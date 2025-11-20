@@ -21,21 +21,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.exception.TikaConfigException;
+import org.junit.jupiter.api.Test;
 
 public class TikaAsyncCLITest {
     @Test
     public void testCrash() throws Exception {
         Path config = getPath("/configs/tika-config-broken.xml");
-        assertThrows(TikaConfigException.class, () -> TikaAsyncCLI.main(new String[]{config.toAbsolutePath().toString()}));
+        assertThrows(TikaConfigException.class,
+                () -> TikaAsyncCLI.main(new String[]{config.toAbsolutePath().toString()}));
     }
 
     private Path getPath(String file) throws Exception {
-        return Paths.get(this
-                .getClass()
-                .getResource(file)
-                .toURI());
+        return Paths.get(this.getClass().getResource(file).toURI());
     }
 }

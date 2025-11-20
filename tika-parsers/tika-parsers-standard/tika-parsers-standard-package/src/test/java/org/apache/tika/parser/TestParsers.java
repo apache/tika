@@ -23,17 +23,16 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Junit test class for Tika {@link Parser}s.
@@ -54,8 +53,7 @@ public class TestParsers extends MultiThreadedTikaTest {
     public void testWORDxtraction() throws Exception {
         Parser parser = TIKA.getParser();
         Metadata metadata = new Metadata();
-        try (TikaInputStream tis = TikaInputStream
-                .get(getResourceAsStream("/test-documents/testWORD.doc"))) {
+        try (TikaInputStream tis = TikaInputStream.get(getResourceAsStream("/test-documents/testWORD.doc"))) {
             try (InputStream stream = new FileInputStream(tis.getFile())) {
                 parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
             }
@@ -67,8 +65,7 @@ public class TestParsers extends MultiThreadedTikaTest {
     public void testEXCELExtraction() throws Exception {
         final String expected = "Numbers and their Squares";
         Metadata metadata = new Metadata();
-        try (TikaInputStream tis = TikaInputStream
-                .get(getResourceAsStream("/test-documents/testEXCEL.xls"))) {
+        try (TikaInputStream tis = TikaInputStream.get(getResourceAsStream("/test-documents/testEXCEL.xls"))) {
             File file = tis.getFile();
             String s1 = TIKA.parseToString(file);
             assertTrue(s1.contains(expected), "Text does not contain '" + expected + "'");
@@ -88,12 +85,10 @@ public class TestParsers extends MultiThreadedTikaTest {
                     .get(getResourceAsStream("/test-documents/testOptionalHyphen." + extension))) {
 
                 String content = TIKA.parseToString(tis.getFile());
-                assertTrue(content.contains("optionalhyphen") ||
-                                        content.contains("optional\u00adhyphen") ||   // soft hyphen
-                                        content.contains("optional\u200bhyphen") ||   // zero width space
-                                        content.contains("optional\u2027"),
-                        "optional hyphen was not handled for '" + extension + "' file type: " +
-                                        content);          // hyphenation point
+                assertTrue(content.contains("optionalhyphen") || content.contains("optional\u00adhyphen") || // soft hyphen
+                        content.contains("optional\u200bhyphen") || // zero width space
+                        content.contains("optional\u2027"),
+                        "optional hyphen was not handled for '" + extension + "' file type: " + content); // hyphenation point
             }
         }
 
@@ -105,16 +100,14 @@ public class TestParsers extends MultiThreadedTikaTest {
                 .get(getResourceAsStream("/test-documents/" + fileName + "." + extension))) {
             content = TIKA.parseToString(tis.getFile());
         }
-        assertTrue(content.contains("Here is some text"),
-                extension + ": content=" + content + " did not extract text");
+        assertTrue(content.contains("Here is some text"), extension + ": content=" + content + " did not extract text");
         assertTrue(content.contains("Here is a comment"),
                 extension + ": content=" + content + " did not extract comment");
     }
 
     @Test
     public void testComment() throws Exception {
-        final String[] extensions =
-                new String[]{"ppt", "pptx", "doc", "docx", "xls", "xlsx", "pdf", "rtf"};
+        final String[] extensions = new String[]{"ppt", "pptx", "doc", "docx", "xls", "xlsx", "pdf", "rtf"};
         for (String extension : extensions) {
             verifyComment(extension, "testComment");
         }

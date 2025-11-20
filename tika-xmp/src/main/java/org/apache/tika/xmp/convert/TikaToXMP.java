@@ -20,10 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import com.adobe.internal.xmp.XMPException;
-import com.adobe.internal.xmp.XMPMeta;
-import com.adobe.internal.xmp.XMPMetaFactory;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -33,6 +29,10 @@ import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
 import org.apache.tika.parser.microsoft.rtf.RTFParser;
 import org.apache.tika.parser.odf.OpenDocumentParser;
+
+import com.adobe.internal.xmp.XMPException;
+import com.adobe.internal.xmp.XMPMeta;
+import com.adobe.internal.xmp.XMPMetaFactory;
 
 public class TikaToXMP {
     /**
@@ -146,8 +146,7 @@ public class TikaToXMP {
                     converter = clazz.getDeclaredConstructor().newInstance();
                 } catch (Exception e) {
                     throw new TikaException(
-                            "TikaToXMP converter class cannot be instantiated for mimetype: " +
-                                    type.toString(), e);
+                            "TikaToXMP converter class cannot be instantiated for mimetype: " + type.toString(), e);
                 }
             }
         }
@@ -157,7 +156,6 @@ public class TikaToXMP {
 
     // --- Private methods ---
 
-
     /**
      * Initializes the map with supported converters.
      */
@@ -166,8 +164,7 @@ public class TikaToXMP {
         ParseContext parseContext = new ParseContext();
 
         // MS Office Binary File Format
-        addConverter(new OfficeParser().getSupportedTypes(parseContext),
-                MSOfficeBinaryConverter.class);
+        addConverter(new OfficeParser().getSupportedTypes(parseContext), MSOfficeBinaryConverter.class);
 
         // Rich Text Format
         addConverter(new RTFParser().getSupportedTypes(parseContext), RTFConverter.class);
@@ -176,12 +173,10 @@ public class TikaToXMP {
         addConverter(new OOXMLParser().getSupportedTypes(parseContext), MSOfficeXMLConverter.class);
 
         // Open document format
-        addConverter(new OpenDocumentParser().getSupportedTypes(parseContext),
-                OpenDocumentConverter.class);
+        addConverter(new OpenDocumentParser().getSupportedTypes(parseContext), OpenDocumentConverter.class);
     }
 
-    private static void addConverter(Set<MediaType> supportedTypes,
-                                     Class<? extends ITikaToXMPConverter> converter) {
+    private static void addConverter(Set<MediaType> supportedTypes, Class<? extends ITikaToXMPConverter> converter) {
         for (MediaType type : supportedTypes) {
             CONVERTER_MAP.put(type, converter);
         }

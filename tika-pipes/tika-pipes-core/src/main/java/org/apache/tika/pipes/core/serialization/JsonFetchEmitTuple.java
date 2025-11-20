@@ -21,14 +21,14 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.FetchEmitTuple;
 import org.apache.tika.serialization.MetadataSerializer;
 import org.apache.tika.serialization.ParseContextSerializer;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 
 public class JsonFetchEmitTuple {
 

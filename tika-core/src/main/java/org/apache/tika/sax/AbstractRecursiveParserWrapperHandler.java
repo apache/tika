@@ -20,13 +20,12 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * This is a special handler to be used only with the
@@ -34,11 +33,10 @@ import org.apache.tika.metadata.TikaCoreProperties;
  * It allows for finer-grained processing of embedded documents than in the legacy handlers.
  * Subclasses can choose how to process individual embedded documents.
  */
-public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandler
-        implements Serializable {
+public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandler implements Serializable {
 
-    public final static Property EMBEDDED_RESOURCE_LIMIT_REACHED = Property.internalBoolean(
-            TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_resource_limit_reached");
+    public final static Property EMBEDDED_RESOURCE_LIMIT_REACHED = Property
+            .internalBoolean(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_resource_limit_reached");
     private static final int MAX_DEPTH = 100;
     private final ContentHandlerFactory contentHandlerFactory;
     private final int maxEmbeddedResources;
@@ -50,7 +48,7 @@ public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandl
     }
 
     public AbstractRecursiveParserWrapperHandler(ContentHandlerFactory contentHandlerFactory,
-                                                 int maxEmbeddedResources) {
+            int maxEmbeddedResources) {
         this.contentHandlerFactory = contentHandlerFactory;
         this.maxEmbeddedResources = maxEmbeddedResources;
     }
@@ -71,8 +69,7 @@ public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandl
      * @param contentHandler local handler to be used on this embedded document
      * @param metadata       embedded document's metadata
      */
-    public void startEmbeddedDocument(ContentHandler contentHandler, Metadata metadata)
-            throws SAXException {
+    public void startEmbeddedDocument(ContentHandler contentHandler, Metadata metadata) throws SAXException {
         embeddedResources++;
         embeddedDepth++;
         if (embeddedDepth >= MAX_DEPTH) {
@@ -91,8 +88,7 @@ public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandl
      * @param metadata       metadata for this embedded document
      * @throws SAXException
      */
-    public void endEmbeddedDocument(ContentHandler contentHandler, Metadata metadata)
-            throws SAXException {
+    public void endEmbeddedDocument(ContentHandler contentHandler, Metadata metadata) throws SAXException {
         decrementEmbeddedDepth();
     }
 

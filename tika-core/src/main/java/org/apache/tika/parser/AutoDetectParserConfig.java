@@ -19,15 +19,14 @@ package org.apache.tika.parser;
 import java.io.IOException;
 import java.io.Serializable;
 
-import org.w3c.dom.Element;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.config.ConfigBase;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.writefilter.MetadataWriteFilterFactory;
 import org.apache.tika.sax.ContentHandlerDecoratorFactory;
+import org.w3c.dom.Element;
+import org.xml.sax.ContentHandler;
 
 /**
  * This config object can be used to tune how conservative we want to be
@@ -40,21 +39,18 @@ import org.apache.tika.sax.ContentHandlerDecoratorFactory;
  */
 public class AutoDetectParserConfig extends ConfigBase implements Serializable {
 
-    private static ContentHandlerDecoratorFactory NOOP_CONTENT_HANDLER_DECORATOR_FACTORY =
-            new ContentHandlerDecoratorFactory() {
-                @Override
-                public ContentHandler decorate(ContentHandler contentHandler, Metadata metadata,
-                                               ParseContext parseContext) {
-                    return contentHandler;
-                }
-            };
+    private static ContentHandlerDecoratorFactory NOOP_CONTENT_HANDLER_DECORATOR_FACTORY = new ContentHandlerDecoratorFactory() {
+        @Override
+        public ContentHandler decorate(ContentHandler contentHandler, Metadata metadata, ParseContext parseContext) {
+            return contentHandler;
+        }
+    };
 
     public static AutoDetectParserConfig DEFAULT = new AutoDetectParserConfig();
 
-    public static AutoDetectParserConfig load(Element element)
-            throws TikaConfigException, IOException {
-        return AutoDetectParserConfig.buildSingle("autoDetectParserConfig",
-                AutoDetectParserConfig.class, element, AutoDetectParserConfig.DEFAULT);
+    public static AutoDetectParserConfig load(Element element) throws TikaConfigException, IOException {
+        return AutoDetectParserConfig.buildSingle("autoDetectParserConfig", AutoDetectParserConfig.class, element,
+                AutoDetectParserConfig.DEFAULT);
     }
 
     /**
@@ -88,8 +84,7 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
 
     private EmbeddedDocumentExtractorFactory embeddedDocumentExtractorFactory = null;
 
-    private ContentHandlerDecoratorFactory contentHandlerDecoratorFactory =
-            NOOP_CONTENT_HANDLER_DECORATOR_FACTORY;
+    private ContentHandlerDecoratorFactory contentHandlerDecoratorFactory = NOOP_CONTENT_HANDLER_DECORATOR_FACTORY;
 
     private DigestingParser.DigesterFactory digesterFactory = null;
 
@@ -104,9 +99,8 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
      * @param maximumDepth             SecureContentHandler - maximum XML element nesting level.
      * @param maximumPackageEntryDepth SecureContentHandler - maximum package entry nesting level.
      */
-    public AutoDetectParserConfig(Long spoolToDisk, Long outputThreshold,
-                                  Long maximumCompressionRatio, Integer maximumDepth,
-                                  Integer maximumPackageEntryDepth) {
+    public AutoDetectParserConfig(Long spoolToDisk, Long outputThreshold, Long maximumCompressionRatio,
+            Integer maximumDepth, Integer maximumPackageEntryDepth) {
         this.spoolToDisk = spoolToDisk;
         this.outputThreshold = outputThreshold;
         this.maximumCompressionRatio = maximumCompressionRatio;
@@ -162,13 +156,11 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
         return this.metadataWriteFilterFactory;
     }
 
-    public void setMetadataWriteFilterFactory(
-            MetadataWriteFilterFactory metadataWriteFilterFactory) {
+    public void setMetadataWriteFilterFactory(MetadataWriteFilterFactory metadataWriteFilterFactory) {
         this.metadataWriteFilterFactory = metadataWriteFilterFactory;
     }
 
-    public void setEmbeddedDocumentExtractorFactory(
-            EmbeddedDocumentExtractorFactory embeddedDocumentExtractorFactory) {
+    public void setEmbeddedDocumentExtractorFactory(EmbeddedDocumentExtractorFactory embeddedDocumentExtractorFactory) {
         this.embeddedDocumentExtractorFactory = embeddedDocumentExtractorFactory;
     }
 
@@ -176,8 +168,7 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
         return embeddedDocumentExtractorFactory;
     }
 
-    public void setContentHandlerDecoratorFactory(
-            ContentHandlerDecoratorFactory contentHandlerDecoratorFactory) {
+    public void setContentHandlerDecoratorFactory(ContentHandlerDecoratorFactory contentHandlerDecoratorFactory) {
         this.contentHandlerDecoratorFactory = contentHandlerDecoratorFactory;
     }
 
@@ -203,14 +194,11 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
 
     @Override
     public String toString() {
-        return "AutoDetectParserConfig{" + "spoolToDisk=" + spoolToDisk + ", outputThreshold=" +
-                outputThreshold + ", maximumCompressionRatio=" + maximumCompressionRatio +
-                ", maximumDepth=" + maximumDepth + ", maximumPackageEntryDepth=" +
-                maximumPackageEntryDepth + ", metadataWriteFilterFactory=" +
-                metadataWriteFilterFactory + ", embeddedDocumentExtractorFactory=" +
-                embeddedDocumentExtractorFactory + ", contentHandlerDecoratorFactory=" +
-                contentHandlerDecoratorFactory + ", digesterFactory=" + digesterFactory +
-                ", throwOnZeroBytes=" + throwOnZeroBytes + '}';
+        return "AutoDetectParserConfig{" + "spoolToDisk=" + spoolToDisk + ", outputThreshold=" + outputThreshold
+                + ", maximumCompressionRatio=" + maximumCompressionRatio + ", maximumDepth=" + maximumDepth
+                + ", maximumPackageEntryDepth=" + maximumPackageEntryDepth + ", metadataWriteFilterFactory="
+                + metadataWriteFilterFactory + ", embeddedDocumentExtractorFactory=" + embeddedDocumentExtractorFactory
+                + ", contentHandlerDecoratorFactory=" + contentHandlerDecoratorFactory + ", digesterFactory="
+                + digesterFactory + ", throwOnZeroBytes=" + throwOnZeroBytes + '}';
     }
 }
-

@@ -19,7 +19,6 @@ package org.apache.tika.metadata;
 import org.apache.tika.metadata.Property.PropertyType;
 import org.apache.tika.metadata.Property.ValueType;
 
-
 /**
  * XMP property definition violation exception. This is thrown when
  * you try to set a {@link Property} value with an incorrect type,
@@ -42,9 +41,9 @@ public final class PropertyTypeException extends IllegalArgumentException {
     }
 
     public PropertyTypeException(PropertyType unsupportedPropertyType) {
-        super((unsupportedPropertyType != PropertyType.COMPOSITE) ?
-                unsupportedPropertyType + " is not supported" :
-                "Composite Properties must not include other Composite" +
-                        " Properties as either Primary or Secondary");
+        super((unsupportedPropertyType != PropertyType.COMPOSITE)
+                ? unsupportedPropertyType + " is not supported"
+                : "Composite Properties must not include other Composite"
+                        + " Properties as either Primary or Secondary");
     }
 }

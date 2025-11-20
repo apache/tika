@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.standard;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -26,12 +25,9 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -42,6 +38,9 @@ import org.apache.tika.server.core.resource.RecursiveMetadataResource;
 import org.apache.tika.server.core.resource.TikaResource;
 import org.apache.tika.server.core.writer.JSONMessageBodyWriter;
 import org.apache.tika.server.core.writer.MetadataListMessageBodyWriter;
+import org.junit.jupiter.api.Test;
+
+import jakarta.ws.rs.core.Response;
 
 public class OpenNLPMetadataFilterTest extends CXFTestBase {
 
@@ -52,7 +51,8 @@ public class OpenNLPMetadataFilterTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(RecursiveMetadataResource.class, TikaResource.class);
-        sf.setResourceProvider(RecursiveMetadataResource.class, new SingletonResourceProvider(new RecursiveMetadataResource()));
+        sf.setResourceProvider(RecursiveMetadataResource.class,
+                new SingletonResourceProvider(new RecursiveMetadataResource()));
         sf.setResourceProvider(TikaResource.class, new SingletonResourceProvider(new TikaResource()));
 
     }
@@ -72,39 +72,25 @@ public class OpenNLPMetadataFilterTest extends CXFTestBase {
 
     @Test
     public void testMeta() throws Exception {
-        Response response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
+        Response response = WebClient.create(endPoint + META_PATH).accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
 
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
 
         assertEquals(12, metadataList.size());
-        assertEquals("Microsoft Office Word", metadataList
-                .get(0)
-                .get(OfficeOpenXMLExtended.APPLICATION));
-        assertContains("plundered our seas", metadataList
-                .get(6)
-                .get("X-TIKA:content"));
+        assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
+        assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
 
-        assertEquals("a38e6c7b38541af87148dee9634cb811", metadataList
-                .get(10)
-                .get("X-TIKA:digest:MD5"));
+        assertEquals("a38e6c7b38541af87148dee9634cb811", metadataList.get(10).get("X-TIKA:digest:MD5"));
 
-        assertEquals("eng", metadataList
-                .get(6)
-                .get(TikaCoreProperties.TIKA_DETECTED_LANGUAGE));
-        assertEquals("LOW", metadataList
-                .get(6)
-                .get(TikaCoreProperties.TIKA_DETECTED_LANGUAGE_CONFIDENCE));
+        assertEquals("eng", metadataList.get(6).get(TikaCoreProperties.TIKA_DETECTED_LANGUAGE));
+        assertEquals("LOW", metadataList.get(6).get(TikaCoreProperties.TIKA_DETECTED_LANGUAGE_CONFIDENCE));
     }
 
     @Test
     public void testTika() throws Exception {
-        Response response = WebClient
-                .create(endPoint + TIKA_PATH)
-                .accept("application/json")
+        Response response = WebClient.create(endPoint + TIKA_PATH).accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
 
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);

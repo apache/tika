@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote;
 
 import java.io.IOException;
@@ -72,8 +71,7 @@ import org.apache.tika.exception.TikaException;
 class PropertySet {
     List<PropertyValue> rgPridsData = new ArrayList<>();
 
-    public void print(OneNoteDocument document, OneNotePtr pointer, int indentLevel)
-            throws IOException, TikaException {
+    public void print(OneNoteDocument document, OneNotePtr pointer, int indentLevel) throws IOException, TikaException {
         for (PropertyValue child : rgPridsData) {
             child.print(document, pointer, indentLevel);
         }

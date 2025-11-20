@@ -22,10 +22,9 @@ import java.util.List;
 import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.xssf.extractor.XSSFExcelExtractor;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.SAXException;
 
 public class POIXMLTextExtractorDecorator extends AbstractOOXMLExtractor {
 
@@ -33,8 +32,7 @@ public class POIXMLTextExtractorDecorator extends AbstractOOXMLExtractor {
         super(context, extractor);
 
         if (extractor instanceof XSSFExcelExtractor) {
-            ((XSSFExcelExtractor) extractor)
-                    .setIncludeTextBoxes(config.isIncludeShapeBasedContent());
+            ((XSSFExcelExtractor) extractor).setIncludeTextBoxes(config.isIncludeShapeBasedContent());
         }
     }
 

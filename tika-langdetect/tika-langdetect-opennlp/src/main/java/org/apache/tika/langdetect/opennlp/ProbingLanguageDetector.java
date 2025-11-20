@@ -4,7 +4,7 @@
  * this work for additional information regarding copyright ownership.
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -102,8 +102,7 @@ class ProbingLanguageDetector implements LanguageDetector {
      *
      * @param model the language detector model
      */
-    public ProbingLanguageDetector(LanguageDetectorModel model,
-                                   CharSequenceNormalizer... normalizers) {
+    public ProbingLanguageDetector(LanguageDetectorModel model, CharSequenceNormalizer... normalizers) {
         this.model = model;
         this.normalizer = new AggregateCharSequenceNormalizer(normalizers);
     }
@@ -172,11 +171,9 @@ class ProbingLanguageDetector implements LanguageDetector {
             i++;
         }
         double[] eval = model.getMaxentModel().eval(allGrams, counts);
-        opennlp.tools.langdetect.Language[] arr =
-                new opennlp.tools.langdetect.Language[eval.length];
+        opennlp.tools.langdetect.Language[] arr = new opennlp.tools.langdetect.Language[eval.length];
         for (int j = 0; j < eval.length; j++) {
-            arr[j] = new opennlp.tools.langdetect.Language(model.getMaxentModel().getOutcome(j),
-                    eval[j]);
+            arr[j] = new opennlp.tools.langdetect.Language(model.getMaxentModel().getOutcome(j), eval[j]);
         }
 
         Arrays.sort(arr, (o1, o2) -> Double.compare(o2.getConfidence(), o1.getConfidence()));
@@ -300,8 +297,7 @@ class ProbingLanguageDetector implements LanguageDetector {
      * @return
      */
     boolean seenEnough(LinkedList<opennlp.tools.langdetect.Language[]> predictionsQueue,
-                       opennlp.tools.langdetect.Language[] newPredictions,
-                       Map<String, MutableInt> ngramCounts) {
+            opennlp.tools.langdetect.Language[] newPredictions, Map<String, MutableInt> ngramCounts) {
 
         if (predictionsQueue.size() < minConsecImprovements) {
             predictionsQueue.add(newPredictions);
@@ -310,8 +306,7 @@ class ProbingLanguageDetector implements LanguageDetector {
             predictionsQueue.removeFirst();
         }
         predictionsQueue.add(newPredictions);
-        if (minDiff > 0.0 &&
-                newPredictions[0].getConfidence() - newPredictions[1].getConfidence() < minDiff) {
+        if (minDiff > 0.0 && newPredictions[0].getConfidence() - newPredictions[1].getConfidence() < minDiff) {
             return false;
         }
         String lastLang = null;

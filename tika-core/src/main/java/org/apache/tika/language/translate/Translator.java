@@ -37,8 +37,7 @@ public interface Translator {
      * @throws java.io.IOException
      * @since Tika 1.6
      */
-    String translate(String text, String sourceLanguage, String targetLanguage)
-            throws TikaException, IOException;
+    String translate(String text, String sourceLanguage, String targetLanguage) throws TikaException, IOException;
 
     /**
      * Translate text to the given language

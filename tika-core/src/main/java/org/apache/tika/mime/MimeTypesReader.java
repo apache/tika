@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -36,6 +37,8 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXResult;
 
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -43,9 +46,6 @@ import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * A reader for XML files compliant with the freedesktop MIME-info DTD.
@@ -216,8 +216,8 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
         try {
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
         } catch (ParserConfigurationException | SAXException e) {
-            LOG.warn("can't set secure processing feature on: " + factory.getClass() +
-                    ". User assumes responsibility for consequences.");
+            LOG.warn("can't set secure processing feature on: " + factory.getClass()
+                    + ". User assumes responsibility for consequences.");
         }
         try {
             return factory.newSAXParser();
@@ -258,8 +258,7 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes attributes)
-            throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
         if (type == null) {
             if (MIME_TYPE_TAG.equals(qName)) {
                 String name = attributes.getValue(MIME_TYPE_TYPE_ATTR);
@@ -278,8 +277,8 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
         } else if (SUB_CLASS_OF_TAG.equals(qName)) {
             String parent = attributes.getValue(SUB_CLASS_TYPE_ATTR);
             types.setSuperType(type, MediaType.parse(parent));
-        } else if (ACRONYM_TAG.equals(qName) || COMMENT_TAG.equals(qName) ||
-                TIKA_LINK_TAG.equals(qName) || TIKA_UTI_TAG.equals(qName)) {
+        } else if (ACRONYM_TAG.equals(qName) || COMMENT_TAG.equals(qName) || TIKA_LINK_TAG.equals(qName)
+                || TIKA_UTI_TAG.equals(qName)) {
             characters = new StringBuilder();
         } else if (GLOB_TAG.equals(qName)) {
             String pattern = attributes.getValue(PATTERN_ATTR);
@@ -297,8 +296,8 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
             type.addRootXML(namespace, name);
         } else if (MATCH_TAG.equals(qName)) {
             if (attributes.getValue(MATCH_MINSHOULDMATCH_ATTR) != null) {
-                current = new ClauseRecord(new MinShouldMatchVal(
-                        Integer.parseInt(attributes.getValue(MATCH_MINSHOULDMATCH_ATTR))));
+                current = new ClauseRecord(
+                        new MinShouldMatchVal(Integer.parseInt(attributes.getValue(MATCH_MINSHOULDMATCH_ATTR))));
             } else {
                 String kind = attributes.getValue(MATCH_TYPE_ATTR);
                 String offset = attributes.getValue(MATCH_OFFSET_ATTR);
@@ -307,8 +306,7 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
                 if (kind == null) {
                     kind = "string";
                 }
-                current =
-                        new ClauseRecord(new MagicMatch(type.getType(), kind, offset, value, mask));
+                current = new ClauseRecord(new MagicMatch(type.getType(), kind, offset, value, mask));
             }
         } else if (MAGIC_TAG.equals(qName)) {
             String value = attributes.getValue(MAGIC_PRIORITY_ATTR);
@@ -360,13 +358,13 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
         }
     }
 
-    protected void handleMimeError(String input, MimeTypeException ex, String qName,
-                                   Attributes attributes) throws SAXException {
+    protected void handleMimeError(String input, MimeTypeException ex, String qName, Attributes attributes)
+            throws SAXException {
         throw new SAXException(ex);
     }
 
-    protected void handleGlobError(MimeType type, String pattern, MimeTypeException ex,
-                                   String qName, Attributes attributes) throws SAXException {
+    protected void handleGlobError(MimeType type, String pattern, MimeTypeException ex, String qName,
+            Attributes attributes) throws SAXException {
         throw new SAXException(ex);
     }
 
@@ -390,8 +388,7 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
 
         @Override
         public boolean eval(byte[] data) {
-            throw new IllegalStateException(
-                    "This should never be used " + "on this placeholder class");
+            throw new IllegalStateException("This should never be used " + "on this placeholder class");
         }
 
         @Override
@@ -415,8 +412,7 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
 
         public void stop() {
             if (clause instanceof MinShouldMatchVal) {
-                clause =
-                        new MinShouldMatchClause(((MinShouldMatchVal) clause).getVal(), subclauses);
+                clause = new MinShouldMatchClause(((MinShouldMatchVal) clause).getVal(), subclauses);
             } else if (subclauses != null) {
                 Clause subclause;
                 if (subclauses.size() == 1) {

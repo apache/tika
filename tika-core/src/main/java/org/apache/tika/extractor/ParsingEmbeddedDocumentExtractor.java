@@ -22,10 +22,6 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
 import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -38,6 +34,9 @@ import org.apache.tika.parser.ParseRecord;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Helper class for parsers of package archives or other compound document
@@ -78,8 +77,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
     }
 
     @Override
-    public void parseEmbedded(
-            TikaInputStream tis, ContentHandler handler, Metadata metadata, boolean outputHtml)
+    public void parseEmbedded(TikaInputStream tis, ContentHandler handler, Metadata metadata, boolean outputHtml)
             throws SAXException, IOException {
         if (outputHtml) {
             AttributesImpl attributes = new AttributesImpl();
@@ -98,8 +96,8 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         // Use the delegate parser to parse this entry
         try {
             tis.setCloseShield();
-            DELEGATING_PARSER.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(handler)),
-                    metadata, context);
+            DELEGATING_PARSER.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(handler)), metadata,
+                    context);
         } catch (EncryptedDocumentException ede) {
             recordException(ede, context);
         } catch (CorruptedFileException e) {

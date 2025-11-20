@@ -22,7 +22,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.nio.charset.Charset;
 
-
 /**
  * A detection may either not find a charset, find an invalid charset, or find a valid charset
  */
@@ -30,7 +29,8 @@ class CharsetDetectionResult {
     private boolean found = false;
     private Charset charset = null;
 
-    private CharsetDetectionResult() { /* default result: not found */}
+    private CharsetDetectionResult() {
+        /* default result: not found */}
 
     static CharsetDetectionResult notFound() {
         return new CharsetDetectionResult();

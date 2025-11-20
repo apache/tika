@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.property;
 
 import java.util.List;
@@ -26,7 +25,6 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
  */
 public class TwoBytesOfData implements IProperty {
     public byte[] data;
-
 
     /**
      * This method is used to deserialize the TwoBytesOfData from the specified byte array and start index.

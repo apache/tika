@@ -23,16 +23,16 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.List;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
 import org.apache.tika.metadata.filter.DateNormalizingMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.parser.ParseContext;
+import org.junit.jupiter.api.Test;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 
 public class TestParseContextSerialization {
 
@@ -58,7 +58,7 @@ public class TestParseContextSerialization {
         ParseContext deserialized = mapper.readValue(json, ParseContext.class);
         MetadataFilter dMetadataFilter = deserialized.get(MetadataFilter.class);
         assertTrue(dMetadataFilter instanceof CompositeMetadataFilter);
-        List<MetadataFilter> metadataFilters = ((CompositeMetadataFilter)dMetadataFilter).getFilters();
+        List<MetadataFilter> metadataFilters = ((CompositeMetadataFilter) dMetadataFilter).getFilters();
         assertEquals(1, metadataFilters.size());
         assertTrue(metadataFilters.get(0) instanceof DateNormalizingMetadataFilter);
     }

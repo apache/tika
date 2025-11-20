@@ -16,11 +16,10 @@
  */
 package org.apache.tika.parser.xml;
 
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
 
 /**
  * SAX event handler that maps the contents of an XML attribute into
@@ -40,19 +39,16 @@ public class AttributeMetadataHandler extends AbstractMetadataHandler {
         this.localName = localName;
     }
 
-    public AttributeMetadataHandler(String uri, String localName, Metadata metadata,
-                                    Property property) {
+    public AttributeMetadataHandler(String uri, String localName, Metadata metadata, Property property) {
         super(metadata, property);
         this.uri = uri;
         this.localName = localName;
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes attributes)
-            throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
         for (int i = 0; i < attributes.getLength(); i++) {
-            if (attributes.getURI(i).equals(this.uri) &&
-                    attributes.getLocalName(i).equals(this.localName)) {
+            if (attributes.getURI(i).equals(this.uri) && attributes.getLocalName(i).equals(this.localName)) {
                 addMetadata(attributes.getValue(i).trim());
             }
         }

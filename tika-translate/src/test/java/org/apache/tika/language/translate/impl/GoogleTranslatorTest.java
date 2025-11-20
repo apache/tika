@@ -14,9 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.language.translate.impl;
-
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -24,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 
 /**
  * Test harness for the {@link GoogleTranslator}.
@@ -52,8 +49,7 @@ public class GoogleTranslatorTest {
             try {
                 result = translator.translate(source, "es", "en");
                 assertNotNull(result);
-                assertEquals(expected, result,
-                        "Result: [" + result + "]: not equal to expected: [" + expected + "]");
+                assertEquals(expected, result, "Result: [" + result + "]: not equal to expected: [" + expected + "]");
             } catch (Exception e) {
                 e.printStackTrace();
                 fail(e.getMessage());
@@ -71,8 +67,7 @@ public class GoogleTranslatorTest {
             try {
                 result = translator.translate(source, "en");
                 assertNotNull(result);
-                assertEquals(expected, result,
-                        "Result: [" + result + "]: not equal to expected: [" + expected + "]");
+                assertEquals(expected, result, "Result: [" + result + "]: not equal to expected: [" + expected + "]");
             } catch (Exception e) {
                 e.printStackTrace();
                 fail(e.getMessage());

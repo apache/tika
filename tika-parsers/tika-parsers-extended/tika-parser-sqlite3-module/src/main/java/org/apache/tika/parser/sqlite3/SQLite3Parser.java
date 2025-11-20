@@ -16,15 +16,11 @@
  */
 package org.apache.tika.parser.sqlite3;
 
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -36,6 +32,8 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * This is the main class for parsing SQLite3 files.  When {@link #parse} is called,
@@ -60,14 +58,12 @@ public class SQLite3Parser implements Parser, Initializable {
     /**
      * Base16 encoded integer representing the "application id"
      */
-    public static final Property SQLITE_APPLICATION_ID =
-            Property.internalText(SQLITE3_PREFIX + "application_id");
+    public static final Property SQLITE_APPLICATION_ID = Property.internalText(SQLITE3_PREFIX + "application_id");
 
     /**
      * Base16 encoded integer representing the "user version"
      */
-    public static final Property SQLITE_USER_VERSION =
-            Property.internalText(SQLITE3_PREFIX + "user_version");
+    public static final Property SQLITE_USER_VERSION = Property.internalText(SQLITE3_PREFIX + "user_version");
 
     /**
      * Serial version UID
@@ -97,8 +93,8 @@ public class SQLite3Parser implements Parser, Initializable {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         SQLite3DBParser p = new SQLite3DBParser();
         p.parse(stream, handler, metadata, context);
     }
@@ -115,7 +111,6 @@ public class SQLite3Parser implements Parser, Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
     }
 }

@@ -18,11 +18,10 @@ package org.apache.tika.parser.wordperfect;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.Test;
 
 /**
  * Junit test class for the {@link WordPerfectParser}.
@@ -44,8 +43,7 @@ public class QuattroProTest extends TikaTest {
     @Test
     public void testWB3() throws Exception {
         XMLResult r = getXML("testQUATTRO.wb3");
-        assertEquals("org.apache.tika.parser.EmptyParser",
-                r.metadata.get(TikaCoreProperties.TIKA_PARSED_BY));
+        assertEquals("org.apache.tika.parser.EmptyParser", r.metadata.get(TikaCoreProperties.TIKA_PARSED_BY));
         assertEquals(QuattroProParser.QP_7_8.toString(), r.metadata.get(Metadata.CONTENT_TYPE));
     }
 }

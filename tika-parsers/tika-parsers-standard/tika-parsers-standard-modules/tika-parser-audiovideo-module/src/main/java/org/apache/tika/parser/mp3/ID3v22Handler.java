@@ -20,11 +20,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.mp3.ID3v2Frame.RawTag;
 import org.apache.tika.parser.mp3.ID3v2Frame.RawTagIterator;
+import org.xml.sax.SAXException;
 
 /**
  * This is used to parse ID3 Version 2.2 Tag information from an MP3 file,
@@ -48,35 +47,36 @@ public class ID3v22Handler implements ID3Tags {
         RawTagIterator tags = new RawV22TagIterator(frame);
         while (tags.hasNext()) {
             RawTag tag = tags.next();
-            switch (tag.name) {
-                case "TT2":
+            switch (tag.name)
+            {
+                case "TT2" :
                     title = getTagString(tag.data, 0, tag.data.length);
                     break;
-                case "TP1":
+                case "TP1" :
                     artist = getTagString(tag.data, 0, tag.data.length);
                     break;
-                case "TP2":
+                case "TP2" :
                     albumArtist = getTagString(tag.data, 0, tag.data.length);
                     break;
-                case "TAL":
+                case "TAL" :
                     album = getTagString(tag.data, 0, tag.data.length);
                     break;
-                case "TYE":
+                case "TYE" :
                     year = getTagString(tag.data, 0, tag.data.length);
                     break;
-                case "TCM":
+                case "TCM" :
                     composer = getTagString(tag.data, 0, tag.data.length);
                     break;
-                case "COM":
+                case "COM" :
                     comments.add(getComment(tag.data, 0, tag.data.length));
                     break;
-                case "TRK":
+                case "TRK" :
                     trackNumber = getTagString(tag.data, 0, tag.data.length);
                     break;
-                case "TPA":
+                case "TPA" :
                     disc = getTagString(tag.data, 0, tag.data.length);
                     break;
-                case "TCO":
+                case "TCO" :
                     genre = extractGenre(getTagString(tag.data, 0, tag.data.length));
                     break;
             }

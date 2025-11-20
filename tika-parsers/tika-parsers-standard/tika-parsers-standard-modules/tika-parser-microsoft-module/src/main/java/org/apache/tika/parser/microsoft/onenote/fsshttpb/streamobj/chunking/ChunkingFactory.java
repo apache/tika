@@ -14,14 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.chunking;
 
 import java.io.IOException;
 import java.util.List;
 
 import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.IntermediateNodeObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.LeafNodeObject;
@@ -73,8 +71,8 @@ public class ChunkingFactory {
             if (nodeObject.intermediateNodeObjectList.size() == nodes.size()) {
                 boolean isDataSizeMatching = true;
                 for (int i = 0; i < nodes.size(); i++) {
-                    if (nodeObject.intermediateNodeObjectList.get(i).dataSize.dataSize !=
-                            nodes.get(i).dataSize.dataSize) {
+                    if (nodeObject.intermediateNodeObjectList.get(i).dataSize.dataSize != nodes
+                            .get(i).dataSize.dataSize) {
                         isDataSizeMatching = false;
                         break;
                     }
@@ -97,23 +95,22 @@ public class ChunkingFactory {
      * @param chunkingMethod The type of chunking methods.
      * @return The instance of AbstractChunking.
      */
-    public static AbstractChunking createChunkingInstance(byte[] fileContent,
-                                                          ChunkingMethod chunkingMethod) {
+    public static AbstractChunking createChunkingInstance(byte[] fileContent, ChunkingMethod chunkingMethod) {
         AbstractChunking chunking;
-        switch (chunkingMethod) {
-            case RDCAnalysis:
+        switch (chunkingMethod)
+        {
+            case RDCAnalysis :
                 chunking = new RDCAnalysisChunking(fileContent);
                 break;
-            case SimpleAlgorithm:
+            case SimpleAlgorithm :
                 chunking = new SimpleChunking(fileContent);
                 break;
-            case ZipAlgorithm:
+            case ZipAlgorithm :
                 chunking = new ZipFilesChunking(fileContent);
                 break;
 
-            default:
-                throw new InvalidOperationException(
-                        "Cannot support the chunking type" + chunkingMethod);
+            default :
+                throw new InvalidOperationException("Cannot support the chunking type" + chunkingMethod);
         }
 
         return chunking;

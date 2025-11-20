@@ -27,9 +27,6 @@ import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
@@ -43,6 +40,8 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.xmp.JempboxExtractor;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Parser for the Adobe Photoshop PSD File Format.
@@ -60,8 +59,8 @@ public class PSDParser implements Parser {
      */
     private static final long serialVersionUID = 883387734607994914L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<>(Collections.singletonList(MediaType.image("vnd.adobe.photoshop"))));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections
+            .unmodifiableSet(new HashSet<>(Collections.singletonList(MediaType.image("vnd.adobe.photoshop"))));
 
     private static final int MAX_DATA_LENGTH_BYTES = 10_000_000;
     private static final int MAX_BLOCKS = 10000;
@@ -72,13 +71,13 @@ public class PSDParser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         // Check for the magic header signature
         byte[] signature = new byte[4];
         IOUtils.readFully(stream, signature);
-        if (signature[0] == (byte) '8' && signature[1] == (byte) 'B' &&
-                signature[2] == (byte) 'P' && signature[3] == (byte) 'S') {
+        if (signature[0] == (byte) '8' && signature[1] == (byte) 'B' && signature[2] == (byte) 'P'
+                && signature[3] == (byte) 'S') {
             // Good, signature found
         } else {
             throw new TikaException("PSD/PSB magic signature invalid");
@@ -186,16 +185,14 @@ public class PSDParser implements Parser {
         private byte[] data;
         private int totalLength;
 
-        private ResourceBlock(InputStream stream, int maxDataLengthBytes)
-                throws IOException, TikaException {
+        private ResourceBlock(InputStream stream, int maxDataLengthBytes) throws IOException, TikaException {
             this.maxDataLengthBytes = maxDataLengthBytes;
             counter++;
             // Verify the signature
             long sig = EndianUtils.readIntBE(stream);
             if (sig != SIGNATURE) {
-                throw new TikaException(
-                        "Invalid Image Resource Block Signature Found, got " + sig + " 0x" +
-                                Long.toHexString(sig) + " but the spec defines " + SIGNATURE);
+                throw new TikaException("Invalid Image Resource Block Signature Found, got " + sig + " 0x"
+                        + Long.toHexString(sig) + " but the spec defines " + SIGNATURE);
             }
 
             // Read the block
@@ -239,8 +236,7 @@ public class PSDParser implements Parser {
             // Do we have use for the data segment?
             if (captureData(id)) {
                 if (dataLen > maxDataLengthBytes) {
-                    throw new TikaMemoryLimitException(
-                            "data length must be < " + maxDataLengthBytes + ": " + dataLen);
+                    throw new TikaMemoryLimitException("data length must be < " + maxDataLengthBytes + ": " + dataLen);
                 }
                 data = new byte[dataLen];
                 IOUtils.readFully(stream, data);
@@ -255,11 +251,12 @@ public class PSDParser implements Parser {
          * section of resource blocks we process
          */
         private static boolean captureData(int id) {
-            switch (id) {
-                case ID_CAPTION:
-                case ID_EXIF_1:
-                case ID_EXIF_3:
-                case ID_XMP:
+            switch (id)
+            {
+                case ID_CAPTION :
+                case ID_EXIF_1 :
+                case ID_EXIF_3 :
+                case ID_XMP :
                     return true;
             }
             return false;

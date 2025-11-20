@@ -23,10 +23,9 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
 
+import org.apache.tika.exception.TikaException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import org.apache.tika.exception.TikaException;
 
 /**
  * Generic Tests to ensure that the RSS library behaves as expected

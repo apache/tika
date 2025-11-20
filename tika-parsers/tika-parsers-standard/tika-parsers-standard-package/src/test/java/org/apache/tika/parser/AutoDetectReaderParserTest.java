@@ -25,19 +25,17 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class AutoDetectReaderParserTest extends MultiThreadedTikaTest {
-
 
     @Test
     public void testMulti() throws Exception {
@@ -48,8 +46,7 @@ public class AutoDetectReaderParserTest extends MultiThreadedTikaTest {
         for (int i = 0; i < numThreads; i++) {
             contexts[i] = new ParseContext();
         }
-        FileFilter fileFilter = pathname -> pathname.getName().endsWith(".txt")
-                || pathname.getName().endsWith(".html");
+        FileFilter fileFilter = pathname -> pathname.getName().endsWith(".txt") || pathname.getName().endsWith(".html");
         testMultiThreaded(AUTO_DETECT_PARSER, contexts, numThreads, numIterations, fileFilter);
     }
 
@@ -59,13 +56,13 @@ public class AutoDetectReaderParserTest extends MultiThreadedTikaTest {
 
         @Override
         public Set<MediaType> getSupportedTypes(ParseContext context) {
-            return Collections.unmodifiableSet(
-                    new HashSet<>(Arrays.asList(MediaType.text("html"), MediaType.text("plain"))));
+            return Collections
+                    .unmodifiableSet(new HashSet<>(Arrays.asList(MediaType.text("html"), MediaType.text("plain"))));
         }
 
         @Override
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                          ParseContext context) throws IOException, SAXException, TikaException {
+        public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+                throws IOException, SAXException, TikaException {
             try (AutoDetectReader reader = new AutoDetectReader(stream)) {
                 Charset charset = reader.getCharset();
                 MediaType type = new MediaType(MediaType.parse("text/plhtml"), charset);
@@ -86,7 +83,6 @@ public class AutoDetectReaderParserTest extends MultiThreadedTikaTest {
 
             }
         }
-
 
     }
 }

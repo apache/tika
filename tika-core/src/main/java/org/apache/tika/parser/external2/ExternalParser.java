@@ -30,11 +30,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -54,6 +49,10 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.FileProcessResult;
 import org.apache.tika.utils.ProcessUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * This is a next generation external parser that uses some of the more
@@ -98,8 +97,8 @@ public class ExternalParser implements Parser, Initializable {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         //this may remain null, depending on whether the external parser writes to a file
         Path outFile = null;
         try (TemporaryResources tmp = new TemporaryResources()) {
@@ -127,21 +126,19 @@ public class ExternalParser implements Parser, Initializable {
             FileProcessResult result = null;
             long localTimeoutMillis = TikaTaskTimeout.getTimeoutMillis(context, timeoutMs);
             if (outputFileInCommandline) {
-                result = ProcessUtils.execute(new ProcessBuilder(thisCommandLine),
-                        localTimeoutMillis, maxStdOut, maxStdErr);
+                result = ProcessUtils.execute(new ProcessBuilder(thisCommandLine), localTimeoutMillis, maxStdOut,
+                        maxStdErr);
             } else {
                 outFile = Files.createTempFile("tika-external2-", "");
-                result = ProcessUtils.execute(new ProcessBuilder(thisCommandLine),
-                        localTimeoutMillis, outFile, maxStdErr);
+                result = ProcessUtils.execute(new ProcessBuilder(thisCommandLine), localTimeoutMillis, outFile,
+                        maxStdErr);
             }
             metadata.set(ExternalProcess.IS_TIMEOUT, result.isTimeout());
             metadata.set(ExternalProcess.EXIT_VALUE, result.getExitValue());
             metadata.set(ExternalProcess.STD_OUT_LENGTH, result.getStdoutLength());
-            metadata.set(ExternalProcess.STD_OUT_IS_TRUNCATED,
-                    result.isStdoutTruncated());
+            metadata.set(ExternalProcess.STD_OUT_IS_TRUNCATED, result.isStdoutTruncated());
             metadata.set(ExternalProcess.STD_ERR_LENGTH, result.getStderrLength());
-            metadata.set(ExternalProcess.STD_ERR_IS_TRUNCATED,
-                    result.isStderrTruncated());
+            metadata.set(ExternalProcess.STD_ERR_IS_TRUNCATED, result.isStderrTruncated());
 
             if (returnStdout) {
                 metadata.set(ExternalProcess.STD_OUT, result.getStdout());
@@ -160,10 +157,8 @@ public class ExternalParser implements Parser, Initializable {
         }
     }
 
-    private void handleOutput(FileProcessResult result, Path outFile,
-                              XHTMLContentHandler xhtml, Metadata metadata,
-                              ParseContext parseContext) throws SAXException, TikaException,
-            IOException {
+    private void handleOutput(FileProcessResult result, Path outFile, XHTMLContentHandler xhtml, Metadata metadata,
+            ParseContext parseContext) throws SAXException, TikaException, IOException {
         if (outputParser == EmptyParser.INSTANCE) {
             if (outFile != null) {
                 try (BufferedReader reader = Files.newBufferedReader(outFile)) {
@@ -185,8 +180,7 @@ public class ExternalParser implements Parser, Initializable {
                     outputParser.parse(is, new BodyContentHandler(xhtml), metadata, parseContext);
                 }
             } else {
-                try (InputStream is = TikaInputStream.get(
-                        result.getStdout().getBytes(StandardCharsets.UTF_8))) {
+                try (InputStream is = TikaInputStream.get(result.getStdout().getBytes(StandardCharsets.UTF_8))) {
                     outputParser.parse(is, new BodyContentHandler(xhtml), metadata, parseContext);
                 }
             }
@@ -238,7 +232,6 @@ public class ExternalParser implements Parser, Initializable {
         this.commandLine = commandLine;
     }
 
-
     /**
      * If set to true, this will return the stdout in the metadata
      * via {@link org.apache.tika.metadata.ExternalProcess#STD_OUT}.
@@ -285,8 +278,7 @@ public class ExternalParser implements Parser, Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         if (supportedTypes.size() == 0) {
             throw new TikaConfigException("supportedTypes size must be > 0");
         }
@@ -295,8 +287,7 @@ public class ExternalParser implements Parser, Initializable {
         }
 
         if (outputParser == EmptyParser.INSTANCE) {
-            LOG.debug("no parser selected for the output; contents will be " +
-                    "written to the content handler");
+            LOG.debug("no parser selected for the output; contents will be " + "written to the content handler");
         }
     }
 

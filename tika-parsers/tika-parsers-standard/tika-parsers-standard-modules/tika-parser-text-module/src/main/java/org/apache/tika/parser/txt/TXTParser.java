@@ -23,9 +23,6 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
@@ -34,6 +31,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Plain text parser. The text encoding of the document stream is
@@ -55,8 +54,7 @@ public class TXTParser extends AbstractEncodingDetectorParser {
      */
     private static final long serialVersionUID = -6656102320836888910L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.TEXT_PLAIN);
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.TEXT_PLAIN);
 
     public TXTParser() {
     }
@@ -71,12 +69,12 @@ public class TXTParser extends AbstractEncodingDetectorParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         // Automatically detect the character encoding
-        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream),
-                metadata, getEncodingDetector(context))) {
+        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream), metadata,
+                getEncodingDetector(context))) {
             //try to get detected content type; could be a subclass of text/plain
             //such as vcal, etc.
             String incomingMime = metadata.get(Metadata.CONTENT_TYPE);

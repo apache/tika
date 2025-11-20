@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -25,8 +24,6 @@ import java.io.InputStream;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.Metadata;
@@ -37,6 +34,7 @@ import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.junit.jupiter.api.Test;
 
 public class JackcessParserTest extends TikaTest {
 
@@ -45,12 +43,10 @@ public class JackcessParserTest extends TikaTest {
 
         RecursiveParserWrapper w = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
 
-        for (String fName : new String[]{"testAccess2.accdb", "testAccess2_2000.mdb",
-                "testAccess2_2002-2003.mdb"}) {
+        for (String fName : new String[]{"testAccess2.accdb", "testAccess2_2000.mdb", "testAccess2_2002-2003.mdb"}) {
             InputStream is = null;
             RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                    new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML,
-                            -1));
+                    new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
             try {
                 is = this.getResourceAsStream("/test-documents/" + fName);
 
@@ -81,8 +77,7 @@ public class JackcessParserTest extends TikaTest {
             assertContains("\u666E\u6797\u65AF\u987F\u5927\u5B66", mainContent);
 
             //test embedded document handling
-            assertContains("Test Document with embedded pdf",
-                    list.get(3).get(TikaCoreProperties.TIKA_CONTENT));
+            assertContains("Test Document with embedded pdf", list.get(3).get(TikaCoreProperties.TIKA_CONTENT));
         }
     }
 
@@ -91,8 +86,7 @@ public class JackcessParserTest extends TikaTest {
         ParseContext c = new ParseContext();
         c.set(PasswordProvider.class, metadata -> "tika");
         String content;
-        try (InputStream is = this
-                .getResourceAsStream("/test-documents/testAccess2_encrypted.accdb")) {
+        try (InputStream is = this.getResourceAsStream("/test-documents/testAccess2_encrypted.accdb")) {
             content = getText(is, AUTO_DETECT_PARSER, c);
         }
         assertContains("red and brown", content);
@@ -101,8 +95,7 @@ public class JackcessParserTest extends TikaTest {
         c.set(PasswordProvider.class, metadata -> "WRONG");
 
         boolean ex = false;
-        try (InputStream is = this
-                .getResourceAsStream("/test-documents/testAccess2_encrypted.accdb")) {
+        try (InputStream is = this.getResourceAsStream("/test-documents/testAccess2_encrypted.accdb")) {
             getText(is, AUTO_DETECT_PARSER, c);
         } catch (EncryptedDocumentException e) {
             ex = true;
@@ -113,26 +106,22 @@ public class JackcessParserTest extends TikaTest {
         c.set(PasswordProvider.class, metadata -> null);
 
         ex = false;
-        try (InputStream is = this
-                .getResourceAsStream("/test-documents/testAccess2_encrypted.accdb")) {
+        try (InputStream is = this.getResourceAsStream("/test-documents/testAccess2_encrypted.accdb")) {
             getText(is, AUTO_DETECT_PARSER, c);
         } catch (EncryptedDocumentException e) {
             ex = true;
         }
         assertTrue(ex, "failed to throw encrypted document exception for null password");
 
-
         //now try missing password provider
         c = new ParseContext();
         ex = false;
-        try (InputStream is = this
-                .getResourceAsStream("/test-documents/testAccess2_encrypted.accdb")) {
+        try (InputStream is = this.getResourceAsStream("/test-documents/testAccess2_encrypted.accdb")) {
             getText(is, AUTO_DETECT_PARSER, c);
         } catch (EncryptedDocumentException e) {
             ex = true;
         }
-        assertTrue(ex,
-                "failed to throw encrypted document exception for missing password provider");
+        assertTrue(ex, "failed to throw encrypted document exception for missing password provider");
 
         //now try password on file that doesn't need a password
         c = new ParseContext();
@@ -143,8 +132,8 @@ public class JackcessParserTest extends TikaTest {
         } catch (EncryptedDocumentException e) {
             ex = true;
         }
-        assertFalse(ex, "shouldn't have thrown encrypted document exception for " +
-                        "opening unencrypted file that doesn't need passowrd");
+        assertFalse(ex, "shouldn't have thrown encrypted document exception for "
+                + "opening unencrypted file that doesn't need passowrd");
         assertContains("red and brown", content);
     }
 

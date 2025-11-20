@@ -34,8 +34,8 @@ public class DefaultEmbeddedStreamTranslator implements EmbeddedStreamTranslator
     final List<EmbeddedStreamTranslator> translators;
 
     private static List<EmbeddedStreamTranslator> getDefaultFilters(ServiceLoader loader) {
-        List<EmbeddedStreamTranslator> embeddedStreamTranslators
-                = loader.loadServiceProviders(EmbeddedStreamTranslator.class);
+        List<EmbeddedStreamTranslator> embeddedStreamTranslators = loader
+                .loadServiceProviders(EmbeddedStreamTranslator.class);
         ServiceLoaderUtils.sortLoadedClasses(embeddedStreamTranslators);
         return embeddedStreamTranslators;
     }
@@ -75,7 +75,8 @@ public class DefaultEmbeddedStreamTranslator implements EmbeddedStreamTranslator
      * @throws IOException
      */
     @Override
-    public void translate(TikaInputStream inputStream, Metadata metadata, OutputStream outputStream) throws IOException {
+    public void translate(TikaInputStream inputStream, Metadata metadata, OutputStream outputStream)
+            throws IOException {
         for (EmbeddedStreamTranslator translator : translators) {
             if (translator.shouldTranslate(inputStream, metadata)) {
                 translator.translate(inputStream, metadata, outputStream);

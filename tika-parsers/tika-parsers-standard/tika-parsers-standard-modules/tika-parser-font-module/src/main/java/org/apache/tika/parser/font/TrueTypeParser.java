@@ -29,9 +29,6 @@ import org.apache.fontbox.ttf.TrueTypeFont;
 import org.apache.pdfbox.io.RandomAccessRead;
 import org.apache.pdfbox.io.RandomAccessReadBuffer;
 import org.apache.pdfbox.io.RandomAccessReadBufferedFile;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -40,6 +37,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Parser for TrueType font files (TTF).
@@ -59,8 +58,8 @@ public class TrueTypeParser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         TikaInputStream tis = TikaInputStream.cast(stream);
 
         // Ask FontBox to parse the file for us
@@ -72,8 +71,7 @@ public class TrueTypeParser implements Parser {
                     font = parser.parse(rar);
                 }
             } else {
-                try (RandomAccessRead rar =
-                             new RandomAccessReadBuffer(CloseShieldInputStream.wrap(tis))) {
+                try (RandomAccessRead rar = new RandomAccessReadBuffer(CloseShieldInputStream.wrap(tis))) {
                     font = parser.parse(rar);
                 }
             }
@@ -82,8 +80,7 @@ public class TrueTypeParser implements Parser {
             metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
             metadata.set(TikaCoreProperties.CREATED, font.getHeader().getCreated());
             metadata.set(TikaCoreProperties.MODIFIED, font.getHeader().getModified());
-            metadata.set(AdobeFontMetricParser.MET_DOC_VERSION,
-                    Float.toString(font.getHeader().getVersion()));
+            metadata.set(AdobeFontMetricParser.MET_DOC_VERSION, Float.toString(font.getHeader().getVersion()));
 
             // Pull out the naming info
             NamingTable fontNaming = font.getNaming();

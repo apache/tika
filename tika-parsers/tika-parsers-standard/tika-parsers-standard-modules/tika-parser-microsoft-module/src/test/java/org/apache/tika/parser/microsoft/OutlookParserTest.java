@@ -26,13 +26,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
-
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
@@ -47,6 +45,8 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 /**
  * Test case for parsing Outlook files.
@@ -64,22 +64,18 @@ public class OutlookParserTest extends TikaTest {
         }
         assertEquals("application/vnd.ms-outlook", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Microsoft Outlook Express 6", metadata.get(TikaCoreProperties.TITLE));
-        assertEquals("Nouvel utilisateur de Outlook Express",
-                metadata.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
-        assertEquals("L'\u00C9quipe Microsoft Outlook Express",
-                metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("Nouvel utilisateur de Outlook Express", metadata.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
+        assertEquals("L'\u00C9quipe Microsoft Outlook Express", metadata.get(TikaCoreProperties.CREATOR));
 
         //ensure that "raw" header is correctly decoded
         assertEquals("L'\u00C9quipe Microsoft Outlook Express <msoe@microsoft.com>",
                 metadata.get(Metadata.MESSAGE_RAW_HEADER_PREFIX + "From"));
 
-        assertEquals("Nouvel utilisateur de Outlook Express",
-                metadata.get(Message.MESSAGE_TO_EMAIL));
+        assertEquals("Nouvel utilisateur de Outlook Express", metadata.get(Message.MESSAGE_TO_EMAIL));
 
         assertEquals("", metadata.get(Message.MESSAGE_TO_NAME));
 
-        assertEquals("Nouvel utilisateur de Outlook Express",
-                metadata.get(Message.MESSAGE_TO_DISPLAY_NAME));
+        assertEquals("Nouvel utilisateur de Outlook Express", metadata.get(Message.MESSAGE_TO_DISPLAY_NAME));
 
         // Stored as Thu, 5 Apr 2007 09:26:06 -0700
         assertEquals("2007-04-05T16:26:06Z", metadata.get(TikaCoreProperties.CREATED));
@@ -88,7 +84,6 @@ public class OutlookParserTest extends TikaTest {
         assertNotContained("Microsoft Outlook Express 6", content);
         assertNotContained("L'\u00C9quipe Microsoft Outlook Express", content);
         assertNotContained("Nouvel utilisateur de Outlook Express", content);
-
 
         //now try with inlining select headers
         ParseContext parseContext = new ParseContext();
@@ -124,9 +119,9 @@ public class OutlookParserTest extends TikaTest {
         assertContains("29 Jan 2009 19:17:10.0163 (UTC) FILETIME=[2ED25E30:01C98246]",
                 Arrays.asList(metadata.getValues("Message:Raw-Header:X-OriginalArrivalTime")));
         //confirm next line is added correctly
-        assertContains("from athena.apache.org (HELO athena.apache.org) (140.211.11.136)\n" +
-                        "    by apache.org (qpsmtpd/0.29) with ESMTP; Thu, 29 Jan 2009 11:17:08 " +
-                        "-0800",
+        assertContains(
+                "from athena.apache.org (HELO athena.apache.org) (140.211.11.136)\n"
+                        + "    by apache.org (qpsmtpd/0.29) with ESMTP; Thu, 29 Jan 2009 11:17:08 " + "-0800",
                 Arrays.asList(metadata.getValues("Message:Raw-Header:Received")));
         assertEquals("EX", metadata.get(MAPI.SENT_BY_SERVER_TYPE));
         assertEquals("NOTE", metadata.get(MAPI.MESSAGE_CLASS));
@@ -156,12 +151,9 @@ public class OutlookParserTest extends TikaTest {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
         assertEquals("application/vnd.ms-outlook", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("Welcome to Microsoft Office Outlook 2003",
-                metadata.get(TikaCoreProperties.TITLE));
-        assertEquals("Welcome to Microsoft Office Outlook 2003",
-                metadata.get(TikaCoreProperties.SUBJECT));
-        assertEquals("Welcome to Microsoft Office Outlook 2003",
-                metadata.get(TikaCoreProperties.DESCRIPTION));
+        assertEquals("Welcome to Microsoft Office Outlook 2003", metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("Welcome to Microsoft Office Outlook 2003", metadata.get(TikaCoreProperties.SUBJECT));
+        assertEquals("Welcome to Microsoft Office Outlook 2003", metadata.get(TikaCoreProperties.DESCRIPTION));
 
         String content = handler.toString();
         assertContains("Outlook 2003", content);
@@ -210,11 +202,9 @@ public class OutlookParserTest extends TikaTest {
         assertEquals("tests.chang@fengttt.com", metadata.get(Message.MESSAGE_TO_EMAIL));
 
         assertEquals("Tests Chang@FT (張毓倫)", metadata.get(MAPI.FROM_REPRESENTING_NAME));
-        assertEquals("/O=FT GROUP/OU=FT/CN=RECIPIENTS/CN=LYDIACHANG",
-                metadata.get(MAPI.FROM_REPRESENTING_EMAIL));
+        assertEquals("/O=FT GROUP/OU=FT/CN=RECIPIENTS/CN=LYDIACHANG", metadata.get(MAPI.FROM_REPRESENTING_EMAIL));
 
-        assertEquals("c=TW;a= ;p=FT GROUP;l=FTM02-110329085248Z-89735\u0000",
-                metadata.get(MAPI.SUBMISSION_ID));
+        assertEquals("c=TW;a= ;p=FT GROUP;l=FTM02-110329085248Z-89735\u0000", metadata.get(MAPI.SUBMISSION_ID));
         assertEquals("<EBB9951D34EA4B41B70AB946CF3FB6EC1A297D98@ftm02.FT.FTG.COM>",
                 metadata.get(MAPI.INTERNET_MESSAGE_ID));
         assertTrue(metadata.get(MAPI.SUBMISSION_ACCEPTED_AT_TIME).startsWith("2011-03-29"));
@@ -308,8 +298,7 @@ public class OutlookParserTest extends TikaTest {
     @Test
     public void testMAPIMessageClasses() throws Exception {
 
-        for (String messageClass : new String[]{"Appointment", "Contact", "Post", "StickyNote",
-                "Task"}) {
+        for (String messageClass : new String[]{"Appointment", "Contact", "Post", "StickyNote", "Task"}) {
             testMsgClass(messageClass, getXML("testMSG_" + messageClass + ".msg").metadata);
         }
 
@@ -317,8 +306,7 @@ public class OutlookParserTest extends TikaTest {
     }
 
     private void testMsgClass(String expected, Metadata metadata) {
-        assertTrue(expected.equalsIgnoreCase(
-                                metadata.get(MAPI.MESSAGE_CLASS).replaceAll("_", "")),
+        assertTrue(expected.equalsIgnoreCase(metadata.get(MAPI.MESSAGE_CLASS).replaceAll("_", "")),
                 expected + ", but got: " + metadata.get(MAPI.MESSAGE_CLASS));
     }
 
@@ -358,7 +346,6 @@ public class OutlookParserTest extends TikaTest {
         assertEquals("2017-02-28T18:41:37Z", m.get("mapi:property:PidLidValidFlagStringProof"));
     }
 
-
     @Test
     public void testPostExtendedMetadata() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testMSG_Post.msg");
@@ -366,14 +353,12 @@ public class OutlookParserTest extends TikaTest {
         assertEquals("2017-02-28T18:47:11Z", m.get("mapi:property:PidLidValidFlagStringProof"));
     }
 
-
     @Test
     public void testHandlingAllAlternativesBodies() throws Exception {
         //test that default only has one body
         List<Metadata> metadataList = getRecursiveMetadata("testMSG.msg");
         assertEquals(1, metadataList.size());
-        assertContains("breaking your application",
-                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("breaking your application", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("application/vnd.ms-outlook", metadataList.get(0).get(Metadata.CONTENT_TYPE));
 
         //now try extracting all bodies
@@ -386,17 +371,13 @@ public class OutlookParserTest extends TikaTest {
             metadataList = getRecursiveMetadata("testMSG.msg", p);
             assertEquals(3, metadataList.size());
 
-            assertNotContained("breaking your application",
-                    metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
-            assertEquals("application/vnd.ms-outlook",
-                    metadataList.get(0).get(Metadata.CONTENT_TYPE));
+            assertNotContained("breaking your application", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+            assertEquals("application/vnd.ms-outlook", metadataList.get(0).get(Metadata.CONTENT_TYPE));
 
-            assertContains("breaking your application",
-                    metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+            assertContains("breaking your application", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
             assertEquals("application/rtf", metadataList.get(1).get(Metadata.CONTENT_TYPE));
 
-            assertContains("breaking your application",
-                    metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
+            assertContains("breaking your application", metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
             assertTrue(metadataList.get(2).get(Metadata.CONTENT_TYPE).startsWith("text/plain"));
         }
 

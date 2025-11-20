@@ -14,16 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.core;
 
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.tika.metadata.Metadata;
+
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.UriInfo;
-
-import org.apache.tika.metadata.Metadata;
 
 /**
  * Interface to allow for custom/consistent creation of InputStream
@@ -33,6 +32,7 @@ import org.apache.tika.metadata.Metadata;
  */
 public interface InputStreamFactory {
 
-    InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders, UriInfo uriInfo) throws IOException;
+    InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders, UriInfo uriInfo)
+            throws IOException;
 
 }

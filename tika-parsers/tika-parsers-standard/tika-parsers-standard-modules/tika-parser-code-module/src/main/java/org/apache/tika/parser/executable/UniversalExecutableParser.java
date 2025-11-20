@@ -25,9 +25,6 @@ import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.UnsupportedFormatException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -39,6 +36,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Parser for universal executable files.
@@ -46,8 +45,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 public class UniversalExecutableParser implements Parser {
     private static final long serialVersionUID = 1L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.application("x-mach-o-universal"));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections
+            .singleton(MediaType.application("x-mach-o-universal"));
 
     private static final int MAX_ARCHS_COUNT = 1000;
     private static final int MAX_ARCH_SIZE = 500_000_000;//arbitrary
@@ -58,24 +57,22 @@ public class UniversalExecutableParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
-        EmbeddedDocumentExtractor extractor =
-                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        EmbeddedDocumentExtractor extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
         byte[] first4 = new byte[4];
         IOUtils.readFully(stream, first4);
 
-        if ((first4[0] == (byte) 0xBF || first4[0] == (byte) 0xBE) &&
-                first4[1] == (byte) 0xBA && first4[2] == (byte) 0xFE && first4[3] == (byte) 0xCA) {
+        if ((first4[0] == (byte) 0xBF || first4[0] == (byte) 0xBE) && first4[1] == (byte) 0xBA
+                && first4[2] == (byte) 0xFE && first4[3] == (byte) 0xCA) {
             parseMachO(xhtml, extractor, metadata, stream, first4);
-        } else if (first4[0] == (byte) 0xCA && first4[1] == (byte) 0xFE &&
-                first4[2] == (byte) 0xBA &&
-                (first4[3] == (byte) 0xBF || first4[3] == (byte) 0xBE)) {
+        } else if (first4[0] == (byte) 0xCA && first4[1] == (byte) 0xFE && first4[2] == (byte) 0xBA
+                && (first4[3] == (byte) 0xBF || first4[3] == (byte) 0xBE)) {
             parseMachO(xhtml, extractor, metadata, stream, first4);
         } else {
             throw new UnsupportedFormatException("Not a universal executable file");
@@ -87,23 +84,23 @@ public class UniversalExecutableParser implements Parser {
     /**
      * Parses a Mach-O Universal file
      */
-    public void parseMachO(XHTMLContentHandler xhtml, EmbeddedDocumentExtractor extractor,
-                           Metadata metadata, InputStream stream,
-                           byte[] first4)
-            throws IOException, SAXException, TikaException {
+    public void parseMachO(XHTMLContentHandler xhtml, EmbeddedDocumentExtractor extractor, Metadata metadata,
+            InputStream stream, byte[] first4) throws IOException, SAXException, TikaException {
         var currentOffset = (long) first4.length;
         var isLE = first4[3] == (byte) 0xCA;
         var is64 = first4[isLE ? 0 : 3] == (byte) 0xBF;
-        int archStructSize = 4 /* cputype */ + 4 /* cpusubtype */ + (is64
-                ? 8 /* offset */ + 8 /* size */ + 4 /* align */ + 4 /* reserved */
-                : 4 /* offset */ + 4 /* size */ + 4 /* align */);
+        int archStructSize = 4 /* cputype */ + 4 /* cpusubtype */
+                + (is64
+                        ? 8 /* offset */ + 8 /* size */ + 4 /* align */ + 4 /* reserved */
+                        : 4 /* offset */ + 4 /* size */ + 4 /* align */);
 
         int archsCount = isLE ? EndianUtils.readIntLE(stream) : EndianUtils.readIntBE(stream);
         if (archsCount < 1) {
             throw new TikaException("Invalid number of architectures: " + archsCount);
         }
         if (archsCount > MAX_ARCHS_COUNT) {
-            throw new TikaException("Number of architectures=" + archsCount + " greater than max allowed=" + MAX_ARCHS_COUNT);
+            throw new TikaException(
+                    "Number of architectures=" + archsCount + " greater than max allowed=" + MAX_ARCHS_COUNT);
         }
 
         currentOffset += 4;
@@ -146,12 +143,12 @@ public class UniversalExecutableParser implements Parser {
         }
 
         for (int archIndex = 0; archIndex < archsCount; archIndex++) {
-            long skipUntilStart = (long)offsetAndSizePerArch[archIndex].getLeft() - currentOffset;
+            long skipUntilStart = (long) offsetAndSizePerArch[archIndex].getLeft() - currentOffset;
             IOUtils.skipFully(stream, skipUntilStart);
             currentOffset += skipUntilStart;
-            long sz = (long)offsetAndSizePerArch[archIndex].getRight();
+            long sz = (long) offsetAndSizePerArch[archIndex].getRight();
             //we bounds checked this above.
-            byte[] perArchMachO = new byte[(int)sz];
+            byte[] perArchMachO = new byte[(int) sz];
             IOUtils.readFully(stream, perArchMachO);
             currentOffset += perArchMachO.length;
 

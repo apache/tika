@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.ner.regex;
 
 import java.io.InputStream;
@@ -28,10 +27,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.tika.parser.ner.NERecogniser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.apache.tika.parser.ner.NERecogniser;
 
 /**
  * This class offers an implementation of {@link NERecogniser} based on
@@ -75,7 +73,7 @@ public class RegexNERecogniser implements NERecogniser {
             for (String line : lines) {
                 line = line.trim();
                 if (line.isEmpty() || line.startsWith("#")) { //empty or comment
-                    continue;                                //skip
+                    continue; //skip
                 }
 
                 int delim = line.indexOf('=');

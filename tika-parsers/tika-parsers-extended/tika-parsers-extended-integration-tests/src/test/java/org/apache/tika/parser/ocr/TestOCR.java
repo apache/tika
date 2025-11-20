@@ -27,10 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
@@ -43,6 +39,9 @@ import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.gdal.GDALParser;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.SAXException;
 
 public class TestOCR extends TikaTest {
 
@@ -69,8 +68,8 @@ public class TestOCR extends TikaTest {
         //remove the GDAL parser from the default parser
         Parser defaultParser = new DefaultParser();
         List<Parser> parsers = new ArrayList<>();
-        for (Parser p : ((CompositeParser)defaultParser).getAllComponentParsers()) {
-            if (! (p instanceof GDALParser)) {
+        for (Parser p : ((CompositeParser) defaultParser).getAllComponentParsers()) {
+            if (!(p instanceof GDALParser)) {
                 parsers.add(p);
             }
         }
@@ -95,7 +94,7 @@ public class TestOCR extends TikaTest {
     public void testOthers() throws Exception {
         Parser p = loadParser();
         if (p instanceof CompositeParser) {
-            Map<MediaType, Parser> parsers = ((CompositeParser)p).getParsers();
+            Map<MediaType, Parser> parsers = ((CompositeParser) p).getParsers();
             Class clz = getParser(MediaType.application("x-netcdf"), parsers);
             assertEquals(GDALParser.class, clz);
         }
@@ -105,17 +104,16 @@ public class TestOCR extends TikaTest {
         //this is fragile, but works well enough for a unit test
         Parser p = parsers.get(mediaType);
         if (p instanceof CompositeParser) {
-            return getParser(mediaType, ((CompositeParser)p).getParsers());
+            return getParser(mediaType, ((CompositeParser) p).getParsers());
         } else if (p instanceof ParserDecorator) {
-            Parser decorated = ((ParserDecorator)p).getWrappedParser();
+            Parser decorated = ((ParserDecorator) p).getWrappedParser();
             return decorated.getClass();
         }
         return p.getClass();
     }
 
     private Parser loadParser() throws IOException, TikaException, SAXException {
-        try (InputStream is = TestOCR.class.getResourceAsStream(
-                "/config/tika-config-restricted-gdal.xml")) {
+        try (InputStream is = TestOCR.class.getResourceAsStream("/config/tika-config-restricted-gdal.xml")) {
             TikaConfig tikaConfig = new TikaConfig(is);
             return new AutoDetectParser(tikaConfig);
         }

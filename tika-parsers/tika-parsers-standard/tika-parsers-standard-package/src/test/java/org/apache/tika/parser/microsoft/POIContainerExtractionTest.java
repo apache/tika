@@ -19,11 +19,10 @@ package org.apache.tika.parser.microsoft;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
+import org.junit.jupiter.api.Test;
 
 public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTest {
 
@@ -63,7 +62,6 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         assertEquals(TYPE_PNG, handler.mediaTypes.get(2)); // Embedded image
         assertEquals(TYPE_PPT, handler.mediaTypes.get(3)); // Embedded office doc
         assertEquals(TYPE_DOC, handler.mediaTypes.get(4)); // Embedded office doc
-
 
         // With recursion, should get the images embedded in the office files too
         handler = process("testEXCEL_embeded.xls", extractor, true);
@@ -123,7 +121,6 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         assertEquals(TYPE_PPT, handler.mediaTypes.get(7)); // Embedded office doc
         assertEquals(TYPE_XLS, handler.mediaTypes.get(8)); // Embedded office doc
 
-
         // With recursion, should get their images too
         handler = process("testWORD_embeded.doc", extractor, true);
         assertEquals(16, handler.filenames.size());
@@ -151,13 +148,12 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         assertEquals(TYPE_EMF, handler.mediaTypes.get(4)); // Icon of embedded office doc
         assertEquals(TYPE_EMF, handler.mediaTypes.get(5)); // Icon of embedded office doc
         assertEquals(TYPE_DOCX, handler.mediaTypes.get(6)); // Embedded office doc
-        assertEquals(TYPE_PNG, handler.mediaTypes.get(7));  //    PNG inside .docx
-        assertEquals(TYPE_JPG, handler.mediaTypes.get(8));  //    JPG inside .docx
-        assertEquals(TYPE_PNG, handler.mediaTypes.get(9));  //    PNG inside .docx
+        assertEquals(TYPE_PNG, handler.mediaTypes.get(7)); //    PNG inside .docx
+        assertEquals(TYPE_JPG, handler.mediaTypes.get(8)); //    JPG inside .docx
+        assertEquals(TYPE_PNG, handler.mediaTypes.get(9)); //    PNG inside .docx
         assertEquals(TYPE_PPT, handler.mediaTypes.get(10)); // Embedded office doc
         assertEquals(TYPE_XLS, handler.mediaTypes.get(14)); // Embedded office doc
         assertEquals(TYPE_PNG, handler.mediaTypes.get(15)); //    PNG inside .xls
-
 
         // PowerPoint with excel and word
         handler = process("testPPT_embeded.ppt", extractor, false);
@@ -201,15 +197,14 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         assertEquals(TYPE_XLS, handler.mediaTypes.get(0)); // Embedded office doc
         assertEquals(TYPE_PNG, handler.mediaTypes.get(1)); //    PNG inside .xls
         assertEquals(TYPE_DOC, handler.mediaTypes.get(2)); // Embedded office doc
-        assertEquals(TYPE_PNG, handler.mediaTypes.get(3));  //    PNG inside .docx
-        assertEquals(TYPE_JPG, handler.mediaTypes.get(4));  //    JPG inside .docx
-        assertEquals(TYPE_PNG, handler.mediaTypes.get(5));  //    PNG inside .docx
+        assertEquals(TYPE_PNG, handler.mediaTypes.get(3)); //    PNG inside .docx
+        assertEquals(TYPE_JPG, handler.mediaTypes.get(4)); //    JPG inside .docx
+        assertEquals(TYPE_PNG, handler.mediaTypes.get(5)); //    PNG inside .docx
         assertEquals(TYPE_EMF, handler.mediaTypes.get(6)); // Icon of embedded office doc
         assertEquals(TYPE_EMF, handler.mediaTypes.get(7)); // Icon of embedded office doc
         assertEquals(TYPE_PNG, handler.mediaTypes.get(8)); // Embedded image
         assertEquals(TYPE_PNG, handler.mediaTypes.get(9)); // Embedded image
         assertEquals(TYPE_PNG, handler.mediaTypes.get(10)); // Embedded image
-
 
         // Word, with a non-office file (PDF)
         handler = process("testWORD_embedded_pdf.doc", extractor, true);
@@ -222,7 +217,6 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         assertEquals(TYPE_EMF, handler.mediaTypes.get(0)); // Icon of embedded pdf
         assertEquals(TYPE_PDF, handler.mediaTypes.get(1)); // The embedded PDF itself
 
-
         // Outlook with a text file and a word document
         handler = process("testMSG_att_doc.msg", extractor, true);
         assertEquals(2, handler.filenames.size());
@@ -233,7 +227,6 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
 
         assertEquals("pj1.txt", handler.filenames.get(1));
         assertEquals(TYPE_TXT, handler.mediaTypes.get(1));
-
 
         // Outlook with a pdf and another outlook message
         handler = process("testMSG_att_msg.msg", extractor, true);

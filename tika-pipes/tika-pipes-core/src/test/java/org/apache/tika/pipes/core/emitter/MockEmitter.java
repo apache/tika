@@ -43,8 +43,7 @@ public class MockEmitter extends AbstractEmitter implements Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
 
         if (throwOnCheck) {
             throw new TikaConfigException("throw on check");

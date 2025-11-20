@@ -22,15 +22,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class ActiveMimeParserTest extends TikaTest {
-
 
     @Test
     @Disabled("until we get permission to use the file")
@@ -41,7 +39,6 @@ public class ActiveMimeParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata(p);
         assertEquals("application/x-activemime", metadataList.get(0).get(Metadata.CONTENT_TYPE));
         assertEquals(5, metadataList.size());
-        assertContains("Arquivo Gerado com sucesso!!!",
-                metadataList.get(4).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("Arquivo Gerado com sucesso!!!", metadataList.get(4).get(TikaCoreProperties.TIKA_CONTENT));
     }
 }

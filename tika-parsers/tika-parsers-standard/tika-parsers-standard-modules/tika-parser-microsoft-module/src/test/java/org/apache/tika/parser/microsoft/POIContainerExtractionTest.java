@@ -25,8 +25,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.detect.microsoft.POIFSContainerDetector;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
@@ -34,6 +32,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests that the various POI powered parsers are
@@ -48,9 +47,8 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
     public void testWithoutEmbedded() throws Exception {
         ContainerExtractor extractor = new ParserContainerExtractor();
 
-        String[] files =
-                new String[]{"testEXCEL.xls", "testWORD.doc", "testPPT.ppt", "testVISIO.vsd",
-                        "test-outlook.msg"};
+        String[] files = new String[]{"testEXCEL.xls", "testWORD.doc", "testPPT.ppt", "testVISIO.vsd",
+                "test-outlook.msg"};
         for (String file : files) {
             // Process it without recursing
             TrackingHandler handler = process(file, extractor, false);
@@ -83,10 +81,8 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         assertEquals(null, handler.filenames.get(0));
         assertEquals(TYPE_PNG, handler.mediaTypes.get(0));
 
-
         // PowerPoint with 2 images + sound
         // TODO
-
 
         // Word with 1 image
         handler = process("testWORD_1img.doc", extractor, false);
@@ -95,7 +91,6 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
 
         assertEquals("image1.png", handler.filenames.get(0));
         assertEquals(TYPE_PNG, handler.mediaTypes.get(0));
-
 
         // Word with 3 images
         handler = process("testWORD_3imgs.doc", extractor, false);
@@ -109,7 +104,6 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         assertEquals(TYPE_JPG, handler.mediaTypes.get(1));
         assertEquals(TYPE_PNG, handler.mediaTypes.get(2));
     }
-
 
     @Test
     public void testEmbeddedOfficeFilesXML() throws Exception {
@@ -136,14 +130,11 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
 
         List<Metadata> list = getRecursiveMetadata("testWORD_embeded.doc");
         //.docx
-        assertEquals("{F4754C9B-64F5-4B40-8AF4-679732AC0607}",
-                list.get(10).get(Office.EMBEDDED_STORAGE_CLASS_ID));
+        assertEquals("{F4754C9B-64F5-4B40-8AF4-679732AC0607}", list.get(10).get(Office.EMBEDDED_STORAGE_CLASS_ID));
         //_1345471035.ppt
-        assertEquals("{64818D10-4F9B-11CF-86EA-00AA00B929E8}",
-                list.get(14).get(Office.EMBEDDED_STORAGE_CLASS_ID));
+        assertEquals("{64818D10-4F9B-11CF-86EA-00AA00B929E8}", list.get(14).get(Office.EMBEDDED_STORAGE_CLASS_ID));
         //_1345470949.xls
-        assertEquals("{00020820-0000-0000-C000-000000000046}",
-                list.get(16).get(Office.EMBEDDED_STORAGE_CLASS_ID));
+        assertEquals("{00020820-0000-0000-C000-000000000046}", list.get(16).get(Office.EMBEDDED_STORAGE_CLASS_ID));
 
     }
 
@@ -155,8 +146,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
             List<Metadata> list = getRecursiveMetadata("testMSChart-govdocs-428996." + suffix);
             boolean found = false;
             for (Metadata m : list) {
-                if (m.get(Metadata.CONTENT_TYPE)
-                        .equals(POIFSContainerDetector.MS_GRAPH_CHART.toString())) {
+                if (m.get(Metadata.CONTENT_TYPE).equals(POIFSContainerDetector.MS_GRAPH_CHART.toString())) {
                     found = true;
                 }
                 assertNull(m.get(TikaCoreProperties.EMBEDDED_EXCEPTION));
@@ -189,9 +179,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         expected.add("text/plain; charset=ISO-8859-1");
         //test that we're correctly handling attachment variants for
         // files created by WPS 表格 (https://www.wps.cn/)
-        for (String suffix : new String[]{
-                "ppt", "doc", "xls", "docx", "pptx", "xlsx"
-        }) {
+        for (String suffix : new String[]{"ppt", "doc", "xls", "docx", "pptx", "xlsx"}) {
             List<Metadata> metadataList = getRecursiveMetadata("testWPSAttachment." + suffix);
             Set<String> found = new HashSet<>();
             int i = 0;
@@ -202,7 +190,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
             }
             Set<String> notFound = new HashSet<>();
             for (String ex : expected) {
-                if (! found.contains(ex)) {
+                if (!found.contains(ex)) {
                     notFound.add(ex);
                 }
             }

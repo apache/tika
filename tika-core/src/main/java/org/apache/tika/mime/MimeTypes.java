@@ -30,10 +30,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
 import javax.xml.namespace.QName;
 
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-
 import org.apache.tika.Tika;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.TextDetector;
@@ -73,8 +73,7 @@ public final class MimeTypes implements Detector, Serializable {
      * Serial version UID.
      */
     private static final long serialVersionUID = -1350863170146349036L;
-    private static final Map<ClassLoader, MimeTypes> CLASSLOADER_SPECIFIC_DEFAULT_TYPES =
-            new HashMap<>();
+    private static final Map<ClassLoader, MimeTypes> CLASSLOADER_SPECIFIC_DEFAULT_TYPES = new HashMap<>();
     private static MimeTypes DEFAULT_TYPES = null;
     /**
      * Root type, application/octet-stream.
@@ -152,8 +151,7 @@ public final class MimeTypes implements Detector, Serializable {
 
         if (types == null) {
             try {
-                types = MimeTypesFactory
-                        .create("tika-mimetypes.xml", "custom-mimetypes.xml", classLoader);
+                types = MimeTypesFactory.create("tika-mimetypes.xml", "custom-mimetypes.xml", classLoader);
             } catch (MimeTypeException e) {
                 throw new RuntimeException("Unable to parse the default media type registry", e);
             } catch (IOException e) {
@@ -248,15 +246,13 @@ public final class MimeTypes implements Detector, Serializable {
 
                 // When detecting generic XML (or possibly XHTML),
                 // extract the root element and match it against known types
-                if ("application/xml".equals(matched.getName()) ||
-                        "text/html".equals(matched.getName())) {
+                if ("application/xml".equals(matched.getName()) || "text/html".equals(matched.getName())) {
                     XmlRootExtractor extractor = new XmlRootExtractor();
 
                     QName rootElement = extractor.extractRootElement(data);
                     if (rootElement != null) {
                         for (MimeType type : xmls) {
-                            if (type.matchesXML(rootElement.getNamespaceURI(),
-                                    rootElement.getLocalPart())) {
+                            if (type.matchesXML(rootElement.getNamespaceURI(), rootElement.getLocalPart())) {
                                 result.set(i, type);
                                 break;
                             }
@@ -292,8 +288,8 @@ public final class MimeTypes implements Detector, Serializable {
         // Finally, assume plain text if no control bytes are found
         try {
             TextDetector detector = new TextDetector(getMinLength());
-            UnsynchronizedByteArrayInputStream stream =
-                    UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get();
+            UnsynchronizedByteArrayInputStream stream = UnsynchronizedByteArrayInputStream.builder().setByteArray(data)
+                    .get();
             MimeType type = forName(detector.detect(stream, new Metadata()).toString());
             return Collections.singletonList(type);
         } catch (Exception e) {
@@ -445,8 +441,7 @@ public final class MimeTypes implements Detector, Serializable {
      *                false.
      * @throws MimeTypeException if the pattern conflicts with existing ones.
      */
-    public void addPattern(MimeType type, String pattern, boolean isRegex)
-            throws MimeTypeException {
+    public void addPattern(MimeType type, String pattern, boolean isRegex) throws MimeTypeException {
         patterns.add(pattern, isRegex, type);
     }
 
@@ -596,8 +591,7 @@ public final class MimeTypes implements Detector, Serializable {
             return Collections.singletonList(hint);
         } else {
             for (final MimeType type : possibleTypes) {
-                if (hint.equals(type) ||
-                        registry.isSpecializationOf(hint.getType(), type.getType())) {
+                if (hint.equals(type) || registry.isSpecializationOf(hint.getType(), type.getType())) {
                     // Use just this type
                     return Collections.singletonList(hint);
                 }

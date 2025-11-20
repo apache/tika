@@ -19,16 +19,16 @@ package org.apache.tika.detect;
 import java.io.CharConversionException;
 import java.io.InputStream;
 import java.util.Arrays;
+
 import javax.xml.namespace.QName;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * Utility class that uses a {@link javax.xml.parsers.SAXParser} to determine
@@ -66,17 +66,16 @@ public class XmlRootExtractor {
     public QName extractRootElement(InputStream stream) {
         return extractRootElement(stream, false);
     }
-    
+
     private QName extractRootElement(InputStream stream, boolean throwMalformed) {
         ExtractorHandler handler = new ExtractorHandler();
         try {
-            XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
-                    handler, EMPTY_CONTEXT);
+            XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream), handler, EMPTY_CONTEXT);
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
-            if (throwMalformed && (e instanceof CharConversionException
-                    || e.getCause() instanceof CharConversionException)) {
+            if (throwMalformed
+                    && (e instanceof CharConversionException || e.getCause() instanceof CharConversionException)) {
                 throw new MalformedCharException(e);
             }
         }
@@ -88,8 +87,7 @@ public class XmlRootExtractor {
         private QName rootElement = null;
 
         @Override
-        public void startElement(String uri, String local, String name, Attributes attributes)
-                throws SAXException {
+        public void startElement(String uri, String local, String name, Attributes attributes) throws SAXException {
             this.rootElement = new QName(uri, local);
             throw new SAXException("Aborting: root element received");
         }

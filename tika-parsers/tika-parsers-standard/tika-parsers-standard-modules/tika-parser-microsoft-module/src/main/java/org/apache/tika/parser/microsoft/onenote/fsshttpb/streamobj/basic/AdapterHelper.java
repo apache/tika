@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.io.IOException;
@@ -47,8 +46,7 @@ public class AdapterHelper {
      * @param exGuid2 The second ExtendedGUID instance.
      * @return Returns the result of XOR two ExtendedGUID instances.
      */
-    public static ExGuid xorExtendedGUID(ExtendedGUID exGuid1, ExtendedGUID exGuid2)
-            throws IOException {
+    public static ExGuid xorExtendedGUID(ExtendedGUID exGuid1, ExtendedGUID exGuid2) throws IOException {
         List<Byte> exGuid1Buffer = exGuid1.SerializeToByteList();
         List<Byte> exGuid2Buffer = exGuid2.SerializeToByteList();
         List<Byte> resultBuffer = new ArrayList<>(exGuid1Buffer.size());

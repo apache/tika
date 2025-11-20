@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
@@ -38,14 +37,12 @@ public class StreamObjectHeaderStart16bit extends StreamObjectHeaderStart {
      * @param type   Specify the type of the StreamObjectHeaderStart16bit.
      * @param length Specify the length of the StreamObjectHeaderStart16bit.
      */
-    public StreamObjectHeaderStart16bit(StreamObjectTypeHeaderStart type, int length)
-            throws TikaException {
+    public StreamObjectHeaderStart16bit(StreamObjectTypeHeaderStart type, int length) throws TikaException {
         if (this.length > 127) {
-            throw new TikaException(
-                    "Field Length - 16-bit Stream Object Header Start, Length (7-bits): A 7-bit " +
-                            "unsigned integer that specifies the length in bytes for additional data " +
-                            "(if any). If the length is more than 127 bytes, a 32-bit stream object header " +
-                            "start MUST be used.");
+            throw new TikaException("Field Length - 16-bit Stream Object Header Start, Length (7-bits): A 7-bit "
+                    + "unsigned integer that specifies the length in bytes for additional data "
+                    + "(if any). If the length is more than 127 bytes, a 32-bit stream object header "
+                    + "start MUST be used.");
         }
 
         this.headerType = 0x0;
@@ -92,8 +89,7 @@ public class StreamObjectHeaderStart16bit extends StreamObjectHeaderStart {
      * @return Return the ushort value.
      */
     public short ToUint16() throws IOException {
-        return LittleEndianBitConverter.ToUInt16(ByteUtil.toByteArray(this.serializeToByteList()),
-                0);
+        return LittleEndianBitConverter.ToUInt16(ByteUtil.toByteArray(this.serializeToByteList()), 0);
     }
 
     /**
@@ -105,15 +101,14 @@ public class StreamObjectHeaderStart16bit extends StreamObjectHeaderStart {
      * @return Return the length in byte of the StreamObjectHeaderStart16bit basic object.
      */
     @Override
-    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex)
-            throws IOException, TikaException {
+    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException, TikaException {
         BitReader bitReader = new BitReader(byteArray, startIndex);
         this.headerType = bitReader.readInt32(2);
         if (this.headerType != StreamObjectHeaderStart.STREAM_OBJECT_HEADER_START_16_BIT) {
             throw new TikaException(String.format(Locale.US,
-                    "Failed to get the StreamObjectHeaderStart16bit header type value, expect value %s, " +
-                            "but actual value is %s", STREAM_OBJECT_HEADER_START_16_BIT,
-                    this.headerType));
+                    "Failed to get the StreamObjectHeaderStart16bit header type value, expect value %s, "
+                            + "but actual value is %s",
+                    STREAM_OBJECT_HEADER_START_16_BIT, this.headerType));
         }
 
         this.compound = bitReader.readInt32(1);
@@ -127,16 +122,16 @@ public class StreamObjectHeaderStart16bit extends StreamObjectHeaderStart {
 
         if (StreamObject.getCompoundTypes().contains(type) && this.compound != 1) {
             throw new TikaException(String.format(Locale.US,
-                    "Failed to parse the StreamObjectHeaderStart16bit header. If the type value is %s then " +
-                            "the compound value should 1, but actual value is 0", typeValue));
+                    "Failed to parse the StreamObjectHeaderStart16bit header. If the type value is %s then "
+                            + "the compound value should 1, but actual value is 0",
+                    typeValue));
         }
 
         this.length = bitReader.readInt32(7);
         if (this.length > 127) {
-            throw new TikaException(
-                    "16-bit Stream Object Header Start, Length (7-bits): A 7-bit unsigned integer that " +
-                            "specifies the length in bytes for additional data (if any). If the length is more than " +
-                            "127 bytes, a 32-bit stream object header start MUST be used.");
+            throw new TikaException("16-bit Stream Object Header Start, Length (7-bits): A 7-bit unsigned integer that "
+                    + "specifies the length in bytes for additional data (if any). If the length is more than "
+                    + "127 bytes, a 32-bit stream object header start MUST be used.");
         }
 
         return 2;

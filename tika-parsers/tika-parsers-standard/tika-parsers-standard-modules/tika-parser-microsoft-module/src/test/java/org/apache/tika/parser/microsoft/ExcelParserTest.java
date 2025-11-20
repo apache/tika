@@ -27,9 +27,6 @@ import java.util.List;
 import java.util.Locale;
 
 import org.apache.poi.util.LocaleUtil;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
@@ -46,6 +43,8 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class ExcelParserTest extends TikaTest {
     @Test
@@ -76,7 +75,6 @@ public class ExcelParserTest extends TikaTest {
             assertNotContained("9.0", content);
             assertContains("196", content);
             assertNotContained("196.0", content);
-
 
             // Won't include missing rows by default
             assertContains("Numbers and their Squares\n\t\tNumber", content);
@@ -153,7 +151,6 @@ public class ExcelParserTest extends TikaTest {
             // Fraction (2.5): # ?/?
             assertContains("2 1/2", content);
 
-
             // Below assertions represent outstanding formatting issues to be addressed
             // they are included to allow the issues to be progressed with the Apache POI
             // team - See TIKA-103.
@@ -161,7 +158,7 @@ public class ExcelParserTest extends TikaTest {
             /*************************************************************************
              // Custom Number (0 "dollars and" .00 "cents")
              assertContains("19 dollars and .99 cents", content);
-
+            
              // Custom Number ("At" h:mm AM/PM "on" dddd mmmm d"," yyyy)
              assertContains("At 4:20 AM on Thursday May 17, 2007", content);
              **************************************************************************/
@@ -171,8 +168,7 @@ public class ExcelParserTest extends TikaTest {
 
     @Test
     public void testExcelParserPassword() throws Exception {
-        try (InputStream input = getResourceAsStream(
-                "/test-documents/testEXCEL_protected_passtika.xls")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testEXCEL_protected_passtika.xls")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             ParseContext context = new ParseContext();
@@ -184,8 +180,7 @@ public class ExcelParserTest extends TikaTest {
         }
 
         // Try again, this time with the password
-        try (InputStream input = getResourceAsStream(
-                "/test-documents/testEXCEL_protected_passtika.xls")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testEXCEL_protected_passtika.xls")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             ParseContext context = new ParseContext();
@@ -262,8 +257,7 @@ public class ExcelParserTest extends TikaTest {
 
     @Test
     public void testWorksSpreadsheet70() throws Exception {
-        try (InputStream input = getResourceAsStream(
-                "/test-documents/testWORKSSpreadsheet7.0.xlr")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testWORKSSpreadsheet7.0.xlr")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler(-1);
             ParseContext context = new ParseContext();
@@ -274,7 +268,6 @@ public class ExcelParserTest extends TikaTest {
             assertContains("Microsoft Works", content);
         }
     }
-
 
     /**
      * Excel 5 and 95 are older formats, and only get basic support
@@ -302,13 +295,10 @@ public class ExcelParserTest extends TikaTest {
         }
 
         // OfficeParser can handle it
-        assertEquals(true,
-                (new OfficeParser()).getSupportedTypes(new ParseContext()).contains(type));
+        assertEquals(true, (new OfficeParser()).getSupportedTypes(new ParseContext()).contains(type));
 
         // OOXMLParser won't handle it
-        assertEquals(false,
-                (new OOXMLParser()).getSupportedTypes(new ParseContext()).contains(type));
-
+        assertEquals(false, (new OOXMLParser()).getSupportedTypes(new ParseContext()).contains(type));
 
         // Parse the Excel 5 file
         m = new Metadata();
@@ -365,8 +355,7 @@ public class ExcelParserTest extends TikaTest {
     public void testCustomProperties() throws Exception {
         Metadata metadata = new Metadata();
 
-        try (InputStream input = getResourceAsStream(
-                "/test-documents/testEXCEL_custom_props.xls")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testEXCEL_custom_props.xls")) {
             ContentHandler handler = new BodyContentHandler(-1);
             ParseContext context = new ParseContext();
             context.set(Locale.class, Locale.US);
@@ -388,8 +377,7 @@ public class ExcelParserTest extends TikaTest {
 
     @Test
     public void testHeaderAndFooterExtraction() throws Exception {
-        try (InputStream input = getResourceAsStream(
-                "/test-documents/testEXCEL_headers_footers.xls")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testEXCEL_headers_footers.xls")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             ParseContext context = new ParseContext();
@@ -452,7 +440,6 @@ public class ExcelParserTest extends TikaTest {
         assertNotContained("Footer - Author: John Smith", content);
     }
 
-
     @Test
     public void testHyperlinksInXLS() throws Exception {
         String xml = getXML("testEXCEL_hyperlinks.xls").xml;
@@ -465,9 +452,8 @@ public class ExcelParserTest extends TikaTest {
 
         //TODO: not extracting these yet
         //link on textbox
-//        assertContains("<a href=\"http://tika.apache.org/1.12/gettingstarted.html\">", xml);
+        //        assertContains("<a href=\"http://tika.apache.org/1.12/gettingstarted.html\">", xml);
     }
-
 
     @Test
     public void testBigIntegersWGeneralFormat() throws Exception {
@@ -478,8 +464,8 @@ public class ExcelParserTest extends TikaTest {
         Locale locale = LocaleUtil.getUserLocale();
         DecimalFormatSymbols symbols = new DecimalFormatSymbols(locale);
         //16 digit number is treated as scientific notation as is the 16 digit formula
-        assertContains("1" + symbols.getDecimalSeparator() + "23456789012345E+15</td>\t" + "<td>1" +
-                symbols.getDecimalSeparator() + "23456789012345E+15", xml);
+        assertContains("1" + symbols.getDecimalSeparator() + "23456789012345E+15</td>\t" + "<td>1"
+                + symbols.getDecimalSeparator() + "23456789012345E+15", xml);
     }
 
     @Test
@@ -536,8 +522,7 @@ public class ExcelParserTest extends TikaTest {
         //This unit test and test file come from Apache POI 51519.xlsx
 
         //test default concatenates = true
-        assertContains("\u65E5\u672C\u30AA\u30E9\u30AF\u30EB \u30CB\u30DB\u30F3",
-                getXML("testEXCEL_phonetic.xls").xml);
+        assertContains("\u65E5\u672C\u30AA\u30E9\u30AF\u30EB \u30CB\u30DB\u30F3", getXML("testEXCEL_phonetic.xls").xml);
 
         //test turning it off
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
@@ -548,8 +533,7 @@ public class ExcelParserTest extends TikaTest {
                 getXML("testEXCEL_phonetic.xls", pc).xml);
 
         //test configuring via config file
-        TikaConfig tikaConfig =
-                new TikaConfig(getResourceAsStream("tika-config-exclude-phonetic.xml"));
+        TikaConfig tikaConfig = new TikaConfig(getResourceAsStream("tika-config-exclude-phonetic.xml"));
         AutoDetectParser parser = new AutoDetectParser(tikaConfig);
         assertNotContained("\u65E5\u672C\u30AA\u30E9\u30AF\u30EB \u30CB\u30DB\u30F3",
                 getXML("testEXCEL_phonetic.xls", parser).xml);

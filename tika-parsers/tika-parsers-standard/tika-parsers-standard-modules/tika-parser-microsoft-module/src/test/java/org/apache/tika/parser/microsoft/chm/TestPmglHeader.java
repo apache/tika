@@ -41,8 +41,7 @@ public class TestPmglHeader {
 
     @Test
     public void testChmPmglHeaderGet() {
-        assertEquals(TestParameters.VP_PMGL_SIGNATURE,
-                new String(chmPmglHeader.getSignature(), UTF_8));
+        assertEquals(TestParameters.VP_PMGL_SIGNATURE, new String(chmPmglHeader.getSignature(), UTF_8));
     }
 
     @Test

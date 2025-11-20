@@ -30,7 +30,6 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.utils.StringUtils;
 
-
 /**
  * This filter runs a regex against the first value in the "sourceField".
  * If the pattern matches, it extracts the first group of the first match and
@@ -110,8 +109,7 @@ public class CaptureGroupMetadataFilter extends MetadataFilter implements Initia
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         if (StringUtils.isBlank(sourceField)) {
             throw new TikaConfigException("Must specify a 'sourceField'");
         }

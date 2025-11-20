@@ -16,21 +16,20 @@
  */
 package org.apache.tika.eval.core.tokens;
 
-
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.custom.CustomAnalyzer;
 import org.apache.lucene.util.ClasspathResourceLoader;
 
-class AnalyzerDeserializer {
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+class AnalyzerDeserializer {
 
     private static final String ANALYZERS = "analyzers";
     private static final String CHAR_FILTERS = "charfilters";
@@ -40,14 +39,12 @@ class AnalyzerDeserializer {
     private static final String PARAMS = "params";
     private static final String COMMENT = "_comment";
 
-    public static Map<String, Analyzer> buildAnalyzers(Reader reader, int maxTokens)
-            throws IOException {
+    public static Map<String, Analyzer> buildAnalyzers(Reader reader, int maxTokens) throws IOException {
         JsonNode root = new ObjectMapper().readTree(reader);
         Map<String, Analyzer> analyzers = new HashMap<>();
 
         if (!root.isObject() || root.get(ANALYZERS) == null) {
-            throw new IllegalArgumentException(
-                    "root object must be object with an 'analyzers' element");
+            throw new IllegalArgumentException("root object must be object with an 'analyzers' element");
         }
         for (Map.Entry<String, JsonNode> e : root.get(ANALYZERS).properties()) {
             String analyzerName = e.getKey();
@@ -57,15 +54,13 @@ class AnalyzerDeserializer {
         return analyzers;
     }
 
-    public static Analyzer buildAnalyzer(String analyzerName, JsonNode node, int maxTokens)
-            throws IOException {
+    public static Analyzer buildAnalyzer(String analyzerName, JsonNode node, int maxTokens) throws IOException {
         if (!node.isObject()) {
-            throw new IllegalArgumentException(
-                    "Expecting map of charfilter, tokenizer, tokenfilters");
+            throw new IllegalArgumentException("Expecting map of charfilter, tokenizer, tokenfilters");
         }
 
-        CustomAnalyzer.Builder builder =
-                CustomAnalyzer.builder(new ClasspathResourceLoader(AnalyzerDeserializer.class));
+        CustomAnalyzer.Builder builder = CustomAnalyzer
+                .builder(new ClasspathResourceLoader(AnalyzerDeserializer.class));
         for (Map.Entry<String, JsonNode> e : node.properties()) {
             String k = e.getKey();
             if (k.equals(CHAR_FILTERS)) {
@@ -75,58 +70,54 @@ class AnalyzerDeserializer {
             } else if (k.equals(TOKENIZER)) {
                 buildTokenizerFactory(e.getValue(), analyzerName, builder);
             } else if (!k.equals(COMMENT)) {
-                throw new IllegalArgumentException(
-                        "Should have one of three values here:" + CHAR_FILTERS + ", " + TOKENIZER +
-                                ", " + TOKEN_FILTERS + ". I don't recognize: " + k);
+                throw new IllegalArgumentException("Should have one of three values here:" + CHAR_FILTERS + ", "
+                        + TOKENIZER + ", " + TOKEN_FILTERS + ". I don't recognize: " + k);
             }
         }
         return builder.build();
     }
 
-    private static void buildTokenizerFactory(JsonNode map, String analyzerName,
-                                              CustomAnalyzer.Builder builder) throws IOException {
+    private static void buildTokenizerFactory(JsonNode map, String analyzerName, CustomAnalyzer.Builder builder)
+            throws IOException {
         if (!map.isObject()) {
-            throw new IllegalArgumentException("Expecting a map with \"factory\" string and " +
-                    "\"params\" map in tokenizer factory;" + " not: " + map.toString() + " in " +
-                    analyzerName);
+            throw new IllegalArgumentException("Expecting a map with \"factory\" string and "
+                    + "\"params\" map in tokenizer factory;" + " not: " + map.toString() + " in " + analyzerName);
         }
         JsonNode factoryEl = map.get(FACTORY);
         if (factoryEl == null || !factoryEl.isTextual()) {
             throw new IllegalArgumentException(
-                    "Expecting value for factory in char filter factory builder in:" +
-                            analyzerName);
+                    "Expecting value for factory in char filter factory builder in:" + analyzerName);
         }
         String factoryName = factoryEl.asText();
-        factoryName = factoryName.startsWith("oala.") ?
-                factoryName.replaceFirst("oala.", "org.apache.lucene.analysis.") : factoryName;
+        factoryName = factoryName.startsWith("oala.")
+                ? factoryName.replaceFirst("oala.", "org.apache.lucene.analysis.")
+                : factoryName;
 
         JsonNode paramsEl = map.get(PARAMS);
         Map<String, String> params = mapify(paramsEl);
         builder.withTokenizer(factoryName, params);
     }
 
-    private static void buildCharFilters(JsonNode el, String analyzerName,
-                                         CustomAnalyzer.Builder builder) throws IOException {
+    private static void buildCharFilters(JsonNode el, String analyzerName, CustomAnalyzer.Builder builder)
+            throws IOException {
         if (el == null || el.isNull()) {
             return;
         }
         if (!el.isArray()) {
             throw new IllegalArgumentException(
-                    "Expecting array for charfilters, but got:" + el.toString() + " for " +
-                            analyzerName);
+                    "Expecting array for charfilters, but got:" + el.toString() + " for " + analyzerName);
         }
 
         for (JsonNode filterMap : el) {
             if (!filterMap.isObject()) {
                 throw new IllegalArgumentException(
-                        "Expecting a map with \"factory\" string and \"params\" map in char filter factory;" +
-                                " not: " + filterMap.toString() + " in " + analyzerName);
+                        "Expecting a map with \"factory\" string and \"params\" map in char filter factory;" + " not: "
+                                + filterMap.toString() + " in " + analyzerName);
             }
             JsonNode factoryEl = filterMap.get(FACTORY);
             if (factoryEl == null || !factoryEl.isTextual()) {
                 throw new IllegalArgumentException(
-                        "Expecting value for factory in char filter factory builder in:" +
-                                analyzerName);
+                        "Expecting value for factory in char filter factory builder in:" + analyzerName);
             }
             String factoryName = factoryEl.asText();
             factoryName = factoryName.replaceAll("oala.", "org.apache.lucene.analysis.");
@@ -138,32 +129,30 @@ class AnalyzerDeserializer {
     }
 
     private static void buildTokenFilterFactories(JsonNode el, String analyzerName, int maxTokens,
-                                                  CustomAnalyzer.Builder builder)
-            throws IOException {
+            CustomAnalyzer.Builder builder) throws IOException {
         if (el == null || el.isNull()) {
             return;
         }
         if (!el.isArray()) {
             throw new IllegalArgumentException(
-                    "Expecting array for tokenfilters, but got:" + el.toString() + " in " +
-                            analyzerName);
+                    "Expecting array for tokenfilters, but got:" + el.toString() + " in " + analyzerName);
         }
 
         for (JsonNode filterMap : el) {
             if (!filterMap.isObject()) {
                 throw new IllegalArgumentException(
-                        "Expecting a map with \"factory\" string and \"params\" map in token filter factory;" +
-                                " not: " + filterMap.toString() + " in " + analyzerName);
+                        "Expecting a map with \"factory\" string and \"params\" map in token filter factory;" + " not: "
+                                + filterMap.toString() + " in " + analyzerName);
             }
             JsonNode factoryEl = filterMap.get(FACTORY);
             if (factoryEl == null || !factoryEl.isTextual()) {
                 throw new IllegalArgumentException(
-                        "Expecting value for factory in token filter factory builder in " +
-                                analyzerName);
+                        "Expecting value for factory in token filter factory builder in " + analyzerName);
             }
             String factoryName = factoryEl.asText();
-            factoryName = factoryName.startsWith("oala.") ?
-                    factoryName.replaceFirst("oala.", "org.apache.lucene.analysis.") : factoryName;
+            factoryName = factoryName.startsWith("oala.")
+                    ? factoryName.replaceFirst("oala.", "org.apache.lucene.analysis.")
+                    : factoryName;
             JsonNode paramsEl = filterMap.get(PARAMS);
             Map<String, String> params = mapify(paramsEl);
             builder.addTokenFilter(factoryName, params);
@@ -187,8 +176,7 @@ class AnalyzerDeserializer {
         for (Map.Entry<String, JsonNode> e : paramsEl.properties()) {
             JsonNode value = e.getValue();
             if (value.isObject() || value.isArray() || value.isNull()) {
-                throw new IllegalArgumentException(
-                        "Expecting parameter to have primitive value: " + value.toString());
+                throw new IllegalArgumentException("Expecting parameter to have primitive value: " + value.toString());
             }
             String v = e.getValue().asText();
             params.put(e.getKey(), v);

@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.eval.app;
 
 import static org.apache.tika.eval.app.ProfilerBase.NON_EXISTENT_FILE_LENGTH;
@@ -36,7 +35,6 @@ class EvalFilePaths {
 
     private long sourceFileLength = NON_EXISTENT_FILE_LENGTH;
     private long extractFileLength = NON_EXISTENT_FILE_LENGTH;
-
 
     public EvalFilePaths(Path relativeSourceFilePath, Path extractFile, long srcFileLen) {
         this(relativeSourceFilePath, extractFile);
@@ -108,7 +106,7 @@ class EvalFilePaths {
 
     @Override
     public String toString() {
-        return "EvalFilePaths{" + "relativeSourceFilePath=" + relativeSourceFilePath + ", extractFile=" + extractFile + ", sourceFileLength=" + sourceFileLength +
-                ", extractFileLength=" + extractFileLength + '}';
+        return "EvalFilePaths{" + "relativeSourceFilePath=" + relativeSourceFilePath + ", extractFile=" + extractFile
+                + ", sourceFileLength=" + sourceFileLength + ", extractFileLength=" + extractFileLength + '}';
     }
 }

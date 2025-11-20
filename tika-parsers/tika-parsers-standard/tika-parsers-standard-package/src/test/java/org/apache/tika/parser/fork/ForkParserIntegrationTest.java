@@ -29,12 +29,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
@@ -50,6 +44,11 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.microsoft.libpst.LibPstParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Test that the ForkParser correctly behaves when
@@ -64,8 +63,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
      */
     @Test
     public void testForkedTextParsing() throws Exception {
-        try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(),
-                tika.getParser())) {
+        try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), tika.getParser())) {
             ContentHandler output = new BodyContentHandler();
             InputStream stream = getResourceAsStream("/test-documents/testTXT.txt");
             ParseContext context = new ParseContext();
@@ -105,15 +103,15 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
         brokenParser = new BrokenParser();
         brokenParser.re = new WontBeSerializedError("Can't Serialize");
         parser = new ForkParser(ForkParser.class.getClassLoader(), brokenParser);
-//        try {
-//           ContentHandler output = new BodyContentHandler();
-//           ParseContext context = new ParseContext();
-//           parser.parse(stream, output, new Metadata(), context);
-//           fail("Expected TikaException caused by Error");
-//       } catch (TikaException e) {
-//           assertEquals(TikaException.class, e.getCause().getClass());
-//           assertEquals("Bang!", e.getCause().getMessage());
-//       }
+        //        try {
+        //           ContentHandler output = new BodyContentHandler();
+        //           ParseContext context = new ParseContext();
+        //           parser.parse(stream, output, new Metadata(), context);
+        //           fail("Expected TikaException caused by Error");
+        //       } catch (TikaException e) {
+        //           assertEquals(TikaException.class, e.getCause().getClass());
+        //           assertEquals("Bang!", e.getCause().getMessage());
+        //       }
     }
 
     /**
@@ -122,8 +120,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
      */
     @Test
     public void testParserHandlingOfNonSerializable() throws Exception {
-        ForkParser parser =
-                new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), tika.getParser());
+        ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), tika.getParser());
 
         ParseContext context = new ParseContext();
         context.set(Detector.class, new Detector() {
@@ -141,7 +138,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
             // Check the right details
             assertNotNull(e.getCause());
             assertEquals(NotSerializableException.class, e.getCause().getClass());
-            assertEquals("Unable to serialize ParseContext to pass to the Forked Parser",e.getMessage());
+            assertEquals("Unable to serialize ParseContext to pass to the Forked Parser", e.getMessage());
         } finally {
             parser.close();
         }
@@ -163,10 +160,9 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
         } catch (IOException e) {
             fail("Port is not available");
         }
-        ForkParser parser =
-                new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), tika.getParser());
-        parser.setJavaCommand(Arrays.asList("java", "-Xmx32m", "-Xdebug", "-Xrunjdwp:transport" +
-                "=dt_socket,address=" + availSocket + ",server=y,suspend=n"));
+        ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), tika.getParser());
+        parser.setJavaCommand(Arrays.asList("java", "-Xmx32m", "-Xdebug",
+                "-Xrunjdwp:transport" + "=dt_socket,address=" + availSocket + ",server=y,suspend=n"));
         try {
             ContentHandler body = new BodyContentHandler();
             InputStream stream = getResourceAsStream("/test-documents/testTXT.txt");
@@ -185,8 +181,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
      */
     @Test
     public void testForkedPDFParsing() throws Exception {
-        try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(),
-                tika.getParser())) {
+        try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), tika.getParser())) {
             ContentHandler output = new BodyContentHandler();
             InputStream stream = getResourceAsStream("/test-documents/testPDF.pdf");
             ParseContext context = new ParseContext();
@@ -203,8 +198,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
 
     @Test
     public void testForkedPackageParsing() throws Exception {
-        try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(),
-                tika.getParser())) {
+        try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), tika.getParser())) {
             ContentHandler output = new BodyContentHandler();
             InputStream stream = getResourceAsStream("/test-documents/moby.zip");
             ParseContext context = new ParseContext();
@@ -215,7 +209,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
 
     @Test
     public void testLibPstParser() throws Exception {
-        if (! new LibPstParser().checkQuietly()) {
+        if (!new LibPstParser().checkQuietly()) {
             return;
         }
         TikaConfig tikaConfig = new TikaConfig(
@@ -231,13 +225,11 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
     }
 
     @Test
-    @Disabled("use for development/one off testing.  This is a beast and takes enormous " +
-            "resources and time")
+    @Disabled("use for development/one off testing.  This is a beast and takes enormous " + "resources and time")
     public void smokeTest() throws Exception {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(tika.getParser());
         int numThreads = 5;
-        ForkParser parser =
-                new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), wrapper);
+        ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), wrapper);
         parser.setServerPulseMillis(500);
         parser.setServerParseTimeoutMillis(1000);
         parser.setPoolSize(numThreads);
@@ -335,8 +327,8 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
             return new HashSet<>(Collections.singletonList(MediaType.TEXT_PLAIN));
         }
 
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                          ParseContext context) throws IOException, SAXException, TikaException {
+        public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+                throws IOException, SAXException, TikaException {
             if (re != null) {
                 throw re;
             }

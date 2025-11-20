@@ -43,8 +43,7 @@ public class LanguageIdentifier {
     /**
      * The available language profiles.
      */
-    private static final Map<String, LanguageProfile> PROFILES =
-            new HashMap<>();
+    private static final Map<String, LanguageProfile> PROFILES = new HashMap<>();
     private static final String PROFILE_SUFFIX = ".ngp";
     private static final String PROPERTIES_OVERRIDE_FILE = "tika.language.override.properties";
     private static final String PROPERTIES_FILE = "tika.language.properties";
@@ -99,15 +98,13 @@ public class LanguageIdentifier {
         try {
             LanguageProfile profile = new LanguageProfile();
 
-            try (InputStream stream = LanguageIdentifier.class
-                    .getResourceAsStream(language + PROFILE_SUFFIX)) {
+            try (InputStream stream = LanguageIdentifier.class.getResourceAsStream(language + PROFILE_SUFFIX)) {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(stream, UTF_8));
                 String line = reader.readLine();
                 while (line != null) {
                     if (line.length() > 0 && !line.startsWith("#")) {
                         int space = line.indexOf(' ');
-                        profile.add(line.substring(0, space),
-                                Long.parseLong(line.substring(space + 1)));
+                        profile.add(line.substring(0, space), Long.parseLong(line.substring(space + 1)));
                     }
                     line = reader.readLine();
                 }
@@ -115,9 +112,8 @@ public class LanguageIdentifier {
 
             addProfile(language, profile);
         } catch (Throwable t) {
-            throw new Exception(
-                    "Failed trying to load language profile for language \"" + language +
-                            "\". Error: " + t.getMessage());
+            throw new Exception("Failed trying to load language profile for language \"" + language + "\". Error: "
+                    + t.getMessage());
         }
     }
 
@@ -153,8 +149,7 @@ public class LanguageIdentifier {
                 props = new Properties();
                 props.load(stream);
             } catch (IOException e) {
-                stringBuilder.append("IOException while trying to load property file. Message: ")
-                        .append(e.getMessage())
+                stringBuilder.append("IOException while trying to load property file. Message: ").append(e.getMessage())
                         .append("\n");
             }
         }
@@ -167,8 +162,7 @@ public class LanguageIdentifier {
                 addProfile(language);
             } catch (Exception e) {
                 stringBuilder.append("Language ").append(language).append(" (").append(name)
-                        .append(") not initialized. Message: ")
-                        .append(e.getMessage()).append("\n");
+                        .append(") not initialized. Message: ").append(e.getMessage()).append("\n");
             }
         }
         errors = stringBuilder.toString();

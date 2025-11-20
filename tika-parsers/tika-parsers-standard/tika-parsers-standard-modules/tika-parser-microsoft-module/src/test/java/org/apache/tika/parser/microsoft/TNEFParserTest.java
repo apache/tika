@@ -18,9 +18,6 @@ package org.apache.tika.parser.microsoft;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.extractor.ContainerExtractor;
@@ -31,6 +28,8 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 /**
  * Tests for the TNEF (winmail.dat) parser
@@ -42,8 +41,7 @@ public class TNEFParserTest extends AbstractPOIContainerExtractionTest {
     public void testBasics() throws Exception {
         Detector detector = new DefaultDetector();
         try (TikaInputStream stream = getTestFile(file)) {
-            assertEquals(MediaType.application("vnd.ms-tnef"),
-                    detector.detect(stream, new Metadata()));
+            assertEquals(MediaType.application("vnd.ms-tnef"), detector.detect(stream, new Metadata()));
         }
     }
 

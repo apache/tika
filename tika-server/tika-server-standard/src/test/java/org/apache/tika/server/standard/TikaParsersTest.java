@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.standard;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,18 +23,19 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.gagravarr.tika.OpusParser;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
 import org.apache.tika.parser.pkg.PackageParser;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.resource.TikaParsers;
+import org.gagravarr.tika.OpusParser;
+import org.junit.jupiter.api.Test;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.ws.rs.core.Response;
 
 public class TikaParsersTest extends CXFTestBase {
 
@@ -64,10 +64,7 @@ public class TikaParsersTest extends CXFTestBase {
     @Test
     public void testGetPlainText() throws Exception {
         for (boolean details : new boolean[]{false, true}) {
-            Response response = WebClient
-                    .create(endPoint + getPath(details))
-                    .type("text/plain")
-                    .accept("text/plain")
+            Response response = WebClient.create(endPoint + getPath(details)).type("text/plain").accept("text/plain")
                     .get();
 
             String text = getStringFromInputStream((InputStream) response.getEntity());
@@ -93,10 +90,7 @@ public class TikaParsersTest extends CXFTestBase {
     @Test
     public void testGetHTML() throws Exception {
         for (boolean details : new boolean[]{false, true}) {
-            Response response = WebClient
-                    .create(endPoint + getPath(details))
-                    .type("text/html")
-                    .accept("text/html")
+            Response response = WebClient.create(endPoint + getPath(details)).type("text/html").accept("text/html")
                     .get();
 
             String text = getStringFromInputStream((InputStream) response.getEntity());
@@ -129,16 +123,12 @@ public class TikaParsersTest extends CXFTestBase {
     @SuppressWarnings("unchecked")
     public void testGetJSON() throws Exception {
         for (boolean details : new boolean[]{false, true}) {
-            Response response = WebClient
-                    .create(endPoint + getPath(details))
+            Response response = WebClient.create(endPoint + getPath(details))
                     .type(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
-                    .accept(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
-                    .get();
+                    .accept(jakarta.ws.rs.core.MediaType.APPLICATION_JSON).get();
 
             String jsonStr = getStringFromInputStream((InputStream) response.getEntity());
-            Map<String, Map<String, Object>> json = new ObjectMapper()
-                    .readerFor(Map.class)
-                    .readValue(jsonStr);
+            Map<String, Map<String, Object>> json = new ObjectMapper().readerFor(Map.class).readValue(jsonStr);
 
             // Should have a nested structure
             assertEquals(true, json.containsKey("name"));
@@ -178,19 +168,13 @@ public class TikaParsersTest extends CXFTestBase {
                     }
 
                     String name = (String) grandChildren.get("name");
-                    if (OpusParser.class
-                            .getName()
-                            .equals(name)) {
+                    if (OpusParser.class.getName().equals(name)) {
                         hasOpus = true;
                     }
-                    if (OOXMLParser.class
-                            .getName()
-                            .equals(name)) {
+                    if (OOXMLParser.class.getName().equals(name)) {
                         hasOOXML = true;
                     }
-                    if (PackageParser.class
-                            .getName()
-                            .equals(name)) {
+                    if (PackageParser.class.getName().equals(name)) {
                         hasZip = true;
                     }
                 }

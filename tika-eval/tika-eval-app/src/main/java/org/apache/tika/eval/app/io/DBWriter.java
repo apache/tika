@@ -25,14 +25,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.eval.app.db.ColInfo;
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.JDBCUtil;
 import org.apache.tika.eval.app.db.MimeBuffer;
 import org.apache.tika.eval.app.db.TableInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is still in its early stages.  The idea is to
@@ -61,7 +60,8 @@ public class DBWriter implements IDBWriter {
     private final Map<String, PreparedStatement> inserts = new HashMap<>();
     private final Map<String, LastInsert> lastInsertMap = new HashMap<>();
 
-    public DBWriter(Connection connection, List<TableInfo> tableInfos, JDBCUtil dbUtil, MimeBuffer mimeBuffer) throws IOException, SQLException {
+    public DBWriter(Connection connection, List<TableInfo> tableInfos, JDBCUtil dbUtil, MimeBuffer mimeBuffer)
+            throws IOException, SQLException {
 
         this.conn = connection;
         this.mimeBuffer = mimeBuffer;
@@ -83,9 +83,7 @@ public class DBWriter implements IDBWriter {
 
     private PreparedStatement createPreparedInsert(TableInfo tableInfo) throws SQLException {
         StringBuilder sb = new StringBuilder();
-        sb
-                .append("INSERT INTO ")
-                .append(tableInfo.getName());
+        sb.append("INSERT INTO ").append(tableInfo.getName());
         sb.append("(");
         int i = 0;
         for (ColInfo c : tableInfo.getColInfos()) {
@@ -109,7 +107,6 @@ public class DBWriter implements IDBWriter {
         return conn.prepareStatement(sb.toString());
     }
 
-
     @Override
     public void writeRow(TableInfo table, Map<Cols, String> data) throws IOException {
         try {
@@ -122,9 +119,10 @@ public class DBWriter implements IDBWriter {
             lastInsert.rowCount++;
             long elapsed = System.currentTimeMillis() - lastInsert.lastInsert;
             if (
-                //elapsed > commitEveryXMS ||
-                    lastInsert.rowCount % commitEveryXRows == 0) {
-                LOG.info("writer ({}) on table ({}) is committing after {} rows and {} ms", myId, table.getName(), lastInsert.rowCount, elapsed);
+            //elapsed > commitEveryXMS ||
+            lastInsert.rowCount % commitEveryXRows == 0) {
+                LOG.info("writer ({}) on table ({}) is committing after {} rows and {} ms", myId, table.getName(),
+                        lastInsert.rowCount, elapsed);
                 p.executeBatch();
                 conn.commit();
                 lastInsert.lastInsert = System.currentTimeMillis();

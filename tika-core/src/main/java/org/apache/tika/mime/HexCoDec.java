@@ -21,8 +21,8 @@ package org.apache.tika.mime;
  */
 public class HexCoDec {
 
-    private static final char[] HEX_CHARS =
-            {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+    private static final char[] HEX_CHARS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e',
+            'f'};
 
     /**
      * Decode a hex string
@@ -59,8 +59,7 @@ public class HexCoDec {
 
         byte[] result = new byte[length / 2];
         for (int j = 0; j < result.length; j++) {
-            result[j] = (byte) (hexCharToNibble(hexChars[startIndex++]) * 16 +
-                    hexCharToNibble(hexChars[startIndex++]));
+            result[j] = (byte) (hexCharToNibble(hexChars[startIndex++]) * 16 + hexCharToNibble(hexChars[startIndex++]));
         }
         return result;
     }

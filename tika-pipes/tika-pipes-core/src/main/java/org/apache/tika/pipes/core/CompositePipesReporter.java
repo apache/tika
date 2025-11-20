@@ -86,8 +86,7 @@ public class CompositePipesReporter extends PipesReporter implements Initializab
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         if (pipesReporters == null) {
             throw new TikaConfigException("must specify 'pipesReporters'");
         }

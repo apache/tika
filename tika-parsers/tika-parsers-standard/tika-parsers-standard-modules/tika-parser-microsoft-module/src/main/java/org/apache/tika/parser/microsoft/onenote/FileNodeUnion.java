@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote;
 
 class FileNodeUnion {
@@ -25,12 +24,9 @@ class FileNodeUnion {
     GlobalIdTableEntryFNDX globalIdTableEntryFNDX = new GlobalIdTableEntryFNDX();
     GlobalIdTableEntry2FNDX globalIdTableEntry2FNDX = new GlobalIdTableEntry2FNDX();
     GlobalIdTableEntry3FNDX globalIdTableEntry3FNDX = new GlobalIdTableEntry3FNDX();
-    ObjectRevisionWithRefCountFNDX objectRevisionWithRefCountFNDX =
-            new ObjectRevisionWithRefCountFNDX();
-    ObjectInfoDependencyOverrides objectInfoDependencyOverrides =
-            new ObjectInfoDependencyOverrides();
-    ObjectDeclarationWithRefCount objectDeclarationWithRefCount =
-            new ObjectDeclarationWithRefCount();
+    ObjectRevisionWithRefCountFNDX objectRevisionWithRefCountFNDX = new ObjectRevisionWithRefCountFNDX();
+    ObjectInfoDependencyOverrides objectInfoDependencyOverrides = new ObjectInfoDependencyOverrides();
+    ObjectDeclarationWithRefCount objectDeclarationWithRefCount = new ObjectDeclarationWithRefCount();
     RootObjectReference rootObjectReference = new RootObjectReference();
     FileDataStoreObjectReference fileDataStoreObjectReference = new FileDataStoreObjectReference();
 
@@ -38,8 +34,7 @@ class FileNodeUnion {
         return revisionManifestListStart;
     }
 
-    public FileNodeUnion setRevisionManifestListStart(
-            RevisionManifestListStart revisionManifestListStart) {
+    public FileNodeUnion setRevisionManifestListStart(RevisionManifestListStart revisionManifestListStart) {
         this.revisionManifestListStart = revisionManifestListStart;
         return this;
     }
@@ -57,8 +52,7 @@ class FileNodeUnion {
         return revisionRoleDeclaration;
     }
 
-    public FileNodeUnion setRevisionRoleDeclaration(
-            RevisionRoleDeclaration revisionRoleDeclaration) {
+    public FileNodeUnion setRevisionRoleDeclaration(RevisionRoleDeclaration revisionRoleDeclaration) {
         this.revisionRoleDeclaration = revisionRoleDeclaration;
         return this;
     }
@@ -85,8 +79,7 @@ class FileNodeUnion {
         return globalIdTableEntry2FNDX;
     }
 
-    public FileNodeUnion setGlobalIdTableEntry2FNDX(
-            GlobalIdTableEntry2FNDX globalIdTableEntry2FNDX) {
+    public FileNodeUnion setGlobalIdTableEntry2FNDX(GlobalIdTableEntry2FNDX globalIdTableEntry2FNDX) {
         this.globalIdTableEntry2FNDX = globalIdTableEntry2FNDX;
         return this;
     }
@@ -95,8 +88,7 @@ class FileNodeUnion {
         return globalIdTableEntry3FNDX;
     }
 
-    public FileNodeUnion setGlobalIdTableEntry3FNDX(
-            GlobalIdTableEntry3FNDX globalIdTableEntry3FNDX) {
+    public FileNodeUnion setGlobalIdTableEntry3FNDX(GlobalIdTableEntry3FNDX globalIdTableEntry3FNDX) {
         this.globalIdTableEntry3FNDX = globalIdTableEntry3FNDX;
         return this;
     }
@@ -115,8 +107,7 @@ class FileNodeUnion {
         return objectInfoDependencyOverrides;
     }
 
-    public FileNodeUnion setObjectInfoDependencyOverrides(
-            ObjectInfoDependencyOverrides objectInfoDependencyOverrides) {
+    public FileNodeUnion setObjectInfoDependencyOverrides(ObjectInfoDependencyOverrides objectInfoDependencyOverrides) {
         this.objectInfoDependencyOverrides = objectInfoDependencyOverrides;
         return this;
     }
@@ -125,8 +116,7 @@ class FileNodeUnion {
         return objectDeclarationWithRefCount;
     }
 
-    public FileNodeUnion setObjectDeclarationWithRefCount(
-            ObjectDeclarationWithRefCount objectDeclarationWithRefCount) {
+    public FileNodeUnion setObjectDeclarationWithRefCount(ObjectDeclarationWithRefCount objectDeclarationWithRefCount) {
         this.objectDeclarationWithRefCount = objectDeclarationWithRefCount;
         return this;
     }
@@ -144,8 +134,7 @@ class FileNodeUnion {
         return fileDataStoreObjectReference;
     }
 
-    public FileNodeUnion setFileDataStoreObjectReference(
-            FileDataStoreObjectReference fileDataStoreObjectReference) {
+    public FileNodeUnion setFileDataStoreObjectReference(FileDataStoreObjectReference fileDataStoreObjectReference) {
         this.fileDataStoreObjectReference = fileDataStoreObjectReference;
         return this;
     }

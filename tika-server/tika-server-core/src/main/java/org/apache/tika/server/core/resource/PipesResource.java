@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.core.resource;
 
 import java.io.IOException;
@@ -25,15 +24,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.UriInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -43,10 +33,18 @@ import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesParser;
 import org.apache.tika.pipes.core.PipesResult;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.UriInfo;
 
 @Path("/pipes")
 public class PipesResource {
-
 
     private static final Logger LOG = LoggerFactory.getLogger(PipesResource.class);
 
@@ -64,7 +62,6 @@ public class PipesResource {
         }
         this.pipesParser = new PipesParser(pipesConfig);
     }
-
 
     /**
      * The client posts a json request.  At a minimum, this must be a
@@ -84,7 +81,8 @@ public class PipesResource {
      */
     @POST
     @Produces("application/json")
-    public Map<String, String> postRmeta(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+    public Map<String, String> postRmeta(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info)
+            throws Exception {
         FetchEmitTuple t = null;
         try (Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8)) {
             t = JsonFetchEmitTuple.fromJson(reader);
@@ -92,38 +90,40 @@ public class PipesResource {
         return processTuple(t);
     }
 
-    private Map<String, String> processTuple(FetchEmitTuple fetchEmitTuple) throws InterruptedException, PipesException, IOException {
+    private Map<String, String> processTuple(FetchEmitTuple fetchEmitTuple)
+            throws InterruptedException, PipesException, IOException {
 
         PipesResult pipesResult = pipesParser.parse(fetchEmitTuple);
-        switch (pipesResult.getStatus()) {
-            case CLIENT_UNAVAILABLE_WITHIN_MS:
+        switch (pipesResult.getStatus())
+        {
+            case CLIENT_UNAVAILABLE_WITHIN_MS :
                 throw new IllegalStateException("client not available within " + "allotted amount of time");
-            case EMIT_EXCEPTION:
+            case EMIT_EXCEPTION :
                 return returnEmitException(pipesResult.getMessage());
-            case PARSE_SUCCESS:
-            case PARSE_SUCCESS_WITH_EXCEPTION:
+            case PARSE_SUCCESS :
+            case PARSE_SUCCESS_WITH_EXCEPTION :
                 throw new IllegalArgumentException("Should have emitted in forked process?!");
-            case EMIT_SUCCESS:
+            case EMIT_SUCCESS :
                 return returnSuccess();
-            case EMIT_SUCCESS_PARSE_EXCEPTION:
+            case EMIT_SUCCESS_PARSE_EXCEPTION :
                 return parseException(pipesResult.getMessage(), true);
-            case PARSE_EXCEPTION_EMIT:
+            case PARSE_EXCEPTION_EMIT :
                 throw new IllegalArgumentException("Should have tried to emit in forked " + "process?!");
-            case PARSE_EXCEPTION_NO_EMIT:
+            case PARSE_EXCEPTION_NO_EMIT :
                 return parseException(pipesResult.getMessage(), false);
-            case TIMEOUT:
+            case TIMEOUT :
                 return returnError("timeout");
-            case OOM:
+            case OOM :
                 return returnError("oom");
-            case UNSPECIFIED_CRASH:
+            case UNSPECIFIED_CRASH :
                 return returnError("unknown_crash");
-            case NO_EMITTER_FOUND: {
-                throw new IllegalArgumentException("Couldn't find emitter that matched: " + fetchEmitTuple
-                        .getEmitKey()
-                        .getEmitterName());
+            case NO_EMITTER_FOUND : {
+                throw new IllegalArgumentException(
+                        "Couldn't find emitter that matched: " + fetchEmitTuple.getEmitKey().getEmitterName());
             }
-            default:
-                throw new IllegalArgumentException("I'm sorry, I don't yet handle a status of " + "this type: " + pipesResult.getStatus());
+            default :
+                throw new IllegalArgumentException(
+                        "I'm sorry, I don't yet handle a status of " + "this type: " + pipesResult.getStatus());
         }
     }
 

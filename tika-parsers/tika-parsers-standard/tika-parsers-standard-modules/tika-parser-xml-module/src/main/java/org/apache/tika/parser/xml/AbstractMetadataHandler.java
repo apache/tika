@@ -19,10 +19,9 @@ package org.apache.tika.parser.xml;
 import java.util.Arrays;
 import java.util.List;
 
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Base class for SAX handlers that map SAX events into document metadata.

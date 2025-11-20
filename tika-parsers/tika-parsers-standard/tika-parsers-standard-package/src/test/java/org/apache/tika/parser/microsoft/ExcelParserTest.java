@@ -18,11 +18,10 @@ package org.apache.tika.parser.microsoft;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.Test;
 
 public class ExcelParserTest extends TikaTest {
     @Test

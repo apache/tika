@@ -34,7 +34,6 @@ public class PDFRenderingState extends RenderingState {
         return tis;
     }
 
-
     public void setRenderResults(RenderResults renderResults) {
         this.renderResults = renderResults;
     }

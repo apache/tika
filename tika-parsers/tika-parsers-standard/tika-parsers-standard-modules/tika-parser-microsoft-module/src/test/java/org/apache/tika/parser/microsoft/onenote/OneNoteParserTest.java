@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
-
 import static org.apache.tika.parser.microsoft.onenote.OneNoteParser.ONE_NOTE_PREFIX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -26,11 +25,10 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.Test;
 
 public class OneNoteParserTest extends TikaTest {
 
@@ -199,17 +197,15 @@ public class OneNoteParserTest extends TikaTest {
         String txt = getText("testOneNote2007OrEarlier.one", metadata);
 
         // utf-16 LE text
-        assertContains(
-                "One note is the application.  The notebooks are the files within the application" +
-                        ".  " +
-                        "Each notebook can have an unlimited amount of sections and pages.  To " +
-                        "create a new notebook, go to file, new, computer, " +
-                        "and name it.  It will go to my documents, oneNote Notebooks folder.  The" +
-                        " notebook doesn't close and you don't have to save.  " +
-                        "If it closes, you can go back to it and it will open at the same place " +
-                        "you left off.  If you are offline and the notebook is " +
-                        "being stored on a sharepoint site, you can work on it and it will sync " +
-                        "when you go back online.", txt);
+        assertContains("One note is the application.  The notebooks are the files within the application" + ".  "
+                + "Each notebook can have an unlimited amount of sections and pages.  To "
+                + "create a new notebook, go to file, new, computer, "
+                + "and name it.  It will go to my documents, oneNote Notebooks folder.  The"
+                + " notebook doesn't close and you don't have to save.  "
+                + "If it closes, you can go back to it and it will open at the same place "
+                + "you left off.  If you are offline and the notebook is "
+                + "being stored on a sharepoint site, you can work on it and it will sync "
+                + "when you go back online.", txt);
         // ascii text
         assertContains("Correlation between Outlook and OneNote", txt);
     }
@@ -218,9 +214,9 @@ public class OneNoteParserTest extends TikaTest {
     public void testOneNoteEmbeddedWordDoc() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testOneNoteEmbeddedWordDoc.one");
 
-        assertTrue(metadataList.stream().anyMatch(
-                ml -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document".equals(
-                        ml.get("Content-Type"))));
+        assertTrue(metadataList.stream()
+                .anyMatch(ml -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        .equals(ml.get("Content-Type"))));
     }
 
     /**
@@ -253,10 +249,8 @@ public class OneNoteParserTest extends TikaTest {
         String txt = getText("testOneNoteFromOffice365-2.one", metadata);
 
         List<String> mostRecentAuthors = Arrays.asList(metadata.getValues(ONE_NOTE_PREFIX + "mostRecentAuthors"));
-        assertContains(
-                "R\u0000o\u0000b\u0000e\u0000r\u0000t\u0000 \u0000L\u0000u\u0000c\u0000a" +
-                        "\u0000r\u0000i\u0000n\u0000i\u0000\u0000\u0000",
-                mostRecentAuthors);
+        assertContains("R\u0000o\u0000b\u0000e\u0000r\u0000t\u0000 \u0000L\u0000u\u0000c\u0000a"
+                + "\u0000r\u0000i\u0000n\u0000i\u0000\u0000\u0000", mostRecentAuthors);
 
         assertEquals(Instant.ofEpochSecond(1591712300),
                 Instant.ofEpochSecond(Long.parseLong(metadata.get(ONE_NOTE_PREFIX + "creationTimestamp"))));

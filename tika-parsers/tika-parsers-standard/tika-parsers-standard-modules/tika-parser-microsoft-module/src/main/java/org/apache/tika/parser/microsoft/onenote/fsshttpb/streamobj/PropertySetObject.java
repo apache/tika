@@ -14,14 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.space.ObjectSpaceObjectPropSet;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
-
 
 /**
  * This class is used to represent the property set.
@@ -36,11 +34,10 @@ public class PropertySetObject {
      * @param objectDeclaration The Object Declaration structure.
      * @param objectData        The Object Data structure.
      */
-    public PropertySetObject(ObjectGroupObjectDeclare objectDeclaration,
-                             ObjectGroupObjectData objectData) throws IOException {
+    public PropertySetObject(ObjectGroupObjectDeclare objectDeclaration, ObjectGroupObjectData objectData)
+            throws IOException {
         this.objectDeclaration = objectDeclaration;
         this.objectSpaceObjectPropSet = new ObjectSpaceObjectPropSet();
-        this.objectSpaceObjectPropSet.doDeserializeFromByteArray(
-                ByteUtil.toByteArray(objectData.data.content), 0);
+        this.objectSpaceObjectPropSet.doDeserializeFromByteArray(ByteUtil.toByteArray(objectData.data.content), 0);
     }
 }

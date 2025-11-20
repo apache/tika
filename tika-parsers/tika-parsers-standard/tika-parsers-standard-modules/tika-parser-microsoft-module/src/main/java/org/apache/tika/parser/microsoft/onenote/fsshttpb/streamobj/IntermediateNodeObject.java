@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
@@ -61,8 +60,7 @@ public class IntermediateNodeObject extends NodeObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems)
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems)
             throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         if (lengthOfItems != 0) {
@@ -104,10 +102,8 @@ public class IntermediateNodeObject extends NodeObject {
             rootNode.signature = new SignatureObject();
             rootNode.dataSize = new DataSizeObject();
             rootNode.dataSize.dataSize = fileContent.length;
-            rootNode.exGuid =
-                    new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());
-            rootNode.intermediateNodeObjectList =
-                    ChunkingFactory.createChunkingInstance(fileContent).chunking();
+            rootNode.exGuid = new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());
+            rootNode.intermediateNodeObjectList = ChunkingFactory.createChunkingInstance(fileContent).chunking();
             return rootNode;
         }
     }

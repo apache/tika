@@ -36,10 +36,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.utils.DateUtils;
+import org.junit.jupiter.api.Test;
 
 //Junit imports
 
@@ -394,8 +393,7 @@ public class TestMetadata extends TikaTest {
     public void testCompositeProperty() {
         Metadata meta = new Metadata();
         Property compositeProperty = Property.composite(DublinCore.DESCRIPTION,
-                new Property[]{TikaCoreProperties.DESCRIPTION,
-                        Property.internalText("testDescriptionAlt")});
+                new Property[]{TikaCoreProperties.DESCRIPTION, Property.internalText("testDescriptionAlt")});
         String message = "composite description";
         meta.set(compositeProperty, message);
 
@@ -411,8 +409,7 @@ public class TestMetadata extends TikaTest {
     public void testMultithreadedDates() throws Exception {
         int numThreads = 10;
         ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
-        ExecutorCompletionService<Integer> executorCompletionService =
-                new ExecutorCompletionService<>(executorService);
+        ExecutorCompletionService<Integer> executorCompletionService = new ExecutorCompletionService<>(executorService);
         for (int i = 0; i < numThreads; i++) {
             executorCompletionService.submit(new MetadataDateAdder());
         }
@@ -505,9 +502,7 @@ public class TestMetadata extends TikaTest {
                 DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
                 df.setTimeZone(TimeZone.getTimeZone("UTC"));
                 m.set(TikaCoreProperties.CREATED, df.format(now));
-                assertTrue(
-                        Math.abs(now.getTime() - m.getDate(TikaCoreProperties.CREATED).getTime()) <
-                                2000);
+                assertTrue(Math.abs(now.getTime() - m.getDate(TikaCoreProperties.CREATED).getTime()) < 2000);
 
             }
             return 1;

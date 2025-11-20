@@ -23,22 +23,22 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.util.EntityUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.client.TikaClientException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class OpenSearchClient {
 
@@ -97,8 +97,7 @@ public class OpenSearchClient {
             int status = response.getStatusLine().getStatusCode();
             if (status == 200) {
                 try (Reader reader = new BufferedReader(
-                        new InputStreamReader(response.getEntity().getContent(),
-                                StandardCharsets.UTF_8))) {
+                        new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8))) {
                     ObjectMapper mapper = new ObjectMapper();
                     JsonNode node = mapper.readTree(reader);
                     if (LOG.isTraceEnabled()) {
@@ -108,8 +107,7 @@ public class OpenSearchClient {
                 }
             } else {
                 return new JsonResponse(status,
-                        new String(EntityUtils.toByteArray(response.getEntity()),
-                                StandardCharsets.UTF_8));
+                        new String(EntityUtils.toByteArray(response.getEntity()), StandardCharsets.UTF_8));
             }
         } finally {
             if (response != null && response instanceof CloseableHttpResponse) {
@@ -131,7 +129,6 @@ public class OpenSearchClient {
         }
     }
 
-
     public void writeBulkRequest(String id, String routing, StringWriter writer) throws IOException {
 
         try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
@@ -147,9 +144,7 @@ public class OpenSearchClient {
         }
     }
 
-
-    private static void writeMetadata(Metadata metadata, JsonGenerator jsonGenerator)
-            throws IOException {
+    private static void writeMetadata(Metadata metadata, JsonGenerator jsonGenerator) throws IOException {
         //writes the metadata without the start { or the end }
         //to allow for other fields to be added
         for (String n : metadata.names()) {

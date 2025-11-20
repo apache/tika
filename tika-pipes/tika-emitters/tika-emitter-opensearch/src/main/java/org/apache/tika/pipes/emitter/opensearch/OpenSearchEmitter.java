@@ -23,9 +23,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.client.TikaClientException;
 import org.apache.tika.config.Field;
@@ -39,10 +36,10 @@ import org.apache.tika.pipes.core.emitter.AbstractEmitter;
 import org.apache.tika.pipes.core.emitter.EmitData;
 import org.apache.tika.pipes.core.emitter.TikaEmitterException;
 import org.apache.tika.utils.StringUtils;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class OpenSearchEmitter extends AbstractEmitter implements Initializable {
-
 
     public enum AttachmentStrategy {
         SEPARATE_DOCUMENTS, PARENT_CHILD,
@@ -103,7 +100,6 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
         }
     }
 
-
     /**
      * Options: SEPARATE_DOCUMENTS, PARENT_CHILD. Default is "SEPARATE_DOCUMENTS".
      * All embedded documents are treated as independent documents.
@@ -123,7 +119,6 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
     public void setAttachmentStrategy(String attachmentStrategy) {
         this.attachmentStrategy = AttachmentStrategy.valueOf(attachmentStrategy);
     }
-
 
     @Field
     public void setConnectionTimeout(int connectionTimeout) {
@@ -192,7 +187,8 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
     }
 
     public void setUpdateStrategy(String strategy) throws TikaConfigException {
-        switch (strategy.toLowerCase(Locale.US)) {
+        switch (strategy.toLowerCase(Locale.US))
+        {
             case "overwrite" :
                 setUpdateStrategy(UpdateStrategy.OVERWRITE);
                 break;
@@ -200,8 +196,8 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
                 setUpdateStrategy(UpdateStrategy.UPSERT);
                 break;
             default :
-                throw new TikaConfigException("'overwrite' and 'upsert' are the two options so " +
-                        "far. I regret I don't understand: " + strategy);
+                throw new TikaConfigException("'overwrite' and 'upsert' are the two options so "
+                        + "far. I regret I don't understand: " + strategy);
         }
     }
 
@@ -218,22 +214,18 @@ public class OpenSearchEmitter extends AbstractEmitter implements Initializable 
         this.embeddedFileFieldName = embeddedFileFieldName;
     }
 
-
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         if (StringUtils.isBlank(openSearchUrl)) {
             throw new TikaConfigException("Must specify an open search url!");
         } else {
-            openSearchClient =
-                    new OpenSearchClient(openSearchUrl,
-                            httpClientFactory.build(), attachmentStrategy, updateStrategy,
-                            embeddedFileFieldName);
+            openSearchClient = new OpenSearchClient(openSearchUrl, httpClientFactory.build(), attachmentStrategy,
+                    updateStrategy, embeddedFileFieldName);
         }
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         mustNotBeEmpty("openSearchUrl", this.openSearchUrl);
         mustNotBeEmpty("idField", this.idField);
     }

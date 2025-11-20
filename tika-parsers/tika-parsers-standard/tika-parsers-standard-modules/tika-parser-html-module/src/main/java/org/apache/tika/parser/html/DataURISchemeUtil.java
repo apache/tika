@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.html;
 
 import java.nio.charset.Charset;
@@ -27,7 +26,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.codec.binary.Base64;
-
 import org.apache.tika.mime.MediaType;
 
 /**
@@ -38,8 +36,7 @@ public class DataURISchemeUtil {
     public static String UNSPECIFIED_MEDIA_TYPE = "text/plain;charset=US-ASCII";
 
     private static Pattern PARSE_PATTERN = Pattern.compile("(?s)data:([^,]*?)(base64)?,(.*)$");
-    private static Pattern EXTRACT_PATTERN =
-            Pattern.compile("(?s)data:([^,]*?)(base64)?,([^\"\']*)[\"\']");
+    private static Pattern EXTRACT_PATTERN = Pattern.compile("(?s)data:([^,]*?)(base64)?,([^\"\']*)[\"\']");
     private final Matcher parseMatcher = PARSE_PATTERN.matcher("");
     private final Matcher extractMatcher = EXTRACT_PATTERN.matcher("");
     Base64 base64 = new Base64();

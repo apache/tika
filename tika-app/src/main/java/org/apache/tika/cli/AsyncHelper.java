@@ -19,7 +19,6 @@ package org.apache.tika.cli;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class AsyncHelper {
 
     private static final String TIKA_CONFIG_KEY = "--config=";

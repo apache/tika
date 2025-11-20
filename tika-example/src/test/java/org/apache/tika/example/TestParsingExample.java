@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.example;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,14 +23,13 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.List;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.serialization.JsonMetadataList;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.SAXException;
 
 public class TestParsingExample extends TikaTest {
     ParsingExample parsingExample;
@@ -43,17 +41,13 @@ public class TestParsingExample extends TikaTest {
 
     @Test
     public void testParseToStringExample() throws IOException, SAXException, TikaException {
-        String result = parsingExample
-                .parseToStringExample()
-                .trim();
+        String result = parsingExample.parseToStringExample().trim();
         assertEquals("test", result, "enough detectors?");
     }
 
     @Test
     public void testParseExample() throws IOException, SAXException, TikaException {
-        String result = parsingExample
-                .parseExample()
-                .trim();
+        String result = parsingExample.parseExample().trim();
         assertEquals("test", result, "Expected 'test', but got '" + result + "'");
     }
 

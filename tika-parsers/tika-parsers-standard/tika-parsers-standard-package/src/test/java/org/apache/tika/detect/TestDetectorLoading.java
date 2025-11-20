@@ -20,12 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
+import org.apache.tika.config.TikaConfig;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.TikaConfig;
-
 public class TestDetectorLoading {
-
 
     @Test
     public void testBasic() throws Exception {
@@ -34,11 +32,9 @@ public class TestDetectorLoading {
         List<Detector> detectors = ((CompositeDetector) detector).getDetectors();
         assertEquals(8, detectors.size());
         assertEquals("org.gagravarr.tika.OggDetector", detectors.get(0).getClass().getName());
-        assertEquals("org.apache.tika.detect.gzip.GZipSpecializationDetector",
-                detectors.get(3).getClass().getName());
+        assertEquals("org.apache.tika.detect.gzip.GZipSpecializationDetector", detectors.get(3).getClass().getName());
 
-        assertEquals("org.apache.tika.detect.microsoft.POIFSContainerDetector",
-                detectors.get(4).getClass().getName());
+        assertEquals("org.apache.tika.detect.microsoft.POIFSContainerDetector", detectors.get(4).getClass().getName());
         assertEquals("org.apache.tika.mime.MimeTypes", detectors.get(7).getClass().getName());
     }
 }

@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.rtf;
 
 import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
@@ -38,10 +37,6 @@ import java.util.Stack;
 import java.util.TimeZone;
 
 import org.apache.commons.io.IOUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.DublinCore;
@@ -53,6 +48,9 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.CharsetUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 /* Tokenizes and performs a "shallow" parse of the RTF
  * document, just enough to properly decode the text.
@@ -190,62 +188,62 @@ final class TextExtractor {
     }
 
     static {
-        ANSICPG_MAP.put(437, CP4372);   // US IBM
-        ANSICPG_MAP.put(708, ISO_8859_6);   // Arabic (ASMO 708)
+        ANSICPG_MAP.put(437, CP4372); // US IBM
+        ANSICPG_MAP.put(708, ISO_8859_6); // Arabic (ASMO 708)
 
-        ANSICPG_MAP.put(709, WINDOWS_709);  // Arabic (ASMO 449+, BCON V4)
-        ANSICPG_MAP.put(710, WINDOWS_710);  // Arabic (transparent Arabic)
-        ANSICPG_MAP.put(710, WINDOWS_711);  // Arabic (Nafitha Enhanced)
-        ANSICPG_MAP.put(710, WINDOWS_720);  // Arabic (transparent ASMO)
-        ANSICPG_MAP.put(819, CP819);  // Windows 3.1 (US & Western Europe)
-        ANSICPG_MAP.put(819, CP819);  // Windows 3.1 (US & Western Europe)
+        ANSICPG_MAP.put(709, WINDOWS_709); // Arabic (ASMO 449+, BCON V4)
+        ANSICPG_MAP.put(710, WINDOWS_710); // Arabic (transparent Arabic)
+        ANSICPG_MAP.put(710, WINDOWS_711); // Arabic (Nafitha Enhanced)
+        ANSICPG_MAP.put(710, WINDOWS_720); // Arabic (transparent ASMO)
+        ANSICPG_MAP.put(819, CP819); // Windows 3.1 (US & Western Europe)
+        ANSICPG_MAP.put(819, CP819); // Windows 3.1 (US & Western Europe)
 
-        ANSICPG_MAP.put(819, CP819);  // Windows 3.1 (US & Western Europe)
-        ANSICPG_MAP.put(850, CP8502);  // IBM Multilingual
-        ANSICPG_MAP.put(852, CP852);  // Eastern European
-        ANSICPG_MAP.put(860, CP860);  // Portuguese
-        ANSICPG_MAP.put(862, CP862);  // Hebrew
-        ANSICPG_MAP.put(863, CP863);  // French Canadian
-        ANSICPG_MAP.put(864, CP864);  // Arabic
-        ANSICPG_MAP.put(865, CP865);  // Norwegian
-        ANSICPG_MAP.put(866, CP866);  // Soviet Union
-        ANSICPG_MAP.put(874, MS8742);  // Thai
-        ANSICPG_MAP.put(932, MS932);  // Japanese
-        ANSICPG_MAP.put(936, MS9362);  // Simplified Chinese
-        ANSICPG_MAP.put(949, CP949);  // Korean
-        ANSICPG_MAP.put(950, CP950);  // Traditional Chinese
-        ANSICPG_MAP.put(1250, CP12502);  // Eastern European
-        ANSICPG_MAP.put(1251, CP12512);  // Cyrillic
-        ANSICPG_MAP.put(1252, CP1252);  // Western European
-        ANSICPG_MAP.put(1253, CP12532);  // Greek
-        ANSICPG_MAP.put(1254, CP12542);  // Turkish
-        ANSICPG_MAP.put(1255, CP12552);  // Hebrew
-        ANSICPG_MAP.put(1256, CP12562);  // Arabic
-        ANSICPG_MAP.put(1257, CP12572);  // Baltic
-        ANSICPG_MAP.put(1258, CP12582);  // Vietnamese
-        ANSICPG_MAP.put(1361, X_JOHAB);  // Johab
-        ANSICPG_MAP.put(10000, MAC_ROMAN);  // Mac Roman
-        ANSICPG_MAP.put(10001, SHIFT_JIS);  // Mac Japan
-        ANSICPG_MAP.put(10004, MAC_ARABIC);  // Mac Arabic
-        ANSICPG_MAP.put(10005, MAC_HEBREW);  // Mac Hebrew
-        ANSICPG_MAP.put(10006, MAC_GREEK);  // Mac Hebrew
-        ANSICPG_MAP.put(10007, MAC_CYRILLIC);  // Mac Cyrillic
-        ANSICPG_MAP.put(10029, X_MAC_CENTRAL_EUROPE);  // MAC Latin2
-        ANSICPG_MAP.put(10081, MAC_TURKISH);  // Mac Turkish
-        ANSICPG_MAP.put(57002, X_ISCII91);   // Devanagari
+        ANSICPG_MAP.put(819, CP819); // Windows 3.1 (US & Western Europe)
+        ANSICPG_MAP.put(850, CP8502); // IBM Multilingual
+        ANSICPG_MAP.put(852, CP852); // Eastern European
+        ANSICPG_MAP.put(860, CP860); // Portuguese
+        ANSICPG_MAP.put(862, CP862); // Hebrew
+        ANSICPG_MAP.put(863, CP863); // French Canadian
+        ANSICPG_MAP.put(864, CP864); // Arabic
+        ANSICPG_MAP.put(865, CP865); // Norwegian
+        ANSICPG_MAP.put(866, CP866); // Soviet Union
+        ANSICPG_MAP.put(874, MS8742); // Thai
+        ANSICPG_MAP.put(932, MS932); // Japanese
+        ANSICPG_MAP.put(936, MS9362); // Simplified Chinese
+        ANSICPG_MAP.put(949, CP949); // Korean
+        ANSICPG_MAP.put(950, CP950); // Traditional Chinese
+        ANSICPG_MAP.put(1250, CP12502); // Eastern European
+        ANSICPG_MAP.put(1251, CP12512); // Cyrillic
+        ANSICPG_MAP.put(1252, CP1252); // Western European
+        ANSICPG_MAP.put(1253, CP12532); // Greek
+        ANSICPG_MAP.put(1254, CP12542); // Turkish
+        ANSICPG_MAP.put(1255, CP12552); // Hebrew
+        ANSICPG_MAP.put(1256, CP12562); // Arabic
+        ANSICPG_MAP.put(1257, CP12572); // Baltic
+        ANSICPG_MAP.put(1258, CP12582); // Vietnamese
+        ANSICPG_MAP.put(1361, X_JOHAB); // Johab
+        ANSICPG_MAP.put(10000, MAC_ROMAN); // Mac Roman
+        ANSICPG_MAP.put(10001, SHIFT_JIS); // Mac Japan
+        ANSICPG_MAP.put(10004, MAC_ARABIC); // Mac Arabic
+        ANSICPG_MAP.put(10005, MAC_HEBREW); // Mac Hebrew
+        ANSICPG_MAP.put(10006, MAC_GREEK); // Mac Hebrew
+        ANSICPG_MAP.put(10007, MAC_CYRILLIC); // Mac Cyrillic
+        ANSICPG_MAP.put(10029, X_MAC_CENTRAL_EUROPE); // MAC Latin2
+        ANSICPG_MAP.put(10081, MAC_TURKISH); // Mac Turkish
+        ANSICPG_MAP.put(57002, X_ISCII91); // Devanagari
 
         // TODO: in theory these other charsets are simple
         // shifts off of Devanagari, so we could impl that
         // here:
-        ANSICPG_MAP.put(57003, WINDOWS_57003);   // Bengali
-        ANSICPG_MAP.put(57004, WINDOWS_57004);   // Tamil
-        ANSICPG_MAP.put(57005, WINDOWS_57005);   // Telugu
-        ANSICPG_MAP.put(57006, WINDOWS_57006);   // Assamese
-        ANSICPG_MAP.put(57007, WINDOWS_57007);   // Oriya
-        ANSICPG_MAP.put(57008, WINDOWS_57008);   // Kannada
-        ANSICPG_MAP.put(57009, WINDOWS_57009);   // Malayalam
-        ANSICPG_MAP.put(57010, WINDOWS_57010);   // Gujariti
-        ANSICPG_MAP.put(57011, WINDOWS_57011);   // Punjabi
+        ANSICPG_MAP.put(57003, WINDOWS_57003); // Bengali
+        ANSICPG_MAP.put(57004, WINDOWS_57004); // Tamil
+        ANSICPG_MAP.put(57005, WINDOWS_57005); // Telugu
+        ANSICPG_MAP.put(57006, WINDOWS_57006); // Assamese
+        ANSICPG_MAP.put(57007, WINDOWS_57007); // Oriya
+        ANSICPG_MAP.put(57008, WINDOWS_57008); // Kannada
+        ANSICPG_MAP.put(57009, WINDOWS_57009); // Malayalam
+        ANSICPG_MAP.put(57010, WINDOWS_57010); // Gujariti
+        ANSICPG_MAP.put(57011, WINDOWS_57011); // Punjabi
     }
 
     // Used when we decode bytes -> chars using CharsetDecoder:
@@ -334,8 +332,7 @@ final class TextExtractor {
     //to defend against DoS with memory consumption
     private int maxStackSize = 1000;
 
-    public TextExtractor(ContentHandler out, Metadata metadata,
-                         RTFEmbObjHandler embObjHandler) {
+    public TextExtractor(ContentHandler out, Metadata metadata, RTFEmbObjHandler embObjHandler) {
         this.metadata = metadata;
         this.out = out;
         this.embObjHandler = embObjHandler;
@@ -450,20 +447,20 @@ final class TextExtractor {
     // Shallow parses the entire doc, writing output to
     // this.out and this.metadata
     public void extract(InputStream in) throws IOException, SAXException, TikaException {
-//        in = new FilterInputStream(in) {
-//            public int read() throws IOException {
-//                int r = super.read();
-//                System.out.write(r);
-//                System.out.flush();
-//                return r;
-//            }
-//            public int read(byte b[], int off, int len) throws IOException {
-//                int r = super.read(b, off, len);
-//                System.out.write(b, off, r);
-//                System.out.flush();
-//                return r;
-//            }
-//        };
+        //        in = new FilterInputStream(in) {
+        //            public int read() throws IOException {
+        //                int r = super.read();
+        //                System.out.write(r);
+        //                System.out.flush();
+        //                return r;
+        //            }
+        //            public int read(byte b[], int off, int len) throws IOException {
+        //                int r = super.read(b, off, len);
+        //                System.out.write(b, off, r);
+        //                System.out.flush();
+        //                return r;
+        //            }
+        //        };
         extract(new PushbackInputStream(in, 2));
     }
 
@@ -487,9 +484,8 @@ final class TextExtractor {
                 }
             } else if (groupState.objdata == true || groupState.pictDepth == 1) {
                 embObjHandler.writeHexChar(b);
-            } else if (b != '\r' && b != '\n' &&
-                    (!groupState.ignore || nextMetaData != null || groupState.sn == true ||
-                            groupState.sv == true)) {
+            } else if (b != '\r' && b != '\n'
+                    && (!groupState.ignore || nextMetaData != null || groupState.sn == true || groupState.sv == true)) {
                 // Linefeed and carriage return are not
                 // significant
                 if (ansiSkip != 0) {
@@ -508,8 +504,7 @@ final class TextExtractor {
         }
     }
 
-    private void parseControlToken(PushbackInputStream in)
-            throws IOException, SAXException, TikaException {
+    private void parseControlToken(PushbackInputStream in) throws IOException, SAXException, TikaException {
         int b = in.read();
         if (b == '\'') {
             // escaped hex char
@@ -526,8 +521,7 @@ final class TextExtractor {
         }
     }
 
-    private void parseHexChar(PushbackInputStream in)
-            throws IOException, SAXException, TikaException {
+    private void parseHexChar(PushbackInputStream in) throws IOException, SAXException, TikaException {
         int hex1 = in.read();
         if (!isHexChar(hex1)) {
             // DOC ERROR (malformed hex escape): ignore 
@@ -635,8 +629,7 @@ final class TextExtractor {
         }
     }
 
-    private void endParagraph(boolean preserveStyles)
-            throws IOException, SAXException, TikaException {
+    private void endParagraph(boolean preserveStyles) throws IOException, SAXException, TikaException {
         pushText();
         //maintain consecutive new lines
         if (!inParagraph) {
@@ -725,8 +718,8 @@ final class TextExtractor {
                 // we are called, we should have seen a
                 // complete sequence of characters for this
                 // charset:
-                final CoderResult result = decoder.decode((ByteBuffer) pendingByteBuffer,
-                        (CharBuffer) outputCharBuffer, true);
+                final CoderResult result = decoder.decode((ByteBuffer) pendingByteBuffer, (CharBuffer) outputCharBuffer,
+                        true);
 
                 final int pos = outputCharBuffer.position();
                 if (pos > 0) {
@@ -786,25 +779,26 @@ final class TextExtractor {
     }
 
     private void processControlSymbol(char ch) throws IOException, SAXException, TikaException {
-        switch (ch) {
-            case '~':
+        switch (ch)
+        {
+            case '~' :
                 // Non-breaking space -> unicode NON-BREAKING SPACE
                 addOutputChar('\u00a0');
                 break;
-            case '*':
+            case '*' :
                 // Ignorable destination (control words defined after
                 // the 1987 RTF spec). These are already handled by
                 // processGroupStart()
                 break;
-            case '-':
+            case '-' :
                 // Optional hyphen -> unicode SOFT HYPHEN
                 addOutputChar('\u00ad');
                 break;
-            case '_':
+            case '_' :
                 // Non-breaking hyphen -> unicode NON-BREAKING HYPHEN
                 addOutputChar('\u2011');
                 break;
-            default:
+            default :
                 break;
         }
     }
@@ -848,8 +842,7 @@ final class TextExtractor {
     }
 
     // Handle control word that takes a parameter:
-    private void processControlWord(int param, PushbackInputStream in)
-            throws IOException, SAXException, TikaException {
+    private void processControlWord(int param, PushbackInputStream in) throws IOException, SAXException, TikaException {
         // TODO: afN?  (associated font number)
 
         // TODO: do these alter text output...?
@@ -1175,10 +1168,8 @@ final class TextExtractor {
                 }
             }
 
-            if (!groupState.ignore &&
-                    (equals("par") || equals("pard") || equals("sect") || equals("sectd") ||
-                            equals("plain") || equals("ltrch") || equals("rtlch") ||
-                            equals("htmlrtf") || equals("line"))) {
+            if (!groupState.ignore && (equals("par") || equals("pard") || equals("sect") || equals("sectd")
+                    || equals("plain") || equals("ltrch") || equals("rtlch") || equals("htmlrtf") || equals("line"))) {
                 inHeader = false;
             }
         } else {
@@ -1380,8 +1371,7 @@ final class TextExtractor {
         }
     }
 
-    private void startStyles(GroupState groupState)
-            throws TikaException, IOException, SAXException {
+    private void startStyles(GroupState groupState) throws TikaException, IOException, SAXException {
         //don't change styles within a <a > element
         if (fieldState != 0) {
             return;
@@ -1418,8 +1408,7 @@ final class TextExtractor {
 
         // Make new GroupState
         groupState = new GroupState(groupState);
-        assert groupStates.size() == groupState.depth :
-                "size=" + groupStates.size() + " depth=" + groupState.depth;
+        assert groupStates.size() == groupState.depth : "size=" + groupStates.size() + " depth=" + groupState.depth;
 
         if (uprState == 0) {
             uprState = 1;

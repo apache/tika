@@ -51,10 +51,8 @@ public abstract class LanguageDetectorTest {
         }
     }
 
-
     protected boolean hasTestLanguage(String language) {
-        InputStream stream = LanguageDetectorTest.class
-                .getResourceAsStream("/language-tests/" + language + ".test");
+        InputStream stream = LanguageDetectorTest.class.getResourceAsStream("/language-tests/" + language + ".test");
         if (stream != null) {
             IOUtils.closeQuietly(stream);
             return true;

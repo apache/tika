@@ -14,16 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser;
-
 
 import java.io.IOException;
 import java.util.Map;
 
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
+import org.xml.sax.SAXException;
 
 public abstract class ParserFactory {
 

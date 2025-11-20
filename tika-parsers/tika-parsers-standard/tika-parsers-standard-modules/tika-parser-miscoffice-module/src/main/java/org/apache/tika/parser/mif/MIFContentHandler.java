@@ -16,14 +16,13 @@
  */
 package org.apache.tika.parser.mif;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
-
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Content handler for MIF Content and Metadata.
@@ -52,8 +51,7 @@ public class MIFContentHandler extends DefaultHandler {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes attributes)
-            throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
 
         if ("PageType".equals(localName)) {
             inPage = true;
@@ -77,19 +75,20 @@ public class MIFContentHandler extends DefaultHandler {
         }
 
         if (inPage) {
-            switch (String.valueOf(ch)) {
-                case "BodyPage":
+            switch (String.valueOf(ch))
+            {
+                case "BodyPage" :
                     bodyPageCount++;
                     break;
-                case "LeftMasterPage":
-                case "RightMasterPage":
-                case "OtherMasterPage":
+                case "LeftMasterPage" :
+                case "RightMasterPage" :
+                case "OtherMasterPage" :
                     masterPageCount++;
                     break;
-                case "ReferencePage":
+                case "ReferencePage" :
                     referencePageCount++;
                     break;
-                default:
+                default :
                     break;
             }
         }
@@ -116,8 +115,7 @@ public class MIFContentHandler extends DefaultHandler {
         metadata.set("PageCount", String.valueOf(bodyPageCount));
         metadata.set("MasterPageCount", String.valueOf(masterPageCount));
         metadata.set("ReferencePageCount", String.valueOf(referencePageCount));
-        metadata.set("TotalPageCount",
-                String.valueOf(bodyPageCount + referencePageCount + masterPageCount));
+        metadata.set("TotalPageCount", String.valueOf(bodyPageCount + referencePageCount + masterPageCount));
     }
 
 }

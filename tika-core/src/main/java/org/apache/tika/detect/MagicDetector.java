@@ -120,8 +120,7 @@ public class MagicDetector implements Detector {
      * match.  {@code pattern} must NOT be a regular expression.
      * Constructor maintained for legacy reasons.
      */
-    public MagicDetector(MediaType type, byte[] pattern, byte[] mask, int offsetRangeBegin,
-                         int offsetRangeEnd) {
+    public MagicDetector(MediaType type, byte[] pattern, byte[] mask, int offsetRangeBegin, int offsetRangeEnd) {
         this(type, pattern, mask, false, offsetRangeBegin, offsetRangeEnd);
     }
 
@@ -129,8 +128,8 @@ public class MagicDetector implements Detector {
      * Creates a detector for input documents that meet the specified
      * magic match.
      */
-    public MagicDetector(MediaType type, byte[] pattern, byte[] mask, boolean isRegex,
-                         int offsetRangeBegin, int offsetRangeEnd) {
+    public MagicDetector(MediaType type, byte[] pattern, byte[] mask, boolean isRegex, int offsetRangeBegin,
+            int offsetRangeEnd) {
         this(type, pattern, mask, isRegex, false, offsetRangeBegin, offsetRangeEnd);
     }
 
@@ -138,8 +137,8 @@ public class MagicDetector implements Detector {
      * Creates a detector for input documents that meet the specified
      * magic match.
      */
-    public MagicDetector(MediaType type, byte[] pattern, byte[] mask, boolean isRegex,
-                         boolean isStringIgnoreCase, int offsetRangeBegin, int offsetRangeEnd) {
+    public MagicDetector(MediaType type, byte[] pattern, byte[] mask, boolean isRegex, boolean isStringIgnoreCase,
+            int offsetRangeBegin, int offsetRangeEnd) {
         if (type == null) {
             throw new IllegalArgumentException("Matching media type is null");
         } else if (pattern == null) {
@@ -184,8 +183,7 @@ public class MagicDetector implements Detector {
         this.offsetRangeEnd = offsetRangeEnd;
     }
 
-    public static MagicDetector parse(MediaType mediaType, String type, String offset, String value,
-                                      String mask) {
+    public static MagicDetector parse(MediaType mediaType, String type, String offset, String value, String mask) {
         int start = 0;
         int end = 0;
         if (offset != null) {
@@ -228,38 +226,39 @@ public class MagicDetector implements Detector {
             radix = 8;
         }
 
-        switch (type) {
-            case "string":
-            case "regex":
-            case "unicodeLE":
-            case "unicodeBE":
+        switch (type)
+        {
+            case "string" :
+            case "regex" :
+            case "unicodeLE" :
+            case "unicodeBE" :
                 decoded = decodeString(value, type);
                 break;
-            case "stringignorecase":
+            case "stringignorecase" :
                 decoded = decodeString(value.toLowerCase(Locale.ROOT), type);
                 break;
-            case "byte":
+            case "byte" :
                 decoded = tmpVal.getBytes(UTF_8);
                 break;
-            case "host16":
-            case "little16": {
+            case "host16" :
+            case "little16" : {
                 int i = Integer.parseInt(tmpVal, radix);
                 decoded = new byte[]{(byte) (i & 0x00FF), (byte) (i >> 8)};
                 break;
             }
-            case "big16": {
+            case "big16" : {
                 int i = Integer.parseInt(tmpVal, radix);
                 decoded = new byte[]{(byte) (i >> 8), (byte) (i & 0x00FF)};
                 break;
             }
-            case "host32":
-            case "little32": {
+            case "host32" :
+            case "little32" : {
                 long i = Long.parseLong(tmpVal, radix);
                 decoded = new byte[]{(byte) ((i & 0x000000FF)), (byte) ((i & 0x0000FF00) >> 8),
                         (byte) ((i & 0x00FF0000) >> 16), (byte) ((i & 0xFF000000) >> 24)};
                 break;
             }
-            case "big32": {
+            case "big32" : {
                 long i = Long.parseLong(tmpVal, radix);
                 decoded = new byte[]{(byte) ((i & 0xFF000000) >> 24), (byte) ((i & 0x00FF0000) >> 16),
                         (byte) ((i & 0x0000FF00) >> 8), (byte) ((i & 0x000000FF))};
@@ -296,8 +295,7 @@ public class MagicDetector implements Detector {
                     i++;
                 } else {
                     int j = i + 1;
-                    while ((j < i + 4) && (j < value.length()) &&
-                            (Character.isDigit(value.charAt(j)))) {
+                    while ((j < i + 4) && (j < value.length()) && (Character.isDigit(value.charAt(j)))) {
                         j++;
                     }
                     decoded.write(Short.decode("0" + value.substring(i + 1, j)).byteValue());
@@ -432,7 +430,7 @@ public class MagicDetector implements Detector {
      */
     public String toString() {
         // Needs to be unique, as these get compared.
-        return "Magic Detection for " + type + " looking for " + pattern.length + " bytes = " +
-                Arrays.toString(this.pattern) + " mask = " + Arrays.toString(this.mask);
+        return "Magic Detection for " + type + " looking for " + pattern.length + " bytes = "
+                + Arrays.toString(this.pattern) + " mask = " + Arrays.toString(this.mask);
     }
 }

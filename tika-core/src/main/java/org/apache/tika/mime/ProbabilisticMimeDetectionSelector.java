@@ -80,16 +80,14 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
         this.initializeDefaultProbabilityParameters();
         this.changeRate = 0.1f;
         if (builder != null) {
-            priorMagicFileType = builder.priorMagicFileType == 0f ? priorMagicFileType :
-                    builder.priorMagicFileType;
-            priorExtensionFileType = builder.priorExtensionFileType == 0f ? priorExtensionFileType :
-                    builder.priorExtensionFileType;
-            priorMetaFileType =
-                    builder.priorMetaFileType == 0f ? priorMetaFileType : builder.priorMetaFileType;
+            priorMagicFileType = builder.priorMagicFileType == 0f ? priorMagicFileType : builder.priorMagicFileType;
+            priorExtensionFileType = builder.priorExtensionFileType == 0f
+                    ? priorExtensionFileType
+                    : builder.priorExtensionFileType;
+            priorMetaFileType = builder.priorMetaFileType == 0f ? priorMetaFileType : builder.priorMetaFileType;
 
             magic_trust = builder.magic_trust == 0f ? magic_trust : builder.extension_neg;
-            extension_trust =
-                    builder.extension_trust == 0f ? extension_trust : builder.extension_trust;
+            extension_trust = builder.extension_trust == 0f ? extension_trust : builder.extension_trust;
             meta_trust = builder.meta_trust == 0f ? meta_trust : builder.meta_trust;
 
             magic_neg = builder.magic_neg == 0f ? magic_neg : builder.magic_neg;
@@ -186,9 +184,8 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
         return applyProbilities(possibleTypes, extHint, metaHint);
     }
 
-    private MediaType applyProbilities(final List<MimeType> possibleTypes,
-                                       final MimeType extMimeType,
-                                       final MimeType metadataMimeType) {
+    private MediaType applyProbilities(final List<MimeType> possibleTypes, final MimeType extMimeType,
+            final MimeType metadataMimeType) {
 
         /* initialize some probability variables */
         MediaType extensionMediaType_ = extMimeType == null ? null : extMimeType.getType();
@@ -231,8 +228,8 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
                 } else {
                     // check if each identified type belongs to the same class;
                     if (extensionMediaType_ != null) {
-                        if (extensionMediaType_.equals(magictype) ||
-                                registry.isSpecializationOf(extensionMediaType_, magictype)) {
+                        if (extensionMediaType_.equals(magictype)
+                                || registry.isSpecializationOf(extensionMediaType_, magictype)) {
                             // Use just this type
                             possibleTypes.set(i, extMimeType);
                         } else if (registry.isSpecializationOf(magictype, extensionMediaType_)) {
@@ -240,8 +237,8 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
                         }
                     }
                     if (metaMediaType_ != null) {
-                        if (metaMediaType_.equals(magictype) ||
-                                registry.isSpecializationOf(metaMediaType_, magictype)) {
+                        if (metaMediaType_.equals(magictype)
+                                || registry.isSpecializationOf(metaMediaType_, magictype)) {
                             // Use just this type
                             possibleTypes.set(i, metadataMimeType);
                         } else if (registry.isSpecializationOf(magictype, metaMediaType_)) {

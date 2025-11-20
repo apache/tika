@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.langdetect.tika;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -30,11 +29,10 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.apache.tika.exception.TikaException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import org.apache.tika.exception.TikaException;
 
 public class LanguageProfilerBuilderTest {
     private final String corpusName = "langbuilder/welsh_corpus.txt";
@@ -48,8 +46,7 @@ public class LanguageProfilerBuilderTest {
     public void setUp() throws Exception {
         tmpProfileModel = Files.createTempFile("tika-lang", ".ngp");
         try (InputStream is = LanguageProfilerBuilderTest.class.getResourceAsStream(corpusName)) {
-            LanguageProfilerBuilder ngramProfileBuilder =
-                    LanguageProfilerBuilder.create(profileName, is, UTF_8.name());
+            LanguageProfilerBuilder ngramProfileBuilder = LanguageProfilerBuilder.create(profileName, is, UTF_8.name());
             try (OutputStream os = Files.newOutputStream(tmpProfileModel)) {
                 ngramProfileBuilder.save(os);;
                 assertEquals(maxlen, ngramProfileBuilder.getSorted().size());
@@ -75,7 +72,6 @@ public class LanguageProfilerBuilderTest {
 
     private LanguageProfile loadProfile() throws IOException, TikaException, URISyntaxException {
 
-
         LanguageProfile langProfile = new LanguageProfile();
 
         try (InputStream stream = Files.newInputStream(tmpProfileModel)) {
@@ -86,8 +82,7 @@ public class LanguageProfilerBuilderTest {
                     // ngp
                     // header/comment
                     int space = line.indexOf(' ');
-                    langProfile.add(line.substring(0, space),
-                            Long.parseLong(line.substring(space + 1)));
+                    langProfile.add(line.substring(0, space), Long.parseLong(line.substring(space + 1)));
                 }
                 line = reader.readLine();
             }

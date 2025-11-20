@@ -56,8 +56,7 @@ public class ExpandedTitleContentHandler extends ContentHandlerDecorator {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes atts)
-            throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
         super.startElement(uri, localName, qName, atts);
         if (TITLE_TAG.equalsIgnoreCase(localName) && XHTMLContentHandler.XHTML.equals(uri)) {
             isTitleTagOpen = true;

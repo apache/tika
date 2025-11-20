@@ -24,7 +24,6 @@ import org.apache.tika.mime.MediaType;
 
 abstract class ZipContainerDetectorBase {
 
-
     /**
      * To be considered as an IPA file, it needs to match all of these
      */
@@ -103,6 +102,5 @@ abstract class ZipContainerDetectorBase {
         }
         return null;
     }
-
 
 }

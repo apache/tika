@@ -38,37 +38,32 @@ class MpegStream extends PushbackInputStream {
     /**
      * Bit rate table for MPEG V1, layer 1.
      */
-    private static final int[] BIT_RATE_MPEG1_L1 =
-            {0, 32000, 64000, 96000, 128000, 160000, 192000, 224000, 256000, 288000, 320000, 352000,
-                    384000, 416000, 448000};
+    private static final int[] BIT_RATE_MPEG1_L1 = {0, 32000, 64000, 96000, 128000, 160000, 192000, 224000, 256000,
+            288000, 320000, 352000, 384000, 416000, 448000};
 
     /**
      * Bit rate table for MPEG V1, layer 2.
      */
-    private static final int[] BIT_RATE_MPEG1_L2 =
-            {0, 32000, 48000, 56000, 64000, 80000, 96000, 112000, 128000, 160000, 192000, 224000,
-                    256000, 320000, 384000};
+    private static final int[] BIT_RATE_MPEG1_L2 = {0, 32000, 48000, 56000, 64000, 80000, 96000, 112000, 128000, 160000,
+            192000, 224000, 256000, 320000, 384000};
 
     /**
      * Bit rate table for MPEG V1, layer 3.
      */
-    private static final int[] BIT_RATE_MPEG1_L3 =
-            {0, 32000, 40000, 48000, 56000, 64000, 80000, 96000, 112000, 128000, 160000, 192000,
-                    224000, 256000, 320000};
+    private static final int[] BIT_RATE_MPEG1_L3 = {0, 32000, 40000, 48000, 56000, 64000, 80000, 96000, 112000, 128000,
+            160000, 192000, 224000, 256000, 320000};
 
     /**
      * Bit rate table for MPEG V2/V2.5, layer 1.
      */
-    private static final int[] BIT_RATE_MPEG2_L1 =
-            {0, 32000, 48000, 56000, 64000, 80000, 96000, 112000, 128000, 144000, 160000, 176000,
-                    192000, 224000, 256000};
+    private static final int[] BIT_RATE_MPEG2_L1 = {0, 32000, 48000, 56000, 64000, 80000, 96000, 112000, 128000, 144000,
+            160000, 176000, 192000, 224000, 256000};
 
     /**
      * Bit rate table for MPEG V2/V2.5, layer 2 and 3.
      */
-    private static final int[] BIT_RATE_MPEG2_L2 =
-            {0, 8000, 16000, 24000, 32000, 40000, 48000, 56000, 64000, 80000, 96000, 112000, 128000,
-                    144000, 160000};
+    private static final int[] BIT_RATE_MPEG2_L2 = {0, 8000, 16000, 24000, 32000, 40000, 48000, 56000, 64000, 80000,
+            96000, 112000, 128000, 144000, 160000};
 
     /**
      * Sample rate table for MPEG V1.
@@ -137,14 +132,15 @@ class MpegStream extends PushbackInputStream {
         int[] arr = null;
 
         if (mpegVer == AudioFrame.MPEG_V1) {
-            switch (layer) {
-                case AudioFrame.LAYER_1:
+            switch (layer)
+            {
+                case AudioFrame.LAYER_1 :
                     arr = BIT_RATE_MPEG1_L1;
                     break;
-                case AudioFrame.LAYER_2:
+                case AudioFrame.LAYER_2 :
                     arr = BIT_RATE_MPEG1_L2;
                     break;
-                case AudioFrame.LAYER_3:
+                case AudioFrame.LAYER_3 :
                     arr = BIT_RATE_MPEG1_L3;
                     break;
             }
@@ -321,8 +317,7 @@ class MpegStream extends PushbackInputStream {
         int sampleRateCode = bits.get(10, 11);
         int padding = bits.get(9);
 
-        if (mpegVer == 1 || layer == 0 || bitRateCode == 0 || bitRateCode == 15 ||
-                sampleRateCode == 3) {
+        if (mpegVer == 1 || layer == 0 || bitRateCode == 0 || bitRateCode == 15 || sampleRateCode == 3) {
             // invalid header values
             return null;
         }

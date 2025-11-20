@@ -14,14 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.property;
 
 import java.util.Arrays;
 import java.util.List;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
-
 
 /**
  * This class is used to represent the property contains 8 bytes of data in the PropertySet.rgData stream field.

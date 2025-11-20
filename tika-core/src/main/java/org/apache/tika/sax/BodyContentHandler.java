@@ -18,12 +18,11 @@ package org.apache.tika.sax;
 
 import java.io.Writer;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.sax.xpath.Matcher;
 import org.apache.tika.sax.xpath.MatchingContentHandler;
 import org.apache.tika.sax.xpath.XPathParser;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Content handler decorator that only passes everything inside
@@ -40,8 +39,7 @@ public class BodyContentHandler extends ContentHandlerDecorator {
     /**
      * The XPath matcher used to select the XHTML body contents.
      */
-    private static final Matcher MATCHER =
-            PARSER.parse("/xhtml:html/xhtml:body/descendant::node()");
+    private static final Matcher MATCHER = PARSER.parse("/xhtml:html/xhtml:body/descendant::node()");
 
     /**
      * Creates a content handler that passes all XHTML body events to the

@@ -18,7 +18,6 @@ package org.apache.tika.eval.core.textstats;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.math3.util.FastMath;
-
 import org.apache.tika.eval.core.tokens.TokenCounts;
 
 public class TokenEntropy implements TokenCountStatsCalculator<Double> {

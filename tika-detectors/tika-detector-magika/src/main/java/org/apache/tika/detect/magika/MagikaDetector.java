@@ -25,12 +25,6 @@ import java.nio.file.Path;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.BoundedInputStream;
@@ -43,6 +37,12 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.utils.FileProcessResult;
 import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Simple wrapper around Google's magika: https://github.com/google/magika
@@ -59,21 +59,14 @@ public class MagikaDetector implements Detector {
     public static final String MAGIKA_PREFIX = "magika:";
 
     public static Property MAGIKA_STATUS = Property.externalText(MAGIKA_PREFIX + "status");
-    public static Property MAGIKA_DESCRIPTION =
-            Property.externalText(MAGIKA_PREFIX + "description");
-    public static Property MAGIKA_SCORE =
-            Property.externalReal(MAGIKA_PREFIX + "score");
-    public static Property MAGIKA_GROUP =
-            Property.externalText(MAGIKA_PREFIX + "group");
-    public static Property MAGIKA_LABEL =
-            Property.externalText(MAGIKA_PREFIX + "label");
-    public static Property MAGIKA_MIME =
-            Property.externalText(MAGIKA_PREFIX + "mime_type");
-    public static Property MAGIKA_IS_TEXT =
-            Property.externalBoolean(MAGIKA_PREFIX + "is_text");
+    public static Property MAGIKA_DESCRIPTION = Property.externalText(MAGIKA_PREFIX + "description");
+    public static Property MAGIKA_SCORE = Property.externalReal(MAGIKA_PREFIX + "score");
+    public static Property MAGIKA_GROUP = Property.externalText(MAGIKA_PREFIX + "group");
+    public static Property MAGIKA_LABEL = Property.externalText(MAGIKA_PREFIX + "label");
+    public static Property MAGIKA_MIME = Property.externalText(MAGIKA_PREFIX + "mime_type");
+    public static Property MAGIKA_IS_TEXT = Property.externalBoolean(MAGIKA_PREFIX + "is_text");
 
-    public static Property MAGIKA_ERRORS =
-            Property.externalTextBag(MAGIKA_PREFIX + "errors");
+    public static Property MAGIKA_ERRORS = Property.externalTextBag(MAGIKA_PREFIX + "errors");
 
     public static Property MAGIKA_VERSION = Property.externalText(MAGIKA_PREFIX + "version");
 
@@ -100,8 +93,7 @@ public class MagikaDetector implements Detector {
         String[] commandline = new String[]{magikaCommandPath, "--version"};
         FileProcessResult result = null;
         try {
-            result = ProcessUtils.execute(new ProcessBuilder(commandline),
-                    1000, 1000, 1000);
+            result = ProcessUtils.execute(new ProcessBuilder(commandline), 1000, 1000, 1000);
         } catch (IOException e) {
             LOGGER.debug("problem with magika");
             return false;
@@ -113,11 +105,10 @@ public class MagikaDetector implements Detector {
         /* python
         Matcher m = Pattern
                 .compile("Magika version:\\s+(.{4,50})").matcher("");
-
+        
         */
         //rust
-        Matcher m = Pattern
-                .compile("magika ([^\\s]{4,50})").matcher("");
+        Matcher m = Pattern.compile("magika ([^\\s]{4,50})").matcher("");
         for (String line : result.getStdout().split("[\r\n]+")) {
             if (m.reset(line).find()) {
                 MAGIKA_VERSION_STRING = m.group(1);
@@ -183,18 +174,14 @@ public class MagikaDetector implements Detector {
 
     private MediaType detectOnPath(Path path, Metadata metadata) throws IOException {
 
-        String[] args = new String[]{
-                ProcessUtils.escapeCommandLine(magikaPath),
-                ProcessUtils.escapeCommandLine(path.toAbsolutePath().toString()),
-                "--json"
-        };
+        String[] args = new String[]{ProcessUtils.escapeCommandLine(magikaPath),
+                ProcessUtils.escapeCommandLine(path.toAbsolutePath().toString()), "--json"};
         ProcessBuilder builder = new ProcessBuilder(args);
         FileProcessResult result = ProcessUtils.execute(builder, timeoutMs, 10000000, 1000);
         return processResult(result, metadata, useMime);
     }
 
-    protected static MediaType processResult(FileProcessResult result, Metadata metadata,
-                                             boolean returnMime) {
+    protected static MediaType processResult(FileProcessResult result, Metadata metadata, boolean returnMime) {
         metadata.set(ExternalProcess.EXIT_VALUE, result.getExitValue());
         metadata.set(ExternalProcess.IS_TIMEOUT, result.isTimeout());
 
@@ -213,7 +200,7 @@ public class MagikaDetector implements Detector {
             metadata.set(MAGIKA_STATUS, STATUS.JSON_PARSE_EXCEPTION.name());
             return MediaType.OCTET_STREAM;
         }
-        if (! rootArray.isArray() || rootArray.isEmpty()) {
+        if (!rootArray.isArray() || rootArray.isEmpty()) {
             //something went wrong
             return MediaType.OCTET_STREAM;
         }
@@ -230,7 +217,7 @@ public class MagikaDetector implements Detector {
     private static MediaType processOlder(JsonNode root, Metadata metadata, boolean returnMime) {
         metadata.set(MAGIKA_STATUS, "ok");
         //TODO -- should we get values in "dl" instead or in addition?
-        if (! root.has("output")) {
+        if (!root.has("output")) {
             //do something else
             return MediaType.OCTET_STREAM;
         }
@@ -244,7 +231,7 @@ public class MagikaDetector implements Detector {
         addString(mOutput, "ct_label", MAGIKA_LABEL, metadata);
         addString(mOutput, "mime_type", MAGIKA_MIME, metadata);
         metadata.set(MAGIKA_VERSION, MAGIKA_VERSION_STRING);
-        if (returnMime && ! StringUtils.isBlank(metadata.get(MAGIKA_MIME))) {
+        if (returnMime && !StringUtils.isBlank(metadata.get(MAGIKA_MIME))) {
             return MediaType.parse(metadata.get(MAGIKA_MIME));
         }
 
@@ -257,12 +244,12 @@ public class MagikaDetector implements Detector {
         //TODO -- should we get values in "dl" instead or in addition?
         addString(result, "status", MAGIKA_STATUS, metadata);
 
-        if (! result.has("value")) {
+        if (!result.has("value")) {
             return MediaType.OCTET_STREAM;
         }
         JsonNode mValue = result.get("value");
 
-        if (! mValue.has("output")) {
+        if (!mValue.has("output")) {
             //do something else
             return MediaType.OCTET_STREAM;
         }
@@ -283,7 +270,7 @@ public class MagikaDetector implements Detector {
         addString(mOutput, "mime_type", MAGIKA_MIME, metadata);
         setBoolean(mOutput, "is_text", MAGIKA_IS_TEXT, metadata);
         metadata.set(MAGIKA_VERSION, MAGIKA_VERSION_STRING);
-        if (returnMime && ! StringUtils.isBlank(metadata.get(MAGIKA_MIME))) {
+        if (returnMime && !StringUtils.isBlank(metadata.get(MAGIKA_MIME))) {
             return MediaType.parse(metadata.get(MAGIKA_MIME));
         }
 
@@ -291,12 +278,11 @@ public class MagikaDetector implements Detector {
 
     }
 
-    private static void setBoolean(JsonNode node, String jsonKey, Property property,
-                                   Metadata metadata) {
-        if (! node.has(jsonKey)) {
+    private static void setBoolean(JsonNode node, String jsonKey, Property property, Metadata metadata) {
+        if (!node.has(jsonKey)) {
             return;
         }
-        if (! node.get(jsonKey).isBoolean()) {
+        if (!node.get(jsonKey).isBoolean()) {
             //log?
             return;
         }
@@ -304,21 +290,17 @@ public class MagikaDetector implements Detector {
 
     }
 
-    private static void addString(JsonNode node, String jsonKey, Property property,
-                                  Metadata metadata) {
+    private static void addString(JsonNode node, String jsonKey, Property property, Metadata metadata) {
         if (node.has(jsonKey)) {
             if (node.get(jsonKey).isArray()) {
                 for (JsonNode child : node.get(jsonKey)) {
-                    String val = child
-                            .asText(StringUtils.EMPTY);
-                    if (! StringUtils.isBlank(val)) {
+                    String val = child.asText(StringUtils.EMPTY);
+                    if (!StringUtils.isBlank(val)) {
                         metadata.add(property, val);
                     }
                 }
             } else {
-                String val = node
-                        .get(jsonKey)
-                        .asText(StringUtils.EMPTY);
+                String val = node.get(jsonKey).asText(StringUtils.EMPTY);
                 if (StringUtils.isBlank(val)) {
                     return;
                 }

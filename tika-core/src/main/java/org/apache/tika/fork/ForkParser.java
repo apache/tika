@@ -28,9 +28,6 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -41,6 +38,8 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.TeeContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class ForkParser implements Parser, Closeable {
 
@@ -109,8 +108,7 @@ public class ForkParser implements Parser, Closeable {
      * @param classLoader          to use for all classes besides the parser in the
      *                             forked process/server
      */
-    public ForkParser(Path tikaBin, ParserFactoryFactory parserFactoryFactory,
-                      ClassLoader classLoader) {
+    public ForkParser(Path tikaBin, ParserFactoryFactory parserFactoryFactory, ClassLoader classLoader) {
         parser = null;
         loader = classLoader;
         this.tikaBin = tikaBin;
@@ -123,9 +121,8 @@ public class ForkParser implements Parser, Closeable {
      */
     public ForkParser(ClassLoader loader, Parser parser) {
         if (parser instanceof ForkParser) {
-            throw new IllegalArgumentException(
-                    "The underlying parser of a ForkParser should not be a ForkParser, " +
-                            "but a specific implementation.");
+            throw new IllegalArgumentException("The underlying parser of a ForkParser should not be a ForkParser, "
+                    + "but a specific implementation.");
         }
         this.tikaBin = null;
         this.parserFactoryFactory = null;
@@ -233,8 +230,8 @@ public class ForkParser implements Parser, Closeable {
      * @throws SAXException
      * @throws TikaException
      */
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         if (stream == null) {
             throw new NullPointerException("null stream");
         }
@@ -244,9 +241,9 @@ public class ForkParser implements Parser, Closeable {
         boolean alive = false;
         ForkClient client = acquireClient();
         try {
-            ContentHandler tee =
-                    (handler instanceof AbstractRecursiveParserWrapperHandler) ? handler :
-                            new TeeContentHandler(handler, new MetadataContentHandler(metadata));
+            ContentHandler tee = (handler instanceof AbstractRecursiveParserWrapperHandler)
+                    ? handler
+                    : new TeeContentHandler(handler, new MetadataContentHandler(metadata));
 
             t = client.call("parse", stream, tee, metadata, context);
             alive = true;
@@ -256,10 +253,10 @@ public class ForkParser implements Parser, Closeable {
             throw te;
         } catch (IOException e) {
             // Problem occurred on the other side
-            throw new TikaException("Failed to communicate with a forked parser process." +
-                    " The process has most likely crashed due to some error" +
-                    " like running out of memory. A new process will be" +
-                    " started for the next parsing request.", e);
+            throw new TikaException("Failed to communicate with a forked parser process."
+                    + " The process has most likely crashed due to some error"
+                    + " like running out of memory. A new process will be" + " started for the next parsing request.",
+                    e);
         } finally {
             releaseClient(client, alive);
         }
@@ -316,11 +313,9 @@ public class ForkParser implements Parser, Closeable {
                 serverWaitTimeoutMillis);
         if (loader == null && parser == null && tikaBin != null && parserFactoryFactory != null) {
             return new ForkClient(tikaBin, parserFactoryFactory, java, timeoutLimits);
-        } else if (loader != null && parser != null && tikaBin == null &&
-                parserFactoryFactory == null) {
+        } else if (loader != null && parser != null && tikaBin == null && parserFactoryFactory == null) {
             return new ForkClient(loader, parser, java, timeoutLimits);
-        } else if (loader != null && parser == null && tikaBin != null &&
-                parserFactoryFactory != null) {
+        } else if (loader != null && parser == null && tikaBin != null && parserFactoryFactory != null) {
             return new ForkClient(tikaBin, parserFactoryFactory, loader, java, timeoutLimits);
         } else {
             //TODO: make this more useful
@@ -331,8 +326,7 @@ public class ForkParser implements Parser, Closeable {
     private synchronized void releaseClient(ForkClient client, boolean alive) {
         currentlyInUse--;
         if (currentlyInUse + pool.size() < poolSize && alive) {
-            if (maxFilesProcessedPerClient > 0 &&
-                    client.getFilesProcessed() >= maxFilesProcessedPerClient) {
+            if (maxFilesProcessedPerClient > 0 && client.getFilesProcessed() >= maxFilesProcessedPerClient) {
                 client.close();
             } else {
                 pool.offer(client);

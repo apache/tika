@@ -25,11 +25,10 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.CompositeParser;
+import org.junit.jupiter.api.Test;
 
 public class TesseractOCRConfigTest extends TikaTest {
 
@@ -54,9 +53,8 @@ public class TesseractOCRConfigTest extends TikaTest {
 
         InputStream stream = getResourceAsStream("/test-configs/tika-config-tesseract-partial.xml");
 
-        TesseractOCRParser parser =
-                (TesseractOCRParser) ((CompositeParser) new TikaConfig(stream).getParser())
-                        .getAllComponentParsers().get(0);
+        TesseractOCRParser parser = (TesseractOCRParser) ((CompositeParser) new TikaConfig(stream).getParser())
+                .getAllComponentParsers().get(0);
         TesseractOCRConfig config = parser.getDefaultConfig();
         assertEquals("fra+deu", config.getLanguage(), "Invalid overridden language value");
         assertEquals("1", config.getPageSegMode(), "Invalid default pageSegMode value");
@@ -75,15 +73,13 @@ public class TesseractOCRConfigTest extends TikaTest {
 
         InputStream stream = getResourceAsStream("/test-configs/tika-config-tesseract-full.xml");
 
-        TesseractOCRParser parser =
-                (TesseractOCRParser) ((CompositeParser) new TikaConfig(stream).getParser())
-                        .getAllComponentParsers().get(0);
+        TesseractOCRParser parser = (TesseractOCRParser) ((CompositeParser) new TikaConfig(stream).getParser())
+                .getAllComponentParsers().get(0);
         TesseractOCRConfig config = parser.getDefaultConfig();
         assertEquals("ceb", config.getLanguage(), "Invalid overridden language value");
         assertEquals("2", config.getPageSegMode(), "Invalid default pageSegMode value");
         assertEquals(1, config.getMinFileSizeToOcr(), "Invalid overridden minFileSizeToOcr value");
-        assertEquals(2000000, config.getMaxFileSizeToOcr(), "Invalid default maxFileSizeToOcr " +
-                "value");
+        assertEquals(2000000, config.getMaxFileSizeToOcr(), "Invalid default maxFileSizeToOcr " + "value");
         assertEquals(240, config.getTimeoutSeconds(), "Invalid overridden timeout value");
         assertEquals(200, config.getDensity(), "Invalid overridden density value");
         assertEquals(8, config.getDepth(), "Invalid overridden depth value");
@@ -94,10 +90,8 @@ public class TesseractOCRConfigTest extends TikaTest {
 
     @Test
     public void testValidateValidLanguage() {
-        List<String> validLanguages =
-                Arrays.asList("eng", "slk_frak", "chi_tra", "eng+fra", "tgk+chi_tra+slk_frak",
-                        "chi_tra_vert", "tgk+chi_tra_vert+slk_frak", "eng+script/Arabic",
-                        "script/HanT_vert");
+        List<String> validLanguages = Arrays.asList("eng", "slk_frak", "chi_tra", "eng+fra", "tgk+chi_tra+slk_frak",
+                "chi_tra_vert", "tgk+chi_tra_vert+slk_frak", "eng+script/Arabic", "script/HanT_vert");
 
         TesseractOCRConfig config = new TesseractOCRConfig();
 

@@ -23,14 +23,10 @@ import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
+
 import javax.xml.namespace.QName;
 
 import org.apache.commons.codec.binary.Base64;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -39,6 +35,10 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.ElementMappingContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 /*
     Handler for the body element or odt flat files and content.xml of
@@ -49,12 +49,10 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
     public static final String TEXT_NS = "urn:oasis:names:tc:opendocument:xmlns:text:1.0";
     public static final String TABLE_NS = "urn:oasis:names:tc:opendocument:xmlns:table:1.0";
     public static final String STYLE_NS = "urn:oasis:names:tc:opendocument:xmlns:style:1.0";
-    public static final String FORMATTING_OBJECTS_NS =
-            "urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0";
+    public static final String FORMATTING_OBJECTS_NS = "urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0";
     public static final String OFFICE_NS = "urn:oasis:names:tc:opendocument:xmlns:office:1.0";
     public static final String SVG_NS = "urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0";
-    public static final String PRESENTATION_NS =
-            "urn:oasis:names:tc:opendocument:xmlns:presentation:1.0";
+    public static final String PRESENTATION_NS = "urn:oasis:names:tc:opendocument:xmlns:presentation:1.0";
     public static final String DRAW_NS = "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0";
     public static final String XLINK_NS = "http://www.w3.org/1999/xlink";
     protected static final char[] TAB = new char[]{'\t'};
@@ -67,8 +65,7 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
      * (including attributes). All other tag names/attributes are ignored
      * and left out from event stream.
      */
-    private static final HashMap<QName, TargetElement> MAPPINGS =
-            new HashMap<>();
+    private static final HashMap<QName, TargetElement> MAPPINGS = new HashMap<>();
     private static final char[] SPACE = new char[]{' '};
     private static final String CLASS = "class";
     private static final Attributes ANNOTATION_ATTRIBUTES = buildAttributes(CLASS, "annotation");
@@ -82,12 +79,9 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
         MAPPINGS.put(new QName(TEXT_NS, "line-break"), new TargetElement(XHTML, "br"));
         MAPPINGS.put(new QName(TEXT_NS, "list-item"), new TargetElement(XHTML, "li"));
         MAPPINGS.put(new QName(TEXT_NS, "note"), new TargetElement(XHTML, "span"));
-        MAPPINGS.put(new QName(OFFICE_NS, "annotation"), new TargetElement(XHTML,
-                "span"));
-        MAPPINGS.put(new QName(PRESENTATION_NS, "notes"), new TargetElement(XHTML,
-                "span"));
-        MAPPINGS.put(new QName(DRAW_NS, "object"), new TargetElement(XHTML,
-                "object"));
+        MAPPINGS.put(new QName(OFFICE_NS, "annotation"), new TargetElement(XHTML, "span"));
+        MAPPINGS.put(new QName(PRESENTATION_NS, "notes"), new TargetElement(XHTML, "span"));
+        MAPPINGS.put(new QName(DRAW_NS, "object"), new TargetElement(XHTML, "object"));
         MAPPINGS.put(new QName(DRAW_NS, "text-box"), new TargetElement(XHTML, "div"));
         MAPPINGS.put(new QName(SVG_NS, "title"), new TargetElement(XHTML, "span"));
         MAPPINGS.put(new QName(SVG_NS, "desc"), new TargetElement(XHTML, "span"));
@@ -96,10 +90,8 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
         final HashMap<QName, QName> aAttsMapping = new HashMap<>();
         aAttsMapping.put(new QName(XLINK_NS, "href"), new QName("href"));
         aAttsMapping.put(new QName(XLINK_NS, "title"), new QName("title"));
-        MAPPINGS.put(new QName(TEXT_NS, "a"), new TargetElement(XHTML, "a",
-                aAttsMapping));
-        MAPPINGS.put(new QName(DRAW_NS, "a"), new TargetElement(XHTML, "a",
-                aAttsMapping));
+        MAPPINGS.put(new QName(TEXT_NS, "a"), new TargetElement(XHTML, "a", aAttsMapping));
+        MAPPINGS.put(new QName(DRAW_NS, "a"), new TargetElement(XHTML, "a", aAttsMapping));
 
         // create HTML tables from table:-tags
         MAPPINGS.put(new QName(TABLE_NS, "table"), new TargetElement(XHTML, "table"));
@@ -107,8 +99,7 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
         MAPPINGS.put(new QName(TABLE_NS, "table-row"), new TargetElement(XHTML, "tr"));
         // special mapping for rowspan/colspan attributes
         final HashMap<QName, QName> tableCellAttsMapping = new HashMap<>();
-        tableCellAttsMapping
-                .put(new QName(TABLE_NS, "number-columns-spanned"), new QName("colspan"));
+        tableCellAttsMapping.put(new QName(TABLE_NS, "number-columns-spanned"), new QName("colspan"));
         tableCellAttsMapping.put(new QName(TABLE_NS, "number-rows-spanned"), new QName("rowspan"));
         /* TODO: The following is not correct, the cell should be repeated not spanned!
          * Code generates a HTML cell, spanning all repeated columns, to make the cell look correct.
@@ -117,10 +108,8 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
          * Cell spanning instead of repeating  is not a problem, because OpenOffice uses it
          * only for empty cells.
          */
-        tableCellAttsMapping
-                .put(new QName(TABLE_NS, "number-columns-repeated"), new QName("colspan"));
-        MAPPINGS.put(new QName(TABLE_NS, "table-cell"),
-                new TargetElement(XHTML, "td", tableCellAttsMapping));
+        tableCellAttsMapping.put(new QName(TABLE_NS, "number-columns-repeated"), new QName("colspan"));
+        MAPPINGS.put(new QName(TABLE_NS, "table-cell"), new TargetElement(XHTML, "td", tableCellAttsMapping));
     }
 
     private final ContentHandler handler;
@@ -185,7 +174,7 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
         }
         return TABLE_NS.equals(namespaceURI) && "covered-table-cell".equals(localName);
     }
-            //<p> can appear inside comments and other things that are already inside <p>
+    //<p> can appear inside comments and other things that are already inside <p>
     //we need to track our pDepth and only output <p> if we're at the main level
 
     // map the heading level to <hX> HTML tags
@@ -209,8 +198,7 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
      * Check if a node is a text node
      */
     private boolean isTextNode(String namespaceURI, String localName) {
-        if (TEXT_NS.equals(namespaceURI) && !localName.equals("page-number") &&
-                !localName.equals("page-count")) {
+        if (TEXT_NS.equals(namespaceURI) && !localName.equals("page-number") && !localName.equals("page-count")) {
             return true;
         }
         if (SVG_NS.equals(namespaceURI)) {
@@ -221,7 +209,7 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
 
     private void startList(String name) throws SAXException {
         ListStyle style = null;
-        if (name == null || ! listStyleMap.containsKey(name)) {
+        if (name == null || !listStyleMap.containsKey(name)) {
             style = NULL_LIST_STYLE;
         } else {
             style = listStyleMap.get(name);
@@ -233,7 +221,7 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
 
     private void endList() throws SAXException {
         String elementName = "ul";
-        if (! listStyleStack.isEmpty()) {
+        if (!listStyleStack.isEmpty()) {
             ListStyle style = listStyleStack.pop();
             elementName = style != null ? style.getTag() : "ul";
         }
@@ -381,16 +369,14 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
             listStyle = new ListStyle();
             String name = attrs.getValue(STYLE_NS, "name");
             listStyleMap.put(name, listStyle);
-        } else if (currTextStyle != null && STYLE_NS.equals(namespaceURI) &&
-                "text-properties".equals(localName)) {
+        } else if (currTextStyle != null && STYLE_NS.equals(namespaceURI) && "text-properties".equals(localName)) {
             String fontStyle = attrs.getValue(FORMATTING_OBJECTS_NS, "font-style");
             if ("italic".equals(fontStyle) || "oblique".equals(fontStyle)) {
                 currTextStyle.italic = true;
             }
             String fontWeight = attrs.getValue(FORMATTING_OBJECTS_NS, "font-weight");
-            if ("bold".equals(fontWeight) || "bolder".equals(fontWeight) ||
-                    (fontWeight != null && Character.isDigit(fontWeight.charAt(0)) &&
-                     Integer.parseInt(fontWeight) > 500)) {
+            if ("bold".equals(fontWeight) || "bolder".equals(fontWeight) || (fontWeight != null
+                    && Character.isDigit(fontWeight.charAt(0)) && Integer.parseInt(fontWeight) > 500)) {
                 currTextStyle.bold = true;
             }
             String underlineStyle = attrs.getValue(STYLE_NS, "text-underline-style");
@@ -443,8 +429,7 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
     }
 
     @Override
-    public void endElement(String namespaceURI, String localName, String qName)
-            throws SAXException {
+    public void endElement(String namespaceURI, String localName, String qName) throws SAXException {
         if (BINARY_DATA.equals(localName)) {
             inBinaryData = false;
             try {
@@ -483,8 +468,7 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
                 hasWrittenStartStyleTags = false;
             } else if (TEXT_NS.equals(namespaceURI) && "p".equals(localName)) {
                 endParagraph();
-            } else if ("annotation".equals(localName) || "note".equals(localName) ||
-                    "notes".equals(localName)) {
+            } else if ("annotation".equals(localName) || "note".equals(localName) || "notes".equals(localName)) {
                 closeStyleTags();
                 handler.endElement(namespaceURI, "p", "p");
             } else if ("a".equals(localName)) {
@@ -495,8 +479,7 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
             }
 
             // special handling of tabulators
-            if (TEXT_NS.equals(namespaceURI) &&
-                    ("tab-stop".equals(localName) || "tab".equals(localName))) {
+            if (TEXT_NS.equals(namespaceURI) && ("tab-stop".equals(localName) || "tab".equals(localName))) {
                 this.characters(TAB, 0, TAB.length);
             }
         }
@@ -523,8 +506,7 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
         inBinaryData = false;
 
         if (embeddedDocumentExtractor == null) {
-            embeddedDocumentExtractor =
-                    EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
+            embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
         }
         Metadata embeddedMetadata = new Metadata();
         if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
@@ -554,8 +536,7 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
 
         @Override
         public String toString() {
-            return "TextStyle{" + "italic=" + italic + ", bold=" + bold + ", underlined=" +
-                    underlined + '}';
+            return "TextStyle{" + "italic=" + italic + ", bold=" + bold + ", underlined=" + underlined + '}';
         }
     }
 
@@ -576,6 +557,5 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
             return "ul";
         }
     }
-
 
 }

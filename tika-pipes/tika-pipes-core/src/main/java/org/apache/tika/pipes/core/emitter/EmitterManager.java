@@ -39,11 +39,8 @@ public class EmitterManager extends ConfigBase {
     private final Map<String, Emitter> emitterMap = new ConcurrentHashMap<>();
 
     public static EmitterManager load(Path tikaConfigPath) throws IOException, TikaConfigException {
-        try (InputStream is = Files.newInputStream(tikaConfigPath) ) {
-            return EmitterManager.buildComposite(
-                    "emitters", EmitterManager.class,
-                    "emitter",
-                    Emitter.class, is);
+        try (InputStream is = Files.newInputStream(tikaConfigPath)) {
+            return EmitterManager.buildComposite("emitters", EmitterManager.class, "emitter", Emitter.class, is);
         }
     }
 
@@ -66,7 +63,6 @@ public class EmitterManager extends ConfigBase {
         return emitterMap.keySet();
     }
 
-
     public Emitter getEmitter(String emitterName) {
         Emitter emitter = emitterMap.get(emitterName);
         if (emitter == null) {
@@ -86,8 +82,7 @@ public class EmitterManager extends ConfigBase {
             throw new IllegalArgumentException("emitters size must == 1 for the no arg call");
         }
         if (emitterMap.size() > 1) {
-            throw new IllegalArgumentException("need to specify 'emitterName' if > 1 emitters are" +
-                    " available");
+            throw new IllegalArgumentException("need to specify 'emitterName' if > 1 emitters are" + " available");
         }
         for (Emitter emitter : emitterMap.values()) {
             return emitter;

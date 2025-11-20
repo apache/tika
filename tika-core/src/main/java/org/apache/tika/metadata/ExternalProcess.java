@@ -23,57 +23,51 @@ public interface ExternalProcess {
     /**
      * STD_OUT
      */
-    Property STD_OUT = Property.externalText(
-            PREFIX_EXTERNAL_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "stdout");
+    Property STD_OUT = Property
+            .externalText(PREFIX_EXTERNAL_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "stdout");
 
     /**
      * STD_ERR
      */
-    Property STD_ERR = Property.externalText(
-            PREFIX_EXTERNAL_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "stderr");
-
+    Property STD_ERR = Property
+            .externalText(PREFIX_EXTERNAL_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "stderr");
 
     /**
      * Whether or not stdout was truncated
      */
-    Property STD_OUT_IS_TRUNCATED = Property.externalBoolean(
-            PREFIX_EXTERNAL_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "stdout-truncated");
+    Property STD_OUT_IS_TRUNCATED = Property
+            .externalBoolean(PREFIX_EXTERNAL_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "stdout-truncated");
 
     /**
      * Whether or not stderr was truncated
      */
-    Property STD_ERR_IS_TRUNCATED = Property.externalBoolean(
-            PREFIX_EXTERNAL_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "stderr-truncated");
+    Property STD_ERR_IS_TRUNCATED = Property
+            .externalBoolean(PREFIX_EXTERNAL_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "stderr-truncated");
 
     /**
      * Stdout length whether or not it was truncated.  If it was truncated,
      * what would its length have been; if it wasn't, what is its length.
      */
-    Property STD_OUT_LENGTH = Property.externalReal(
-            PREFIX_EXTERNAL_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "stdout-length");
+    Property STD_OUT_LENGTH = Property
+            .externalReal(PREFIX_EXTERNAL_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "stdout-length");
 
     /**
      * Stderr length whether or not it was truncated.  If it was truncated,
      * what would its length have been; if it wasn't, what is its length.
      */
-    Property STD_ERR_LENGTH = Property.externalReal(
-            PREFIX_EXTERNAL_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "stderr-length");
+    Property STD_ERR_LENGTH = Property
+            .externalReal(PREFIX_EXTERNAL_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "stderr-length");
 
     /**
      * Exit value of the sub process
      */
-    Property EXIT_VALUE = Property.externalInteger(
-            PREFIX_EXTERNAL_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "exit-value");
+    Property EXIT_VALUE = Property
+            .externalInteger(PREFIX_EXTERNAL_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "exit-value");
 
     /**
      * Was the process timed out
      */
-    Property IS_TIMEOUT = Property.externalBoolean(
-            PREFIX_EXTERNAL_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "timeout");
+    Property IS_TIMEOUT = Property
+            .externalBoolean(PREFIX_EXTERNAL_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "timeout");
 
 }

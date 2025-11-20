@@ -26,14 +26,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Date;
 import java.util.Properties;
 
-import com.adobe.internal.xmp.XMPConst;
-import com.adobe.internal.xmp.XMPException;
-import com.adobe.internal.xmp.XMPMeta;
-import com.adobe.internal.xmp.XMPUtils;
-import com.adobe.internal.xmp.properties.XMPProperty;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
@@ -41,6 +33,14 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.PropertyTypeException;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPRights;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.adobe.internal.xmp.XMPConst;
+import com.adobe.internal.xmp.XMPException;
+import com.adobe.internal.xmp.XMPMeta;
+import com.adobe.internal.xmp.XMPUtils;
+import com.adobe.internal.xmp.properties.XMPProperty;
 
 public class XMPMetadataTest {
     private static final String GENERIC_MIMETYPE = "generic/mimetype";
@@ -50,8 +50,7 @@ public class XMPMetadataTest {
     // --- SETUP ---
     @BeforeEach
     public void setUp() throws Exception {
-        XMPMetadata.registerNamespace(DublinCore.NAMESPACE_URI_DC_TERMS,
-                DublinCore.PREFIX_DC_TERMS);
+        XMPMetadata.registerNamespace(DublinCore.NAMESPACE_URI_DC_TERMS, DublinCore.PREFIX_DC_TERMS);
         xmpMeta = new XMPMetadata();
         tikaMetadata = new Metadata();
         setupMetadata(tikaMetadata);

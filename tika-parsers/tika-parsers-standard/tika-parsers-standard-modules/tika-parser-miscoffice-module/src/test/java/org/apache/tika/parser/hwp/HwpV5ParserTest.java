@@ -19,15 +19,13 @@ package org.apache.tika.parser.hwp;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.commons.io.filefilter.RegexFileFilter;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
-
+import org.junit.jupiter.api.Test;
 
 public class HwpV5ParserTest extends MultiThreadedTikaTest {
 
@@ -74,7 +72,7 @@ public class HwpV5ParserTest extends MultiThreadedTikaTest {
         int numIterations = 50;
         ParseContext[] parseContexts = new ParseContext[numThreads];
 
-        testMultiThreaded(new RecursiveParserWrapper(AUTO_DETECT_PARSER), parseContexts, numThreads,
-                numIterations, new RegexFileFilter(".*\\.hwp"));
+        testMultiThreaded(new RecursiveParserWrapper(AUTO_DETECT_PARSER), parseContexts, numThreads, numIterations,
+                new RegexFileFilter(".*\\.hwp"));
     }
 }

@@ -23,13 +23,6 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Map;
 
-import com.google.cloud.storage.Blob;
-import com.google.cloud.storage.BlobId;
-import com.google.cloud.storage.Storage;
-import com.google.cloud.storage.StorageOptions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -42,6 +35,13 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.gcs.config.GCSFetcherConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
 
 /**
  * Fetches files from google cloud storage. Must set projectId and bucket via the config.
@@ -65,7 +65,8 @@ public class GCSFetcher extends AbstractFetcher implements Initializable {
     private boolean spoolToTemp = true;
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
+    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext)
+            throws TikaException, IOException {
 
         LOGGER.debug("about to fetch fetchkey={} from bucket ({})", fetchKey, bucket);
 
@@ -137,8 +138,7 @@ public class GCSFetcher extends AbstractFetcher implements Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         mustNotBeEmpty("bucket", this.bucket);
         mustNotBeEmpty("projectId", this.projectId);
     }

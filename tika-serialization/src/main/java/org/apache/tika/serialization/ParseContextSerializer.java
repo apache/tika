@@ -18,18 +18,18 @@ package org.apache.tika.serialization;
 
 import java.io.IOException;
 
+import org.apache.tika.parser.ParseContext;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
-import org.apache.tika.parser.ParseContext;
-
 public class ParseContextSerializer extends JsonSerializer<ParseContext> {
     public static final String PARSE_CONTEXT = "parseContext";
 
-
     @Override
-    public void serialize(ParseContext parseContext, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+    public void serialize(ParseContext parseContext, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
+            throws IOException {
         jsonGenerator.writeStartObject();
         for (String className : parseContext.keySet()) {
             try {

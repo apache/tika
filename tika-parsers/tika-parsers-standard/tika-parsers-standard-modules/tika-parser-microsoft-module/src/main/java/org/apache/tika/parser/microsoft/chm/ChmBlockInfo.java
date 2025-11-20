@@ -37,16 +37,12 @@ public class ChmBlockInfo {
 
     @Deprecated
     public static ChmBlockInfo getChmBlockInfoInstance(DirectoryListingEntry dle, int bytesPerBlock,
-                                                       ChmLzxcControlData clcd)
-            throws ChmParsingException {
+            ChmLzxcControlData clcd) throws ChmParsingException {
         return getChmBlockInfoInstance(dle, bytesPerBlock, clcd, new ChmBlockInfo());
     }
 
-
     public static ChmBlockInfo getChmBlockInfoInstance(DirectoryListingEntry dle, int bytesPerBlock,
-                                                       ChmLzxcControlData clcd,
-                                                       ChmBlockInfo chmBlockInfo)
-            throws ChmParsingException {
+            ChmLzxcControlData clcd, ChmBlockInfo chmBlockInfo) throws ChmParsingException {
         if (chmBlockInfo == null) {
             chmBlockInfo = new ChmBlockInfo();
         }
@@ -54,21 +50,19 @@ public class ChmBlockInfo {
             throw new ChmParsingException("Please check you parameters");
         }
 
-
         chmBlockInfo.setStartBlock(dle.getOffset() / bytesPerBlock);
         chmBlockInfo.setEndBlock((dle.getOffset() + dle.getLength()) / bytesPerBlock);
         chmBlockInfo.setStartOffset(dle.getOffset() % bytesPerBlock);
         chmBlockInfo.setEndOffset((dle.getOffset() + dle.getLength()) % bytesPerBlock);
         // potential problem with casting long to int
-        chmBlockInfo.setIniBlock(
-                chmBlockInfo.startBlock - chmBlockInfo.startBlock % (int) clcd.getResetInterval());
-//                (getChmBlockInfo().startBlock - getChmBlockInfo().startBlock)
-//                        % (int) clcd.getResetInterval());
+        chmBlockInfo.setIniBlock(chmBlockInfo.startBlock - chmBlockInfo.startBlock % (int) clcd.getResetInterval());
+        //                (getChmBlockInfo().startBlock - getChmBlockInfo().startBlock)
+        //                        % (int) clcd.getResetInterval());
         return chmBlockInfo;
     }
 
-    private static boolean validateParameters(DirectoryListingEntry dle, int bytesPerBlock,
-                                              ChmLzxcControlData clcd, ChmBlockInfo chmBlockInfo) {
+    private static boolean validateParameters(DirectoryListingEntry dle, int bytesPerBlock, ChmLzxcControlData clcd,
+            ChmBlockInfo chmBlockInfo) {
         int goodParameter = 0;
         if (dle != null) {
             ++goodParameter;

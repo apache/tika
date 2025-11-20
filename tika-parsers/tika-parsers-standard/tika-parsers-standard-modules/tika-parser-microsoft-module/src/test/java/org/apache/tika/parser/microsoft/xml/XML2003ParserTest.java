@@ -18,10 +18,6 @@ package org.apache.tika.parser.microsoft.xml;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -29,6 +25,9 @@ import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 public class XML2003ParserTest extends MultiThreadedTikaTest {
 
@@ -36,7 +35,6 @@ public class XML2003ParserTest extends MultiThreadedTikaTest {
     public static void tearDown() throws TikaException {
         XMLReaderUtils.setPoolSize(XMLReaderUtils.DEFAULT_POOL_SIZE);
     }
-
 
     @Test
     public void testBasicExcel() throws Exception {
@@ -56,8 +54,7 @@ public class XML2003ParserTest extends MultiThreadedTikaTest {
         assertContains("<td>5.5</td>", xml);
 
         //check that text is extracted with breaks between elements
-        String txt = getText(getResourceAsStream("/test-documents/testEXCEL2003.xml"),
-                AUTO_DETECT_PARSER);
+        String txt = getText(getResourceAsStream("/test-documents/testEXCEL2003.xml"), AUTO_DETECT_PARSER);
         txt = txt.replaceAll("\\s+", " ");
         assertContains("Col1 Col2 Col3 Col4 string 1 1.10", txt);
 

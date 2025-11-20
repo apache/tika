@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.core;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -26,17 +25,17 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.server.core.resource.RecursiveMetadataResource;
 import org.apache.tika.server.core.writer.MetadataListMessageBodyWriter;
+import org.junit.jupiter.api.Test;
+
+import jakarta.ws.rs.core.Response;
 
 public class RecursiveMetadataResourceTest extends CXFTestBase {
 
@@ -46,7 +45,8 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(RecursiveMetadataResource.class);
-        sf.setResourceProvider(RecursiveMetadataResource.class, new SingletonResourceProvider(new RecursiveMetadataResource()));
+        sf.setResourceProvider(RecursiveMetadataResource.class,
+                new SingletonResourceProvider(new RecursiveMetadataResource()));
     }
 
     @Override
@@ -58,9 +58,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
 
     @Test
     public void testNPE() throws Exception {
-        Response response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
+        Response response = WebClient.create(endPoint + META_PATH).accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_NULL_POINTER));
 
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);

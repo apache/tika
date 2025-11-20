@@ -23,12 +23,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.BoundedInputStream;
@@ -42,6 +36,12 @@ import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.utils.FileProcessResult;
 import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Simple wrapper around Siegfried https://github.com/richardlehane/siegfried
@@ -57,20 +57,16 @@ public class SiegfriedDetector implements Detector {
     public static final String SIEGFRIED_PREFIX = "sf:";
     public static Property SIEGFRIED_STATUS = Property.externalText(SIEGFRIED_PREFIX + "status");
 
-    public static Property SIEGFRIED_VERSION =
-            Property.externalText(SIEGFRIED_PREFIX + "sf_version");
+    public static Property SIEGFRIED_VERSION = Property.externalText(SIEGFRIED_PREFIX + "sf_version");
 
-    public static Property SIEGFRIED_SIGNATURE =
-            Property.externalText(SIEGFRIED_PREFIX + "signature");
+    public static Property SIEGFRIED_SIGNATURE = Property.externalText(SIEGFRIED_PREFIX + "signature");
 
-    public static Property SIEGFRIED_IDENTIFIERS_NAME =
-            Property.externalTextBag(SIEGFRIED_PREFIX + "identifiers_name");
+    public static Property SIEGFRIED_IDENTIFIERS_NAME = Property.externalTextBag(SIEGFRIED_PREFIX + "identifiers_name");
 
-    public static Property SIEGFRIED_IDENTIFIERS_DETAILS =
-            Property.externalTextBag(SIEGFRIED_PREFIX + "identifiers_details");
+    public static Property SIEGFRIED_IDENTIFIERS_DETAILS = Property
+            .externalTextBag(SIEGFRIED_PREFIX + "identifiers_details");
 
-    public static Property SIEGFRIED_ERRORS =
-            Property.externalTextBag(SIEGFRIED_PREFIX + "errors");
+    public static Property SIEGFRIED_ERRORS = Property.externalTextBag(SIEGFRIED_PREFIX + "errors");
 
     //TODO -- grab errors and warnings
 
@@ -164,8 +160,7 @@ public class SiegfriedDetector implements Detector {
         return processResult(result, metadata, useMime);
     }
 
-    protected static MediaType processResult(FileProcessResult result, Metadata metadata,
-                                             boolean returnMime) {
+    protected static MediaType processResult(FileProcessResult result, Metadata metadata, boolean returnMime) {
         metadata.set(ExternalProcess.EXIT_VALUE, result.getExitValue());
         metadata.set(ExternalProcess.IS_TIMEOUT, result.isTimeout());
 
@@ -221,8 +216,7 @@ public class SiegfriedDetector implements Detector {
                     }
                 }
                 for (JsonNode match : file.get("matches")) {
-                    String ns = match.has("ns") ? match.get("ns").asText(StringUtils.EMPTY) :
-                            StringUtils.EMPTY;
+                    String ns = match.has("ns") ? match.get("ns").asText(StringUtils.EMPTY) : StringUtils.EMPTY;
                     addNotBlank(match, "basis", metadata, SIEGFRIED_PREFIX + ns + ":" + BASIS);
                     addNotBlank(match, "format", metadata, SIEGFRIED_PREFIX + ns + ":" + FORMAT);
                     addNotBlank(match, "id", metadata, SIEGFRIED_PREFIX + ns + ":" + ID);
@@ -246,8 +240,7 @@ public class SiegfriedDetector implements Detector {
         return mt;
     }
 
-    private static void addNotBlank(JsonNode node, String jsonKey, Metadata metadata,
-                                    String metadataKey) {
+    private static void addNotBlank(JsonNode node, String jsonKey, Metadata metadata, String metadataKey) {
         if (node.has(jsonKey)) {
             String val = node.get(jsonKey).asText(StringUtils.EMPTY);
             if (StringUtils.isBlank(val)) {

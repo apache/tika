@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
@@ -45,11 +44,11 @@ public class DataSizeObject extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) throws IOException {
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems)
+            throws IOException {
         if (lengthOfItems != 8) {
-            throw new StreamObjectParseErrorException(currentIndex.get(), "DataSize",
-                    "Stream Object over-parse error", null);
+            throw new StreamObjectParseErrorException(currentIndex.get(), "DataSize", "Stream Object over-parse error",
+                    null);
         }
 
         this.dataSize = LittleEndianBitConverter.toUInt64(byteArray, currentIndex.get());
@@ -64,8 +63,7 @@ public class DataSizeObject extends StreamObject {
      */
     @Override
     protected int serializeItemsToByteList(List<Byte> byteList) {
-        ByteUtil.appendByteArrayToListOfByte(byteList,
-                LittleEndianBitConverter.getBytes(this.dataSize));
+        ByteUtil.appendByteArrayToListOfByte(byteList, LittleEndianBitConverter.getBytes(this.dataSize));
         return 8;
     }
 }

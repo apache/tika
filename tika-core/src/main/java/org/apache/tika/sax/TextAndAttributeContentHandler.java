@@ -29,14 +29,12 @@ public class TextAndAttributeContentHandler extends TextContentHandler {
         this(delegate, false);
     }
 
-    public TextAndAttributeContentHandler(ContentHandler delegate,
-                                          boolean addSpaceBetweenElements) {
+    public TextAndAttributeContentHandler(ContentHandler delegate, boolean addSpaceBetweenElements) {
         super(delegate, addSpaceBetweenElements);
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes attributes)
-            throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
         super.startElement(uri, localName, qName, attributes);
 
         // output element name and attributes if attributes length larger than 0.

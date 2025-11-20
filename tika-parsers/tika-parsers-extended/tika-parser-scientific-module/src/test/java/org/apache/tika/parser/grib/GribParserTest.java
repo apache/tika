@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.grib;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -22,13 +21,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 /**
  * Test cases to exercise the {@link org.apache.tika.parser.grib.GribParser}.
@@ -51,4 +49,3 @@ public class GribParserTest {
         assertTrue(content.contains("variables:"));
     }
 }
- 

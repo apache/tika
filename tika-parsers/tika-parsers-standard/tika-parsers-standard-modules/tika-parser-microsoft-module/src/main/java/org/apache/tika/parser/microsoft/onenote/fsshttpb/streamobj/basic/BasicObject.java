@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.io.IOException;
@@ -36,16 +35,15 @@ public abstract class BasicObject implements IFSSHTTPBSerializable {
      * @param index     The index special where to start.
      * @return The instance of target object.
      */
-    public static <T extends BasicObject> T parse(byte[] byteArray, AtomicInteger index,
-                                                  Class<T> clazz) throws TikaException,
-            IOException {
+    public static <T extends BasicObject> T parse(byte[] byteArray, AtomicInteger index, Class<T> clazz)
+            throws TikaException, IOException {
         try {
             T fsshttpbObject = clazz.getDeclaredConstructor().newInstance();
             index.addAndGet(fsshttpbObject.deserializeFromByteArray(byteArray, index.get()));
 
             return fsshttpbObject;
-        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
-                 InvocationTargetException e) {
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException
+                | InvocationTargetException e) {
             throw new TikaException("Could not parse basic object", e);
         }
     }
@@ -57,8 +55,7 @@ public abstract class BasicObject implements IFSSHTTPBSerializable {
      * @param startIndex The start position.
      * @return The element length.
      */
-    public int deserializeFromByteArray(byte[] byteArray, int startIndex)
-            throws TikaException, IOException {
+    public int deserializeFromByteArray(byte[] byteArray, int startIndex) throws TikaException, IOException {
         return this.doDeserializeFromByteArray(byteArray, startIndex);
     }
 

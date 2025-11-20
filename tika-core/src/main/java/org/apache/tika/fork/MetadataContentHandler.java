@@ -16,11 +16,10 @@
  */
 package org.apache.tika.fork;
 
+import org.apache.tika.metadata.Metadata;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-
-import org.apache.tika.metadata.Metadata;
 
 class MetadataContentHandler extends DefaultHandler {
 
@@ -30,8 +29,7 @@ class MetadataContentHandler extends DefaultHandler {
         this.metadata = metadata;
     }
 
-    public void startElement(String uri, String local, String name, Attributes attributes)
-            throws SAXException {
+    public void startElement(String uri, String local, String name, Attributes attributes) throws SAXException {
         if ("meta".equals(local)) {
             String aname = attributes.getValue("name");
             String content = attributes.getValue("content");

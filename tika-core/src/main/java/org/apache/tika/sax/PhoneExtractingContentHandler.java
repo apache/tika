@@ -14,17 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.sax;
 
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.tika.metadata.Metadata;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-
-import org.apache.tika.metadata.Metadata;
 
 /**
  * Class used to extract phone numbers while parsing.
@@ -92,7 +90,6 @@ public class PhoneExtractingContentHandler extends ContentHandlerDecorator {
             handleException(e);
         }
     }
-
 
     /**
      * This method is called whenever the Parser is done parsing the file. So,

@@ -44,16 +44,12 @@ public class ExternalParsersFactory {
         return create(new ServiceLoader());
     }
 
-    public static List<ExternalParser> create(ServiceLoader loader)
-            throws IOException, TikaException {
+    public static List<ExternalParser> create(ServiceLoader loader) throws IOException, TikaException {
         return create("tika-external-parsers.xml", loader);
     }
 
-    public static List<ExternalParser> create(String filename, ServiceLoader loader)
-            throws IOException, TikaException {
-        String filepath =
-                ExternalParsersFactory.class.getPackage().getName().replace('.', '/') + "/" +
-                        filename;
+    public static List<ExternalParser> create(String filename, ServiceLoader loader) throws IOException, TikaException {
+        String filepath = ExternalParsersFactory.class.getPackage().getName().replace('.', '/') + "/" + filename;
         Enumeration<URL> files = loader.findServiceResources(filepath);
         ArrayList<URL> list = Collections.list(files);
         URL[] urls = list.toArray(new URL[0]);

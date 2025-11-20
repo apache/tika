@@ -32,11 +32,10 @@ import org.apache.tika.parser.mp3.ID3Tags.ID3Comment;
  */
 public class ID3v2Frame implements MP3Frame {
 
-    protected static final TextEncoding[] encodings =
-            new TextEncoding[]{new TextEncoding("ISO-8859-1", false),
-                    new TextEncoding("UTF-16", true), // With BOM
-                    new TextEncoding("UTF-16BE", true), // Without BOM
-                    new TextEncoding("UTF-8", false)};
+    protected static final TextEncoding[] encodings = new TextEncoding[]{new TextEncoding("ISO-8859-1", false),
+            new TextEncoding("UTF-16", true), // With BOM
+            new TextEncoding("UTF-16BE", true), // Without BOM
+            new TextEncoding("UTF-8", false)};
     private static int MAX_RECORD_SIZE = 50_000_000;
     private int majorVersion;
     private int minorVersion;
@@ -161,12 +160,10 @@ public class ID3v2Frame implements MP3Frame {
         return readFully(inp, length, true);
     }
 
-    protected static byte[] readFully(InputStream inp, int length, boolean shortDataIsFatal)
-            throws IOException {
+    protected static byte[] readFully(InputStream inp, int length, boolean shortDataIsFatal) throws IOException {
         if (MAX_RECORD_SIZE > 0 && length > MAX_RECORD_SIZE) {
             throw new IOException(
-                    "Record size (" + length + " bytes) is larger than the allowed record size: " +
-                            MAX_RECORD_SIZE);
+                    "Record size (" + length + " bytes) is larger than the allowed record size: " + MAX_RECORD_SIZE);
         }
         byte[] b = new byte[length];
 
@@ -176,8 +173,7 @@ public class ID3v2Frame implements MP3Frame {
             read = inp.read(b, pos, length - pos);
             if (read == -1) {
                 if (shortDataIsFatal) {
-                    throw new IOException("Tried to read " + length + " bytes, but only " + pos +
-                            " bytes present");
+                    throw new IOException("Tried to read " + length + " bytes, but only " + pos + " bytes present");
                 } else {
                     // Give them what we found
                     // TODO Log the short read
@@ -214,8 +210,8 @@ public class ID3v2Frame implements MP3Frame {
         }
 
         // Trim off null termination / padding (as present)
-        while (encoding.doubleByte && actualLength >= 2 && data[offset + actualLength - 1] == 0 &&
-                data[offset + actualLength - 2] == 0) {
+        while (encoding.doubleByte && actualLength >= 2 && data[offset + actualLength - 1] == 0
+                && data[offset + actualLength - 2] == 0) {
             actualLength -= 2;
         }
         while (!encoding.doubleByte && actualLength >= 1 && data[offset + actualLength - 1] == 0) {
@@ -229,9 +225,9 @@ public class ID3v2Frame implements MP3Frame {
         // have is a naked BOM then short-circuit here
         // (return empty string), because new String(..)
         // gives different results on different JVMs
-        if (encoding.encoding.equals("UTF-16") && actualLength == 2 &&
-                ((data[offset] == (byte) 0xff && data[offset + 1] == (byte) 0xfe) ||
-                        (data[offset] == (byte) 0xfe && data[offset + 1] == (byte) 0xff))) {
+        if (encoding.encoding.equals("UTF-16") && actualLength == 2
+                && ((data[offset] == (byte) 0xff && data[offset + 1] == (byte) 0xfe)
+                        || (data[offset] == (byte) 0xfe && data[offset + 1] == (byte) 0xff))) {
             return "";
         }
 
@@ -239,8 +235,7 @@ public class ID3v2Frame implements MP3Frame {
             // Build the base string
             return new String(data, offset, actualLength, encoding.encoding);
         } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("Core encoding " + encoding.encoding + " is not available",
-                    e);
+            throw new RuntimeException("Core encoding " + encoding.encoding + " is not available", e);
         }
     }
 
@@ -299,8 +294,7 @@ public class ID3v2Frame implements MP3Frame {
             // Return
             return new ID3Comment(lang, description, text);
         } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("Core encoding " + encoding.encoding + " is not available",
-                    e);
+            throw new RuntimeException("Core encoding " + encoding.encoding + " is not available", e);
         }
     }
 
@@ -356,8 +350,8 @@ public class ID3v2Frame implements MP3Frame {
         protected byte[] data;
         private int headerSize;
 
-        private RawTag(int nameLength, int sizeLength, int sizeMultiplier, int flagLength,
-                       byte[] frameData, int offset) {
+        private RawTag(int nameLength, int sizeLength, int sizeMultiplier, int flagLength, byte[] frameData,
+                int offset) {
             headerSize = nameLength + sizeLength + flagLength;
 
             // Name, normally 3 or 4 bytes
@@ -383,8 +377,7 @@ public class ID3v2Frame implements MP3Frame {
 
             // Now data
             int copyFrom = offset + nameLength + sizeLength + flagLength;
-            size = Math.max(0, Math.min(size, frameData.length -
-                    copyFrom)); // TIKA-1218, prevent negative size for malformed files.
+            size = Math.max(0, Math.min(size, frameData.length - copyFrom)); // TIKA-1218, prevent negative size for malformed files.
             data = new byte[size];
             System.arraycopy(frameData, copyFrom, data, 0, size);
         }
@@ -408,8 +401,7 @@ public class ID3v2Frame implements MP3Frame {
 
         private int offset = 0;
 
-        protected RawTagIterator(int nameLength, int sizeLength, int sizeMultiplier,
-                                 int flagLength) {
+        protected RawTagIterator(int nameLength, int sizeLength, int sizeMultiplier, int flagLength) {
             this.nameLength = nameLength;
             this.sizeLength = sizeLength;
             this.sizeMultiplier = sizeMultiplier;
@@ -422,8 +414,7 @@ public class ID3v2Frame implements MP3Frame {
         }
 
         public RawTag next() {
-            RawTag tag =
-                    new RawTag(nameLength, sizeLength, sizeMultiplier, flagLength, data, offset);
+            RawTag tag = new RawTag(nameLength, sizeLength, sizeMultiplier, flagLength, data, offset);
             offset += tag.getSize();
             return tag;
         }

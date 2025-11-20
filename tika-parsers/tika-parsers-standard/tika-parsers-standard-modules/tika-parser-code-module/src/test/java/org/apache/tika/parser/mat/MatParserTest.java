@@ -20,13 +20,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.InputStream;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.ToXMLContentHandler;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test cases to exercise the {@link MatParser}.

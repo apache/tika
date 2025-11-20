@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.ner;
 
 import java.io.IOException;
@@ -29,11 +28,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
@@ -44,6 +38,10 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ner.opennlp.OpenNLPNERecogniser;
 import org.apache.tika.parser.ner.regex.RegexNERecogniser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * This implementation of {@link org.apache.tika.parser.Parser} extracts
@@ -60,8 +58,8 @@ public class NamedEntityParser implements Parser {
     public static final Logger LOG = LoggerFactory.getLogger(NamedEntityParser.class);
     public static final Set<MediaType> MEDIA_TYPES = new HashSet<>();
     public static final String MD_KEY_PREFIX = "NER_";
-    public static final String DEFAULT_NER_IMPL =
-            OpenNLPNERecogniser.class.getName() + "," + RegexNERecogniser.class.getName();
+    public static final String DEFAULT_NER_IMPL = OpenNLPNERecogniser.class.getName() + ","
+            + RegexNERecogniser.class.getName();
     public static final String SYS_PROP_NER_IMPL = "ner.impl.class";
 
     static {
@@ -88,8 +86,8 @@ public class NamedEntityParser implements Parser {
             className = className.trim();
             LOG.info("going to load, instantiate and bind the instance of {}", className);
             try {
-                NERecogniser recogniser =
-                        (NERecogniser) Class.forName(className).getDeclaredConstructor().newInstance();
+                NERecogniser recogniser = (NERecogniser) Class.forName(className).getDeclaredConstructor()
+                        .newInstance();
                 LOG.info("{} is available ? {}", className, recogniser.isAvailable());
                 if (recogniser.isAvailable()) {
                     nerChain.add(recogniser);
@@ -114,7 +112,7 @@ public class NamedEntityParser implements Parser {
     }
 
     public void parse(InputStream inputStream, ContentHandler contentHandler, Metadata metadata,
-                      ParseContext parseContext) throws IOException, SAXException, TikaException {
+            ParseContext parseContext) throws IOException, SAXException, TikaException {
 
         if (!initialized) {
             initialize(parseContext);
@@ -123,10 +121,9 @@ public class NamedEntityParser implements Parser {
             return;
         }
 
-        Reader reader =
-                MediaType.TEXT_PLAIN.toString().equals(metadata.get(Metadata.CONTENT_TYPE)) ?
-                        new InputStreamReader(inputStream, StandardCharsets.UTF_8) :
-                        secondaryParser.parse(inputStream);
+        Reader reader = MediaType.TEXT_PLAIN.toString().equals(metadata.get(Metadata.CONTENT_TYPE))
+                ? new InputStreamReader(inputStream, StandardCharsets.UTF_8)
+                : secondaryParser.parse(inputStream);
 
         String text = IOUtils.toString(reader);
         IOUtils.closeQuietly(reader);

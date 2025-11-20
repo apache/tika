@@ -22,8 +22,6 @@ import java.nio.file.FileVisitor;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 
-import org.xml.sax.SAXException;
-
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -31,6 +29,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PST;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.SAXException;
 
 public class EmailVisitor implements FileVisitor<Path> {
 
@@ -40,7 +39,8 @@ public class EmailVisitor implements FileVisitor<Path> {
     private final Metadata parentMetadata;
     private final EmbeddedDocumentExtractor embeddedDocumentExtractor;
 
-    public EmailVisitor(Path root, boolean processEmailAsMsg, XHTMLContentHandler xhtml, Metadata parentMetadata, ParseContext parseContext) {
+    public EmailVisitor(Path root, boolean processEmailAsMsg, XHTMLContentHandler xhtml, Metadata parentMetadata,
+            ParseContext parseContext) {
         this.root = root;
         this.processEmailAsMsg = processEmailAsMsg;
         this.xhtml = xhtml;
@@ -56,16 +56,10 @@ public class EmailVisitor implements FileVisitor<Path> {
     @Override
     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
         if (processEmailAsMsg) {
-            if (file
-                    .getFileName()
-                    .toString()
-                    .endsWith(".msg")) {
+            if (file.getFileName().toString().endsWith(".msg")) {
                 process(file);
             }
-        } else if (file
-                .getFileName()
-                .toString()
-                .endsWith(".eml")) {
+        } else if (file.getFileName().toString().endsWith(".eml")) {
             process(file);
         }
         return FileVisitResult.CONTINUE;
@@ -73,9 +67,7 @@ public class EmailVisitor implements FileVisitor<Path> {
 
     private void process(Path file) throws IOException {
         Metadata emailMetadata = new Metadata();
-        String pstPath = root
-                .relativize(file.getParent())
-                .toString();
+        String pstPath = root.relativize(file.getParent()).toString();
         emailMetadata.set(PST.PST_FOLDER_PATH, pstPath);
         try (TikaInputStream tis = TikaInputStream.get(file)) {
             try {

@@ -14,9 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft;
-
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -31,19 +29,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-import com.healthmarketscience.jackcess.Column;
-import com.healthmarketscience.jackcess.DataType;
-import com.healthmarketscience.jackcess.Database;
-import com.healthmarketscience.jackcess.DateTimeType;
-import com.healthmarketscience.jackcess.PropertyMap;
-import com.healthmarketscience.jackcess.Row;
-import com.healthmarketscience.jackcess.Table;
-import com.healthmarketscience.jackcess.query.Query;
-import com.healthmarketscience.jackcess.util.OleBlob;
 import org.apache.commons.io.IOUtils;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -56,6 +43,17 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.html.JSoupParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.SAXException;
+
+import com.healthmarketscience.jackcess.Column;
+import com.healthmarketscience.jackcess.DataType;
+import com.healthmarketscience.jackcess.Database;
+import com.healthmarketscience.jackcess.DateTimeType;
+import com.healthmarketscience.jackcess.PropertyMap;
+import com.healthmarketscience.jackcess.Row;
+import com.healthmarketscience.jackcess.Table;
+import com.healthmarketscience.jackcess.query.Query;
+import com.healthmarketscience.jackcess.util.OleBlob;
 
 /**
  * Internal class.  Needs to be instantiated for each parse because of
@@ -83,8 +81,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
         currencyFormatter = NumberFormat.getCurrencyInstance(locale);
         shortDateTimeFormatter = DateFormat.getDateInstance(DateFormat.SHORT, locale);
         this.parseContext = context;
-        Parser tmpHtmlParser =
-                EmbeddedDocumentUtil.tryToFindExistingLeafParser(JSoupParser.class, context);
+        Parser tmpHtmlParser = EmbeddedDocumentUtil.tryToFindExistingLeafParser(JSoupParser.class, context);
         if (tmpHtmlParser == null) {
             htmlParser = new JSoupParser();
         } else {
@@ -92,9 +89,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
         }
     }
 
-    public void parse(Database db, XHTMLContentHandler xhtml)
-            throws IOException, SAXException, TikaException {
-
+    public void parse(Database db, XHTMLContentHandler xhtml) throws IOException, SAXException, TikaException {
 
         String pw = db.getDatabasePassword();
         if (pw != null) {
@@ -103,8 +98,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
         db.setDateTimeType(DateTimeType.DATE);
         PropertyMap dbp = db.getDatabaseProperties();
         for (PropertyMap.Property p : dbp) {
-            parentMetadata.add(JackcessParser.MDB_PROPERTY_PREFIX + p.getName(),
-                    toString(p.getValue(), p.getType()));
+            parentMetadata.add(JackcessParser.MDB_PROPERTY_PREFIX + p.getName(), toString(p.getValue(), p.getType()));
         }
 
         PropertyMap up = db.getUserDefinedProperties();
@@ -119,8 +113,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
             //try to get core properties
             PropertyMap.Property title = summaryProperties.get(TITLE_PROP_KEY);
             if (title != null) {
-                parentMetadata
-                        .set(TikaCoreProperties.TITLE, toString(title.getValue(), title.getType()));
+                parentMetadata.set(TikaCoreProperties.TITLE, toString(title.getValue(), title.getType()));
                 found.add(title.getName());
             }
             PropertyMap.Property author = summaryProperties.get(AUTHOR_PROP_KEY);
@@ -131,8 +124,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
             }
             PropertyMap.Property company = summaryProperties.get(COMPANY_PROP_KEY);
             if (company != null) {
-                parentMetadata.set(OfficeOpenXMLExtended.COMPANY,
-                        toString(company.getValue(), company.getType()));
+                parentMetadata.set(OfficeOpenXMLExtended.COMPANY, toString(company.getValue(), company.getType()));
                 found.add(company.getName());
             }
 
@@ -144,8 +136,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
             }
         }
 
-        for (Table table : db.newIterable().setIncludeLinkedTables(false)
-                .setIncludeSystemTables(false)) {
+        for (Table table : db.newIterable().setIncludeLinkedTables(false).setIncludeSystemTables(false)) {
             if (table == null) {
                 break;
             }
@@ -183,8 +174,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
         }
     }
 
-    private void addHeaders(List<? extends Column> columns, XHTMLContentHandler xhtml)
-            throws SAXException {
+    private void addHeaders(List<? extends Column> columns, XHTMLContentHandler xhtml) throws SAXException {
         xhtml.startElement("thead");
         xhtml.startElement("tr");
         for (Column c : columns) {
@@ -207,9 +197,9 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
             Object obj = r.get(c.getName());
             if (obj != null) {
                 byte[] bytes = (byte[]) obj;
-                handleEmbeddedResource(TikaInputStream.get(bytes), null,//filename
-                        null,//relationshipId
-                        null,//mediatype
+                handleEmbeddedResource(TikaInputStream.get(bytes), null, //filename
+                        null, //relationshipId
+                        null, //mediatype
                         handler, false);
             }
         } else {
@@ -262,44 +252,44 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
             //this shouldn't happen
             return value.toString();
         }
-        switch (type) {
-            case LONG:
+        switch (type)
+        {
+            case LONG :
                 return Integer.toString((Integer) value);
-            case TEXT:
+            case TEXT :
                 return (String) value;
-            case MONEY:
+            case MONEY :
                 //TODO: consider getting parsing "Format" field from
                 //field properties.
                 return formatCurrency(((BigDecimal) value).doubleValue(), type);
-            case SHORT_DATE_TIME:
+            case SHORT_DATE_TIME :
                 return formatShortDateTime((Date) value);
-            case BOOLEAN:
+            case BOOLEAN :
                 return Boolean.toString((Boolean) value);
-            case MEMO:
+            case MEMO :
                 return (String) value;
-            case INT:
+            case INT :
                 return Short.toString((Short) value);
-            case DOUBLE:
+            case DOUBLE :
                 return Double.toString((Double) value);
-            case FLOAT:
+            case FLOAT :
                 return Float.toString((Float) value);
-            case NUMERIC:
+            case NUMERIC :
                 return value.toString();
-            case BYTE:
+            case BYTE :
                 return Byte.toString((Byte) value);
-            case GUID:
+            case GUID :
                 return value.toString();
-            case COMPLEX_TYPE: //skip all these
-            case UNKNOWN_0D:
-            case UNKNOWN_11:
-            case UNSUPPORTED_FIXEDLEN:
-            case UNSUPPORTED_VARLEN:
-            default:
+            case COMPLEX_TYPE : //skip all these
+            case UNKNOWN_0D :
+            case UNKNOWN_11 :
+            case UNSUPPORTED_FIXEDLEN :
+            case UNSUPPORTED_VARLEN :
+            default :
                 return "";
 
         }
     }
-
 
     private void handleOLE(Row row, String cName, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
@@ -314,11 +304,12 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
             return;
         }
 
-        switch (content.getType()) {
-            case LINK:
+        switch (content.getType())
+        {
+            case LINK :
                 xhtml.characters(((OleBlob.LinkContent) content).getLinkPath());
                 break;
-            case SIMPLE_PACKAGE:
+            case SIMPLE_PACKAGE :
                 OleBlob.SimplePackageContent spc = (OleBlob.SimplePackageContent) content;
                 //TODO: find test file that has this kind of attachment
                 //and see if getFilePath or getLocalFilePath is meaningful
@@ -332,16 +323,16 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 }
                 if (tis != null) {
                     try {
-                        handleEmbeddedResource(tis, spc.getFileName(),//filename
-                                null,//relationshipId
-                                spc.getTypeName(),//mediatype
+                        handleEmbeddedResource(tis, spc.getFileName(), //filename
+                                null, //relationshipId
+                                spc.getTypeName(), //mediatype
                                 xhtml, false);
                     } finally {
                         IOUtils.closeQuietly(tis);
                     }
                 }
                 break;
-            case OTHER:
+            case OTHER :
                 OleBlob.OtherContent oc = (OleBlob.OtherContent) content;
                 TikaInputStream ocStream = null;
                 try {
@@ -350,15 +341,15 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                     EmbeddedDocumentUtil.recordException(e, parentMetadata);
                 }
                 try {
-                    handleEmbeddedResource(ocStream, null,//filename
-                            null,//relationshipId
-                            oc.getTypeName(),//mediatype
+                    handleEmbeddedResource(ocStream, null, //filename
+                            null, //relationshipId
+                            oc.getTypeName(), //mediatype
                             xhtml, false);
                 } finally {
                     IOUtils.closeQuietly(ocStream);
                 }
                 break;
-            case COMPOUND_STORAGE:
+            case COMPOUND_STORAGE :
                 OleBlob.CompoundContent cc = (OleBlob.CompoundContent) content;
                 handleCompoundContent(cc, xhtml);
                 break;
@@ -415,4 +406,3 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
     }
 
 }
-

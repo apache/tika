@@ -18,9 +18,10 @@ package org.apache.tika.pipes.fetcher.http.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.junit.jupiter.api.Test;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.Test;
 
 class HttpHeadersTest {
 
@@ -29,10 +30,8 @@ class HttpHeadersTest {
     @Test
     void testToAndFromJson() throws JsonProcessingException {
         HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders
-                .getHeaders().put("nick1", "val1");
-        httpHeaders
-                .getHeaders().put("nick2", "val2");
+        httpHeaders.getHeaders().put("nick1", "val1");
+        httpHeaders.getHeaders().put("nick2", "val2");
 
         String json = om.writeValueAsString(httpHeaders);
 

@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.io.IOException;
@@ -85,8 +84,7 @@ public class CellIDArray extends BasicObject {
      * @return Return the length in byte of the CellIDArray basic object.
      */
     @Override
-    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex)
-            throws TikaException, IOException {
+    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(startIndex);
 
         this.count = BasicObject.parse(byteArray, index, Compact64bitInt.class).getDecodedValue();

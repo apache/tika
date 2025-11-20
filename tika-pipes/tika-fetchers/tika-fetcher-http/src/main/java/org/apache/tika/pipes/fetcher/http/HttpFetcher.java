@@ -16,7 +16,6 @@
  */
 package org.apache.tika.pipes.fetcher.http;
 
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -40,9 +39,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nimbusds.jose.JOSEException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.http.ConnectionClosedException;
@@ -58,9 +54,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.conn.ConnectionShutdownException;
 import org.apache.http.util.EntityUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
@@ -84,6 +77,12 @@ import org.apache.tika.pipes.fetcher.http.jwt.JwtGenerator;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtPrivateKeyCreds;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtSecretCreds;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.jose.JOSEException;
 
 /**
  * Based on Apache httpclient
@@ -157,14 +156,12 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     JwtGenerator jwtGenerator;
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws IOException, TikaException {
+    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext)
+            throws IOException, TikaException {
         HttpFetcherConfig additionalHttpFetcherConfig = getAdditionalHttpFetcherConfig(parseContext);
         HttpGet get = new HttpGet(fetchKey);
-        RequestConfig requestConfig = RequestConfig
-                .custom()
-                .setMaxRedirects(httpFetcherConfig.getMaxRedirects())
-                .setRedirectsEnabled(httpFetcherConfig.getMaxRedirects() > 0)
-                .build();
+        RequestConfig requestConfig = RequestConfig.custom().setMaxRedirects(httpFetcherConfig.getMaxRedirects())
+                .setRedirectsEnabled(httpFetcherConfig.getMaxRedirects() > 0).build();
         get.setConfig(requestConfig);
         setHttpRequestHeaders(metadata, get);
         putAdditionalHeadersOnRequest(additionalHttpFetcherConfig, get);
@@ -191,8 +188,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     }
 
     private static void parseHeaderAndPutOnRequest(HttpGet get, String httpRequestHeader) {
-        String[] parts = httpRequestHeader
-                .trim().split(":", 2);
+        String[] parts = httpRequestHeader.trim().split(":", 2);
         if (parts.length >= 2) {
             String key = parts[0].trim();
             String value = parts[1].trim();
@@ -211,7 +207,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
 
     @Override
     public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata,
-                             ParseContext parseContext) throws IOException, TikaException {
+            ParseContext parseContext) throws IOException, TikaException {
         HttpFetcherConfig additionalHttpFetcherConfig = getAdditionalHttpFetcherConfig(parseContext);
         HttpGet get = new HttpGet(fetchKey);
         putAdditionalHeadersOnRequest(additionalHttpFetcherConfig, get);
@@ -220,19 +216,16 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         return execute(get, metadata, httpClient, true);
     }
 
-    private void putAdditionalHeadersOnRequest(HttpFetcherConfig additionalFetcherConfig, HttpGet httpGet) throws TikaException {
+    private void putAdditionalHeadersOnRequest(HttpFetcherConfig additionalFetcherConfig, HttpGet httpGet)
+            throws TikaException {
         if (!StringUtils.isBlank(httpFetcherConfig.getUserAgent())) {
             httpGet.setHeader(USER_AGENT, httpFetcherConfig.getUserAgent());
         }
         if (additionalFetcherConfig != null && additionalFetcherConfig.getHttpRequestHeaders() != null) {
-            additionalFetcherConfig.getHttpRequestHeaders()
-                    .getHeaders()
-                    .forEach(httpGet::addHeader);
+            additionalFetcherConfig.getHttpRequestHeaders().getHeaders().forEach(httpGet::addHeader);
         }
         if (httpFetcherConfig.getHttpRequestHeaders() != null) {
-            httpFetcherConfig.getHttpRequestHeaders()
-                    .getHeaders()
-                    .forEach(httpGet::addHeader);
+            httpFetcherConfig.getHttpRequestHeaders().getHeaders().forEach(httpGet::addHeader);
         }
         if (jwtGenerator != null) {
             try {
@@ -248,21 +241,20 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         if (idxOfEquals == -1) {
             return;
         }
-        String headerKey = httpRequestHeader
-                .substring(0, idxOfEquals)
-                .trim();
-        String headerValue = httpRequestHeader
-                .substring(idxOfEquals + 1)
-                .trim();
+        String headerKey = httpRequestHeader.substring(0, idxOfEquals).trim();
+        String headerValue = httpRequestHeader.substring(idxOfEquals + 1).trim();
         get.setHeader(headerKey, headerValue);
     }
 
-    private InputStream execute(HttpGet get, Metadata metadata, HttpClient client, boolean retryOnBadLength) throws IOException {
+    private InputStream execute(HttpGet get, Metadata metadata, HttpClient client, boolean retryOnBadLength)
+            throws IOException {
         HttpClientContext context = HttpClientContext.create();
         HttpResponse response = null;
         final AtomicBoolean timeout = new AtomicBoolean(false);
         Timer timer = null;
-        long overallTimeout = httpFetcherConfig.getOverallTimeout() == null ? -1 : httpFetcherConfig.getOverallTimeout();
+        long overallTimeout = httpFetcherConfig.getOverallTimeout() == null
+                ? -1
+                : httpFetcherConfig.getOverallTimeout();
         try {
             if (overallTimeout > -1) {
                 TimerTask task = new TimerTask() {
@@ -280,31 +272,24 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
             }
             response = client.execute(get, context);
 
-            updateMetadata(get
-                    .getURI()
-                    .toString(), response, context, metadata);
+            updateMetadata(get.getURI().toString(), response, context, metadata);
 
-            int code = response
-                    .getStatusLine()
-                    .getStatusCode();
+            int code = response.getStatusLine().getStatusCode();
             LOG.info("Fetch id {} status code {}", get.getURI(), code);
             if (code < 200 || code > 299) {
                 throw new IOException("bad status code: " + code + " :: " + responseToString(response));
             }
-            try (InputStream is = response
-                    .getEntity()
-                    .getContent()) {
+            try (InputStream is = response.getEntity().getContent()) {
                 return spool(is, metadata);
             }
         } catch (ConnectionClosedException e) {
 
-            if (retryOnBadLength && e.getMessage() != null && e
-                    .getMessage()
-                    .contains("Premature " + "end of " + "Content-Length delimited message")) {
+            if (retryOnBadLength && e.getMessage() != null
+                    && e.getMessage().contains("Premature " + "end of " + "Content-Length delimited message")) {
                 //one trigger for this is if the server sends the uncompressed length
                 //and then compresses the stream. See HTTPCLIENT-2176
-                LOG.warn("premature end of content-length delimited message; retrying with " + "content compression" +
-                        " disabled for {}", get.getURI());
+                LOG.warn("premature end of content-length delimited message; retrying with " + "content compression"
+                        + " disabled for {}", get.getURI());
                 return execute(get, metadata, noCompressHttpClient, false);
             }
             throw e;
@@ -354,21 +339,15 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         }
 
         if (response.getStatusLine() != null) {
-            metadata.set(HTTP_STATUS_CODE, response
-                    .getStatusLine()
-                    .getStatusCode());
+            metadata.set(HTTP_STATUS_CODE, response.getStatusLine().getStatusCode());
         }
 
         HttpEntity entity = response.getEntity();
         if (entity != null && entity.getContentEncoding() != null) {
-            metadata.set(HTTP_CONTENT_ENCODING, entity
-                    .getContentEncoding()
-                    .getValue());
+            metadata.set(HTTP_CONTENT_ENCODING, entity.getContentEncoding().getValue());
         }
         if (entity != null && entity.getContentType() != null) {
-            metadata.set(HTTP_CONTENT_TYPE, entity
-                    .getContentType()
-                    .getValue());
+            metadata.set(HTTP_CONTENT_TYPE, entity.getContentType().getValue());
         }
 
         //load headers
@@ -419,12 +398,8 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
         if (response.getEntity() == null) {
             return "";
         }
-        try (InputStream is = response
-                .getEntity()
-                .getContent()) {
-            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream
-                    .builder()
-                    .get();
+        try (InputStream is = response.getEntity().getContent()) {
+            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
             IOUtils.copyLarge(is, bos, 0, httpFetcherConfig.getMaxErrMsgSize());
             return bos.toString(StandardCharsets.UTF_8);
         } catch (IOException e) {
@@ -558,9 +533,7 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
     public void setHttpHeaders(List<String> headers) {
         httpFetcherConfig.setHttpHeaders(new ArrayList<>());
         if (headers != null) {
-            httpFetcherConfig
-                    .getHttpHeaders()
-                    .addAll(headers);
+            httpFetcherConfig.getHttpHeaders().addAll(headers);
         }
     }
 
@@ -655,16 +628,18 @@ public class HttpFetcher extends AbstractFetcher implements Initializable, Range
             jwtGenerator = new JwtGenerator(new JwtPrivateKeyCreds(key, httpFetcherConfig.getJwtIssuer(),
                     httpFetcherConfig.getJwtSubject(), httpFetcherConfig.getJwtExpiresInSeconds()));
         } else if (!StringUtils.isBlank(httpFetcherConfig.getJwtSecret())) {
-            jwtGenerator = new JwtGenerator(new JwtSecretCreds(httpFetcherConfig
-                    .getJwtSecret()
-                    .getBytes(StandardCharsets.UTF_8), httpFetcherConfig.getJwtIssuer(), httpFetcherConfig.getJwtSubject(), httpFetcherConfig.getJwtExpiresInSeconds()));
+            jwtGenerator = new JwtGenerator(new JwtSecretCreds(
+                    httpFetcherConfig.getJwtSecret().getBytes(StandardCharsets.UTF_8), httpFetcherConfig.getJwtIssuer(),
+                    httpFetcherConfig.getJwtSubject(), httpFetcherConfig.getJwtExpiresInSeconds()));
         }
     }
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
-        if (!StringUtils.isBlank(httpFetcherConfig.getJwtSecret()) && !StringUtils.isBlank(httpFetcherConfig.getJwtPrivateKeyBase64())) {
-            throw new TikaConfigException("Both JWT secret and JWT private key base 64 were " + "specified. Only one or the other is supported");
+        if (!StringUtils.isBlank(httpFetcherConfig.getJwtSecret())
+                && !StringUtils.isBlank(httpFetcherConfig.getJwtPrivateKeyBase64())) {
+            throw new TikaConfigException("Both JWT secret and JWT private key base 64 were "
+                    + "specified. Only one or the other is supported");
         }
     }
 

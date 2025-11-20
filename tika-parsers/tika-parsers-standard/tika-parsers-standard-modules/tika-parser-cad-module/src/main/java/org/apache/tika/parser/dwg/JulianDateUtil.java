@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.dwg;
 
 import java.time.Instant;
@@ -42,6 +41,6 @@ class JulianDateUtil {
     public static Instant toInstant(long julianDay, long millisecondsIntoDay) {
         return new JulianDateUtil(JulianDateUtil.JULIAN_DATE)
                 .toInstant(Double.parseDouble(julianDay + "." + millisecondsIntoDay));
-         
+
     }
 }

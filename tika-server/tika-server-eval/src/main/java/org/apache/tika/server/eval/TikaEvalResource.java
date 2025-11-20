@@ -33,13 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-
 import org.apache.tika.eval.core.langid.LanguageIDWrapper;
 import org.apache.tika.eval.core.metadata.TikaEvalMetadataFilter;
 import org.apache.tika.eval.core.textstats.BasicTokenCountStatsCalculator;
@@ -57,6 +50,14 @@ import org.apache.tika.server.core.ServerStatusResource;
 import org.apache.tika.server.core.resource.TikaServerResource;
 import org.apache.tika.utils.StringUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+
 @Path("/eval")
 public class TikaEvalResource implements TikaServerResource, ServerStatusResource {
 
@@ -65,11 +66,9 @@ public class TikaEvalResource implements TikaServerResource, ServerStatusResourc
     public static final String TEXT_B = "textB";
     public static final String ID = "id";
 
-    public static final Property DICE = Property.externalReal(
-            TikaEvalMetadataFilter.TIKA_EVAL_NS + "dice");
+    public static final Property DICE = Property.externalReal(TikaEvalMetadataFilter.TIKA_EVAL_NS + "dice");
 
-    public static final Property OVERLAP = Property.externalReal(
-            TikaEvalMetadataFilter.TIKA_EVAL_NS + "overlap");
+    public static final Property OVERLAP = Property.externalReal(TikaEvalMetadataFilter.TIKA_EVAL_NS + "overlap");
 
     private ServerStatus serverStatus;
     public static final long DEFAULT_TIMEOUT_MILLIS = 60000;
@@ -89,15 +88,13 @@ public class TikaEvalResource implements TikaServerResource, ServerStatusResourc
     @Path("compare")
     public Map<String, Object> compare(InputStream is) throws Exception {
         JsonNode node = null;
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(is, StandardCharsets.UTF_8))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             node = new ObjectMapper().readTree(reader);
         }
         String id = node.get(ID).asText();
         String textA = node.get(TEXT_A).asText();
         String textB = node.get(TEXT_B).asText();
-        long timeoutMillis = node.has("timeoutMillis") ? node.get("timeoutMillis").asLong() :
-                DEFAULT_TIMEOUT_MILLIS;
+        long timeoutMillis = node.has("timeoutMillis") ? node.get("timeoutMillis").asLong() : DEFAULT_TIMEOUT_MILLIS;
         return compareText(id, textA, textB, timeoutMillis);
     }
 
@@ -107,14 +104,12 @@ public class TikaEvalResource implements TikaServerResource, ServerStatusResourc
     @Path("profile")
     public Map<String, Object> profile(InputStream is) throws Exception {
         JsonNode node = null;
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(is, StandardCharsets.UTF_8))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             node = new ObjectMapper().readTree(reader);
         }
         String id = node.get(ID).asText();
         String text = node.get(TEXT).asText();
-        long timeoutMillis = node.has("timeoutMillis") ? node.get("timeoutMillis").asLong() :
-                DEFAULT_TIMEOUT_MILLIS;
+        long timeoutMillis = node.has("timeoutMillis") ? node.get("timeoutMillis").asLong() : DEFAULT_TIMEOUT_MILLIS;
         return profile(id, text, timeoutMillis);
     }
 
@@ -130,7 +125,6 @@ public class TikaEvalResource implements TikaServerResource, ServerStatusResourc
         return stats;
     }
 
-
     private Map<String, Object> compareText(String id, String textA, String textB, long timeoutMillis) {
 
         Map<String, Object> stats = new HashMap<>();
@@ -139,8 +133,7 @@ public class TikaEvalResource implements TikaServerResource, ServerStatusResourc
             TokenCounts tokensA = profile("A", textA, stats);
             TokenCounts tokensB = profile("B", textB, stats);
             TokenContraster tokenContraster = new TokenContraster();
-            ContrastStatistics contrastStatistics =
-                    tokenContraster.calculateContrastStatistics(tokensA, tokensB);
+            ContrastStatistics contrastStatistics = tokenContraster.calculateContrastStatistics(tokensA, tokensB);
             reportContrastStats(contrastStatistics, stats);
         } finally {
             serverStatus.complete(taskId);
@@ -148,8 +141,7 @@ public class TikaEvalResource implements TikaServerResource, ServerStatusResourc
         return stats;
     }
 
-    private void reportContrastStats(ContrastStatistics contrastStatistics,
-                                     Map<String, Object> stats) {
+    private void reportContrastStats(ContrastStatistics contrastStatistics, Map<String, Object> stats) {
         stats.put(DICE.getName(), contrastStatistics.getDiceCoefficient());
         stats.put(OVERLAP.getName(), contrastStatistics.getOverlap());
         //TODO, add topNMore, topNUnique
@@ -162,7 +154,6 @@ public class TikaEvalResource implements TikaServerResource, ServerStatusResourc
         stats.put(NUM_TOKENS.getName() + suffix, tokenCounts.getTotalTokens());
         stats.put(NUM_UNIQUE_TOKENS.getName() + suffix, tokenCounts.getTotalUniqueTokens());
 
-
         //common token results
         CommonTokenResult commonTokenResult = (CommonTokenResult) results.get(CommonTokens.class);
         stats.put(NUM_ALPHA_TOKENS.getName() + suffix, commonTokenResult.getAlphabeticTokens());
@@ -174,8 +165,7 @@ public class TikaEvalResource implements TikaServerResource, ServerStatusResourc
         }
 
         //languages
-        List<LanguageResult> probabilities =
-                (List<LanguageResult>) results.get(LanguageIDWrapper.class);
+        List<LanguageResult> probabilities = (List<LanguageResult>) results.get(LanguageIDWrapper.class);
         if (probabilities.size() > 0) {
             stats.put(LANGUAGE.getName() + suffix, probabilities.get(0).getLanguage());
             stats.put(LANGUAGE_CONFIDENCE.getName() + suffix, probabilities.get(0).getRawScore());

@@ -18,30 +18,25 @@ package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
 
 import java.util.HashMap;
 
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLTikaBodyPartHandler;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLWordAndPowerPointTextHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
-
+import org.xml.sax.SAXException;
 
 /**
  * Simple wrapper/extension of OOXMLWordAndPowerPointTextHandler to fit
  * into the inline parsing scheme.
  */
-class WordAndPowerPointTextPartHandler extends OOXMLWordAndPowerPointTextHandler
-        implements PartHandler {
+class WordAndPowerPointTextPartHandler extends OOXMLWordAndPowerPointTextHandler implements PartHandler {
 
     private final String contentType;
     private String name;
 
     public WordAndPowerPointTextPartHandler(String contentType, XHTMLContentHandler xhtml,
-                                            RelationshipsManager relationshipsManager,
-                                            OfficeParserConfig officeParserConfig) {
-        super(new OOXMLTikaBodyPartHandler(xhtml, null, null, officeParserConfig),
-                new HashMap<>());
+            RelationshipsManager relationshipsManager, OfficeParserConfig officeParserConfig) {
+        super(new OOXMLTikaBodyPartHandler(xhtml, null, null, officeParserConfig), new HashMap<>());
         this.contentType = contentType;
     }
 

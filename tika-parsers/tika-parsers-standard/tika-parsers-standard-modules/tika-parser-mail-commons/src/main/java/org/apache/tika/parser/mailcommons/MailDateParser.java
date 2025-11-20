@@ -70,8 +70,8 @@ public class MailDateParser {
     //TIKA-1970 Mac Mail's format is GMT+1 so we need to check for hour only
     //Also, there are numerous bugs in jdk 8 with localized offsets
     //so we need to get rid of the GMT/UTC component (e.g. https://bugs.openjdk.org/browse/JDK-8154520)
-    private static final Pattern LOCALIZED_OFFSET_PATTERN =
-            Pattern.compile("(?:UTC|GMT)\\s*([-+])\\s*(\\d?\\d):?(\\d\\d)?\\Z");
+    private static final Pattern LOCALIZED_OFFSET_PATTERN = Pattern
+            .compile("(?:UTC|GMT)\\s*([-+])\\s*(\\d?\\d):?(\\d\\d)?\\Z");
 
     //this is used to strip junk after a fairly full offset:
     // Wed, 26 Jan 2022 09:14:37 +0100 (CET)
@@ -80,12 +80,12 @@ public class MailDateParser {
 
     //we add the first pattern -\\d\\d-\\d\\d\\d\\d so that we skip over 10-10-2000 via
     //the while loop.
-    private static final Pattern OFFSET_PATTERN =
-            Pattern.compile("(?:(?:-\\d\\d-\\d{4})|([-+])\\s*(\\d?\\d):?(\\d\\d))");
+    private static final Pattern OFFSET_PATTERN = Pattern
+            .compile("(?:(?:-\\d\\d-\\d{4})|([-+])\\s*(\\d?\\d):?(\\d\\d))");
 
-    private static final Pattern DAYS_OF_WEEK =
-            Pattern.compile("(?:\\A| )(MON|MONDAY|TUE|TUES|TUESDAY|WED|WEDNESDAY|THU|THUR|THURS" +
-                    "|THURSDAY|FRI|FRIDAY|SAT|SATURDAY|SUN|SUNDAY) ");
+    private static final Pattern DAYS_OF_WEEK = Pattern
+            .compile("(?:\\A| )(MON|MONDAY|TUE|TUES|TUESDAY|WED|WEDNESDAY|THU|THUR|THURS"
+                    + "|THURSDAY|FRI|FRIDAY|SAT|SATURDAY|SUN|SUNDAY) ");
 
     //find a time ending in am/pm without a space: 10:30am and
     //use this pattern to insert space: 10:30 am
@@ -123,6 +123,7 @@ public class MailDateParser {
 
     private static final int INITIAL_YEAR = 1970;
 
+    //@formatter:off
     private static final DateTimeFormatter TIME_ZONE_FORMATTER
             = new DateTimeFormatterBuilder()
             .parseCaseInsensitive()
@@ -488,6 +489,7 @@ public class MailDateParser {
             MM_SLASH_DD_SLASH_YY_HH_MM_AM_PM
 
     };
+    // @formatter:on
     public static Date parseRFC5322(String string) throws ParseException {
         //this fails on: MON, 9 MAY 2016 3:32:00 GMT+0200 ... it stops short and doesn't include
         // the +0200?!
@@ -532,9 +534,7 @@ public class MailDateParser {
         for (DateTimeFormatter dateFormatter : DATE_FORMATTERS) {
             try {
                 TemporalAccessor temporalAccessor = dateFormatter.parse(normalized);
-                ZonedDateTime localDate = LocalDate.from(temporalAccessor)
-                        .atStartOfDay()
-                        .atZone(MIDDAY.toZoneId());
+                ZonedDateTime localDate = LocalDate.from(temporalAccessor).atStartOfDay().atZone(MIDDAY.toZoneId());
                 return Date.from(Instant.from(localDate));
             } catch (SecurityException e) {
                 throw e;
@@ -568,8 +568,7 @@ public class MailDateParser {
         while (matcher.find()) {
             if (matcher.group(1) != null) {
                 text = text.substring(0, matcher.start());
-                text += matcher.group(1) + StringUtils.leftPad(matcher.group(2), 2, '0') + ":" +
-                        matcher.group(3);
+                text += matcher.group(1) + StringUtils.leftPad(matcher.group(2), 2, '0') + ":" + matcher.group(3);
                 break;
             }
         }

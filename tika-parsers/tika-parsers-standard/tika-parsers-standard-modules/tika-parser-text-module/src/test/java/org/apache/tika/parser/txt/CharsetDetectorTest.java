@@ -26,13 +26,12 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.nio.file.Files;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
+import org.junit.jupiter.api.Test;
 
 public class CharsetDetectorTest extends TikaTest {
 
@@ -133,19 +132,16 @@ public class CharsetDetectorTest extends TikaTest {
     @Test
     public void testIgnoreCharset() throws Exception {
         //TIKA-3516, TIKA-3525, TIKA-1236
-        TikaConfig tikaConfig = new TikaConfig(
-                getResourceAsStream("/test-configs/tika-config-ignore-charset.xml"));
+        TikaConfig tikaConfig = new TikaConfig(getResourceAsStream("/test-configs/tika-config-ignore-charset.xml"));
 
         AutoDetectParser parser = new AutoDetectParser(tikaConfig);
 
         Metadata m = new Metadata();
         m.set(TikaCoreProperties.RESOURCE_NAME_KEY, "texty-text.txt");
-        assertContains("ACTIVE AGE", getXML("testIgnoreCharset.txt",
-                parser, m).xml);
+        assertContains("ACTIVE AGE", getXML("testIgnoreCharset.txt", parser, m).xml);
 
         m = new Metadata();
         m.set(TikaCoreProperties.RESOURCE_NAME_KEY, "texty-text.txt");
-        assertContains("Please check your email", getXML("test_ignore_IBM420.html",
-                parser, m).xml);
+        assertContains("Please check your email", getXML("test_ignore_IBM420.html", parser, m).xml);
     }
 }

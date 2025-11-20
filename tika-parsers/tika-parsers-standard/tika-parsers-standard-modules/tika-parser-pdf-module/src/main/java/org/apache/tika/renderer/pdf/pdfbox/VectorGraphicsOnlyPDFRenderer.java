@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -58,7 +58,6 @@ public class VectorGraphicsOnlyPDFRenderer extends PDFRenderer {
             super(parameters);
         }
 
-
         @Override
         public void beginText() throws IOException {
         }
@@ -68,13 +67,13 @@ public class VectorGraphicsOnlyPDFRenderer extends PDFRenderer {
         }
 
         @Override
-        protected void showFontGlyph(Matrix textRenderingMatrix, PDFont font, int code,
-                                     Vector displacement) throws IOException {
+        protected void showFontGlyph(Matrix textRenderingMatrix, PDFont font, int code, Vector displacement)
+                throws IOException {
         }
 
         @Override
-        protected void showType3Glyph(Matrix textRenderingMatrix, PDType3Font font, int code,
-                                      Vector displacement) throws IOException {
+        protected void showType3Glyph(Matrix textRenderingMatrix, PDType3Font font, int code, Vector displacement)
+                throws IOException {
         }
 
         @Override
@@ -82,8 +81,8 @@ public class VectorGraphicsOnlyPDFRenderer extends PDFRenderer {
         }
 
         @Override
-        protected void showTransparencyGroupOnGraphics(PDTransparencyGroup form,
-                                                       Graphics2D graphics) throws IOException {
+        protected void showTransparencyGroupOnGraphics(PDTransparencyGroup form, Graphics2D graphics)
+                throws IOException {
         }
 
         @Override
@@ -93,7 +92,6 @@ public class VectorGraphicsOnlyPDFRenderer extends PDFRenderer {
         @Override
         public void endMarkedContentSequence() {
         }
-
 
         @Override
         public void showTextString(byte[] string) throws IOException {
@@ -112,8 +110,8 @@ public class VectorGraphicsOnlyPDFRenderer extends PDFRenderer {
         }
 
         @Override
-        protected void showGlyph(Matrix textRenderingMatrix, PDFont font, int code,
-                                 Vector displacement) throws IOException {
+        protected void showGlyph(Matrix textRenderingMatrix, PDFont font, int code, Vector displacement)
+                throws IOException {
         }
 
     }

@@ -27,19 +27,18 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Set;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Test cases for the {@link org.apache.tika.sax.BodyContentHandler} class.
@@ -54,8 +53,7 @@ public class BasicContentHandlerFactoryTest {
         assertFalse(haystack.contains(needle), needle + " found in:\n" + haystack);
     }
 
-    public static void assertNotContains(String needle, byte[] hayStack)
-            throws UnsupportedEncodingException {
+    public static void assertNotContains(String needle, byte[] hayStack) throws UnsupportedEncodingException {
         assertNotContains(needle, new String(hayStack, UTF_8));
     }
 
@@ -63,17 +61,15 @@ public class BasicContentHandlerFactoryTest {
         assertTrue(haystack.contains(needle), needle + " not found in:\n" + haystack);
     }
 
-    public static void assertContains(String needle, byte[] hayStack)
-            throws UnsupportedEncodingException {
+    public static void assertContains(String needle, byte[] hayStack) throws UnsupportedEncodingException {
         assertContains(needle, new String(hayStack, UTF_8));
     }
 
     @Test
     public void testIgnore() throws Exception {
         Parser p = new MockParser(OVER_DEFAULT);
-        ContentHandler handler =
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1)
-                        .getNewContentHandler();
+        ContentHandler handler = new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1)
+                .getNewContentHandler();
         assertTrue(handler instanceof DefaultHandler);
         p.parse(null, handler, null, null);
         //unfortunatley, the DefaultHandler does not return "",
@@ -167,7 +163,6 @@ public class BasicContentHandlerFactoryTest {
         assertContains("<html", os.toByteArray());
         assertTrue(os.toByteArray().length > 110000);
 
-
         p = new MockParser(10);
         os = new ByteArrayOutputStream();
         handler = new BasicContentHandlerFactory(type, 5).getNewContentHandler(os, UTF_8);
@@ -210,7 +205,6 @@ public class BasicContentHandlerFactoryTest {
         assertContains("<body", os.toByteArray());
         assertContains("<html", os.toByteArray());
         assertTrue(os.toByteArray().length > 110000);
-
 
         p = new MockParser(10);
         os = new ByteArrayOutputStream();
@@ -263,8 +257,7 @@ public class BasicContentHandlerFactoryTest {
         assertEquals(0, os.toByteArray().length);
     }
 
-    private void assertWriteLimitReached(Parser p, WriteOutContentHandler handler)
-            throws Exception {
+    private void assertWriteLimitReached(Parser p, WriteOutContentHandler handler) throws Exception {
         boolean wlr = false;
         try {
             p.parse(null, handler, null, null);
@@ -283,7 +276,7 @@ public class BasicContentHandlerFactoryTest {
         try {
             p.parse(null, handler, null, null);
         } catch (SAXException e) {
-            if (! WriteLimitReachedException.isWriteLimitReached(e)) {
+            if (!WriteLimitReachedException.isWriteLimitReached(e)) {
                 throw e;
             }
 
@@ -311,8 +304,8 @@ public class BasicContentHandlerFactoryTest {
         }
 
         @Override
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                          ParseContext context) throws IOException, SAXException, TikaException {
+        public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+                throws IOException, SAXException, TikaException {
             handler.startDocument();
             handler.startPrefixMapping("", XHTML);
             handler.startElement(XHTML, "html", "html", EMPTY_ATTRIBUTES);

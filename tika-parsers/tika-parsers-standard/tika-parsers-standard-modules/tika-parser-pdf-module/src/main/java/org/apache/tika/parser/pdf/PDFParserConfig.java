@@ -27,7 +27,6 @@ import java.util.regex.Pattern;
 
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.text.PDFTextStripper;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.pdf.image.ImageGraphicsEngineFactory;
 import org.apache.tika.renderer.Renderer;
@@ -45,8 +44,7 @@ import org.apache.tika.renderer.Renderer;
 public class PDFParserConfig implements Serializable {
 
     public enum TikaImageType {
-        RGB(ImageType.RGB),
-        GRAY(ImageType.GRAY);
+        RGB(ImageType.RGB), GRAY(ImageType.GRAY);
 
         private ImageType imageType;
         TikaImageType(ImageType imageType) {
@@ -89,8 +87,7 @@ public class PDFParserConfig implements Serializable {
     //extracted.
     private boolean extractInlineImageMetadataOnly = false;
 
-    private ImageGraphicsEngineFactory imageGraphicsEngineFactory =
-            new ImageGraphicsEngineFactory();
+    private ImageGraphicsEngineFactory imageGraphicsEngineFactory = new ImageGraphicsEngineFactory();
 
     //True if inline images (as identified by their object id within
     //a pdf file) should only be extracted once.
@@ -563,7 +560,6 @@ public class PDFParserConfig implements Serializable {
         userConfigured.add("ocrStrategy");
     }
 
-
     public void setOcrStrategyAuto(String ocrStrategyAuto) {
         final String regex = "^\\s*(faster|better)|(\\d{1,3})(%)?(?:,\\s*(\\d{1,3}))?\\s*$";
         Pattern pattern = Pattern.compile(regex);
@@ -580,8 +576,8 @@ public class PDFParserConfig implements Serializable {
                 if (matcher.group(3) != null) {
                     // If we have the percent sign, then convert
                     if (unmappedUnicodeCharsPerPage > 100.0) {
-                        throw new IllegalArgumentException
-                        ("Error parsing OCRStrategyAuto - Percent cannot exceed 100%");
+                        throw new IllegalArgumentException(
+                                "Error parsing OCRStrategyAuto - Percent cannot exceed 100%");
                     }
                     unmappedUnicodeCharsPerPage = unmappedUnicodeCharsPerPage / 100f;
                 }
@@ -642,11 +638,10 @@ public class PDFParserConfig implements Serializable {
      * @see #getOcrImageFormatName()
      */
     public void setOcrImageFormatName(String ocrImageFormatName) {
-        if (!ocrImageFormatName.equals("png") && !ocrImageFormatName.equals("tiff") &&
-                !ocrImageFormatName.equals("jpeg")) {
+        if (!ocrImageFormatName.equals("png") && !ocrImageFormatName.equals("tiff")
+                && !ocrImageFormatName.equals("jpeg")) {
             throw new IllegalArgumentException(
-                    "Available options: png, tiff, jpeg. " + "I'm sorry, but I don't recognize: " +
-                            ocrImageFormatName);
+                    "Available options: png, tiff, jpeg. " + "I'm sorry, but I don't recognize: " + ocrImageFormatName);
         }
         this.ocrImageFormatName = ocrImageFormatName;
         userConfigured.add("ocrImageFormatName");
@@ -982,8 +977,7 @@ public class PDFParserConfig implements Serializable {
             //and return that instead of the literal values
             String unmappedString = null;
             if (unmappedUnicodeCharsPerPage < 1.0) {
-                unmappedString = String.format(Locale.US, "%.03f",
-                        unmappedUnicodeCharsPerPage * 100) + "%";
+                unmappedString = String.format(Locale.US, "%.03f", unmappedUnicodeCharsPerPage * 100) + "%";
             } else {
                 unmappedString = String.format(Locale.US, "%.0f", unmappedUnicodeCharsPerPage);
             }
@@ -1004,14 +998,15 @@ public class PDFParserConfig implements Serializable {
                 return ALL;
             }
             String lc = s.toLowerCase(Locale.US);
-            switch (lc) {
-                case "vector_graphics_only":
+            switch (lc)
+            {
+                case "vector_graphics_only" :
                     return VECTOR_GRAPHICS_ONLY;
-                case "text_only":
+                case "text_only" :
                     return TEXT_ONLY;
-                case "no_text":
+                case "no_text" :
                     return NO_TEXT;
-                case "all":
+                case "all" :
                     return ALL;
             }
 
@@ -1053,16 +1048,17 @@ public class PDFParserConfig implements Serializable {
 
         private static IMAGE_STRATEGY parse(String s) {
             String lc = s.toLowerCase(Locale.US);
-            switch (lc) {
+            switch (lc)
+            {
                 case "rawimages" :
                     return RAW_IMAGES;
-                case "renderpagesbeforeparse":
+                case "renderpagesbeforeparse" :
                     return RENDER_PAGES_BEFORE_PARSE;
-                case "renderpagesatpageend":
+                case "renderpagesatpageend" :
                     return RENDER_PAGES_AT_PAGE_END;
-                case "none":
+                case "none" :
                     return NONE;
-                default:
+                default :
                     //fall through to exception
                     break;
             }

@@ -25,10 +25,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test cases for the {@link TextDetector} class.
@@ -99,8 +98,7 @@ public class TextDetectorTest {
 
     private void assertNotText(byte[] data) {
         try {
-            assertEquals(MediaType.OCTET_STREAM,
-                    detector.detect(new ByteArrayInputStream(data), new Metadata()));
+            assertEquals(MediaType.OCTET_STREAM, detector.detect(new ByteArrayInputStream(data), new Metadata()));
         } catch (IOException e) {
             fail("Unexpected exception from TextDetector");
         }

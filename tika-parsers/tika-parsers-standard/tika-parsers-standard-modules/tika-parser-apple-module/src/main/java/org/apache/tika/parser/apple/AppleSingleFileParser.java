@@ -26,9 +26,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -42,6 +39,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Parser that strips the header off of AppleSingle and AppleDouble
@@ -71,16 +70,15 @@ public class AppleSingleFileParser implements Parser {
     private static final int AFP_FILE_INFO = 14;
     private static final int DIRECTORY_ID = 15;
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.application("applefile"));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.application("applefile"));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         EmbeddedDocumentExtractor ex = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
@@ -128,9 +126,8 @@ public class AppleSingleFileParser implements Parser {
         return null;
     }
 
-    private long processFieldEntries(InputStream stream, List<FieldInfo> fieldInfoList,
-                                     Metadata embeddedMetadata, long bytesRead)
-            throws IOException, TikaException {
+    private long processFieldEntries(InputStream stream, List<FieldInfo> fieldInfoList, Metadata embeddedMetadata,
+            long bytesRead) throws IOException, TikaException {
         byte[] buffer = null;
         for (FieldInfo f : fieldInfoList) {
             long diff = f.offset - bytesRead;
@@ -144,8 +141,7 @@ public class AppleSingleFileParser implements Parser {
                 buffer = new byte[(int) f.length];
                 IOUtils.readFully(stream, buffer);
                 bytesRead += f.length;
-                String originalFileName =
-                        new String(buffer, 0, buffer.length, StandardCharsets.US_ASCII);
+                String originalFileName = new String(buffer, 0, buffer.length, StandardCharsets.US_ASCII);
                 embeddedMetadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, originalFileName);
             } else if (f.entryId != DATA_FORK) {
                 IOUtils.skipFully(stream, f.length);
@@ -154,7 +150,6 @@ public class AppleSingleFileParser implements Parser {
         }
         return bytesRead;
     }
-
 
     private List<FieldInfo> getSortedFieldInfoList(InputStream stream, short numEntries)
             throws IOException, TikaException {

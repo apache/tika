@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.language.translate.impl;
 
 import java.io.BufferedReader;
@@ -77,22 +76,20 @@ public class MosesTranslator extends ExternalTranslator {
             return text;
         }
         File tmpFile = new File(TMP_FILE_NAME);
-        try (OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(tmpFile),
-                Charset.defaultCharset())) {
+        try (OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(tmpFile), Charset.defaultCharset())) {
             out.append(text).append('\n').close();
         }
 
-        Runtime.getRuntime().exec(buildCommand(smtPath, scriptPath), new String[]{},
-                buildWorkingDirectory(scriptPath));
+        Runtime.getRuntime().exec(buildCommand(smtPath, scriptPath), new String[]{}, buildWorkingDirectory(scriptPath));
 
         File tmpTranslatedFile = new File(TMP_FILE_NAME + ".translated");
 
         StringBuilder stringBuilder = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(new FileInputStream(tmpTranslatedFile),
-                        Charset.defaultCharset()))) {
+                new InputStreamReader(new FileInputStream(tmpTranslatedFile), Charset.defaultCharset()))) {
             String line;
-            while ((line = reader.readLine()) != null) stringBuilder.append(line);
+            while ((line = reader.readLine()) != null)
+                stringBuilder.append(line);
         }
 
         if (!tmpFile.delete() || !tmpTranslatedFile.delete()) {
@@ -114,8 +111,8 @@ public class MosesTranslator extends ExternalTranslator {
      * @return String to run on the command line.
      */
     private String buildCommand(String smtPath, String scriptPath) {
-        return "java -jar " + smtPath + " -c NONE " + scriptPath + " " +
-                System.getProperty("user.dir") + "/" + TMP_FILE_NAME;
+        return "java -jar " + smtPath + " -c NONE " + scriptPath + " " + System.getProperty("user.dir") + "/"
+                + TMP_FILE_NAME;
     }
 
     /**

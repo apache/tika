@@ -33,9 +33,6 @@ import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.LoadErrorHandler;
 import org.apache.tika.config.ServiceLoader;
@@ -44,6 +41,8 @@ import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class is designed to detect subtypes of zip-based file formats.
@@ -90,8 +89,7 @@ public class DefaultZipContainerDetector implements Detector {
     private List<ZipContainerDetector> staticZipDetectors;
 
     public DefaultZipContainerDetector() {
-        this(new ServiceLoader(DefaultZipContainerDetector.class.getClassLoader(),
-                LoadErrorHandler.WARN, false));
+        this(new ServiceLoader(DefaultZipContainerDetector.class.getClassLoader(), LoadErrorHandler.WARN, false));
     }
 
     public DefaultZipContainerDetector(ServiceLoader loader) {
@@ -133,8 +131,8 @@ public class DefaultZipContainerDetector implements Detector {
             return TIFF;
         }
         try {
-            String name = ArchiveStreamFactory.detect(
-                    UnsynchronizedByteArrayInputStream.builder().setByteArray(prefix).setLength(length).get());
+            String name = ArchiveStreamFactory
+                    .detect(UnsynchronizedByteArrayInputStream.builder().setByteArray(prefix).setLength(length).get());
             return PackageConstants.getMediaType(name);
         } catch (IOException e) {
             return MediaType.OCTET_STREAM;
@@ -143,9 +141,8 @@ public class DefaultZipContainerDetector implements Detector {
 
     static MediaType detectCompressorFormat(byte[] prefix, int length) {
         try {
-            String type =
-                    CompressorStreamFactory.detect(
-                            UnsynchronizedByteArrayInputStream.builder().setByteArray(prefix).setLength(length).get());
+            String type = CompressorStreamFactory
+                    .detect(UnsynchronizedByteArrayInputStream.builder().setByteArray(prefix).setLength(length).get());
             return CompressorConstants.getMediaType(type);
         } catch (IOException e) {
             return MediaType.OCTET_STREAM;
@@ -205,8 +202,8 @@ public class DefaultZipContainerDetector implements Detector {
                     return tryStreamingOnTikaInputStream(tis, metadata);
                 }
             } else {
-                LOG.warn("Applying streaming detection in DefaultZipContainerDetector. " +
-                            "This can lead to imprecise detection. Please consider using a TikaInputStream");
+                LOG.warn("Applying streaming detection in DefaultZipContainerDetector. "
+                        + "This can lead to imprecise detection. Please consider using a TikaInputStream");
                 return detectStreaming(input, metadata);
             }
         } else if (!type.equals(MediaType.OCTET_STREAM)) {
@@ -222,7 +219,7 @@ public class DefaultZipContainerDetector implements Detector {
         //try streaming detect
         try {
             MediaType mt = detectStreaming(boundedInputStream, metadata, false);
-            if (! boundedInputStream.hasHitBound()) {
+            if (!boundedInputStream.hasHitBound()) {
                 return mt;
             }
         } finally {
@@ -249,8 +246,7 @@ public class DefaultZipContainerDetector implements Detector {
                 MediaType type = zipDetector.detect(zip, tis);
                 if (type != null) {
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("{} detected {}", zipDetector.getClass(),
-                                type.toString());
+                        LOG.debug("{} detected {}", zipDetector.getClass(), type.toString());
                     }
                     //e.g. if OPCPackage has already been set
                     //don't overwrite it with the zip
@@ -297,11 +293,10 @@ public class DefaultZipContainerDetector implements Detector {
         }
     }
 
-    MediaType detectStreaming(InputStream input, Metadata metadata, boolean allowStoredEntries)
-            throws IOException {
+    MediaType detectStreaming(InputStream input, Metadata metadata, boolean allowStoredEntries) throws IOException {
         StreamingDetectContext detectContext = new StreamingDetectContext();
-        try (ZipArchiveInputStream zis = new ZipArchiveInputStream(
-                CloseShieldInputStream.wrap(input), "UTF8", false, allowStoredEntries)) {
+        try (ZipArchiveInputStream zis = new ZipArchiveInputStream(CloseShieldInputStream.wrap(input), "UTF8", false,
+                allowStoredEntries)) {
             ZipArchiveEntry zae = zis.getNextEntry();
             while (zae != null) {
                 MediaType mt = detect(zae, zis, detectContext);
@@ -311,8 +306,8 @@ public class DefaultZipContainerDetector implements Detector {
                 zae = zis.getNextEntry();
             }
         } catch (UnsupportedZipFeatureException zfe) {
-            if (allowStoredEntries == false &&
-                    zfe.getFeature() == UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR) {
+            if (allowStoredEntries == false
+                    && zfe.getFeature() == UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR) {
                 input.reset();
                 return detectStreaming(input, metadata, true);
             }
@@ -327,11 +322,10 @@ public class DefaultZipContainerDetector implements Detector {
         return finalDetect(detectContext);
     }
 
-    MediaType detectStreamingFromPath(Path p, Metadata metadata, boolean allowStoredEntries)
-            throws IOException {
+    MediaType detectStreamingFromPath(Path p, Metadata metadata, boolean allowStoredEntries) throws IOException {
         StreamingDetectContext detectContext = new StreamingDetectContext();
-        try (ZipArchiveInputStream zis = new ZipArchiveInputStream(
-                Files.newInputStream(p), "UTF8", false, allowStoredEntries)) {
+        try (ZipArchiveInputStream zis = new ZipArchiveInputStream(Files.newInputStream(p), "UTF8", false,
+                allowStoredEntries)) {
             ZipArchiveEntry zae = zis.getNextEntry();
             while (zae != null) {
                 MediaType mt = detect(zae, zis, detectContext);
@@ -341,8 +335,8 @@ public class DefaultZipContainerDetector implements Detector {
                 zae = zis.getNextEntry();
             }
         } catch (UnsupportedZipFeatureException zfe) {
-            if (allowStoredEntries == false &&
-                    zfe.getFeature() == UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR) {
+            if (allowStoredEntries == false
+                    && zfe.getFeature() == UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR) {
                 return detectStreamingFromPath(p, metadata, true);
             }
         } catch (SecurityException e) {
@@ -356,8 +350,8 @@ public class DefaultZipContainerDetector implements Detector {
         return finalDetect(detectContext);
     }
 
-    private MediaType detect(ZipArchiveEntry zae, ZipArchiveInputStream zis,
-                             StreamingDetectContext detectContext) throws IOException {
+    private MediaType detect(ZipArchiveEntry zae, ZipArchiveInputStream zis, StreamingDetectContext detectContext)
+            throws IOException {
         for (ZipContainerDetector d : getDetectors()) {
             MediaType mt = d.streamingDetectUpdate(zae, zis, detectContext);
             if (mt != null) {
@@ -379,8 +373,8 @@ public class DefaultZipContainerDetector implements Detector {
 
     private List<ZipContainerDetector> getDetectors() {
         if (loader != null && loader.isDynamic()) {
-            List<ZipContainerDetector> dynamicDetectors =
-                    loader.loadDynamicServiceProviders(ZipContainerDetector.class);
+            List<ZipContainerDetector> dynamicDetectors = loader
+                    .loadDynamicServiceProviders(ZipContainerDetector.class);
             if (!dynamicDetectors.isEmpty()) {
                 List<ZipContainerDetector> zipDetectors = new ArrayList<>(staticZipDetectors);
                 zipDetectors.addAll(dynamicDetectors);

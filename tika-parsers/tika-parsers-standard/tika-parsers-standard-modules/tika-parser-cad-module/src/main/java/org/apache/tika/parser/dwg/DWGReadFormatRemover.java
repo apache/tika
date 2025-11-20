@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.dwg;
 
 import java.util.regex.Matcher;
@@ -37,7 +36,7 @@ public class DWGReadFormatRemover {
     private static final String underlineStrikeThrough = "((?:\\\\\\\\)+|\\\\[LlOoKk])";
     private static final String endMarks = "((?:\\\\\\\\)+|\\\\(?:A|H|pi|pxt|pxi|pt|X|Q|f|F|W|C|T)[^;]{0,100};)";
     private static final String newLine = "((?:\\\\\\\\)+|\\\\P)";
-    private static final  String stackFrac = "(\\\\\\\\)+|\\\\S([^/^#]{1,20})[/^#]([^;]{1,20});";
+    private static final String stackFrac = "(\\\\\\\\)+|\\\\S([^/^#]{1,20})[/^#]([^;]{1,20});";
     private static final String curlyBraces = "(\\\\)+[{}]|([{}])";
     private static final String escapeChars = "(?<!\\\\)(\\\\)(?!\\\\)";
     public String cleanupDwgString(String dwgString) {
@@ -46,7 +45,7 @@ public class DWGReadFormatRemover {
         //Strip off start/stop underline/overstrike/strike throughs
         Matcher m = Pattern.compile(underlineStrikeThrough).matcher(cleanString);
         while (m.find()) {
-            if (! m.group(1).endsWith("\\")) {
+            if (!m.group(1).endsWith("\\")) {
                 m.appendReplacement(sb, "");
             }
         }
@@ -57,14 +56,14 @@ public class DWGReadFormatRemover {
         m = Pattern.compile(endMarks).matcher(cleanString);
         sb.setLength(0);
         while (m.find()) {
-            if (! m.group(1).endsWith("\\")) {
+            if (!m.group(1).endsWith("\\")) {
                 m.appendReplacement(sb, "");
             }
         }
         m.appendTail(sb);
         cleanString = sb.toString();
 
-            //new line marker \\P replace with actual new line
+        //new line marker \\P replace with actual new line
         m = Pattern.compile(newLine).matcher(cleanString);
         sb.setLength(0);
         while (m.find()) {
@@ -75,7 +74,7 @@ public class DWGReadFormatRemover {
         m.appendTail(sb);
         cleanString = sb.toString();
 
-            //stacking fractions
+        //stacking fractions
         m = Pattern.compile(stackFrac).matcher(cleanString);
         sb.setLength(0);
         while (m.find()) {
@@ -96,7 +95,7 @@ public class DWGReadFormatRemover {
         }
         m.appendTail(sb);
         cleanString = sb.toString();
-            //now get rid of escape characters
+        //now get rid of escape characters
         cleanString = cleanString.replaceAll(escapeChars, "");
         //now unescape backslash
         cleanString = cleanString.replaceAll("(\\\\\\\\)", "\\\\");

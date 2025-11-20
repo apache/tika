@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.eval.core.tokens;
 
 import java.util.Map;
@@ -38,7 +37,6 @@ public class TokenContraster {
     private TokenCountDiffQueue moreA;
     private TokenCountDiffQueue moreB;
 
-
     private int topN = 10;
 
     private int diceCoefficientNum = 0;
@@ -47,9 +45,7 @@ public class TokenContraster {
     private double diceCoefficient = 0.0d;
     private double overlap = 0.0;
 
-
-    public ContrastStatistics calculateContrastStatistics(TokenCounts tokensA,
-                                                          TokenCounts tokensB) {
+    public ContrastStatistics calculateContrastStatistics(TokenCounts tokensA, TokenCounts tokensB) {
         reset();
         this.tokensA = tokensA;
         this.tokensB = tokensB;
@@ -96,7 +92,6 @@ public class TokenContraster {
             overlapNum += 2 * Math.min(tokenCountA, tokenCountB);
         }
 
-
         if (tokenCountA == 0L && tokenCountB > 0L) {
             addToken(token, tokenCountB, uniqB);
         }
@@ -118,8 +113,7 @@ public class TokenContraster {
         long sumUniqTokens = tokensA.getTotalUniqueTokens() + tokensB.getTotalUniqueTokens();
 
         diceCoefficient = (double) diceCoefficientNum / (double) sumUniqTokens;
-        overlap =
-                (float) overlapNum / (double) (tokensA.getTotalTokens() + tokensB.getTotalTokens());
+        overlap = (float) overlapNum / (double) (tokensA.getTotalTokens() + tokensB.getTotalTokens());
 
     }
 

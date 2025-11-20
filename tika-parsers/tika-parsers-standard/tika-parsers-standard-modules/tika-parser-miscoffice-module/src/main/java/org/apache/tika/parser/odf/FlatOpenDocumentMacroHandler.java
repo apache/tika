@@ -20,10 +20,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.lang3.StringUtils;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -32,6 +28,9 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Handler for macros in flat open documents
@@ -72,8 +71,7 @@ class FlatOpenDocumentMacroHandler extends ContentHandlerDecorator {
     }
 
     @Override
-    public void endElement(String namespaceURI, String localName, String qName)
-            throws SAXException {
+    public void endElement(String namespaceURI, String localName, String qName) throws SAXException {
         if (SOURCE_CODE.equals(localName)) {
             try {
                 handleMacro();
@@ -96,8 +94,7 @@ class FlatOpenDocumentMacroHandler extends ContentHandlerDecorator {
         byte[] bytes = macroBuffer.toString().getBytes(StandardCharsets.UTF_8);
 
         if (embeddedDocumentExtractor == null) {
-            embeddedDocumentExtractor =
-                    EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
+            embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
         }
         Metadata embeddedMetadata = new Metadata();
         if (!StringUtils.isBlank(macroName)) {
@@ -108,8 +105,7 @@ class FlatOpenDocumentMacroHandler extends ContentHandlerDecorator {
 
         if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
             try (TikaInputStream tis = TikaInputStream.get(bytes)) {
-                embeddedDocumentExtractor
-                        .parseEmbedded(tis, contentHandler, embeddedMetadata, true);
+                embeddedDocumentExtractor.parseEmbedded(tis, contentHandler, embeddedMetadata, true);
             }
         }
     }

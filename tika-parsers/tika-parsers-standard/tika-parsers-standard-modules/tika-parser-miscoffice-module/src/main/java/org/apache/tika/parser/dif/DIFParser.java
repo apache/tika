@@ -23,9 +23,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -35,6 +32,8 @@ import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.TaggedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class DIFParser implements Parser {
 
@@ -42,8 +41,8 @@ public class DIFParser implements Parser {
      *
      */
     private static final long serialVersionUID = 971505521275777826L;
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<>(Collections.singletonList(MediaType.application("dif+xml"))));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections
+            .unmodifiableSet(new HashSet<>(Collections.singletonList(MediaType.application("dif+xml"))));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -52,8 +51,8 @@ public class DIFParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         // TODO Auto-generated method stub
         final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
@@ -61,9 +60,7 @@ public class DIFParser implements Parser {
         TaggedContentHandler tagged = new TaggedContentHandler(handler);
         try {
             XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
-                            new EmbeddedContentHandler(
-                                    getContentHandler(tagged, metadata, context)),
-                    context);
+                    new EmbeddedContentHandler(getContentHandler(tagged, metadata, context)), context);
         } catch (SAXException e) {
             tagged.throwIfCauseOf(e);
             throw new TikaException("XML parse error", e);
@@ -74,8 +71,7 @@ public class DIFParser implements Parser {
 
     }
 
-    protected ContentHandler getContentHandler(ContentHandler handler, Metadata metadata,
-                                               ParseContext context) {
+    protected ContentHandler getContentHandler(ContentHandler handler, Metadata metadata, ParseContext context) {
 
         return new DIFContentHandler(handler, metadata);
 

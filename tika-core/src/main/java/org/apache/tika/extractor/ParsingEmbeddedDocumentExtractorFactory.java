@@ -20,8 +20,7 @@ import org.apache.tika.config.Field;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
-public class ParsingEmbeddedDocumentExtractorFactory
-        implements EmbeddedDocumentExtractorFactory {
+public class ParsingEmbeddedDocumentExtractorFactory implements EmbeddedDocumentExtractorFactory {
 
     private boolean writeFileNameToContent = true;
 
@@ -32,8 +31,7 @@ public class ParsingEmbeddedDocumentExtractorFactory
 
     @Override
     public EmbeddedDocumentExtractor newInstance(Metadata metadata, ParseContext parseContext) {
-        ParsingEmbeddedDocumentExtractor ex =
-                new ParsingEmbeddedDocumentExtractor(parseContext);
+        ParsingEmbeddedDocumentExtractor ex = new ParsingEmbeddedDocumentExtractor(parseContext);
         ex.setWriteFileNameToContent(writeFileNameToContent);
         return ex;
     }

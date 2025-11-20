@@ -29,15 +29,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.pipes.core.FetchEmitTuple;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
-
 @Disabled("turn into an actual unit test")
 public class TestS3PipesIterator {
-
 
     @Test
     public void testSimple() throws Exception {

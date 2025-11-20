@@ -22,15 +22,14 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.multiple.AbstractMultipleParser.MetadataPolicy;
 import org.apache.tika.parser.multiple.FallbackParser;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Decorator base class for the {@link Parser} interface.
@@ -99,8 +98,7 @@ public class ParserDecorator implements Parser {
             @Override
             public Set<MediaType> getSupportedTypes(ParseContext context) {
                 // Get our own, writable copy of the types the parser supports
-                Set<MediaType> parserTypes =
-                        new HashSet<>(super.getSupportedTypes(context));
+                Set<MediaType> parserTypes = new HashSet<>(super.getSupportedTypes(context));
                 // Remove anything on our excludes list
                 parserTypes.removeAll(excludeTypes);
                 // Return whatever is left
@@ -121,8 +119,7 @@ public class ParserDecorator implements Parser {
      * @deprecated This has been replaced by {@link FallbackParser}
      */
     @Deprecated
-    public static final Parser withFallbacks(final Collection<? extends Parser> parsers,
-                                             final Set<MediaType> types) {
+    public static final Parser withFallbacks(final Collection<? extends Parser> parsers, final Set<MediaType> types) {
         // Delegate to the new FallbackParser for now, until people upgrade
         // Keep old behaviour on metadata, which was to preseve all
         MediaTypeRegistry registry = MediaTypeRegistry.getDefaultRegistry();
@@ -148,8 +145,8 @@ public class ParserDecorator implements Parser {
      * override this method (and use <code>super.parse()</code> to invoke
      * the decorated parser) to implement extra decoration.
      */
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         parser.parse(stream, handler, metadata, context);
     }
 

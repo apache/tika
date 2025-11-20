@@ -22,7 +22,6 @@ import java.io.Serializable;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
-
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 
@@ -56,8 +55,8 @@ public interface ZipContainerDetector extends Serializable {
      * @param zae
      * @return
      */
-    MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis,
-                                    StreamingDetectContext detectContext) throws IOException;
+    MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis, StreamingDetectContext detectContext)
+            throws IOException;
 
     /**
      * After we've finished streaming the zip archive entries,

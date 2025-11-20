@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.standard;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -26,14 +25,10 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.ws.rs.core.Response;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -44,7 +39,10 @@ import org.apache.tika.server.core.FetcherStreamFactory;
 import org.apache.tika.server.core.InputStreamFactory;
 import org.apache.tika.server.core.resource.RecursiveMetadataResource;
 import org.apache.tika.server.core.writer.MetadataListMessageBodyWriter;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
+import jakarta.ws.rs.core.Response;
 
 @Disabled("turn into actual unit tests -- this relies on network connectivity...bad")
 public class FetcherTest extends CXFTestBase {
@@ -57,7 +55,8 @@ public class FetcherTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(RecursiveMetadataResource.class);
-        sf.setResourceProvider(RecursiveMetadataResource.class, new SingletonResourceProvider(new RecursiveMetadataResource()));
+        sf.setResourceProvider(RecursiveMetadataResource.class,
+                new SingletonResourceProvider(new RecursiveMetadataResource()));
     }
 
     @Override
@@ -84,13 +83,8 @@ public class FetcherTest extends CXFTestBase {
 
     @Test
     public void testBasic() throws Exception {
-        Response response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .acceptEncoding("gzip")
-                .header("fetcherName", "url")
-                .header("fetchKey", "https://tika.apache.org")
-                .put("");
+        Response response = WebClient.create(endPoint + META_PATH).accept("application/json").acceptEncoding("gzip")
+                .header("fetcherName", "url").header("fetchKey", "https://tika.apache.org").put("");
 
         Reader reader = new InputStreamReader(new GzipCompressorInputStream((InputStream) response.getEntity()), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);

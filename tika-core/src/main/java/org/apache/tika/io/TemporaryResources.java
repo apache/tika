@@ -23,13 +23,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedList;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Utility class for tracking and ultimately closing or otherwise disposing
@@ -86,8 +85,9 @@ public class TemporaryResources implements Closeable {
     public Path createTempFile(String suffix) throws IOException {
         String actualSuffix = StringUtils.isBlank(suffix) ? ".tmp" : suffix;
 
-        final Path path = tempFileDir == null ? Files.createTempFile("apache-tika-", actualSuffix) :
-                Files.createTempFile(tempFileDir, "apache-tika-", actualSuffix);
+        final Path path = tempFileDir == null
+                ? Files.createTempFile("apache-tika-", actualSuffix)
+                : Files.createTempFile(tempFileDir, "apache-tika-", actualSuffix);
         addResource(() -> {
             try {
                 Files.delete(path);

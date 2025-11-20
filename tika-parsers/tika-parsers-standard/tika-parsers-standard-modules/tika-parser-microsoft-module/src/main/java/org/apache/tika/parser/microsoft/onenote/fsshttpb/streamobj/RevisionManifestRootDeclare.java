@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
@@ -47,15 +46,14 @@ public class RevisionManifestRootDeclare extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems)
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems)
             throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.rootExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
         this.objectExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
         if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(),
-                    "RevisionManifestRootDeclare", "Stream object over-parse error", null);
+            throw new StreamObjectParseErrorException(currentIndex.get(), "RevisionManifestRootDeclare",
+                    "Stream object over-parse error", null);
         }
 
         currentIndex.set(index.get());

@@ -18,16 +18,16 @@ package org.apache.tika.parser.transcribe.aws;
 
 import java.io.InputStream;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.transcribe.model.LanguageCode;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
+import software.amazon.awssdk.services.transcribe.model.LanguageCode;
 
 //TODO: Check the ACTUAL output of Amazon Transcribe.
 
@@ -51,8 +51,7 @@ public class AmazonTranscribeTest extends TikaTest {
 
     @BeforeAll
     public static void setUp() throws Exception {
-        try (InputStream is = AmazonTranscribeTest.class
-                .getResourceAsStream("/tika-config-aws-transcribe.xml")) {
+        try (InputStream is = AmazonTranscribeTest.class.getResourceAsStream("/tika-config-aws-transcribe.xml")) {
             PARSER = new AutoDetectParser(new TikaConfig(is));
         }
     }

@@ -28,15 +28,14 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.JsonMappingException;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.Test;
+
+import com.fasterxml.jackson.databind.JsonMappingException;
 
 public class JsonMetadataListTest {
-
 
     @Test
     public void testListBasic() throws Exception {
@@ -69,9 +68,7 @@ public class JsonMetadataListTest {
     public void testListNull() throws Exception {
         StringWriter writer = new StringWriter();
         JsonMetadataList.toJson(null, writer);
-        assertEquals("null", writer
-                .toString()
-                .trim());
+        assertEquals("null", writer.toString().trim());
 
         List<Metadata> m = JsonMetadataList.fromJson(null);
         assertNull(m);
@@ -79,8 +76,10 @@ public class JsonMetadataListTest {
 
     @Test
     public void testListCorrupted() throws Exception {
-        String json = "[{\"k1\":[\"v1\",\"v2\",\"v3\",\"v4\",\"v4\"],\"k2\":\"v1\"}," + "\"k3\":[\"v1\",\"v2\",\"v3\",\"v4\",\"v4\"],\"k4\":\"v1\"}]";
-        Exception ex = assertThrows(JsonMappingException.class, () -> JsonMetadataList.fromJson(new StringReader(json)));
+        String json = "[{\"k1\":[\"v1\",\"v2\",\"v3\",\"v4\",\"v4\"],\"k2\":\"v1\"},"
+                + "\"k3\":[\"v1\",\"v2\",\"v3\",\"v4\",\"v4\"],\"k4\":\"v1\"}]";
+        Exception ex = assertThrows(JsonMappingException.class,
+                () -> JsonMetadataList.fromJson(new StringReader(json)));
     }
 
     @Test
@@ -107,30 +106,22 @@ public class JsonMetadataListTest {
         metadataList.add(m2);
         StringWriter writer = new StringWriter();
         JsonMetadataList.toJson(metadataList, writer);
-        assertTrue(writer
-                .toString()
-                .startsWith("["));
+        assertTrue(writer.toString().startsWith("["));
         writer = new StringWriter();
         JsonMetadata.setPrettyPrinting(true);
 
-
         JsonMetadataList.setPrettyPrinting(true);
         JsonMetadataList.toJson(metadataList, writer);
-        String expected = "[ {[NEWLINE]  \"zk1\" : [ \"v1\", \"v2\", \"v3\", \"v4\", \"v4\" ],[NEWLINE]  \"zk2\" : \"v1\",[NEWLINE]" +
-                "  \"X-TIKA:content\" : \"this is the content\"[NEWLINE]}, " +
-                "{[NEWLINE]  \"k3\" : [ \"v1\", \"v2\", \"v3\", \"v4\", \"v4\" ],[NEWLINE]  \"k4\" : \"v1\"[NEWLINE]} ]";
-        assertEquals(expected, writer
-                .toString()
-                .replaceAll("[\r\n]+", "[NEWLINE]"));
-
+        String expected = "[ {[NEWLINE]  \"zk1\" : [ \"v1\", \"v2\", \"v3\", \"v4\", \"v4\" ],[NEWLINE]  \"zk2\" : \"v1\",[NEWLINE]"
+                + "  \"X-TIKA:content\" : \"this is the content\"[NEWLINE]}, "
+                + "{[NEWLINE]  \"k3\" : [ \"v1\", \"v2\", \"v3\", \"v4\", \"v4\" ],[NEWLINE]  \"k4\" : \"v1\"[NEWLINE]} ]";
+        assertEquals(expected, writer.toString().replaceAll("[\r\n]+", "[NEWLINE]"));
 
         //now set it back to false
         JsonMetadataList.setPrettyPrinting(false);
         writer = new StringWriter();
         JsonMetadataList.toJson(metadataList, writer);
-        assertTrue(writer
-                .toString()
-                .startsWith("["));
+        assertTrue(writer.toString().startsWith("["));
     }
 
     @Test

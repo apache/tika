@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.apple;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,12 +21,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.pdf.PDFParser;
+import org.junit.jupiter.api.Test;
 
 public class AppleSingleFileParserTest extends TikaTest {
 
@@ -40,7 +38,6 @@ public class AppleSingleFileParserTest extends TikaTest {
         assertContains(PDFParser.class.getName(),
                 Arrays.asList(list.get(1).getValues(TikaCoreProperties.TIKA_PARSED_BY)));
         assertContains("Hello World", list.get(1).get(TikaCoreProperties.TIKA_CONTENT));
-        assertEquals("fltsyllabussortie2rev1_2.pdf",
-                list.get(1).get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
+        assertEquals("fltsyllabussortie2rev1_2.pdf", list.get(1).get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
     }
 }

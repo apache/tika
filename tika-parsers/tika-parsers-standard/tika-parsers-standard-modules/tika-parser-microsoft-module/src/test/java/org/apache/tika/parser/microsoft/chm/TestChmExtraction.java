@@ -36,9 +36,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -46,21 +43,21 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.SAXException;
 
 public class TestChmExtraction extends MultiThreadedTikaTest {
 
     private final Parser parser = new ChmParser();
 
-    private final List<String> files =
-            Arrays.asList("/test-documents/testChm.chm", "/test-documents/testChm2.chm",
-                    "/test-documents/testChm3.chm");
+    private final List<String> files = Arrays.asList("/test-documents/testChm.chm", "/test-documents/testChm2.chm",
+            "/test-documents/testChm3.chm");
 
     @Test
     public void testGetText() throws Exception {
         BodyContentHandler handler = new BodyContentHandler();
-        new ChmParser()
-                .parse(new ByteArrayInputStream(TestParameters.chmData), handler, new Metadata(),
-                        new ParseContext());
+        new ChmParser().parse(new ByteArrayInputStream(TestParameters.chmData), handler, new Metadata(),
+                new ParseContext());
         assertTrue(handler.toString().contains("The TCard method accepts only numeric arguments"));
     }
 
@@ -124,26 +121,24 @@ public class TestChmExtraction extends MultiThreadedTikaTest {
             //Entry names should be nice. Disable this if the test chm do have bad looking but
             // valid entry names.
             if (!niceAscFileName(directoryListingEntry.getName())) {
-                throw new TikaException("Warning: File name contains a non ascii char : " +
-                        directoryListingEntry.getName());
+                throw new TikaException(
+                        "Warning: File name contains a non ascii char : " + directoryListingEntry.getName());
             }
 
             final String lowName = directoryListingEntry.getName().toLowerCase(Locale.ROOT);
 
             //check duplicate entry name which is seen before.
             if (names.contains(lowName)) {
-                throw new TikaException(
-                        "Duplicate File name detected : " + directoryListingEntry.getName());
+                throw new TikaException("Duplicate File name detected : " + directoryListingEntry.getName());
             }
             names.add(lowName);
 
-            if (lowName.endsWith(".html") || lowName.endsWith(".htm") || lowName.endsWith(".hhk") ||
-                    lowName.endsWith(".hhc")
-                //|| name.endsWith(".bmp")
+            if (lowName.endsWith(".html") || lowName.endsWith(".htm") || lowName.endsWith(".hhk")
+                    || lowName.endsWith(".hhc")
+            //|| name.endsWith(".bmp")
             ) {
                 if (findZero(data)) {
-                    throw new TikaException(
-                            "Xhtml/text file contains '\\0' : " + directoryListingEntry.getName());
+                    throw new TikaException("Xhtml/text file contains '\\0' : " + directoryListingEntry.getName());
                 }
 
                 //validate html
@@ -151,16 +146,14 @@ public class TestChmExtraction extends MultiThreadedTikaTest {
                 if (!htmlPairP.matcher(html).find()) {
                     System.err.println(lowName + " is invalid.");
                     System.err.println(html);
-                    throw new TikaException(
-                            "Invalid xhtml file : " + directoryListingEntry.getName());
+                    throw new TikaException("Invalid xhtml file : " + directoryListingEntry.getName());
                 }
-//                else {
-//                    System.err.println(directoryListingEntry.getName() + " is valid.");
-//                }
+                //                else {
+                //                    System.err.println(directoryListingEntry.getName() + " is valid.");
+                //                }
             }
         }
     }
-
 
     @Test //TODO: redo with new MultiThreadedTikaTest
     public void testMultiThreadedChmExtraction() throws InterruptedException {

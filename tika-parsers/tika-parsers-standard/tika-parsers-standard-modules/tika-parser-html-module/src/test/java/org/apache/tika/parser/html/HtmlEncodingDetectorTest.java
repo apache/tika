@@ -14,9 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.html;
-
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -26,10 +24,9 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
+import org.apache.tika.metadata.Metadata;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
-import org.apache.tika.metadata.Metadata;
 
 public class HtmlEncodingDetectorTest {
 
@@ -61,9 +58,9 @@ public class HtmlEncodingDetectorTest {
     @Test
     @Disabled("until we do a full parse")
     public void insideTag() throws IOException {
-        assertWindows1252("<meta name='description'" +
-                "content='If I write charset=UTF-8 here, it doesnt mean the page is in UTF-8'/>" +
-                "<meta charset='WINDOWS-1252'>");
+        assertWindows1252("<meta name='description'"
+                + "content='If I write charset=UTF-8 here, it doesnt mean the page is in UTF-8'/>"
+                + "<meta charset='WINDOWS-1252'>");
     }
 
     @Test
@@ -104,11 +101,10 @@ public class HtmlEncodingDetectorTest {
     @Disabled("until we can prove this harms detection")
     public void unmatchedQuote() throws IOException {
         assertWindows1252("<meta http-equiv='content-type' content='charset=\"UTF-8'>" +
-                // invalid charset declaration
+        // invalid charset declaration
                 "<meta charset='WINDOWS-1252'>" // real charset declaration
         );
     }
-
 
     @Test
     @Disabled("until we do a full parse")
@@ -127,8 +123,7 @@ public class HtmlEncodingDetectorTest {
     }
 
     private void assertCharset(String html, Charset charset) throws IOException {
-        assertEquals(charset, detectCharset(html),
-                html + " should be detected as " + charset);
+        assertEquals(charset, detectCharset(html), html + " should be detected as " + charset);
     }
 
     private Charset detectCharset(String test) throws IOException {

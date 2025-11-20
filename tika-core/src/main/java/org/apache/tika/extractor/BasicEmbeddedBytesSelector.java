@@ -25,8 +25,6 @@ import org.apache.tika.utils.StringUtils;
 
 public class BasicEmbeddedBytesSelector implements EmbeddedBytesSelector {
 
-
-
     private final Set<String> includeMimes;
     private final Set<String> excludeMimes;
     private final Set<String> includeEmbeddedResourceTypes;
@@ -34,8 +32,7 @@ public class BasicEmbeddedBytesSelector implements EmbeddedBytesSelector {
     private final Set<String> excludeEmbeddedResourceTypes;
 
     public BasicEmbeddedBytesSelector(Set<String> includeMimes, Set<String> excludeMimes,
-                                      Set<String> includeEmbeddedResourceTypes,
-                                      Set<String> excludeEmbeddedResourceTypes) {
+            Set<String> includeEmbeddedResourceTypes, Set<String> excludeEmbeddedResourceTypes) {
         this.includeMimes = includeMimes;
         this.excludeMimes = excludeMimes;
         this.includeEmbeddedResourceTypes = includeEmbeddedResourceTypes;
@@ -58,13 +55,12 @@ public class BasicEmbeddedBytesSelector implements EmbeddedBytesSelector {
         if (excludeMimes.contains(mime)) {
             return false;
         }
-        if (includeMimes.size() > 0 && ! includeMimes.contains(mime)) {
+        if (includeMimes.size() > 0 && !includeMimes.contains(mime)) {
             return false;
         }
         String embeddedResourceType = metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
         //if a parser doesn't specify the type, treat it as ATTACHMENT
-        embeddedResourceType = StringUtils.isBlank(embeddedResourceType) ? "ATTACHMENT" :
-                embeddedResourceType;
+        embeddedResourceType = StringUtils.isBlank(embeddedResourceType) ? "ATTACHMENT" : embeddedResourceType;
 
         if (excludeEmbeddedResourceTypes.contains(embeddedResourceType)) {
             return false;

@@ -1,10 +1,18 @@
-// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
-/**
- * ******************************************************************************
- * Copyright (C) 2005-2016, International Business Machines Corporation and    *
- * others. All Rights Reserved.                                                *
- * ******************************************************************************
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.apache.tika.parser.txt;
 
@@ -30,18 +38,17 @@ import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
  */
 public class CharsetMatch implements Comparable<CharsetMatch> {
 
-
     //
     //   Private Data
     //
     private int fConfidence;
-    private byte[] fRawInput = null;     // Original, untouched input bytes.
+    private byte[] fRawInput = null; // Original, untouched input bytes.
     //  If user gave us a byte array, this is it.
-    private int fRawLength;           // Length of data in fRawInput array.
-    private InputStream fInputStream = null;  // User's input stream, or null if the user
-    private String fCharsetName;         // The name of the charset this CharsetMatch
+    private int fRawLength; // Length of data in fRawInput array.
+    private InputStream fInputStream = null; // User's input stream, or null if the user
+    private String fCharsetName; // The name of the charset this CharsetMatch
     //   represents.  Filled in by the recognizer.
-    private String fLang;                // The language, if one was determined by
+    private String fLang; // The language, if one was determined by
 
     /*
      *  Constructor.  Implementation internal
@@ -100,9 +107,9 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
 
         if (inputStream == null) {
             try {
-                inputStream = UnsynchronizedByteArrayInputStream.builder().setByteArray(fRawInput).setLength(fRawLength).get();
-            }
-            catch (IOException ex) {
+                inputStream = UnsynchronizedByteArrayInputStream.builder().setByteArray(fRawInput).setLength(fRawLength)
+                        .get();
+            } catch (IOException ex) {
                 return null;
             }
         }
@@ -150,7 +157,7 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
             try (Reader reader = getReader()) {
                 int max = maxLength < 0 ? Integer.MAX_VALUE : maxLength;
                 int bytesRead;
-                
+
                 while ((bytesRead = reader.read(buffer, 0, Math.min(max, 1024))) > 0) {
                     sb.append(buffer, 0, bytesRead);
                     max -= bytesRead;
@@ -178,8 +185,7 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
          * be used to open a charset (e.g. IBM424_rtl). The ending '_rtl' or '_ltr'
          * should be stripped off before creating the string.
          */
-        int startSuffix =
-                !name.contains("_rtl") ? name.indexOf("_ltr") : name.indexOf("_rtl");
+        int startSuffix = !name.contains("_rtl") ? name.indexOf("_ltr") : name.indexOf("_rtl");
         if (startSuffix > 0) {
             name = name.substring(0, startSuffix);
         }

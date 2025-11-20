@@ -16,7 +16,6 @@
  */
 package org.apache.tika.eval.core.textstats;
 
-
 import org.apache.tika.eval.core.tokens.TokenCounts;
 
 public class BasicTokenCountStatsCalculator implements TokenCountStatsCalculator<TokenCounts> {

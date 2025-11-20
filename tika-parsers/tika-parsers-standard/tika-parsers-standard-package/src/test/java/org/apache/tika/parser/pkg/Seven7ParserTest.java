@@ -23,10 +23,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
-import javax.crypto.Cipher;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
+import javax.crypto.Cipher;
 
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -35,6 +33,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseRecord;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 /**
  * Test case for parsing 7z files.
@@ -51,8 +51,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
         Metadata metadata = new Metadata();
 
         // Ensure 7zip is a parsable format
-        assertTrue(AUTO_DETECT_PARSER.getSupportedTypes(recursingContext).contains(TYPE_7ZIP),
-                "No 7zip parser found");
+        assertTrue(AUTO_DETECT_PARSER.getSupportedTypes(recursingContext).contains(TYPE_7ZIP), "No 7zip parser found");
 
         // Parse
         String content = getText("test-documents.7z", metadata);
@@ -85,8 +84,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
 
         // No password, will fail with EncryptedDocumentException
         boolean ex = false;
-        try (InputStream stream = getResourceAsStream(
-                "/test-documents/test7Z_protected_passTika.7z")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/test7Z_protected_passTika.7z")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
             fail("Shouldn't be able to read a password protected 7z without the password");
         } catch (EncryptedDocumentException e) {
@@ -116,8 +114,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
         // Ideally we'd like Commons Compress to give an error, but it doesn't...
         recursingContext.set(PasswordProvider.class, metadata1 -> "wrong");
         handler = new BodyContentHandler();
-        try (InputStream stream = getResourceAsStream(
-                "/test-documents/test7Z_protected_passTika.7z")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/test7Z_protected_passTika.7z")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
             fail("Shouldn't be able to read a password protected 7z with wrong password");
         } catch (TikaException e) {
@@ -135,8 +132,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
         if (isStrongCryptoAvailable()) {
             recursingContext.set(PasswordProvider.class, metadata12 -> "Tika");
             handler = new BodyContentHandler();
-            try (InputStream stream = getResourceAsStream(
-                    "/test-documents/test7Z_protected_passTika.7z")) {
+            try (InputStream stream = getResourceAsStream("/test-documents/test7Z_protected_passTika.7z")) {
                 AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
             }
 
@@ -165,8 +161,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
             boolean ioe = false;
             recursingContext.set(PasswordProvider.class, metadata13 -> "Tika");
             handler = new BodyContentHandler();
-            try (InputStream stream = getResourceAsStream(
-                    "/test-documents/test7Z_protected_passTika.7z")) {
+            try (InputStream stream = getResourceAsStream("/test-documents/test7Z_protected_passTika.7z")) {
                 AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
             } catch (TikaException e) {
                 ioe = true;

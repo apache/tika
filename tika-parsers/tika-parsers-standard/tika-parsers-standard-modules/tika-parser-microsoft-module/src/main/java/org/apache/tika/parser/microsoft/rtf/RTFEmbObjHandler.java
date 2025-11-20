@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,9 +23,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -35,6 +32,8 @@ import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.EmbeddedContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * This class buffers data from embedded objects and pictures.
@@ -77,8 +76,7 @@ class RTFEmbObjHandler {
     private Metadata metadata;
     private EMB_STATE state = EMB_STATE.NADA;
 
-    protected RTFEmbObjHandler(ContentHandler handler, Metadata metadata, ParseContext context,
-                               int memoryLimitInKb) {
+    protected RTFEmbObjHandler(ContentHandler handler, Metadata metadata, ParseContext context, int memoryLimitInKb) {
         this.handler = handler;
         this.embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
         os = UnsynchronizedByteArrayOutputStream.builder().get();
@@ -196,8 +194,7 @@ class RTFEmbObjHandler {
             }
             metadata.set(RTFMetadata.THUMBNAIL, Boolean.toString(inObject));
             if (isPictBitmap) {
-                metadata.set(
-                        TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, "image/x-rtf-raw-bitmap");
+                metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, "image/x-rtf-raw-bitmap");
             }
             extractObj(bytes, handler, metadata);
 
@@ -221,8 +218,7 @@ class RTFEmbObjHandler {
             if (metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY) == null) {
                 String extension = embeddedDocumentUtil.getExtension(stream, metadata);
                 if (inObject && state == EMB_STATE.PICT) {
-                    metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
-                            "thumbnail_" + thumbCount++ + extension);
+                    metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "thumbnail_" + thumbCount++ + extension);
                     metadata.set(RTFMetadata.THUMBNAIL, "true");
                 } else {
                     metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
@@ -230,9 +226,7 @@ class RTFEmbObjHandler {
                 }
             }
             try {
-                embeddedDocumentUtil
-                        .parseEmbedded(stream, new EmbeddedContentHandler(handler), metadata,
-                                true);
+                embeddedDocumentUtil.parseEmbedded(stream, new EmbeddedContentHandler(handler), metadata, true);
             } catch (IOException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
             } finally {

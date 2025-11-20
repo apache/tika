@@ -24,13 +24,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import aQute.bnd.annotation.metatype.Configurable;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
+import org.junit.jupiter.api.Test;
 
+import aQute.bnd.annotation.metatype.Configurable;
 
 /**
  * @since 6/1/16
@@ -121,7 +120,6 @@ public class AnnotationUtilsTest {
         }
     }
 
-
     @Test
     public void testParserInheritance() {
 
@@ -165,7 +163,6 @@ public class AnnotationUtilsTest {
             //expected
         }
     }
-
 
     @Test
     public void testParamValueInheritance() {

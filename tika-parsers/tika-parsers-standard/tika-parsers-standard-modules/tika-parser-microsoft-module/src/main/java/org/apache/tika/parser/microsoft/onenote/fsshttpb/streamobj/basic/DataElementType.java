@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.util.HashMap;
@@ -64,7 +63,6 @@ public enum DataElementType {
      * Object Data BLOB Data Element
      */
     ObjectDataBLOBDataElementData(10);
-
 
     static final Map<Integer, DataElementType> valToEnumMap = new HashMap<>();
 

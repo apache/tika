@@ -23,7 +23,6 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 
 import org.apache.commons.io.input.BoundedInputStream;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.metadata.Metadata;

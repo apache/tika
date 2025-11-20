@@ -28,13 +28,13 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import com.github.openjson.JSONException;
-import com.github.openjson.JSONObject;
 import org.apache.commons.io.IOUtils;
+import org.apache.tika.parser.ner.NERecogniser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.parser.ner.NERecogniser;
+import com.github.openjson.JSONException;
+import com.github.openjson.JSONObject;
 
 /**
  * This class offers an implementation of {@link NERecogniser} based on
@@ -48,12 +48,9 @@ import org.apache.tika.parser.ner.NERecogniser;
 public class CoreNLPNERecogniser implements NERecogniser {
 
     //default model paths
-    public static final String NER_3CLASS_MODEL =
-            "edu/stanford/nlp/models/ner/english.all.3class.distsim.crf.ser.gz";
-    public static final String NER_4CLASS_MODEL =
-            "edu/stanford/nlp/models/ner/english.conll.4class.distsim.crf.ser.gz";
-    public static final String NER_7CLASS_MODEL =
-            "edu/stanford/nlp/models/ner/english.muc.7class.distsim.crf.ser.gz";
+    public static final String NER_3CLASS_MODEL = "edu/stanford/nlp/models/ner/english.all.3class.distsim.crf.ser.gz";
+    public static final String NER_4CLASS_MODEL = "edu/stanford/nlp/models/ner/english.conll.4class.distsim.crf.ser.gz";
+    public static final String NER_7CLASS_MODEL = "edu/stanford/nlp/models/ner/english.muc.7class.distsim.crf.ser.gz";
     /**
      * default Model path
      */
@@ -93,8 +90,7 @@ public class CoreNLPNERecogniser implements NERecogniser {
         try {
             Properties props = new Properties();
             Class<?> classifierClass = Class.forName(CLASSIFIER_CLASS_NAME);
-            Method loadMethod =
-                    classifierClass.getMethod("getClassifier", String.class, Properties.class);
+            Method loadMethod = classifierClass.getMethod("getClassifier", String.class, Properties.class);
             classifierInstance = loadMethod.invoke(classifierClass, modelPath, props);
             classifyMethod = classifierClass.getMethod("classifyToCharacterOffsets", String.class);
 

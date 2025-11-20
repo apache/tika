@@ -16,7 +16,6 @@
  */
 package org.apache.tika.server.core;
 
-
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -31,19 +30,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.core.Response;
 import org.apache.commons.io.FileUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.FetchEmitTuple;
@@ -52,6 +40,18 @@ import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTupleList;
 import org.apache.tika.utils.ProcessUtils;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.ws.rs.core.Response;
 
 @Disabled("useful for development...need to turn it into a real unit test")
 public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
@@ -95,19 +95,19 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
         }
         TIKA_CONFIG = TMP_DIR.resolve("tika-config.xml");
 
-        TIKA_CONFIG_XML =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" + "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" + "<name>" +
-                        FETCHER_NAME + "</name>" + "<basePath>" + inputDir.toAbsolutePath() + "</basePath>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
-                        "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" + "<name>" + EMITTER_NAME + "</name>" + "<basePath>" +
-                        TMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" + "</emitter>" + "</emitters>" + "<server><endpoints><endpoint>async</endpoint></endpoints>" +
-                        "<enableUnsecureFeatures>true</enableUnsecureFeatures></server>" + "<async><tikaConfig>" + ProcessUtils.escapeCommandLine(TIKA_CONFIG
-                        .toAbsolutePath()
-                        .toString()) + "</tikaConfig><numClients>10</numClients><forkedJvmArgs><arg>-Xmx256m" + "</arg></forkedJvmArgs><timeoutMillis>5000</timeoutMillis>" +
-                        "</async>" + "</properties>";
+        TIKA_CONFIG_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>"
+                + "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" + "<name>" + FETCHER_NAME
+                + "</name>" + "<basePath>" + inputDir.toAbsolutePath() + "</basePath>" + "</fetcher>" + "</fetchers>"
+                + "<emitters>" + "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" + "<name>"
+                + EMITTER_NAME + "</name>" + "<basePath>" + TMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>"
+                + "</emitter>" + "</emitters>" + "<server><endpoints><endpoint>async</endpoint></endpoints>"
+                + "<enableUnsecureFeatures>true</enableUnsecureFeatures></server>" + "<async><tikaConfig>"
+                + ProcessUtils.escapeCommandLine(TIKA_CONFIG.toAbsolutePath().toString())
+                + "</tikaConfig><numClients>10</numClients><forkedJvmArgs><arg>-Xmx256m"
+                + "</arg></forkedJvmArgs><timeoutMillis>5000</timeoutMillis>" + "</async>" + "</properties>";
 
         FileUtils.write(TIKA_CONFIG.toFile(), TIKA_CONFIG_XML, UTF_8);
     }
-
 
     @BeforeEach
     public void setUpEachTest() throws Exception {
@@ -120,7 +120,6 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
             }
         }
     }
-
 
     @Test
     public void testBasic() throws Exception {
@@ -135,28 +134,26 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
             long start = System.currentTimeMillis();
 
             JsonNode response = sendAsync(FILE_LIST);
-            String status = response
-                    .get("status")
-                    .asText();
+            String status = response.get("status").asText();
             if (!"ok".equals(status)) {
                 fail("bad status: '" + status + "' -> " + response.toPrettyString());
             }
-            int expected = (ON_PARSE_EXCEPTION == FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT) ? FILE_LIST.size() : FILE_LIST.size() / 3;
+            int expected = (ON_PARSE_EXCEPTION == FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT)
+                    ? FILE_LIST.size()
+                    : FILE_LIST.size() / 3;
             int targets = 0;
             while (targets < NUM_FILES * 2) {
                 targets = countTargets();
                 Thread.sleep(100);
             }
-//            System.out.println("elapsed : " + (System.currentTimeMillis() - start));
+            //            System.out.println("elapsed : " + (System.currentTimeMillis() - start));
         } finally {
             serverThread.interrupt();
         }
     }
 
     private int countTargets() {
-        return TMP_OUTPUT_DIR
-                .toFile()
-                .listFiles().length;
+        return TMP_OUTPUT_DIR.toFile().listFiles().length;
     }
 
     private JsonNode sendAsync(List<String> fileNames) throws Exception {
@@ -167,10 +164,7 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
         }
         String json = JsonFetchEmitTupleList.toJson(tuples);
 
-        Response response = WebClient
-                .create(endPoint + "/async")
-                .accept("application/json")
-                .post(json);
+        Response response = WebClient.create(endPoint + "/async").accept("application/json").post(json);
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         return new ObjectMapper().readTree(reader);
     }
@@ -179,6 +173,7 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
         ParseContext parseContext = new ParseContext();
         parseContext.set(HandlerConfig.class, HandlerConfig.DEFAULT_HANDLER_CONFIG);
 
-        return new FetchEmitTuple(fileName, new FetchKey(FETCHER_NAME, fileName), new EmitKey(EMITTER_NAME, ""), new Metadata(), parseContext, ON_PARSE_EXCEPTION);
+        return new FetchEmitTuple(fileName, new FetchKey(FETCHER_NAME, fileName), new EmitKey(EMITTER_NAME, ""),
+                new Metadata(), parseContext, ON_PARSE_EXCEPTION);
     }
 }

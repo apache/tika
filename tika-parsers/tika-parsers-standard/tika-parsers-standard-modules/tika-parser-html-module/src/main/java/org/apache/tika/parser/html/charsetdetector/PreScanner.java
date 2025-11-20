@@ -33,12 +33,10 @@ import java.util.regex.Pattern;
  */
 class PreScanner {
 
-    private static final Pattern CHARSET_PATTERN =
-            Pattern.compile("charset\\s*=\\s*([\"']?)([^\"'\\s;]+)\\1");
+    private static final Pattern CHARSET_PATTERN = Pattern.compile("charset\\s*=\\s*([\"']?)([^\"'\\s;]+)\\1");
     private static final byte[] COMMENT_START = {(byte) '<', (byte) '!', (byte) '-', (byte) '-'};
     private static final byte[] COMMENT_END = {(byte) '-', (byte) '-', (byte) '>'};
-    private static final byte[] META_TAG_START =
-            {(byte) '<', (byte) 'm', (byte) 'e', (byte) 't', (byte) 'a'};
+    private static final byte[] META_TAG_START = {(byte) '<', (byte) 'm', (byte) 'e', (byte) 't', (byte) 'a'};
     private static final byte SLASH = (byte) '/';
     private static final byte EQUAL = (byte) '=';
     private static final byte TAG_START = (byte) '<';
@@ -66,13 +64,15 @@ class PreScanner {
 
     private static BitSet bitSet(int... bs) {
         BitSet bitSet = new BitSet(0xFF);
-        for (int b : bs) bitSet.set(b);
+        for (int b : bs)
+            bitSet.set(b);
         return bitSet;
     }
 
     private static BitSet bitSet(BitSet base, int... bs) {
         BitSet bitSet = (BitSet) base.clone();
-        for (int b : bs) bitSet.set(b);
+        for (int b : bs)
+            bitSet.set(b);
         return bitSet;
     }
 
@@ -106,14 +106,14 @@ class PreScanner {
             } else if (expect(UTF16_LE_BOM)) {
                 return StandardCharsets.UTF_16LE;
             }
-        } catch (IOException e) { /* stream could not be read, also return null */ }
+        } catch (IOException e) {
+            /* stream could not be read, also return null */ }
         return null;
     }
 
     private boolean processAtLeastOneByte() {
         try {
-            return processComment() || processMeta() || processTag() || processSpecialTag() ||
-                    processAny();
+            return processComment() || processMeta() || processTag() || processSpecialTag() || processAny();
         } catch (IOException e) {
             return false;
         }
@@ -136,7 +136,8 @@ class PreScanner {
                     stream.mark(1);
                 } while (!contains(SPACE_OR_TAG_END, read()));
                 stream.reset();
-                while (getAttribute() != null) {/* ignore the attribute*/}
+                while (getAttribute() != null) {
+                    /* ignore the attribute*/}
                 return true;
             }
         }
@@ -158,8 +159,7 @@ class PreScanner {
         stream.mark(6); // len("<meta ") == 6
         if (readCaseInsensitive(META_TAG_START) && contains(SPACE_OR_SLASH, read())) {
             MetaProcessor metaProcessor = new MetaProcessor();
-            for (Map.Entry<String, String> attribute = getAttribute(); attribute != null;
-                    attribute = getAttribute()) {
+            for (Map.Entry<String, String> attribute = getAttribute(); attribute != null; attribute = getAttribute()) {
                 metaProcessor.processAttribute(attribute);
             }
             metaProcessor.updateDetectedCharset(detectedCharset);
@@ -196,8 +196,8 @@ class PreScanner {
             return null;
         }
         StringBuilder name = new StringBuilder();
-        while (!(peek() == EQUAL && name.length() > 0) && !(peek() == TAG_END || peek() == SLASH) &&
-                !skipAll(WHITESPACE)) {
+        while (!(peek() == EQUAL && name.length() > 0) && !(peek() == TAG_END || peek() == SLASH)
+                && !skipAll(WHITESPACE)) {
             name.append((char) getLowerCaseChar());
         }
         return name.toString();
@@ -213,8 +213,7 @@ class PreScanner {
             }
         } else {
             stream.reset();
-            for (byte b = getLowerCaseChar(); !contains(SPACE_OR_TAG_END, b);
-                    b = getLowerCaseChar()) {
+            for (byte b = getLowerCaseChar(); !contains(SPACE_OR_TAG_END, b); b = getLowerCaseChar()) {
                 value.append((char) b);
                 stream.mark(1);
             }

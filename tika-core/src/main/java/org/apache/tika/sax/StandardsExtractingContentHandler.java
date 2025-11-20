@@ -14,17 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.sax;
 
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.tika.metadata.Metadata;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-
-import org.apache.tika.metadata.Metadata;
 
 /**
  * StandardsExtractingContentHandler is a Content Handler used to extract
@@ -113,13 +111,12 @@ public class StandardsExtractingContentHandler extends ContentHandlerDecorator {
     @Override
     public void endDocument() throws SAXException {
         super.endDocument();
-        List<StandardReference> standards =
-                StandardsText.extractStandardReferences(stringBuilder.toString(), threshold);
+        List<StandardReference> standards = StandardsText.extractStandardReferences(stringBuilder.toString(),
+                threshold);
         for (StandardReference standardReference : standards) {
             metadata.add(STANDARD_REFERENCES, standardReference.toString());
         }
     }
-
 
     /**
      * The number of characters to store in memory for checking for standards.

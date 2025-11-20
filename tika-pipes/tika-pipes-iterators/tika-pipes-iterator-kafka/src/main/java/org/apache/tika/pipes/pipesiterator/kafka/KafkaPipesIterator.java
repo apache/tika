@@ -27,9 +27,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -43,6 +40,8 @@ import org.apache.tika.pipes.core.HandlerConfig;
 import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class KafkaPipesIterator extends PipesIterator implements Initializable {
 
@@ -59,7 +58,6 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
 
     private Properties props;
     private KafkaConsumer<String, String> consumer;
-
 
     @Field
     public void setTopic(String topic) {
@@ -121,8 +119,10 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
     public void initialize(Map<String, Param> params) {
         props = new Properties();
         safePut(props, ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        safePut(props, ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, serializerClass(keySerializer, StringDeserializer.class));
-        safePut(props, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, serializerClass(valueSerializer, StringDeserializer.class));
+        safePut(props, ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+                serializerClass(keySerializer, StringDeserializer.class));
+        safePut(props, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+                serializerClass(valueSerializer, StringDeserializer.class));
         safePut(props, ConsumerConfig.GROUP_ID_CONFIG, groupId);
         safePut(props, ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, autoOffsetReset);
         safePut(props, "group.inital.rebalance.delay.ms", groupInitialRebalanceDelayMs);
@@ -164,7 +164,8 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
                 }
                 ParseContext parseContext = new ParseContext();
                 parseContext.set(HandlerConfig.class, handlerConfig);
-                tryToAdd(new FetchEmitTuple(r.key(), new FetchKey(fetcherName, r.key()), new EmitKey(emitterName, r.key()), new Metadata(), parseContext, getOnParseException()));
+                tryToAdd(new FetchEmitTuple(r.key(), new FetchKey(fetcherName, r.key()),
+                        new EmitKey(emitterName, r.key()), new Metadata(), parseContext, getOnParseException()));
                 ++count;
             }
         } while ((emitMax > 0 || count < emitMax) && !records.isEmpty());

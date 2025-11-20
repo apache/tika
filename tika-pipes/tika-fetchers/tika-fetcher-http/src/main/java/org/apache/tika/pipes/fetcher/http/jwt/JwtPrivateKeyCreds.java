@@ -27,8 +27,7 @@ import org.apache.tika.exception.TikaConfigException;
 
 public class JwtPrivateKeyCreds extends JwtCreds {
     private final PrivateKey privateKey;
-    public JwtPrivateKeyCreds(PrivateKey privateKey, String issuer, String subject,
-                              int expiresInSeconds) {
+    public JwtPrivateKeyCreds(PrivateKey privateKey, String issuer, String subject, int expiresInSeconds) {
         super(issuer, subject, expiresInSeconds);
         this.privateKey = privateKey;
     }
@@ -44,8 +43,7 @@ public class JwtPrivateKeyCreds extends JwtCreds {
         return Base64.getEncoder().encodeToString(privateKeyEncoded);
     }
 
-    public static PrivateKey convertBase64ToPrivateKey(String privateKeyBase64)
-            throws TikaConfigException {
+    public static PrivateKey convertBase64ToPrivateKey(String privateKeyBase64) throws TikaConfigException {
         try {
             byte[] privateKeyEncoded = Base64.getDecoder().decode(privateKeyBase64);
 

@@ -34,17 +34,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-
 import org.apache.tika.pipes.core.PipesReporter;
 import org.apache.tika.pipes.core.PipesResult;
 import org.apache.tika.pipes.core.async.AsyncStatus;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.core.pipesiterator.TotalCountResult;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 public class TestFileSystemStatusReporter {
 
@@ -55,16 +55,13 @@ public class TestFileSystemStatusReporter {
         reporter.setStatusFile(path.toAbsolutePath().toString());
         reporter.setReportUpdateMillis(100);
         reporter.initialize(new HashMap<>());
-        final ObjectMapper objectMapper = JsonMapper.builder()
-                .addModule(new JavaTimeModule())
-                .build();
+        final ObjectMapper objectMapper = JsonMapper.builder().addModule(new JavaTimeModule()).build();
         Thread readerThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 while (true) {
                     try {
-                        AsyncStatus asyncStatus =
-                                objectMapper.readValue(path.toFile(), AsyncStatus.class);
+                        AsyncStatus asyncStatus = objectMapper.readValue(path.toFile(), AsyncStatus.class);
                         assertEquals(TotalCountResult.STATUS.NOT_COMPLETED,
                                 asyncStatus.getTotalCountResult().getStatus());
 
@@ -85,7 +82,6 @@ public class TestFileSystemStatusReporter {
 
         Map<PipesResult.STATUS, Long> total = runBatch(reporter, 10, 200);
 
-
         readerThread.interrupt();
         readerThread.join(1000);
         reporter.report(new TotalCountResult(30000, TotalCountResult.STATUS.COMPLETED));
@@ -102,13 +98,10 @@ public class TestFileSystemStatusReporter {
         assertEquals(TotalCountResult.STATUS.COMPLETED, asyncStatus.getTotalCountResult().getStatus());
     }
 
-    private Map<PipesResult.STATUS, Long> runBatch(FileSystemStatusReporter reporter,
-                                                   int numThreads,
-                                                   int numIterations)
+    private Map<PipesResult.STATUS, Long> runBatch(FileSystemStatusReporter reporter, int numThreads, int numIterations)
             throws ExecutionException, InterruptedException {
         ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
-        ExecutorCompletionService executorCompletionService =
-                new ExecutorCompletionService(executorService);
+        ExecutorCompletionService executorCompletionService = new ExecutorCompletionService(executorService);
         List<ReportWorker> workerList = new ArrayList<>();
         for (int i = 0; i < numThreads; i++) {
             ReportWorker reportWorker = new ReportWorker(reporter, numIterations);

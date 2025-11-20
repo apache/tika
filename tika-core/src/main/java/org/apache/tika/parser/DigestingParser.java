@@ -14,18 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser;
-
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.DefaultEmbeddedStreamTranslator;
@@ -34,6 +29,8 @@ import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class DigestingParser extends ParserDecorator {
 
@@ -52,11 +49,10 @@ public class DigestingParser extends ParserDecorator {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
-
-        if (! shouldDigest(metadata)) {
+        if (!shouldDigest(metadata)) {
             super.parse(stream, handler, metadata, context);
             return;
         }
@@ -85,7 +81,7 @@ public class DigestingParser extends ParserDecorator {
         if (digester == null) {
             return false;
         }
-        if (! skipContainerDocument) {
+        if (!skipContainerDocument) {
             return true;
         }
         Integer parseDepth = metadata.getInt(TikaCoreProperties.EMBEDDED_DEPTH);
@@ -105,11 +101,11 @@ public class DigestingParser extends ParserDecorator {
         boolean isSkipContainerDocument();
     }
 
-        /**
-     * Interface for digester. See
-     * org.apache.parser.utils.CommonsDigester in tika-parsers for an
-     * implementation.
-     */
+    /**
+    * Interface for digester. See
+    * org.apache.parser.utils.CommonsDigester in tika-parsers for an
+    * implementation.
+    */
     public interface Digester {
         /**
          * Digests an InputStream and sets the appropriate value(s) in the metadata.

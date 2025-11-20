@@ -23,10 +23,6 @@ import java.util.Map;
 
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.UnsupportedFormatException;
 import org.apache.tika.metadata.Metadata;
@@ -34,6 +30,9 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.QuattroPro;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
 
 /**
  * Extracts text from a Quattro Pro document according to QPW v9 File Format.
@@ -51,8 +50,8 @@ class QPWTextExtractor {
 
     static {
         //--- Global Records ---
-        EXTRACTORS.put(0x0001, Extractor.BOF);     // Beginning of file
-        EXTRACTORS.put(0x0005, Extractor.USER);    // User
+        EXTRACTORS.put(0x0001, Extractor.BOF); // Beginning of file
+        EXTRACTORS.put(0x0005, Extractor.USER); // User
 
         //--- Notebook Records ---
         EXTRACTORS.put(0x0403, Extractor.EXT_LINK);// External link
@@ -90,17 +89,14 @@ class QPWTextExtractor {
         POIFSFileSystem pfs = new POIFSFileSystem(input);
         DirectoryNode rootNode = pfs.getRoot();
         if (rootNode == null || !rootNode.hasEntry(OLE_DOCUMENT_NAME)) {
-            throw new UnsupportedFormatException(
-                    "Unsupported QuattroPro file format. " + "Looking for OLE entry \"" +
-                            OLE_DOCUMENT_NAME + "\". Found: " +
-                            (rootNode == null ? "null" : rootNode.getEntryNames()));
+            throw new UnsupportedFormatException("Unsupported QuattroPro file format. " + "Looking for OLE entry \""
+                    + OLE_DOCUMENT_NAME + "\". Found: " + (rootNode == null ? "null" : rootNode.getEntryNames()));
         }
 
         //TODO shall we validate and throw warning/error if the file does not
         //start with a BOF and ends with a EOF?
         xhtml.startElement("p");
-        try (WPInputStream in = new WPInputStream(
-                pfs.createDocumentInputStream(OLE_DOCUMENT_NAME))) {
+        try (WPInputStream in = new WPInputStream(pfs.createDocumentInputStream(OLE_DOCUMENT_NAME))) {
             Context ctx = new Context(in, xhtml, metadata);
             while (hasNext(in)) {
                 ctx.type = in.readWPShort();
@@ -110,7 +106,7 @@ class QPWTextExtractor {
                     extractor.extract(ctx);
                 } else {
                     // Use DEBUG to find out what we are ignoring
-//                    Extractor.DEBUG.extract(ctx);
+                    //                    Extractor.DEBUG.extract(ctx);
                     Extractor.IGNORE.extract(ctx);
                 }
             }
@@ -133,7 +129,8 @@ class QPWTextExtractor {
             public void extract(Context ctx) throws IOException {
                 ctx.in.skipWPByte(ctx.bodyLength);
             }
-        }, BOF {
+        },
+        BOF {
             @Override
             public void extract(Context ctx) throws IOException {
                 ctx.metadata.set(QuattroPro.ID, ctx.in.readWPString(4));
@@ -144,13 +141,15 @@ class QPWTextExtractor {
                 ctx.metadata.set(Office.PAGE_COUNT, ctx.in.readWPShort());
                 ctx.in.skipWPByte(ctx.bodyLength - 14);
             }
-        }, USER {
+        },
+        USER {
             @Override
             public void extract(Context ctx) throws IOException {
                 ctx.metadata.set(TikaCoreProperties.CREATOR, getQstrLabel(ctx.in));
                 ctx.metadata.set(TikaCoreProperties.MODIFIER, getQstrLabel(ctx.in));
             }
-        }, EXT_LINK {
+        },
+        EXT_LINK {
             @Override
             public void extract(Context ctx) throws IOException, SAXException {
                 ctx.in.readWPShort(); // index
@@ -159,62 +158,69 @@ class QPWTextExtractor {
                 ctx.xhtml.characters(getQstrLabel(ctx.in));
                 ctx.xhtml.characters(System.lineSeparator());
             }
-        }, STRING_TABLE {
+        },
+        STRING_TABLE {
             @Override
             public void extract(Context ctx) throws IOException, SAXException {
                 long entries = ctx.in.readWPLong();
-                ctx.in.readWPLong();  // Total used
-                ctx.in.readWPLong();  // Total saved
+                ctx.in.readWPLong(); // Total used
+                ctx.in.readWPLong(); // Total saved
                 for (int i = 0; i < entries; i++) {
                     ctx.xhtml.characters(getQstrLabel(ctx.in));
                     ctx.xhtml.characters(System.lineSeparator());
                 }
             }
-        }, BOS {
+        },
+        BOS {
             @Override
             public void extract(Context ctx) throws IOException, SAXException {
                 ctx.in.readWPShort(); // sheet #
                 ctx.in.readWPShort(); // first col index
                 ctx.in.readWPShort(); // last col index
-                ctx.in.readWPLong();  // first row index
-                ctx.in.readWPLong();  // last row index
+                ctx.in.readWPLong(); // first row index
+                ctx.in.readWPLong(); // last row index
                 ctx.in.readWPShort(); // format
                 ctx.in.readWPShort(); // flags
                 ctx.xhtml.characters(getQstrLabel(ctx.in));
                 ctx.xhtml.characters(System.lineSeparator());
             }
-        }, SHEET_HEADFOOT {
+        },
+        SHEET_HEADFOOT {
             @Override
             public void extract(Context ctx) throws IOException, SAXException {
                 ctx.in.readWPShort(); // flag
                 ctx.xhtml.characters(getQstrLabel(ctx.in));
                 ctx.xhtml.characters(System.lineSeparator());
             }
-        }, FORMULA_STRING_VALUE {
+        },
+        FORMULA_STRING_VALUE {
             @Override
             public void extract(Context ctx) throws IOException, SAXException {
                 ctx.in.readWPShort(); // column
-                ctx.in.readWPLong();  // row
+                ctx.in.readWPLong(); // row
                 ctx.xhtml.characters(getQstrLabel(ctx.in));
             }
-        }, CGENERICLABEL {
+        },
+        CGENERICLABEL {
             @Override
             public void extract(Context ctx) throws IOException, SAXException {
                 ctx.in.readWPShort(); // column
-                ctx.in.readWPLong();  // row
+                ctx.in.readWPLong(); // row
                 ctx.in.readWPShort(); // format index
                 ctx.xhtml.characters(getQstrLabel(ctx.in));
             }
-        }, CCOMMENT {
+        },
+        CCOMMENT {
             @Override
             public void extract(Context ctx) throws IOException, SAXException {
                 ctx.in.readWPShort(); // column
-                ctx.in.readWPLong();  // row
-                ctx.in.readWPLong();  // flag
-                ctx.xhtml.characters(getQstrLabel(ctx.in));  // author name
-                ctx.xhtml.characters(getQstrLabel(ctx.in));  // comment
+                ctx.in.readWPLong(); // row
+                ctx.in.readWPLong(); // flag
+                ctx.xhtml.characters(getQstrLabel(ctx.in)); // author name
+                ctx.xhtml.characters(getQstrLabel(ctx.in)); // comment
             }
-        }, DEBUG { //used to print out a chunk
+        },
+        DEBUG { //used to print out a chunk
             @Override
             public void extract(Context ctx) throws IOException {
                 LOG.error("REC ({}/{}):{}", Integer.toHexString(ctx.type), ctx.bodyLength,

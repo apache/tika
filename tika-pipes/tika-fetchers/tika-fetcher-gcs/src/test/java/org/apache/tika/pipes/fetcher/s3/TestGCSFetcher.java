@@ -24,15 +24,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.fetcher.Fetcher;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 @Disabled("write actual unit tests")
 public class TestGCSFetcher {
@@ -48,11 +47,10 @@ public class TestGCSFetcher {
         outputFile = Files.createTempFile(TEMP_DIR, "tika-test", ".pdf");
     }
 
-
     @Test
     public void testConfig() throws Exception {
-        FetcherManager fetcherManager = FetcherManager.load(
-                Paths.get(this.getClass().getResource("/tika-config-gcs.xml").toURI()));
+        FetcherManager fetcherManager = FetcherManager
+                .load(Paths.get(this.getClass().getResource("/tika-config-gcs.xml").toURI()));
         Fetcher fetcher = fetcherManager.getFetcher("gcs");
         Metadata metadata = new Metadata();
         try (InputStream is = fetcher.fetch(FETCH_STRING, metadata, new ParseContext())) {

@@ -60,8 +60,7 @@ public class TextContentHandler extends DefaultHandler {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes attributes)
-            throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
         if (addSpaceBetweenElements) {
             delegate.characters(SPACE, 0, SPACE.length);
         }

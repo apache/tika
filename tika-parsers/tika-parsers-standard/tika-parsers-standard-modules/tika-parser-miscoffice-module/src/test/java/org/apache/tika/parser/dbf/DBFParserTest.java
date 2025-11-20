@@ -24,29 +24,26 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.Parser;
+import org.junit.jupiter.api.Test;
 
 public class DBFParserTest extends TikaTest {
 
     @Test
     public void testBasic() throws Exception {
         XMLResult r = getXML("testDBF.dbf");
-        assertEquals(DBFReader.Version.FOXBASE_PLUS.getFullMimeString(),
-                r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(DBFReader.Version.FOXBASE_PLUS.getFullMimeString(), r.metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("2016-05-24T00:00:00Z", r.metadata.get(TikaCoreProperties.MODIFIED));
         assertEquals("UTF-8", r.metadata.get(Metadata.CONTENT_ENCODING));
 
         String xml = r.xml.replaceAll("[\\t\\r\\n]", " ");
         //header
-        assertContains(
-                "<thead> <th>TEXT_FIELD</th> <th>NUMERIC_FI</th> <th>DATE_FIELD</th></thead>", xml);
+        assertContains("<thead> <th>TEXT_FIELD</th> <th>NUMERIC_FI</th> <th>DATE_FIELD</th></thead>", xml);
         //look for contents
         assertContains("普林斯顿大学", xml);
         assertContains("\u0627\u0645\u0639\u0629", xml);
@@ -64,8 +61,7 @@ public class DBFParserTest extends TikaTest {
     @Test
     public void testGB18030Encoded() throws Exception {
         XMLResult r = getXML("testDBF_gb18030.dbf");
-        assertEquals(DBFReader.Version.FOXBASE_PLUS.getFullMimeString(),
-                r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(DBFReader.Version.FOXBASE_PLUS.getFullMimeString(), r.metadata.get(Metadata.CONTENT_TYPE));
         assertContains("虽然该", r.xml);
     }
 
@@ -137,8 +133,8 @@ public class DBFParserTest extends TikaTest {
         }
     }
 
-/*
-commented out until we get permission to add the test file
+    /*
+    commented out until we get permission to add the test file
     @Test
     public void testEncodingInHeaderAndDateTime() throws Exception {
         XMLResult r = getXML("prem2007_2.dbf");
@@ -149,6 +145,6 @@ commented out until we get permission to add the test file
         assertContains("<td>齠褕</td>", xml);//content
         assertContains("<td>2010-04-20T00:00:00Z</td>", xml);
     }
-*/
+    */
 
 }

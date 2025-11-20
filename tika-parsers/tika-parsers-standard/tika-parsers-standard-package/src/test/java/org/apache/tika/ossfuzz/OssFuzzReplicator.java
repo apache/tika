@@ -16,10 +16,9 @@
  */
 package org.apache.tika.ossfuzz;
 
+import org.apache.tika.parser.mail.RFC822Parser;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
-import org.apache.tika.parser.mail.RFC822Parser;
 
 public class OssFuzzReplicator {
 

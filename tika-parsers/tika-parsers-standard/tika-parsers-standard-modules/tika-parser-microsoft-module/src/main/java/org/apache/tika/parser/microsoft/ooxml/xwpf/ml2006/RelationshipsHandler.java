@@ -14,9 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
-
 
 import org.apache.poi.openxml4j.opc.ContentTypes;
 import org.apache.poi.openxml4j.opc.TargetMode;
@@ -32,7 +30,6 @@ class RelationshipsHandler extends AbstractPartHandler {
     public RelationshipsHandler(RelationshipsManager relationshipsManager) {
         this.relationshipsManager = relationshipsManager;
     }
-
 
     @Override
     public void startDocument() throws SAXException {
@@ -51,16 +48,14 @@ class RelationshipsHandler extends AbstractPartHandler {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes atts)
-            throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
         if (uri.equals(REL_NS)) {
             if (localName.equals("Relationship")) {
                 String id = atts.getValue("", "Id");
                 String type = atts.getValue("", "Type");
                 String target = atts.getValue("", "Target");
                 String targetModeString = atts.getValue("", "TargetMode");
-                TargetMode targetMode = "EXTERNAL".equals(targetModeString) ? TargetMode.EXTERNAL :
-                        TargetMode.INTERNAL;
+                TargetMode targetMode = "EXTERNAL".equals(targetModeString) ? TargetMode.EXTERNAL : TargetMode.INTERNAL;
                 relationshipsManager.addRelationship(getName(), id, type, target, targetMode);
             }
         }

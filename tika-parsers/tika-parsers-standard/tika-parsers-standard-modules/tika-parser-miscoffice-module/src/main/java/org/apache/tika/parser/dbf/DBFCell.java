@@ -30,7 +30,6 @@ import java.util.TimeZone;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-
 import org.apache.tika.io.EndianUtils;
 
 class DBFCell {
@@ -48,18 +47,19 @@ class DBFCell {
     }
 
     String getString(Charset charset) {
-        switch (colType) {
-            case C:
+        switch (colType)
+        {
+            case C :
                 return new String(getBytes(), charset).trim();
-            case D:
+            case D :
                 return getFormattedDate();
-            case N:
+            case N :
                 return new String(getBytes(), StandardCharsets.US_ASCII).trim();
-            case L:
+            case L :
                 return new String(getBytes(), StandardCharsets.US_ASCII).trim();
-            case T:
+            case T :
                 return getFormattedDateTime();
-            default:
+            default :
                 //TODO: find examples of other cell types for testing
                 return new String(getBytes(), StandardCharsets.US_ASCII).trim();
         }
@@ -69,8 +69,8 @@ class DBFCell {
     boolean read(InputStream is) throws IOException {
         bytesReadLast = IOUtils.read(is, bytes);
         if (DBFReader.STRICT && bytesReadLast != bytes.length) {
-            throw new IOException("Truncated record, only read " + bytesReadLast +
-                    " bytes, but should have read: " + bytes.length);
+            throw new IOException(
+                    "Truncated record, only read " + bytesReadLast + " bytes, but should have read: " + bytes.length);
         }
         return bytesReadLast > 0;
     }
@@ -91,8 +91,8 @@ class DBFCell {
 
     @Override
     public String toString() {
-        return "DBFCell{" + "colType=" + colType + ", bytes=" + Arrays.toString(bytes) +
-                ", decimalCount=" + decimalCount + '}';
+        return "DBFCell{" + "colType=" + colType + ", bytes=" + Arrays.toString(bytes) + ", decimalCount="
+                + decimalCount + '}';
     }
 
     DBFCell deepCopy() {
@@ -126,9 +126,8 @@ class DBFCell {
         //http://stackoverflow.com/questions/20026154/convert-dbase-timestamp
         //TODO: add heuristic for deciding;
         //TODO: find example of file with time != 0
-        Calendar baseCalendar =
-                GregorianCalendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT);
-//        baseCalendar.set(1899, 11, 31, 0, 0, 0);
+        Calendar baseCalendar = GregorianCalendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT);
+        //        baseCalendar.set(1899, 11, 31, 0, 0, 0);
         baseCalendar.set(-4712, 0, 1, 0, 0, 0);
         try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(getBytes()).get()) {
             int date = EndianUtils.readIntLE(is);

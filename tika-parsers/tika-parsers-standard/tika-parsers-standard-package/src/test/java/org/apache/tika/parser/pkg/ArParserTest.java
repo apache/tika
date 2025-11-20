@@ -14,19 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.pkg;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.InputStream;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.BodyContentHandler;
-
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class ArParserTest extends AbstractPkgTest {
 

@@ -23,9 +23,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -36,6 +33,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * <p>Parser for Corel WordPerfect documents. Targets WP6 File Format
@@ -51,8 +50,8 @@ public class WordPerfectParser implements Parser {
     final static MediaType WP_5_1 = new MediaType(WP_BASE, "version", "5.1");
     final static MediaType WP_6_x = new MediaType(WP_BASE, "version", "6.x");
     private static final long serialVersionUID = 8941810225917012232L;
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<>(Arrays.asList(WP_5_0, WP_5_1, WP_6_x)));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections
+            .unmodifiableSet(new HashSet<>(Arrays.asList(WP_5_0, WP_5_1, WP_6_x)));
 
     @Field
     private boolean includeDeletedContent = true;
@@ -63,8 +62,8 @@ public class WordPerfectParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         WPInputStream wpStream = new WPInputStream(stream);
         WPPrefixArea prefixArea = WPPrefixAreaExtractor.extract(wpStream);
@@ -76,8 +75,8 @@ public class WordPerfectParser implements Parser {
         extractDocumentArea(prefixArea, wpStream, new XHTMLContentHandler(handler, metadata));
     }
 
-    private void extractDocumentArea(WPPrefixArea prefixArea, WPInputStream in,
-                                     XHTMLContentHandler xhtml) throws SAXException, IOException {
+    private void extractDocumentArea(WPPrefixArea prefixArea, WPInputStream in, XHTMLContentHandler xhtml)
+            throws SAXException, IOException {
 
         // Move to offset (for some reason skip() did not work).
         for (int i = 0; i < prefixArea.getDocAreaPointer(); i++) {
@@ -93,8 +92,8 @@ public class WordPerfectParser implements Parser {
 
     private void ensureFileSupport(WPPrefixArea pa, Metadata metadata)
             throws UnsupportedFormatException, EncryptedDocumentException {
-        if (pa.getMajorVersion() != WPPrefixArea.WP5_MAJOR_VERSION &&
-                pa.getMajorVersion() != WPPrefixArea.WP6_MAJOR_VERSION) {
+        if (pa.getMajorVersion() != WPPrefixArea.WP5_MAJOR_VERSION
+                && pa.getMajorVersion() != WPPrefixArea.WP6_MAJOR_VERSION) {
             metadata.set(Metadata.CONTENT_TYPE, WP_UNK.toString());
             throw new UnsupportedFormatException(
                     "Parser doesn't recognize this major version: " + pa.getMajorVersion());

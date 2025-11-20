@@ -18,12 +18,11 @@ package org.apache.tika.eval.core.metadata;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.DefaultMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
+import org.junit.jupiter.api.Test;
 
 public class TikaEvalMetadataFilterTest {
 
@@ -44,15 +43,10 @@ public class TikaEvalMetadataFilterTest {
             assertEquals(9, (int) metadata.getInt(TikaEvalMetadataFilter.NUM_UNIQUE_ALPHA_TOKENS));
             assertEquals(9, (int) metadata.getInt(TikaEvalMetadataFilter.NUM_COMMON_TOKENS));
 
-
-            assertEquals(0.0999,
-                    Double.parseDouble(metadata.get(TikaEvalMetadataFilter.OUT_OF_VOCABULARY)),
-                    0.1);
+            assertEquals(0.0999, Double.parseDouble(metadata.get(TikaEvalMetadataFilter.OUT_OF_VOCABULARY)), 0.1);
             assertEquals("eng", metadata.get(TikaEvalMetadataFilter.LANGUAGE));
 
-            assertEquals(0.0196,
-                    Double.parseDouble(metadata.get(TikaEvalMetadataFilter.LANGUAGE_CONFIDENCE)),
-                    0.1);
+            assertEquals(0.0196, Double.parseDouble(metadata.get(TikaEvalMetadataFilter.LANGUAGE_CONFIDENCE)), 0.1);
         }
     }
 }

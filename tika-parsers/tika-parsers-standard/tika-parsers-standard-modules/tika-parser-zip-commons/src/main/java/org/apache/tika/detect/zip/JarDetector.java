@@ -21,7 +21,6 @@ import java.io.InputStream;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
-
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 
@@ -68,8 +67,7 @@ public class JarDetector implements ZipContainerDetector {
     }
 
     @Override
-    public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis,
-                                           StreamingDetectContext detectContext) {
+    public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis, StreamingDetectContext detectContext) {
 
         String name = zae.getName();
 
@@ -81,7 +79,7 @@ public class JarDetector implements ZipContainerDetector {
             // It's a Jar file, or something based on Jar
             detectContext.set(SeenManifest.class, SEEN_MANIFEST);
         }
-        
+
         SeenManifest seenManifest = detectContext.get(SeenManifest.class);
 
         if (seenManifest != null) {

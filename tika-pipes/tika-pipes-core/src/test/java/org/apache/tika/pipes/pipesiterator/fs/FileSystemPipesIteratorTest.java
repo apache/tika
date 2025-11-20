@@ -29,12 +29,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-
 import org.apache.tika.pipes.core.FetchEmitTuple;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
-
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 public class FileSystemPipesIteratorTest {
 
@@ -51,8 +49,7 @@ public class FileSystemPipesIteratorTest {
     @Test
     @Timeout(30000)
     public void testBasic() throws Exception {
-        URL url =
-                FileSystemPipesIteratorTest.class.getResource("/test-documents");
+        URL url = FileSystemPipesIteratorTest.class.getResource("/test-documents");
         Path root = Paths.get(url.toURI());
         List<Path> files = listFiles(root);
         Set<String> truthSet = new HashSet<>();

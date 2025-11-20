@@ -18,10 +18,9 @@ package org.apache.tika.parser.video;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.Tika;
 import org.apache.tika.metadata.Metadata;
+import org.junit.jupiter.api.Test;
 
 public class FLVParserTest {
 
@@ -30,8 +29,7 @@ public class FLVParserTest {
         String path = "/test-documents/testFLV.flv";
         Metadata metadata = new Metadata();
 
-        String content =
-                new Tika().parseToString(FLVParserTest.class.getResourceAsStream(path), metadata);
+        String content = new Tika().parseToString(FLVParserTest.class.getResourceAsStream(path), metadata);
 
         assertEquals("", content);
         assertEquals("video/x-flv", metadata.get(Metadata.CONTENT_TYPE));

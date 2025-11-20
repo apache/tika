@@ -34,7 +34,7 @@ public interface XMPMM {
      *
      * TODO This property is of type RessourceRef which is a struct
      */
-//    Property DERIVED_FROM = Property.externalText(PREFIX_ + "DerivedFrom");
+    //    Property DERIVED_FROM = Property.externalText(PREFIX_ + "DerivedFrom");
 
     /**
      * The common identifier for all versions and renditions of a resource.
@@ -62,9 +62,8 @@ public interface XMPMM {
      * should be absent or set to default for a resource that is not
      * a derived rendition
      */
-    Property RENDITION_CLASS =
-            Property.externalOpenChoise(PREFIX_ + "RenditionClass", "default", "draft", "low-res",
-                    "proof", "screen", "thumbnail");
+    Property RENDITION_CLASS = Property.externalOpenChoise(PREFIX_ + "RenditionClass", "default", "draft", "low-res",
+            "proof", "screen", "thumbnail");
 
     /**
      * Can be used to provide additional rendition parameters that

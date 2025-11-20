@@ -22,13 +22,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.tika.metadata.Metadata;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
-
-import org.apache.tika.metadata.Metadata;
 
 /**
  * Unit tests for the {@link XHTMLContentHandler} class.
@@ -144,13 +143,11 @@ public class XHTMLContentHandlerTest {
     @Test
     public void testAttributesOnBody() throws Exception {
         ToHTMLContentHandler toHTMLContentHandler = new ToHTMLContentHandler();
-        XHTMLContentHandler xhtmlContentHandler =
-                new XHTMLContentHandler(toHTMLContentHandler, new Metadata());
+        XHTMLContentHandler xhtmlContentHandler = new XHTMLContentHandler(toHTMLContentHandler, new Metadata());
         AttributesImpl attributes = new AttributesImpl();
 
         attributes.addAttribute(XHTMLContentHandler.XHTML, "itemscope", "itemscope", "", "");
-        attributes.addAttribute(XHTMLContentHandler.XHTML, "itemtype", "itemtype", "",
-                "http://schema.org/Event");
+        attributes.addAttribute(XHTMLContentHandler.XHTML, "itemtype", "itemtype", "", "http://schema.org/Event");
 
         xhtmlContentHandler.startDocument();
         xhtmlContentHandler.startElement(XHTMLContentHandler.XHTML, "body", "body", attributes);
@@ -163,13 +160,11 @@ public class XHTMLContentHandlerTest {
     @Test
     public void testAttributesOnHtml() throws Exception {
         ToHTMLContentHandler toHTMLContentHandler = new ToHTMLContentHandler();
-        XHTMLContentHandler xhtmlContentHandler =
-                new XHTMLContentHandler(toHTMLContentHandler, new Metadata());
+        XHTMLContentHandler xhtmlContentHandler = new XHTMLContentHandler(toHTMLContentHandler, new Metadata());
         AttributesImpl attributes = new AttributesImpl();
 
         attributes.addAttribute(XHTMLContentHandler.XHTML, "itemscope", "itemscope", "", "");
-        attributes.addAttribute(XHTMLContentHandler.XHTML, "itemtype", "itemtype", "",
-                "http://schema.org/Event");
+        attributes.addAttribute(XHTMLContentHandler.XHTML, "itemtype", "itemtype", "", "http://schema.org/Event");
 
         xhtmlContentHandler.startDocument();
         xhtmlContentHandler.startElement(XHTMLContentHandler.XHTML, "html", "html", attributes);

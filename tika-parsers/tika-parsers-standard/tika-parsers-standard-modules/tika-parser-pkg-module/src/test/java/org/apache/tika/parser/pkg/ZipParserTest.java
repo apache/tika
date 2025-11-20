@@ -27,15 +27,14 @@ import java.io.InputStream;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Test case for parsing zip files.
@@ -97,17 +96,16 @@ public class ZipParserTest extends AbstractPkgTest {
         assertContains("README", content);
     }
 
-
     @Test // TIKA-936
     public void testCustomEncoding() throws Exception {
         ArchiveStreamFactory factory = new ArchiveStreamFactory("SJIS");
         trackingContext.set(ArchiveStreamFactory.class, factory);
 
-        try (InputStream stream = TikaInputStream.get(Base64.decodeBase64(
-                "UEsDBBQAAAAIAI+CvUCDo3+zIgAAACgAAAAOAAAAk/qWe4zqg4GDgi50" +
-                        "eHRr2tj0qulsc2pzRHN609Gm7Y1OvFxNYLHJv6ZV97yCiQEAUEsBAh" +
-                        "QLFAAAAAgAj4K9QIOjf7MiAAAAKAAAAA4AAAAAAAAAAAAgAAAAAAAA" +
-                        "AJP6lnuM6oOBg4IudHh0UEsFBgAAAAABAAEAPAAAAE4AAAAAAA=="))) {
+        try (InputStream stream = TikaInputStream
+                .get(Base64.decodeBase64("UEsDBBQAAAAIAI+CvUCDo3+zIgAAACgAAAAOAAAAk/qWe4zqg4GDgi50"
+                        + "eHRr2tj0qulsc2pzRHN609Gm7Y1OvFxNYLHJv6ZV97yCiQEAUEsBAh"
+                        + "QLFAAAAAgAj4K9QIOjf7MiAAAAKAAAAA4AAAAAAAAAAAAgAAAAAAAA"
+                        + "AJP6lnuM6oOBg4IudHh0UEsFBgAAAAABAAEAPAAAAE4AAAAAAA=="))) {
             AUTO_DETECT_PARSER.parse(stream, new DefaultHandler(), new Metadata(), trackingContext);
         }
 
@@ -118,8 +116,7 @@ public class ZipParserTest extends AbstractPkgTest {
     @Test
     public void testQuineRecursiveParserWrapper() throws Exception {
         //Anti-virus can surreptitiously remove this file
-        assumeTrue(
-                ZipParserTest.class.getResourceAsStream("/test-documents/droste.zip") != null);
+        assumeTrue(ZipParserTest.class.getResourceAsStream("/test-documents/droste.zip") != null);
         //received permission from author via dm
         //2019-07-25 to include
         //http://alf.nu/s/droste.zip in unit tests
@@ -131,8 +128,7 @@ public class ZipParserTest extends AbstractPkgTest {
     @Test
     public void testQuine() {
         //Anti-virus can surreptitiously remove this file
-        assumeTrue(
-                ZipParserTest.class.getResourceAsStream("/test-documents/droste.zip") != null);
+        assumeTrue(ZipParserTest.class.getResourceAsStream("/test-documents/droste.zip") != null);
         assertThrows(TikaException.class, () -> {
             getXML("droste.zip");
         });
@@ -143,8 +139,7 @@ public class ZipParserTest extends AbstractPkgTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = getResourceAsStream(
-                "/test-documents/testZip_with_DataDescriptor.zip")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testZip_with_DataDescriptor.zip")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
 
             assertEquals(5, tracker.filenames.size());

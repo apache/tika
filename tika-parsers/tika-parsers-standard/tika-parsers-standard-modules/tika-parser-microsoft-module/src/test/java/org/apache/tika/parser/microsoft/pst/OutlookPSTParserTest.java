@@ -23,8 +23,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.MAPI;
 import org.apache.tika.metadata.Message;
@@ -33,6 +31,7 @@ import org.apache.tika.metadata.PST;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.Parser;
+import org.junit.jupiter.api.Test;
 
 public class OutlookPSTParserTest extends TikaTest {
 
@@ -40,8 +39,7 @@ public class OutlookPSTParserTest extends TikaTest {
 
     @Test
     public void testAccept() throws Exception {
-        assertTrue((parser.getSupportedTypes(null)
-                .contains(MediaType.application("vnd.ms-outlook-pst"))));
+        assertTrue((parser.getSupportedTypes(null).contains(MediaType.application("vnd.ms-outlook-pst"))));
     }
 
     @Test
@@ -52,8 +50,8 @@ public class OutlookPSTParserTest extends TikaTest {
 
         assertTrue(output.contains("<body><div class=\"email-folder\"><h1>"));
         assertTrue(output.contains("<div class=\"embedded\" id=\"&lt;530D9CAC.5080901@gmail.com&gt;\">"));
-        assertTrue(output.contains(
-                "<div class=\"embedded\" id=\"&lt;1393363252.28814.YahooMailNeo@web140906.mail" + ".bf1.yahoo.com&gt;\">"));
+        assertTrue(output.contains("<div class=\"embedded\" id=\"&lt;1393363252.28814.YahooMailNeo@web140906.mail"
+                + ".bf1.yahoo.com&gt;\">"));
         assertTrue(output.contains("Gary Murphy commented on TIKA-1250:"));
 
         assertTrue(output.contains("<div class=\"email-folder\"><h1>Racine (pour la recherche)</h1>"));
@@ -79,7 +77,8 @@ public class OutlookPSTParserTest extends TikaTest {
         assertEquals("NOTE", m1.get(MAPI.MESSAGE_CLASS));
         assertEquals("/Début du fichier de données Outlook", m1.get(PST.PST_FOLDER_PATH));
         //test that subject is making it into the xhtml
-        assertContains("<meta name=\"dc:subject\" content=\"Re: Feature Generators\"", m1.get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("<meta name=\"dc:subject\" content=\"Re: Feature Generators\"",
+                m1.get(TikaCoreProperties.TIKA_CONTENT));
 
         Metadata m6 = metadataList.get(6);
         assertEquals("Couchbase", m6.get(Message.MESSAGE_FROM_NAME));
@@ -92,8 +91,8 @@ public class OutlookPSTParserTest extends TikaTest {
 
         //test full EX email
         assertEquals(
-                "/o=ExchangeLabs/ou=Exchange Administrative Group (FYDIBOHF23SPDLT)" +
-                        "/cn=Recipients/cn=polyspot1.onmicrosoft.com-50609-Hong-Thai.Ng",
+                "/o=ExchangeLabs/ou=Exchange Administrative Group (FYDIBOHF23SPDLT)"
+                        + "/cn=Recipients/cn=polyspot1.onmicrosoft.com-50609-Hong-Thai.Ng",
                 m6.get(Message.MESSAGE_TO_EMAIL));
         assertEquals("Hong-Thai Nguyen", m6.get(Message.MESSAGE_TO_DISPLAY_NAME));
 
@@ -109,8 +108,7 @@ public class OutlookPSTParserTest extends TikaTest {
     @Test
     public void testOverrideDetector() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testPST_variousBodyTypes.pst");
-        assertEquals(5,
-                metadataList.size());//before the fix that prevents the RFC parser, this was 6
+        assertEquals(5, metadataList.size());//before the fix that prevents the RFC parser, this was 6
         for (Metadata metadata : metadataList) {
             for (String v : metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY)) {
                 if (v.contains("RFC822Parser")) {

@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.eval.app.reports;
 
 import java.nio.file.Files;
@@ -23,11 +22,10 @@ import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.Statement;
 
+import org.apache.tika.eval.app.db.H2Util;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
-import org.apache.tika.eval.app.db.H2Util;
 
 public class ResultsReporterTest {
     private Path configFile;
@@ -37,10 +35,7 @@ public class ResultsReporterTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        configFile = Paths.get(this
-                .getClass()
-                .getResource("/reports.xml")
-                .toURI());
+        configFile = Paths.get(this.getClass().getResource("/reports.xml").toURI());
         tmpDir = Files.createTempDirectory("tika-eval-report-test-");
 
         connection = new H2Util(tmpDir.resolve(dbName)).getConnection();

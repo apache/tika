@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.eval.core.tokens;
 
 import java.io.IOException;
@@ -60,7 +59,6 @@ public class LuceneTokenCounter {
 
     }
 
-
     void count(String field) throws IOException {
         long tokenCount = leafReader.getSumTotalTermFreq(field);
         if (tokenCount > Integer.MAX_VALUE) {
@@ -77,8 +75,7 @@ public class LuceneTokenCounter {
         if (terms == null) {
             //if there were no terms
             fieldStats.put(field,
-                    new TokenStatistics(uniqueTokenCount, tokenCountInt, new TokenIntPair[0], ent,
-                            summStats));
+                    new TokenStatistics(uniqueTokenCount, tokenCountInt, new TokenIntPair[0], ent, summStats));
             return;
 
         }
@@ -114,9 +111,7 @@ public class LuceneTokenCounter {
             ent = (-1.0d / (double) tokenCountInt) * ent;
         }
 
-        fieldStats.put(field,
-                new TokenStatistics(uniqueTokenCount, tokenCountInt, queue.getArray(), ent,
-                        summStats));
+        fieldStats.put(field, new TokenStatistics(uniqueTokenCount, tokenCountInt, queue.getArray(), ent, summStats));
     }
 
     public void setTopN(int topN) {
@@ -131,28 +126,27 @@ public class LuceneTokenCounter {
         return leafReader.terms(field);
     }
 
-
     public void clear() {
         memoryIndex.reset();
         fieldStats.clear();
     }
-/*
+    /*
     public ContrastStatistics contrast(String fieldA, String fieldB) throws IOException {
         long diceDenom = getUniqueTokenCount(fieldA) +
                 getUniqueTokenCount(fieldB);
-
+    
         long diceNum = 0;
         long overlapNum = 0;
-
+    
         Terms termsA = getTerms(fieldA);
         Terms termsB = getTerms(fieldB);
-
+    
         TermsEnum termsEnumA = termsA.iterator();
         TermsEnum termsEnumB = termsB.iterator();
-
+    
         BytesRef bytesRefA = termsEnumA.next();
         BytesRef bytesRefB = termsEnumB.next();
-
+    
         while (bytesRefA != null) {
             int compare = bytesRefA.compareTo(bytesRefB);
             while (compare > 0) {
@@ -160,7 +154,7 @@ public class LuceneTokenCounter {
                     break;
                 }
                 //handle term in B, but not A
-
+    
                 compare = bytesRefA.compareTo(bytesRefB);
                 bytesRefB = termsEnumB.next();
             }
@@ -168,20 +162,20 @@ public class LuceneTokenCounter {
                 diceNum += 2;
                 overlapNum += 2 * Math.min(termsEnumA.totalTermFreq(), termsEnumB.totalTermFreq());
             }
-
+    
             bytesRefA = termsEnumA.next();
         }
-
-
+    
+    
         for (PairCount p : tokens.values()) {
             if (p.a > 0 && p.b > 0) {
                 diceNum += 2;
                 overlapNum += 2 * Math.min(p.a, p.b);
             }
         }
-
+    
         float dice = (float) diceNum / (float) diceDenom;
         float overlap = (float) overlapNum / (float) (theseTokens.getTokenCount() + thoseTokens.getTokenCount());
     }
-*/
+    */
 }

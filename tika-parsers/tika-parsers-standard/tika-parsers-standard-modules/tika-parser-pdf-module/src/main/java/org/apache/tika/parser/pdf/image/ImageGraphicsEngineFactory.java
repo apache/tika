@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.pdfbox.cos.COSStream;
 import org.apache.pdfbox.pdmodel.PDPage;
-
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -31,13 +30,10 @@ import org.apache.tika.sax.XHTMLContentHandler;
 
 public class ImageGraphicsEngineFactory implements Serializable {
 
-    public ImageGraphicsEngine newEngine(PDPage page,
-                                         int pageNumber,
-                                         EmbeddedDocumentExtractor embeddedDocumentExtractor,
-                                         PDFParserConfig pdfParserConfig,
-                                         Map<COSStream, Integer> processedInlineImages,
-                                         AtomicInteger imageCounter, XHTMLContentHandler xhtml,
-                                         Metadata parentMetadata, ParseContext parseContext) {
+    public ImageGraphicsEngine newEngine(PDPage page, int pageNumber,
+            EmbeddedDocumentExtractor embeddedDocumentExtractor, PDFParserConfig pdfParserConfig,
+            Map<COSStream, Integer> processedInlineImages, AtomicInteger imageCounter, XHTMLContentHandler xhtml,
+            Metadata parentMetadata, ParseContext parseContext) {
         return new ImageGraphicsEngine(page, pageNumber, embeddedDocumentExtractor, pdfParserConfig,
                 processedInlineImages, imageCounter, xhtml, parentMetadata, parseContext);
     }

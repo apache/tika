@@ -14,9 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.eval.core.tokens;
-
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -46,13 +44,11 @@ public class TokenCounterTest {
 
     @Test
     public void testBasic() throws Exception {
-        String s =
-                " bde cde def abc efg f f f f ghijklmnop a a a a a a a a a a a a a a a a a b b b b b b b b b b b b b";
+        String s = " bde cde def abc efg f f f f ghijklmnop a a a a a a a a a a a a a a a a a b b b b b b b b b b b b b";
         TokenCounter counter = new TokenCounter(analyzerManager.getGeneralAnalyzer());
         counter.add(FIELD, s);
         TokenStatistics simpleTokenStatistics = counter.getTokenStatistics(FIELD);
-        LuceneTokenCounter tokenCounter =
-                new LuceneTokenCounter(analyzerManager.getGeneralAnalyzer());
+        LuceneTokenCounter tokenCounter = new LuceneTokenCounter(analyzerManager.getGeneralAnalyzer());
         tokenCounter.add(FIELD, s);
         assertEquals(simpleTokenStatistics, tokenCounter.getTokenStatistics(FIELD));
     }
@@ -72,8 +68,7 @@ public class TokenCounterTest {
             TokenStatistics simpleTokenStatistics = counter.getTokenStatistics(FIELD);
 
             start = System.currentTimeMillis();
-            LuceneTokenCounter tokenCounter =
-                    new LuceneTokenCounter(analyzerManager.getGeneralAnalyzer());
+            LuceneTokenCounter tokenCounter = new LuceneTokenCounter(analyzerManager.getGeneralAnalyzer());
             tokenCounter.add(FIELD, s);
             lucene += System.currentTimeMillis() - start;
 
@@ -84,8 +79,7 @@ public class TokenCounterTest {
     @Test
     public void testCommonTokens() throws Exception {
         TokenCounter tokenCounter = new TokenCounter(analyzerManager.getCommonTokensAnalyzer());
-        String s =
-                "the http://www.cnn.com and blahdeblah@apache.org are in valuable www.sites.org 普林斯顿大学";
+        String s = "the http://www.cnn.com and blahdeblah@apache.org are in valuable www.sites.org 普林斯顿大学";
         tokenCounter.add(FIELD, s);
         Map<String, MutableInt> tokens = tokenCounter.getTokens(FIELD);
         assertEquals(new MutableInt(2), tokens.get("___url___"));

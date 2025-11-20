@@ -16,7 +16,6 @@
  */
 package org.apache.tika.eval.app.db;
 
-
 import java.sql.Types;
 import java.util.Objects;
 
@@ -37,7 +36,6 @@ public class ColInfo {
     public ColInfo(Cols name, int type, Integer precision) {
         this(name, type, precision, null);
     }
-
 
     public ColInfo(Cols name, int type, Integer precision, String constraints) {
         this.name = name;
@@ -76,18 +74,19 @@ public class ColInfo {
         } else if (type == Types.CHAR) {
             return "CHAR(" + precision + ")";
         }
-        switch (type) {
-            case Types.FLOAT:
+        switch (type)
+        {
+            case Types.FLOAT :
                 return "FLOAT";
-            case Types.DOUBLE:
+            case Types.DOUBLE :
                 return "DOUBLE";
-            case Types.BLOB:
+            case Types.BLOB :
                 return "BLOB";
-            case Types.INTEGER:
+            case Types.INTEGER :
                 return "INTEGER";
-            case Types.BIGINT:
+            case Types.BIGINT :
                 return "BIGINT";
-            case Types.BOOLEAN:
+            case Types.BOOLEAN :
                 return "BOOLEAN";
         }
         throw new UnsupportedOperationException("Don't yet recognize a type for: " + type);

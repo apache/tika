@@ -25,7 +25,6 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
-
 import org.apache.tika.detect.Detector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -73,8 +72,8 @@ public class GZipSpecializationDetector implements Detector {
             input.reset();
         }
         UnsynchronizedByteArrayOutputStream bytes = UnsynchronizedByteArrayOutputStream.builder().get();
-        try (InputStream is = new
-                     GzipCompressorInputStream(UnsynchronizedByteArrayInputStream.builder().setByteArray(gzippedBytes.toByteArray()).get())) {
+        try (InputStream is = new GzipCompressorInputStream(
+                UnsynchronizedByteArrayInputStream.builder().setByteArray(gzippedBytes.toByteArray()).get())) {
             int c = is.read();
             //read bytes one at a time to avoid premature EOF from buffering
             while (c > -1) {

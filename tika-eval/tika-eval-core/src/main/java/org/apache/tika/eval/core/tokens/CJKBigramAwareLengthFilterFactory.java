@@ -37,7 +37,6 @@ public class CJKBigramAwareLengthFilterFactory extends TokenFilterFactory {
 
     public static final String NAME = "cjkBigramAwareLength";
 
-
     private final int min;
     private final int max;
     public CJKBigramAwareLengthFilterFactory() {

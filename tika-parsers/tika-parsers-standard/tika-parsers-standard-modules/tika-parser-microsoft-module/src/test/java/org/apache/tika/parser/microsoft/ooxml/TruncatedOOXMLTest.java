@@ -31,20 +31,18 @@ import java.util.Random;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class TruncatedOOXMLTest extends TikaTest {
 
     @Test
     public void testWordTrunc14435() throws Exception {
         //this is only very slightly truncated
-        List<Metadata> metadataList =
-                getRecursiveMetadata(truncate("testWORD_various.docx", 14435), true);
+        List<Metadata> metadataList = getRecursiveMetadata(truncate("testWORD_various.docx", 14435), true);
         assertEquals(1, metadataList.size());
         Metadata metadata = metadataList.get(0);
         String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
@@ -54,7 +52,6 @@ public class TruncatedOOXMLTest extends TikaTest {
         assertContains("This is the footer text", content);
         assertContains("Suddenly some Japanese", content);
     }
-
 
     @Test
     public void testTruncation() throws Exception {
@@ -84,8 +81,7 @@ public class TruncatedOOXMLTest extends TikaTest {
             if (f.isDirectory()) {
                 continue;
             }
-            if (f.getName().endsWith(
-                    ".xlsx")) { // || f.getName().endsWith(".pptx") || f.getName().endsWith("
+            if (f.getName().endsWith(".xlsx")) { // || f.getName().endsWith(".pptx") || f.getName().endsWith("
                 // .docx")) {
 
             } else {

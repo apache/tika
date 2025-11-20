@@ -25,6 +25,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.tika.language.detect.LanguageConfidence;
+import org.apache.tika.language.detect.LanguageDetector;
+import org.apache.tika.language.detect.LanguageNames;
+import org.apache.tika.language.detect.LanguageResult;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.optimaize.langdetect.DetectedLanguage;
@@ -34,11 +39,6 @@ import com.optimaize.langdetect.ngram.NgramExtractors;
 import com.optimaize.langdetect.profiles.BuiltInLanguages;
 import com.optimaize.langdetect.profiles.LanguageProfile;
 import com.optimaize.langdetect.profiles.LanguageProfileReader;
-
-import org.apache.tika.language.detect.LanguageConfidence;
-import org.apache.tika.language.detect.LanguageDetector;
-import org.apache.tika.language.detect.LanguageNames;
-import org.apache.tika.language.detect.LanguageResult;
 
 /**
  * Implementation of the LanguageDetector API that uses
@@ -54,8 +54,7 @@ public class OptimaizeLangDetector extends LanguageDetector {
 
     static {
         try {
-            DEFAULT_LANGUAGE_PROFILES =
-                    ImmutableList.copyOf(new LanguageProfileReader().readAllBuiltIn());
+            DEFAULT_LANGUAGE_PROFILES = ImmutableList.copyOf(new LanguageProfileReader().readAllBuiltIn());
 
             ImmutableSet.Builder<String> builder = new ImmutableSet.Builder<>();
             for (LanguageProfile profile : DEFAULT_LANGUAGE_PROFILES) {
@@ -84,17 +83,15 @@ public class OptimaizeLangDetector extends LanguageDetector {
     }
 
     private static String makeLanguageName(LdLocale locale) {
-        return LanguageNames.makeName(locale.getLanguage(), locale.getScript().orNull(),
-                locale.getRegion().orNull());
+        return LanguageNames.makeName(locale.getLanguage(), locale.getScript().orNull(), locale.getRegion().orNull());
     }
 
-    private static com.optimaize.langdetect.LanguageDetector createDetector(
-            List<LanguageProfile> languageProfiles, Map<String, Float> languageProbabilities) {
+    private static com.optimaize.langdetect.LanguageDetector createDetector(List<LanguageProfile> languageProfiles,
+            Map<String, Float> languageProbabilities) {
         // FUTURE currently the short text algorithm doesn't normalize probabilities until the end, which
         // means you can often get 0 probabilities. So we pick a very short length for this limit.
-        LanguageDetectorBuilder builder =
-                LanguageDetectorBuilder.create(NgramExtractors.standard()).shortTextAlgorithm(30)
-                        .withProfiles(languageProfiles);
+        LanguageDetectorBuilder builder = LanguageDetectorBuilder.create(NgramExtractors.standard())
+                .shortTextAlgorithm(30).withProfiles(languageProfiles);
 
         if (languageProbabilities != null) {
             Map<LdLocale, Double> languageWeights = new HashMap<>(languageProbabilities.size());
@@ -144,8 +141,7 @@ public class OptimaizeLangDetector extends LanguageDetector {
             }
         }
 
-        detector = createDetector(new LanguageProfileReader().readBuiltIn(locales),
-                languageProbabilities);
+        detector = createDetector(new LanguageProfileReader().readBuiltIn(locales), languageProbabilities);
 
         return this;
     }
@@ -194,8 +190,7 @@ public class OptimaizeLangDetector extends LanguageDetector {
     @Override
     public List<LanguageResult> detectAll() {
         if (detector == null) {
-            throw new IllegalStateException(
-                    "models haven't been loaded yet (forgot to call loadModels?)");
+            throw new IllegalStateException("models haven't been loaded yet (forgot to call loadModels?)");
         }
 
         List<LanguageResult> result = new ArrayList<>();
@@ -203,9 +198,9 @@ public class OptimaizeLangDetector extends LanguageDetector {
         List<DetectedLanguage> rawResults = detector.getProbabilities(writer.toString());
         for (DetectedLanguage rawResult : rawResults) {
             // TODO figure out right level for confidence brackets.
-            LanguageConfidence confidence =
-                    rawResult.getProbability() > 0.9 ? LanguageConfidence.HIGH :
-                            LanguageConfidence.MEDIUM;
+            LanguageConfidence confidence = rawResult.getProbability() > 0.9
+                    ? LanguageConfidence.HIGH
+                    : LanguageConfidence.MEDIUM;
             result.add(new LanguageResult(makeLanguageName(rawResult.getLocale()), confidence,
                     (float) rawResult.getProbability()));
         }

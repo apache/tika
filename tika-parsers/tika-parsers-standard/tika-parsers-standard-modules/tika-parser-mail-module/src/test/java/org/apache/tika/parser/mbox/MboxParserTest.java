@@ -23,10 +23,6 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.TypeDetector;
 import org.apache.tika.metadata.Metadata;
@@ -35,6 +31,9 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class MboxParserTest extends TikaTest {
 
@@ -73,13 +72,11 @@ public class MboxParserTest extends TikaTest {
 
         Metadata mail1 = mailsMetadata.get(0);
         assertEquals("message/rfc822", mail1.get(Metadata.CONTENT_TYPE));
-        assertEquals("envelope-sender-mailbox-name Mon Jun 01 10:00:00 2009",
-                mail1.get("MboxParser-from"));
+        assertEquals("envelope-sender-mailbox-name Mon Jun 01 10:00:00 2009", mail1.get("MboxParser-from"));
 
         Metadata mail2 = mailsMetadata.get(1);
         assertEquals("message/rfc822", mail2.get(Metadata.CONTENT_TYPE));
-        assertEquals("envelope-sender-mailbox-name Mon Jun 01 11:00:00 2010",
-                mail2.get("MboxParser-from"));
+        assertEquals("envelope-sender-mailbox-name Mon Jun 01 11:00:00 2010", mail2.get("MboxParser-from"));
     }
 
     @Test
@@ -154,14 +151,10 @@ public class MboxParserTest extends TikaTest {
         assertEquals(3, mboxParser.getTrackingMetadata().size(), "Nb. Of mails");
 
         Metadata firstMail = mboxParser.getTrackingMetadata().get(0);
-        assertEquals("Re: question about when shuffle/sort start working",
-                firstMail.get(TikaCoreProperties.SUBJECT));
-        assertEquals("Re: question about when shuffle/sort start working",
-                firstMail.get(TikaCoreProperties.TITLE));
-        assertEquals("Jothi Padmanabhan <jothipn@yahoo-inc.com>",
-                firstMail.get(TikaCoreProperties.CREATOR));
-        assertEquals("core-user@hadoop.apache.org",
-                firstMail.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
+        assertEquals("Re: question about when shuffle/sort start working", firstMail.get(TikaCoreProperties.SUBJECT));
+        assertEquals("Re: question about when shuffle/sort start working", firstMail.get(TikaCoreProperties.TITLE));
+        assertEquals("Jothi Padmanabhan <jothipn@yahoo-inc.com>", firstMail.get(TikaCoreProperties.CREATOR));
+        assertEquals("core-user@hadoop.apache.org", firstMail.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
 
         assertContains("When a Mapper completes", handler.toString());
     }

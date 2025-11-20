@@ -25,9 +25,6 @@ import java.util.Set;
 
 import org.apache.fontbox.afm.AFMParser;
 import org.apache.fontbox.afm.FontMetrics;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -36,6 +33,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Parser for AFM Font Files
@@ -64,8 +63,8 @@ public class AdobeFontMetricParser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         FontMetrics fontMetrics;
         AFMParser parser = new AFMParser(stream);
 
@@ -83,8 +82,7 @@ public class AdobeFontMetricParser implements Parser {
         metadata.set(TikaCoreProperties.TITLE, fontMetrics.getFullName());
 
         // Add metadata associated with the font type
-        addMetadataByString(metadata, MET_AVG_CHAR_WIDTH,
-                Float.toString(fontMetrics.getAverageCharacterWidth()));
+        addMetadataByString(metadata, MET_AVG_CHAR_WIDTH, Float.toString(fontMetrics.getAverageCharacterWidth()));
         addMetadataByString(metadata, MET_DOC_VERSION, Float.toString(fontMetrics.getAFMVersion()));
         addMetadataByString(metadata, MET_FONT_NAME, fontMetrics.getFontName());
         addMetadataByString(metadata, MET_FONT_FULL_NAME, fontMetrics.getFullName());
@@ -125,7 +123,6 @@ public class AdobeFontMetricParser implements Parser {
             metadata.set(property, value);
         }
     }
-
 
     private void extractCreationDate(Metadata metadata, List<String> comments) {
         String date = null;

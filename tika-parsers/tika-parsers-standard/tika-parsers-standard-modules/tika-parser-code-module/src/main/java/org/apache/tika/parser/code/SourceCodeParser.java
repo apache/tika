@@ -29,9 +29,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import javax.xml.XMLConstants;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.tika.detect.AutoDetectReader;
+import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractEncodingDetectorParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.codelibs.jhighlight.renderer.Renderer;
 import org.codelibs.jhighlight.renderer.XhtmlRendererFactory;
 import org.jsoup.Jsoup;
@@ -45,16 +55,6 @@ import org.jsoup.select.NodeTraversor;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
-
-import org.apache.tika.detect.AutoDetectReader;
-import org.apache.tika.detect.EncodingDetector;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractEncodingDetectorParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Generic Source code parser for Java, Groovy, C++.
@@ -95,8 +95,8 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream),
-                metadata, getEncodingDetector(context))) {
+        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream), metadata,
+                getEncodingDetector(context))) {
             Charset charset = reader.getCharset();
             String mediaType = metadata.get(Metadata.CONTENT_TYPE);
             String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
@@ -112,9 +112,7 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
             String line;
             int nbLines = 0;
             while ((line = reader.readLine()) != null) {
-                out
-                        .append(line)
-                        .append(System.getProperty("line.separator"));
+                out.append(line).append(System.getProperty("line.separator"));
                 String author = parserAuthor(line);
                 if (author != null) {
                     metadata.add(TikaCoreProperties.CREATOR, author);
@@ -148,13 +146,10 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
         return XhtmlRendererFactory.getRenderer(type);
     }
 
-
     private String parserAuthor(String line) {
         Matcher m = AUTHORPATTERN.matcher(line);
         if (m.find()) {
-            return m
-                    .group(1)
-                    .trim();
+            return m.group(1).trim();
         }
 
         return null;
@@ -207,9 +202,7 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
                 return NodeFilter.FilterResult.CONTINUE;
             }
             AttributesImpl attributes = new AttributesImpl();
-            Iterator<Attribute> jsoupAttrs = node
-                    .attributes()
-                    .iterator();
+            Iterator<Attribute> jsoupAttrs = node.attributes().iterator();
             while (jsoupAttrs.hasNext()) {
                 Attribute jsoupAttr = jsoupAttrs.next();
                 attributes.addAttribute("", jsoupAttr.getKey(), jsoupAttr.getKey(), "", jsoupAttr.getValue());

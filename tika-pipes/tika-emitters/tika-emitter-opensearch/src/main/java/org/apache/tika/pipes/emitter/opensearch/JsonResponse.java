@@ -16,7 +16,6 @@
  */
 package org.apache.tika.pipes.emitter.opensearch;
 
-
 import com.fasterxml.jackson.databind.JsonNode;
 
 public class JsonResponse {
@@ -51,10 +50,6 @@ public class JsonResponse {
 
     @Override
     public String toString() {
-        return "JsonResponse{" +
-                "status=" + status +
-                ", msg='" + msg + '\'' +
-                ", root=" + root +
-                '}';
+        return "JsonResponse{" + "status=" + status + ", msg='" + msg + '\'' + ", root=" + root + '}';
     }
 }

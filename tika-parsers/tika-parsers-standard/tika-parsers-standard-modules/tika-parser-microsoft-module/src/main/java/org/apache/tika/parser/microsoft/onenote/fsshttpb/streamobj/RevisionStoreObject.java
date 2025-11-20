@@ -14,13 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CellIDArray;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGUIDArray;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
-
 
 /**
  * The class is used to represent the revision store object.
@@ -31,8 +29,7 @@ public class RevisionStoreObject {
     public ExGuid objectGroupID;
     public JCIDObject jcid;
     public PropertySetObject propertySet;
-    public org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.FileDataObject
-            fileDataObject;
+    public org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.FileDataObject fileDataObject;
     public ExGUIDArray referencedObjectID;
     public CellIDArray referencedObjectSpacesID;
 

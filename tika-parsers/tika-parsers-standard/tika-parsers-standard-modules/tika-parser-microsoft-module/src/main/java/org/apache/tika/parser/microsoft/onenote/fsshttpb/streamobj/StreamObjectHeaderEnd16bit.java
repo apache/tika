@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
@@ -40,8 +39,7 @@ public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
         this.type = StreamObjectTypeHeaderEnd.fromIntVal(type);
         if (this.type == null) {
             throw new TikaException(String.format(Locale.US,
-                    "The type value %d is not defined for the stream object end 16-bit header",
-                    type));
+                    "The type value %d is not defined for the stream object end 16-bit header", type));
         }
 
     }
@@ -93,23 +91,22 @@ public class StreamObjectHeaderEnd16bit extends StreamObjectHeaderEnd {
      * @return Return the length in byte of the StreamObjectHeaderEnd16bit basic object.
      */
     @Override
-    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex)
-            throws IOException, TikaException {
+    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException, TikaException {
         BitReader reader = new BitReader(byteArray, startIndex);
         int headerType = reader.readInt32(2);
 
         if (headerType != 0x3) {
             throw new TikaException(String.format(Locale.US,
-                    "Failed to get the StreamObjectHeaderEnd16bit header type value, expect value %d, " +
-                            "but actual value is %s", 0x3, headerType));
+                    "Failed to get the StreamObjectHeaderEnd16bit header type value, expect value %d, "
+                            + "but actual value is %s",
+                    0x3, headerType));
         }
 
         int typeValue = reader.readUInt32(14);
         this.type = StreamObjectTypeHeaderEnd.fromIntVal(typeValue);
         if (this.type == null) {
             throw new TikaException(String.format(Locale.US,
-                    "Failed to get the StreamObjectHeaderEnd16bit type value, the value %d is not defined",
-                    typeValue));
+                    "Failed to get the StreamObjectHeaderEnd16bit type value, the value %d is not defined", typeValue));
         }
 
         return 2;

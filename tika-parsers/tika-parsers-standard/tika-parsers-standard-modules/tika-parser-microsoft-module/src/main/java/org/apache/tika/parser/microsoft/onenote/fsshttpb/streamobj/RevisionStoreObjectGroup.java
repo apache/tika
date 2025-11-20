@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
@@ -37,19 +36,16 @@ public class RevisionStoreObjectGroup {
         this.objectGroupID = objectGroupId;
     }
 
-    public static RevisionStoreObjectGroup createInstance(ExGuid objectGroupId,
-                                                          ObjectGroupDataElementData dataObject,
-                                                          boolean isEncryption) throws IOException {
+    public static RevisionStoreObjectGroup createInstance(ExGuid objectGroupId, ObjectGroupDataElementData dataObject,
+            boolean isEncryption) throws IOException {
         RevisionStoreObjectGroup objectGroup = new RevisionStoreObjectGroup(objectGroupId);
         Map<ExGuid, RevisionStoreObject> objectDict = new HashMap<>();
         if (!isEncryption) {
             RevisionStoreObject revisionObject = null;
-            for (int i = 0; i < dataObject.objectGroupDeclarations.objectDeclarationList.size();
-                    i++) {
-                ObjectGroupObjectDeclare objectDeclaration =
-                        dataObject.objectGroupDeclarations.objectDeclarationList.get(i);
-                ObjectGroupObjectData objectData =
-                        dataObject.objectGroupData.objectGroupObjectDataList.get(i);
+            for (int i = 0; i < dataObject.objectGroupDeclarations.objectDeclarationList.size(); i++) {
+                ObjectGroupObjectDeclare objectDeclaration = dataObject.objectGroupDeclarations.objectDeclarationList
+                        .get(i);
+                ObjectGroupObjectData objectData = dataObject.objectGroupData.objectGroupObjectDataList.get(i);
 
                 if (!objectDict.containsKey(objectDeclaration.objectExtendedGUID)) {
                     revisionObject = new RevisionStoreObject();
@@ -62,8 +58,7 @@ public class RevisionStoreObjectGroup {
                 if (objectDeclaration.objectPartitionID.getDecodedValue() == 4) {
                     revisionObject.jcid = new JCIDObject(objectDeclaration, objectData);
                 } else if (objectDeclaration.objectPartitionID.getDecodedValue() == 1) {
-                    revisionObject.propertySet =
-                            new PropertySetObject(objectDeclaration, objectData);
+                    revisionObject.propertySet = new PropertySetObject(objectDeclaration, objectData);
                     if (revisionObject.jcid.jcid.isFileData != 0) {
                         revisionObject.referencedObjectID = objectData.objectExGUIDArray;
                         revisionObject.referencedObjectSpacesID = objectData.cellIDArray;
@@ -71,38 +66,30 @@ public class RevisionStoreObjectGroup {
                 }
             }
 
-            for (int i = 0; i <
-                    dataObject.objectGroupDeclarations.objectGroupObjectBLOBDataDeclarationList.size();
-                    i++) {
-                ObjectGroupObjectBLOBDataDeclaration objectGroupObjectBLOBDataDeclaration =
-                        dataObject.objectGroupDeclarations.objectGroupObjectBLOBDataDeclarationList.get(
-                                i);
-                ObjectGroupObjectDataBLOBReference objectGroupObjectDataBLOBReference =
-                        dataObject.objectGroupData.objectGroupObjectDataBLOBReferenceList.get(i);
+            for (int i = 0; i < dataObject.objectGroupDeclarations.objectGroupObjectBLOBDataDeclarationList
+                    .size(); i++) {
+                ObjectGroupObjectBLOBDataDeclaration objectGroupObjectBLOBDataDeclaration = dataObject.objectGroupDeclarations.objectGroupObjectBLOBDataDeclarationList
+                        .get(i);
+                ObjectGroupObjectDataBLOBReference objectGroupObjectDataBLOBReference = dataObject.objectGroupData.objectGroupObjectDataBLOBReferenceList
+                        .get(i);
                 if (!objectDict.containsKey(objectGroupObjectBLOBDataDeclaration.objectExGUID)) {
                     revisionObject = new RevisionStoreObject();
-                    objectDict.put(objectGroupObjectBLOBDataDeclaration.objectExGUID,
-                            revisionObject);
+                    objectDict.put(objectGroupObjectBLOBDataDeclaration.objectExGUID, revisionObject);
                 } else {
-                    revisionObject =
-                            objectDict.get(objectGroupObjectBLOBDataDeclaration.objectExGUID);
+                    revisionObject = objectDict.get(objectGroupObjectBLOBDataDeclaration.objectExGUID);
                 }
                 if (objectGroupObjectBLOBDataDeclaration.objectPartitionID.getDecodedValue() == 2) {
                     revisionObject.fileDataObject = new FileDataObject();
-                    revisionObject.fileDataObject.objectDataBLOBDeclaration =
-                            objectGroupObjectBLOBDataDeclaration;
-                    revisionObject.fileDataObject.objectDataBLOBReference =
-                            objectGroupObjectDataBLOBReference;
+                    revisionObject.fileDataObject.objectDataBLOBDeclaration = objectGroupObjectBLOBDataDeclaration;
+                    revisionObject.fileDataObject.objectDataBLOBReference = objectGroupObjectDataBLOBReference;
                 }
             }
             objectGroup.objects.addAll(objectDict.values());
         } else {
-            for (int i = 0; i < dataObject.objectGroupDeclarations.objectDeclarationList.size();
-                    i++) {
-                ObjectGroupObjectDeclare objectDeclaration =
-                        dataObject.objectGroupDeclarations.objectDeclarationList.get(i);
-                ObjectGroupObjectData objectData =
-                        dataObject.objectGroupData.objectGroupObjectDataList.get(i);
+            for (int i = 0; i < dataObject.objectGroupDeclarations.objectDeclarationList.size(); i++) {
+                ObjectGroupObjectDeclare objectDeclaration = dataObject.objectGroupDeclarations.objectDeclarationList
+                        .get(i);
+                ObjectGroupObjectData objectData = dataObject.objectGroupData.objectGroupObjectDataList.get(i);
 
                 if (objectDeclaration.objectPartitionID.getDecodedValue() == 1) {
                     EncryptionObject encrypObject = new EncryptionObject();

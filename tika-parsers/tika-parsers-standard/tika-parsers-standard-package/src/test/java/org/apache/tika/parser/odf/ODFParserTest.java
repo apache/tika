@@ -21,10 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.IOException;
 import java.util.List;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
@@ -33,6 +29,9 @@ import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.SAXException;
 
 public class ODFParserTest extends TikaTest {
     private static Parser MACRO_PARSER;
@@ -53,8 +52,7 @@ public class ODFParserTest extends TikaTest {
         assertEquals("application/vnd.oasis.opendocument.text", parent.get(Metadata.CONTENT_TYPE));
 
         //make sure metadata came through
-        assertEquals("LibreOffice/6.4.4.2$Linux_X86_64 LibreOffice_project/40$Build-2",
-                parent.get("generator"));
+        assertEquals("LibreOffice/6.4.4.2$Linux_X86_64 LibreOffice_project/40$Build-2", parent.get("generator"));
         assertEquals(1, parent.getInt(PagedText.N_PAGES).intValue());
 
         Metadata macro1 = metadataList.get(1);
@@ -95,8 +93,7 @@ public class ODFParserTest extends TikaTest {
         Metadata parent = metadataList.get(0);
 
         assertContains("<tr>", parent.get(TikaCoreProperties.TIKA_CONTENT));
-        assertEquals("application/vnd.oasis.opendocument.spreadsheet",
-                parent.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/vnd.oasis.opendocument.spreadsheet", parent.get(Metadata.CONTENT_TYPE));
 
         Metadata macro = metadataList.get(1);
         assertEquals("MACRO", macro.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY));
@@ -114,12 +111,10 @@ public class ODFParserTest extends TikaTest {
         Metadata parent = metadataList.get(0);
 
         assertContains("<p", parent.get(TikaCoreProperties.TIKA_CONTENT));
-        assertEquals("application/vnd.oasis.opendocument.presentation",
-                parent.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/vnd.oasis.opendocument.presentation", parent.get(Metadata.CONTENT_TYPE));
         //make sure metadata came through
         assertEquals(
-                "LibreOffice/6.4.3.2$MacOSX_X86_64 " +
-                        "LibreOffice_project/747b5d0ebf89f41c860ec2a39efd7cb15b54f2d8",
+                "LibreOffice/6.4.3.2$MacOSX_X86_64 " + "LibreOffice_project/747b5d0ebf89f41c860ec2a39efd7cb15b54f2d8",
                 parent.get("generator"));
 
         assertEquals("2", parent.get("editing-cycles"));
@@ -139,13 +134,11 @@ public class ODFParserTest extends TikaTest {
         Metadata parent = metadataList.get(0);
 
         assertContains("<p>Hello dear user,</p>", parent.get(TikaCoreProperties.TIKA_CONTENT));
-        assertEquals("application/vnd.oasis.opendocument.flat.text",
-                parent.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/vnd.oasis.opendocument.flat.text", parent.get(Metadata.CONTENT_TYPE));
 
         //make sure metadata came through
         assertEquals(
-                "LibreOffice/6.4.3.2$MacOSX_X86_64 " +
-                        "LibreOffice_project/747b5d0ebf89f41c860ec2a39efd7cb15b54f2d8",
+                "LibreOffice/6.4.3.2$MacOSX_X86_64 " + "LibreOffice_project/747b5d0ebf89f41c860ec2a39efd7cb15b54f2d8",
                 parent.get("generator"));
         assertEquals(1, parent.getInt(PagedText.N_PAGES).intValue());
 
@@ -157,7 +150,6 @@ public class ODFParserTest extends TikaTest {
         Metadata image = metadataList.get(2);
         assertEquals("image/png", image.get(Metadata.CONTENT_TYPE));
     }
-
 
     @Test
     public void testMacroFODTandXMLOutput() throws Exception {
@@ -173,8 +165,7 @@ public class ODFParserTest extends TikaTest {
         Metadata parent = metadataList.get(0);
 
         assertContains("<tr>", parent.get(TikaCoreProperties.TIKA_CONTENT));
-        assertEquals("application/vnd.oasis.opendocument.flat.spreadsheet",
-                parent.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/vnd.oasis.opendocument.flat.spreadsheet", parent.get(Metadata.CONTENT_TYPE));
 
         Metadata macro = metadataList.get(1);
         assertEquals("MACRO", macro.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY));
@@ -192,12 +183,10 @@ public class ODFParserTest extends TikaTest {
         Metadata parent = metadataList.get(0);
 
         assertContains("<p", parent.get(TikaCoreProperties.TIKA_CONTENT));
-        assertEquals("application/vnd.oasis.opendocument.flat.presentation",
-                parent.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/vnd.oasis.opendocument.flat.presentation", parent.get(Metadata.CONTENT_TYPE));
         //make sure metadata came through
         assertEquals(
-                "LibreOffice/6.4.3.2$MacOSX_X86_64 " +
-                        "LibreOffice_project/747b5d0ebf89f41c860ec2a39efd7cb15b54f2d8",
+                "LibreOffice/6.4.3.2$MacOSX_X86_64 " + "LibreOffice_project/747b5d0ebf89f41c860ec2a39efd7cb15b54f2d8",
                 parent.get("generator"));
 
         assertEquals("3", parent.get("editing-cycles"));

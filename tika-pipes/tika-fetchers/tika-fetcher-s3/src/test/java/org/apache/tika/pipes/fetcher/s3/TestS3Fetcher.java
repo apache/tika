@@ -23,13 +23,12 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.fetcher.Fetcher;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 @Disabled("write actual unit tests")
 public class TestS3Fetcher {
@@ -53,8 +52,8 @@ public class TestS3Fetcher {
 
     @Test
     public void testConfig() throws Exception {
-        FetcherManager fetcherManager = FetcherManager.load(
-                Paths.get(this.getClass().getResource("/tika-config-s3.xml").toURI()));
+        FetcherManager fetcherManager = FetcherManager
+                .load(Paths.get(this.getClass().getResource("/tika-config-s3.xml").toURI()));
         Fetcher fetcher = fetcherManager.getFetcher("s3");
         Metadata metadata = new Metadata();
         try (InputStream is = fetcher.fetch(FETCH_STRING, metadata, new ParseContext())) {

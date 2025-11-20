@@ -29,10 +29,8 @@ package org.apache.tika.metadata;
  * >ECMA document of Office Open XML specification</a>
  */
 public interface OfficeOpenXMLExtended {
-    String NAMESPACE_URI =
-            "http://schemas.openxmlformats.org/officeDocument/2006/extended-properties/";
-    String WORD_PROCESSING_NAMESPACE_URI =
-            "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+    String NAMESPACE_URI = "http://schemas.openxmlformats.org/officeDocument/2006/extended-properties/";
+    String WORD_PROCESSING_NAMESPACE_URI = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
     String PREFIX = "extended-properties";
     String WORD_PROCESSING_PREFIX = "w";
     String SECURITY_NONE = "None";
@@ -42,42 +40,37 @@ public interface OfficeOpenXMLExtended {
     String SECURITY_LOCKED_FOR_ANNOTATIONS = "LockedForAnnotations";
     String SECURITY_UNKNOWN = "Unknown";
 
-    Property TEMPLATE = Property.externalText(
-            PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Template");
+    Property TEMPLATE = Property.externalText(PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Template");
 
-    Property MANAGER = Property.externalTextBag(
-            PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Manager");
+    Property MANAGER = Property.externalTextBag(PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Manager");
 
-    Property COMPANY = Property.externalText(
-            PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Company");
+    Property COMPANY = Property.externalText(PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Company");
 
-    Property PRESENTATION_FORMAT = Property.externalText(
-            PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "PresentationFormat");
+    Property PRESENTATION_FORMAT = Property
+            .externalText(PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "PresentationFormat");
 
-    Property NOTES = Property.externalInteger(
-            PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Notes");
+    Property NOTES = Property.externalInteger(PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Notes");
 
-    Property TOTAL_TIME = Property.externalInteger(
-            PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "TotalTime");
+    Property TOTAL_TIME = Property
+            .externalInteger(PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "TotalTime");
 
-    Property HIDDEN_SLIDES = Property.externalInteger(
-            PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "HiddedSlides");
+    Property HIDDEN_SLIDES = Property
+            .externalInteger(PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "HiddedSlides");
 
-    Property APPLICATION = Property.externalText(
-            PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Application");
+    Property APPLICATION = Property
+            .externalText(PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Application");
 
-    Property APP_VERSION = Property.externalText(
-            PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "AppVersion");
+    Property APP_VERSION = Property.externalText(PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "AppVersion");
     //Integer flag
-    Property DOC_SECURITY = Property.externalInteger(
-            PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "DocSecurity");
+    Property DOC_SECURITY = Property
+            .externalInteger(PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "DocSecurity");
 
     //Human readable string explaining doc security flag
     Property DOC_SECURITY_STRING = Property.externalClosedChoise(
-            PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "DocSecurityString",
-            SECURITY_NONE, SECURITY_PASSWORD_PROTECTED, SECURITY_READ_ONLY_RECOMMENDED,
-            SECURITY_READ_ONLY_ENFORCED, SECURITY_LOCKED_FOR_ANNOTATIONS, SECURITY_UNKNOWN);
+            PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "DocSecurityString", SECURITY_NONE,
+            SECURITY_PASSWORD_PROTECTED, SECURITY_READ_ONLY_RECOMMENDED, SECURITY_READ_ONLY_ENFORCED,
+            SECURITY_LOCKED_FOR_ANNOTATIONS, SECURITY_UNKNOWN);
 
-    Property COMMENTS = Property.externalTextBag(
-            WORD_PROCESSING_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Comments");
+    Property COMMENTS = Property
+            .externalTextBag(WORD_PROCESSING_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Comments");
 }

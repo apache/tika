@@ -23,9 +23,6 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -33,6 +30,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Parser for temporary MSOFfice files.
@@ -56,15 +55,14 @@ public class MSOwnerFileParser implements Parser {
     /**
      * Extracts owner from MS temp file
      */
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         byte[] asciiNameBytes = new byte[ASCII_CHUNK_LENGTH];
         IOUtils.readFully(stream, asciiNameBytes);
-        int asciiNameLength =
-                (int) asciiNameBytes[0];//don't need to convert to unsigned int because it can't
+        int asciiNameLength = (int) asciiNameBytes[0];//don't need to convert to unsigned int because it can't
         // be that long
         //bounds check name length
         if (asciiNameLength < 0) {
@@ -73,8 +71,7 @@ public class MSOwnerFileParser implements Parser {
             throw new TikaException("ascii name length must be < 55");
         }
 
-        String asciiName =
-                new String(asciiNameBytes, 1, asciiNameLength, StandardCharsets.US_ASCII);
+        String asciiName = new String(asciiNameBytes, 1, asciiNameLength, StandardCharsets.US_ASCII);
         metadata.set(TikaCoreProperties.MODIFIER, asciiName);
 
         int unicodeCharLength = stream.read();

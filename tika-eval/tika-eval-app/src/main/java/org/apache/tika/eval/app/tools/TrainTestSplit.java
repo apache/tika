@@ -54,9 +54,7 @@ public class TrainTestSplit {
 
     private void execute(Path leipzigDir, Path outputDir) throws Exception {
         initOutDirs(outputDir);
-        for (File f : leipzigDir
-                .toFile()
-                .listFiles()) {
+        for (File f : leipzigDir.toFile().listFiles()) {
             if (f.isDirectory()) {
                 continue;
             }
@@ -82,22 +80,15 @@ public class TrainTestSplit {
             while (line != null) {
                 float r = random.nextFloat();
                 if (r <= trainingP) {
-                    writers
-                            .get(TRAINING)
-                            .write(line + "\n");
+                    writers.get(TRAINING).write(line + "\n");
                 } else if (r < trainingP + devTestP) {
-                    writers
-                            .get(DEVTEST)
-                            .write(line + "\n");
+                    writers.get(DEVTEST).write(line + "\n");
                 } else {
-                    writers
-                            .get(TESTING)
-                            .write(line + "\n");
+                    writers.get(TESTING).write(line + "\n");
                 }
                 line = reader.readLine();
             }
         }
-
 
         for (Writer w : writers.values()) {
             w.flush();
@@ -114,9 +105,8 @@ public class TrainTestSplit {
     }
 
     private BufferedWriter getWriter(Path outputDir, String which, File f) throws IOException {
-        OutputStream os = new GzipCompressorOutputStream(new BufferedOutputStream(Files.newOutputStream(outputDir
-                .resolve(which)
-                .resolve(f.getName() + ".gz"))));
+        OutputStream os = new GzipCompressorOutputStream(
+                new BufferedOutputStream(Files.newOutputStream(outputDir.resolve(which).resolve(f.getName() + ".gz"))));
         return new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8));
     }
 }

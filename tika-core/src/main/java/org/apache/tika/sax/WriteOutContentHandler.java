@@ -19,19 +19,17 @@ package org.apache.tika.sax;
 import java.io.StringWriter;
 import java.io.Writer;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.ParseRecord;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * SAX event handler that writes content up to an optional write
  * limit out to a character stream or other decorated handler.
  */
 public class WriteOutContentHandler extends ContentHandlerDecorator {
-
 
     /**
      * The maximum number of characters to write to the character stream.
@@ -124,9 +122,8 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
      * @param throwOnWriteLimitReached
      * @param parseContext
      */
-    public WriteOutContentHandler(ContentHandler handler,
-                                  int writeLimit, boolean throwOnWriteLimitReached,
-                                  ParseContext parseContext) {
+    public WriteOutContentHandler(ContentHandler handler, int writeLimit, boolean throwOnWriteLimitReached,
+            ParseContext parseContext) {
         super(handler);
         this.writeLimit = writeLimit;
         this.throwOnWriteLimitReached = throwOnWriteLimitReached;

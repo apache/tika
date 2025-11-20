@@ -21,8 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.extractor.EmbeddedBytesSelector;
 import org.apache.tika.extractor.RUnpackExtractor;
@@ -30,19 +28,18 @@ import org.apache.tika.extractor.RUnpackExtractorFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
+import org.junit.jupiter.api.Test;
 
 public class AutoDetectParserConfigTest {
 
     @Test
     public void testEmbeddedBytesSelector() throws Exception {
         TikaConfig config;
-        try (InputStream is = TikaConfig.class.getResourceAsStream(
-                "TIKA-4207-embedded-bytes-config.xml")) {
+        try (InputStream is = TikaConfig.class.getResourceAsStream("TIKA-4207-embedded-bytes-config.xml")) {
             config = new TikaConfig(is);
         }
         AutoDetectParserConfig c = config.getAutoDetectParserConfig();
-        RUnpackExtractorFactory f =
-                (RUnpackExtractorFactory) c.getEmbeddedDocumentExtractorFactory();
+        RUnpackExtractorFactory f = (RUnpackExtractorFactory) c.getEmbeddedDocumentExtractorFactory();
 
         Metadata metadata = new Metadata();
         ParseContext parseContext = new ParseContext();

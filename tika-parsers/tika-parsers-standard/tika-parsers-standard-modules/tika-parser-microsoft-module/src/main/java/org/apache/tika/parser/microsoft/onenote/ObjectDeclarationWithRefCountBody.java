@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote;
 
 class ObjectDeclarationWithRefCountBody {
@@ -66,8 +65,7 @@ class ObjectDeclarationWithRefCountBody {
         return file_data_store_reference;
     }
 
-    public ObjectDeclarationWithRefCountBody setFile_data_store_reference(
-            boolean file_data_store_reference) {
+    public ObjectDeclarationWithRefCountBody setFile_data_store_reference(boolean file_data_store_reference) {
         this.file_data_store_reference = file_data_store_reference;
         return this;
     }

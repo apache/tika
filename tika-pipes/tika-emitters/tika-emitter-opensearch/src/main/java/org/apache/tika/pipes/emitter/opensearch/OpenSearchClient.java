@@ -25,23 +25,23 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.util.EntityUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.client.TikaClientException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.core.emitter.EmitData;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class OpenSearchClient {
 
@@ -56,17 +56,16 @@ public class OpenSearchClient {
     private final MetadataToJsonWriter metadataToJsonWriter;
     private final String embeddedFileFieldName;
     protected OpenSearchClient(String openSearchUrl, HttpClient httpClient,
-                               OpenSearchEmitter.AttachmentStrategy attachmentStrategy,
-                               OpenSearchEmitter.UpdateStrategy updateStrategy,
-                               String embeddedFileFieldName) {
+            OpenSearchEmitter.AttachmentStrategy attachmentStrategy, OpenSearchEmitter.UpdateStrategy updateStrategy,
+            String embeddedFileFieldName) {
         this.openSearchUrl = openSearchUrl;
         this.httpClient = httpClient;
         this.attachmentStrategy = attachmentStrategy;
-        this.metadataToJsonWriter = (updateStrategy == OpenSearchEmitter.UpdateStrategy.OVERWRITE) ?
-                new InsertMetadataToJsonWriter() : new UpsertMetadataToJsonWriter();
+        this.metadataToJsonWriter = (updateStrategy == OpenSearchEmitter.UpdateStrategy.OVERWRITE)
+                ? new InsertMetadataToJsonWriter()
+                : new UpsertMetadataToJsonWriter();
         this.embeddedFileFieldName = embeddedFileFieldName;
     }
-
 
     public void emitDocuments(List<? extends EmitData> emitData) throws IOException, TikaClientException {
         StringBuilder json = new StringBuilder();
@@ -91,20 +90,16 @@ public class OpenSearchClient {
         }
     }
 
-
-    public void emitDocument(String emitKey, List<Metadata> metadataList) throws IOException,
-            TikaClientException {
+    public void emitDocument(String emitKey, List<Metadata> metadataList) throws IOException, TikaClientException {
 
         StringBuilder json = new StringBuilder();
         appendDoc(emitKey, metadataList, json);
         emitJson(json);
     }
 
-    private void appendDoc(String emitKey, List<Metadata> metadataList, StringBuilder json)
-            throws IOException {
+    private void appendDoc(String emitKey, List<Metadata> metadataList, StringBuilder json) throws IOException {
         int i = 0;
-        String routing = (attachmentStrategy == OpenSearchEmitter.AttachmentStrategy.PARENT_CHILD) ?
-                emitKey : null;
+        String routing = (attachmentStrategy == OpenSearchEmitter.AttachmentStrategy.PARENT_CHILD) ? emitKey : null;
 
         for (Metadata metadata : metadataList) {
             StringBuilder id = new StringBuilder(emitKey);
@@ -126,18 +121,16 @@ public class OpenSearchClient {
 
     //Only here for testing. These may disappear without notice in the future.
     protected static String metadataToJsonContainerInsert(Metadata metadata,
-                                                    OpenSearchEmitter.AttachmentStrategy attachmentStrategy)
-            throws IOException {
+            OpenSearchEmitter.AttachmentStrategy attachmentStrategy) throws IOException {
         return new InsertMetadataToJsonWriter().writeContainer(metadata, attachmentStrategy);
     }
 
     //Only here for testing. These may disappear without notice in the future.
     protected static String metadataToJsonEmbeddedInsert(Metadata metadata,
-                                                         OpenSearchEmitter.AttachmentStrategy attachmentStrategy,
-                                                         String emitKey, String embeddedFileFieldName)
+            OpenSearchEmitter.AttachmentStrategy attachmentStrategy, String emitKey, String embeddedFileFieldName)
             throws IOException {
-        return new InsertMetadataToJsonWriter().writeEmbedded(metadata,
-                attachmentStrategy, emitKey, embeddedFileFieldName);
+        return new InsertMetadataToJsonWriter().writeEmbedded(metadata, attachmentStrategy, emitKey,
+                embeddedFileFieldName);
     }
 
     public JsonResponse postJson(String url, String json) throws IOException {
@@ -158,8 +151,7 @@ public class OpenSearchClient {
             int status = response.getStatusLine().getStatusCode();
             if (status == 200) {
                 try (Reader reader = new BufferedReader(
-                        new InputStreamReader(response.getEntity().getContent(),
-                                StandardCharsets.UTF_8))) {
+                        new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8))) {
                     ObjectMapper mapper = new ObjectMapper();
                     JsonNode node = mapper.readTree(reader);
                     if (LOG.isTraceEnabled()) {
@@ -169,12 +161,11 @@ public class OpenSearchClient {
                 }
             } else {
                 return new JsonResponse(status,
-                        new String(EntityUtils.toByteArray(response.getEntity()),
-                                StandardCharsets.UTF_8));
+                        new String(EntityUtils.toByteArray(response.getEntity()), StandardCharsets.UTF_8));
             }
         } finally {
             if (response != null && response instanceof CloseableHttpResponse) {
-                ((CloseableHttpResponse)response).close();
+                ((CloseableHttpResponse) response).close();
             }
             httpRequest.releaseConnection();
         }
@@ -184,8 +175,8 @@ public class OpenSearchClient {
         String writeContainer(Metadata metadata, OpenSearchEmitter.AttachmentStrategy attachmentStrategy)
                 throws IOException;
 
-        String writeEmbedded(Metadata metadata, OpenSearchEmitter.AttachmentStrategy attachmentStrategy,
-                             String emitKey, String embeddedFileFieldName) throws IOException;
+        String writeEmbedded(Metadata metadata, OpenSearchEmitter.AttachmentStrategy attachmentStrategy, String emitKey,
+                String embeddedFileFieldName) throws IOException;
 
         String getBulkJson(String id, String routing) throws IOException;
     }
@@ -193,8 +184,7 @@ public class OpenSearchClient {
     private static class InsertMetadataToJsonWriter implements MetadataToJsonWriter {
 
         @Override
-        public String writeContainer(Metadata metadata,
-                                     OpenSearchEmitter.AttachmentStrategy attachmentStrategy)
+        public String writeContainer(Metadata metadata, OpenSearchEmitter.AttachmentStrategy attachmentStrategy)
                 throws IOException {
             StringWriter writer = new StringWriter();
             try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
@@ -209,10 +199,8 @@ public class OpenSearchClient {
         }
 
         @Override
-        public String writeEmbedded(Metadata metadata,
-                                    OpenSearchEmitter.AttachmentStrategy attachmentStrategy,
-                                    String emitKey, String embeddedFileFieldName)
-                throws IOException {
+        public String writeEmbedded(Metadata metadata, OpenSearchEmitter.AttachmentStrategy attachmentStrategy,
+                String emitKey, String embeddedFileFieldName) throws IOException {
             StringWriter writer = new StringWriter();
             try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
                 jsonGenerator.writeStartObject();
@@ -253,8 +241,7 @@ public class OpenSearchClient {
     private static class UpsertMetadataToJsonWriter implements MetadataToJsonWriter {
 
         @Override
-        public String writeContainer(Metadata metadata,
-                                     OpenSearchEmitter.AttachmentStrategy attachmentStrategy)
+        public String writeContainer(Metadata metadata, OpenSearchEmitter.AttachmentStrategy attachmentStrategy)
                 throws IOException {
             StringWriter writer = new StringWriter();
             try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
@@ -272,10 +259,8 @@ public class OpenSearchClient {
         }
 
         @Override
-        public String writeEmbedded(Metadata metadata,
-                                    OpenSearchEmitter.AttachmentStrategy attachmentStrategy,
-                                    String emitKey, String embeddedFileFieldName)
-                throws IOException {
+        public String writeEmbedded(Metadata metadata, OpenSearchEmitter.AttachmentStrategy attachmentStrategy,
+                String emitKey, String embeddedFileFieldName) throws IOException {
             StringWriter writer = new StringWriter();
             try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {
                 jsonGenerator.writeStartObject();

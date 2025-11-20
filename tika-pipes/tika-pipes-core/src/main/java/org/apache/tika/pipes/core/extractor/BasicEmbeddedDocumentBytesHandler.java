@@ -23,9 +23,7 @@ import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedBufferedInputStream;
-
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 
 /**
  * For now, this is an in-memory EmbeddedDocumentBytesHandler that stores

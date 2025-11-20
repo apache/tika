@@ -18,12 +18,11 @@ package org.apache.tika.sax.xpath;
 
 import java.util.LinkedList;
 
+import org.apache.tika.sax.ContentHandlerDecorator;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
-
-import org.apache.tika.sax.ContentHandlerDecorator;
 
 /**
  * Content handler decorator that only passes the elements, attributes,
@@ -40,8 +39,7 @@ public class MatchingContentHandler extends ContentHandlerDecorator {
         this.matcher = matcher;
     }
 
-    public void startElement(String uri, String localName, String name, Attributes attributes)
-            throws SAXException {
+    public void startElement(String uri, String localName, String name, Attributes attributes) throws SAXException {
         matchers.addFirst(matcher);
         matcher = matcher.descend(uri, localName);
 
@@ -50,8 +48,8 @@ public class MatchingContentHandler extends ContentHandlerDecorator {
             String attributeURI = attributes.getURI(i);
             String attributeName = attributes.getLocalName(i);
             if (matcher.matchesAttribute(attributeURI, attributeName)) {
-                matches.addAttribute(attributeURI, attributeName, attributes.getQName(i),
-                        attributes.getType(i), attributes.getValue(i));
+                matches.addAttribute(attributeURI, attributeName, attributes.getQName(i), attributes.getType(i),
+                        attributes.getValue(i));
             }
         }
 

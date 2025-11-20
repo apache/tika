@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.wordperfect;
 
 import static org.junit.jupiter.api.Assertions.fail;
@@ -38,7 +37,6 @@ public class WPInputStreamTest {
         }
     }
 
-
     @Test
     public void testReadShort() throws Exception {
         try (WPInputStream wpInputStream = emptyWPStream()) {
@@ -48,7 +46,6 @@ public class WPInputStreamTest {
             //swallow
         }
     }
-
 
     @Test
     public void testReadChar() throws Exception {
@@ -89,7 +86,6 @@ public class WPInputStreamTest {
             //swallow
         }
     }
-
 
     @Test
     public void testReadString() throws Exception {

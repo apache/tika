@@ -54,7 +54,6 @@ public interface MAPI {
 
     Property INTERNET_REFERENCES = Property.internalTextBag(PREFIX_MAPI_META + "internet-references");
 
-
     Property CONVERSATION_TOPIC = Property.internalText(PREFIX_MAPI_META + "conversation-topic");
 
     Property CONVERSATION_INDEX = Property.internalText(PREFIX_MAPI_META + "conversation-index");
@@ -78,4 +77,3 @@ public interface MAPI {
     Property ATTACH_LANGUAGE = Property.internalText(PREFIX_MAPI_ATTACH_META + "language");
 
 }
-

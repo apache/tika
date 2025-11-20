@@ -31,8 +31,25 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.tika.config.Field;
+import org.apache.tika.config.Initializable;
+import org.apache.tika.config.InitializableProblemHandler;
+import org.apache.tika.config.Param;
+import org.apache.tika.exception.FileTooLongException;
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.FilenameUtils;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.core.fetcher.AbstractFetcher;
+import org.apache.tika.pipes.core.fetcher.RangeFetcher;
+import org.apache.tika.pipes.fetcher.s3.config.S3FetcherConfig;
+import org.apache.tika.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider;
@@ -50,23 +67,6 @@ import software.amazon.awssdk.services.s3.S3ClientBuilder;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
-import org.apache.tika.exception.FileTooLongException;
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.FilenameUtils;
-import org.apache.tika.io.TemporaryResources;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.fetcher.AbstractFetcher;
-import org.apache.tika.pipes.core.fetcher.RangeFetcher;
-import org.apache.tika.pipes.fetcher.s3.config.S3FetcherConfig;
-import org.apache.tika.utils.StringUtils;
 
 /**
  * Fetches files from s3. Example file: s3://my_bucket/path/to/my_file.pdf
@@ -126,7 +126,8 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     private String prefix;
     private String credentialsProvider;
     private boolean extractUserMetadata = true;
-    private int maxConnections = SdkHttpConfigurationOption.GLOBAL_HTTP_DEFAULTS.get(SdkHttpConfigurationOption.MAX_CONNECTIONS);
+    private int maxConnections = SdkHttpConfigurationOption.GLOBAL_HTTP_DEFAULTS
+            .get(SdkHttpConfigurationOption.MAX_CONNECTIONS);
     private S3Client s3Client;
     private boolean spoolToTemp = true;
     private int retries = 0; //TODO why isn't this used? Add getter/setter?
@@ -138,22 +139,22 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     private boolean pathStyleAccessEnabled = false;
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
+    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext)
+            throws TikaException, IOException {
         return fetch(fetchKey, -1, -1, metadata);
     }
 
     @Override
-    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata, ParseContext parseContext)
-            throws TikaException, IOException {
+    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata,
+            ParseContext parseContext) throws TikaException, IOException {
         String theFetchKey = StringUtils.isBlank(prefix) ? fetchKey : prefix + fetchKey;
 
         if (LOGGER.isDebugEnabled()) {
             if (startRange > -1) {
-                LOGGER.debug("about to fetch fetchkey={} (start={} end={}) from bucket ({})",
-                        theFetchKey, startRange, endRange, bucket);
+                LOGGER.debug("about to fetch fetchkey={} (start={} end={}) from bucket ({})", theFetchKey, startRange,
+                        endRange, bucket);
             } else {
-                LOGGER.debug("about to fetch fetchkey={} from bucket ({})",
-                        theFetchKey, bucket);
+                LOGGER.debug("about to fetch fetchkey={} from bucket ({})", theFetchKey, bucket);
             }
         }
         int tries = 0;
@@ -195,15 +196,13 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
         throw ex;
     }
 
-    private InputStream _fetch(String fetchKey, Metadata metadata,
-                               Long startRange, Long endRange) throws IOException {
+    private InputStream _fetch(String fetchKey, Metadata metadata, Long startRange, Long endRange) throws IOException {
         TemporaryResources tmp = null;
         ResponseInputStream<GetObjectResponse> s3Object = null;
         try {
             long start = System.currentTimeMillis();
             GetObjectRequest.Builder builder = GetObjectRequest.builder().bucket(bucket).key(fetchKey);
-            if (startRange != null && endRange != null
-                    && startRange > -1 && endRange > -1) {
+            if (startRange != null && endRange != null && startRange > -1 && endRange > -1) {
                 String range = String.format(Locale.US, "bytes=%d-%d", startRange, endRange);
                 builder.range(range);
             }
@@ -371,32 +370,35 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         //params have already been set...ignore them
         AwsCredentialsProvider provider;
-        switch (credentialsProvider) {
-            case "instance":
+        switch (credentialsProvider)
+        {
+            case "instance" :
                 provider = InstanceProfileCredentialsProvider.builder().build();
                 break;
-            case "profile":
+            case "profile" :
                 provider = ProfileCredentialsProvider.builder().profileName(profile).build();
                 break;
-            case "key_secret":
+            case "key_secret" :
                 AwsBasicCredentials awsCreds = AwsBasicCredentials.create(accessKey, secretKey);
                 provider = StaticCredentialsProvider.create(awsCreds);
                 break;
-            default:
-                throw new TikaConfigException("credentialsProvider must be set and " + "must be either 'instance', 'profile' or 'key_secret'");
+            default :
+                throw new TikaConfigException("credentialsProvider must be set and "
+                        + "must be either 'instance', 'profile' or 'key_secret'");
         }
         SdkHttpClient httpClient = ApacheHttpClient.builder().maxConnections(maxConnections).build();
         S3Configuration clientConfig = S3Configuration.builder().pathStyleAccessEnabled(pathStyleAccessEnabled).build();
         try {
             synchronized (clientLock) {
-                S3ClientBuilder s3ClientBuilder = S3Client.builder().httpClient(httpClient).
-                        serviceConfiguration(clientConfig).credentialsProvider(provider);
+                S3ClientBuilder s3ClientBuilder = S3Client.builder().httpClient(httpClient)
+                        .serviceConfiguration(clientConfig).credentialsProvider(provider);
                 if (!StringUtils.isBlank(endpointConfigurationService)) {
                     try {
-                        s3ClientBuilder.endpointOverride(new URI(endpointConfigurationService)).region(Region.of(region));
-                    }
-                    catch (URISyntaxException ex) {
-                        throw new TikaConfigException("bad endpointConfigurationService: " + endpointConfigurationService, ex);
+                        s3ClientBuilder.endpointOverride(new URI(endpointConfigurationService))
+                                .region(Region.of(region));
+                    } catch (URISyntaxException ex) {
+                        throw new TikaConfigException(
+                                "bad endpointConfigurationService: " + endpointConfigurationService, ex);
                     }
                 } else {
                     s3ClientBuilder.region(Region.of(region));
@@ -415,8 +417,7 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         mustNotBeEmpty("bucket", this.bucket);
         mustNotBeEmpty("region", this.region);
     }

@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.example;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -27,7 +26,6 @@ import java.nio.charset.Charset;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.TikaConfigSerializer;
-
 
 /**
  * This class shows how to dump a TikaConfig object to a configuration file.
@@ -60,7 +58,8 @@ public class DumpTikaConfigExample {
                     mode = TikaConfigSerializer.Mode.STATIC;
                 } else {
                     System.out.println("Use:");
-                    System.out.println("  DumpTikaConfig [--dump-minimal] [--dump-current] [--dump-static] [filename] [encoding]");
+                    System.out.println(
+                            "  DumpTikaConfig [--dump-minimal] [--dump-current] [--dump-static] [filename] [encoding]");
                     System.out.println("");
                     System.out.println("--dump-minimal    Produce the minimal config file");
                     System.out.println("--dump-current    The current (with defaults) config file");

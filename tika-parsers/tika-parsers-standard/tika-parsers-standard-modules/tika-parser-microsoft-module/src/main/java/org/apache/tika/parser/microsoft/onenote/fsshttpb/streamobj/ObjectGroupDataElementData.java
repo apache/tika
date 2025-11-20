@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
@@ -34,8 +33,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
 
 public class ObjectGroupDataElementData extends DataElementData {
-    public org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.DataElementHash
-            dataElementHash;
+    public org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.DataElementHash dataElementHash;
     public ObjectGroupDeclarations objectGroupDeclarations;
     public ObjectGroupMetadataDeclarations objectMetadataDeclaration;
     public ObjectGroupData objectGroupData;
@@ -93,11 +91,10 @@ public class ObjectGroupDataElementData extends DataElementData {
             this.dataElementHash = dataElementHash.get();
         }
 
-        this.objectGroupDeclarations =
-                StreamObject.getCurrent(byteArray, index, ObjectGroupDeclarations.class);
+        this.objectGroupDeclarations = StreamObject.getCurrent(byteArray, index, ObjectGroupDeclarations.class);
 
-        AtomicReference<ObjectGroupMetadataDeclarations> objectMetadataDeclaration =
-                new AtomicReference<>(new ObjectGroupMetadataDeclarations());
+        AtomicReference<ObjectGroupMetadataDeclarations> objectMetadataDeclaration = new AtomicReference<>(
+                new ObjectGroupMetadataDeclarations());
         if (StreamObject.tryGetCurrent(byteArray, index, objectMetadataDeclaration,
                 ObjectGroupMetadataDeclarations.class)) {
             this.objectMetadataDeclaration = objectMetadataDeclaration.get();
@@ -136,10 +133,9 @@ public class ObjectGroupDataElementData extends DataElementData {
             if (node instanceof IntermediateNodeObject) {
                 IntermediateNodeObject intermediateNodeObject = (IntermediateNodeObject) node;
                 ObjectGroupDataElementData data = new ObjectGroupDataElementData();
-                data.objectGroupDeclarations.objectDeclarationList.add(
-                        this.createObjectDeclare(node));
-                data.objectGroupData.objectGroupObjectDataList.add(
-                        this.createObjectData((IntermediateNodeObject) node));
+                data.objectGroupDeclarations.objectDeclarationList.add(this.createObjectDeclare(node));
+                data.objectGroupData.objectGroupObjectDataList
+                        .add(this.createObjectData((IntermediateNodeObject) node));
 
                 dataElements.add(new DataElement(DataElementType.ObjectGroupDataElementData, data));
 
@@ -150,25 +146,21 @@ public class ObjectGroupDataElementData extends DataElementData {
                 LeafNodeObject intermediateNode = (LeafNodeObject) node;
 
                 ObjectGroupDataElementData data = new ObjectGroupDataElementData();
-                data.objectGroupDeclarations.objectDeclarationList.add(
-                        this.createObjectDeclare(node));
-                data.objectGroupData.objectGroupObjectDataList.add(
-                        this.createObjectData(intermediateNode));
+                data.objectGroupDeclarations.objectDeclarationList.add(this.createObjectDeclare(node));
+                data.objectGroupData.objectGroupObjectDataList.add(this.createObjectData(intermediateNode));
 
                 if (intermediateNode.dataNodeObjectData != null) {
-                    data.objectGroupDeclarations.objectDeclarationList.add(
-                            this.createObjectDeclare(intermediateNode.dataNodeObjectData));
-                    data.objectGroupData.objectGroupObjectDataList.add(
-                            this.createObjectData(intermediateNode.dataNodeObjectData));
-                    dataElements.add(
-                            new DataElement(DataElementType.ObjectGroupDataElementData, data));
+                    data.objectGroupDeclarations.objectDeclarationList
+                            .add(this.createObjectDeclare(intermediateNode.dataNodeObjectData));
+                    data.objectGroupData.objectGroupObjectDataList
+                            .add(this.createObjectData(intermediateNode.dataNodeObjectData));
+                    dataElements.add(new DataElement(DataElementType.ObjectGroupDataElementData, data));
                     return;
                 }
 
-                if (intermediateNode.dataNodeObjectData == null &&
-                        intermediateNode.intermediateNodeObjectList != null) {
-                    dataElements.add(
-                            new DataElement(DataElementType.ObjectGroupDataElementData, data));
+                if (intermediateNode.dataNodeObjectData == null
+                        && intermediateNode.intermediateNodeObjectList != null) {
+                    dataElements.add(new DataElement(DataElementType.ObjectGroupDataElementData, data));
 
                     for (LeafNodeObject child : intermediateNode.intermediateNodeObjectList) {
                         this.traverseNodeObject(child, dataElements);
@@ -177,9 +169,8 @@ public class ObjectGroupDataElementData extends DataElementData {
                     return;
                 }
 
-                throw new TikaException(
-                        "The DataNodeObjectData and IntermediateNodeObjectList properties in " +
-                                "LeafNodeObjectData type cannot be null in the same time.");
+                throw new TikaException("The DataNodeObjectData and IntermediateNodeObjectList properties in "
+                        + "LeafNodeObjectData type cannot be null in the same time.");
             }
         }
 
@@ -225,8 +216,7 @@ public class ObjectGroupDataElementData extends DataElementData {
          * @param node Specify the node object.
          * @return Return the ObjectGroupObjectData instance.
          */
-        private ObjectGroupObjectData createObjectData(IntermediateNodeObject node)
-                throws TikaException, IOException {
+        private ObjectGroupObjectData createObjectData(IntermediateNodeObject node) throws TikaException, IOException {
             ObjectGroupObjectData objectData = new ObjectGroupObjectData();
 
             objectData.cellIDArray = new CellIDArray(0, null);
@@ -248,8 +238,7 @@ public class ObjectGroupDataElementData extends DataElementData {
          * @param node Specify the node object.
          * @return Return the ObjectGroupObjectData instance.
          */
-        private ObjectGroupObjectData createObjectData(LeafNodeObject node)
-                throws TikaException, IOException {
+        private ObjectGroupObjectData createObjectData(LeafNodeObject node) throws TikaException, IOException {
             ObjectGroupObjectData objectData = new ObjectGroupObjectData();
 
             objectData.cellIDArray = new CellIDArray(0, null);

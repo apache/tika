@@ -41,9 +41,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -56,6 +53,8 @@ import org.apache.tika.pipes.core.emitter.EmitData;
 import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.emitter.TikaEmitterException;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is only an initial, basic implementation of an emitter for JDBC.
@@ -82,8 +81,8 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
 
     //some file formats do not have time zones...
     //try both
-    private static final String[] TIKA_DATE_PATTERNS =
-            new String[] {"yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd'T'HH:mm:ss"};
+    private static final String[] TIKA_DATE_PATTERNS = new String[]{"yyyy-MM-dd'T'HH:mm:ss'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss"};
     //the "write" lock is used for creating the table
     private static ReadWriteLock READ_WRITE_LOCK = new ReentrantReadWriteLock();
     //this keeps track of which table + connection string have been created
@@ -109,8 +108,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     private PreparedStatement insertStatement;
     private AttachmentStrategy attachmentStrategy = AttachmentStrategy.FIRST_ONLY;
 
-    private MultivaluedFieldStrategy multivaluedFieldStrategy =
-            MultivaluedFieldStrategy.CONCATENATE;
+    private MultivaluedFieldStrategy multivaluedFieldStrategy = MultivaluedFieldStrategy.CONCATENATE;
 
     private String multivaluedFieldDelimiter = ", ";
 
@@ -206,8 +204,8 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
         } else if (lc.equals("concatenate")) {
             setMultivaluedFieldStrategy(MultivaluedFieldStrategy.CONCATENATE);
         } else {
-            throw new TikaConfigException("I'm sorry, I only recogize 'first_only' and " +
-                    "'concatenate'. I don't mind '" + strategy + "'");
+            throw new TikaConfigException(
+                    "I'm sorry, I only recogize 'first_only' and " + "'concatenate'. I don't mind '" + strategy + "'");
         }
     }
 
@@ -309,8 +307,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
             long start = System.currentTimeMillis();
             insertStatement.executeBatch();
             connection.commit();
-            LOGGER.debug("took {}ms to insert {} rows ", System.currentTimeMillis() - start,
-                    emitData.size());
+            LOGGER.debug("took {}ms to insert {} rows ", System.currentTimeMillis() - start, emitData.size());
         } else {
             insertStatement.executeBatch();
             connection.commit();
@@ -387,40 +384,36 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     }
 
     private void updateValue(String emitKey, PreparedStatement insertStatement, int i,
-                             ColumnDefinition columnDefinition, int metadataListIndex,
-                             List<Metadata> metadataList)
-            throws SQLException {
+            ColumnDefinition columnDefinition, int metadataListIndex, List<Metadata> metadataList) throws SQLException {
         Metadata metadata = metadataList.get(metadataListIndex);
         String val = getVal(metadata, columnDefinition);
-        switch (columnDefinition.getType()) {
-            case Types.VARCHAR:
+        switch (columnDefinition.getType())
+        {
+            case Types.VARCHAR :
                 updateVarchar(emitKey, columnDefinition, insertStatement, i, val);
                 break;
-            case Types.BOOLEAN:
+            case Types.BOOLEAN :
                 updateBoolean(insertStatement, i, val);
                 break;
-            case Types.INTEGER:
+            case Types.INTEGER :
                 updateInteger(insertStatement, i, val);
                 break;
-            case Types.BIGINT:
+            case Types.BIGINT :
                 updateLong(insertStatement, i, val);
                 break;
-            case Types.FLOAT:
+            case Types.FLOAT :
                 updateFloat(insertStatement, i, val);
                 break;
-            case Types.DOUBLE:
+            case Types.DOUBLE :
                 updateDouble(insertStatement, i, val);
                 break;
-            case Types.TIMESTAMP:
+            case Types.TIMESTAMP :
                 updateTimestamp(insertStatement, i, val, dateFormats);
                 break;
-            default:
-                throw new IllegalArgumentException(
-                        "Can only process:" + getHandledTypes() +
-                                " types so far.  " +
-                                "Please open a ticket to request: " +
-                                columnDefinition.getType() + " for " +
-                                columnDefinition.getColumnName());
+            default :
+                throw new IllegalArgumentException("Can only process:" + getHandledTypes() + " types so far.  "
+                        + "Please open a ticket to request: " + columnDefinition.getType() + " for "
+                        + columnDefinition.getColumnName());
         }
     }
 
@@ -453,8 +446,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
         return sb.toString();
     }
 
-    private void updateDouble(PreparedStatement insertStatement, int i, String val)
-            throws SQLException {
+    private void updateDouble(PreparedStatement insertStatement, int i, String val) throws SQLException {
         if (StringUtils.isBlank(val)) {
             insertStatement.setNull(i, Types.DOUBLE);
             return;
@@ -464,19 +456,18 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     }
 
     private void updateVarchar(String emitKey, ColumnDefinition columnDefinition, PreparedStatement insertStatement,
-                               int i,
-                               String val) throws SQLException {
+            int i, String val) throws SQLException {
         if (val == null) {
             insertStatement.setNull(i, Types.VARCHAR);
             return;
         }
-        String normalized = stringNormalizer.normalize(emitKey,
-                columnDefinition.getColumnName(), val, columnDefinition.getPrecision());
+        String normalized = stringNormalizer.normalize(emitKey, columnDefinition.getColumnName(), val,
+                columnDefinition.getPrecision());
         insertStatement.setString(i, normalized);
     }
 
-    private void updateTimestamp(PreparedStatement insertStatement, int i, String val,
-                                 DateFormat[] dateFormats) throws SQLException {
+    private void updateTimestamp(PreparedStatement insertStatement, int i, String val, DateFormat[] dateFormats)
+            throws SQLException {
         if (StringUtils.isBlank(val)) {
             insertStatement.setNull(i, Types.TIMESTAMP);
             return;
@@ -495,8 +486,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
         insertStatement.setNull(i, Types.TIMESTAMP);
     }
 
-    private void updateFloat(PreparedStatement insertStatement, int i, String val)
-            throws SQLException {
+    private void updateFloat(PreparedStatement insertStatement, int i, String val) throws SQLException {
         if (StringUtils.isBlank(val)) {
             insertStatement.setNull(i, Types.FLOAT);
         } else {
@@ -504,8 +494,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
         }
     }
 
-    private void updateLong(PreparedStatement insertStatement, int i, String val)
-            throws SQLException {
+    private void updateLong(PreparedStatement insertStatement, int i, String val) throws SQLException {
         if (StringUtils.isBlank(val)) {
             insertStatement.setNull(i, Types.BIGINT);
         } else {
@@ -513,8 +502,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
         }
     }
 
-    private void updateInteger(PreparedStatement insertStatement, int i, String val)
-            throws SQLException {
+    private void updateInteger(PreparedStatement insertStatement, int i, String val) throws SQLException {
         if (StringUtils.isBlank(val)) {
             insertStatement.setNull(i, Types.INTEGER);
         } else {
@@ -522,15 +510,13 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
         }
     }
 
-    private void updateBoolean(PreparedStatement insertStatement, int i, String val)
-            throws SQLException {
+    private void updateBoolean(PreparedStatement insertStatement, int i, String val) throws SQLException {
         if (StringUtils.isBlank(val)) {
             insertStatement.setNull(i, Types.BOOLEAN);
         } else {
             insertStatement.setBoolean(i, Boolean.parseBoolean(val));
         }
     }
-
 
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
@@ -584,8 +570,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         //require
     }
 
@@ -607,8 +592,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     }
 
     private static String getHandledTypes() {
-        return "'string', 'varchar', " +
-                "'boolean', 'int', 'long', 'float', 'double' and 'timestamp'";
+        return "'string', 'varchar', " + "'boolean', 'int', 'long', 'float', 'double' and 'timestamp'";
     }
 
     private static class StringNormalizer {
@@ -617,8 +601,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
             if (maxLength < 0 || s.length() <= maxLength) {
                 return s;
             }
-            LOGGER.warn("truncating {}->'{}' from {} chars to {} chars",
-                    emitKey, columnName, s.length(), maxLength);
+            LOGGER.warn("truncating {}->'{}' from {} chars to {} chars", emitKey, columnName, s.length(), maxLength);
 
             return s.substring(0, maxLength);
         }
@@ -634,8 +617,7 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
     }
 
     private static class ColumnDefinition {
-        private static final Matcher VARCHAR_MATCHER =
-                Pattern.compile("varchar\\((\\d+)\\)").matcher("");
+        private static final Matcher VARCHAR_MATCHER = Pattern.compile("varchar\\((\\d+)\\)").matcher("");
 
         private final String columnName;
 
@@ -647,35 +629,33 @@ public class JDBCEmitter extends AbstractEmitter implements Initializable, Close
         private static ColumnDefinition parse(String name, String type, int maxStringLength) {
             String lcType = type.toLowerCase(Locale.US);
             if (VARCHAR_MATCHER.reset(lcType).find()) {
-                return new ColumnDefinition(name,
-                        Types.VARCHAR, Integer.parseInt(VARCHAR_MATCHER.group(1)));
+                return new ColumnDefinition(name, Types.VARCHAR, Integer.parseInt(VARCHAR_MATCHER.group(1)));
             }
 
-            switch (lcType) {
+            switch (lcType)
+            {
 
-                case "string":
+                case "string" :
                     return new ColumnDefinition(name, Types.VARCHAR, maxStringLength);
-                case "bool":
-                case "boolean":
+                case "bool" :
+                case "boolean" :
                     return new ColumnDefinition(name, Types.BOOLEAN, -1);
-                case "int":
-                case "integer":
+                case "int" :
+                case "integer" :
                     return new ColumnDefinition(name, Types.INTEGER, -1);
-                case "bigint":
-                case "long":
+                case "bigint" :
+                case "long" :
                     return new ColumnDefinition(name, Types.BIGINT, -1);
-                case "float":
+                case "float" :
                     return new ColumnDefinition(name, Types.FLOAT, -1);
-                case "double":
+                case "double" :
                     return new ColumnDefinition(name, Types.DOUBLE, -1);
-                case "timestamp":
+                case "timestamp" :
                     return new ColumnDefinition(name, Types.TIMESTAMP, -1);
 
-                default:
-                    throw new IllegalArgumentException(
-                            "Can only process: " + getHandledTypes() +
-                                    " types so far.  Please open a ticket to request " +
-                                    type + " for column: " + name);
+                default :
+                    throw new IllegalArgumentException("Can only process: " + getHandledTypes()
+                            + " types so far.  Please open a ticket to request " + type + " for column: " + name);
             }
         }
 

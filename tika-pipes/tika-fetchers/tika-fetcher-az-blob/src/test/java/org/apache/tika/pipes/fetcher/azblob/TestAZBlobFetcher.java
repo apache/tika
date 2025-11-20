@@ -16,7 +16,6 @@
  */
 package org.apache.tika.pipes.fetcher.azblob;
 
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -24,15 +23,14 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.List;
 
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.fetcher.Fetcher;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.serialization.JsonMetadataList;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 @Disabled("write actual unit tests")
 public class TestAZBlobFetcher extends TikaTest {
@@ -41,13 +39,12 @@ public class TestAZBlobFetcher extends TikaTest {
 
     @Test
     public void testConfig() throws Exception {
-        FetcherManager fetcherManager = FetcherManager.load(Paths.get(this
-                .getClass()
-                .getResource("/tika-config-az-blob.xml")
-                .toURI()));
+        FetcherManager fetcherManager = FetcherManager
+                .load(Paths.get(this.getClass().getResource("/tika-config-az-blob.xml").toURI()));
         Fetcher fetcher = fetcherManager.getFetcher("az-blob");
         List<Metadata> metadataList = null;
-        try (Reader reader = new BufferedReader(new InputStreamReader(fetcher.fetch(FETCH_STRING, new Metadata(), new ParseContext()), StandardCharsets.UTF_8))) {
+        try (Reader reader = new BufferedReader(new InputStreamReader(
+                fetcher.fetch(FETCH_STRING, new Metadata(), new ParseContext()), StandardCharsets.UTF_8))) {
             metadataList = JsonMetadataList.fromJson(reader);
         }
         debug(metadataList);

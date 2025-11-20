@@ -21,14 +21,13 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Parser for Java .class files.
@@ -40,15 +39,14 @@ public class ClassParser implements Parser {
      */
     private static final long serialVersionUID = -3531388963354454357L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.application("java-vm"));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.application("java-vm"));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         new XHTMLClassVisitor(handler, metadata).parse(stream);
     }
 

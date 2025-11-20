@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.iwork.iwana;
 
 import java.io.IOException;
@@ -28,15 +27,14 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * For now, this parser isn't even registered.  It contains
@@ -44,10 +42,9 @@ import org.apache.tika.parser.Parser;
  */
 public class IWork18PackageParser implements Parser {
 
-    private final static Set<MediaType> supportedTypes = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(IWork18DocumentType.KEYNOTE18.getType(),
-                    IWork18DocumentType.NUMBERS18.getType(),
-                    IWork18DocumentType.PAGES18.getType())));
+    private final static Set<MediaType> supportedTypes = Collections
+            .unmodifiableSet(new HashSet<>(Arrays.asList(IWork18DocumentType.KEYNOTE18.getType(),
+                    IWork18DocumentType.NUMBERS18.getType(), IWork18DocumentType.PAGES18.getType())));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -55,8 +52,8 @@ public class IWork18PackageParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         // Open the Zip stream
         // Use a File if we can, and an already open zip is even better
         ZipFile zipFile = null;
@@ -101,8 +98,7 @@ public class IWork18PackageParser implements Parser {
 
     public enum IWork18DocumentType {
         KEYNOTE18(MediaType.application("vnd.apple.keynote.18")),
-        NUMBERS18(MediaType.application("vnd.apple.numbers.18")),
-        PAGES18(MediaType.application("vnd.apple.pages.18"));
+        NUMBERS18(MediaType.application("vnd.apple.numbers.18")), PAGES18(MediaType.application("vnd.apple.pages.18"));
 
         private final MediaType mediaType;
 

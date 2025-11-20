@@ -40,13 +40,13 @@ final class WPPrefixAreaExtractor {
         WPPrefixArea prefixArea = new WPPrefixArea();
 
         in.mark(30);
-        prefixArea.setFileId(in.readWPString(4));         // 1-4
-        prefixArea.setDocAreaPointer(in.readWPLong());    // 5-8
-        prefixArea.setProductType(in.readWP());           // 9
-        prefixArea.setFileType(in.readWPChar());          // 10
-        prefixArea.setMajorVersion(in.readWP());          // 11
-        prefixArea.setMinorVersion(in.readWP());          // 12
-        prefixArea.setEncrypted(in.readWPShort() != 0);   // 13-14
+        prefixArea.setFileId(in.readWPString(4)); // 1-4
+        prefixArea.setDocAreaPointer(in.readWPLong()); // 5-8
+        prefixArea.setProductType(in.readWP()); // 9
+        prefixArea.setFileType(in.readWPChar()); // 10
+        prefixArea.setMajorVersion(in.readWP()); // 11
+        prefixArea.setMinorVersion(in.readWP()); // 12
+        prefixArea.setEncrypted(in.readWPShort() != 0); // 13-14
         prefixArea.setIndexAreaPointer(in.readWPShort()); // 15-16
 
         // only applies to 6.x:
@@ -54,7 +54,7 @@ final class WPPrefixAreaExtractor {
         if (prefixArea.getMajorVersion() == WPPrefixArea.WP6_MAJOR_VERSION) {
             try {
                 in.skip(4); // 4 reserved bytes: skip     // 17-20
-                prefixArea.setFileSize(in.readWPLong());      // 21-24
+                prefixArea.setFileSize(in.readWPLong()); // 21-24
             } catch (IOException e) {
                 // May fail if no index header, which is fine.
             }

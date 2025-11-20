@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
@@ -38,8 +37,7 @@ public class ObjectGroupData extends StreamObject {
     public ObjectGroupData() {
         super(StreamObjectTypeHeaderStart.ObjectGroupData);
         this.objectGroupObjectDataList = new ArrayList<ObjectGroupObjectData>();
-        this.objectGroupObjectDataBLOBReferenceList =
-                new ArrayList<ObjectGroupObjectDataBLOBReference>();
+        this.objectGroupObjectDataBLOBReferenceList = new ArrayList<ObjectGroupObjectDataBLOBReference>();
     }
 
     /**
@@ -57,8 +55,7 @@ public class ObjectGroupData extends StreamObject {
         }
 
         if (this.objectGroupObjectDataBLOBReferenceList != null) {
-            for (ObjectGroupObjectDataBLOBReference objectGroupObjectDataBLOBReference :
-                    this.objectGroupObjectDataBLOBReferenceList) {
+            for (ObjectGroupObjectDataBLOBReference objectGroupObjectDataBLOBReference : this.objectGroupObjectDataBLOBReferenceList) {
                 byteList.addAll(objectGroupObjectDataBLOBReference.serializeToByteList());
             }
         }
@@ -74,8 +71,7 @@ public class ObjectGroupData extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems)
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems)
             throws TikaException, IOException {
         if (lengthOfItems != 0) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "ObjectGroupDeclarations",
@@ -89,24 +85,22 @@ public class ObjectGroupData extends StreamObject {
         this.objectGroupObjectDataList = new ArrayList<>();
         this.objectGroupObjectDataBLOBReferenceList = new ArrayList<>();
 
-        while ((headerLength = StreamObjectHeaderStart.tryParse(byteArray, index.get(), header)) !=
-                0) {
+        while ((headerLength = StreamObjectHeaderStart.tryParse(byteArray, index.get(), header)) != 0) {
             StreamObjectTypeHeaderStart type = header.get().type;
             if (type == StreamObjectTypeHeaderStart.ObjectGroupObjectData) {
                 index.addAndGet(headerLength);
-                this.objectGroupObjectDataList.add(
-                        (ObjectGroupObjectData) StreamObject.parseStreamObject(header.get(),
-                                byteArray, index));
+                this.objectGroupObjectDataList
+                        .add((ObjectGroupObjectData) StreamObject.parseStreamObject(header.get(), byteArray, index));
             } else if (type == StreamObjectTypeHeaderStart.ObjectGroupObjectDataBLOBReference) {
                 index.addAndGet(headerLength);
-                this.objectGroupObjectDataBLOBReferenceList.add(
-                        (ObjectGroupObjectDataBLOBReference) StreamObject.parseStreamObject(
-                                header.get(), byteArray, index));
+                this.objectGroupObjectDataBLOBReferenceList.add((ObjectGroupObjectDataBLOBReference) StreamObject
+                        .parseStreamObject(header.get(), byteArray, index));
             } else {
                 throw new StreamObjectParseErrorException(index.get(), "ObjectGroupDeclarations",
-                        "Failed to parse ObjectGroupData, expect the inner object type either " +
-                                "ObjectGroupObjectData or ObjectGroupObjectDataBLOBReference, " +
-                                "but actual type value is " + type, null);
+                        "Failed to parse ObjectGroupData, expect the inner object type either "
+                                + "ObjectGroupObjectData or ObjectGroupObjectDataBLOBReference, "
+                                + "but actual type value is " + type,
+                        null);
             }
         }
 

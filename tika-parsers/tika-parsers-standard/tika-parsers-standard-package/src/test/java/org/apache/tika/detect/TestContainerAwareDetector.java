@@ -34,11 +34,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
@@ -57,6 +52,10 @@ import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.iwork.iwana.IWork13PackageParser;
 import org.apache.tika.parser.iwork.iwana.IWork18PackageParser;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.SAXException;
 
 /**
  * Junit test class for {@link org.apache.tika.detect.microsoft.POIFSContainerDetector}
@@ -66,8 +65,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     private final MimeTypes mimeTypes = tikaConfig.getMimeRepository();
     private final MediaTypeRegistry mediaTypeRegistry = mimeTypes.getMediaTypeRegistry();
     private final Detector detector = new DefaultDetector(mimeTypes);
-    private final StreamingZipContainerDetector streamingZipDetector =
-            new StreamingZipContainerDetector();
+    private final StreamingZipContainerDetector streamingZipDetector = new StreamingZipContainerDetector();
 
     TestContainerAwareDetector() {
         streamingZipDetector.setMarkLimit(128 * 1024 * 1024);
@@ -92,15 +90,13 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         assertTypeByNameAndData(file, byNameAndData);
     }
 
-    private void assertTypeByNameAndData(String dataFile, String name, String type)
-            throws Exception {
+    private void assertTypeByNameAndData(String dataFile, String name, String type) throws Exception {
         assertTypeByNameAndData(dataFile, name, type, null);
     }
 
-    private void assertTypeByNameAndData(String dataFile, String name, String typeFromDetector,
-                                         String typeFromMagic) throws Exception {
-        try (TikaInputStream stream = TikaInputStream
-                .get(getResourceAsUrl("/test-documents/" + dataFile))) {
+    private void assertTypeByNameAndData(String dataFile, String name, String typeFromDetector, String typeFromMagic)
+            throws Exception {
+        try (TikaInputStream stream = TikaInputStream.get(getResourceAsUrl("/test-documents/" + dataFile))) {
             Metadata m = new Metadata();
             if (name != null) {
                 m.add(TikaCoreProperties.RESOURCE_NAME_KEY, name);
@@ -115,18 +111,17 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
             // All being well, the detector should get it perfect
             assertEquals(expected, detector.detect(stream, m));
 
-            if (mediaTypeRegistry.isSpecializationOf(expected, MediaType.APPLICATION_ZIP) &&
-                    !expected.toString().contains("tika-ooxml-protected")) {
+            if (mediaTypeRegistry.isSpecializationOf(expected, MediaType.APPLICATION_ZIP)
+                    && !expected.toString().contains("tika-ooxml-protected")) {
 
-                assertEquals(expected, streamingZipDetector.detect(stream, m),
-                        "streaming zip detector failed");
+                assertEquals(expected, streamingZipDetector.detect(stream, m), "streaming zip detector failed");
             }
         }
     }
 
     @Test
     public void testDetectOLE2() throws Exception {
-/*        // Microsoft office types known by POI
+        /*        // Microsoft office types known by POI
         assertTypeByData("testEXCEL.xls", "application/vnd.ms-excel");
         assertTypeByData("testWORD.doc", "application/msword");
         assertTypeByData("testPPT.ppt", "application/vnd.ms-powerpoint");
@@ -156,7 +151,6 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         assertTypeByData("testQUATTRO.wb3", "application/x-quattro-pro; version=7-8");
 
         assertTypeByData("testHWP_5.0.hwp", "application/x-hwp-v5");
-
 
         // With the filename and data
         assertTypeByNameAndData("testEXCEL.xls", "application/vnd.ms-excel");
@@ -193,12 +187,10 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     public void testDetectStarOfficeFiles() throws Exception {
         assertType("testStarOffice-5.2-calc.sdc", "application/vnd.stardivision.calc",
                 "application/vnd.stardivision.calc");
-        assertType("testVORCalcTemplate.vor", "application/vnd.stardivision.calc",
-                "application/vnd.stardivision.calc");
+        assertType("testVORCalcTemplate.vor", "application/vnd.stardivision.calc", "application/vnd.stardivision.calc");
         assertType("testStarOffice-5.2-draw.sda", "application/vnd.stardivision.draw",
                 "application/vnd.stardivision.draw");
-        assertType("testVORDrawTemplate.vor", "application/vnd.stardivision.draw",
-                "application/vnd.stardivision.draw");
+        assertType("testVORDrawTemplate.vor", "application/vnd.stardivision.draw", "application/vnd.stardivision.draw");
         assertType("testStarOffice-5.2-impress.sdd", "application/vnd.stardivision.impress",
                 "application/vnd.stardivision.impress");
         assertType("testVORImpressTemplate.vor", "application/vnd.stardivision.impress",
@@ -209,23 +201,18 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
                 "application/vnd.stardivision.writer");
         //file from open office bug tracker issue #6452
         //star office >6.0
-        assertType("testStarOffice-6.0-writer.sxw", "application/vnd.sun.xml.writer",
-                "application/vnd.sun.xml.writer");
+        assertType("testStarOffice-6.0-writer.sxw", "application/vnd.sun.xml.writer", "application/vnd.sun.xml.writer");
         //ooo byg #5116
         //can't find a diff in contents btwn sxw and stw...need to rely on file extension
-        assertTypeByNameAndData("testStarOffice-6.0-writer-template.stw",
-                "application/vnd.sun.xml.writer.template", "application/vnd.sun.xml.writer",
-                "application/zip");
+        assertTypeByNameAndData("testStarOffice-6.0-writer-template.stw", "application/vnd.sun.xml.writer.template",
+                "application/vnd.sun.xml.writer", "application/zip");
 
         //ooo bug #1151
-        assertType("testStarOffice-6.0-calc.sxc", "application/vnd.sun.xml.calc",
-                "application/vnd.sun.xml.calc");
+        assertType("testStarOffice-6.0-calc.sxc", "application/vnd.sun.xml.calc", "application/vnd.sun.xml.calc");
         //ooo bug #261
-        assertType("testStarOffice-6.0-draw.sxd", "application/vnd.sun.xml.draw",
-                "application/vnd.sun.xml.draw");
+        assertType("testStarOffice-6.0-draw.sxd", "application/vnd.sun.xml.draw", "application/vnd.sun.xml.draw");
         //ooo bug #5336
-        assertType("testStarOffice-6.0-draw.sxi", "application/vnd.sun.xml.impress",
-                "application/vnd.sun.xml.impress");
+        assertType("testStarOffice-6.0-draw.sxi", "application/vnd.sun.xml.impress", "application/vnd.sun.xml.impress");
 
         //ooo bug #67431 -- had to manually fix the name spacing in the manifest.xml
         assertType("testOpenOffice-autotext.bau", "application/vnd.openofficeorg.autotext",
@@ -237,11 +224,9 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
 
     @Test
     public void testOpenContainer() throws Exception {
-        try (TikaInputStream stream = TikaInputStream
-                .get(getResourceAsUrl("/test-documents/testPPT.ppt"))) {
+        try (TikaInputStream stream = TikaInputStream.get(getResourceAsUrl("/test-documents/testPPT.ppt"))) {
             assertNull(stream.getOpenContainer());
-            assertEquals(MediaType.parse("application/vnd.ms-powerpoint"),
-                    detector.detect(stream, new Metadata()));
+            assertEquals(MediaType.parse("application/vnd.ms-powerpoint"), detector.detect(stream, new Metadata()));
             assertTrue(stream.getOpenContainer() instanceof POIFSFileSystem);
         }
     }
@@ -282,8 +267,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         detectors.add(new OPCPackageDetector());
         detectors.add(new OpenDocumentDetector());
         DefaultZipContainerDetector zipContainerDetector = new DefaultZipContainerDetector(detectors);
-        try (TikaInputStream tis = TikaInputStream.get(
-                getResourceAsStream("/test-documents/testODFwithOOo3.odt"))) {
+        try (TikaInputStream tis = TikaInputStream.get(getResourceAsStream("/test-documents/testODFwithOOo3.odt"))) {
             //force underlying file to test the proper behavior with the underlying zipfile
             tis.getFile();
             MediaType mt = zipContainerDetector.detect(tis, new Metadata());
@@ -296,24 +280,17 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
 
     @Test
     public void testDetectOOXML() throws Exception {
-        assertTypeByData("testEXCEL.xlsx",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        assertTypeByData("testWORD.docx",
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-        assertTypeByData("testPPT.pptx",
-                "application/vnd.openxmlformats-officedocument.presentationml.presentation");
+        assertTypeByData("testEXCEL.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        assertTypeByData("testWORD.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        assertTypeByData("testPPT.pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation");
 
         // Check some of the less common OOXML types
-        assertTypeByData("testPPT.pptm",
-                "application/vnd.ms-powerpoint.presentation.macroenabled.12");
-        assertTypeByData("testPPT.ppsx",
-                "application/vnd.openxmlformats-officedocument.presentationml.slideshow");
+        assertTypeByData("testPPT.pptm", "application/vnd.ms-powerpoint.presentation.macroenabled.12");
+        assertTypeByData("testPPT.ppsx", "application/vnd.openxmlformats-officedocument.presentationml.slideshow");
         assertTypeByData("testPPT.ppsm", "application/vnd.ms-powerpoint.slideshow.macroEnabled.12");
         assertTypeByData("testDOTM.dotm", "application/vnd.ms-word.template.macroEnabled.12");
-        assertTypeByData("testEXCEL.strict.xlsx",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        assertTypeByData("testEXCEL_macro_enabled_template.xltm",
-                "application/vnd.ms-excel.template.macroenabled.12");
+        assertTypeByData("testEXCEL.strict.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        assertTypeByData("testEXCEL_macro_enabled_template.xltm", "application/vnd.ms-excel.template.macroenabled.12");
         assertTypeByData("testEXCEL_template.xltx",
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.template");
 
@@ -331,8 +308,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         assertTypeByData("testEXCEL.xlsb", "application/vnd.ms-excel.sheet.binary.macroEnabled.12");
 
         // With the filename and data
-        assertTypeByNameAndData("testEXCEL.xlsx",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        assertTypeByNameAndData("testEXCEL.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         assertTypeByNameAndData("testWORD.docx",
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
         assertTypeByNameAndData("testPPT.pptx",
@@ -383,12 +359,9 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
 
         // At the moment, we can't use the name to specialise
         // See discussions on TIKA-790 for details
-        assertTypeByNameAndData("testEXCEL_protected_passtika.xlsx",
-                "application/x-tika-ooxml-protected");
-        assertTypeByNameAndData("testWORD_protected_passtika.docx",
-                "application/x-tika-ooxml-protected");
-        assertTypeByNameAndData("testPPT_protected_passtika.pptx",
-                "application/x-tika-ooxml-protected");
+        assertTypeByNameAndData("testEXCEL_protected_passtika.xlsx", "application/x-tika-ooxml-protected");
+        assertTypeByNameAndData("testWORD_protected_passtika.docx", "application/x-tika-ooxml-protected");
+        assertTypeByNameAndData("testPPT_protected_passtika.pptx", "application/x-tika-ooxml-protected");
     }
 
     /**
@@ -412,8 +385,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     private void assertRemovalTempfiles(String fileName) throws Exception {
         int numberOfTempFiles = countTemporaryFiles();
 
-        try (TikaInputStream stream = TikaInputStream
-                .get(getResourceAsUrl("/test-documents/" + fileName))) {
+        try (TikaInputStream stream = TikaInputStream.get(getResourceAsUrl("/test-documents/" + fileName))) {
             detector.detect(stream, new Metadata());
         }
 
@@ -449,7 +421,6 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         //see https://bugs.documentfoundation.org/show_bug.cgi?id=120707 for a 2018 pages file
     }
 
-
     @Test
     public void testDetectKMZ() throws Exception {
         assertTypeByData("testKMZ.kmz", "application/vnd.google-earth.kmz");
@@ -481,8 +452,8 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         assertTypeByData("testAPK.apk", "application/vnd.android.package-archive");
 
         // JAR with HTML files in it
-        assertTypeByNameAndData("testJAR_with_HTML.jar", "testJAR_with_HTML.jar",
-                "application/java-archive", "application/java-archive");
+        assertTypeByNameAndData("testJAR_with_HTML.jar", "testJAR_with_HTML.jar", "application/java-archive",
+                "application/java-archive");
     }
 
     @Test
@@ -500,8 +471,8 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     public void testLyr() throws Exception {
         //file used in development but not added to
         //repo: https://cmgds.marine.usgs.gov/publications/of2005-1346/arcgis/bathy/Bathymetry.lyr
-        assertTypeByNameAndData("testLyr.lyr", "x-esri-layer",
-                "application/x-esri-layer", "application/x-tika-msoffice");
+        assertTypeByNameAndData("testLyr.lyr", "x-esri-layer", "application/x-esri-layer",
+                "application/x-tika-msoffice");
     }
 
     @Test
@@ -539,8 +510,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         m = new Metadata();
         m.add(TikaCoreProperties.RESOURCE_NAME_KEY, "testEXCEL.xlsx");
         try (TikaInputStream xlsx = getTruncatedFile("testEXCEL.xlsx", 300)) {
-            assertEquals(
-                    MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+            assertEquals(MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
                     detector.detect(xlsx, m));
         }
 
@@ -600,8 +570,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     public void testOpenOfficeInAZip() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testOpenOfficeInAZip.zip");
         assertEquals(3, metadataList.size());
-        assertEquals("application/vnd.oasis.opendocument.presentation",
-                metadataList.get(2).get(Metadata.CONTENT_TYPE));
+        assertEquals("application/vnd.oasis.opendocument.presentation", metadataList.get(2).get(Metadata.CONTENT_TYPE));
     }
 
     @Test
@@ -623,51 +592,47 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         //test default
         Detector detector = TikaConfig.getDefaultConfig().getDetector();
         try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get()) {
-            assertEquals("application/x-tika-msoffice",
-                    detector.detect(is, new Metadata()).toString());
+            assertEquals("application/x-tika-msoffice", detector.detect(is, new Metadata()).toString());
             assertEquals(len, countBytes(is));
         }
 
         detector = loadDetector("tika-4441-neg1.xml");
         try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get()) {
-            assertEquals("application/x-tika-msoffice",
-                    detector.detect(is, new Metadata()).toString());
+            assertEquals("application/x-tika-msoffice", detector.detect(is, new Metadata()).toString());
             assertEquals(len, countBytes(is));
         }
 
         detector = loadDetector("tika-4441-120.xml");
         try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get()) {
-            assertEquals("application/x-tika-msoffice",
-                    detector.detect(is, new Metadata()).toString());
+            assertEquals("application/x-tika-msoffice", detector.detect(is, new Metadata()).toString());
             assertEquals(len, countBytes(is));
         }
 
         detector = loadDetector("tika-4441-12000000.xml");
         try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get()) {
-            assertEquals("application/msword",
-                    detector.detect(is, new Metadata()).toString());
+            assertEquals("application/msword", detector.detect(is, new Metadata()).toString());
             assertEquals(len, countBytes(is));
         }
 
         //now try wrapping in a TikaInputStream
         detector = loadDetector("tika-4441-neg1.xml");
-        try (InputStream is = TikaInputStream.get(UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
-            assertEquals("application/msword",
-                    detector.detect(is, new Metadata()).toString());
+        try (InputStream is = TikaInputStream
+                .get(UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
+            assertEquals("application/msword", detector.detect(is, new Metadata()).toString());
             assertEquals(len, countBytes(is));
         }
 
         detector = loadDetector("tika-4441-120.xml");
-        try (InputStream is = TikaInputStream.get(UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
-            assertEquals("application/x-tika-msoffice",
-                    detector.detect(is, new Metadata()).toString());
+        try (InputStream is = TikaInputStream
+                .get(UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
+            assertEquals("application/x-tika-msoffice", detector.detect(is, new Metadata()).toString());
             assertEquals(len, countBytes(is));
         }
 
         detector = loadDetector("tika-4441-12000000.xml");
-        try (InputStream is = TikaInputStream.get(UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
-            assertEquals("application/msword",
-                    detector.detect(is, new Metadata()).toString());
+        try (InputStream is = TikaInputStream
+                .get(UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
+            assertEquals("application/msword", detector.detect(is, new Metadata()).toString());
             assertEquals(len, countBytes(is));
         }
     }

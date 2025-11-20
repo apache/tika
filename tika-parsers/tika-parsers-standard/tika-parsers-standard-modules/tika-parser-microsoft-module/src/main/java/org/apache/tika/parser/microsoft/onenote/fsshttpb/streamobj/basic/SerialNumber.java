@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.io.IOException;
@@ -86,9 +85,7 @@ public class SerialNumber extends BasicObject {
      * @return Return the length in byte of the SerialNumber basic object.
      */
     @Override
-    protected int doDeserializeFromByteArray(byte[] byteArray,
-                                             int startIndex)
-            throws IOException // return the length consumed
+    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException // return the length consumed
     {
         BitReader bitField = new BitReader(byteArray, startIndex);
         int type = bitField.readInt32(8);
@@ -105,8 +102,8 @@ public class SerialNumber extends BasicObject {
             return 25;
         } else {
             throw new IllegalArgumentException(
-                    "Failed to parse SerialNumber object, Expect the type value is either 0 or 128, " +
-                            "but the actual value is " + this.type);
+                    "Failed to parse SerialNumber object, Expect the type value is either 0 or 128, "
+                            + "but the actual value is " + this.type);
         }
     }
 }

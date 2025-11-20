@@ -20,14 +20,13 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.extractor.EmbeddedStreamTranslator;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PSTEmailStreamTranslator implements EmbeddedStreamTranslator {
     private static final String MIME_TYPE = MediaType.application("x-tika-pst-mail-item").toString();

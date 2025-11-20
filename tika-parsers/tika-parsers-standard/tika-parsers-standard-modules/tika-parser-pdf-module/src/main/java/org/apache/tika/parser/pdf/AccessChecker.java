@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.pdf;
 
 import java.io.Serializable;
@@ -78,8 +77,7 @@ public class AccessChecker implements Serializable {
                 if ("true".equals(metadata.get(AccessPermissions.EXTRACT_FOR_ACCESSIBILITY))) {
                     return;
                 }
-                throw new AccessPermissionException(
-                        "Content extraction for accessibility is not allowed.");
+                throw new AccessPermissionException("Content extraction for accessibility is not allowed.");
             }
             throw new AccessPermissionException("Content extraction is not allowed.");
         }

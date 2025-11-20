@@ -21,12 +21,11 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.ByteArrayInputStream;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test case for parsing mp3 files.
@@ -40,9 +39,7 @@ public class Mp3ParserTest extends TikaTest {
      * @param expected the expected duration, rounded as seconds
      */
     private static void checkDuration(Metadata metadata, int expected) {
-        assertEquals(expected,
-                Math.round(Float.parseFloat(metadata.get(XMPDM.DURATION))),
-                "wrong duration");
+        assertEquals(expected, Math.round(Float.parseFloat(metadata.get(XMPDM.DURATION))), "wrong duration");
     }
 
     /**
@@ -107,8 +104,7 @@ public class Mp3ParserTest extends TikaTest {
         assertEquals(null, metadata.get(XMPDM.COMPOSER));
         assertEquals("2008", metadata.get(XMPDM.RELEASE_DATE));
         assertEquals("Rock", metadata.get(XMPDM.GENRE));
-        assertEquals("XXX - ID3v1 Comment\nTest Comment",
-                metadata.get(XMPDM.LOG_COMMENT.getName()));
+        assertEquals("XXX - ID3v1 Comment\nTest Comment", metadata.get(XMPDM.LOG_COMMENT.getName()));
         assertEquals("1", metadata.get(XMPDM.TRACK_NUMBER));
         assertEquals("1/1", metadata.get(XMPDM.DISC_NUMBER));
         assertEquals("1", metadata.get(XMPDM.COMPILATION));
@@ -211,8 +207,7 @@ public class Mp3ParserTest extends TikaTest {
         assertEquals("Test Artist \u2468\u2460", metadata.get(XMPDM.ARTIST));
         assertEquals("Test Album \u2460\u2468", metadata.get(XMPDM.ALBUM));
 
-        assertEquals("Eng - Comment Desc\nThis is a \u1357\u2468\u2460 Comment",
-                metadata.get(XMPDM.LOG_COMMENT));
+        assertEquals("Eng - Comment Desc\nThis is a \u1357\u2468\u2460 Comment", metadata.get(XMPDM.LOG_COMMENT));
 
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
         assertEquals("44100", metadata.get("samplerate"));
@@ -236,8 +231,7 @@ public class Mp3ParserTest extends TikaTest {
         assertEquals("Test Artist \u2468\u2460", metadata.get(XMPDM.ARTIST));
         assertEquals("Test Album \u2460\u2468", metadata.get(XMPDM.ALBUM));
 
-        assertEquals("Eng - Comment Desc\nThis is a \u1357\u2468\u2460 Comment",
-                metadata.get(XMPDM.LOG_COMMENT));
+        assertEquals("Eng - Comment Desc\nThis is a \u1357\u2468\u2460 Comment", metadata.get(XMPDM.LOG_COMMENT));
 
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
         assertEquals("44100", metadata.get("samplerate"));
@@ -282,8 +276,7 @@ public class Mp3ParserTest extends TikaTest {
         assertEquals(11, ID3v2Frame.getInt(new byte[]{0, 0, 0, 0x0b}));
         assertEquals(257, ID3v2Frame.getInt(new byte[]{0, 0, 1, 1}));
 
-        ID3v2Frame f =
-                (ID3v2Frame) ID3v2Frame.createFrameIfPresent(new ByteArrayInputStream(empty));
+        ID3v2Frame f = (ID3v2Frame) ID3v2Frame.createFrameIfPresent(new ByteArrayInputStream(empty));
         assertEquals(3, f.getMajorVersion());
         assertEquals(1, f.getMinorVersion());
         assertEquals(0, f.getFlags());
@@ -309,8 +302,7 @@ public class Mp3ParserTest extends TikaTest {
      */
     @Test
     public void testTIKA424() throws Exception {
-        assumeTrue(
-                Mp3ParserTest.class.getResourceAsStream("/test-documents/test2.mp3") != null);
+        assumeTrue(Mp3ParserTest.class.getResourceAsStream("/test-documents/test2.mp3") != null);
 
         Metadata metadata = new Metadata();
         String content = getText("test2.mp3", metadata);

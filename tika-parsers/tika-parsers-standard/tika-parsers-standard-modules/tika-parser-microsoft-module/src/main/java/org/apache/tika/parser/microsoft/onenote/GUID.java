@@ -14,9 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote;
-
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -44,11 +42,10 @@ public class GUID implements Comparable<GUID> {
      */
     public static GUID fromCurlyBraceUTF16Bytes(byte[] guid) {
         int[] intGuid = new int[16];
-        String utf16Str = new String(guid, StandardCharsets.UTF_16LE).replaceAll("\\{", "")
-                .replaceAll("-", "").replaceAll("}", "");
+        String utf16Str = new String(guid, StandardCharsets.UTF_16LE).replaceAll("\\{", "").replaceAll("-", "")
+                .replaceAll("}", "");
         for (int i = 0; i < utf16Str.length(); i += 2) {
-            intGuid[i / 2] =
-                    Integer.parseUnsignedInt("" + utf16Str.charAt(i) + utf16Str.charAt(i + 1), 16);
+            intGuid[i / 2] = Integer.parseUnsignedInt("" + utf16Str.charAt(i) + utf16Str.charAt(i + 1), 16);
         }
         return new GUID(intGuid);
     }

@@ -29,8 +29,6 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.DefaultEncodingDetector;
@@ -40,6 +38,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.SAXException;
 
 public class ISATabUtils {
 
@@ -48,9 +47,8 @@ public class ISATabUtils {
      */
 
     // Investigation section.
-    private static final String[] sections =
-            {"ONTOLOGY SOURCE REFERENCE", "INVESTIGATION", "INVESTIGATION PUBLICATIONS",
-                    "INVESTIGATION CONTACTS"};
+    private static final String[] sections = {"ONTOLOGY SOURCE REFERENCE", "INVESTIGATION",
+            "INVESTIGATION PUBLICATIONS", "INVESTIGATION CONTACTS"};
 
     // STUDY section (inside the Study section)
     private static final String studySectionField = "STUDY";
@@ -58,32 +56,27 @@ public class ISATabUtils {
     // Study File Name (inside the STUDY section)
     private static final String studyFileNameField = "Study File Name";
 
-    public static void parseInvestigation(InputStream stream, XHTMLContentHandler handler,
-                                          Metadata metadata, ParseContext context,
-                                          String studyFileName)
-            throws IOException, TikaException, SAXException {
+    public static void parseInvestigation(InputStream stream, XHTMLContentHandler handler, Metadata metadata,
+            ParseContext context, String studyFileName) throws IOException, TikaException, SAXException {
 
         // Automatically detect the character encoding
-        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream),
-                metadata)) {
+        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream), metadata)) {
             extractMetadata(reader, metadata, studyFileName);
         }
     }
 
-    public static void parseInvestigation(InputStream stream, XHTMLContentHandler handler,
-                                          Metadata metadata, ParseContext context)
-            throws IOException, TikaException, SAXException {
+    public static void parseInvestigation(InputStream stream, XHTMLContentHandler handler, Metadata metadata,
+            ParseContext context) throws IOException, TikaException, SAXException {
         parseInvestigation(stream, handler, metadata, context, null);
     }
 
     public static void parseStudy(InputStream stream, XHTMLContentHandler xhtml, Metadata metadata,
-                                  ParseContext context)
-            throws IOException, TikaException, SAXException {
+            ParseContext context) throws IOException, TikaException, SAXException {
         TikaInputStream tis = TikaInputStream.get(stream);
         // Automatically detect the character encoding
         EncodingDetector encodingDetector = getEncodingDetector(context);
-        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(tis),
-                metadata, encodingDetector);
+        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(tis), metadata,
+                encodingDetector);
                 CSVParser csvParser = CSVParser.builder().setReader(reader).setFormat(CSVFormat.TDF).get()) {
             Iterator<CSVRecord> iterator = csvParser.iterator();
 
@@ -126,14 +119,13 @@ public class ISATabUtils {
     }
 
     public static void parseAssay(InputStream stream, XHTMLContentHandler xhtml, Metadata metadata,
-                                  ParseContext context)
-            throws IOException, TikaException, SAXException {
+            ParseContext context) throws IOException, TikaException, SAXException {
         TikaInputStream tis = TikaInputStream.get(stream);
 
         // Automatically detect the character encoding
         EncodingDetector encodingDetector = getEncodingDetector(context);
-        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(tis),
-                metadata, encodingDetector);
+        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(tis), metadata,
+                encodingDetector);
                 CSVParser csvParser = CSVParser.builder().setReader(reader).setFormat(CSVFormat.TDF).get()) {
             xhtml.startElement("table");
 
@@ -167,8 +159,7 @@ public class ISATabUtils {
         }
     }
 
-    private static void extractMetadata(Reader reader, Metadata metadata, String studyFileName)
-            throws IOException {
+    private static void extractMetadata(Reader reader, Metadata metadata, String studyFileName) throws IOException {
         boolean investigationSection = false;
         boolean studySection = false;
         boolean studyTarget = false;
@@ -191,8 +182,7 @@ public class ISATabUtils {
                         }
                         String value = record.get(1);
                         map.put(field, value);
-                        studyTarget =
-                                (field.equals(studyFileNameField)) && (value.equals(studyFileName));
+                        studyTarget = (field.equals(studyFileNameField)) && (value.equals(studyFileName));
                         if (studyTarget) {
                             mapStudyToMetadata(map, metadata);
                             studySection = false;

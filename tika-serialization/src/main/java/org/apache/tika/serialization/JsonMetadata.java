@@ -16,18 +16,17 @@
  */
 package org.apache.tika.serialization;
 
-
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.metadata.Metadata;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.metadata.Metadata;
 
 public class JsonMetadata {
 
@@ -53,9 +52,7 @@ public class JsonMetadata {
      */
     public static void toJson(Metadata metadata, Writer writer) throws IOException {
         if (PRETTY_PRINT) {
-            PRETTY_SERIALIZER
-                    .writerWithDefaultPrettyPrinter()
-                    .writeValue(writer, metadata);
+            PRETTY_SERIALIZER.writerWithDefaultPrettyPrinter().writeValue(writer, metadata);
         } else {
             OBJECT_MAPPER.writeValue(writer, metadata);
         }
@@ -76,10 +73,8 @@ public class JsonMetadata {
         if (reader == null) {
             return null;
         }
-        if (OBJECT_MAPPER
-                .getFactory()
-                .streamReadConstraints()
-                .getMaxStringLength() != TikaConfig.getMaxJsonStringFieldLength()) {
+        if (OBJECT_MAPPER.getFactory().streamReadConstraints().getMaxStringLength() != TikaConfig
+                .getMaxJsonStringFieldLength()) {
             OBJECT_MAPPER = buildObjectMapper(TikaConfig.getMaxJsonStringFieldLength());
         }
         return OBJECT_MAPPER.readValue(reader, Metadata.class);
@@ -91,12 +86,8 @@ public class JsonMetadata {
 
     static ObjectMapper buildObjectMapper(int maxStringLen) {
         JsonFactory factory = new JsonFactory();
-        factory.setStreamReadConstraints(StreamReadConstraints
-                .builder()
-                .maxNestingDepth(10)
-                .maxStringLength(maxStringLen)
-                .maxNumberLength(500)
-                .build());
+        factory.setStreamReadConstraints(StreamReadConstraints.builder().maxNestingDepth(10)
+                .maxStringLength(maxStringLen).maxNumberLength(500).build());
         ObjectMapper objectMapper = new ObjectMapper(factory);
         SimpleModule baseModule = new SimpleModule();
         baseModule.addDeserializer(Metadata.class, new MetadataDeserializer());

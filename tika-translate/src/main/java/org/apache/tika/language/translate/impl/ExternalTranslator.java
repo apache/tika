@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.language.translate.impl;
 
 import java.io.BufferedReader;
@@ -47,8 +46,7 @@ public abstract class ExternalTranslator extends AbstractTranslator {
     public Reader runAndGetOutput(String command, String[] env, File workingDirectory)
             throws IOException, InterruptedException {
         Process process = Runtime.getRuntime().exec(command, env, workingDirectory);
-        InputStreamReader reader =
-                new InputStreamReader(process.getInputStream(), Charset.defaultCharset());
+        InputStreamReader reader = new InputStreamReader(process.getInputStream(), Charset.defaultCharset());
         BufferedReader bufferedReader = new BufferedReader(reader);
         process.waitFor();
         return bufferedReader;

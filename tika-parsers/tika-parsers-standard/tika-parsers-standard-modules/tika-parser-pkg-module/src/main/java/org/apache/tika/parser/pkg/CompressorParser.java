@@ -57,9 +57,6 @@ import org.apache.commons.compress.compressors.snappy.SnappyCompressorInputStrea
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
 import org.apache.commons.compress.compressors.z.ZCompressorInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
@@ -72,6 +69,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Parser for various compression formats.
@@ -83,16 +82,14 @@ public class CompressorParser implements Parser {
      */
     private static final long serialVersionUID = 2793565792967222459L;
 
-
     private static Set<MediaType> SUPPORTED_TYPES;
     private static Map<String, String> MIMES_TO_NAME;
 
     private boolean decompressConcatenated = false;
 
     static {
-        Set<MediaType> TMP_SET = new HashSet<>(MediaType
-                .set(BZIP, BZIP2, DEFLATE64, GZIP, GZIP_ALT, LZ4_FRAMED, COMPRESS, XZ, PACK,
-                        SNAPPY_FRAMED, ZLIB, LZMA));
+        Set<MediaType> TMP_SET = new HashSet<>(MediaType.set(BZIP, BZIP2, DEFLATE64, GZIP, GZIP_ALT, LZ4_FRAMED,
+                COMPRESS, XZ, PACK, SNAPPY_FRAMED, ZLIB, LZMA));
         try {
             Class.forName("org.brotli.dec.BrotliInputStream");
             TMP_SET.add(BROTLI);
@@ -126,7 +123,6 @@ public class CompressorParser implements Parser {
         MIMES_TO_NAME = Collections.unmodifiableMap(tmpMimesToName);
     }
 
-
     private int memoryLimitInKb = 100000;//100MB
 
     /**
@@ -149,8 +145,8 @@ public class CompressorParser implements Parser {
             return COMPRESS;
         } else if (stream instanceof Pack200CompressorInputStream) {
             return PACK;
-        } else if (stream instanceof FramedSnappyCompressorInputStream ||
-                stream instanceof SnappyCompressorInputStream) {
+        } else if (stream instanceof FramedSnappyCompressorInputStream
+                || stream instanceof SnappyCompressorInputStream) {
             // TODO Add unit tests for this format
             return SNAPPY_FRAMED;
         } else if (stream instanceof LZMACompressorInputStream) {
@@ -160,15 +156,14 @@ public class CompressorParser implements Parser {
         }
     }
 
-
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         // At the end we want to close the compression stream to release
         // any associated resources, but the underlying document stream
         // should not be closed
@@ -181,11 +176,10 @@ public class CompressorParser implements Parser {
 
         CompressorInputStream cis;
         try {
-            CompressorParserOptions options =
-                    context.get(CompressorParserOptions.class, metadata1 -> decompressConcatenated);
-            CompressorStreamFactory factory =
-                    new CompressorStreamFactory(options.decompressConcatenated(metadata),
-                            memoryLimitInKb);
+            CompressorParserOptions options = context.get(CompressorParserOptions.class,
+                    metadata1 -> decompressConcatenated);
+            CompressorStreamFactory factory = new CompressorStreamFactory(options.decompressConcatenated(metadata),
+                    memoryLimitInKb);
             //if we've already identified it via autodetect
             //trust that and go with the appropriate name
             //to avoid calling CompressorStreamFactory.detect() twice
@@ -206,7 +200,6 @@ public class CompressorParser implements Parser {
             throw new TikaException("Unable to uncompress document stream", e);
         }
 
-
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
@@ -216,8 +209,8 @@ public class CompressorParser implements Parser {
             if (name != null) {
                 if (name.endsWith(".tbz") || name.endsWith(".tbz2")) {
                     name = name.substring(0, name.lastIndexOf(".")) + ".tar";
-                } else if (name.endsWith(".bz") || name.endsWith(".bz2") || name.endsWith(".xz") ||
-                        name.endsWith(".zlib") || name.endsWith(".pack") || name.endsWith(".br")) {
+                } else if (name.endsWith(".bz") || name.endsWith(".bz2") || name.endsWith(".xz")
+                        || name.endsWith(".zlib") || name.endsWith(".pack") || name.endsWith(".br")) {
                     name = name.substring(0, name.lastIndexOf("."));
                 } else if (name.length() > 0) {
                     name = GzipUtils.getUncompressedFileName(name);
@@ -226,8 +219,7 @@ public class CompressorParser implements Parser {
             }
 
             // Use the delegate parser to parse the compressed document
-            EmbeddedDocumentExtractor extractor =
-                    EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+            EmbeddedDocumentExtractor extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
             if (extractor.shouldParseEmbedded(entrydata)) {
                 try (TikaInputStream tis = TikaInputStream.get(cis)) {
                     extractor.parseEmbedded(tis, xhtml, entrydata, true);

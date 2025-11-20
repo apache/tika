@@ -34,9 +34,6 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.text.TextPosition;
 import org.apache.pdfbox.util.Matrix;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -49,6 +46,8 @@ import org.apache.tika.renderer.RenderResult;
 import org.apache.tika.renderer.RenderResults;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.renderer.pdf.pdfbox.PDFRenderingState;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Utility class that overrides the {@link PDFTextStripper} functionality
@@ -56,7 +55,6 @@ import org.apache.tika.renderer.pdf.pdfbox.PDFRenderingState;
  * stream.
  */
 class PDF2XHTML extends AbstractPDF2XHTML {
-
 
     /**
      * This keeps track of the pdf object ids for inline
@@ -73,7 +71,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
     private AtomicInteger inlineImageCounter = new AtomicInteger(0);
 
     PDF2XHTML(PDDocument document, ContentHandler handler, ParseContext context, Metadata metadata,
-              PDFParserConfig config) throws IOException {
+            PDFParserConfig config) throws IOException {
         super(document, handler, context, metadata, config);
     }
 
@@ -87,17 +85,15 @@ class PDF2XHTML extends AbstractPDF2XHTML {
      * @throws SAXException  if the content handler fails to process SAX events
      * @throws TikaException if there was an exception outside of per page processing
      */
-    public static void process(PDDocument document, ContentHandler handler, ParseContext context,
-                               Metadata metadata, PDFParserConfig config)
-            throws SAXException, TikaException {
+    public static void process(PDDocument document, ContentHandler handler, ParseContext context, Metadata metadata,
+            PDFParserConfig config) throws SAXException, TikaException {
         PDF2XHTML pdf2XHTML = null;
         try {
             // Extract text using a dummy Writer as we override the
             // key methods to output to the given content
             // handler.
             if (config.isDetectAngles()) {
-                pdf2XHTML =
-                        new AngleDetectingPDF2XHTML(document, handler, context, metadata, config);
+                pdf2XHTML = new AngleDetectingPDF2XHTML(document, handler, context, metadata, config);
             } else {
                 pdf2XHTML = new PDF2XHTML(document, handler, context, metadata, config);
             }
@@ -176,8 +172,8 @@ class PDF2XHTML extends AbstractPDF2XHTML {
 
                         try (TikaInputStream resultInputStream = result.getInputStream()) {
                             //TODO: add markup here?
-                            embeddedDocumentExtractor.parseEmbedded(resultInputStream, xhtml,
-                                    result.getMetadata(), true);
+                            embeddedDocumentExtractor.parseEmbedded(resultInputStream, xhtml, result.getMetadata(),
+                                    true);
                         }
                     }
                 }
@@ -190,15 +186,12 @@ class PDF2XHTML extends AbstractPDF2XHTML {
     }
 
     void extractImages(PDPage page) throws SAXException, IOException {
-        if (config.isExtractInlineImages() == false &&
-                config.isExtractInlineImageMetadataOnly() == false) {
+        if (config.isExtractInlineImages() == false && config.isExtractInlineImageMetadataOnly() == false) {
             return;
         }
         //TODO: modernize to ImageStratey != rawImages
-        ImageGraphicsEngine engine =
-                config.getImageGraphicsEngineFactory().newEngine(
-                        page, getCurrentPageNo(), embeddedDocumentExtractor, config,
-                        processedInlineImages, inlineImageCounter, xhtml, metadata, context);
+        ImageGraphicsEngine engine = config.getImageGraphicsEngineFactory().newEngine(page, getCurrentPageNo(),
+                embeddedDocumentExtractor, config, processedInlineImages, inlineImageCounter, xhtml, metadata, context);
         engine.run();
         List<IOException> engineExceptions = engine.getExceptions();
         if (!engineExceptions.isEmpty()) {
@@ -268,9 +261,8 @@ class PDF2XHTML extends AbstractPDF2XHTML {
 
     private static class AngleDetectingPDF2XHTML extends PDF2XHTML {
 
-        private AngleDetectingPDF2XHTML(PDDocument document, ContentHandler handler,
-                                        ParseContext context, Metadata metadata,
-                                        PDFParserConfig config) throws IOException {
+        private AngleDetectingPDF2XHTML(PDDocument document, ContentHandler handler, ParseContext context,
+                Metadata metadata, PDFParserConfig config) throws IOException {
             super(document, handler, context, metadata, config);
         }
 
@@ -371,4 +363,3 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         }
     }
 }
-

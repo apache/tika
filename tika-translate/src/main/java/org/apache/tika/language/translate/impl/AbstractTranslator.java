@@ -23,7 +23,6 @@ import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.language.translate.Translator;
 
-
 public abstract class AbstractTranslator implements Translator {
 
     protected LanguageResult detectLanguage(String text) throws IOException {

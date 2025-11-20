@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
@@ -105,14 +104,13 @@ public class StreamObjectHeaderStart32bit extends StreamObjectHeaderStart {
      * @return Return the length in byte of the StreamObjectHeaderStart32bit basic object.
      */
     @Override
-    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex)
-            throws IOException, TikaException {
+    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException, TikaException {
         BitReader bitReader = new BitReader(byteArray, startIndex);
         this.headerType = bitReader.readInt32(2);
         if (this.headerType != StreamObjectHeaderStart.STREAM_OBJECT_HEADER_START_32_BIT) {
             throw new TikaException(String.format(Locale.US,
-                    "Failed to get the StreamObjectHeaderStart32bit header type value, expect " +
-                            "value %s, but actual value is %s",
+                    "Failed to get the StreamObjectHeaderStart32bit header type value, expect "
+                            + "value %s, but actual value is %s",
                     StreamObjectHeaderStart.STREAM_OBJECT_HEADER_START_32_BIT, this.headerType));
         }
 
@@ -127,8 +125,9 @@ public class StreamObjectHeaderStart32bit extends StreamObjectHeaderStart {
 
         if (StreamObject.getCompoundTypes().contains(this.type) && this.compound != 1) {
             throw new TikaException(String.format(Locale.US,
-                    "Failed to parse the StreamObjectHeaderStart32bit header. If the type value is %s " +
-                            "then the compound value should 1, but actual value is 0", typeValue));
+                    "Failed to parse the StreamObjectHeaderStart32bit header. If the type value is %s "
+                            + "then the compound value should 1, but actual value is 0",
+                    typeValue));
         }
 
         this.length = bitReader.readInt32(15);

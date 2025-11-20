@@ -26,11 +26,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.pipes.core.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.core.fetcher.config.AbstractConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ExpiringFetcherStore implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(ExpiringFetcherStore.class);
@@ -49,12 +48,9 @@ public class ExpiringFetcherStore implements AutoCloseable {
                 if (lastAccessed == null) {
                     LOG.error("Detected a fetcher with no last access time. FetcherName={}", fetcherName);
                     expired.add(fetcherName);
-                } else if (Instant
-                        .now()
-                        .isAfter(lastAccessed.plusSeconds(expireAfterSeconds))) {
-                    LOG.info("Detected stale fetcher {} hasn't been accessed in {} seconds. " + "Deleting.", fetcherName, Instant
-                            .now()
-                            .getEpochSecond() - lastAccessed.getEpochSecond());
+                } else if (Instant.now().isAfter(lastAccessed.plusSeconds(expireAfterSeconds))) {
+                    LOG.info("Detected stale fetcher {} hasn't been accessed in {} seconds. " + "Deleting.",
+                            fetcherName, Instant.now().getEpochSecond() - lastAccessed.getEpochSecond());
                     expired.add(fetcherName);
                 }
             }

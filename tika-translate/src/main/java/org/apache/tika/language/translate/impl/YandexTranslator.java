@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.language.translate.impl;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -25,17 +24,18 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Properties;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.language.translate.Translator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.language.translate.Translator;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 /**
  * An implementation of a REST client for the YANDEX <a href="https://tech.yandex.com/translate/">Translate API</a>.
@@ -49,8 +49,7 @@ public class YandexTranslator implements Translator {
     /**
      * Yandex Translate API service end-point URL
      */
-    private static final String YANDEX_TRANSLATE_URL_BASE =
-            "https://translate.yandex.net/api/v1.5/tr.json/translate";
+    private static final String YANDEX_TRANSLATE_URL_BASE = "https://translate.yandex.net/api/v1.5/tr.json/translate";
 
     /**
      * Default USer-Key, a real User-Key must be provided before the Lingo24 can successfully request translations
@@ -99,11 +98,10 @@ public class YandexTranslator implements Translator {
         }
 
         //TODO Add support for text over 10k characters
-        Response response = client.accept(MediaType.APPLICATION_JSON).query("key", this.apiKey)
-                .query("lang", langCode).query("text", text).get();
+        Response response = client.accept(MediaType.APPLICATION_JSON).query("key", this.apiKey).query("lang", langCode)
+                .query("text", text).get();
         StringBuilder responseText = new StringBuilder();
-        try (InputStreamReader inputStreamReader = new InputStreamReader(
-                (InputStream) response.getEntity(), UTF_8);
+        try (InputStreamReader inputStreamReader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
                 BufferedReader reader = new BufferedReader(inputStreamReader)) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -123,18 +121,14 @@ public class YandexTranslator implements Translator {
                     throw new TikaException(jsonResp.findValue("message").get(0).asText());
                 }
             } else {
-                throw new TikaException("Return message not recognized: " +
-                        responseText.toString().substring(0, Math.min(responseText.length(), 100)));
+                throw new TikaException("Return message not recognized: "
+                        + responseText.toString().substring(0, Math.min(responseText.length(), 100)));
             }
         } catch (JsonParseException e) {
-            throw new TikaException(
-                    "Error requesting translation from '" + sourceLanguage + "' to '" +
-                            targetLanguage +
-                            "', JSON response from Lingo24 is not well formatted: " +
-                            responseText.toString());
+            throw new TikaException("Error requesting translation from '" + sourceLanguage + "' to '" + targetLanguage
+                    + "', JSON response from Lingo24 is not well formatted: " + responseText.toString());
         }
     }
-
 
     /**
      * Get the API Key in use for client authentication

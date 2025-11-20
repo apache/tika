@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
-
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -44,8 +43,7 @@ public class OneNoteTreeWalkerOptions implements Serializable {
      * @param crawlAllFileNodesFromRoot
      * @return
      */
-    public OneNoteTreeWalkerOptions setCrawlAllFileNodesFromRoot(
-            boolean crawlAllFileNodesFromRoot) {
+    public OneNoteTreeWalkerOptions setCrawlAllFileNodesFromRoot(boolean crawlAllFileNodesFromRoot) {
         this.crawlAllFileNodesFromRoot = crawlAllFileNodesFromRoot;
         return this;
     }
@@ -82,8 +80,7 @@ public class OneNoteTreeWalkerOptions implements Serializable {
      *                               Defaults are usually ok here.
      * @return Returns this, as per builder pattern.
      */
-    public OneNoteTreeWalkerOptions setUtf16PropertiesToPrint(
-            Set<OneNotePropertyEnum> utf16PropertiesToPrint) {
+    public OneNoteTreeWalkerOptions setUtf16PropertiesToPrint(Set<OneNotePropertyEnum> utf16PropertiesToPrint) {
         this.utf16PropertiesToPrint = utf16PropertiesToPrint;
         return this;
     }

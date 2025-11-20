@@ -30,11 +30,9 @@ public class WriteLimitReachedException extends SAXException {
 
     @Override
     public String getMessage() {
-        return "Your document contained more than " + writeLimit
-                + " characters, and so your requested limit has been"
+        return "Your document contained more than " + writeLimit + " characters, and so your requested limit has been"
                 + " reached. To receive the full text of the document,"
-                + " increase your limit. (Text up to the limit is"
-                + " however available).";
+                + " increase your limit. (Text up to the limit is" + " however available).";
     }
     /**
      * Checks whether the given exception (or any of it's root causes) was

@@ -24,13 +24,9 @@ package org.apache.tika.detect.zip;
  */
 public class DeprecatedZipContainerDetector {
 
-
-
-
-/*
-TODO: move this to the apple module
-
+    /*
+    TODO: move this to the apple module
+    
     */
-
 
 }

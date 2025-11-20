@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.wordperfect;
 
 import java.io.BufferedInputStream;
@@ -177,12 +176,10 @@ class WPInputStream extends InputStream {
         return i;
     }
 
-
     @Override
     public int read() throws IOException {
         return in.read();
     }
-
 
     /**
      * Does not guarantee full buffer is read.

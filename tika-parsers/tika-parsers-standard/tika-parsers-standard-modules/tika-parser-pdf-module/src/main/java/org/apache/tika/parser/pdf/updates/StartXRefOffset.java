@@ -22,8 +22,7 @@ public class StartXRefOffset {
     private final long endEofOffset;
 
     private final boolean hasEof;
-    public StartXRefOffset(long startxref, long startXrefOffset, long endEofOffset,
-                           boolean hasEof) {
+    public StartXRefOffset(long startxref, long startXrefOffset, long endEofOffset, boolean hasEof) {
         this.startxref = startxref;
         this.startXrefOffset = startXrefOffset;
         this.endEofOffset = endEofOffset;
@@ -46,7 +45,6 @@ public class StartXRefOffset {
         return startXrefOffset;
     }
 
-
     /**
      *
      * @return offset in the file for where the EOF ends, this includes a trailing newline if
@@ -62,7 +60,7 @@ public class StartXRefOffset {
 
     @Override
     public String toString() {
-        return "StartXRefOffset{" + "startxref=" + startxref + ", startXrefOffset=" +
-                startXrefOffset + ", endEofOffset=" + endEofOffset + ", hasEof=" + hasEof + '}';
+        return "StartXRefOffset{" + "startxref=" + startxref + ", startXrefOffset=" + startXrefOffset
+                + ", endEofOffset=" + endEofOffset + ", hasEof=" + hasEof + '}';
     }
 }

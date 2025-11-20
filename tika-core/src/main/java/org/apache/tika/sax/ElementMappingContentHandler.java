@@ -18,6 +18,7 @@ package org.apache.tika.sax;
 
 import java.util.Collections;
 import java.util.Map;
+
 import javax.xml.namespace.QName;
 
 import org.xml.sax.Attributes;
@@ -37,8 +38,7 @@ public class ElementMappingContentHandler extends ContentHandlerDecorator {
 
     private final Map<QName, TargetElement> mappings;
 
-    public ElementMappingContentHandler(ContentHandler handler,
-                                        Map<QName, TargetElement> mappings) {
+    public ElementMappingContentHandler(ContentHandler handler, Map<QName, TargetElement> mappings) {
         super(handler);
         this.mappings = mappings;
     }
@@ -53,8 +53,7 @@ public class ElementMappingContentHandler extends ContentHandlerDecorator {
     }
 
     @Override
-    public void startElement(String namespaceURI, String localName, String qName, Attributes atts)
-            throws SAXException {
+    public void startElement(String namespaceURI, String localName, String qName, Attributes atts) throws SAXException {
         TargetElement mapping = mappings.get(new QName(namespaceURI, localName));
         if (mapping != null) {
             QName tag = mapping.getMappedTagName();
@@ -64,8 +63,7 @@ public class ElementMappingContentHandler extends ContentHandlerDecorator {
     }
 
     @Override
-    public void endElement(String namespaceURI, String localName, String qName)
-            throws SAXException {
+    public void endElement(String namespaceURI, String localName, String qName) throws SAXException {
         TargetElement mapping = mappings.get(new QName(namespaceURI, localName));
         if (mapping != null) {
             QName tag = mapping.getMappedTagName();
@@ -90,8 +88,7 @@ public class ElementMappingContentHandler extends ContentHandlerDecorator {
         /**
          * A shortcut that automatically creates the QName object
          */
-        public TargetElement(String mappedTagURI, String mappedTagLocalName,
-                             Map<QName, QName> attributesMapping) {
+        public TargetElement(String mappedTagURI, String mappedTagLocalName, Map<QName, QName> attributesMapping) {
             this(new QName(mappedTagURI, mappedTagLocalName), attributesMapping);
         }
 
@@ -123,8 +120,8 @@ public class ElementMappingContentHandler extends ContentHandlerDecorator {
             for (int i = 0; i < atts.getLength(); i++) {
                 QName name = attributesMapping.get(new QName(atts.getURI(i), atts.getLocalName(i)));
                 if (name != null) {
-                    natts.addAttribute(name.getNamespaceURI(), name.getLocalPart(),
-                            getQNameAsString(name), atts.getType(i), atts.getValue(i));
+                    natts.addAttribute(name.getNamespaceURI(), name.getLocalPart(), getQNameAsString(name),
+                            atts.getType(i), atts.getValue(i));
                 }
             }
             return natts;

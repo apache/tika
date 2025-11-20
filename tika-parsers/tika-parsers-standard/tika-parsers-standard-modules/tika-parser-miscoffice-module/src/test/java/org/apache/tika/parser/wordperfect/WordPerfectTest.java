@@ -21,12 +21,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.InputStream;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
+import org.junit.jupiter.api.Test;
 
 /**
  * Junit test class for the {@link WordPerfectParser}.
@@ -68,9 +67,7 @@ public class WordPerfectTest extends TikaTest {
         String xml = getXML("testWordPerfect.wpd").xml;
         assertContains("this was deleted.", xml);
 
-
-        try (InputStream is = getResourceAsStream(
-                "/org/apache/tika/parser/wordperfect/tika-config.xml")) {
+        try (InputStream is = getResourceAsStream("/org/apache/tika/parser/wordperfect/tika-config.xml")) {
             assertNotNull(is);
             TikaConfig tikaConfig = new TikaConfig(is);
 

@@ -23,9 +23,6 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.fork.unusedpackage.ClassInUnusedPackage;
 import org.apache.tika.metadata.Metadata;
@@ -33,6 +30,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 class ForkTestParser implements Parser {
 
@@ -45,8 +44,8 @@ class ForkTestParser implements Parser {
         return Collections.singleton(MediaType.TEXT_PLAIN);
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         stream.read();
 
         metadata.set(Metadata.CONTENT_TYPE, "text/plain");
@@ -60,8 +59,8 @@ class ForkTestParser implements Parser {
 
     static class ForkTestParserAccessingPackage extends ForkTestParser {
         @Override
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                          ParseContext context) throws IOException, SAXException, TikaException {
+        public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+                throws IOException, SAXException, TikaException {
             assertNotNull(ClassInUnusedPackage.class.getPackage());
             super.parse(stream, handler, metadata, context);
         }
@@ -69,8 +68,8 @@ class ForkTestParser implements Parser {
 
     static class ForkTestParserWaiting extends ForkTestParser {
         @Override
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                          ParseContext context) throws IOException, SAXException, TikaException {
+        public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+                throws IOException, SAXException, TikaException {
             try {
                 Thread.sleep(10_000);
             } catch (InterruptedException e) {

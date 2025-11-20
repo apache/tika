@@ -23,10 +23,9 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test cases for the {@link TypeDetector} class.
@@ -40,7 +39,6 @@ public class TypeDetectorTest {
     }
 
     private static MediaType TEXT_PLAIN_A_EQ_B = new MediaType("text", "plain", params);
-
 
     private final Detector detector = new TypeDetector();
 

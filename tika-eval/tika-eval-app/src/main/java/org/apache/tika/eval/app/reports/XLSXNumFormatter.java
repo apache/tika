@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.eval.app.reports;
 
 import java.sql.ResultSet;
@@ -33,14 +32,10 @@ class XLSXNumFormatter implements XSLXCellFormatter {
         this.formatString = formatString;
     }
 
-
     @Override
     public void reset(XSSFWorkbook workbook) {
         style = workbook.createCellStyle();
-        style.setDataFormat(workbook
-                .getCreationHelper()
-                .createDataFormat()
-                .getFormat(formatString));
+        style.setDataFormat(workbook.getCreationHelper().createDataFormat().getFormat(formatString));
     }
 
     @Override

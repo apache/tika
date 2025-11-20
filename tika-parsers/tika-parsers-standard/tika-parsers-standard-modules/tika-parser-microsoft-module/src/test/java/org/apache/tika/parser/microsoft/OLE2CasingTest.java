@@ -22,14 +22,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class OLE2CasingTest extends TikaTest {
 
@@ -65,7 +64,7 @@ public class OLE2CasingTest extends TikaTest {
 
     private void assertCloseEnough(Metadata expected, Metadata test) {
         for (String n : expected.names()) {
-            if (! IGNORE_FIELDS.contains(n)) {
+            if (!IGNORE_FIELDS.contains(n)) {
                 assertArrayEquals(expected.getValues(n), test.getValues(n));
             }
         }

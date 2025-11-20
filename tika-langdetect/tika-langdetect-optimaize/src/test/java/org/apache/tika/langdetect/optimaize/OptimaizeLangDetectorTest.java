@@ -29,14 +29,13 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-
 import org.apache.tika.langdetect.LanguageDetectorTest;
 import org.apache.tika.language.detect.LanguageConfidence;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.language.detect.LanguageWriter;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 public class OptimaizeLangDetectorTest extends LanguageDetectorTest {
     /*
@@ -203,8 +202,7 @@ public class OptimaizeLangDetectorTest extends LanguageDetectorTest {
                     LanguageResult result = results.get(0);
 
                     assertFalse(result.isReasonablyCertain(),
-                            "mix of " + language + " and " + other + " incorrectly detected as " +
-                                    result);
+                            "mix of " + language + " and " + other + " incorrectly detected as " + result);
                 }
             }
         }
@@ -236,15 +234,12 @@ public class OptimaizeLangDetectorTest extends LanguageDetectorTest {
             writeTo(language, writer, 300);
 
             LanguageResult result = detector.detect();
-            assertNotNull(result, String.format(Locale.US, "Language '%s' wasn't detected",
-                            language));
+            assertNotNull(result, String.format(Locale.US, "Language '%s' wasn't detected", language));
 
-            assertTrue(result.isLanguage(language), String.format(Locale.US, "Language '%s' was " +
-                            "detected as '%s'", language,
-                    result.getLanguage()));
-            assertTrue(result.isReasonablyCertain(),
-                    String.format(Locale.US, "Language '%s' isn't reasonably certain: %s", language,
-                            result.getConfidence()));
+            assertTrue(result.isLanguage(language), String.format(Locale.US, "Language '%s' was " + "detected as '%s'",
+                    language, result.getLanguage()));
+            assertTrue(result.isReasonablyCertain(), String.format(Locale.US,
+                    "Language '%s' isn't reasonably certain: %s", language, result.getConfidence()));
         }
 
         writer.close();
@@ -252,9 +247,8 @@ public class OptimaizeLangDetectorTest extends LanguageDetectorTest {
 
     private Map<String, String> getTestLanguages(String resourceName) throws IOException {
         Map<String, String> result = new HashMap<>();
-        List<String> languages =
-                IOUtils.readLines(OptimaizeLangDetectorTest.class.getResourceAsStream(resourceName),
-                        StandardCharsets.UTF_8);
+        List<String> languages = IOUtils.readLines(OptimaizeLangDetectorTest.class.getResourceAsStream(resourceName),
+                StandardCharsets.UTF_8);
         for (String line : languages) {
             line = line.trim();
             if (line.isEmpty() || line.startsWith("#")) {

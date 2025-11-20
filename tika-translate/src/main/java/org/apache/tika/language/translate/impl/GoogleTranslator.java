@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.language.translate.impl;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -25,15 +24,16 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Properties;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.tika.exception.TikaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.exception.TikaException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 /**
  * An implementation of a REST client to the <a
@@ -47,8 +47,7 @@ public class GoogleTranslator extends AbstractTranslator {
 
     private static final Logger LOG = LoggerFactory.getLogger(GoogleTranslator.class);
 
-    private static final String GOOGLE_TRANSLATE_URL_BASE =
-            "https://www.googleapis.com/language/translate/v2";
+    private static final String GOOGLE_TRANSLATE_URL_BASE = "https://www.googleapis.com/language/translate/v2";
 
     private static final String DEFAULT_KEY = "dummy-secret";
 
@@ -81,12 +80,10 @@ public class GoogleTranslator extends AbstractTranslator {
             return text;
         }
         Response response = client.accept(MediaType.APPLICATION_JSON).query("key", apiKey)
-                .query("source", sourceLanguage).query("target", targetLanguage).query("q", text)
-                .get();
+                .query("source", sourceLanguage).query("target", targetLanguage).query("q", text).get();
 
         StringBuilder responseText = new StringBuilder();
-        try (InputStreamReader inputStreamReader = new InputStreamReader(
-                (InputStream) response.getEntity(), UTF_8);
+        try (InputStreamReader inputStreamReader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
                 BufferedReader reader = new BufferedReader(inputStreamReader)) {
             String line;
             while ((line = reader.readLine()) != null) {

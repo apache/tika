@@ -73,8 +73,6 @@ import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.ss.usermodel.DateUtil;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -83,6 +81,7 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
+import org.xml.sax.SAXException;
 
 /**
  * Excel parser implementation which uses POI's Event API
@@ -192,8 +191,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
         Biff8EncryptionKey.setCurrentUserPassword(getPassword());
 
         // Have the file processed in event mode
-        TikaHSSFListener listener =
-                new TikaHSSFListener(workbookEntryName, xhtml, locale, this, officeParserConfig);
+        TikaHSSFListener listener = new TikaHSSFListener(workbookEntryName, xhtml, locale, this, officeParserConfig);
         listener.processFile(root, isListenForAllRecords());
         listener.throwStoredException();
         updateMetadata(listener);
@@ -219,19 +217,19 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
         if (listener.hasHiddenRow) {
             parentMetadata.set(Office.HAS_HIDDEN_ROWS, true);
         }
-        if (! listener.commentAuthors.isEmpty()) {
+        if (!listener.commentAuthors.isEmpty()) {
             for (String author : listener.commentAuthors) {
                 parentMetadata.add(Office.COMMENT_PERSONS, author);
             }
             parentMetadata.set(Office.HAS_COMMENTS, true);
         }
-        if (! listener.hiddenSheets.isEmpty()) {
+        if (!listener.hiddenSheets.isEmpty()) {
             for (String sheetName : listener.hiddenSheets) {
                 parentMetadata.add(Office.HIDDEN_SHEET_NAMES, sheetName);
             }
             parentMetadata.set(Office.HAS_HIDDEN_SHEETS, true);
         }
-        if (! listener.veryHiddenSheets.isEmpty()) {
+        if (!listener.veryHiddenSheets.isEmpty()) {
             for (String sheetName : listener.veryHiddenSheets) {
                 parentMetadata.add(Office.VERY_HIDDEN_SHEET_NAMES, sheetName);
             }
@@ -320,9 +318,8 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          *
          * @param handler Destination to write the parsed output to
          */
-        private TikaHSSFListener(String workbookEntryName, XHTMLContentHandler handler,
-                                 Locale locale, AbstractPOIFSExtractor extractor,
-                                 OfficeParserConfig officeParserConfig) {
+        private TikaHSSFListener(String workbookEntryName, XHTMLContentHandler handler, Locale locale,
+                AbstractPOIFSExtractor extractor, OfficeParserConfig officeParserConfig) {
             this.workbookEntryName = workbookEntryName;
             this.handler = handler;
             this.extractor = extractor;
@@ -331,8 +328,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             this.tikaExcelDataFormatter = new TikaExcelDataFormatter(locale);
             this.officeParserConfig = officeParserConfig;
 
-            this.tikaExcelDataFormatter
-                    .setDateFormatOverride(officeParserConfig.getDateFormatOverride());
+            this.tikaExcelDataFormatter.setDateFormatOverride(officeParserConfig.getDateFormatOverride());
         }
 
         /**
@@ -385,8 +381,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             }
 
             // Create event factory and process Workbook (fire events)
-            DocumentInputStream documentInputStream =
-                    root.createDocumentInputStream(workbookEntryName);
+            DocumentInputStream documentInputStream = root.createDocumentInputStream(workbookEntryName);
             HSSFEventFactory eventFactory = new HSSFEventFactory();
             try {
                 eventFactory.processEvents(hssfRequest, documentInputStream);
@@ -435,10 +430,10 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             }
         }
 
-        private void internalProcessRecord(Record record)
-                throws SAXException, TikaException, IOException {
-            switch (record.getSid()) {
-                case BOFRecord.sid: // start of workbook, worksheet etc. records
+        private void internalProcessRecord(Record record) throws SAXException, TikaException, IOException {
+            switch (record.getSid())
+            {
+                case BOFRecord.sid : // start of workbook, worksheet etc. records
                     BOFRecord bof = (BOFRecord) record;
                     if (bof.getType() == BOFRecord.TYPE_WORKBOOK) {
                         currentSheetIndex = -1;
@@ -460,14 +455,14 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     }
                     break;
 
-                case EOFRecord.sid: // end of workbook, worksheet etc. records
+                case EOFRecord.sid : // end of workbook, worksheet etc. records
                     if (currentSheet != null) {
                         processSheet();
                     }
                     currentSheet = null;
                     break;
 
-                case BoundSheetRecord.sid: // Worksheet index record
+                case BoundSheetRecord.sid : // Worksheet index record
                     BoundSheetRecord boundSheetRecord = (BoundSheetRecord) record;
                     if (boundSheetRecord.isHidden()) {
                         hiddenSheets.add(boundSheetRecord.getSheetname());
@@ -478,11 +473,11 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     sheetNames.add(boundSheetRecord.getSheetname());
                     break;
 
-                case SSTRecord.sid: // holds all the strings for LabelSSTRecords
+                case SSTRecord.sid : // holds all the strings for LabelSSTRecords
                     sstRecord = (SSTRecord) record;
                     break;
 
-                case FormulaRecord.sid: // Cell value from a formula
+                case FormulaRecord.sid : // Cell value from a formula
                     FormulaRecord formula = (FormulaRecord) record;
                     if (formula.hasCachedResultString()) {
                         // The String itself should be the next record
@@ -492,7 +487,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     }
                     break;
 
-                case StringRecord.sid:
+                case StringRecord.sid :
                     if (previousSid == FormulaRecord.sid) {
                         // Cached string value of a string formula
                         StringRecord sr = (StringRecord) record;
@@ -502,23 +497,25 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     }
                     break;
 
-                case LabelRecord.sid: // strings stored directly in the cell
+                case LabelRecord.sid : // strings stored directly in the cell
                     LabelRecord label = (LabelRecord) record;
                     addTextCell(record, label.getValue());
                     break;
 
-                case LabelSSTRecord.sid: // Ref. a string in the shared string table
+                case LabelSSTRecord.sid : // Ref. a string in the shared string table
                     if (sstRecord == null) {
-                        throw new TikaException("sstRecord should have been initialized before a ref to the shared string table");
+                        throw new TikaException(
+                                "sstRecord should have been initialized before a ref to the shared string table");
                     }
                     LabelSSTRecord sst = (LabelSSTRecord) record;
                     UnicodeString unicode = sstRecord.getString(sst.getSSTIndex());
                     String cellString = null;
                     if (officeParserConfig.isConcatenatePhoneticRuns()) {
-                        String phonetic = (unicode != null && unicode.getExtendedRst() != null &&
-                                unicode.getExtendedRst().getPhoneticText() != null &&
-                                !unicode.getExtendedRst().getPhoneticText().isBlank()) ?
-                                unicode.getExtendedRst().getPhoneticText() : "";
+                        String phonetic = (unicode != null && unicode.getExtendedRst() != null
+                                && unicode.getExtendedRst().getPhoneticText() != null
+                                && !unicode.getExtendedRst().getPhoneticText().isBlank())
+                                        ? unicode.getExtendedRst().getPhoneticText()
+                                        : "";
                         cellString = unicode.getString() + " " + phonetic;
                     } else {
                         cellString = unicode.getString();
@@ -526,17 +523,17 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     addTextCell(record, cellString);
                     break;
 
-                case NumberRecord.sid: // Contains a numeric cell value
+                case NumberRecord.sid : // Contains a numeric cell value
                     NumberRecord number = (NumberRecord) record;
                     addTextCell(record, formatListener.formatNumberDateCell(number));
                     break;
 
-                case RKRecord.sid: // Excel internal number record
+                case RKRecord.sid : // Excel internal number record
                     RKRecord rk = (RKRecord) record;
                     addCell(record, new NumberCell(rk.getRKNumber(), format));
                     break;
 
-                case HyperlinkRecord.sid: // holds a URL associated with a cell
+                case HyperlinkRecord.sid : // holds a URL associated with a cell
                     if (currentSheet != null) {
                         HyperlinkRecord link = (HyperlinkRecord) record;
                         Point point = new Point(link.getFirstColumn(), link.getFirstRow());
@@ -552,56 +549,56 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     }
                     break;
 
-                case TextObjectRecord.sid:
+                case TextObjectRecord.sid :
                     if (extractor.officeParserConfig.isIncludeShapeBasedContent()) {
                         TextObjectRecord tor = (TextObjectRecord) record;
                         addTextCell(record, tor.getStr().getString());
                     }
                     break;
 
-                case SeriesTextRecord.sid: // Chart label or title
+                case SeriesTextRecord.sid : // Chart label or title
                     SeriesTextRecord str = (SeriesTextRecord) record;
                     addTextCell(record, str.getText());
                     break;
 
-                case DrawingGroupRecord.sid:
+                case DrawingGroupRecord.sid :
                     // Collect this now, we'll process later when all
                     //  the continue records are in
                     drawingGroups.add((DrawingGroupRecord) record);
                     break;
 
-                case HeaderRecord.sid:
+                case HeaderRecord.sid :
                     if (extractor.officeParserConfig.isIncludeHeadersAndFooters()) {
                         HeaderRecord headerRecord = (HeaderRecord) record;
                         addTextCell(record, headerRecord.getText());
                     }
                     break;
 
-                case FooterRecord.sid:
+                case FooterRecord.sid :
                     if (extractor.officeParserConfig.isIncludeHeadersAndFooters()) {
                         FooterRecord footerRecord = (FooterRecord) record;
                         addTextCell(record, footerRecord.getText());
                     }
                     break;
-                case ProtectRecord.sid:
-                    if (((ProtectRecord)record).getProtect()) {
+                case ProtectRecord.sid :
+                    if (((ProtectRecord) record).getProtect()) {
                         //TODO -- associate this worksheet name
                         hasProtectedSheet = true;
                     }
                     break;
-                case ColumnInfoRecord.sid:
-                    if (((ColumnInfoRecord)record).getHidden()) {
+                case ColumnInfoRecord.sid :
+                    if (((ColumnInfoRecord) record).getHidden()) {
                         hasHiddenColumn = true;
                     }
                     break;
-                case NoteRecord.sid:
-                    String author = ((NoteRecord)record).getAuthor();
+                case NoteRecord.sid :
+                    String author = ((NoteRecord) record).getAuthor();
                     if (!StringUtils.isBlank(author)) {
                         commentAuthors.add(author);
                     }
                     break;
-                case RowRecord.sid:
-                    if (((RowRecord)record).getZeroHeight()) {
+                case RowRecord.sid :
+                    if (((RowRecord) record).getZeroHeight()) {
                         hasHiddenRow = true;
                     }
                     break;
@@ -707,8 +704,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                         handler.startElement("tr");
                         handler.startElement("td");
                         currentRow++;
-                    } while (officeParserConfig.isIncludeMissingRows() &&
-                            currentRow < entry.getKey().y);
+                    } while (officeParserConfig.isIncludeMissingRows() && currentRow < entry.getKey().y);
                     currentRow = entry.getKey().y;
                     currentColumn = 0;
                 }
@@ -733,8 +729,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             handler.endElement("div");
         }
 
-        private void findPictures(List<EscherRecord> records)
-                throws IOException, SAXException, TikaException {
+        private void findPictures(List<EscherRecord> records) throws IOException, SAXException, TikaException {
             for (EscherRecord escherRecord : records) {
                 if (escherRecord instanceof EscherBSERecord) {
                     EscherBlipRecord blip = ((EscherBSERecord) escherRecord).getBlipRecord();
@@ -744,8 +739,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                         TikaInputStream stream = TikaInputStream.get(picture.getData());
 
                         // Handle the embeded resource
-                        extractor.handleEmbeddedResource(stream, null, null, mimeType, handler,
-                                true);
+                        extractor.handleEmbeddedResource(stream, null, null, mimeType, handler, true);
                     }
                 }
 
@@ -773,19 +767,16 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     value = ((NumberRecord) cell).getValue();
                 } else {
                     if (!(cell instanceof FormulaRecord)) {
-                        throw new IllegalArgumentException(
-                                "Unsupported CellValue Record passed in " + cell);
+                        throw new IllegalArgumentException("Unsupported CellValue Record passed in " + cell);
                     }
                     value = ((FormulaRecord) cell).getValue();
                 }
                 if (DateUtil.isADateFormat(getFormatIndex(cell), formatString)) {
-                    return tikaExcelDataFormatter
-                            .formatRawCellContents(value, getFormatIndex(cell), formatString,
-                                    false);
+                    return tikaExcelDataFormatter.formatRawCellContents(value, getFormatIndex(cell), formatString,
+                            false);
                 } else if ("general".equalsIgnoreCase(formatString)) {
-                    return tikaExcelDataFormatter
-                            .formatRawCellContents(value, getFormatIndex(cell), formatString,
-                                    false);
+                    return tikaExcelDataFormatter.formatRawCellContents(value, getFormatIndex(cell), formatString,
+                            false);
                 }
                 return super.formatNumberDateCell(cell);
             }

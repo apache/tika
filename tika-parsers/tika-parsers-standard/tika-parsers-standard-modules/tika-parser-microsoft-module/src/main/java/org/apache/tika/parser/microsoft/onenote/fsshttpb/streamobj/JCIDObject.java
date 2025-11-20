@@ -14,14 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.JCID;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
-
 
 /**
  * This class is used to represent the JCID object.
@@ -36,8 +34,7 @@ public class JCIDObject {
      * @param objectDeclaration The Object Declaration structure.
      * @param objectData        The Object Data structure.
      */
-    public JCIDObject(ObjectGroupObjectDeclare objectDeclaration,
-                      ObjectGroupObjectData objectData) throws IOException {
+    public JCIDObject(ObjectGroupObjectDeclare objectDeclaration, ObjectGroupObjectData objectData) throws IOException {
         this.objectDeclaration = objectDeclaration;
         this.jcid = new JCID();
         this.jcid.doDeserializeFromByteArray(ByteUtil.toByteArray(objectData.data.content), 0);

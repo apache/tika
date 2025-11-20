@@ -13,7 +13,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package org.apache.tika.parser.scientific.integration;
 
@@ -27,8 +26,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.CompositeParser;
@@ -36,6 +33,7 @@ import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.external.CompositeExternalParser;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
+import org.junit.jupiter.api.Test;
 
 /**
  * We fixed parser ordering in 2.4.1.  This confirms going forward that the integration
@@ -64,10 +62,8 @@ public class TestParsers {
         //However, on systems with ffmpeg or exiftool installed, we need
         //to override those file formats
         CompositeParser externalParser = (CompositeParser) new CompositeExternalParser();
-        try (BufferedReader reader =
-                     new BufferedReader(new InputStreamReader(
-                             getClass().getResourceAsStream(path241),
-                             StandardCharsets.UTF_8))) {
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(getClass().getResourceAsStream(path241), StandardCharsets.UTF_8))) {
             String line = reader.readLine();
             while (line != null) {
                 String[] data = line.split("\t");
@@ -78,8 +74,7 @@ public class TestParsers {
                 if (external != null) {
                     parserClass = externalParser.getClass().toString();
                 }
-                assertEquals(parserClass, currentDefault.get(mediaType),
-                        "for mediaType '" + mediaType + "'");
+                assertEquals(parserClass, currentDefault.get(mediaType), "for mediaType '" + mediaType + "'");
                 checked++;
                 line = reader.readLine();
             }

@@ -49,7 +49,7 @@ public class ClearByAttachmentTypeMetadataFilter extends MetadataFilter {
         if (type == null) {
             return;
         }
-        if (! types.contains(type)) {
+        if (!types.contains(type)) {
             return;
         }
         for (String n : metadata.names()) {
@@ -77,8 +77,8 @@ public class ClearByAttachmentTypeMetadataFilter extends MetadataFilter {
                     }
                     sb.append(type.name());
                 }
-                throw new TikaConfigException("I'm sorry. I regret I don't recognise " + t +
-                        ". I do recognize the following (case-sensitive):" + sb.toString());
+                throw new TikaConfigException("I'm sorry. I regret I don't recognise " + t
+                        + ". I do recognize the following (case-sensitive):" + sb.toString());
             }
         }
         this.types.addAll(types);

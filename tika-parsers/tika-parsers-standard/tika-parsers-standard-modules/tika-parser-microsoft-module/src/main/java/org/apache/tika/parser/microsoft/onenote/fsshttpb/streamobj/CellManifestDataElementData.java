@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
@@ -47,8 +46,7 @@ public class CellManifestDataElementData extends DataElementData {
     public int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex)
             throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(startIndex);
-        this.cellManifestCurrentRevision =
-                StreamObject.getCurrent(byteArray, index, CellManifestCurrentRevision.class);
+        this.cellManifestCurrentRevision = StreamObject.getCurrent(byteArray, index, CellManifestCurrentRevision.class);
         return index.get() - startIndex;
     }
 

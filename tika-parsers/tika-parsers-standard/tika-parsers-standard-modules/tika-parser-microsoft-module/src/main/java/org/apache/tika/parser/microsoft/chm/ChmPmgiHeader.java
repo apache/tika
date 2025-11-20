@@ -66,8 +66,7 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
         this.currentPlace = currentPlace;
     }
 
-    private void unmarshalCharArray(byte[] data, ChmPmgiHeader chmPmgiHeader, int count)
-            throws ChmParsingException {
+    private void unmarshalCharArray(byte[] data, ChmPmgiHeader chmPmgiHeader, int count) throws ChmParsingException {
         int index = -1;
         ChmAssert.assertByteArrayNotNull(data);
         ChmAssert.assertChmAccessorNotNull(chmPmgiHeader);
@@ -91,10 +90,8 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
         if (4 > getDataRemained()) {
             throw new ChmParsingException("4 > dataLenght");
         }
-        dest = (data[this.getCurrentPlace()] & 0xff) |
-                (data[this.getCurrentPlace() + 1] & 0xff) << 8 |
-                (data[this.getCurrentPlace() + 2] & 0xff) << 16 |
-                (data[this.getCurrentPlace() + 3] & 0xff) << 24;
+        dest = (data[this.getCurrentPlace()] & 0xff) | (data[this.getCurrentPlace() + 1] & 0xff) << 8
+                | (data[this.getCurrentPlace() + 2] & 0xff) << 16 | (data[this.getCurrentPlace() + 3] & 0xff) << 24;
 
         setDataRemained(this.getDataRemained() - 4);
         this.setCurrentPlace(this.getCurrentPlace() + 4);
@@ -156,15 +153,12 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
 
         /* unmarshal fields */
         chmPmgiHeader.unmarshalCharArray(data, chmPmgiHeader, ChmConstants.CHM_SIGNATURE_LEN);
-        chmPmgiHeader
-                .setFreeSpace(chmPmgiHeader.unmarshalUInt32(data, chmPmgiHeader.getFreeSpace()));
+        chmPmgiHeader.setFreeSpace(chmPmgiHeader.unmarshalUInt32(data, chmPmgiHeader.getFreeSpace()));
 
         /* check structure */
-        if (!Arrays.equals(chmPmgiHeader.getSignature(),
-                ChmConstants.CHM_PMGI_MARKER.getBytes(UTF_8))) {
-            throw new TikaException(
-                    "it does not seem to be valid a PMGI signature, check ChmItsp index_root if " +
-                            "it was -1, means no PMGI, use PMGL insted");
+        if (!Arrays.equals(chmPmgiHeader.getSignature(), ChmConstants.CHM_PMGI_MARKER.getBytes(UTF_8))) {
+            throw new TikaException("it does not seem to be valid a PMGI signature, check ChmItsp index_root if "
+                    + "it was -1, means no PMGI, use PMGL insted");
         }
 
     }

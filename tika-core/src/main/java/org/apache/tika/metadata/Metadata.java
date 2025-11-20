@@ -42,9 +42,15 @@ import org.apache.tika.utils.DateUtils;
  * A multi-valued metadata container.
  */
 public class Metadata
-        implements CreativeCommons, Geographic, HttpHeaders, Message, ClimateForcast, TIFF,
-        TikaMimeKeys, Serializable {
-
+        implements
+            CreativeCommons,
+            Geographic,
+            HttpHeaders,
+            Message,
+            ClimateForcast,
+            TIFF,
+            TikaMimeKeys,
+            Serializable {
 
     private static final MetadataWriteFilter ACCEPT_ALL = new MetadataWriteFilter() {
         @Override
@@ -66,7 +72,7 @@ public class Metadata
         @Override
         public void set(String field, String value, Map<String, String[]> data) {
             if (value != null) {
-                data.put(field, new String[]{ value });
+                data.put(field, new String[]{value});
             } else {
                 data.remove(field);
             }
@@ -96,7 +102,6 @@ public class Metadata
      * A map of all metadata attributes.
      */
     private Map<String, String[]> metadata = null;
-
 
     private MetadataWriteFilter writeFilter = ACCEPT_ALL;
     /**
@@ -133,8 +138,7 @@ public class Metadata
      * @return true is named value is multivalued, false if single value or null
      */
     public boolean isMultiValued(final Property property) {
-        return metadata.get(property.getName()) != null &&
-                metadata.get(property.getName()).length > 1;
+        return metadata.get(property.getName()) != null && metadata.get(property.getName()).length > 1;
     }
 
     /**
@@ -339,8 +343,7 @@ public class Metadata
                 if (property.isMultiValuePermitted()) {
                     add(property.getName(), value);
                 } else {
-                    throw new PropertyTypeException(
-                            property.getName() + " : " + property.getPropertyType());
+                    throw new PropertyTypeException(property.getName() + " : " + property.getPropertyType());
                 }
             }
         }
@@ -445,8 +448,7 @@ public class Metadata
                     property.getPrimaryProperty().getPropertyType());
         }
         if (property.getPrimaryProperty().getValueType() != Property.ValueType.INTEGER) {
-            throw new PropertyTypeException(Property.ValueType.INTEGER,
-                    property.getPrimaryProperty().getValueType());
+            throw new PropertyTypeException(Property.ValueType.INTEGER, property.getPrimaryProperty().getValueType());
         }
         set(property, Integer.toString(value));
     }
@@ -464,8 +466,7 @@ public class Metadata
                     property.getPrimaryProperty().getPropertyType());
         }
         if (property.getPrimaryProperty().getValueType() != Property.ValueType.REAL) {
-            throw new PropertyTypeException(Property.ValueType.REAL,
-                    property.getPrimaryProperty().getValueType());
+            throw new PropertyTypeException(Property.ValueType.REAL, property.getPrimaryProperty().getValueType());
         }
         set(property, Long.toString(value));
     }
@@ -482,8 +483,7 @@ public class Metadata
                     property.getPrimaryProperty().getPropertyType());
         }
         if (property.getPrimaryProperty().getValueType() != Property.ValueType.BOOLEAN) {
-            throw new PropertyTypeException(Property.ValueType.BOOLEAN,
-                    property.getPrimaryProperty().getValueType());
+            throw new PropertyTypeException(Property.ValueType.BOOLEAN, property.getPrimaryProperty().getValueType());
         }
         set(property, Boolean.toString(value));
     }
@@ -497,12 +497,10 @@ public class Metadata
      */
     public void add(Property property, int value) {
         if (property.getPrimaryProperty().getPropertyType() != PropertyType.SEQ) {
-            throw new PropertyTypeException(PropertyType.SEQ,
-                    property.getPrimaryProperty().getPropertyType());
+            throw new PropertyTypeException(PropertyType.SEQ, property.getPrimaryProperty().getPropertyType());
         }
         if (property.getPrimaryProperty().getValueType() != Property.ValueType.INTEGER) {
-            throw new PropertyTypeException(Property.ValueType.INTEGER,
-                    property.getPrimaryProperty().getValueType());
+            throw new PropertyTypeException(Property.ValueType.INTEGER, property.getPrimaryProperty().getValueType());
         }
         add(property, Integer.toString(value));
     }
@@ -516,12 +514,10 @@ public class Metadata
      */
     public int[] getIntValues(Property property) {
         if (property.getPrimaryProperty().getPropertyType() != PropertyType.SEQ) {
-            throw new PropertyTypeException(PropertyType.SEQ,
-                    property.getPrimaryProperty().getPropertyType());
+            throw new PropertyTypeException(PropertyType.SEQ, property.getPrimaryProperty().getPropertyType());
         }
         if (property.getPrimaryProperty().getValueType() != Property.ValueType.INTEGER) {
-            throw new PropertyTypeException(Property.ValueType.INTEGER,
-                    property.getPrimaryProperty().getValueType());
+            throw new PropertyTypeException(Property.ValueType.INTEGER, property.getPrimaryProperty().getValueType());
         }
         String[] vals = getValues(property);
         int[] ret = new int[vals.length];
@@ -540,12 +536,10 @@ public class Metadata
      */
     public long[] getLongValues(Property property) {
         if (property.getPrimaryProperty().getPropertyType() != PropertyType.SEQ) {
-            throw new PropertyTypeException(PropertyType.SEQ,
-                    property.getPrimaryProperty().getPropertyType());
+            throw new PropertyTypeException(PropertyType.SEQ, property.getPrimaryProperty().getPropertyType());
         }
         if (property.getPrimaryProperty().getValueType() != Property.ValueType.REAL) {
-            throw new PropertyTypeException(Property.ValueType.REAL,
-                    property.getPrimaryProperty().getValueType());
+            throw new PropertyTypeException(Property.ValueType.REAL, property.getPrimaryProperty().getValueType());
         }
         String[] vals = getValues(property);
         long[] ret = new long[vals.length];
@@ -563,10 +557,9 @@ public class Metadata
      * @since Apache Tika 0.8
      */
     public void set(Property property, double value) {
-        if (property.getPrimaryProperty().getValueType() != Property.ValueType.REAL &&
-                property.getPrimaryProperty().getValueType() != Property.ValueType.RATIONAL) {
-            throw new PropertyTypeException(Property.ValueType.REAL,
-                    property.getPrimaryProperty().getValueType());
+        if (property.getPrimaryProperty().getValueType() != Property.ValueType.REAL
+                && property.getPrimaryProperty().getValueType() != Property.ValueType.RATIONAL) {
+            throw new PropertyTypeException(Property.ValueType.REAL, property.getPrimaryProperty().getValueType());
         }
         set(property, Double.toString(value));
     }
@@ -584,8 +577,7 @@ public class Metadata
                     property.getPrimaryProperty().getPropertyType());
         }
         if (property.getPrimaryProperty().getValueType() != Property.ValueType.DATE) {
-            throw new PropertyTypeException(Property.ValueType.DATE,
-                    property.getPrimaryProperty().getValueType());
+            throw new PropertyTypeException(Property.ValueType.DATE, property.getPrimaryProperty().getValueType());
         }
         String dateString = null;
         if (date != null) {
@@ -607,8 +599,7 @@ public class Metadata
                     property.getPrimaryProperty().getPropertyType());
         }
         if (property.getPrimaryProperty().getValueType() != Property.ValueType.DATE) {
-            throw new PropertyTypeException(Property.ValueType.DATE,
-                    property.getPrimaryProperty().getValueType());
+            throw new PropertyTypeException(Property.ValueType.DATE, property.getPrimaryProperty().getValueType());
         }
         String dateString = null;
         if (date != null) {
@@ -626,8 +617,7 @@ public class Metadata
      */
     public void add(Property property, Calendar date) {
         if (property.getPrimaryProperty().getValueType() != Property.ValueType.DATE) {
-            throw new PropertyTypeException(Property.ValueType.DATE,
-                    property.getPrimaryProperty().getValueType());
+            throw new PropertyTypeException(Property.ValueType.DATE, property.getPrimaryProperty().getValueType());
         }
         String dateString = null;
         if (date != null) {

@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.example;
 
 import java.io.IOException;
@@ -25,8 +24,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.xml.sax.SAXException;
 
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
@@ -43,6 +40,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.serialization.JsonMetadataList;
+import org.xml.sax.SAXException;
 
 public class ParsingExample {
 
@@ -115,7 +113,6 @@ public class ParsingExample {
         }
     }
 
-
     /**
      * This example shows how to extract content from the outer document and all
      * embedded documents.  The key is to specify a {@link Parser} in the {@link ParseContext}.
@@ -161,7 +158,8 @@ public class ParsingExample {
      */
     public List<Metadata> recursiveParserWrapperExample() throws IOException, SAXException, TikaException {
         Parser p = new AutoDetectParser();
-        ContentHandlerFactory factory = new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.HTML, -1);
+        ContentHandlerFactory factory = new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.HTML,
+                -1);
 
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p);
         Metadata metadata = new Metadata();
@@ -197,7 +195,6 @@ public class ParsingExample {
         return writer.toString();
     }
 
-
     /**
      * @param outputPath -- output directory to place files
      * @return list of files created
@@ -208,7 +205,8 @@ public class ParsingExample {
     public List<Path> extractEmbeddedDocumentsExample(Path outputPath) throws IOException, SAXException, TikaException {
         ExtractEmbeddedFiles ex = new ExtractEmbeddedFiles();
         List<Path> ret = new ArrayList<>();
-        try (TikaInputStream stream = TikaInputStream.get(ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx"))) {
+        try (TikaInputStream stream = TikaInputStream
+                .get(ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx"))) {
             ex.extract(stream, outputPath);
             try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(outputPath)) {
                 for (Path entry : dirStream) {

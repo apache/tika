@@ -43,9 +43,8 @@ public class MockEmitter extends AbstractEmitter {
     @Override
     public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext)
             throws IOException, TikaEmitterException {
-        emit(
-                Collections.singletonList(new EmitData(new EmitKey(getName(), emitKey),
-                 metadataList, null, parseContext)));
+        emit(Collections
+                .singletonList(new EmitData(new EmitKey(getName(), emitKey), metadataList, null, parseContext)));
     }
 
     @Override

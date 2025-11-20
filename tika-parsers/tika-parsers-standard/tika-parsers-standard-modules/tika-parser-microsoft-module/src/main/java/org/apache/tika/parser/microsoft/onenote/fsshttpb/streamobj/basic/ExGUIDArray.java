@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.io.IOException;
@@ -99,9 +98,7 @@ public class ExGUIDArray extends BasicObject {
      * @return Return the length in byte of the ExGUIDArray basic object.
      */
     @Override
-    protected int doDeserializeFromByteArray(byte[] byteArray,
-                                             int startIndex)
-            throws TikaException, IOException // return the length consumed
+    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws TikaException, IOException // return the length consumed
     {
         AtomicInteger index = new AtomicInteger(startIndex);
         this.count = BasicObject.parse(byteArray, index, Compact64bitInt.class);

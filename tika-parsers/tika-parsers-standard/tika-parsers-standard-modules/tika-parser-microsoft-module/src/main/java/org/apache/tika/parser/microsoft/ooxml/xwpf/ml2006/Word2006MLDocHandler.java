@@ -14,28 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
-
 
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 class Word2006MLDocHandler extends DefaultHandler {
 
     final static String PKG_NS = "http://schemas.microsoft.com/office/2006/xmlPackage";
-
 
     private final XHTMLContentHandler xhtml;
     private final Metadata metadata;
@@ -46,8 +42,7 @@ class Word2006MLDocHandler extends DefaultHandler {
     private final RelationshipsManager relationshipsManager = new RelationshipsManager();
     private PartHandler currentPartHandler = null;
 
-    public Word2006MLDocHandler(XHTMLContentHandler xhtml, Metadata metadata,
-                                ParseContext context) {
+    public Word2006MLDocHandler(XHTMLContentHandler xhtml, Metadata metadata, ParseContext context) {
         this.xhtml = xhtml;
         this.metadata = metadata;
         this.parseContext = context;
@@ -55,40 +50,33 @@ class Word2006MLDocHandler extends DefaultHandler {
 
         addPartHandler(new RelationshipsHandler(relationshipsManager));
 
-        addPartHandler(
-                new WordAndPowerPointTextPartHandler(XWPFRelation.DOCUMENT.getContentType(), xhtml,
-                        relationshipsManager, officeParserConfig));
+        addPartHandler(new WordAndPowerPointTextPartHandler(XWPFRelation.DOCUMENT.getContentType(), xhtml,
+                relationshipsManager, officeParserConfig));
 
-        addPartHandler(
-                new WordAndPowerPointTextPartHandler(XWPFRelation.FOOTNOTE.getContentType(), xhtml,
-                        relationshipsManager, officeParserConfig));
+        addPartHandler(new WordAndPowerPointTextPartHandler(XWPFRelation.FOOTNOTE.getContentType(), xhtml,
+                relationshipsManager, officeParserConfig));
 
         addPartHandler(new WordAndPowerPointTextPartHandler(
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml",
-                xhtml, relationshipsManager, officeParserConfig));
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml", xhtml,
+                relationshipsManager, officeParserConfig));
 
-        addPartHandler(
-                new WordAndPowerPointTextPartHandler(XWPFRelation.HEADER.getContentType(), xhtml,
-                        relationshipsManager, officeParserConfig));
+        addPartHandler(new WordAndPowerPointTextPartHandler(XWPFRelation.HEADER.getContentType(), xhtml,
+                relationshipsManager, officeParserConfig));
 
-        addPartHandler(
-                new WordAndPowerPointTextPartHandler(XWPFRelation.FOOTER.getContentType(), xhtml,
-                        relationshipsManager, officeParserConfig));
+        addPartHandler(new WordAndPowerPointTextPartHandler(XWPFRelation.FOOTER.getContentType(), xhtml,
+                relationshipsManager, officeParserConfig));
 
         addPartHandler(new WordAndPowerPointTextPartHandler(
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml",
-                xhtml, relationshipsManager, officeParserConfig));
-
-
-        addPartHandler(new WordAndPowerPointTextPartHandler(
-                "application/vnd.openxmlformats-officedocument.wordprocessingml" +
-                        ".footnotes+xml",
-                xhtml, relationshipsManager, officeParserConfig));
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml", xhtml,
+                relationshipsManager, officeParserConfig));
 
         addPartHandler(new WordAndPowerPointTextPartHandler(
-                "application/vnd.openxmlformats-officedocument.wordprocessingml" +
-                        ".document.glossary+xml",
-                xhtml, relationshipsManager, officeParserConfig));
+                "application/vnd.openxmlformats-officedocument.wordprocessingml" + ".footnotes+xml", xhtml,
+                relationshipsManager, officeParserConfig));
+
+        addPartHandler(new WordAndPowerPointTextPartHandler(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml" + ".document.glossary+xml", xhtml,
+                relationshipsManager, officeParserConfig));
 
         addPartHandler(new CorePropertiesHandler(metadata));
         addPartHandler(new ExtendedPropertiesHandler(metadata));
@@ -98,7 +86,6 @@ class Word2006MLDocHandler extends DefaultHandler {
     private void addPartHandler(PartHandler partHandler) {
         partHandlers.put(partHandler.getContentType(), partHandler);
     }
-
 
     @Override
     public void startDocument() throws SAXException {
@@ -118,8 +105,7 @@ class Word2006MLDocHandler extends DefaultHandler {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes atts)
-            throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
         if (uri.equals(PKG_NS) && localName.equals("part")) {
             //start of a package
             String name = atts.getValue(PKG_NS, "name");

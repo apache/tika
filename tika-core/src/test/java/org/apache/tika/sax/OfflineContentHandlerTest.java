@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.StringReader;
 import java.net.ConnectException;
+
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
@@ -55,15 +56,13 @@ public class OfflineContentHandlerTest {
 
     @Test
     public void testExternalEntity() throws Exception {
-        String xml =
-                "<!DOCTYPE foo [" + " <!ENTITY bar SYSTEM \"http://127.234.172.38:7845/bar\">" +
-                        " ]><foo>&bar;</foo>";
+        String xml = "<!DOCTYPE foo [" + " <!ENTITY bar SYSTEM \"http://127.234.172.38:7845/bar\">"
+                + " ]><foo>&bar;</foo>";
         try {
             parser.parse(new InputSource(new StringReader(xml)), offline);
         } catch (ConnectException e) {
             fail("Parser tried to access the external DTD:" + e);
         }
     }
-
 
 }

@@ -28,7 +28,6 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 import org.apache.commons.io.IOUtils;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 
@@ -111,13 +110,10 @@ class DBFFileHeader {
         col.setType(colType);
         col.fieldLength = fieldRecord[16] & 0xFF;
         if (col.fieldLength < 0) {
-            throw new TikaException(
-                    "Field length for column " + col.getName(StandardCharsets.US_ASCII) +
-                            " is < 0");
+            throw new TikaException("Field length for column " + col.getName(StandardCharsets.US_ASCII) + " is < 0");
         } else if (col.fieldLength > DBFReader.MAX_FIELD_LENGTH) {
-            throw new TikaException("Field length (" + col.fieldLength +
-                    ") is greater than DBReader.MAX_FIELD_LENGTH (" + DBFReader.MAX_FIELD_LENGTH +
-                    ")");
+            throw new TikaException("Field length (" + col.fieldLength + ") is greater than DBReader.MAX_FIELD_LENGTH ("
+                    + DBFReader.MAX_FIELD_LENGTH + ")");
         }
         col.decimalCount = fieldRecord[17] & 0xFF;
         return col;
@@ -141,8 +137,7 @@ class DBFFileHeader {
 
     @Override
     public String toString() {
-        return "DBFFileHeader{" + "lastModified=" + lastModified + ", numRecords=" + numRecords +
-                ", numBytesInHeader=" + numBytesInHeader + ", numBytesInRecord=" +
-                numBytesInRecord + ", cols=" + Arrays.toString(cols) + '}';
+        return "DBFFileHeader{" + "lastModified=" + lastModified + ", numRecords=" + numRecords + ", numBytesInHeader="
+                + numBytesInHeader + ", numBytesInRecord=" + numBytesInRecord + ", cols=" + Arrays.toString(cols) + '}';
     }
 }

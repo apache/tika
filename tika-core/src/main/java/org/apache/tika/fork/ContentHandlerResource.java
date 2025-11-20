@@ -60,8 +60,8 @@ class ContentHandlerResource implements ForkResource {
             if (n >= 0) {
                 atts = new AttributesImpl();
                 for (int i = 0; i < n; i++) {
-                    atts.addAttribute(readString(input), readString(input), readString(input),
-                            readString(input), readString(input));
+                    atts.addAttribute(readString(input), readString(input), readString(input), readString(input),
+                            readString(input));
                 }
             }
             handler.startElement(uri, localName, qName, atts);

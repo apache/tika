@@ -19,12 +19,11 @@ package org.apache.tika.sax;
 import java.io.IOException;
 import java.util.LinkedList;
 
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
 
 /**
  * Content handler decorator that attempts to prevent denial of service
@@ -99,7 +98,6 @@ public class SecureContentHandler extends ContentHandlerDecorator {
         return threshold;
     }
 
-
     /**
      * Sets the threshold for output characters before the zip bomb prevention
      * is activated. This avoids false positives in cases where an otherwise
@@ -112,7 +110,6 @@ public class SecureContentHandler extends ContentHandlerDecorator {
         this.threshold = threshold;
     }
 
-
     /**
      * Returns the maximum compression ratio.
      *
@@ -121,7 +118,6 @@ public class SecureContentHandler extends ContentHandlerDecorator {
     public long getMaximumCompressionRatio() {
         return ratio;
     }
-
 
     /**
      * Sets the ratio between output characters and input bytes. If this
@@ -211,25 +207,24 @@ public class SecureContentHandler extends ContentHandlerDecorator {
         if (characterCount > threshold) {
             long byteCount = getByteCount();
             if (characterCount > byteCount * ratio) {
-                throw new SecureSAXException("Suspected zip bomb: " + byteCount + " input bytes produced " + characterCount + " output characters");
+                throw new SecureSAXException("Suspected zip bomb: " + byteCount + " input bytes produced "
+                        + characterCount + " output characters");
             }
         }
     }
 
     @Override
-    public void startElement(String uri, String localName, String name, Attributes atts)
-            throws SAXException {
+    public void startElement(String uri, String localName, String name, Attributes atts) throws SAXException {
         currentDepth++;
         if (currentDepth >= maxDepth) {
-            throw new SecureSAXException(
-                    "Suspected zip bomb: " + currentDepth + " levels of XML element nesting");
+            throw new SecureSAXException("Suspected zip bomb: " + currentDepth + " levels of XML element nesting");
         }
 
         if ("div".equals(name) && "package-entry".equals(atts.getValue("class"))) {
             packageEntryDepths.addLast(currentDepth);
             if (packageEntryDepths.size() >= maxPackageEntryDepth) {
-                throw new SecureSAXException("Suspected zip bomb: " + packageEntryDepths.size() +
-                        " levels of package entry nesting");
+                throw new SecureSAXException(
+                        "Suspected zip bomb: " + packageEntryDepths.size() + " levels of package entry nesting");
             }
         }
 

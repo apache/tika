@@ -27,12 +27,11 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.apache.tika.detect.AutoDetectReader;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
-
-import org.apache.tika.detect.AutoDetectReader;
 
 /**
  * Helper Class to Parse and Extract Adobe MIF Files.
@@ -55,8 +54,7 @@ public class MIFExtractor {
      * @throws IOException  on any IO error.
      * @throws SAXException on any SAX error.
      */
-    static void parse(AutoDetectReader reader, ContentHandler handler)
-            throws IOException, SAXException {
+    static void parse(AutoDetectReader reader, ContentHandler handler) throws IOException, SAXException {
         handler.startDocument();
         String line;
         Tag currentTag = new Tag();
@@ -72,8 +70,7 @@ public class MIFExtractor {
                     currentTag.setName(matcher.group(1));
                     parents.push(currentTag);
                     Attributes attrs = new AttributesImpl();
-                    handler.startElement(StringUtils.EMPTY, matcher.group(1), matcher.group(1),
-                            attrs);
+                    handler.startElement(StringUtils.EMPTY, matcher.group(1), matcher.group(1), attrs);
                 }
             } else if (line.trim().startsWith(CLOSE_TAG_MARKER)) {
                 try {

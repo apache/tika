@@ -14,9 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.eval.app.db;
-
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -59,9 +57,7 @@ public class JDBCUtil {
                     Properties properties = new Properties();
                     properties.load(is);
                     for (String k : properties.stringPropertyNames()) {
-                        Matcher m = Pattern
-                                .compile("(?i)jdbc:" + k)
-                                .matcher(connectionString);
+                        Matcher m = Pattern.compile("(?i)jdbc:" + k).matcher(connectionString);
                         if (m.find()) {
                             this.driverClass = properties.getProperty(k);
                         }
@@ -74,7 +70,8 @@ public class JDBCUtil {
         }
     }
 
-    public static void batchInsert(PreparedStatement insertStatement, TableInfo table, Map<Cols, String> data) throws SQLException {
+    public static void batchInsert(PreparedStatement insertStatement, TableInfo table, Map<Cols, String> data)
+            throws SQLException {
 
         try {
             int i = 1;
@@ -84,7 +81,8 @@ public class JDBCUtil {
             }
             for (Cols c : data.keySet()) {
                 if (!table.containsColumn(c)) {
-                    throw new IllegalArgumentException("Can't add data to " + c + " because it doesn't exist in the table: " + table.getName());
+                    throw new IllegalArgumentException(
+                            "Can't add data to " + c + " because it doesn't exist in the table: " + table.getName());
                 }
             }
             insertStatement.addBatch();
@@ -93,14 +91,16 @@ public class JDBCUtil {
         }
     }
 
-    public static void updateInsertStatement(int dbColOffset, PreparedStatement st, ColInfo colInfo, String value) throws SQLException {
+    public static void updateInsertStatement(int dbColOffset, PreparedStatement st, ColInfo colInfo, String value)
+            throws SQLException {
         if (value == null) {
             st.setNull(dbColOffset, colInfo.getType());
             return;
         }
         try {
-            switch (colInfo.getType()) {
-                case Types.VARCHAR:
+            switch (colInfo.getType())
+            {
+                case Types.VARCHAR :
                     if (value != null && value.length() > colInfo.getPrecision()) {
                         value = value.substring(0, colInfo.getPrecision());
                         LOG.warn("truncated varchar value in {} : {}", colInfo.getName(), value);
@@ -109,27 +109,27 @@ public class JDBCUtil {
                     value = value.replaceAll("\u0000", " ");
                     st.setString(dbColOffset, value);
                     break;
-                case Types.CHAR:
+                case Types.CHAR :
                     //postgres doesn't allow \0000
                     value = value.replaceAll("\u0000", " ");
                     st.setString(dbColOffset, value);
                     break;
-                case Types.DOUBLE:
+                case Types.DOUBLE :
                     st.setDouble(dbColOffset, Double.parseDouble(value));
                     break;
-                case Types.FLOAT:
+                case Types.FLOAT :
                     st.setDouble(dbColOffset, Float.parseFloat(value));
                     break;
-                case Types.INTEGER:
+                case Types.INTEGER :
                     st.setInt(dbColOffset, Integer.parseInt(value));
                     break;
-                case Types.BIGINT:
+                case Types.BIGINT :
                     st.setLong(dbColOffset, Long.parseLong(value));
                     break;
-                case Types.BOOLEAN:
+                case Types.BOOLEAN :
                     st.setBoolean(dbColOffset, Boolean.parseBoolean(value));
                     break;
-                default:
+                default :
                     throw new UnsupportedOperationException("Don't yet support type: " + colInfo.getType());
             }
         } catch (NumberFormatException e) {
@@ -199,9 +199,7 @@ public class JDBCUtil {
 
         try (ResultSet rs = dbMeta.getTables(null, null, "%", null)) {
             while (rs.next()) {
-                tables.add(rs
-                        .getString(3)
-                        .toLowerCase(Locale.US));
+                tables.add(rs.getString(3).toLowerCase(Locale.US));
             }
         }
         return tables;
@@ -249,9 +247,7 @@ public class JDBCUtil {
     //does not close the connection
     private void createTable(Connection conn, TableInfo tableInfo) throws SQLException {
         StringBuilder createSql = new StringBuilder();
-        createSql
-                .append("CREATE TABLE ")
-                .append(tableInfo.getName());
+        createSql.append("CREATE TABLE ").append(tableInfo.getName());
         createSql.append("(");
 
         int last = 0;

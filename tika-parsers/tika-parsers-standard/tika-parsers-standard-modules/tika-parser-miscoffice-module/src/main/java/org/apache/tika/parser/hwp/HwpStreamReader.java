@@ -35,7 +35,6 @@ public class HwpStreamReader {
         buf = new byte[4];
     }
 
-
     /**
      * unsigned 1 byte
      *

@@ -21,14 +21,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.StringWriter;
 import java.io.Writer;
+
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
-
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
@@ -37,6 +34,9 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.html.JSoupParser;
 import org.apache.tika.sax.boilerpipe.BoilerpipeContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class BoilerpipeHandlerTest extends TikaTest {
     /**
@@ -50,11 +50,8 @@ public class BoilerpipeHandlerTest extends TikaTest {
 
         Metadata metadata = new Metadata();
         BodyContentHandler handler = new BodyContentHandler();
-        new JSoupParser()
-                .parse(TikaInputStream.get(getResourceAsStream(path)),
-                        new BoilerpipeContentHandler(handler),
-                        metadata,
-                        new ParseContext());
+        new JSoupParser().parse(TikaInputStream.get(getResourceAsStream(path)), new BoilerpipeContentHandler(handler),
+                metadata, new ParseContext());
 
         String content = handler.toString();
         assertTrue(content.startsWith("This is the real meat"));
@@ -79,12 +76,10 @@ public class BoilerpipeHandlerTest extends TikaTest {
         BoilerpipeContentHandler bpch = new BoilerpipeContentHandler(ch);
         bpch.setIncludeMarkup(true);
 
-        new JSoupParser().parse(TikaInputStream.get(getResourceAsStream(path)), bpch, metadata,
-                new ParseContext());
+        new JSoupParser().parse(TikaInputStream.get(getResourceAsStream(path)), bpch, metadata, new ParseContext());
 
         String content = sw.toString();
-        assertTrue(content.contains("<body><table><tr><td><table><tr><td>"),
-                "Has empty table elements");
+        assertTrue(content.contains("<body><table><tr><td><table><tr><td>"), "Has empty table elements");
         assertTrue(content.contains("<a shape=\"rect\" href=\"Main.php\"/>"), "Has empty a element");
         assertTrue(content.contains("<p>This is the real meat"), "Has real content");
         assertTrue(content.endsWith("</p></body></html>"), "Ends with appropriate HTML");
@@ -137,8 +132,7 @@ public class BoilerpipeHandlerTest extends TikaTest {
         BoilerpipeContentHandler bpHandler = new BoilerpipeContentHandler(handler);
         bpHandler.setIncludeMarkup(true);
 
-        new JSoupParser().parse(
-                TikaInputStream.get(getResourceAsStream(path)), bpHandler, metadata,
+        new JSoupParser().parse(TikaInputStream.get(getResourceAsStream(path)), bpHandler, metadata,
                 new ParseContext());
 
         String content = handler.toString();

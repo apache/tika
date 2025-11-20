@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,9 +35,6 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
@@ -50,6 +47,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Unless the {@link TikaCoreProperties#CONTENT_TYPE_USER_OVERRIDE} is set,
@@ -76,21 +75,21 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
     private static final String CSV_PREFIX = "csv";
     private static final String CHARSET = "charset";
     private static final String DELIMITER = "delimiter";
-    public static final Property DELIMITER_PROPERTY = Property.externalText(
-            CSV_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + DELIMITER);
+    public static final Property DELIMITER_PROPERTY = Property
+            .externalText(CSV_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + DELIMITER);
 
     /**
      * If the file is detected as a csv/tsv, this is the number of columns in the first row.
      */
-    public static final Property NUM_COLUMNS = Property.externalInteger(
-            CSV_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "num_columns");
+    public static final Property NUM_COLUMNS = Property
+            .externalInteger(CSV_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "num_columns");
 
     /**
      * If the file is detected as a csv/tsv, this is the number of rows if the file
      * is successfully read (e.g. no encapsulation exceptions, etc).
      */
-    public static final Property NUM_ROWS = Property.externalInteger(
-            CSV_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "num_rows");
+    public static final Property NUM_ROWS = Property
+            .externalInteger(CSV_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "num_rows");
 
     private static final String TD = "td";
     private static final String TR = "tr";
@@ -108,7 +107,6 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
     @Field
     private int markLimit = DEFAULT_MARK_LIMIT;
 
-
     /**
      * minimum confidence score that there's enough
      * evidence to determine csv/tsv vs. txt
@@ -123,8 +121,7 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
         super(encodingDetector);
     }
 
-    private static void handleText(Reader reader, XHTMLContentHandler xhtml)
-            throws SAXException, IOException {
+    private static void handleText(Reader reader, XHTMLContentHandler xhtml) throws SAXException, IOException {
         xhtml.startElement("p");
         char[] buffer = new char[4096];
         int n = reader.read(buffer);
@@ -150,8 +147,8 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         TextAndCSVConfig textAndCSVConfig = context.get(TextAndCSVConfig.class, defaultTextAndCSVConfig);
 
         CSVParams params = getOverride(metadata, textAndCSVConfig);
@@ -174,14 +171,14 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
         //if text or a non-csv/tsv category of text
         //treat this as text and be done
         //TODO -- if it was detected as a non-csv subtype of text
-        if (!params.getMediaType().getBaseType().equals(CSV) &&
-                !params.getMediaType().getBaseType().equals(TSV)) {
+        if (!params.getMediaType().getBaseType().equals(CSV) && !params.getMediaType().getBaseType().equals(TSV)) {
             handleText(reader, charset, handler, metadata);
             return;
         }
 
         CSVFormat csvFormat = CSVFormat.EXCEL.builder().setDelimiter(params.getDelimiter()).get();
-        metadata.set(DELIMITER_PROPERTY, textAndCSVConfig.getDelimiterToNameMap().get(csvFormat.getDelimiterString().charAt(0)));
+        metadata.set(DELIMITER_PROPERTY,
+                textAndCSVConfig.getDelimiterToNameMap().get(csvFormat.getDelimiterString().charAt(0)));
 
         XHTMLContentHandler xhtmlContentHandler = new XHTMLContentHandler(handler, metadata);
         int totalRows = 0;
@@ -208,8 +205,8 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
                 }
                 metadata.set(NUM_ROWS, totalRows);
             } catch (UncheckedIOException e) {
-                if (e.getCause() != null && e.getCause().getMessage() != null &&
-                        e.getCause().getMessage().contains("encapsulated")) {
+                if (e.getCause() != null && e.getCause().getMessage() != null
+                        && e.getCause().getMessage().contains("encapsulated")) {
                     //if there's a parse exception
                     //try to get the rest of the content...treat it as text for now
                     //There will be some content lost because of buffering.
@@ -235,8 +232,8 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
         }
     }
 
-    private void handleText(Reader reader, Charset charset, ContentHandler handler,
-                            Metadata metadata) throws SAXException, IOException, TikaException {
+    private void handleText(Reader reader, Charset charset, ContentHandler handler, Metadata metadata)
+            throws SAXException, IOException, TikaException {
         // Automatically detect the character encoding
         //try to get detected content type; could be a subclass of text/plain
         //such as vcal, etc.
@@ -260,7 +257,7 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
     }
 
     private Reader detect(CSVParams params, TextAndCSVConfig textAndCSVConfig, InputStream stream, Metadata metadata,
-                          ParseContext context) throws IOException, TikaException {
+            ParseContext context) throws IOException, TikaException {
         //if the file was already identified as not .txt, .csv or .tsv
         //don't even try to csv or not
         String mediaString = metadata.get(Metadata.CONTENT_TYPE);
@@ -274,8 +271,7 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
         }
         Reader reader;
         if (params.getCharset() == null) {
-            reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream), metadata,
-                    getEncodingDetector(context));
+            reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream), metadata, getEncodingDetector(context));
             params.setCharset(((AutoDetectReader) reader).getCharset());
             if (params.isComplete()) {
                 return reader;
@@ -285,10 +281,10 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
                     new InputStreamReader(CloseShieldInputStream.wrap(stream), params.getCharset()));
         }
 
-        if (params.getDelimiter() == null &&
-                (params.getMediaType() == null || isCSVOrTSV(params.getMediaType()))) {
+        if (params.getDelimiter() == null && (params.getMediaType() == null || isCSVOrTSV(params.getMediaType()))) {
 
-            CSVSniffer sniffer = new CSVSniffer(markLimit, textAndCSVConfig.getDelimiterToNameMap().keySet(), minConfidence);
+            CSVSniffer sniffer = new CSVSniffer(markLimit, textAndCSVConfig.getDelimiterToNameMap().keySet(),
+                    minConfidence);
             CSVResult result = sniffer.getBest(reader, metadata);
             params.setMediaType(result.getMediaType());
             params.setDelimiter(result.getDelimiter());

@@ -114,7 +114,7 @@
         <executions>
           <execution>
             <id>validate</id>
-            <phase>validate</phase>
+            <phase>process-classes</phase>
             <configuration>
               <configLocation>checkstyle.xml</configLocation>
               <inputEncoding>UTF-8</inputEncoding>

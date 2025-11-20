@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.iwork.iwana;
 
 import java.io.IOException;
@@ -29,16 +28,9 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import com.dd.plist.NSArray;
-import com.dd.plist.NSDictionary;
-import com.dd.plist.NSObject;
-import com.dd.plist.PropertyListParser;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.io.IOUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -51,6 +43,13 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
+import com.dd.plist.NSArray;
+import com.dd.plist.NSDictionary;
+import com.dd.plist.NSObject;
+import com.dd.plist.PropertyListParser;
 
 public class IWork13PackageParser implements Parser {
 
@@ -61,17 +60,13 @@ public class IWork13PackageParser implements Parser {
     public final static String IWORK13_MAIN_ENTRY = "Index/Document.iwa";
 
     public static final String IWORKS_PREFIX = "iworks:";
-    public static final Property IWORKS_DOC_ID =
-            Property.externalText(IWORKS_PREFIX + "document-id");
-    public static final Property IWORKS_BUILD_VERSION_HISTORY =
-            Property.externalTextBag(IWORKS_PREFIX + "build-version-history");
+    public static final Property IWORKS_DOC_ID = Property.externalText(IWORKS_PREFIX + "document-id");
+    public static final Property IWORKS_BUILD_VERSION_HISTORY = Property
+            .externalTextBag(IWORKS_PREFIX + "build-version-history");
 
-
-    private final static Set<MediaType> supportedTypes = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(IWork13DocumentType.KEYNOTE13.getType(),
-                    IWork13DocumentType.NUMBERS13.getType(),
-                    IWork13DocumentType.PAGES13.getType(),
-                    IWork13DocumentType.UNKNOWN13.getType())));
+    private final static Set<MediaType> supportedTypes = Collections.unmodifiableSet(new HashSet<>(
+            Arrays.asList(IWork13DocumentType.KEYNOTE13.getType(), IWork13DocumentType.NUMBERS13.getType(),
+                    IWork13DocumentType.PAGES13.getType(), IWork13DocumentType.UNKNOWN13.getType())));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -79,8 +74,8 @@ public class IWork13PackageParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         // Open the Zip stream
         // Use a File if we can, and an already open zip is even better
         ZipFile zipFile = null;
@@ -117,13 +112,12 @@ public class IWork13PackageParser implements Parser {
 
     }
 
-    private MediaType processZipStream(ZipInputStream zipStream, Metadata metadata,
-                                       XHTMLContentHandler xhtml, ParseContext parseContext)
-            throws TikaException, IOException, SAXException {
+    private MediaType processZipStream(ZipInputStream zipStream, Metadata metadata, XHTMLContentHandler xhtml,
+            ParseContext parseContext) throws TikaException, IOException, SAXException {
         MediaType type = null;
         ZipEntry entry = zipStream.getNextEntry();
-        EmbeddedDocumentExtractor embeddedDocumentExtractor =
-                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
+        EmbeddedDocumentExtractor embeddedDocumentExtractor = EmbeddedDocumentUtil
+                .getEmbeddedDocumentExtractor(parseContext);
         while (entry != null) {
             if (type == null) {
                 type = IWork13DocumentType.detectIfPossible(entry);
@@ -141,11 +135,11 @@ public class IWork13PackageParser implements Parser {
         return type;
     }
 
-    private MediaType processZipFile(ZipFile zipFile, Metadata metadata,
-                                     XHTMLContentHandler xhtml, ParseContext parseContext) throws TikaException {
+    private MediaType processZipFile(ZipFile zipFile, Metadata metadata, XHTMLContentHandler xhtml,
+            ParseContext parseContext) throws TikaException {
         MediaType type = null;
-        EmbeddedDocumentExtractor embeddedDocumentExtractor =
-                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
+        EmbeddedDocumentExtractor embeddedDocumentExtractor = EmbeddedDocumentUtil
+                .getEmbeddedDocumentExtractor(parseContext);
 
         Enumeration<? extends ZipArchiveEntry> entries = zipFile.getEntries();
         Exception ex = null;
@@ -172,11 +166,8 @@ public class IWork13PackageParser implements Parser {
         return type;
     }
 
-    private void processZipEntry(ZipEntry entry,
-                                 TikaInputStream tis,
-                                 Metadata metadata, XHTMLContentHandler xhtml,
-                                 ParseContext parseContext,
-                                 EmbeddedDocumentExtractor embeddedDocumentExtractor)
+    private void processZipEntry(ZipEntry entry, TikaInputStream tis, Metadata metadata, XHTMLContentHandler xhtml,
+            ParseContext parseContext, EmbeddedDocumentExtractor embeddedDocumentExtractor)
             throws TikaException, IOException, SAXException {
         String streamName = entry.getName();
         if (streamName == null) {
@@ -195,8 +186,7 @@ public class IWork13PackageParser implements Parser {
                     TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
             embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, streamName);
             handleEmbedded(tis, embeddedMetadata, xhtml, embeddedDocumentExtractor);
-        } else if (streamName.equals("preview-micro.jpg") ||
-                streamName.equals("preview-web.jpg")
+        } else if (streamName.equals("preview-micro.jpg") || streamName.equals("preview-web.jpg")
                 || streamName.endsWith(".iwa")) {
             //do nothing
         } else {
@@ -206,12 +196,8 @@ public class IWork13PackageParser implements Parser {
         }
     }
 
-
-
-    private void handleEmbedded(TikaInputStream tis, Metadata embeddedMetadata,
-                                XHTMLContentHandler xhtml,
-                                EmbeddedDocumentExtractor embeddedDocumentExtractor)
-            throws IOException, SAXException {
+    private void handleEmbedded(TikaInputStream tis, Metadata embeddedMetadata, XHTMLContentHandler xhtml,
+            EmbeddedDocumentExtractor embeddedDocumentExtractor) throws IOException, SAXException {
         if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
             embeddedDocumentExtractor.parseEmbedded(tis, xhtml, embeddedMetadata, true);
         }
@@ -221,7 +207,7 @@ public class IWork13PackageParser implements Parser {
         try {
             NSObject rootObj = PropertyListParser.parse(inputStream);
             if (rootObj instanceof NSArray) {
-                for (NSObject obj : ((NSArray)rootObj).getArray()) {
+                for (NSObject obj : ((NSArray) rootObj).getArray()) {
                     metadata.add(IWORKS_BUILD_VERSION_HISTORY, obj.toString());
                 }
             }
@@ -237,7 +223,7 @@ public class IWork13PackageParser implements Parser {
         try {
             NSObject rootObj = PropertyListParser.parse(inputStream);
             if (rootObj instanceof NSDictionary) {
-                NSDictionary dict = (NSDictionary)rootObj;
+                NSDictionary dict = (NSDictionary) rootObj;
                 for (String k : dict.keySet()) {
                     String v = dict.get(k).toString();
                     metadata.set(IWORKS_PREFIX + k, v);
@@ -250,8 +236,7 @@ public class IWork13PackageParser implements Parser {
         }
     }
 
-    private void extractDocumentIdentifier(InputStream inputStream, Metadata metadata)
-            throws IOException {
+    private void extractDocumentIdentifier(InputStream inputStream, Metadata metadata) throws IOException {
         byte[] bytes = new byte[36];
         int read = IOUtils.read(inputStream, bytes);
         if (read == 36) {
@@ -276,8 +261,7 @@ public class IWork13PackageParser implements Parser {
 
     public enum IWork13DocumentType {
         KEYNOTE13(MediaType.application("vnd.apple.keynote.13")),
-        NUMBERS13(MediaType.application("vnd.apple.numbers.13")),
-        PAGES13(MediaType.application("vnd.apple.pages.13")),
+        NUMBERS13(MediaType.application("vnd.apple.numbers.13")), PAGES13(MediaType.application("vnd.apple.pages.13")),
         UNKNOWN13(MediaType.application("vnd.apple.unknown.13"));
 
         private final MediaType mediaType;

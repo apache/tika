@@ -16,13 +16,13 @@
  */
 package org.apache.tika.server.core.config;
 
-import jakarta.ws.rs.core.MultivaluedMap;
 import org.apache.commons.lang3.Strings;
-
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.server.core.ParseContextConfig;
+
+import jakarta.ws.rs.core.MultivaluedMap;
 
 public class DocumentSelectorConfig implements ParseContextConfig {
 

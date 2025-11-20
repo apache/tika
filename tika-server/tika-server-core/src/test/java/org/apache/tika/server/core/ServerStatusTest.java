@@ -64,9 +64,7 @@ public class ServerStatusTest {
             }
         }
         assertEquals(numThreads * filesToProcess, totalProcessed);
-        assertEquals(0, serverStatus
-                .getTasks()
-                .size());
+        assertEquals(0, serverStatus.getTasks().size());
         assertEquals(totalProcessed, serverStatus.getFilesProcessed());
 
     }

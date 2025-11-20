@@ -33,6 +33,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.RereadableInputStream;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
@@ -49,18 +60,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.exception.WriteLimitReachedException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.RereadableInputStream;
 
 /**
  * Tika parser for Time Stamped Data Envelope (application/timestamped-data)
@@ -80,8 +79,8 @@ public class TSDParser implements Parser {
     private static final String TSD_SERIAL_NUMBER = "Serial-Number";
     private static final String TSD_TSA = "TSA";
     private static final String TSD_ALGORITHM = "Algorithm";
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.application("timestamped-data"));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections
+            .singleton(MediaType.application("timestamped-data"));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -89,16 +88,15 @@ public class TSDParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         //Try to parse TSD file
         try (RereadableInputStream ris = new RereadableInputStream(stream, 2048, true)) {
             Metadata TSDAndEmbeddedMetadata = new Metadata();
 
             List<TSDMetas> tsdMetasList = this.extractMetas(ris);
-            this.buildMetas(tsdMetasList,
-                    metadata != null && metadata.size() > 0 ? TSDAndEmbeddedMetadata : metadata);
+            this.buildMetas(tsdMetasList, metadata != null && metadata.size() > 0 ? TSDAndEmbeddedMetadata : metadata);
 
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();
@@ -120,8 +118,7 @@ public class TSDParser implements Parser {
 
             for (TimeStampToken token : tokens) {
                 TSDMetas tsdMetas = new TSDMetas(true, token.getTimeStampInfo().getGenTime(),
-                        token.getTimeStampInfo().getPolicy().getId(),
-                        token.getTimeStampInfo().getSerialNumber(),
+                        token.getTimeStampInfo().getPolicy().getId(), token.getTimeStampInfo().getSerialNumber(),
                         token.getTimeStampInfo().getTsa(),
                         token.getTimeStampInfo().getHashAlgorithm().getAlgorithm().getId());
 
@@ -144,25 +141,21 @@ public class TSDParser implements Parser {
 
         for (TSDMetas tsdm : tsdMetasList) {
             metadata.set(TSD_LOOP_LABEL + count + " - " + Metadata.CONTENT_TYPE, TSD_MIME_TYPE);
-            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_DESCRIPTION_LABEL,
-                    TSD_DESCRIPTION_VALUE);
-            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_PARSED_LABEL,
-                    tsdm.getParseBuiltStr());
+            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_DESCRIPTION_LABEL, TSD_DESCRIPTION_VALUE);
+            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_PARSED_LABEL, tsdm.getParseBuiltStr());
             metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_PARSED_DATE,
                     tsdm.getParsedDateStr() + " " + TSD_DATE_FORMAT);
-            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_DATE,
-                    tsdm.getEmitDateStr() + " " + TSD_DATE_FORMAT);
+            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_DATE, tsdm.getEmitDateStr() + " " + TSD_DATE_FORMAT);
             metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_POLICY_ID, tsdm.getPolicyId());
-            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_SERIAL_NUMBER,
-                    tsdm.getSerialNumberFormatted());
+            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_SERIAL_NUMBER, tsdm.getSerialNumberFormatted());
             metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_TSA, tsdm.getTsaStr());
             metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_ALGORITHM, tsdm.getAlgorithmName());
             count++;
         }
     }
 
-    private void parseTSDContent(InputStream stream, ContentHandler handler, Metadata metadata,
-                                 ParseContext context) throws SAXException {
+    private void parseTSDContent(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws SAXException {
 
         CMSTimeStampedDataParser cmsTimeStampedDataParser = null;
         EmbeddedDocumentExtractor edx = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
@@ -206,8 +199,7 @@ public class TSDParser implements Parser {
             encryptionAlgs.put(OIWObjectIdentifiers.dsaWithSHA1.getId(), "DSA");
             encryptionAlgs.put(PKCSObjectIdentifiers.rsaEncryption.getId(), "RSA");
             encryptionAlgs.put(PKCSObjectIdentifiers.sha1WithRSAEncryption.getId(), "RSA");
-            encryptionAlgs
-                    .put(TeleTrusTObjectIdentifiers.teleTrusTRSAsignatureAlgorithm.getId(), "RSA");
+            encryptionAlgs.put(TeleTrusTObjectIdentifiers.teleTrusTRSAsignatureAlgorithm.getId(), "RSA");
             encryptionAlgs.put(X509ObjectIdentifiers.id_ea_rsa.getId(), "RSA");
             encryptionAlgs.put(CMSSignedDataGenerator.ENCRYPTION_ECDSA, "ECDSA");
             encryptionAlgs.put(X9ObjectIdentifiers.ecdsa_with_SHA2.getId(), "ECDSA");
@@ -288,8 +280,8 @@ public class TSDParser implements Parser {
             super();
         }
 
-        public TSDMetas(Boolean parseBuilt, Date emitDate, String policyId, BigInteger serialNumber,
-                        GeneralName tsa, String algorithm) {
+        public TSDMetas(Boolean parseBuilt, Date emitDate, String policyId, BigInteger serialNumber, GeneralName tsa,
+                String algorithm) {
             super();
             this.parseBuilt = parseBuilt;
             this.emitDate = emitDate;
@@ -386,9 +378,9 @@ public class TSDParser implements Parser {
 
         @Override
         public String toString() {
-            return "TSDMetas [parseBuilt=" + parseBuilt + ", emitDate=" + emitDate + ", policyId=" +
-                    policyId + ", serialNumber=" + serialNumber + ", tsa=" + tsa + ", algorithm=" +
-                    algorithm + ", parsedDate=" + parsedDate + "]";
+            return "TSDMetas [parseBuilt=" + parseBuilt + ", emitDate=" + emitDate + ", policyId=" + policyId
+                    + ", serialNumber=" + serialNumber + ", tsa=" + tsa + ", algorithm=" + algorithm + ", parsedDate="
+                    + parsedDate + "]";
         }
     }
 }

@@ -110,7 +110,6 @@ public class DateUtils {
         return formatted.substring(0, formatted.length() - 1);
     }
 
-
     /**
      * Returns ISO-8601 formatted time converted to UTC, truncated to the seconds place
      * @param calendar
@@ -123,17 +122,16 @@ public class DateUtils {
     private List<DateFormat> loadDateFormats() {
         List<DateFormat> dateFormats = new ArrayList<>();
         // yyyy-mm-ddThh...
-        dateFormats.add(createDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", UTC));   // UTC/Zulu
-        dateFormats.add(createDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", null));    // With timezone
-        dateFormats.add(createDateFormat("yyyy-MM-dd'T'HH:mm:ss", null));     // Without timezone
+        dateFormats.add(createDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", UTC)); // UTC/Zulu
+        dateFormats.add(createDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", null)); // With timezone
+        dateFormats.add(createDateFormat("yyyy-MM-dd'T'HH:mm:ss", null)); // Without timezone
         // yyyy-mm-dd hh...
-        dateFormats.add(createDateFormat("yyyy-MM-dd' 'HH:mm:ss'Z'", UTC));   // UTC/Zulu
-        dateFormats.add(createDateFormat("yyyy-MM-dd' 'HH:mm:ssZ", null));    // With timezone
-        dateFormats.add(createDateFormat("yyyy-MM-dd' 'HH:mm:ss", null));     // Without timezone
+        dateFormats.add(createDateFormat("yyyy-MM-dd' 'HH:mm:ss'Z'", UTC)); // UTC/Zulu
+        dateFormats.add(createDateFormat("yyyy-MM-dd' 'HH:mm:ssZ", null)); // With timezone
+        dateFormats.add(createDateFormat("yyyy-MM-dd' 'HH:mm:ss", null)); // Without timezone
         // Date without time, set to Midday UTC
-        dateFormats.add(createDateFormat("yyyy-MM-dd", MIDDAY));       // Normal date format
-        dateFormats.add(createDateFormat("yyyy:MM:dd",
-                MIDDAY));              // Image (IPTC/EXIF) format
+        dateFormats.add(createDateFormat("yyyy-MM-dd", MIDDAY)); // Normal date format
+        dateFormats.add(createDateFormat("yyyy:MM:dd", MIDDAY)); // Image (IPTC/EXIF) format
 
         return dateFormats;
     }
@@ -151,8 +149,7 @@ public class DateUtils {
         // Java doesn't like timezones in the form ss+hh:mm
         // It only likes the hhmm form, without the colon
         int n = dateString.length();
-        if (dateString.charAt(n - 3) == ':' &&
-                (dateString.charAt(n - 6) == '+' || dateString.charAt(n - 6) == '-')) {
+        if (dateString.charAt(n - 3) == ':' && (dateString.charAt(n - 6) == '+' || dateString.charAt(n - 6) == '-')) {
             dateString = dateString.substring(0, n - 3) + dateString.substring(n - 2);
         }
 

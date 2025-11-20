@@ -16,11 +16,10 @@
  */
 package org.apache.tika.parser.odf;
 
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.sax.ContentHandlerDecorator;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
 
 /**
  * For now, this only looks for any encryption-data elements.
@@ -35,9 +34,8 @@ import org.apache.tika.sax.ContentHandlerDecorator;
 class OpenDocumentManifestHandler extends ContentHandlerDecorator {
 
     @Override
-    public void startElement(
-            String namespaceURI, String localName, String qName,
-            Attributes attrs) throws SAXException {
+    public void startElement(String namespaceURI, String localName, String qName, Attributes attrs)
+            throws SAXException {
         if (localName.equals("encryption-data")) {
             throw new SAXException(new EncryptedDocumentException());
         }

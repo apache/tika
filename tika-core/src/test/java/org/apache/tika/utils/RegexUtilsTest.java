@@ -52,22 +52,19 @@ public class RegexUtilsTest {
         assertEquals(0, links.size());
     }
 
-
     /**
      * Test {@link RegexUtils#extractLinks(String)} for http.
      */
     @Test
     public void testExtractLinksHttp() {
-        List<String> links = RegexUtils.extractLinks(
-                "Test with http://www.nutch.org/index.html is it found? " +
-                        "What about www.google.com at http://www.google.de " +
-                        "A longer URL could be http://www.sybit.com/solutions/portals.html");
+        List<String> links = RegexUtils.extractLinks("Test with http://www.nutch.org/index.html is it found? "
+                + "What about www.google.com at http://www.google.de "
+                + "A longer URL could be http://www.sybit.com/solutions/portals.html");
 
         assertTrue(links.size() == 3, "Url not found!");
         assertEquals("http://www.nutch.org/index.html", links.get(0), "Wrong URL");
         assertEquals("http://www.google.de", links.get(1), "Wrong URL");
-        assertEquals("http://www.sybit.com/solutions/portals.html", links.get(2),
-                "Wrong URL");
+        assertEquals("http://www.sybit.com/solutions/portals.html", links.get(2), "Wrong URL");
     }
 
     /**
@@ -75,8 +72,8 @@ public class RegexUtilsTest {
      */
     @Test
     public void testExtractLinksFtp() {
-        List<String> links = RegexUtils.extractLinks("Test with ftp://www.nutch.org is it found? " +
-                "What about www.google.com at ftp://www.google.de");
+        List<String> links = RegexUtils.extractLinks(
+                "Test with ftp://www.nutch.org is it found? " + "What about www.google.com at ftp://www.google.de");
 
         assertTrue(links.size() == 2, "Url not found!");
         assertEquals("ftp://www.nutch.org", links.get(0), "Wrong URL");

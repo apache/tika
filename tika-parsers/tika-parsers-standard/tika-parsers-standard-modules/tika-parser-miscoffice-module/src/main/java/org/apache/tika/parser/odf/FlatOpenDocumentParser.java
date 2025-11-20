@@ -24,11 +24,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -39,16 +34,17 @@ import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class FlatOpenDocumentParser implements Parser {
 
-    static final MediaType FLAT_OD =
-            MediaType.application("vnd.oasis.opendocument.tika.flat.document");
+    static final MediaType FLAT_OD = MediaType.application("vnd.oasis.opendocument.tika.flat.document");
     static final MediaType FLAT_ODT = MediaType.application("vnd.oasis.opendocument.flat.text");
-    static final MediaType FLAT_ODP =
-            MediaType.application("vnd.oasis.opendocument.flat.presentation");
-    static final MediaType FLAT_ODS =
-            MediaType.application("vnd.oasis.opendocument.flat.spreadsheet");
+    static final MediaType FLAT_ODP = MediaType.application("vnd.oasis.opendocument.flat.presentation");
+    static final MediaType FLAT_ODS = MediaType.application("vnd.oasis.opendocument.flat.spreadsheet");
     static final MediaType ODT = MediaType.application("vnd.oasis.opendocument.text");
     static final MediaType ODP = MediaType.application("vnd.oasis.opendocument.presentation");
     static final MediaType ODS = MediaType.application("vnd.oasis.opendocument.spreadsheet");
@@ -64,15 +60,15 @@ public class FlatOpenDocumentParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
 
         xhtml.startDocument();
         try {
             ContentHandler fodHandler = getContentHandler(xhtml, metadata, context);
-            XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
-                    new EmbeddedContentHandler(fodHandler), context);
+            XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream), new EmbeddedContentHandler(fodHandler),
+                    context);
             //can only detect subtype (text/pres/sheet) during parse.
             //update it here.
             MediaType detected = ((FlatOpenDocumentParserHandler) fodHandler).getDetectedType();
@@ -92,8 +88,7 @@ public class FlatOpenDocumentParser implements Parser {
     public boolean isExtractMacros() {
         return extractMacros;
     }
-    private ContentHandler getContentHandler(ContentHandler handler, Metadata metadata,
-                                             ParseContext context) {
+    private ContentHandler getContentHandler(ContentHandler handler, Metadata metadata, ParseContext context) {
         return new FlatOpenDocumentParserHandler(handler, metadata, context, extractMacros);
     }
 
@@ -102,7 +97,6 @@ public class FlatOpenDocumentParser implements Parser {
         private static final String BODY = "body";
         private static final String SCRIPTS = "scripts";
         private static final String DOCUMENT = "document";
-
 
         private final ContentHandler defaultHandler = new DefaultHandler();
 
@@ -113,12 +107,11 @@ public class FlatOpenDocumentParser implements Parser {
         private ContentHandler currentHandler = defaultHandler;
         private MediaType detectedType = null;
 
-        private FlatOpenDocumentParserHandler(ContentHandler baseHandler, Metadata metadata,
-                                              ParseContext parseContext, boolean extractMacros) {
+        private FlatOpenDocumentParserHandler(ContentHandler baseHandler, Metadata metadata, ParseContext parseContext,
+                boolean extractMacros) {
             this.extractMacros = extractMacros;
 
-            this.bodyHandler = new OpenDocumentBodyHandler(new NSNormalizerContentHandler(baseHandler),
-                            parseContext);
+            this.bodyHandler = new OpenDocumentBodyHandler(new NSNormalizerContentHandler(baseHandler), parseContext);
 
             this.metadataHandler = new NSNormalizerContentHandler(
                     OpenDocumentMetaParser.getContentHandler(metadata, parseContext));
@@ -135,8 +128,8 @@ public class FlatOpenDocumentParser implements Parser {
         }
 
         @Override
-        public void startElement(String namespaceURI, String localName, String qName,
-                                 Attributes attrs) throws SAXException {
+        public void startElement(String namespaceURI, String localName, String qName, Attributes attrs)
+                throws SAXException {
 
             if (META.equals(localName)) {
                 currentHandler = metadataHandler;
@@ -168,8 +161,7 @@ public class FlatOpenDocumentParser implements Parser {
         }
 
         @Override
-        public void endElement(String namespaceURI, String localName, String qName)
-                throws SAXException {
+        public void endElement(String namespaceURI, String localName, String qName) throws SAXException {
             if (META.equals(localName)) {
                 currentHandler = defaultHandler;
             } else if (BODY.equals(localName)) {

@@ -16,7 +16,6 @@
  */
 package org.apache.tika.langdetect.tika;
 
-
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
@@ -109,8 +108,7 @@ public class LanguageProfile {
     public void add(String ngram, long count) {
         if (length != ngram.length()) {
             throw new IllegalArgumentException(
-                    "Unable to add an ngram of incorrect length: " + ngram.length() + " != " +
-                    length);
+                    "Unable to add an ngram of incorrect length: " + ngram.length() + " != " + length);
         }
 
         Counter counter = ngrams.get(ngram);
@@ -135,8 +133,8 @@ public class LanguageProfile {
 
     private double distanceStandard(LanguageProfile that) {
         if (length != that.length) {
-            throw new IllegalArgumentException("Unable to calculage distance of language profiles" +
-                                               " with different ngram lengths: " + that.length + " != " + length);
+            throw new IllegalArgumentException("Unable to calculage distance of language profiles"
+                    + " with different ngram lengths: " + that.length + " != " + length);
         }
 
         double sumOfSquares = 0.0;
@@ -163,8 +161,8 @@ public class LanguageProfile {
 
     private double distanceInterleaved(LanguageProfile that) {
         if (length != that.length) {
-            throw new IllegalArgumentException("Unable to calculage distance of language profiles" +
-                                               " with different ngram lengths: " + that.length + " != " + length);
+            throw new IllegalArgumentException("Unable to calculage distance of language profiles"
+                    + " with different ngram lengths: " + that.length + " != " + length);
         }
 
         double sumOfSquares = 0.0;
@@ -265,8 +263,7 @@ public class LanguageProfile {
         }
 
         private List<Map.Entry<String, Counter>> getSortedNgrams() {
-            List<Map.Entry<String, Counter>> entries =
-                    new ArrayList<>(ngrams.size());
+            List<Map.Entry<String, Counter>> entries = new ArrayList<>(ngrams.size());
             entries.addAll(ngrams.entrySet());
             entries.sort(Map.Entry.comparingByKey());
             return entries;

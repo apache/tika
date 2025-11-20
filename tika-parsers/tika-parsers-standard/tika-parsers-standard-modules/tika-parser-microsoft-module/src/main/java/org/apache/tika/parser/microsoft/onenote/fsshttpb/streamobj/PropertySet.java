@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
@@ -87,41 +86,42 @@ public class PropertySet implements IProperty {
         this.rgData = new ArrayList<>();
         for (PropertyID propertyID : this.rgPrids) {
             IProperty property = null;
-            switch (PropertyType.fromIntVal(propertyID.type)) {
-                case NoData:
-                case Bool:
-                case ObjectID:
-                case ContextID:
-                case ObjectSpaceID:
+            switch (PropertyType.fromIntVal(propertyID.type))
+            {
+                case NoData :
+                case Bool :
+                case ObjectID :
+                case ContextID :
+                case ObjectSpaceID :
                     property = new NoData();
                     break;
-                case ArrayOfObjectIDs:
-                case ArrayOfObjectSpaceIDs:
-                case ArrayOfContextIDs:
+                case ArrayOfObjectIDs :
+                case ArrayOfObjectSpaceIDs :
+                case ArrayOfContextIDs :
                     property = new ArrayNumber();
                     break;
-                case OneByteOfData:
+                case OneByteOfData :
                     property = new OneByteOfData();
                     break;
-                case TwoBytesOfData:
+                case TwoBytesOfData :
                     property = new TwoBytesOfData();
                     break;
-                case FourBytesOfData:
+                case FourBytesOfData :
                     property = new FourBytesOfData();
                     break;
-                case EightBytesOfData:
+                case EightBytesOfData :
                     property = new EightBytesOfData();
                     break;
-                case FourBytesOfLengthFollowedByData:
+                case FourBytesOfLengthFollowedByData :
                     property = new PrtFourBytesOfLengthFollowedByData();
                     break;
-                case ArrayOfPropertyValues:
+                case ArrayOfPropertyValues :
                     property = new PrtArrayOfPropertyValues();
                     break;
-                case PropertySet:
+                case PropertySet :
                     property = new PropertySet();
                     break;
-                default:
+                default :
                     break;
             }
             if (property != null) {

@@ -16,17 +16,15 @@
  */
 package org.apache.tika.sax;
 
-
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.Locale;
 
+import org.apache.tika.parser.ParseContext;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
-
-import org.apache.tika.parser.ParseContext;
 
 /**
  * Basic factory for creating common types of ContentHandlers
@@ -60,15 +58,15 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory, WriteL
      * @param parseContext to store the writelimitreached warning if
      *                 throwOnWriteLimitReached is set to <code>false</code>
      */
-    public BasicContentHandlerFactory(HANDLER_TYPE type, int writeLimit,
-                                      boolean throwOnWriteLimitReached, ParseContext parseContext) {
+    public BasicContentHandlerFactory(HANDLER_TYPE type, int writeLimit, boolean throwOnWriteLimitReached,
+            ParseContext parseContext) {
         this.type = type;
         this.writeLimit = writeLimit;
         this.throwOnWriteLimitReached = throwOnWriteLimitReached;
         this.parseContext = parseContext;
         if (throwOnWriteLimitReached == false && parseContext == null) {
-            throw new IllegalArgumentException("parse context must not be null if " +
-                    "throwOnWriteLimitReached is false");
+            throw new IllegalArgumentException(
+                    "parse context must not be null if " + "throwOnWriteLimitReached is false");
         }
 
     }
@@ -89,20 +87,21 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory, WriteL
         }
 
         String lcHandlerTypeName = handlerTypeName.toLowerCase(Locale.ROOT);
-        switch (lcHandlerTypeName) {
-            case "xml":
+        switch (lcHandlerTypeName)
+        {
+            case "xml" :
                 return HANDLER_TYPE.XML;
-            case "text":
+            case "text" :
                 return HANDLER_TYPE.TEXT;
-            case "txt":
+            case "txt" :
                 return HANDLER_TYPE.TEXT;
-            case "html":
+            case "html" :
                 return HANDLER_TYPE.HTML;
-            case "body":
+            case "body" :
                 return HANDLER_TYPE.BODY;
-            case "ignore":
+            case "ignore" :
                 return HANDLER_TYPE.IGNORE;
-            default:
+            default :
                 return defaultType;
         }
     }
@@ -111,8 +110,7 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory, WriteL
     public ContentHandler getNewContentHandler() {
 
         if (type == HANDLER_TYPE.BODY) {
-            return new BodyContentHandler(
-                    new WriteOutContentHandler(new ToTextContentHandler(), writeLimit,
+            return new BodyContentHandler(new WriteOutContentHandler(new ToTextContentHandler(), writeLimit,
                     throwOnWriteLimitReached, parseContext));
         } else if (type == HANDLER_TYPE.IGNORE) {
             return new DefaultHandler();
@@ -121,19 +119,19 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory, WriteL
         if (writeLimit < 0) {
             return formatHandler;
         }
-        return new WriteOutContentHandler(formatHandler, writeLimit, throwOnWriteLimitReached,
-                parseContext);
+        return new WriteOutContentHandler(formatHandler, writeLimit, throwOnWriteLimitReached, parseContext);
     }
 
     private ContentHandler getFormatHandler() {
-        switch (type) {
-            case TEXT:
+        switch (type)
+        {
+            case TEXT :
                 return new ToTextContentHandler();
-            case HTML:
+            case HTML :
                 return new ToHTMLContentHandler();
-            case XML:
+            case XML :
                 return new ToXMLContentHandler();
-            default:
+            default :
                 return new ToTextContentHandler();
         }
     }
@@ -146,35 +144,32 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory, WriteL
         }
         try {
             if (writeLimit > -1) {
-                switch (type) {
-                    case BODY:
-                        return new WriteOutContentHandler(
-                                new BodyContentHandler(new OutputStreamWriter(os, charset)),
+                switch (type)
+                {
+                    case BODY :
+                        return new WriteOutContentHandler(new BodyContentHandler(new OutputStreamWriter(os, charset)),
                                 writeLimit);
-                    case TEXT:
-                        return new WriteOutContentHandler(
-                                new ToTextContentHandler(os, charset.name()), writeLimit);
-                    case HTML:
-                        return new WriteOutContentHandler(
-                                new ToHTMLContentHandler(os, charset.name()), writeLimit);
-                    case XML:
-                        return new WriteOutContentHandler(
-                                new ToXMLContentHandler(os, charset.name()), writeLimit);
-                    default:
-                        return new WriteOutContentHandler(
-                                new ToTextContentHandler(os, charset.name()), writeLimit);
+                    case TEXT :
+                        return new WriteOutContentHandler(new ToTextContentHandler(os, charset.name()), writeLimit);
+                    case HTML :
+                        return new WriteOutContentHandler(new ToHTMLContentHandler(os, charset.name()), writeLimit);
+                    case XML :
+                        return new WriteOutContentHandler(new ToXMLContentHandler(os, charset.name()), writeLimit);
+                    default :
+                        return new WriteOutContentHandler(new ToTextContentHandler(os, charset.name()), writeLimit);
                 }
             } else {
-                switch (type) {
-                    case BODY:
+                switch (type)
+                {
+                    case BODY :
                         return new BodyContentHandler(new OutputStreamWriter(os, charset));
-                    case TEXT:
+                    case TEXT :
                         return new ToTextContentHandler(os, charset.name());
-                    case HTML:
+                    case HTML :
                         return new ToHTMLContentHandler(os, charset.name());
-                    case XML:
+                    case XML :
                         return new ToXMLContentHandler(os, charset.name());
-                    default:
+                    default :
                         return new ToTextContentHandler(os, charset.name());
 
                 }

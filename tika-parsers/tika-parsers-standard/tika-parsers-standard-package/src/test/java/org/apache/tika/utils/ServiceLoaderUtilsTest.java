@@ -14,17 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.utils;
 
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.Parser;
+import org.junit.jupiter.api.Test;
 
 public class ServiceLoaderUtilsTest extends TikaTest {
 
@@ -42,8 +40,7 @@ public class ServiceLoaderUtilsTest extends TikaTest {
             if ("class org.gagravarr.tika.VorbisParser".equals(p.getClass().toString())) {
                 vorbisIndex = i;
             }
-            if ("class org.apache.tika.parser.xml.FictionBookParser"
-                    .equals(p.getClass().toString())) {
+            if ("class org.apache.tika.parser.xml.FictionBookParser".equals(p.getClass().toString())) {
                 fictIndex = i;
             }
             if ("class org.apache.tika.parser.xml.DcXMLParser".equals(p.getClass().toString())) {

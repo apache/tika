@@ -27,7 +27,21 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+
 import javax.xml.parsers.ParserConfigurationException;
+
+import org.apache.tika.detect.apple.BPListDetector;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import com.dd.plist.NSArray;
 import com.dd.plist.NSData;
@@ -40,19 +54,6 @@ import com.dd.plist.NSString;
 import com.dd.plist.PropertyListFormatException;
 import com.dd.plist.PropertyListParser;
 import com.dd.plist.UID;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
-import org.apache.tika.detect.apple.BPListDetector;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Parser for Apple's plist and bplist. This is a wrapper around
@@ -76,10 +77,9 @@ public class PListParser implements Parser {
     private static final String STRING = "string";
     private static final String UID = "uid";
 
-
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(new HashSet<>(
-            Arrays.asList(BPListDetector.BITUNES, BPListDetector.BMEMGRAPH, BPListDetector.BPLIST,
-                    BPListDetector.BWEBARCHIVE, BPListDetector.PLIST)));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections
+            .unmodifiableSet(new HashSet<>(Arrays.asList(BPListDetector.BITUNES, BPListDetector.BMEMGRAPH,
+                    BPListDetector.BPLIST, BPListDetector.BWEBARCHIVE, BPListDetector.PLIST)));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -87,11 +87,11 @@ public class PListParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
-        EmbeddedDocumentExtractor embeddedDocumentExtractor =
-                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        EmbeddedDocumentExtractor embeddedDocumentExtractor = EmbeddedDocumentUtil
+                .getEmbeddedDocumentExtractor(context);
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US);
         NSObject rootObj = null;
         //if this already went through the PListDetector,
@@ -107,16 +107,14 @@ public class PListParser implements Parser {
                 } else {
                     rootObj = PropertyListParser.parse(stream);
                 }
-            } catch (PropertyListFormatException | ParseException |
-                    ParserConfigurationException e) {
+            } catch (PropertyListFormatException | ParseException | ParserConfigurationException e) {
                 throw new TikaException("problem parsing root", e);
             }
         }
         String contentType = metadata.get(Metadata.CONTENT_TYPE);
         if (BPListDetector.PLIST.toString().equals(contentType)) {
             if (rootObj instanceof NSDictionary) {
-                MediaType subtype =
-                        BPListDetector.detectXMLOnKeys(((NSDictionary) rootObj).keySet());
+                MediaType subtype = BPListDetector.detectXMLOnKeys(((NSDictionary) rootObj).keySet());
                 metadata.set(Metadata.CONTENT_TYPE, subtype.toString());
             }
         }
@@ -165,9 +163,8 @@ public class PListParser implements Parser {
             //do we want to do anything with obj.getBytes()
             state.xhtml.element(UID, ((UID) obj).getName());
         } else {
-            throw new UnsupportedOperationException(
-                    "don't yet support this type of object: " + obj.getClass() +
-                            " Please open an issue on our tracker");
+            throw new UnsupportedOperationException("don't yet support this type of object: " + obj.getClass()
+                    + " Please open an issue on our tracker");
         }
     }
 
@@ -198,8 +195,7 @@ public class PListParser implements Parser {
         }
 
         try (TikaInputStream tis = TikaInputStream.get(value.bytes())) {
-            state.embeddedDocumentExtractor
-                    .parseEmbedded(tis, state.xhtml, embeddedMetadata, true);
+            state.embeddedDocumentExtractor.parseEmbedded(tis, state.xhtml, embeddedMetadata, true);
         }
     }
 
@@ -209,8 +205,8 @@ public class PListParser implements Parser {
         final EmbeddedDocumentExtractor embeddedDocumentExtractor;
         final DateFormat dateFormat;
 
-        public State(XHTMLContentHandler xhtml, Metadata metadata,
-                     EmbeddedDocumentExtractor embeddedDocumentExtractor, DateFormat df) {
+        public State(XHTMLContentHandler xhtml, Metadata metadata, EmbeddedDocumentExtractor embeddedDocumentExtractor,
+                DateFormat df) {
             this.xhtml = xhtml;
             this.metadata = metadata;
             this.embeddedDocumentExtractor = embeddedDocumentExtractor;

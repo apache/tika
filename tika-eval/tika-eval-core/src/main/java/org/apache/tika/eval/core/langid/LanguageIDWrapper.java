@@ -41,7 +41,6 @@ public class LanguageIDWrapper implements StringStatsCalculator<List<LanguageRes
         return detector.detectAll();
     }
 
-
     public String[] getSupportedLanguages() {
         return new OpenNLPDetector().getSupportedLanguages();
     }

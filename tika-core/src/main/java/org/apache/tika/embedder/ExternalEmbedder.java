@@ -32,7 +32,6 @@ import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -59,8 +58,7 @@ public class ExternalEmbedder implements Embedder {
      * Token to be replaced with a String array of metadata assignment command
      * arguments
      */
-    public static final String METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN =
-            "${METADATA_SERIALIZED}";
+    public static final String METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN = "${METADATA_SERIALIZED}";
     private static final long serialVersionUID = -2828829275642475697L;
     private final TemporaryResources tmp = new TemporaryResources();
     /**
@@ -76,9 +74,8 @@ public class ExternalEmbedder implements Embedder {
      *
      * @see Runtime#exec(String[])
      */
-    private String[] command =
-            new String[]{"sed", "-e", "$a\\\n" + METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN,
-                    ExternalParser.INPUT_FILE_TOKEN};
+    private String[] command = new String[]{"sed", "-e", "$a\\\n" + METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN,
+            ExternalParser.INPUT_FILE_TOKEN};
     private String commandAssignmentOperator = "=";
     private String commandAssignmentDelimeter = ", ";
     private String commandAppendOperator = "=";
@@ -156,8 +153,7 @@ public class ExternalEmbedder implements Embedder {
     }
 
     public void setSupportedEmbedTypes(Set<MediaType> supportedEmbedTypes) {
-        this.supportedEmbedTypes =
-                Collections.unmodifiableSet(new HashSet<>(supportedEmbedTypes));
+        this.supportedEmbedTypes = Collections.unmodifiableSet(new HashSet<>(supportedEmbedTypes));
     }
 
     /**
@@ -305,8 +301,7 @@ public class ExternalEmbedder implements Embedder {
                                         assignmentValue = "'" + assignmentValue + "'";
                                     }
                                     commandMetadataSegments
-                                            .add(metadataCommandArgument + commandAppendOperator +
-                                                    assignmentValue);
+                                            .add(metadataCommandArgument + commandAppendOperator + assignmentValue);
                                 }
                             } else {
                                 String assignmentValue = metadata.get(metadataName);
@@ -314,8 +309,7 @@ public class ExternalEmbedder implements Embedder {
                                     assignmentValue = "'" + assignmentValue + "'";
                                 }
                                 commandMetadataSegments
-                                        .add(metadataCommandArgument + commandAssignmentOperator +
-                                                assignmentValue);
+                                        .add(metadataCommandArgument + commandAssignmentOperator + assignmentValue);
                             }
                         }
                     }
@@ -332,14 +326,12 @@ public class ExternalEmbedder implements Embedder {
      * has been called to set arguments.
      */
     @Override
-    public void embed(final Metadata metadata, final InputStream inputStream,
-                      final OutputStream outputStream, final ParseContext context)
-            throws IOException, TikaException {
+    public void embed(final Metadata metadata, final InputStream inputStream, final OutputStream outputStream,
+            final ParseContext context) throws IOException, TikaException {
 
         boolean inputToStdIn = true;
         boolean outputFromStdOut = true;
-        boolean hasMetadataCommandArguments =
-                (metadataCommandArguments != null && !metadataCommandArguments.isEmpty());
+        boolean hasMetadataCommandArguments = (metadataCommandArguments != null && !metadataCommandArguments.isEmpty());
         boolean serializeMetadataCommandArgumentsToken = false;
         boolean replacedMetadataCommandArgumentsToken = false;
 
@@ -362,8 +354,7 @@ public class ExternalEmbedder implements Embedder {
             }
             if (commandSegment.contains(ExternalParser.OUTPUT_FILE_TOKEN)) {
                 tempOutputFile = tmp.createTemporaryFile();
-                commandSegment = commandSegment
-                        .replace(ExternalParser.OUTPUT_FILE_TOKEN, tempOutputFile.toString());
+                commandSegment = commandSegment.replace(ExternalParser.OUTPUT_FILE_TOKEN, tempOutputFile.toString());
                 outputFromStdOut = false;
             }
             if (commandSegment.contains(METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN)) {
@@ -384,15 +375,13 @@ public class ExternalEmbedder implements Embedder {
                 int i = 0;
                 for (String commandSegment : cmd) {
                     if (commandSegment.contains(METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN)) {
-                        commandSegment = commandSegment
-                                .replace(METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN,
-                                        serializeMetadata(commandMetadataSegments));
+                        commandSegment = commandSegment.replace(METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN,
+                                serializeMetadata(commandMetadataSegments));
                         cmd.set(i, commandSegment);
                     }
                     i++;
                 }
-            } else if (!replacedMetadataCommandArgumentsToken &&
-                    !serializeMetadataCommandArgumentsToken) {
+            } else if (!replacedMetadataCommandArgumentsToken && !serializeMetadataCommandArgumentsToken) {
                 // Tack metadata onto the end of the cmd as arguments
                 cmd.addAll(commandMetadataSegments);
             }
@@ -452,9 +441,8 @@ public class ExternalEmbedder implements Embedder {
             IOUtils.closeQuietly(outputStream);
             IOUtils.closeQuietly(stdErrOutputStream);
             if (process.exitValue() != 0) {
-                throw new TikaException("There was an error executing the command line" +
-                        "\nExecutable Command:\n\n" + cmd + "\nExecutable Error:\n\n" +
-                        stdErrOutputStream.toString(UTF_8.name()));
+                throw new TikaException("There was an error executing the command line" + "\nExecutable Command:\n\n"
+                        + cmd + "\nExecutable Error:\n\n" + stdErrOutputStream.toString(UTF_8.name()));
             }
         }
     }
@@ -465,8 +453,7 @@ public class ExternalEmbedder implements Embedder {
      * @param inputStream  the source input stream
      * @param outputStream the target output stream
      */
-    private void multiThreadedStreamCopy(final InputStream inputStream,
-                                         final OutputStream outputStream) {
+    private void multiThreadedStreamCopy(final InputStream inputStream, final OutputStream outputStream) {
         new Thread(() -> {
             try {
                 IOUtils.copy(inputStream, outputStream);

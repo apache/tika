@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.example;
 
 import java.io.ByteArrayInputStream;
@@ -34,10 +33,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -56,6 +51,9 @@ import org.apache.tika.parser.xml.XMLParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.LinkContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class TIAParsingExample {
     public static String parseToStringExample() throws Exception {
@@ -191,7 +189,8 @@ public class TIAParsingExample {
             private static final long serialVersionUID = 4424210691523343833L;
 
             @Override
-            public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+            public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+                    throws IOException, SAXException, TikaException {
                 // custom processing of the component document
             }
         });

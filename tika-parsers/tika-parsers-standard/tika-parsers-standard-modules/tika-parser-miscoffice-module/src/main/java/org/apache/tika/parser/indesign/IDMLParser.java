@@ -28,9 +28,6 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
 import org.apache.commons.io.IOUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -40,7 +37,8 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.xmp.XMPMetadataExtractor;
 import org.apache.tika.sax.EndDocumentShieldingContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
-
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Adobe InDesign IDML Parser.
@@ -50,8 +48,7 @@ public class IDMLParser implements Parser {
     /**
      * IDML MimeType
      */
-    private static final MediaType IDML_CONTENT_TYPE
-            = MediaType.application("vnd.adobe.indesign-idml-package");
+    private static final MediaType IDML_CONTENT_TYPE = MediaType.application("vnd.adobe.indesign-idml-package");
 
     /**
      * Supported types set.
@@ -128,7 +125,7 @@ public class IDMLParser implements Parser {
     }
 
     private void handleZipStream(ZipInputStream zipStream, Metadata metadata, ParseContext context,
-                                 ContentHandler handler) throws IOException, TikaException, SAXException {
+            ContentHandler handler) throws IOException, TikaException, SAXException {
         ZipEntry entry = zipStream.getNextEntry();
         if (entry == null) {
             throw new IOException("No entries found in ZipInputStream");
@@ -156,9 +153,8 @@ public class IDMLParser implements Parser {
         }
     }
 
-    private void handleZipEntry(ZipEntry entry, InputStream zip, Metadata metadata,
-                                ParseContext context, ContentHandler handler)
-            throws IOException, SAXException, TikaException {
+    private void handleZipEntry(ZipEntry entry, InputStream zip, Metadata metadata, ParseContext context,
+            ContentHandler handler) throws IOException, SAXException, TikaException {
 
         if (entry == null) {
             return;
@@ -179,7 +175,7 @@ public class IDMLParser implements Parser {
             ContentAndMetadataExtractor.extract(zip, handler, embeddedMeta, context);
             int spreadCount = Integer.parseInt(embeddedMeta.get("PageCount"));
             pageCount += spreadCount;
-        }  else if (entry.getName().contains("Stories")) {
+        } else if (entry.getName().contains("Stories")) {
             ContentAndMetadataExtractor.extract(zip, handler, new Metadata(), context);
         }
 

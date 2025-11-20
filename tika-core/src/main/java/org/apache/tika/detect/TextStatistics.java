@@ -70,9 +70,8 @@ public class TextStatistics {
         }
 
         int continuation = count(0x80, 0xc0);
-        return utf8 > 0 && continuation <= expectedContinuation &&
-                continuation >= expectedContinuation - 3 && count(0xf8, 0x100) == 0 &&
-                (control - safe) * 100 < utf8 * 2;
+        return utf8 > 0 && continuation <= expectedContinuation && continuation >= expectedContinuation - 3
+                && count(0xf8, 0x100) == 0 && (control - safe) * 100 < utf8 * 2;
     }
 
     /**
@@ -150,7 +149,7 @@ public class TextStatistics {
 
     private int countSafeControl() {
         return count('\t') + count('\n') + count('\r') // tab, LF, CR
-                + count(0x0c) + count(0x1b);           // new page, escape
+                + count(0x0c) + count(0x1b); // new page, escape
     }
 
 }

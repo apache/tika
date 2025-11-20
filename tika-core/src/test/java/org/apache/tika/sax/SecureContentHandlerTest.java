@@ -21,14 +21,13 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.IOException;
 
 import org.apache.commons.io.input.NullInputStream;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
-
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
 
 /**
  * Tests for the {@link SecureContentHandler} class.

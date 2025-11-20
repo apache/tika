@@ -25,11 +25,10 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.Test;
 
 public class JsonMetadataTest {
 
@@ -60,21 +59,17 @@ public class JsonMetadataTest {
         assertEquals(metadata, deserialized);
 
         //test that this really is 6 Chinese characters
-        assertEquals(6, deserialized
-                .get("alma_mater")
-                .length());
+        assertEquals(6, deserialized.get("alma_mater").length());
 
         //now test pretty print;
         writer = new StringWriter();
         JsonMetadata.setPrettyPrinting(true);
         JsonMetadata.toJson(metadata, writer);
-        String expected = "{[NEWLINE]  \"alma_mater\" : \"普林斯顿大学\",[NEWLINE]  \"html\" : \"<html><body>&amp;&nbsp;</body></html>\"," +
-                "[NEWLINE]  \"json_escapes\" : \"the: \\\"quick\\\" brown, fox\"," +
-                "[NEWLINE]  \"k1\" : [ \"v1\", \"v2\" ],[NEWLINE]  \"k3\" : [ \"v3\", \"v3\" ],[NEWLINE]  \"k4\" : \"500,000\"," +
-                "[NEWLINE]  \"url\" : \"/myApp/myAction.html?method=router&cmd=1\",[NEWLINE]  \"X-TIKA:content\" : \"this is the content\"[NEWLINE]}";
-        assertEquals(expected, writer
-                .toString()
-                .replaceAll("[\r\n]+", "[NEWLINE]"));
+        String expected = "{[NEWLINE]  \"alma_mater\" : \"普林斯顿大学\",[NEWLINE]  \"html\" : \"<html><body>&amp;&nbsp;</body></html>\","
+                + "[NEWLINE]  \"json_escapes\" : \"the: \\\"quick\\\" brown, fox\","
+                + "[NEWLINE]  \"k1\" : [ \"v1\", \"v2\" ],[NEWLINE]  \"k3\" : [ \"v3\", \"v3\" ],[NEWLINE]  \"k4\" : \"500,000\","
+                + "[NEWLINE]  \"url\" : \"/myApp/myAction.html?method=router&cmd=1\",[NEWLINE]  \"X-TIKA:content\" : \"this is the content\"[NEWLINE]}";
+        assertEquals(expected, writer.toString().replaceAll("[\r\n]+", "[NEWLINE]"));
     }
 
     @Test

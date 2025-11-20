@@ -16,22 +16,20 @@
  */
 package org.apache.tika.parser.indesign;
 
-
 import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Extractor for InDesign Content and Metadata.
@@ -55,9 +53,8 @@ class ContentAndMetadataExtractor {
             throws IOException, SAXException, TikaException {
 
         // Parse the content using inner content handler
-        XMLReaderUtils.parseSAX(
-                CloseShieldInputStream.wrap(stream), new ContentAndMetadataHandler(handler, metadata), context
-        );
+        XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream), new ContentAndMetadataHandler(handler, metadata),
+                context);
     }
 
     /**
@@ -74,8 +71,7 @@ class ContentAndMetadataExtractor {
             this.metadata = metadata;
         }
 
-        public void startElement(
-                String uri, String localName, String qName, Attributes attributes)
+        public void startElement(String uri, String localName, String qName, Attributes attributes)
                 throws SAXException {
 
             // Get Spread Metadata

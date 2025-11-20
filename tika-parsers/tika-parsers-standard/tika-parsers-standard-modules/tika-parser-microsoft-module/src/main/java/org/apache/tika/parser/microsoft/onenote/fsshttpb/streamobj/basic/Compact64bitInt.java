@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.io.IOException;
@@ -138,9 +137,7 @@ public class Compact64bitInt extends BasicObject {
      * @return Return the length in byte of the Compact64bitInt basic object.
      */
     @Override
-    protected int doDeserializeFromByteArray(byte[] byteArray,
-                                             int startIndex)
-            throws IOException // return the length consumed
+    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException // return the length consumed
     {
         BitReader bitReader = new BitReader(byteArray, startIndex);
         int numberOfContinousZeroBit = 0;
@@ -152,55 +149,55 @@ public class Compact64bitInt extends BasicObject {
             }
         }
 
-        switch (numberOfContinousZeroBit) {
-            case 0:
+        switch (numberOfContinousZeroBit)
+        {
+            case 0 :
                 this.decodedValue = bitReader.readUInt64(7);
                 this.type = CompactUint7bitType;
                 return 1;
 
-            case 1:
+            case 1 :
                 this.decodedValue = bitReader.readUInt64(14);
                 this.type = CompactUint14bitType;
                 return 2;
 
-            case 2:
+            case 2 :
                 this.decodedValue = bitReader.readUInt64(21);
                 this.type = CompactUint21bitType;
                 return 3;
 
-            case 3:
+            case 3 :
                 this.decodedValue = bitReader.readUInt64(28);
                 this.type = CompactUint28bitType;
                 return 4;
 
-            case 4:
+            case 4 :
                 this.decodedValue = bitReader.readUInt64(35);
                 this.type = CompactUint35bitType;
                 return 5;
 
-            case 5:
+            case 5 :
                 this.decodedValue = bitReader.readUInt64(42);
                 this.type = CompactUint42bitType;
                 return 6;
 
-            case 6:
+            case 6 :
                 this.decodedValue = bitReader.readUInt64(49);
                 this.type = CompactUint49bitType;
                 return 7;
 
-            case 7:
+            case 7 :
                 this.decodedValue = bitReader.readUInt64(64);
                 this.type = CompactUint64bitType;
                 return 9;
 
-            case 8:
+            case 8 :
                 this.decodedValue = 0;
                 this.type = CompactUintNullType;
                 return 1;
 
-            default:
-                throw new IllegalArgumentException(
-                        "Failed to parse the Compact64bitInt, the type value is unexpected");
+            default :
+                throw new IllegalArgumentException("Failed to parse the Compact64bitInt, the type value is unexpected");
         }
     }
 

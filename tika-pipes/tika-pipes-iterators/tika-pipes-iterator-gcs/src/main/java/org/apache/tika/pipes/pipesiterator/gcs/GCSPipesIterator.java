@@ -22,13 +22,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-import com.google.api.gax.paging.Page;
-import com.google.cloud.storage.Blob;
-import com.google.cloud.storage.Storage;
-import com.google.cloud.storage.StorageOptions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -42,6 +35,13 @@ import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.api.gax.paging.Page;
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
 
 public class GCSPipesIterator extends PipesIterator implements Initializable {
 
@@ -76,11 +76,7 @@ public class GCSPipesIterator extends PipesIterator implements Initializable {
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         //TODO -- add other params to the builder as needed
-        storage = StorageOptions
-                .newBuilder()
-                .setProjectId(projectId)
-                .build()
-                .getService();
+        storage = StorageOptions.newBuilder().setProjectId(projectId).build().getService();
     }
 
     @Override
@@ -116,8 +112,8 @@ public class GCSPipesIterator extends PipesIterator implements Initializable {
             //TODO -- allow user specified metadata as the "id"?
             ParseContext parseContext = new ParseContext();
             parseContext.set(HandlerConfig.class, handlerConfig);
-            tryToAdd(new FetchEmitTuple(blob.getName(), new FetchKey(fetcherName, blob.getName()), new EmitKey(emitterName, blob.getName()), new Metadata(), parseContext,
-                    getOnParseException()));
+            tryToAdd(new FetchEmitTuple(blob.getName(), new FetchKey(fetcherName, blob.getName()),
+                    new EmitKey(emitterName, blob.getName()), new Metadata(), parseContext, getOnParseException()));
             count++;
         }
         long elapsed = System.currentTimeMillis() - start;

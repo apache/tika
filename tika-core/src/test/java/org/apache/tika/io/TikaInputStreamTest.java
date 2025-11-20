@@ -31,11 +31,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class TikaInputStreamTest {
 
@@ -50,18 +49,15 @@ public class TikaInputStreamTest {
         assertNull(stream.getOpenContainer());
         assertNull(stream.getInputStreamFactory());
 
-        assertEquals(path, TikaInputStream.get(stream).getPath(),
-                "The file returned by the getFile() method should" +
-                                " be the file used to instantiate a TikaInputStream");
+        assertEquals(path, TikaInputStream.get(stream).getPath(), "The file returned by the getFile() method should"
+                + " be the file used to instantiate a TikaInputStream");
 
         assertEquals("Hello, World!", readStream(stream),
-                "The contents of the TikaInputStream should equal the" +
-                        " contents of the underlying file");
+                "The contents of the TikaInputStream should equal the" + " contents of the underlying file");
 
         stream.close();
         assertTrue(Files.exists(path),
-                "The close() method must not remove the file used to" +
-                " instantiate a TikaInputStream");
+                "The close() method must not remove the file used to" + " instantiate a TikaInputStream");
 
     }
 
@@ -79,13 +75,11 @@ public class TikaInputStreamTest {
         assertNull(stream.getOpenContainer());
         assertNull(stream.getInputStreamFactory());
 
-        assertEquals("Hello, World!", readFile(file),
-                "The contents of the file returned by the getFile method" +
-                        " should equal the contents of the TikaInputStream");
+        assertEquals("Hello, World!", readFile(file), "The contents of the file returned by the getFile method"
+                + " should equal the contents of the TikaInputStream");
 
         assertEquals("Hello, World!", readStream(stream),
-                "The contents of the TikaInputStream should not get modified" +
-                        " by reading the file first");
+                "The contents of the TikaInputStream should not get modified" + " by reading the file first");
 
         stream.close();
         assertFalse(Files.exists(file),
@@ -100,8 +94,7 @@ public class TikaInputStreamTest {
         assertNotNull(stream.getInputStreamFactory());
 
         assertEquals("Hello, World!", readStream(stream),
-                "The contents of the TikaInputStream should not get modified" +
-                        " by reading the file first");
+                "The contents of the TikaInputStream should not get modified" + " by reading the file first");
         stream.close();
     }
 
@@ -125,8 +118,7 @@ public class TikaInputStreamTest {
         Metadata metadata = new Metadata();
         TikaInputStream.get(url, metadata).close();
         assertEquals("test.txt", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertEquals(Long.toString(Files.size(Paths.get(url.toURI()))),
-                metadata.get(Metadata.CONTENT_LENGTH));
+        assertEquals(Long.toString(Files.size(Paths.get(url.toURI()))), metadata.get(Metadata.CONTENT_LENGTH));
     }
 
 }

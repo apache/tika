@@ -41,8 +41,7 @@ public class AnalyzerManager {
 
     public static AnalyzerManager newInstance(int maxTokens) {
         Map<String, Analyzer> map;
-        try (InputStream is = AnalyzerManager.class.getClassLoader()
-                .getResourceAsStream("lucene-analyzers.json")) {
+        try (InputStream is = AnalyzerManager.class.getClassLoader().getResourceAsStream("lucene-analyzers.json")) {
             try (Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8)) {
                 map = AnalyzerDeserializer.buildAnalyzers(reader, maxTokens);
             }

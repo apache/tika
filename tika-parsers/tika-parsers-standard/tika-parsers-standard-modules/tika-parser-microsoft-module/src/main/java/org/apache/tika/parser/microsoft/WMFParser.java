@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft;
 
 import java.io.IOException;
@@ -31,15 +30,14 @@ import org.apache.poi.hwmf.record.HwmfText;
 import org.apache.poi.hwmf.usermodel.HwmfPicture;
 import org.apache.poi.util.LocaleUtil;
 import org.apache.poi.util.RecordFormatException;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * This parser offers a very rough capability to extract text if there
@@ -57,8 +55,8 @@ public class WMFParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         try {
@@ -78,9 +76,9 @@ public class WMFParser implements Parser {
                 //This fix should be done within POI
                 if (record.getWmfRecordType().equals(HwmfRecordType.createFontIndirect)) {
                     HwmfFont font = ((HwmfText.WmfCreateFontIndirect) record).getFont();
-                    charset =
-                            (font.getCharset() == null || font.getCharset().getCharset() == null) ?
-                                    LocaleUtil.CHARSET_1252 : font.getCharset().getCharset();
+                    charset = (font.getCharset() == null || font.getCharset().getCharset() == null)
+                            ? LocaleUtil.CHARSET_1252
+                            : font.getCharset().getCharset();
                 }
                 if (record.getWmfRecordType().equals(HwmfRecordType.extTextOut)) {
                     HwmfText.WmfExtTextOut textOut = (HwmfText.WmfExtTextOut) record;

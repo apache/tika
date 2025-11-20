@@ -88,24 +88,19 @@ public class RUnpackExtractorFactory implements EmbeddedDocumentByteStoreExtract
 
     @Override
     public EmbeddedDocumentExtractor newInstance(Metadata metadata, ParseContext parseContext) {
-        RUnpackExtractor ex =
-                new RUnpackExtractor(parseContext,
-                        maxEmbeddedBytesForExtraction);
+        RUnpackExtractor ex = new RUnpackExtractor(parseContext, maxEmbeddedBytesForExtraction);
         ex.setWriteFileNameToContent(writeFileNameToContent);
         ex.setEmbeddedBytesSelector(createEmbeddedBytesSelector());
         return ex;
     }
 
-
     private EmbeddedBytesSelector createEmbeddedBytesSelector() {
-        if (embeddedBytesIncludeMimeTypes.size() == 0 &&
-                embeddedBytesExcludeMimeTypes.size() == 0 &&
-                embeddedBytesIncludeEmbeddedResourceTypes.size() == 0 &&
-                embeddedBytesExcludeEmbeddedResourceTypes.size() == 0) {
+        if (embeddedBytesIncludeMimeTypes.size() == 0 && embeddedBytesExcludeMimeTypes.size() == 0
+                && embeddedBytesIncludeEmbeddedResourceTypes.size() == 0
+                && embeddedBytesExcludeEmbeddedResourceTypes.size() == 0) {
             return EmbeddedBytesSelector.ACCEPT_ALL;
         }
-        return new BasicEmbeddedBytesSelector(embeddedBytesIncludeMimeTypes,
-                embeddedBytesExcludeMimeTypes, embeddedBytesIncludeEmbeddedResourceTypes,
-                embeddedBytesExcludeEmbeddedResourceTypes);
+        return new BasicEmbeddedBytesSelector(embeddedBytesIncludeMimeTypes, embeddedBytesExcludeMimeTypes,
+                embeddedBytesIncludeEmbeddedResourceTypes, embeddedBytesExcludeEmbeddedResourceTypes);
     }
 }

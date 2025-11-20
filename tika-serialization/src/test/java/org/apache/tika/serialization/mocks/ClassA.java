@@ -121,7 +121,8 @@ public class ClassA {
 
     @Override
     public String toString() {
-        return "ClassA{" + "a=" + a + ", b=" + b + ", c=" + c + ", d=" + d + ", e=" + e + ", f=" + f + ", g=" + g + ", h=" + h + ", i=" + i + ", j=" + j + ", k=" + k + '}';
+        return "ClassA{" + "a=" + a + ", b=" + b + ", c=" + c + ", d=" + d + ", e=" + e + ", f=" + f + ", g=" + g
+                + ", h=" + h + ", i=" + i + ", j=" + j + ", k=" + k + '}';
     }
 
     @Override
@@ -134,8 +135,9 @@ public class ClassA {
         }
 
         ClassA classA = (ClassA) o;
-        return a == classA.a && Float.compare(b, classA.b) == 0 && c == classA.c && d == classA.d && e == classA.e && Objects.equals(f, classA.f) && Objects.equals(g, classA.g) &&
-                Objects.equals(h, classA.h) && Objects.equals(i, classA.i) && Objects.equals(j, classA.j) && Objects.equals(k, classA.k);
+        return a == classA.a && Float.compare(b, classA.b) == 0 && c == classA.c && d == classA.d && e == classA.e
+                && Objects.equals(f, classA.f) && Objects.equals(g, classA.g) && Objects.equals(h, classA.h)
+                && Objects.equals(i, classA.i) && Objects.equals(j, classA.j) && Objects.equals(k, classA.k);
     }
 
     @Override

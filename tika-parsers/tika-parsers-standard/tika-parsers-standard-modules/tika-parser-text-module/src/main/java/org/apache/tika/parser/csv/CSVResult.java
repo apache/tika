@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -65,9 +65,8 @@ public class CSVResult implements Comparable<CSVResult> {
             return false;
         }
         CSVResult csvResult = (CSVResult) o;
-        return Double.compare(csvResult.confidence, confidence) == 0 &&
-                mediaType.equals(csvResult.mediaType) &&
-                Objects.equals(delimiter, csvResult.delimiter);
+        return Double.compare(csvResult.confidence, confidence) == 0 && mediaType.equals(csvResult.mediaType)
+                && Objects.equals(delimiter, csvResult.delimiter);
     }
 
     @Override
@@ -77,8 +76,8 @@ public class CSVResult implements Comparable<CSVResult> {
 
     @Override
     public String toString() {
-        return "CSVResult{" + "confidence=" + confidence + ", mediaType=" + mediaType +
-                ", delimiter=" + delimiter + '}';
+        return "CSVResult{" + "confidence=" + confidence + ", mediaType=" + mediaType + ", delimiter=" + delimiter
+                + '}';
     }
 
     public double getConfidence() {

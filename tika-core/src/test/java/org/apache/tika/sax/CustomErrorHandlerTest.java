@@ -22,19 +22,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.apache.tika.TikaTest;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
-
-import org.apache.tika.TikaTest;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * Test that validates a custom {@link ContentHandlerDecorator} can handle errors during XML parsing
@@ -49,8 +49,7 @@ public class CustomErrorHandlerTest extends TikaTest {
     @BeforeAll
     public static void setUp() throws TikaException {
         DEFAULT_SAX_PARSER_FACTORY = System.getProperty(SAX_PARSER_FACTORY_KEY);
-        System.setProperty(SAX_PARSER_FACTORY_KEY,
-                "org.apache.tika.sax.ErrorResistantSAXParserFactory");
+        System.setProperty(SAX_PARSER_FACTORY_KEY, "org.apache.tika.sax.ErrorResistantSAXParserFactory");
         //forces re-initialization
         XMLReaderUtils.setPoolSize(10);
     }
@@ -69,8 +68,7 @@ public class CustomErrorHandlerTest extends TikaTest {
             throws IOException, SAXException, TikaException, ParserConfigurationException {
 
         try {
-            ToXMLContentHandler contentHandler =
-                    new ToXMLContentHandler(textStream, StandardCharsets.UTF_8.toString());
+            ToXMLContentHandler contentHandler = new ToXMLContentHandler(textStream, StandardCharsets.UTF_8.toString());
             NonValidatingContentHandler handler = new NonValidatingContentHandler(contentHandler);
             XMLReaderUtils.parseSAX(blobStream, handler, new ParseContext());
         } finally {

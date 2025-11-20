@@ -21,9 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.collections4.MapUtils;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Extracts WordPerfect Document Area text from a WordPerfect document
@@ -40,24 +39,23 @@ class WP6DocumentAreaExtractor extends WPDocumentAreaExtractor {
      * Those that are not handled explicitely in the code below should be
      * skipped according to their size (minus the first char if already read).
      */
-    private static final Map<Integer, Integer> FIXED_LENGTH_FUNCTION_SIZES =
-            MapUtils.putAll(new HashMap<>(),
-                    new Integer[]{240, 4,  // Extended Character
-                            241, 5,  // Undo
-                            242, 3,  // Attribute On
-                            243, 3,  // Attribute Off
-                            244, 3,  // (Reserved)
-                            245, 3,  // (Reserved)
-                            246, 4,  // (Reserved)
-                            247, 4,  // (Reserved)
-                            248, 4,  // (Reserved)
-                            249, 5,  // (Reserved)
-                            250, 5,  // (Reserved)
-                            251, 6,  // (Reserved)
-                            252, 6,  // (Reserved)
-                            253, 8,  // (Reserved)
-                            254, 8,  // (Reserved)
-                    });
+    private static final Map<Integer, Integer> FIXED_LENGTH_FUNCTION_SIZES = MapUtils.putAll(new HashMap<>(),
+            new Integer[]{240, 4, // Extended Character
+                    241, 5, // Undo
+                    242, 3, // Attribute On
+                    243, 3, // Attribute Off
+                    244, 3, // (Reserved)
+                    245, 3, // (Reserved)
+                    246, 4, // (Reserved)
+                    247, 4, // (Reserved)
+                    248, 4, // (Reserved)
+                    249, 5, // (Reserved)
+                    250, 5, // (Reserved)
+                    251, 6, // (Reserved)
+                    252, 6, // (Reserved)
+                    253, 8, // (Reserved)
+                    254, 8, // (Reserved)
+            });
     private boolean includeDeletedContent = true;
     private boolean inUndo = false;
 
@@ -94,11 +92,11 @@ class WP6DocumentAreaExtractor extends WPDocumentAreaExtractor {
         } else if (c >= 33 && c <= 126) {
             out.append((char) c);
         } else if (c == 128) {
-            out.append(' ');      // Soft space
+            out.append(' '); // Soft space
         } else if (c == 129) {
             out.append('\u00A0'); // Hard space
         } else if (c == 132) {
-            out.append('-');      // Hard hyphen
+            out.append('-'); // Hard hyphen
         } else if (c == 135 || c == 137) {
             endParagraph(out, xhtml); // Dormant Hard return
         } else if (c == 138) {

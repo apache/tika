@@ -24,12 +24,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.langdetect.LanguageDetectorTest;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.language.detect.LanguageWriter;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created by trevorlewis on 3/7/16.
@@ -38,9 +37,8 @@ public class TextLangDetectorTest {
 
     @Test
     public void test() throws Exception {
-        List<String> lines =
-                IOUtils.readLines(LanguageDetectorTest.class.getResourceAsStream("text-test.tsv"),
-                        StandardCharsets.UTF_8);
+        List<String> lines = IOUtils.readLines(LanguageDetectorTest.class.getResourceAsStream("text-test.tsv"),
+                StandardCharsets.UTF_8);
 
         assertEquals(18, lines.size());
 

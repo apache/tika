@@ -22,10 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -33,6 +29,9 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.junit.jupiter.api.BeforeEach;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Parent class for all Package based Test cases
@@ -77,8 +76,8 @@ public abstract class AbstractPkgTest extends TikaTest {
             mediaTypes.clear();
         }
 
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                          ParseContext context) throws IOException, SAXException, TikaException {
+        public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+                throws IOException, SAXException, TikaException {
             parser.parse(stream, handler, metadata, context);
 
             filenames.add(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
@@ -105,8 +104,8 @@ public abstract class AbstractPkgTest extends TikaTest {
             return AUTO_DETECT_PARSER.getSupportedTypes(context);
         }
 
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                          ParseContext context) throws IOException, SAXException, TikaException {
+        public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+                throws IOException, SAXException, TikaException {
             filenames.add(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
             mediatypes.add(metadata.get(Metadata.CONTENT_TYPE));
             createdAts.add(metadata.get(TikaCoreProperties.CREATED));

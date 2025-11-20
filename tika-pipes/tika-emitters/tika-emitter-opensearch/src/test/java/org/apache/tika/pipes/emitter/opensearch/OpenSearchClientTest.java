@@ -16,10 +16,9 @@
  */
 package org.apache.tika.pipes.emitter.opensearch;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.junit.jupiter.api.Test;
 
 public class OpenSearchClientTest extends TikaTest {
 
@@ -29,19 +28,16 @@ public class OpenSearchClientTest extends TikaTest {
         metadata.add("authors", "author1");
         metadata.add("authors", "author2");
         metadata.add("title", "title1");
-        for (OpenSearchEmitter.AttachmentStrategy strategy :
-                OpenSearchEmitter.AttachmentStrategy.values()) {
-            String json = OpenSearchClient.metadataToJsonContainerInsert(metadata,
-                    strategy);
+        for (OpenSearchEmitter.AttachmentStrategy strategy : OpenSearchEmitter.AttachmentStrategy.values()) {
+            String json = OpenSearchClient.metadataToJsonContainerInsert(metadata, strategy);
             assertContains("author1", json);
             assertContains("author2", json);
             assertContains("authors", json);
             assertContains("title1", json);
         }
-        for (OpenSearchEmitter.AttachmentStrategy strategy :
-                OpenSearchEmitter.AttachmentStrategy.values()) {
-            String json = OpenSearchClient.metadataToJsonEmbeddedInsert(metadata, strategy,
-                    "myEmitKey", OpenSearchEmitter.DEFAULT_EMBEDDED_FILE_FIELD_NAME);
+        for (OpenSearchEmitter.AttachmentStrategy strategy : OpenSearchEmitter.AttachmentStrategy.values()) {
+            String json = OpenSearchClient.metadataToJsonEmbeddedInsert(metadata, strategy, "myEmitKey",
+                    OpenSearchEmitter.DEFAULT_EMBEDDED_FILE_FIELD_NAME);
             assertContains("author1", json);
             assertContains("author2", json);
             assertContains("authors", json);

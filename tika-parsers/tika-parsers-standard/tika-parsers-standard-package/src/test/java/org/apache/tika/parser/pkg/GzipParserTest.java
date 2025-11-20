@@ -20,9 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.InputStream;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -30,6 +27,8 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 /**
  * Test case for parsing gzip files.
@@ -91,9 +90,8 @@ public class GzipParserTest extends AbstractPkgTest {
         try (InputStream is = getResourceAsStream("/configs/tika-config-multiple-gz.xml")) {
             tikaConfig = new TikaConfig(is);
         }
-        assertContains("<p>ab</p>",
-                getRecursiveMetadata("multiple.gz", new AutoDetectParser(tikaConfig)).get(1)
-                        .get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("<p>ab</p>", getRecursiveMetadata("multiple.gz", new AutoDetectParser(tikaConfig)).get(1)
+                .get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Test
@@ -106,8 +104,7 @@ public class GzipParserTest extends AbstractPkgTest {
             }
         });
         assertContains("<p>a</p>",
-                getRecursiveMetadata("multiple.gz", parseContext).get(1)
-                        .get(TikaCoreProperties.TIKA_CONTENT));
+                getRecursiveMetadata("multiple.gz", parseContext).get(1).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Test
@@ -118,8 +115,6 @@ public class GzipParserTest extends AbstractPkgTest {
             tikaConfig = new TikaConfig(is);
         }
         Parser p = new AutoDetectParser(tikaConfig);
-        assertContains("<p>a</p>",
-                getRecursiveMetadata("multiple.gz", p).get(1)
-                        .get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("<p>a</p>", getRecursiveMetadata("multiple.gz", p).get(1).get(TikaCoreProperties.TIKA_CONTENT));
     }
 }

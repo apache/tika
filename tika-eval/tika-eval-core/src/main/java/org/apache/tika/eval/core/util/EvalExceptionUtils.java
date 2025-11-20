@@ -20,15 +20,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
-
 import org.apache.tika.utils.ExceptionUtils;
 
 public class EvalExceptionUtils {
 
     //these remove runtime info from the stacktraces so
     //that actual causes can be counted.
-    private final static Pattern CAUSED_BY_SNIPPER =
-            Pattern.compile("(Caused by: [^:]+):[^\\r\\n]+");
+    private final static Pattern CAUSED_BY_SNIPPER = Pattern.compile("(Caused by: [^:]+):[^\\r\\n]+");
 
     public static String normalize(String stacktrace) {
         if (StringUtils.isBlank(stacktrace)) {

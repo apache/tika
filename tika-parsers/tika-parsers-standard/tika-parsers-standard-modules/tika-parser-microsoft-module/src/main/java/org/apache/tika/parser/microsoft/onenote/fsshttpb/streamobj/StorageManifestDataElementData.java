@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
@@ -69,24 +68,21 @@ public class StorageManifestDataElementData extends DataElementData {
             throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(startIndex);
 
-        this.storageManifestSchemaGUID =
-                StreamObject.getCurrent(byteArray, index, StorageManifestSchemaGUID.class);
+        this.storageManifestSchemaGUID = StreamObject.getCurrent(byteArray, index, StorageManifestSchemaGUID.class);
         this.storageManifestRootDeclareList = new ArrayList<>();
 
         AtomicReference<StreamObjectHeaderStart> header = new AtomicReference<>();
         int headerLength = 0;
-        while ((headerLength = StreamObjectHeaderStart.tryParse(byteArray, index.get(), header)) !=
-                0) {
+        while ((headerLength = StreamObjectHeaderStart.tryParse(byteArray, index.get(), header)) != 0) {
             if (header.get().type == StreamObjectTypeHeaderStart.StorageManifestRootDeclare) {
                 index.addAndGet(headerLength);
                 this.storageManifestRootDeclareList.add(
-                        (StorageManifestRootDeclare) StreamObject.parseStreamObject(header.get(),
-                                byteArray, index));
+                        (StorageManifestRootDeclare) StreamObject.parseStreamObject(header.get(), byteArray, index));
             } else {
                 throw new DataElementParseErrorException(index.get(),
-                        "Failed to parse StorageManifestDataElement, expect the inner object type " +
-                                "StorageManifestRootDeclare, but actual type value is " +
-                                header.get().type, null);
+                        "Failed to parse StorageManifestDataElement, expect the inner object type "
+                                + "StorageManifestRootDeclare, but actual type value is " + header.get().type,
+                        null);
             }
         }
 

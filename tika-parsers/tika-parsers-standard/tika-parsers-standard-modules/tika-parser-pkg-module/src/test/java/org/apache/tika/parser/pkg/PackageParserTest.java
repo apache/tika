@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.pkg;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -26,14 +25,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.zip.PackageConstants;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.ParseContext;
+import org.junit.jupiter.api.Test;
 
 public class PackageParserTest extends TikaTest {
 
@@ -42,8 +40,7 @@ public class PackageParserTest extends TikaTest {
         //test that the package parser covers all inputstreams handled
         //by ArchiveStreamFactory.  When we update commons-compress, and they add
         //a new stream type, we want to make sure that we're handling it.
-        ArchiveStreamFactory archiveStreamFactory =
-                new ArchiveStreamFactory(StandardCharsets.UTF_8.name());
+        ArchiveStreamFactory archiveStreamFactory = new ArchiveStreamFactory(StandardCharsets.UTF_8.name());
         PackageParser packageParser = new PackageParser();
         ParseContext parseContext = new ParseContext();
         for (String name : archiveStreamFactory.getInputStreamArchiveNames()) {
@@ -69,15 +66,14 @@ public class PackageParserTest extends TikaTest {
         Set<MediaType> currentSpecializations = new HashSet<>();
         MediaType tar = MediaType.parse("application/x-tar");
         for (MediaType type : mediaTypeRegistry.getTypes()) {
-            if (mediaTypeRegistry.isSpecializationOf(type, MediaType.APPLICATION_ZIP) ||
-                    mediaTypeRegistry.isSpecializationOf(type, tar)) {
+            if (mediaTypeRegistry.isSpecializationOf(type, MediaType.APPLICATION_ZIP)
+                    || mediaTypeRegistry.isSpecializationOf(type, tar)) {
                 currentSpecializations.add(type);
-//                System.out.println("\""+type.toString()+"\",");
+                //                System.out.println("\""+type.toString()+"\",");
             }
         }
         for (MediaType mediaType : currentSpecializations) {
-            assertTrue(PackageParser.PACKAGE_SPECIALIZATIONS.contains(mediaType),
-                    "missing: " + mediaType);
+            assertTrue(PackageParser.PACKAGE_SPECIALIZATIONS.contains(mediaType), "missing: " + mediaType);
         }
         assertEquals(currentSpecializations.size(), PackageParser.PACKAGE_SPECIALIZATIONS.size());
     }

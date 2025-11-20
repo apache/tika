@@ -16,7 +16,6 @@
  */
 package org.apache.tika.pipes.core.serialization;
 
-
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.EMITTER;
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.EMIT_KEY;
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.FETCHER;
@@ -31,12 +30,6 @@ import static org.apache.tika.serialization.ParseContextSerializer.PARSE_CONTEXT
 import java.io.IOException;
 import java.util.Map;
 
-import com.fasterxml.jackson.core.JacksonException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.FetchEmitTuple;
@@ -44,10 +37,17 @@ import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
 import org.apache.tika.serialization.ParseContextDeserializer;
 
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonNode;
+
 public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple> {
 
     @Override
-    public FetchEmitTuple deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JacksonException {
+    public FetchEmitTuple deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
+            throws IOException, JacksonException {
         JsonNode root = jsonParser.readValueAsTree();
 
         String id = readVal(ID, root, null, true);
@@ -59,12 +59,13 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
         long fetchRangeEnd = readLong(FETCH_RANGE_END, root, -1l, false);
         Metadata metadata = readMetadata(root);
         JsonNode parseContextNode = root.get(PARSE_CONTEXT);
-        ParseContext parseContext = parseContextNode == null ? new ParseContext() : ParseContextDeserializer.readParseContext(parseContextNode);
+        ParseContext parseContext = parseContextNode == null
+                ? new ParseContext()
+                : ParseContextDeserializer.readParseContext(parseContextNode);
         FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = readOnParseException(root);
 
         return new FetchEmitTuple(id, new FetchKey(fetcherName, fetchKey, fetchRangeStart, fetchRangeEnd),
-                new EmitKey(emitterName, emitKey), metadata, parseContext,
-                onParseException);
+                new EmitKey(emitterName, emitKey), metadata, parseContext, onParseException);
     }
 
     private static FetchEmitTuple.ON_PARSE_EXCEPTION readOnParseException(JsonNode root) throws IOException {
@@ -102,7 +103,8 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
         return metadata;
     }
 
-    private static String readVal(String key, JsonNode jsonObj, String defaultRet, boolean isRequired) throws IOException {
+    private static String readVal(String key, JsonNode jsonObj, String defaultRet, boolean isRequired)
+            throws IOException {
         JsonNode valNode = jsonObj.get(key);
         if (valNode == null) {
             if (isRequired) {

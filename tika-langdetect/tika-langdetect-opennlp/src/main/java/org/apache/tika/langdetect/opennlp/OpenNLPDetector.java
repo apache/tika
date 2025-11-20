@@ -24,6 +24,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.apache.tika.language.detect.LanguageConfidence;
+import org.apache.tika.language.detect.LanguageDetector;
+import org.apache.tika.language.detect.LanguageResult;
+
 import opennlp.tools.langdetect.Language;
 import opennlp.tools.langdetect.LanguageDetectorModel;
 import opennlp.tools.util.normalizer.CharSequenceNormalizer;
@@ -31,10 +35,6 @@ import opennlp.tools.util.normalizer.EmojiCharSequenceNormalizer;
 import opennlp.tools.util.normalizer.NumberCharSequenceNormalizer;
 import opennlp.tools.util.normalizer.ShrinkCharSequenceNormalizer;
 import opennlp.tools.util.normalizer.TwitterCharSequenceNormalizer;
-
-import org.apache.tika.language.detect.LanguageConfidence;
-import org.apache.tika.language.detect.LanguageDetector;
-import org.apache.tika.language.detect.LanguageResult;
 
 /**
  * <p>
@@ -90,8 +90,7 @@ public class OpenNLPDetector extends LanguageDetector {
         }
     }
 
-    private final ProbingLanguageDetector detector =
-            new ProbingLanguageDetector(LANG_MODEL, getNormalizers());
+    private final ProbingLanguageDetector detector = new ProbingLanguageDetector(LANG_MODEL, getNormalizers());
     private final StringBuilder buffer = new StringBuilder();
 
     public OpenNLPDetector() {
@@ -99,18 +98,15 @@ public class OpenNLPDetector extends LanguageDetector {
     }
 
     static void loadBuiltInModels() throws IOException {
-        try (InputStream is = OpenNLPDetector.class
-                .getResourceAsStream("/opennlp-langdetect-20210413.bin")) {
+        try (InputStream is = OpenNLPDetector.class.getResourceAsStream("/opennlp-langdetect-20210413.bin")) {
             LANG_MODEL = new LanguageDetectorModel(is);
         }
     }
 
     private static CharSequenceNormalizer[] getNormalizers() {
         return new CharSequenceNormalizer[]{TikaUrlCharSequenceNormalizer.getInstance(),
-                AlphaIdeographSequenceNormalizer.getInstance(),
-                EmojiCharSequenceNormalizer.getInstance(),
-                TwitterCharSequenceNormalizer.getInstance(),
-                NumberCharSequenceNormalizer.getInstance(),
+                AlphaIdeographSequenceNormalizer.getInstance(), EmojiCharSequenceNormalizer.getInstance(),
+                TwitterCharSequenceNormalizer.getInstance(), NumberCharSequenceNormalizer.getInstance(),
                 ShrinkCharSequenceNormalizer.getInstance()};
     }
 
@@ -146,8 +142,7 @@ public class OpenNLPDetector extends LanguageDetector {
      */
     @Override
     public LanguageDetector loadModels(Set<String> languages) throws IOException {
-        throw new UnsupportedOperationException(
-                "This lang detector doesn't allow subsetting models");
+        throw new UnsupportedOperationException("This lang detector doesn't allow subsetting models");
     }
 
     @Override
@@ -200,9 +195,8 @@ public class OpenNLPDetector extends LanguageDetector {
         Language[] langs = detector.predictLanguages(buffer.toString());
         List<LanguageResult> results = new ArrayList<>();
         for (Language lang : langs) {
-            LanguageResult r =
-                    new LanguageResult(lang.getLang(), getConfidence(lang.getConfidence()),
-                            (float) lang.getConfidence());
+            LanguageResult r = new LanguageResult(lang.getLang(), getConfidence(lang.getConfidence()),
+                    (float) lang.getConfidence());
             results.add(r);
         }
         return results;
@@ -219,12 +213,10 @@ public class OpenNLPDetector extends LanguageDetector {
     private static class TikaUrlCharSequenceNormalizer implements CharSequenceNormalizer {
         //use this custom copy/paste of opennlp to avoid long, long hang with mail_regex
         //TIKA-2777
-        private static final Pattern URL_REGEX =
-                Pattern.compile("https?://[-_.?&~;+=/#0-9A-Za-z]{10,10000}");
-        private static final Pattern MAIL_REGEX =
-                Pattern.compile("[-_.0-9A-Za-z]{1,100}@[-_0-9A-Za-z]{1,100}[-_.0-9A-Za-z]{1,100}");
-        private static final TikaUrlCharSequenceNormalizer INSTANCE =
-                new TikaUrlCharSequenceNormalizer();
+        private static final Pattern URL_REGEX = Pattern.compile("https?://[-_.?&~;+=/#0-9A-Za-z]{10,10000}");
+        private static final Pattern MAIL_REGEX = Pattern
+                .compile("[-_.0-9A-Za-z]{1,100}@[-_0-9A-Za-z]{1,100}[-_.0-9A-Za-z]{1,100}");
+        private static final TikaUrlCharSequenceNormalizer INSTANCE = new TikaUrlCharSequenceNormalizer();
 
         private TikaUrlCharSequenceNormalizer() {
         }
@@ -241,10 +233,8 @@ public class OpenNLPDetector extends LanguageDetector {
     }
 
     private static class AlphaIdeographSequenceNormalizer implements CharSequenceNormalizer {
-        private static final Pattern REGEX =
-                Pattern.compile("[^\\p{IsAlphabetic}\\p{IsIdeographic}]+");
-        private static final AlphaIdeographSequenceNormalizer INSTANCE =
-                new AlphaIdeographSequenceNormalizer();
+        private static final Pattern REGEX = Pattern.compile("[^\\p{IsAlphabetic}\\p{IsIdeographic}]+");
+        private static final AlphaIdeographSequenceNormalizer INSTANCE = new AlphaIdeographSequenceNormalizer();
 
         private AlphaIdeographSequenceNormalizer() {
         }

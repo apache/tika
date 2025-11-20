@@ -29,18 +29,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.tika.exception.TikaException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider;
+
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.apache.cxf.jaxrs.client.WebClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.tika.exception.TikaException;
 
 /**
  * <p>This translator is designed to work with a TCP-IP available
@@ -150,12 +151,9 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
         jsonNode.put("inputLanguage", sourceLanguage);
         jsonNode.put("inputText", inputText);
         //make the request
-        Response response =
-                client.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
-                        .post(jsonNode);
+        Response response = client.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON).post(jsonNode);
         StringBuilder responseText = new StringBuilder();
-        try (InputStreamReader inputStreamReader = new InputStreamReader(
-                (InputStream) response.getEntity(), UTF_8);
+        try (InputStreamReader inputStreamReader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
                 BufferedReader reader = new BufferedReader(inputStreamReader)) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -173,11 +171,9 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
                 throw new TikaException(jsonResp.findValue("message").get(0).asText());
             }
         } catch (JsonParseException e) {
-            throw new TikaException(
-                    "Error requesting translation from '" + sourceLanguage + "' to '" +
-                            targetLanguage + "', JSON response " +
-                            "from Joshua REST Server is not well formatted: " +
-                            responseText.toString());
+            throw new TikaException("Error requesting translation from '" + sourceLanguage + "' to '" + targetLanguage
+                    + "', JSON response " + "from Joshua REST Server is not well formatted: "
+                    + responseText.toString());
         }
     }
 
@@ -208,8 +204,7 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
             try {
                 url = new URL(networkURI);
             } catch (MalformedURLException mue) {
-                LOG.error("Error reading {} property from {}. {}", JOSHUA_SERVER, PROPERTIES_FILE,
-                        mue);
+                LOG.error("Error reading {} property from {}. {}", JOSHUA_SERVER, PROPERTIES_FILE, mue);
             }
             HttpURLConnection connection = null;
             try {

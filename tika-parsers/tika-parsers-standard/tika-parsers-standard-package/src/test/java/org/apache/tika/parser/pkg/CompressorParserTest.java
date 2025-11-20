@@ -14,21 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.pkg;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.Test;
 
 public class CompressorParserTest extends TikaTest {
-
 
     @Test
     public void testLZ4Framed() throws Exception {
@@ -56,9 +53,7 @@ public class CompressorParserTest extends TikaTest {
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "testBROTLI_compressed.br");
         List<Metadata> metadataList = getRecursiveMetadata("testBROTLI_compressed.br", metadata);
 
-        assertContains("XXXXXXXXXXYYYYYYYYYY",
-                metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
-        assertEquals("testBROTLI_compressed",
-                metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertContains("XXXXXXXXXXYYYYYYYYYY", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals("testBROTLI_compressed", metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
 }

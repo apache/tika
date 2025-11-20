@@ -47,22 +47,20 @@ public class DefaultParser extends CompositeParser {
     private transient final ServiceLoader loader;
 
     public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader,
-                         Collection<Class<? extends Parser>> excludeParsers,
-                         EncodingDetector encodingDetector, Renderer renderer) {
+            Collection<Class<? extends Parser>> excludeParsers, EncodingDetector encodingDetector, Renderer renderer) {
         super(registry, getDefaultParsers(loader, encodingDetector, renderer, excludeParsers));
         this.loader = loader;
     }
 
     public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader,
-                         Collection<Class<? extends Parser>> excludeParsers) {
-        super(registry,
-                getDefaultParsers(loader, new DefaultEncodingDetector(loader),
-                        new CompositeRenderer(loader), excludeParsers));
+            Collection<Class<? extends Parser>> excludeParsers) {
+        super(registry, getDefaultParsers(loader, new DefaultEncodingDetector(loader), new CompositeRenderer(loader),
+                excludeParsers));
         this.loader = loader;
     }
 
-    public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader,
-                         EncodingDetector encodingDetector, Renderer renderer) {
+    public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader, EncodingDetector encodingDetector,
+            Renderer renderer) {
         this(registry, loader, Collections.EMPTY_SET, encodingDetector, renderer);
     }
 
@@ -96,13 +94,9 @@ public class DefaultParser extends CompositeParser {
      * @param loader service loader
      * @return ordered list of statically loadable parsers
      */
-    private static List<Parser> getDefaultParsers(ServiceLoader loader,
-                                                  EncodingDetector encodingDetector,
-                                                  Renderer renderer,
-                                                  Collection<Class<? extends Parser>>
-                                                          excludeParsers) {
-        List<Parser> parsers =
-                loader.loadStaticServiceProviders(Parser.class, excludeParsers);
+    private static List<Parser> getDefaultParsers(ServiceLoader loader, EncodingDetector encodingDetector,
+            Renderer renderer, Collection<Class<? extends Parser>> excludeParsers) {
+        List<Parser> parsers = loader.loadStaticServiceProviders(Parser.class, excludeParsers);
 
         if (encodingDetector != null) {
             for (Parser p : parsers) {

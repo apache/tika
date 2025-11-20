@@ -51,8 +51,8 @@ public class TypeDetectionBenchmark {
                 for (int i = 0; i < 1000; i++) {
                     tika.detect(new ByteArrayInputStream(content));
                 }
-                System.out.printf(Locale.ROOT, "%6dns per Tika.detect(%s) = %s%n",
-                        System.currentTimeMillis() - start, file, type);
+                System.out.printf(Locale.ROOT, "%6dns per Tika.detect(%s) = %s%n", System.currentTimeMillis() - start,
+                        file, type);
             }
         } else if (file.isDirectory()) {
             for (File child : file.listFiles()) {

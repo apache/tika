@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -40,8 +40,7 @@ public class EndianUtils {
      * @throws IOException             will be propagated back to the caller
      * @throws BufferUnderrunException if the stream cannot provide enough bytes
      */
-    public static short readShortLE(InputStream stream)
-            throws IOException, BufferUnderrunException {
+    public static short readShortLE(InputStream stream) throws IOException, BufferUnderrunException {
         return (short) readUShortLE(stream);
     }
 
@@ -53,8 +52,7 @@ public class EndianUtils {
      * @throws IOException             will be propagated back to the caller
      * @throws BufferUnderrunException if the stream cannot provide enough bytes
      */
-    public static short readShortBE(InputStream stream)
-            throws IOException, BufferUnderrunException {
+    public static short readShortBE(InputStream stream) throws IOException, BufferUnderrunException {
         return (short) readUShortBE(stream);
     }
 
@@ -192,8 +190,7 @@ public class EndianUtils {
             throw new BufferUnderrunException();
         }
 
-        return ((long) ch8 << 56) + ((long) ch7 << 48) + ((long) ch6 << 40) + ((long) ch5 << 32) +
-                ((long) ch4 << 24) + // cast to long to preserve bit 31 (sign bit for ints)
+        return ((long) ch8 << 56) + ((long) ch7 << 48) + ((long) ch6 << 40) + ((long) ch5 << 32) + ((long) ch4 << 24) + // cast to long to preserve bit 31 (sign bit for ints)
                 (ch3 << 16) + (ch2 << 8) + (ch1);
     }
 
@@ -218,8 +215,7 @@ public class EndianUtils {
             throw new BufferUnderrunException();
         }
 
-        return ((long) ch1 << 56) + ((long) ch2 << 48) + ((long) ch3 << 40) + ((long) ch4 << 32) +
-                ((long) ch5 << 24) + // cast to long to preserve bit 31 (sign bit for ints)
+        return ((long) ch1 << 56) + ((long) ch2 << 48) + ((long) ch3 << 40) + ((long) ch4 << 32) + ((long) ch5 << 24) + // cast to long to preserve bit 31 (sign bit for ints)
                 (ch6 << 16) + (ch7 << 8) + (ch8);
     }
 
@@ -471,7 +467,6 @@ public class EndianUtils {
     public static short getUByte(byte[] data, int offset) {
         return (short) (data[offset] & 0xFF);
     }
-
 
     public static class BufferUnderrunException extends TikaException {
         private static final long serialVersionUID = 8358288231138076276L;

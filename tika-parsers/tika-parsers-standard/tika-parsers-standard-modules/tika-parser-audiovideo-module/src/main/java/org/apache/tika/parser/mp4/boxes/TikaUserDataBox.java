@@ -21,19 +21,19 @@ import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.drew.lang.SequentialByteArrayReader;
-import com.drew.lang.SequentialReader;
-import com.drew.lang.annotations.NotNull;
-import com.drew.lang.annotations.Nullable;
-import com.drew.metadata.mp4.Mp4Directory;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.RuntimeSAXException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.SAXException;
+
+import com.drew.lang.SequentialByteArrayReader;
+import com.drew.lang.SequentialReader;
+import com.drew.lang.annotations.NotNull;
+import com.drew.lang.annotations.Nullable;
+import com.drew.metadata.mp4.Mp4Directory;
 
 public class TikaUserDataBox {
 
@@ -43,17 +43,15 @@ public class TikaUserDataBox {
     private static final String MDTA = "mdta";
     private static final String HDLR = "hdlr";
     private static final String MDIR = "mdir";//apple metadata itunes reader
-    private static final Pattern COORDINATE_PATTERN =
-            Pattern.compile("([+-]\\d+\\.\\d+)([+-]\\d+\\.\\d+)");
+    private static final Pattern COORDINATE_PATTERN = Pattern.compile("([+-]\\d+\\.\\d+)([+-]\\d+\\.\\d+)");
 
-    @Nullable
-    private String coordinateString;
+    @Nullable private String coordinateString;
 
     private boolean isQuickTime = false;
     private final Metadata metadata;
     private final XHTMLContentHandler xhtml;
-    public TikaUserDataBox(@NotNull String box, byte[] payload, Metadata metadata,
-                           XHTMLContentHandler xhtml) throws IOException, SAXException {
+    public TikaUserDataBox(@NotNull String box, byte[] payload, Metadata metadata, XHTMLContentHandler xhtml)
+            throws IOException, SAXException {
         this.metadata = metadata;
         this.xhtml = xhtml;
         int length = payload.length;
@@ -87,7 +85,7 @@ public class TikaUserDataBox {
                     isQuickTime = true;
                 }
                 int read = 16;//bytes read so far
-                parseUserDataBox(reader, subtype, read, (int)lengthToStartOfList);
+                parseUserDataBox(reader, subtype, read, (int) lengthToStartOfList);
             } else {
                 if (size < 8L) {
                     return;
@@ -99,8 +97,7 @@ public class TikaUserDataBox {
 
     }
 
-    private void parseUserDataBox(SequentialReader reader, String handlerType,
-                                  int read, int lengthToStartOfList)
+    private void parseUserDataBox(SequentialReader reader, String handlerType, int read, int lengthToStartOfList)
             throws IOException {
         if (!MDIR.equals(handlerType)) {
             return;
@@ -118,7 +115,7 @@ public class TikaUserDataBox {
         String subType = reader.getString(4, StandardCharsets.ISO_8859_1);
         //this handles "free" types...not sure if there are others?
         //will throw IOException if no ilist is found
-        while (! subType.equals(ILST)) {
+        while (!subType.equals(ILST)) {
             reader.skip(len - 8);
             len = reader.getUInt32();
             subType = reader.getString(4, StandardCharsets.ISO_8859_1);
@@ -129,10 +126,7 @@ public class TikaUserDataBox {
 
     }
 
-
-
-    private void processIList(SequentialReader reader, long totalLen)
-            throws IOException {
+    private void processIList(SequentialReader reader, long totalLen) throws IOException {
 
         long totalRead = 0;
         while (totalRead < totalLen) {
@@ -154,13 +148,13 @@ public class TikaUserDataBox {
                     //skip this for now
                     reader.skip(toRead);
                 } else if ("cpil".equals(fieldName)) {
-                    int compilationId = (int)reader.getByte();
+                    int compilationId = (int) reader.getByte();
                     metadata.set(XMPDM.COMPILATION, compilationId);
                 } else if ("trkn".equals(fieldName)) {
                     if (toRead == 8) {
                         long numA = reader.getUInt32();
                         long numB = reader.getUInt32();
-                        metadata.set(XMPDM.TRACK_NUMBER, (int)numA);
+                        metadata.set(XMPDM.TRACK_NUMBER, (int) numA);
                     } else {
                         //log
                         reader.skip(toRead);
@@ -192,14 +186,14 @@ public class TikaUserDataBox {
         }
     }
 
-
     private void addMetadata(String key, String value) throws SAXException {
-        switch (key) {
-            case "\u00A9nam":
+        switch (key)
+        {
+            case "\u00A9nam" :
                 metadata.set(TikaCoreProperties.TITLE, value);
                 xhtml.element("p", value);
                 break;
-            case "\u00A9too":
+            case "\u00A9too" :
                 metadata.set(XMP.CREATOR_TOOL, value);
                 break;
             case "\u00A9ART" :
@@ -211,11 +205,11 @@ public class TikaUserDataBox {
                 metadata.set(XMPDM.ALBUM_ARTIST, value);
                 xhtml.element("p", value);
                 break;
-            case "\u00A9wrt":
+            case "\u00A9wrt" :
                 metadata.set(XMPDM.COMPOSER, value);
                 xhtml.element("p", value);
                 break;
-            case "\u00A9alb":
+            case "\u00A9alb" :
                 metadata.set(XMPDM.ALBUM, value);
                 xhtml.element("p", value);
                 break;
@@ -252,13 +246,13 @@ public class TikaUserDataBox {
                 //not sure this is the right use of this key
                 metadata.set(XMP.IDENTIFIER, value);
                 break;
-                //purd date?
-                //xid ? e.g. SonyBMG:isrc:KRA031208874
-                //cprt copyright
-                //ownr ? and apID
-                //flvr ?
-                //son = nam, soal = (c)alb soar = aART?
-                //(C)ART
+            //purd date?
+            //xid ? e.g. SonyBMG:isrc:KRA031208874
+            //cprt copyright
+            //ownr ? and apID
+            //flvr ?
+            //son = nam, soal = (c)alb soar = aART?
+            //(C)ART
         }
     }
 
@@ -274,5 +268,3 @@ public class TikaUserDataBox {
         }
     }
 }
-
-

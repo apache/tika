@@ -24,10 +24,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.Detector;
@@ -40,6 +36,9 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 /**
  * Tests if the IWork parser parses the content and metadata properly of the supported formats.
@@ -64,7 +63,7 @@ public class IWorkParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
         iWorkParser.parse(input, handler, metadata, new ParseContext());
-        input.read();   // Will throw an Exception if the stream was already closed.
+        input.read(); // Will throw an Exception if the stream was already closed.
     }
 
     @Test
@@ -76,16 +75,13 @@ public class IWorkParserTest extends TikaTest {
         // (Exact numbers will vary based on composites)
         assertTrue(metadata.size() >= 6, "Insufficient metadata found " + metadata.size());
         List<String> metadataKeys = Arrays.asList(metadata.names());
-        assertTrue(metadataKeys.contains(Metadata.CONTENT_TYPE),
-                "Metadata not found in " + metadataKeys);
-        assertTrue(metadataKeys.contains(Office.SLIDE_COUNT.getName()),
-                "Metadata not found in " + metadataKeys);
-//        assertTrue("Metadata not found in " + metadataKeys,
-//        metadataKeys.contains(Office.SLIDE_COUNT.getName()));
+        assertTrue(metadataKeys.contains(Metadata.CONTENT_TYPE), "Metadata not found in " + metadataKeys);
+        assertTrue(metadataKeys.contains(Office.SLIDE_COUNT.getName()), "Metadata not found in " + metadataKeys);
+        //        assertTrue("Metadata not found in " + metadataKeys,
+        //        metadataKeys.contains(Office.SLIDE_COUNT.getName()));
         assertTrue(metadataKeys.contains(TikaCoreProperties.CREATOR.getName()),
                 "Metadata not found in " + metadataKeys);
-        assertTrue(metadataKeys.contains(TikaCoreProperties.TITLE.getName()),
-                "Metadata not found in " + metadataKeys);
+        assertTrue(metadataKeys.contains(TikaCoreProperties.TITLE.getName()), "Metadata not found in " + metadataKeys);
 
         // Check the metadata values
         assertEquals("application/vnd.apple.keynote", metadata.get(Metadata.CONTENT_TYPE));
@@ -125,8 +121,7 @@ public class IWorkParserTest extends TikaTest {
     @Test
     public void testKeynoteBulletPoints() throws Exception {
         String content = getText("testBulletPoints.key", iWorkParser);
-        assertTrue(content.replaceAll("\\s+", " ")
-                .contains("bullet point 1 bullet point 2 bullet point 3"));
+        assertTrue(content.replaceAll("\\s+", " ").contains("bullet point 1 bullet point 2 bullet point 3"));
     }
 
     // TIKA-923
@@ -155,14 +150,11 @@ public class IWorkParserTest extends TikaTest {
         // (Exact numbers will vary based on composites)
         assertTrue(metadata.size() >= 50, "Insufficient metadata found " + metadata.size());
         List<String> metadataKeys = Arrays.asList(metadata.names());
-        assertTrue(metadataKeys.contains(Metadata.CONTENT_TYPE),
-                "Metadata not found in " + metadataKeys);
-        assertTrue(metadataKeys.contains(Office.PAGE_COUNT.getName()),
-                "Metadata not found in " + metadataKeys);
+        assertTrue(metadataKeys.contains(Metadata.CONTENT_TYPE), "Metadata not found in " + metadataKeys);
+        assertTrue(metadataKeys.contains(Office.PAGE_COUNT.getName()), "Metadata not found in " + metadataKeys);
         assertTrue(metadataKeys.contains(TikaCoreProperties.CREATOR.getName()),
                 "Metadata not found in " + metadataKeys);
-        assertTrue(metadataKeys.contains(TikaCoreProperties.TITLE.getName()),
-                "Metadata not found in " + metadataKeys);
+        assertTrue(metadataKeys.contains(TikaCoreProperties.TITLE.getName()), "Metadata not found in " + metadataKeys);
         assertTrue(metadataKeys.contains(TikaCoreProperties.MODIFIED.getName()),
                 "Metadata not found in " + metadataKeys);
         assertTrue(metadataKeys.contains(TikaCoreProperties.LANGUAGE.getName()),
@@ -216,18 +208,14 @@ public class IWorkParserTest extends TikaTest {
         // (Exact numbers will vary based on composites)
         assertTrue(metadata.size() >= 8, "Insufficient metadata found " + metadata.size());
         List<String> metadataKeys = Arrays.asList(metadata.names());
-        assertTrue(metadataKeys.contains(Metadata.CONTENT_TYPE),
-                "Metadata not found in " + metadataKeys);
-        assertTrue(metadataKeys.contains(Office.PAGE_COUNT.getName()),
-                "Metadata not found in " + metadataKeys);
+        assertTrue(metadataKeys.contains(Metadata.CONTENT_TYPE), "Metadata not found in " + metadataKeys);
+        assertTrue(metadataKeys.contains(Office.PAGE_COUNT.getName()), "Metadata not found in " + metadataKeys);
         assertTrue(metadataKeys.contains(TikaCoreProperties.CREATOR.getName()),
                 "Metadata not found in " + metadataKeys);
         assertTrue(metadataKeys.contains(TikaCoreProperties.COMMENTS.getName()),
                 "Metadata not found in " + metadataKeys);
-        assertTrue(metadataKeys.contains(TikaCoreProperties.TITLE.getName()),
-                "Metadata not found in " + metadataKeys);
-        assertTrue(metadataKeys.contains(TikaCoreProperties.TITLE.getName()),
-                "Metadata not found in " + metadataKeys);
+        assertTrue(metadataKeys.contains(TikaCoreProperties.TITLE.getName()), "Metadata not found in " + metadataKeys);
+        assertTrue(metadataKeys.contains(TikaCoreProperties.TITLE.getName()), "Metadata not found in " + metadataKeys);
 
         // Check the metadata values
         assertEquals("2", metadata.get(Office.PAGE_COUNT));
@@ -406,11 +394,9 @@ public class IWorkParserTest extends TikaTest {
     //TIKA-3020
     @Test
     public void testKeyNoteTableMarkup() throws Exception {
-        String expected =
-                "<table><tr>\t<td>Cell one</td>\t<td>Cell two</td>\t<td>Cell three</td></tr>" +
-                        "<tr>\t<td>Cell four</td>\t<td>Cell 5</td>\t<td>Cell six</td></tr>" +
-                        "<tr>\t<td>7</td>\t<td>Cell eight</td>\t<td>5/5/1985</td></tr>" +
-                        "</table>";
+        String expected = "<table><tr>\t<td>Cell one</td>\t<td>Cell two</td>\t<td>Cell three</td></tr>"
+                + "<tr>\t<td>Cell four</td>\t<td>Cell 5</td>\t<td>Cell six</td></tr>"
+                + "<tr>\t<td>7</td>\t<td>Cell eight</td>\t<td>5/5/1985</td></tr>" + "</table>";
         String xml = getXML("testKeynote.key", iWorkParser).xml;
         xml = xml.replaceAll("[\r\n]", "");
         assertContains(expected, xml);
@@ -422,8 +408,7 @@ public class IWorkParserTest extends TikaTest {
         List<ZipContainerDetector> zips = new ArrayList<>();
         zips.add(new IWorkDetector());
         Detector d = new CompositeDetector(new DefaultZipContainerDetector(zips));
-        try (InputStream is = this.getClass()
-                .getResourceAsStream("/test-documents/testIWorksNPEDetector.zip")) {
+        try (InputStream is = this.getClass().getResourceAsStream("/test-documents/testIWorksNPEDetector.zip")) {
             MediaType mt = d.detect(is, new Metadata());
             assertEquals(MediaType.application("zip"), mt);
         }

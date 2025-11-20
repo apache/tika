@@ -18,13 +18,13 @@ package org.apache.tika.server.core.config;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import jakarta.ws.rs.core.MultivaluedMap;
 import org.apache.commons.codec.binary.Base64;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.server.core.ParseContextConfig;
+
+import jakarta.ws.rs.core.MultivaluedMap;
 
 public class PasswordProviderConfig implements ParseContextConfig {
     public static final String PASSWORD = "Password";

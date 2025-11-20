@@ -16,12 +16,8 @@
  */
 package org.apache.tika.extractor;
 
-
 import java.io.IOException;
 import java.io.Serializable;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
@@ -40,6 +36,8 @@ import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.StatefulParser;
 import org.apache.tika.utils.ExceptionUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Utility class to handle common issues with embedded documents.
@@ -50,7 +48,6 @@ import org.apache.tika.utils.ExceptionUtils;
  * Note: This is not thread safe.  Make sure to instantiate one per thread.
  */
 public class EmbeddedDocumentUtil implements Serializable {
-
 
     private final ParseContext context;
     private final EmbeddedDocumentExtractor embeddedDocumentExtractor;
@@ -218,8 +215,8 @@ public class EmbeddedDocumentUtil implements Serializable {
         return embeddedDocumentExtractor;
     }
 
-    public void parseEmbedded(TikaInputStream tis, ContentHandler handler, Metadata metadata,
-                              boolean outputHtml) throws IOException, SAXException {
+    public void parseEmbedded(TikaInputStream tis, ContentHandler handler, Metadata metadata, boolean outputHtml)
+            throws IOException, SAXException {
         embeddedDocumentExtractor.parseEmbedded(tis, handler, metadata, outputHtml);
     }
 

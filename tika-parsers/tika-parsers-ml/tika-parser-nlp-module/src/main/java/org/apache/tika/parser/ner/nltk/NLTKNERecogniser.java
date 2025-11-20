@@ -25,15 +25,15 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.tika.parser.ner.NERecogniser;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.parser.ner.NERecogniser;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 /**
  * This class offers an implementation of {@link NERecogniser} based on
@@ -56,7 +56,6 @@ public class NLTKNERecogniser implements NERecogniser {
     private static final String NLTK_REST_HOST = "http://localhost:8881";
     private static boolean available = false;
     private String restHostUrlStr;
-
 
     public NLTKNERecogniser() {
         try {
@@ -131,8 +130,7 @@ public class NLTKNERecogniser implements NERecogniser {
                     String key = (String) o;
                     if (!key.equals("result")) {
                         ENTITY_TYPES.add(key);
-                        entities.put(key.toUpperCase(Locale.ENGLISH),
-                                new HashSet((Collection) j.get(key)));
+                        entities.put(key.toUpperCase(Locale.ENGLISH), new HashSet((Collection) j.get(key)));
                     }
                 }
             }
@@ -142,6 +140,5 @@ public class NLTKNERecogniser implements NERecogniser {
 
         return entities;
     }
-
 
 }

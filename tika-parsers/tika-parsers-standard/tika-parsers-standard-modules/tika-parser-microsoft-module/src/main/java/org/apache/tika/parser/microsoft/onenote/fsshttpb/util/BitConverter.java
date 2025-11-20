@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.util;
 
 import java.io.IOException;
@@ -43,9 +42,8 @@ public class BitConverter {
     }
 
     public static byte[] getBytes(long x) {
-        return new byte[]{(byte) (x >>> 56), (byte) (x >>> 48), (byte) (x >>> 40),
-                (byte) (x >>> 32), (byte) (x >>> 24), (byte) (x >>> 16), (byte) (x >>> 8),
-                (byte) x};
+        return new byte[]{(byte) (x >>> 56), (byte) (x >>> 48), (byte) (x >>> 40), (byte) (x >>> 32), (byte) (x >>> 24),
+                (byte) (x >>> 16), (byte) (x >>> 8), (byte) x};
     }
 
     public static byte[] getBytes(float x) {
@@ -66,8 +64,7 @@ public class BitConverter {
 
     public static short toInt16(byte[] bytes, int index) throws IOException {
         if (bytes.length < 2) {
-            throw new IOException(
-                    "The length of the byte array must be at least 2 bytes long.");
+            throw new IOException("The length of the byte array must be at least 2 bytes long.");
         }
         byte[] uint16Bytes = Arrays.copyOfRange(bytes, index, index + 2);
         return LittleEndianBitConverter.ToUInt16(uint16Bytes, 0);
@@ -75,8 +72,7 @@ public class BitConverter {
 
     public static int toInt32(byte[] bytes, int index) throws IOException {
         if (bytes.length < 4) {
-            throw new IOException(
-                    "The length of the byte array must be at least 4 bytes long.");
+            throw new IOException("The length of the byte array must be at least 4 bytes long.");
         }
         byte[] int32Bytes = Arrays.copyOfRange(bytes, index, index + 4);
         return LittleEndianBitConverter.toInt32(int32Bytes, 0);
@@ -89,8 +85,7 @@ public class BitConverter {
 
     public static long toInt64(byte[] bytes, int index) throws IOException {
         if (bytes.length != 8) {
-            throw new IOException(
-                    "The length of the byte array must be at least 8 bytes long.");
+            throw new IOException("The length of the byte array must be at least 8 bytes long.");
         }
         byte[] uint64Bytes = Arrays.copyOfRange(bytes, index, index + 8);
         return LittleEndianBitConverter.toUInt64(uint64Bytes, 0);
@@ -98,8 +93,7 @@ public class BitConverter {
 
     public static float toSingle(byte[] bytes, int index) throws IOException {
         if (bytes.length != 4) {
-            throw new IOException(
-                    "The length of the byte array must be at least 4 bytes long.");
+            throw new IOException("The length of the byte array must be at least 4 bytes long.");
         }
         return Float.intBitsToFloat(toInt32(bytes, index));
     }
@@ -113,24 +107,21 @@ public class BitConverter {
 
     public boolean toBoolean(byte[] bytes, int index) throws IOException {
         if (bytes.length != 1) {
-            throw new IOException(
-                    "The length of the byte array must be at least 1 byte long.");
+            throw new IOException("The length of the byte array must be at least 1 byte long.");
         }
         return bytes[index] != 0;
     }
 
     public char toChar(byte[] bytes, int index) throws IOException {
         if (bytes.length != 2) {
-            throw new IOException(
-                    "The length of the byte array must be at least 2 bytes long.");
+            throw new IOException("The length of the byte array must be at least 2 bytes long.");
         }
         return (char) ((0xff & bytes[index]) << 8 | (0xff & bytes[index + 1]) << 0);
     }
 
     public double toDouble(byte[] bytes, int index) throws IOException {
         if (bytes.length < 8) {
-            throw new IOException(
-                    "The length of the byte array must be at least 8 bytes long.");
+            throw new IOException("The length of the byte array must be at least 8 bytes long.");
         }
         return Double.longBitsToDouble(toInt64(bytes, index));
     }

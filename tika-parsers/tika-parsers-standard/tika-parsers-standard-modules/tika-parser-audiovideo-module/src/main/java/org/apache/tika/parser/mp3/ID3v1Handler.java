@@ -23,10 +23,9 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.tika.exception.TikaException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
-import org.apache.tika.exception.TikaException;
 
 /**
  * This is used to parse ID3 Version 1 Tag information from an MP3 file,
@@ -44,8 +43,7 @@ public class ID3v1Handler implements ID3Tags {
     private String genre;
     private String trackNumber;
 
-    public ID3v1Handler(InputStream stream, ContentHandler handler)
-            throws IOException, SAXException, TikaException {
+    public ID3v1Handler(InputStream stream, ContentHandler handler) throws IOException, SAXException, TikaException {
         this(LyricsHandler.getSuffix(stream, 128));
     }
 

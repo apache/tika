@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.digest;
 
 import java.io.File;
@@ -59,7 +58,7 @@ public class InputStreamDigester implements DigestingParser.Digester {
      *                         string
      */
     public InputStreamDigester(int markLimit, String algorithm, String algorithmKeyName,
-                               DigestingParser.Encoder encoder) {
+            DigestingParser.Encoder encoder) {
         this.algorithm = algorithm;
         this.algorithmKeyName = algorithmKeyName;
         this.encoder = encoder;
@@ -125,8 +124,7 @@ public class InputStreamDigester implements DigestingParser.Digester {
      * @throws IOException on IO problem or IllegalArgumentException if algorithm couldn't be found
      */
     @Override
-    public void digest(InputStream is, Metadata metadata, ParseContext parseContext)
-            throws IOException {
+    public void digest(InputStream is, Metadata metadata, ParseContext parseContext) throws IOException {
         TikaInputStream tis = TikaInputStream.cast(is);
         if (tis != null && tis.hasFile()) {
             long sz = -1;
@@ -141,7 +139,6 @@ public class InputStreamDigester implements DigestingParser.Digester {
                 return;
             }
         }
-
 
         //try the usual mark/reset stuff.
         //however, if you actually hit the bound,
@@ -174,8 +171,8 @@ public class InputStreamDigester implements DigestingParser.Digester {
     }
 
     private String getMetadataKey() {
-        return TikaCoreProperties.TIKA_META_PREFIX + "digest" +
-                TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + algorithmKeyName;
+        return TikaCoreProperties.TIKA_META_PREFIX + "digest" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER
+                + algorithmKeyName;
     }
 
     private void digestFile(File f, long sz, Metadata m) throws IOException {

@@ -26,14 +26,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class OpenDocumentContentParserTest extends TikaTest {
 
@@ -42,8 +41,8 @@ public class OpenDocumentContentParserTest extends TikaTest {
         Parser p = new OpenDocumentContentParser();
         Metadata metadata = new Metadata();
         XMLResult r = null;
-        try (InputStream is = new GzipCompressorInputStream(getResourceAsStream(
-                "/test-documents/testODTBodyListOpenClose.xml.gz"))) {
+        try (InputStream is = new GzipCompressorInputStream(
+                getResourceAsStream("/test-documents/testODTBodyListOpenClose.xml.gz"))) {
             r = getXML(is, p, metadata);
         }
         String xml = r.xml;
@@ -54,8 +53,7 @@ public class OpenDocumentContentParserTest extends TikaTest {
             sb.append(m.group(1)).append(" ");
         }
         String tags = sb.toString();
-        assertContains("</p> <ol> <li> <p> </p> <ul> <li> <p> </p> </li> <li> <p> </p> </li> " +
-                        "</ul> </li> </ol>",
+        assertContains("</p> <ol> <li> <p> </p> <ul> <li> <p> </p> </li> <li> <p> </p> </li> " + "</ul> </li> </ol>",
                 tags);
         assertContains("Exercice", xml);
 
@@ -66,7 +64,7 @@ public class OpenDocumentContentParserTest extends TikaTest {
         assertFalse(m.find());
 
         //just make sure this doesn't throw any exceptions
-        XMLReaderUtils.parseSAX(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)),
-                new DefaultHandler(), new ParseContext());
+        XMLReaderUtils.parseSAX(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)), new DefaultHandler(),
+                new ParseContext());
     }
 }

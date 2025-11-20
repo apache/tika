@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.ooxml.xslf;
 
 import java.io.Closeable;
@@ -26,14 +25,12 @@ import org.apache.poi.ooxml.POIXMLProperties;
 import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
-import org.apache.xmlbeans.XmlException;
-
 import org.apache.tika.parser.microsoft.ooxml.OOXMLWordAndPowerPointTextHandler;
 import org.apache.tika.parser.microsoft.ooxml.ParagraphProperties;
 import org.apache.tika.parser.microsoft.ooxml.RunProperties;
+import org.apache.xmlbeans.XmlException;
 
 public class XSLFEventBasedPowerPointExtractor implements POIXMLTextExtractor {
-
 
     private OPCPackage container;
     private POIXMLProperties properties;
@@ -65,7 +62,6 @@ public class XSLFEventBasedPowerPointExtractor implements POIXMLTextExtractor {
         return null;
     }
 
-
     @Override
     public String getText() {
         //TODO
@@ -92,8 +88,7 @@ public class XSLFEventBasedPowerPointExtractor implements POIXMLTextExtractor {
         getPackage().revert();
     }
 
-    private static class XSLFToTextContentHandler
-            implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
+    private static class XSLFToTextContentHandler implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
         private final StringBuilder buffer;
 
         public XSLFToTextContentHandler(StringBuilder buffer) {
@@ -166,8 +161,7 @@ public class XSLFEventBasedPowerPointExtractor implements POIXMLTextExtractor {
         }
 
         @Override
-        public void startEditedSection(String editor, Date date,
-                                       OOXMLWordAndPowerPointTextHandler.EditType editType) {
+        public void startEditedSection(String editor, Date date, OOXMLWordAndPowerPointTextHandler.EditType editType) {
 
         }
 
@@ -195,7 +189,6 @@ public class XSLFEventBasedPowerPointExtractor implements POIXMLTextExtractor {
         public boolean isIncludeMoveFromText() {
             return false;
         }
-
 
         @Override
         public void embeddedOLERef(String refId) {

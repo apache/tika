@@ -14,16 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.exception.TikaException;
@@ -35,7 +30,9 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.utils.XMLReaderUtils;
-
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 public class Word2006MLParserTest extends MultiThreadedTikaTest {
 
@@ -66,7 +63,6 @@ public class Word2006MLParserTest extends MultiThreadedTikaTest {
         assertEquals("12", m.get(Office.LINE_COUNT));
         assertEquals("16.0000", m.get(OfficeOpenXMLExtended.APP_VERSION));
 
-
         String content = m.get(TikaCoreProperties.TIKA_CONTENT);
 
         assertContainsCount("This is the Author", content, 1);
@@ -77,15 +73,14 @@ public class Word2006MLParserTest extends MultiThreadedTikaTest {
 
         assertContains("<p>\t<a href=\"#_Toc467647605\">Heading1\t3</a></p>", content);
 
-
         //TODO: integrate numbering
         assertContains("Really basic 2.", content);
 
         assertContainsCount("This is a text box", content, 1);
 
-//        assertContains("<p>This is a hyperlink: <a href=\"http://tika.apache.org\">tika</a></p>", content);
+        //        assertContains("<p>This is a hyperlink: <a href=\"http://tika.apache.org\">tika</a></p>", content);
 
-//        assertContains("<p>This is a link to a local file: <a href=\"file:///C:\\data\\test.png\">test.png</a></p>", content);
+        //        assertContains("<p>This is a link to a local file: <a href=\"file:///C:\\data\\test.png\">test.png</a></p>", content);
 
         assertContains("<p>This is          10 spaces</p>", content);
 
@@ -125,11 +120,10 @@ public class Word2006MLParserTest extends MultiThreadedTikaTest {
         assertContains("Click or tap to enter a date", content);
 
         //basic formatting
-        assertContains("<p>The <i>quick</i> brown <b>fox </b>j<i>um</i><b><i>ped</i></b> over",
-                content);
+        assertContains("<p>The <i>quick</i> brown <b>fox </b>j<i>um</i><b><i>ped</i></b> over", content);
 
         //TODO: add chart parsing
-//        assertContains("This is the chart", content);
+        //        assertContains("This is the chart", content);
 
         assertContains("This is a comment", content);
 

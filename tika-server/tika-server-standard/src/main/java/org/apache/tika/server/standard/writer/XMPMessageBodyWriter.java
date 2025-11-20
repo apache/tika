@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.standard.writer;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -26,16 +25,16 @@ import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.server.core.writer.TikaServerWriter;
+import org.apache.tika.xmp.XMPMetadata;
+
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.ext.Provider;
-
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.server.core.writer.TikaServerWriter;
-import org.apache.tika.xmp.XMPMetadata;
 
 @Provider
 @Produces("application/rdf+xml")
@@ -52,8 +51,9 @@ public class XMPMessageBodyWriter implements TikaServerWriter<Metadata> {
     }
 
     @Override
-    public void writeTo(Metadata metadata, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders,
-                        OutputStream entityStream) throws IOException, WebApplicationException {
+    public void writeTo(Metadata metadata, Class<?> type, Type genericType, Annotation[] annotations,
+            MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
+            throws IOException, WebApplicationException {
         try {
             Writer writer = new OutputStreamWriter(entityStream, UTF_8);
             XMPMetadata xmp = new XMPMetadata(metadata);

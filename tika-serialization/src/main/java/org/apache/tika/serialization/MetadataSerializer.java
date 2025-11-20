@@ -20,12 +20,12 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
-
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 
 public class MetadataSerializer extends JsonSerializer<Metadata> {
     private static final String TIKA_CONTENT_KEY = TikaCoreProperties.TIKA_CONTENT.getName();
@@ -54,7 +54,8 @@ public class MetadataSerializer extends JsonSerializer<Metadata> {
         this.prettyPrint = prettyPrint;
     }
     @Override
-    public void serialize(Metadata metadata, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+    public void serialize(Metadata metadata, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
+            throws IOException {
         jsonGenerator.writeStartObject();
         String[] names = metadata.names();
         if (prettyPrint) {

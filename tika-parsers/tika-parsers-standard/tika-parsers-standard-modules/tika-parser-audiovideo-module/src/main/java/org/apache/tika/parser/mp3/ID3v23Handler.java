@@ -20,11 +20,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.mp3.ID3v2Frame.RawTag;
 import org.apache.tika.parser.mp3.ID3v2Frame.RawTagIterator;
+import org.xml.sax.SAXException;
 
 /**
  * This is used to parse ID3 Version 2.3 Tag information from an MP3 file,
@@ -49,38 +48,39 @@ public class ID3v23Handler implements ID3Tags {
         RawTagIterator tags = new RawV23TagIterator(frame);
         while (tags.hasNext()) {
             RawTag tag = tags.next();
-            switch (tag.name) {
-                case "TIT2":
+            switch (tag.name)
+            {
+                case "TIT2" :
                     title = getTagString(tag.data, 0, tag.data.length);
                     break;
-                case "TPE1":
+                case "TPE1" :
                     artist = getTagString(tag.data, 0, tag.data.length);
                     break;
-                case "TPE2":
+                case "TPE2" :
                     albumArtist = getTagString(tag.data, 0, tag.data.length);
                     break;
-                case "TALB":
+                case "TALB" :
                     album = getTagString(tag.data, 0, tag.data.length);
                     break;
-                case "TYER":
+                case "TYER" :
                     year = getTagString(tag.data, 0, tag.data.length);
                     break;
-                case "TCOM":
+                case "TCOM" :
                     composer = getTagString(tag.data, 0, tag.data.length);
                     break;
-                case "COMM":
+                case "COMM" :
                     comments.add(getComment(tag.data, 0, tag.data.length));
                     break;
-                case "TRCK":
+                case "TRCK" :
                     trackNumber = getTagString(tag.data, 0, tag.data.length);
                     break;
-                case "TPOS":
+                case "TPOS" :
                     disc = getTagString(tag.data, 0, tag.data.length);
                     break;
-                case "TCMP":
+                case "TCMP" :
                     compilation = getTagString(tag.data, 0, tag.data.length);
                     break;
-                case "TCON":
+                case "TCON" :
                     genre = ID3v22Handler.extractGenre(getTagString(tag.data, 0, tag.data.length));
                     break;
             }

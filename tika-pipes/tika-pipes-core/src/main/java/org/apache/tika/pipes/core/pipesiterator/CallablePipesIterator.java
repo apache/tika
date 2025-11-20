@@ -49,8 +49,7 @@ public class CallablePipesIterator implements Callable<Long> {
      * @param pipesIterator
      * @param queue
      */
-    public CallablePipesIterator(PipesIterator pipesIterator,
-                                 ArrayBlockingQueue<FetchEmitTuple> queue) {
+    public CallablePipesIterator(PipesIterator pipesIterator, ArrayBlockingQueue<FetchEmitTuple> queue) {
         this(pipesIterator, queue, -1);
     }
 
@@ -63,8 +62,8 @@ public class CallablePipesIterator implements Callable<Long> {
      * @param timeoutMillis how long to try to offer the fetch emit tuples to the queue. If -1,
      *                      this will block with {@link ArrayBlockingQueue#put(Object)} forever.
     */
-    public CallablePipesIterator(PipesIterator pipesIterator,
-                                 ArrayBlockingQueue<FetchEmitTuple> queue, long timeoutMillis) {
+    public CallablePipesIterator(PipesIterator pipesIterator, ArrayBlockingQueue<FetchEmitTuple> queue,
+            long timeoutMillis) {
         this(pipesIterator, queue, timeoutMillis, 1);
     }
 
@@ -79,9 +78,8 @@ public class CallablePipesIterator implements Callable<Long> {
      *                     find it, then this should be set to 1, otherwise, for a single semaphore
      *                     for each consumer, set this to the number of consumers
      */
-    public CallablePipesIterator(PipesIterator pipesIterator,
-                                 ArrayBlockingQueue<FetchEmitTuple> queue, long timeoutMillis,
-                                 int numConsumers) {
+    public CallablePipesIterator(PipesIterator pipesIterator, ArrayBlockingQueue<FetchEmitTuple> queue,
+            long timeoutMillis, int numConsumers) {
         this.pipesIterator = pipesIterator;
         this.queue = queue;
         this.timeoutMillis = timeoutMillis;
@@ -93,17 +91,15 @@ public class CallablePipesIterator implements Callable<Long> {
         if (timeoutMillis > 0) {
             for (FetchEmitTuple t : pipesIterator) {
                 boolean offered = queue.offer(t, timeoutMillis, TimeUnit.MILLISECONDS);
-                if (! offered) {
+                if (!offered) {
                     throw new TimeoutException("timed out trying to offer tuple");
                 }
                 enqueued.incrementAndGet();
             }
             for (int i = 0; i < numConsumers; i++) {
-                boolean offered = queue.offer(PipesIterator.COMPLETED_SEMAPHORE, timeoutMillis,
-                        TimeUnit.MILLISECONDS);
+                boolean offered = queue.offer(PipesIterator.COMPLETED_SEMAPHORE, timeoutMillis, TimeUnit.MILLISECONDS);
                 if (!offered) {
-                    throw new TimeoutException("timed out trying to offer the completed " +
-                            "semaphore");
+                    throw new TimeoutException("timed out trying to offer the completed " + "semaphore");
                 }
             }
         } else {

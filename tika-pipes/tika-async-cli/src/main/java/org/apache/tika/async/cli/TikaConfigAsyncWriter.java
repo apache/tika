@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
@@ -31,6 +32,10 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.utils.StringUtils;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -39,13 +44,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.utils.StringUtils;
-import org.apache.tika.utils.XMLReaderUtils;
-
 class TikaConfigAsyncWriter {
-
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaAsyncCLI.class);
 
@@ -66,15 +65,16 @@ class TikaConfigAsyncWriter {
         }
     }
 
-    void _write(Path output) throws ParserConfigurationException, TransformerException, IOException, TikaException, SAXException {
+    void _write(Path output)
+            throws ParserConfigurationException, TransformerException, IOException, TikaException, SAXException {
         Document document = null;
         Element properties = null;
         if (simpleAsyncConfig.getTikaConfig() != null) {
             document = XMLReaderUtils.buildDOM(Paths.get(simpleAsyncConfig.getTikaConfig()));
             properties = document.getDocumentElement();
-            if (! "properties".equals(properties.getLocalName())) {
-                throw new TikaConfigException("Document element must be '<properties>' in " +
-                        simpleAsyncConfig.getTikaConfig());
+            if (!"properties".equals(properties.getLocalName())) {
+                throw new TikaConfigException(
+                        "Document element must be '<properties>' in " + simpleAsyncConfig.getTikaConfig());
             }
         } else {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -95,8 +95,7 @@ class TikaConfigAsyncWriter {
         writeFetchers(document, properties, baseInput);
         writeEmitters(document, properties, baseOutput);
         writeAsync(document, properties, output);
-        Transformer transformer = TransformerFactory
-                .newInstance().newTransformer();
+        Transformer transformer = TransformerFactory.newInstance().newTransformer();
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
         transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
         try (Writer writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8)) {
@@ -113,7 +112,7 @@ class TikaConfigAsyncWriter {
             LOG.info("pipesIterator already exists in tika-config. Not overwriting with commandline");
             return;
         }
-        if (! StringUtils.isBlank(simpleAsyncConfig.getFileList())) {
+        if (!StringUtils.isBlank(simpleAsyncConfig.getFileList())) {
             writeFileListIterator(document, properties, baseInput);
         } else {
             writeFileSystemIterator(document, properties, baseInput);
@@ -121,20 +120,19 @@ class TikaConfigAsyncWriter {
     }
 
     private void writeFileSystemIterator(Document document, Element properties, Path baseInput) {
-        Element pipesIterator = createAndGetElement(document, properties, "pipesIterator",
-                "class", "org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator");
+        Element pipesIterator = createAndGetElement(document, properties, "pipesIterator", "class",
+                "org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator");
         appendTextElement(document, pipesIterator, "basePath", baseInput.toAbsolutePath().toString());
         appendTextElement(document, pipesIterator, "fetcherName", FETCHER_NAME);
         appendTextElement(document, pipesIterator, "emitterName", EMITTER_NAME);
     }
 
     private void writeFileListIterator(Document document, Element properties, Path baseInput) {
-        Element pipesIterator = createAndGetElement(document, properties, "pipesIterator",
-                "class", "org.apache.tika.pipes.pipesiterator.filelist.FileListPipesIterator");
+        Element pipesIterator = createAndGetElement(document, properties, "pipesIterator", "class",
+                "org.apache.tika.pipes.pipesiterator.filelist.FileListPipesIterator");
         appendTextElement(document, pipesIterator, "fetcherName", FETCHER_NAME);
         appendTextElement(document, pipesIterator, "emitterName", EMITTER_NAME);
-        appendTextElement(document, pipesIterator, "fileList",
-                baseInput.toAbsolutePath().toString());
+        appendTextElement(document, pipesIterator, "fileList", baseInput.toAbsolutePath().toString());
         appendTextElement(document, pipesIterator, "hasHeader", "false");
     }
 
@@ -146,8 +144,8 @@ class TikaConfigAsyncWriter {
         }
 
         emitters = createAndGetElement(document, properties, "emitters");
-        Element emitter = createAndGetElement( document, emitters, "emitter",
-                "class", "org.apache.tika.pipes.emitter.fs.FileSystemEmitter");
+        Element emitter = createAndGetElement(document, emitters, "emitter", "class",
+                "org.apache.tika.pipes.emitter.fs.FileSystemEmitter");
         appendTextElement(document, emitter, "name", EMITTER_NAME);
         appendTextElement(document, emitter, "basePath", baseOutput.toAbsolutePath().toString());
     }
@@ -160,8 +158,8 @@ class TikaConfigAsyncWriter {
         }
 
         fetchers = createAndGetElement(document, properties, "fetchers");
-        Element fetcher = createAndGetElement(document, fetchers, "fetcher",
-                "class", "org.apache.tika.pipes.fetcher.fs.FileSystemFetcher");
+        Element fetcher = createAndGetElement(document, fetchers, "fetcher", "class",
+                "org.apache.tika.pipes.fetcher.fs.FileSystemFetcher");
         appendTextElement(document, fetcher, "name", FETCHER_NAME);
         if (!StringUtils.isBlank(simpleAsyncConfig.getInputDir())) {
             appendTextElement(document, fetcher, "basePath", baseInput.toAbsolutePath().toString());
@@ -199,7 +197,8 @@ class TikaConfigAsyncWriter {
         appendTextElement(document, async, "maxForEmitBatchBytes", "0");
     }
 
-    private static  void appendTextElement(Document document, Element parent, String itemName, String text, String... attrs) {
+    private static void appendTextElement(Document document, Element parent, String itemName, String text,
+            String... attrs) {
         Element el = createAndGetElement(document, parent, itemName, attrs);
         el.setTextContent(text);
     }
@@ -218,7 +217,7 @@ class TikaConfigAsyncWriter {
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node child = nodeList.item(i);
             if (childElementName.equals(child.getLocalName())) {
-                return (Element)child;
+                return (Element) child;
             }
         }
         return null;

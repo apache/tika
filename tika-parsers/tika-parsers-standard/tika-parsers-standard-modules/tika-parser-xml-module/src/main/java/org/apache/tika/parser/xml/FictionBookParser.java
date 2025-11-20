@@ -21,11 +21,6 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.commons.codec.binary.Base64;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -33,12 +28,16 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class FictionBookParser extends XMLParser {
     private static final long serialVersionUID = 4195954546491524374L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.application("x-fictionbook+xml"));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections
+            .singleton(MediaType.application("x-fictionbook+xml"));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -46,10 +45,8 @@ public class FictionBookParser extends XMLParser {
     }
 
     @Override
-    protected ContentHandler getContentHandler(ContentHandler handler, Metadata metadata,
-                                               ParseContext context) {
-        return new BinaryElementsDataHandler(
-                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context), handler);
+    protected ContentHandler getContentHandler(ContentHandler handler, Metadata metadata, ParseContext context) {
+        return new BinaryElementsDataHandler(EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context), handler);
     }
 
     private static class BinaryElementsDataHandler extends DefaultHandler {
@@ -62,8 +59,7 @@ public class FictionBookParser extends XMLParser {
         private boolean binaryMode = false;
         private Metadata metadata;
 
-        private BinaryElementsDataHandler(EmbeddedDocumentExtractor partExtractor,
-                                          ContentHandler handler) {
+        private BinaryElementsDataHandler(EmbeddedDocumentExtractor partExtractor, ContentHandler handler) {
             this.partExtractor = partExtractor;
             this.handler = handler;
         }
@@ -76,8 +72,7 @@ public class FictionBookParser extends XMLParser {
                 binaryData.setLength(0);
                 metadata = new Metadata();
 
-                metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
-                        attributes.getValue(ATTRIBUTE_ID));
+                metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, attributes.getValue(ATTRIBUTE_ID));
                 metadata.set(Metadata.CONTENT_TYPE, attributes.getValue(ATTRIBUTE_CONTENT_TYPE));
             }
         }
@@ -86,8 +81,7 @@ public class FictionBookParser extends XMLParser {
         public void endElement(String uri, String localName, String qName) throws SAXException {
             if (binaryMode) {
                 try (TikaInputStream tis = TikaInputStream.get(Base64.decodeBase64(binaryData.toString()))) {
-                    partExtractor.parseEmbedded(
-                            tis, handler, metadata, true);
+                    partExtractor.parseEmbedded(tis, handler, metadata, true);
                 } catch (IOException e) {
                     throw new SAXException("IOException in parseEmbedded", e);
                 }

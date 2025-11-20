@@ -24,9 +24,6 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -36,6 +33,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Abstract class that handles iterating through tables within a database.
@@ -52,8 +51,8 @@ public abstract class AbstractDBParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         connection = getConnection(stream, metadata, context);
         XHTMLContentHandler xHandler = null;
         List<String> tableNames = null;
@@ -66,9 +65,8 @@ public abstract class AbstractDBParser implements Parser {
             } catch (SQLException sqlE) {
                 //swallow
             }
-            if (e.getClass().toString().contains("SQLiteException") && e.getMessage() != null &&
-                    (e.getMessage().contains("[SQLITE_ERROR]") ||
-                            e.getMessage().contains("[SQLITE_CORRUPT]"))) {
+            if (e.getClass().toString().contains("SQLiteException") && e.getMessage() != null
+                    && (e.getMessage().contains("[SQLITE_ERROR]") || e.getMessage().contains("[SQLITE_CORRUPT]"))) {
                 throw new CorruptedFileException("Corrupt SQLITE", e);
             }
 
@@ -86,8 +84,7 @@ public abstract class AbstractDBParser implements Parser {
 
         try {
             for (String tableName : tableNames) {
-                JDBCTableReader tableReader =
-                        getTableReader(connection, tableName, embeddedDocumentUtil);
+                JDBCTableReader tableReader = getTableReader(connection, tableName, embeddedDocumentUtil);
                 xHandler.startElement("table", "name", tableReader.getTableName());
                 xHandler.startElement("thead");
                 xHandler.startElement("tr");
@@ -179,8 +176,8 @@ public abstract class AbstractDBParser implements Parser {
      * @return connection string to be used by {@link #getConnection}.
      * @throws java.io.IOException
      */
-    abstract protected String getConnectionString(InputStream stream, Metadata metadata,
-                                                  ParseContext parseContext) throws IOException;
+    abstract protected String getConnectionString(InputStream stream, Metadata metadata, ParseContext parseContext)
+            throws IOException;
 
     /**
      * JDBC class name, e.g. org.sqlite.JDBC
@@ -198,8 +195,8 @@ public abstract class AbstractDBParser implements Parser {
      * @return
      * @throws java.sql.SQLException
      */
-    abstract protected List<String> getTableNames(Connection connection, Metadata metadata,
-                                                  ParseContext context) throws SQLException;
+    abstract protected List<String> getTableNames(Connection connection, Metadata metadata, ParseContext context)
+            throws SQLException;
 
     /**
      * Given a connection and a table name, return the JDBCTableReader for this db.
@@ -211,7 +208,7 @@ public abstract class AbstractDBParser implements Parser {
      */
     @Deprecated
     abstract protected JDBCTableReader getTableReader(Connection connection, String tableName,
-                                                      ParseContext parseContext);
+            ParseContext parseContext);
 
     /**
      * Given a connection and a table name, return the JDBCTableReader for this db.
@@ -222,6 +219,6 @@ public abstract class AbstractDBParser implements Parser {
      * @return
      */
     abstract protected JDBCTableReader getTableReader(Connection connection, String tableName,
-                                                      EmbeddedDocumentUtil embeddedDocumentUtil);
+            EmbeddedDocumentUtil embeddedDocumentUtil);
 
 }

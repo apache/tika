@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.ner.opennlp;
 
 import java.util.ArrayList;
@@ -26,7 +25,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.tika.parser.ner.NERecogniser;
-
 
 /**
  * This implementation of {@link NERecogniser} chains an array of
@@ -66,8 +64,7 @@ import org.apache.tika.parser.ner.NERecogniser;
  */
 public class OpenNLPNERecogniser implements NERecogniser {
 
-    public static final String MODELS_DIR =
-            OpenNLPNERecogniser.class.getPackage().getName().replace(".", "/");
+    public static final String MODELS_DIR = OpenNLPNERecogniser.class.getPackage().getName().replace(".", "/");
     public static final String PERSON_FILE = "ner-person.bin";
     public static final String LOCATION_FILE = "ner-location.bin";
     public static final String ORGANIZATION_FILE = "ner-organization.bin";
@@ -75,7 +72,6 @@ public class OpenNLPNERecogniser implements NERecogniser {
     public static final String DATE_FILE = "ner-date.bin";
     public static final String PERCENT_FILE = "ner-percentage.bin";
     public static final String MONEY_FILE = "ner-money.bin";
-
 
     //Default (English) Models for the common 7 classes of named types
     public static final String NER_PERSON_MODEL = MODELS_DIR + "/" + PERSON_FILE;
@@ -96,7 +92,7 @@ public class OpenNLPNERecogniser implements NERecogniser {
             put(PERCENT, NER_PERCENT_MODEL);
             put(MONEY, NER_MONEY_MODEL);
         }
-        };
+    };
 
     private Set<String> entityTypes;
     private List<OpenNLPNameFinder> nameFinders;

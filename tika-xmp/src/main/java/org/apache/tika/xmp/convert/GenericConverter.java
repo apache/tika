@@ -20,12 +20,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.adobe.internal.xmp.XMPException;
-import com.adobe.internal.xmp.XMPMeta;
-import com.adobe.internal.xmp.XMPMetaFactory;
-import com.adobe.internal.xmp.XMPSchemaRegistry;
-import com.adobe.internal.xmp.options.PropertyOptions;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
@@ -33,6 +27,12 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.Property.PropertyType;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPRights;
+
+import com.adobe.internal.xmp.XMPException;
+import com.adobe.internal.xmp.XMPMeta;
+import com.adobe.internal.xmp.XMPMetaFactory;
+import com.adobe.internal.xmp.XMPSchemaRegistry;
+import com.adobe.internal.xmp.options.PropertyOptions;
 
 /**
  * Trys to convert as much of the properties in the <code>Metadata</code> map to XMP namespaces.
@@ -58,30 +58,27 @@ public class GenericConverter extends AbstractConverter {
 
                 if (uri != null) {
                     // Tika properties where the type differs from the XMP specification
-                    if (key.equals(DublinCore.TITLE.getName()) ||
-                            key.equals(DublinCore.DESCRIPTION.getName()) ||
-                            key.equals(XMPRights.USAGE_TERMS.getName())) {
+                    if (key.equals(DublinCore.TITLE.getName()) || key.equals(DublinCore.DESCRIPTION.getName())
+                            || key.equals(XMPRights.USAGE_TERMS.getName())) {
                         createLangAltProperty(key, uri, keyParts[1]);
                     } else if (key.equals(DublinCore.CREATOR.getName())) {
                         createArrayProperty(key, uri, keyParts[1], PropertyOptions.ARRAY_ORDERED);
                     } else {
                         PropertyType type = Property.getPropertyType(key);
                         if (type != null) {
-                            switch (type) {
-                                case SIMPLE:
+                            switch (type)
+                            {
+                                case SIMPLE :
                                     createProperty(key, uri, keyParts[1]);
                                     break;
-                                case BAG:
-                                    createArrayProperty(key, uri, keyParts[1],
-                                            PropertyOptions.ARRAY);
+                                case BAG :
+                                    createArrayProperty(key, uri, keyParts[1], PropertyOptions.ARRAY);
                                     break;
-                                case SEQ:
-                                    createArrayProperty(key, uri, keyParts[1],
-                                            PropertyOptions.ARRAY_ORDERED);
+                                case SEQ :
+                                    createArrayProperty(key, uri, keyParts[1], PropertyOptions.ARRAY_ORDERED);
                                     break;
-                                case ALT:
-                                    createArrayProperty(key, uri, keyParts[1],
-                                            PropertyOptions.ARRAY_ALTERNATE);
+                                case ALT :
+                                    createArrayProperty(key, uri, keyParts[1], PropertyOptions.ARRAY_ALTERNATE);
                                     break;
                                 // TODO Add support for structs and lang-alts, but those types are
                                 // currently not used in Tika

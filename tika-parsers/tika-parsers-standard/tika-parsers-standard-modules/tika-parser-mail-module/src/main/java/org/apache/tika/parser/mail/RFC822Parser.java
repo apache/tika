@@ -25,9 +25,6 @@ import org.apache.james.mime4j.MimeException;
 import org.apache.james.mime4j.message.DefaultBodyDescriptorBuilder;
 import org.apache.james.mime4j.parser.MimeStreamParser;
 import org.apache.james.mime4j.stream.MimeConfig;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
@@ -39,6 +36,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Uses apache-mime4j to parse emails. Each part is treated with the
@@ -55,8 +54,7 @@ public class RFC822Parser implements Parser {
      */
     private static final long serialVersionUID = -5504243905998074168L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.parse("message/rfc822"));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.parse("message/rfc822"));
 
     //rely on the detector to be thread-safe
     //built lazily and then reused
@@ -69,11 +67,10 @@ public class RFC822Parser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         // Get the mime4j configuration, or use a default one
-        MimeConfig config =
-                new MimeConfig.Builder().setMaxLineLen(100000).setMaxHeaderLen(100000).build();
+        MimeConfig config = new MimeConfig.Builder().setMaxLineLen(100000).setMaxHeaderLen(100000).build();
 
         config = context.get(MimeConfig.class, config);
         Detector localDetector = context.get(Detector.class);
@@ -85,8 +82,7 @@ public class RFC822Parser implements Parser {
             }
             localDetector = detector;
         }
-        MimeStreamParser parser =
-                new MimeStreamParser(config, null, new DefaultBodyDescriptorBuilder());
+        MimeStreamParser parser = new MimeStreamParser(config, null, new DefaultBodyDescriptorBuilder());
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
 
         MailContentHandler mch = new MailContentHandler(xhtml, localDetector, metadata, context,

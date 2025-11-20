@@ -16,13 +16,12 @@
  */
 package org.apache.tika.sax;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
-
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
 
 /**
  * Content handler decorator that simplifies the task of producing XMP output.

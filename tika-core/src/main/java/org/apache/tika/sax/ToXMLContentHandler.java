@@ -49,8 +49,7 @@ public class ToXMLContentHandler extends ToTextContentHandler {
      * @param encoding output encoding
      * @throws UnsupportedEncodingException if the encoding is unsupported
      */
-    public ToXMLContentHandler(OutputStream stream, String encoding)
-            throws UnsupportedEncodingException {
+    public ToXMLContentHandler(OutputStream stream, String encoding) throws UnsupportedEncodingException {
         super(stream, encoding);
         this.encoding = encoding;
     }
@@ -92,8 +91,7 @@ public class ToXMLContentHandler extends ToTextContentHandler {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes atts)
-            throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
         lazyCloseStartElement();
 
         currentElement = new ElementInfo(currentElement, namespaces);
@@ -192,8 +190,7 @@ public class ToXMLContentHandler extends ToTextContentHandler {
      * after the characters plus one entity
      * @throws SAXException if the characters could not be written
      */
-    private int writeCharsAndEntity(char[] ch, int from, int to, String entity)
-            throws SAXException {
+    private int writeCharsAndEntity(char[] ch, int from, int to, String entity) throws SAXException {
         super.characters(ch, from, to - from);
         write('&');
         write(entity);

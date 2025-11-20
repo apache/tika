@@ -19,14 +19,12 @@ package org.apache.tika.parser.tmx;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
-
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.XHTMLContentHandler;
-
 
 /**
  * Content Handler for Translation Memory eXchange (TMX) files.
@@ -52,8 +50,7 @@ public class TMXContentHandler extends DefaultHandler {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes attributes)
-            throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
 
         final AttributesImpl attributeVals = new AttributesImpl();
         attributeVals.setAttributes(attributes);
@@ -160,4 +157,3 @@ public class TMXContentHandler extends DefaultHandler {
     }
 
 }
-

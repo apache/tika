@@ -14,22 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft;
-
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Set;
-
-import com.healthmarketscience.jackcess.Database;
-import com.healthmarketscience.jackcess.DatabaseBuilder;
-import com.healthmarketscience.jackcess.crypt.CryptCodecProvider;
-import com.healthmarketscience.jackcess.util.LinkResolver;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -43,6 +34,13 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
+import com.healthmarketscience.jackcess.Database;
+import com.healthmarketscience.jackcess.DatabaseBuilder;
+import com.healthmarketscience.jackcess.crypt.CryptCodecProvider;
+import com.healthmarketscience.jackcess.util.LinkResolver;
 
 /**
  * Parser that handles Microsoft Access files via
@@ -53,8 +51,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
  */
 public class JackcessParser implements Parser {
 
-    public static final String SUMMARY_PROPERTY_PREFIX =
-            "MDB_SUMMARY_PROP" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    public static final String SUMMARY_PROPERTY_PREFIX = "MDB_SUMMARY_PROP"
+            + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     private final static LinkResolver IGNORE_LINK_RESOLVER = new IgnoreLinkResolver();
     private static final long serialVersionUID = -752276948656079347L;
     private static final MediaType MEDIA_TYPE = MediaType.application("x-msaccess");
@@ -62,10 +60,8 @@ public class JackcessParser implements Parser {
 
     //TODO: figure out how to get this info
     // public static Property LINKED_DATABASES = Property.externalTextBag("LinkedDatabases");
-    public static String MDB_PROPERTY_PREFIX =
-            "MDB_PROP" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
-    public static String USER_DEFINED_PROPERTY_PREFIX =
-            "MDB_USER_PROP" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    public static String MDB_PROPERTY_PREFIX = "MDB_PROP" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    public static String USER_DEFINED_PROPERTY_PREFIX = "MDB_USER_PROP" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     public static Property MDB_PW = Property.externalText("Password");
     private Locale locale = Locale.ROOT;
 
@@ -75,8 +71,8 @@ public class JackcessParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         TikaInputStream tis = TikaInputStream.get(stream);
         Database db = null;
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
@@ -91,12 +87,11 @@ public class JackcessParser implements Parser {
             if (password == null) {
                 //do this to ensure encryption/wrong password exception vs. more generic
                 //"need right codec" error message.
-                db = new DatabaseBuilder(tis.getFile()).setCodecProvider(new CryptCodecProvider())
-                        .setReadOnly(true).open();
-            } else {
-                db = new DatabaseBuilder(tis.getFile())
-                        .setCodecProvider(new CryptCodecProvider(password)).setReadOnly(true)
+                db = new DatabaseBuilder(tis.getFile()).setCodecProvider(new CryptCodecProvider()).setReadOnly(true)
                         .open();
+            } else {
+                db = new DatabaseBuilder(tis.getFile()).setCodecProvider(new CryptCodecProvider(password))
+                        .setReadOnly(true).open();
             }
             db.setLinkResolver(IGNORE_LINK_RESOLVER);//just in case
             JackcessExtractor ex = new JackcessExtractor(metadata, context, locale);
@@ -104,8 +99,7 @@ public class JackcessParser implements Parser {
         } catch (IOException e) {
             //TIKA-3849
             if (e.getMessage() != null && e.getMessage().contains("Unrecognized map type: 75")) {
-                throw new UnsupportedFormatException(
-                        "Jackcess doesn't process mdb versions before v97");
+                throw new UnsupportedFormatException("Jackcess doesn't process mdb versions before v97");
             }
             throw e;
         } catch (IllegalStateException e) {

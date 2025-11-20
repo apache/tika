@@ -14,11 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.core.resource;
 
 import java.io.IOException;
 import java.io.InputStream;
+
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.server.core.ServerStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.PUT;
@@ -27,15 +35,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.UriInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.server.core.ServerStatus;
 
 @Path("/detect")
 public class DetectorResource {
@@ -62,11 +61,7 @@ public class DetectorResource {
         long taskId = serverStatus.start(ServerStatus.TASK.DETECT, filename, timeoutMillis);
 
         try (TikaInputStream tis = TikaInputStream.get(TikaResource.getInputStream(is, met, httpHeaders, info))) {
-            return TikaResource
-                    .getConfig()
-                    .getDetector()
-                    .detect(tis, met)
-                    .toString();
+            return TikaResource.getConfig().getDetector().detect(tis, met).toString();
         } catch (IOException e) {
             LOG.warn("Unable to detect MIME type for file. Reason: {} ({})", e.getMessage(), filename, e);
             return MediaType.OCTET_STREAM.toString();

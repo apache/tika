@@ -27,13 +27,12 @@ import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * A test Parsers to test {@link Field}
@@ -84,7 +83,6 @@ public class DummyParameterizedParser implements Parser {
     @Field
     private String missing = "default";
 
-
     private final String inner = "inner";
     private File xfile;
 
@@ -113,8 +111,8 @@ public class DummyParameterizedParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         metadata.add("testparam", testParam);
         metadata.add("xshort", xshort + "");

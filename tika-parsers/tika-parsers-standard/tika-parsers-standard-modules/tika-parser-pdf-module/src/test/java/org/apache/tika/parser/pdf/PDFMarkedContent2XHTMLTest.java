@@ -20,14 +20,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class PDFMarkedContent2XHTMLTest extends TikaTest {
 
@@ -65,8 +63,7 @@ public class PDFMarkedContent2XHTMLTest extends TikaTest {
 
     @Test
     public void testChildAttachments() throws Exception {
-        List<Metadata> metadataList =
-                getRecursiveMetadata("testPDF_childAttachments.pdf", MARKUP_CONTEXT);
+        List<Metadata> metadataList = getRecursiveMetadata("testPDF_childAttachments.pdf", MARKUP_CONTEXT);
 
         //make sure that embedded docs are still getting extracted
         assertEquals(3, metadataList.size());

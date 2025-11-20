@@ -23,10 +23,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.pipes.core.CompositePipesReporter;
 import org.apache.tika.pipes.core.PipesReporter;
+import org.junit.jupiter.api.Test;
 
 public class MockReporterTest {
 
@@ -36,7 +35,7 @@ public class MockReporterTest {
         AsyncConfig asyncConfig = AsyncConfig.load(configPath);
         PipesReporter reporter = asyncConfig.getPipesReporter();
         assertTrue(reporter instanceof MockReporter);
-        assertEquals("somethingOrOther", ((MockReporter)reporter).getEndpoint());
+        assertEquals("somethingOrOther", ((MockReporter) reporter).getEndpoint());
     }
 
     @Test
@@ -45,8 +44,8 @@ public class MockReporterTest {
         AsyncConfig asyncConfig = AsyncConfig.load(configPath);
         PipesReporter reporter = asyncConfig.getPipesReporter();
         assertTrue(reporter instanceof CompositePipesReporter);
-        List<PipesReporter> reporters = ((CompositePipesReporter)reporter).getPipesReporters();
-        assertEquals("somethingOrOther1", ((MockReporter)reporters.get(0)).getEndpoint());
-        assertEquals("somethingOrOther2", ((MockReporter)reporters.get(1)).getEndpoint());
+        List<PipesReporter> reporters = ((CompositePipesReporter) reporter).getPipesReporters();
+        assertEquals("somethingOrOther1", ((MockReporter) reporters.get(0)).getEndpoint());
+        assertEquals("somethingOrOther2", ((MockReporter) reporters.get(1)).getEndpoint());
     }
 }

@@ -21,9 +21,6 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -31,6 +28,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.xmp.JempboxExtractor;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class JpegParser extends AbstractImageParser {
 
@@ -39,8 +38,7 @@ public class JpegParser extends AbstractImageParser {
      */
     private static final long serialVersionUID = -1355028253756234603L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.image("jpeg"));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.image("jpeg"));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -48,8 +46,7 @@ public class JpegParser extends AbstractImageParser {
 
     @Override
     void extractMetadata(InputStream stream, ContentHandler contentHandler, Metadata metadata,
-                         ParseContext parseContext)
-            throws IOException, SAXException, TikaException {
+            ParseContext parseContext) throws IOException, SAXException, TikaException {
         TemporaryResources tmp = new TemporaryResources();
         try {
             TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);

@@ -18,11 +18,10 @@ package org.apache.tika.parser.mock;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.Test;
 
 public class MockParserTest extends TikaTest {
 
@@ -35,7 +34,6 @@ public class MockParserTest extends TikaTest {
     @Test
     public void testTimes() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("mock_times.xml");
-        assertContainsCount("hello",
-                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT), 30);
+        assertContainsCount("hello", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT), 30);
     }
 }

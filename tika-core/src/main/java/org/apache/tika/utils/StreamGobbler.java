@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.utils;
 
 import java.io.BufferedReader;
@@ -27,7 +26,6 @@ import java.util.List;
 
 public class StreamGobbler implements Runnable {
 
-
     private final InputStream is;
     private final int maxBufferLength;
     List<String> lines = new ArrayList<>();
@@ -39,12 +37,10 @@ public class StreamGobbler implements Runnable {
         this.maxBufferLength = maxBufferLength;
     }
 
-
     @Override
     public void run() {
 
-        try (BufferedReader r = new BufferedReader(
-                new InputStreamReader(is, StandardCharsets.UTF_8))) {
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             String line = r.readLine();
             while (line != null) {
                 if (maxBufferLength >= 0) {

@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import javax.xml.stream.XMLStreamException;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
@@ -55,9 +56,6 @@ import org.apache.pdfbox.pdmodel.fixup.PDDocumentFixup;
 import org.apache.pdfbox.pdmodel.fixup.processor.AcroFormDefaultsProcessor;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.PDSignature;
 import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -91,6 +89,8 @@ import org.apache.tika.renderer.Renderer;
 import org.apache.tika.renderer.pdf.pdfbox.PDFBoxRenderer;
 import org.apache.tika.renderer.pdf.pdfbox.PDFRenderingState;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * PDF parser.
@@ -140,8 +140,8 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         PDFParserConfig localConfig = defaultConfig;
         PDFParserConfig userConfig = context.get(PDFParserConfig.class);
@@ -175,22 +175,18 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
                 tstream = TikaInputStream.cast(stream);
             }
 
-
             scanXRefOffsets(localConfig, tstream, metadata, context);
 
             password = getPassword(metadata, context);
             MemoryUsageSetting memoryUsageSetting = null;
 
             if (localConfig.getMaxMainMemoryBytes() >= 0) {
-                memoryUsageSetting =
-                        MemoryUsageSetting.setupMixed(localConfig.getMaxMainMemoryBytes());
+                memoryUsageSetting = MemoryUsageSetting.setupMixed(localConfig.getMaxMainMemoryBytes());
             } else {
                 memoryUsageSetting = MemoryUsageSetting.setupMainMemoryOnly();
             }
 
-            pdfDocument = getPDDocument(stream, tstream, password,
-                    memoryUsageSetting.streamCache, metadata, context);
-
+            pdfDocument = getPDDocument(stream, tstream, password, memoryUsageSetting.streamCache, metadata, context);
 
             boolean hasCollection = hasCollection(pdfDocument, metadata);
 
@@ -207,17 +203,12 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
             if (handler != null) {
                 if (shouldHandleXFAOnly(hasXFA, localConfig)) {
                     handleXFAOnly(pdfDocument, handler, metadata, context);
-                } else if (localConfig.getOcrStrategy()
-                        .equals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY)) {
-                    OCR2XHTML.process(pdfDocument, handler, context, metadata,
-                            localConfig);
+                } else if (localConfig.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY)) {
+                    OCR2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
                 } else if (hasMarkedContent && localConfig.isExtractMarkedContent()) {
-                    PDFMarkedContent2XHTML
-                            .process(pdfDocument, handler, context, metadata,
-                                    localConfig);
+                    PDFMarkedContent2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
                 } else {
-                    PDF2XHTML.process(pdfDocument, handler, context, metadata,
-                            localConfig);
+                    PDF2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
                 }
             }
         } catch (InvalidPasswordException e) {
@@ -247,15 +238,14 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         }
     }
 
-    private void checkEncryptedPayload(PDDocument pdfDocument,
-                                       boolean hasCollection, PDFParserConfig localConfig)
+    private void checkEncryptedPayload(PDDocument pdfDocument, boolean hasCollection, PDFParserConfig localConfig)
             throws IOException, EncryptedDocumentException {
-        if (! localConfig.isThrowOnEncryptedPayload()) {
+        if (!localConfig.isThrowOnEncryptedPayload()) {
             return;
         }
         //We require a collection. We could also require that it have View=H(idden)
         //as the spec suggests for Wrapped encrypted files (7.6.7).
-        if (! hasCollection) {
+        if (!hasCollection) {
             return;
         }
         List<COSObject> fileSpecs = pdfDocument.getDocument().getObjectsByType(COSName.FILESPEC);
@@ -269,24 +259,20 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
                     COSBase uf = dict.getDictionaryObject(COSName.UF);
                     COSBase f = dict.getDictionaryObject(COSName.F);
                     if (uf != null && uf instanceof COSString) {
-                        name = ((COSString)uf).getString();
+                        name = ((COSString) uf).getString();
                     } else if (f != null && f instanceof COSString) {
-                        name = ((COSString)f).getString();
+                        name = ((COSString) f).getString();
                     }
-                    throw new EncryptedDocumentException("PDF file contains an encrypted " +
-                                    "payload: '" + name + "'");
+                    throw new EncryptedDocumentException("PDF file contains an encrypted " + "payload: '" + name + "'");
                 }
             }
         }
     }
 
-    private void scanXRefOffsets(PDFParserConfig localConfig,
-                                 TikaInputStream tikaInputStream,
-                                 Metadata metadata,
-                                 ParseContext parseContext) {
+    private void scanXRefOffsets(PDFParserConfig localConfig, TikaInputStream tikaInputStream, Metadata metadata,
+            ParseContext parseContext) {
 
-        if (!localConfig.isParseIncrementalUpdates() &&
-                !localConfig.isExtractIncrementalUpdateInfo()) {
+        if (!localConfig.isParseIncrementalUpdates() && !localConfig.isExtractIncrementalUpdateInfo()) {
             return;
         }
         //do not scan for xrefoffsets if this is an incremental update
@@ -298,8 +284,7 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         List<StartXRefOffset> xRefOffsets = new ArrayList<>();
         //TODO -- can we use the PDFBox parser's RandomAccessRead
         //so that we don't have to reopen from file?
-        try (RandomAccessRead ra =
-                     new RandomAccessReadBufferedFile(tikaInputStream.getFile())) {
+        try (RandomAccessRead ra = new RandomAccessReadBufferedFile(tikaInputStream.getFile())) {
             StartXRefScanner xRefScanner = new StartXRefScanner(ra);
             xRefOffsets.addAll(xRefScanner.scan());
         } catch (IOException e) {
@@ -374,7 +359,8 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
             if (date != null) {
                 metadata.add(TikaCoreProperties.SIGNATURE_DATE, date);
             }
-            PDMetadataExtractor.addNotNull(signature.getContactInfo(), metadata, TikaCoreProperties.SIGNATURE_CONTACT_INFO);
+            PDMetadataExtractor.addNotNull(signature.getContactInfo(), metadata,
+                    TikaCoreProperties.SIGNATURE_CONTACT_INFO);
             PDMetadataExtractor.addNotNull(signature.getFilter(), metadata, TikaCoreProperties.SIGNATURE_FILTER);
             PDMetadataExtractor.addNotNull(signature.getLocation(), metadata, TikaCoreProperties.SIGNATURE_LOCATION);
             PDMetadataExtractor.addNotNull(signature.getReason(), metadata, TikaCoreProperties.SIGNATURE_REASON);
@@ -392,8 +378,7 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
                 || localConfig.getImageStrategy() == PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_AT_PAGE_END) {
             return true;
         }
-        if (localConfig.isExtractIncrementalUpdateInfo() ||
-                localConfig.isParseIncrementalUpdates()) {
+        if (localConfig.isExtractIncrementalUpdateInfo() || localConfig.isParseIncrementalUpdates()) {
             return true;
         }
 
@@ -404,10 +389,8 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return true;
     }
 
-    private void renderPagesBeforeParse(TikaInputStream tstream,
-                                        ContentHandler xhtml, Metadata parentMetadata,
-                                        ParseContext context,
-                                        PDFParserConfig config) {
+    private void renderPagesBeforeParse(TikaInputStream tstream, ContentHandler xhtml, Metadata parentMetadata,
+            ParseContext context, PDFParserConfig config) {
         if (config.getImageStrategy() != PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_BEFORE_PARSE) {
             return;
         }
@@ -421,15 +404,14 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
             return;
         }
         context.get(PDFRenderingState.class).setRenderResults(renderResults);
-        EmbeddedDocumentExtractor embeddedDocumentExtractor =
-                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        EmbeddedDocumentExtractor embeddedDocumentExtractor = EmbeddedDocumentUtil
+                .getEmbeddedDocumentExtractor(context);
 
         for (RenderResult result : renderResults.getResults()) {
             if (result.getStatus() == RenderResult.STATUS.SUCCESS) {
                 if (embeddedDocumentExtractor.shouldParseEmbedded(result.getMetadata())) {
                     try (TikaInputStream tis = result.getInputStream()) {
-                        embeddedDocumentExtractor.parseEmbedded(tis, xhtml, result.getMetadata(),
-                                false);
+                        embeddedDocumentExtractor.parseEmbedded(tis, xhtml, result.getMetadata(), false);
                     } catch (SecurityException e) {
                         throw e;
                     } catch (Exception e) {
@@ -440,38 +422,31 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         }
     }
 
-    private RenderResults renderPDF(TikaInputStream tstream,
-                                    ParseContext parseContext, PDFParserConfig localConfig)
+    private RenderResults renderPDF(TikaInputStream tstream, ParseContext parseContext, PDFParserConfig localConfig)
             throws IOException, TikaException {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.TYPE, MEDIA_TYPE.toString());
-        return localConfig.getRenderer().render(
-                tstream, metadata, parseContext, PageRangeRequest.RENDER_ALL);
+        return localConfig.getRenderer().render(tstream, metadata, parseContext, PageRangeRequest.RENDER_ALL);
     }
 
     protected PDDocument getPDDocument(InputStream stream, TikaInputStream tstream, String password,
-                                       RandomAccessStreamCache.StreamCacheCreateFunction streamCacheCreateFunction,
-                                       Metadata metadata,
-                                       ParseContext context)
-            throws IOException, EncryptedDocumentException {
+            RandomAccessStreamCache.StreamCacheCreateFunction streamCacheCreateFunction, Metadata metadata,
+            ParseContext context) throws IOException, EncryptedDocumentException {
         try {
             PDDocument pdDocument = null;
             if (tstream != null && tstream.hasFile()) {
                 // File based -- send file directly to PDFBox
-                pdDocument =
-                        getPDDocument(tstream.getPath(), password, streamCacheCreateFunction, metadata,
-                                context);
+                pdDocument = getPDDocument(tstream.getPath(), password, streamCacheCreateFunction, metadata, context);
             } else {
-                pdDocument = getPDDocument(CloseShieldInputStream.wrap(stream), password,
-                        streamCacheCreateFunction, metadata, context);
+                pdDocument = getPDDocument(CloseShieldInputStream.wrap(stream), password, streamCacheCreateFunction,
+                        metadata, context);
             }
             if (tstream != null) {
                 tstream.setOpenContainer(pdDocument);
             }
             return pdDocument;
         } catch (IOException e) {
-            if (e.getMessage() != null &&
-                    e.getMessage().contains("No security handler for filter")) {
+            if (e.getMessage() != null && e.getMessage().contains("No security handler for filter")) {
                 throw new EncryptedDocumentException(e);
             }
             throw e;
@@ -479,16 +454,14 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
     }
 
     protected PDDocument getPDDocument(InputStream inputStream, String password,
-                                       RandomAccessStreamCache.StreamCacheCreateFunction streamCacheCreateFunction,
-                                       Metadata metadata,
-                                       ParseContext parseContext) throws IOException {
+            RandomAccessStreamCache.StreamCacheCreateFunction streamCacheCreateFunction, Metadata metadata,
+            ParseContext parseContext) throws IOException {
         return Loader.loadPDF(new RandomAccessReadBuffer(inputStream), password, streamCacheCreateFunction);
     }
 
     protected PDDocument getPDDocument(Path path, String password,
-                                       RandomAccessStreamCache.StreamCacheCreateFunction
-                                        streamCacheCreateFunction, Metadata metadata,
-                                       ParseContext parseContext) throws IOException {
+            RandomAccessStreamCache.StreamCacheCreateFunction streamCacheCreateFunction, Metadata metadata,
+            ParseContext parseContext) throws IOException {
         return Loader.loadPDF(path.toFile(), password, streamCacheCreateFunction);
     }
 
@@ -551,25 +524,19 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return password;
     }
 
-
-    private void extractMetadata(PDDocument document, Metadata metadata, ParseContext context)
-            throws TikaException {
+    private void extractMetadata(PDDocument document, Metadata metadata, ParseContext context) throws TikaException {
         metadata.set(Metadata.CONTENT_TYPE, MEDIA_TYPE.toString());
 
         //first extract AccessPermissions
         AccessPermission ap = document.getCurrentAccessPermission();
-        metadata.set(AccessPermissions.EXTRACT_FOR_ACCESSIBILITY,
-                Boolean.toString(ap.canExtractForAccessibility()));
+        metadata.set(AccessPermissions.EXTRACT_FOR_ACCESSIBILITY, Boolean.toString(ap.canExtractForAccessibility()));
         metadata.set(AccessPermissions.EXTRACT_CONTENT, Boolean.toString(ap.canExtractContent()));
-        metadata.set(AccessPermissions.ASSEMBLE_DOCUMENT,
-                Boolean.toString(ap.canAssembleDocument()));
+        metadata.set(AccessPermissions.ASSEMBLE_DOCUMENT, Boolean.toString(ap.canAssembleDocument()));
         metadata.set(AccessPermissions.FILL_IN_FORM, Boolean.toString(ap.canFillInForm()));
         metadata.set(AccessPermissions.CAN_MODIFY, Boolean.toString(ap.canModify()));
-        metadata.set(AccessPermissions.CAN_MODIFY_ANNOTATIONS,
-                Boolean.toString(ap.canModifyAnnotations()));
+        metadata.set(AccessPermissions.CAN_MODIFY_ANNOTATIONS, Boolean.toString(ap.canModifyAnnotations()));
         metadata.set(AccessPermissions.CAN_PRINT, Boolean.toString(ap.canPrint()));
-        metadata.set(AccessPermissions.CAN_PRINT_FAITHFUL,
-                Boolean.toString(ap.canPrintFaithful()));
+        metadata.set(AccessPermissions.CAN_PRINT_FAITHFUL, Boolean.toString(ap.canPrintFaithful()));
         metadata.set(PDF.IS_ENCRYPTED, Boolean.toString(document.isEncrypted()));
 
         if (document.getDocumentCatalog().getLanguage() != null) {
@@ -598,8 +565,7 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
             PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.TITLE, info.getTitle());
         }
         PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_CREATOR_TOOL, info.getCreator());
-        PDMetadataExtractor
-                .addMetadata(metadata, TikaCoreProperties.CREATOR_TOOL, info.getCreator());
+        PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.CREATOR_TOOL, info.getCreator());
         PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_KEY_WORDS, info.getKeywords());
         PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_PRODUCER, info.getProducer());
         PDMetadataExtractor.addMetadata(metadata, PDF.PRODUCER, info.getProducer());
@@ -619,9 +585,8 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
 
         // All remaining metadata is custom
         // Copy this over as-is
-        List<String> handledMetadata =
-                Arrays.asList("Author", "Creator", "CreationDate", "ModDate", "Keywords",
-                        "Producer", "Subject", "Title", "Trapped");
+        List<String> handledMetadata = Arrays.asList("Author", "Creator", "CreationDate", "ModDate", "Keywords",
+                "Producer", "Subject", "Title", "Trapped");
         for (COSName key : info.getCOSObject().keySet()) {
             String name = key.getName();
             if (!handledMetadata.contains(name)) {
@@ -637,32 +602,26 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         //    There are also three potential pdf specific version keys:
         //    pdf:PDFVersion, pdfa:PDFVersion, pdf:PDFExtensionVersion
         metadata.set(PDF.PDF_VERSION, Float.toString(document.getDocument().getVersion()));
-        metadata.add(TikaCoreProperties.FORMAT.getName(), MEDIA_TYPE.toString() + "; version=" +
-                Float.toString(document.getDocument().getVersion()));
-
+        metadata.add(TikaCoreProperties.FORMAT.getName(),
+                MEDIA_TYPE.toString() + "; version=" + Float.toString(document.getDocument().getVersion()));
 
         //TODO: Let's try to move this into PDFBox.
         //Attempt to determine Adobe extension level, if present:
         COSDictionary root = document.getDocumentCatalog().getCOSObject();
-        COSDictionary extensions =
-                (COSDictionary) root.getDictionaryObject(COSName.getPDFName("Extensions"));
+        COSDictionary extensions = (COSDictionary) root.getDictionaryObject(COSName.getPDFName("Extensions"));
         if (extensions != null) {
             for (COSName extName : extensions.keySet()) {
                 // If it's an Adobe one, interpret it to determine the extension level:
                 if (extName.equals(COSName.getPDFName("ADBE"))) {
-                    COSDictionary adobeExt =
-                            (COSDictionary) extensions.getDictionaryObject(extName);
+                    COSDictionary adobeExt = (COSDictionary) extensions.getDictionaryObject(extName);
                     if (adobeExt != null) {
-                        String baseVersion =
-                                adobeExt.getNameAsString(COSName.getPDFName("BaseVersion"));
+                        String baseVersion = adobeExt.getNameAsString(COSName.getPDFName("BaseVersion"));
                         int el = adobeExt.getInt(COSName.getPDFName("ExtensionLevel"));
                         //-1 is sentinel value that something went wrong in getInt
                         if (el != -1) {
-                            metadata.set(PDF.PDF_EXTENSION_VERSION,
-                                    baseVersion + " Adobe Extension Level " + el);
-                            metadata.add(TikaCoreProperties.FORMAT.getName(),
-                                    MEDIA_TYPE.toString() + "; version=\"" + baseVersion +
-                                            " Adobe Extension Level " + el + "\"");
+                            metadata.set(PDF.PDF_EXTENSION_VERSION, baseVersion + " Adobe Extension Level " + el);
+                            metadata.add(TikaCoreProperties.FORMAT.getName(), MEDIA_TYPE.toString() + "; version=\""
+                                    + baseVersion + " Adobe Extension Level " + el + "\"");
                         }
                     }
                 } else {
@@ -674,11 +633,10 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         }
     }
 
-
     private boolean hasXFA(PDDocument pdDocument, Metadata metadata) {
-        boolean hasXFA = pdDocument.getDocumentCatalog() != null &&
-                pdDocument.getDocumentCatalog().getAcroForm(null) != null &&
-                pdDocument.getDocumentCatalog().getAcroForm(null).hasXFA();
+        boolean hasXFA = pdDocument.getDocumentCatalog() != null
+                && pdDocument.getDocumentCatalog().getAcroForm(null) != null
+                && pdDocument.getDocumentCatalog().getAcroForm(null).hasXFA();
         metadata.set(PDF.HAS_XFA, Boolean.toString(hasXFA));
         return hasXFA;
     }
@@ -687,14 +645,13 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return config.isIfXFAExtractOnlyXFA() && hasXFA;
     }
 
-    private void handleXFAOnly(PDDocument pdDocument, ContentHandler handler, Metadata metadata,
-                               ParseContext context)
+    private void handleXFAOnly(PDDocument pdDocument, ContentHandler handler, Metadata metadata, ParseContext context)
             throws SAXException, IOException, TikaException {
         XFAExtractor ex = new XFAExtractor();
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
-        try (InputStream is = 
-                UnsynchronizedByteArrayInputStream.builder().setByteArray(pdDocument.getDocumentCatalog().getAcroForm(null).getXFA().getBytes()).get()) {
+        try (InputStream is = UnsynchronizedByteArrayInputStream.builder()
+                .setByteArray(pdDocument.getDocumentCatalog().getAcroForm(null).getXFA().getBytes()).get()) {
             ex.extract(is, xhtml, metadata, context);
         } catch (XMLStreamException e) {
             throw new TikaException("XML error in XFA", e);
@@ -911,7 +868,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return defaultConfig.getSpacingTolerance();
     }
 
-
     @Field
     public void setCatchIntermediateExceptions(boolean catchIntermediateExceptions) {
         defaultConfig.setCatchIntermediateIOExceptions(catchIntermediateExceptions);
@@ -1096,15 +1052,13 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler handler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler handler) throws TikaConfigException {
         //no-op
     }
 
     private void initRenderer(PDFParserConfig config, ParseContext context) {
 
-        if (config.getRenderer() != null &&
-                config.getRenderer().getSupportedTypes(context).contains(MEDIA_TYPE)) {
+        if (config.getRenderer() != null && config.getRenderer().getSupportedTypes(context).contains(MEDIA_TYPE)) {
             return;
         }
         //set a default renderer if nothing was defined

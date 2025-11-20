@@ -16,7 +16,6 @@
  */
 package org.apache.tika.language.translate.impl;
 
-
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -55,8 +54,7 @@ public class MarianTranslatorTest {
     @Test
     public void testNoConfig() throws Exception {
         String source = "Apache Tika is a wonderful tool";
-        String expected =
-                "Apache Tika is a wonderful tool"; // Pattern from other Translators is to return source
+        String expected = "Apache Tika is a wonderful tool"; // Pattern from other Translators is to return source
         String translated = translator.translate(source, "en", "zz");
         assertTrue(expected.equalsIgnoreCase(translated),
                 "Translate " + source + " to " + expected + " (was " + translated + ")");

@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
@@ -83,34 +82,31 @@ public class StorageIndexDataElementData extends DataElementData {
         int headerLength = 0;
         AtomicReference<StreamObjectHeaderStart> header = new AtomicReference<>();
         boolean isStorageIndexManifestMappingExist = false;
-        while ((headerLength = StreamObjectHeaderStart.tryParse(byteArray, index.get(), header)) !=
-                0) {
+        while ((headerLength = StreamObjectHeaderStart.tryParse(byteArray, index.get(), header)) != 0) {
             index.addAndGet(headerLength);
             if (header.get().type == StreamObjectTypeHeaderStart.StorageIndexManifestMapping) {
                 if (isStorageIndexManifestMappingExist) {
                     throw new DataElementParseErrorException(index.get() - headerLength,
-                            "Failed to parse StorageIndexDataElement, only can contain zero or one " +
-                                    "StorageIndexManifestMapping", null);
+                            "Failed to parse StorageIndexDataElement, only can contain zero or one "
+                                    + "StorageIndexManifestMapping",
+                            null);
                 }
 
-                this.storageIndexManifestMapping =
-                        (StorageIndexManifestMapping) StreamObject.parseStreamObject(header.get(),
-                                byteArray, index);
+                this.storageIndexManifestMapping = (StorageIndexManifestMapping) StreamObject
+                        .parseStreamObject(header.get(), byteArray, index);
                 isStorageIndexManifestMappingExist = true;
             } else if (header.get().type == StreamObjectTypeHeaderStart.StorageIndexCellMapping) {
-                this.storageIndexCellMappingList.add(
-                        (StorageIndexCellMapping) StreamObject.parseStreamObject(header.get(),
-                                byteArray, index));
-            } else if (header.get().type ==
-                    StreamObjectTypeHeaderStart.StorageIndexRevisionMapping) {
+                this.storageIndexCellMappingList
+                        .add((StorageIndexCellMapping) StreamObject.parseStreamObject(header.get(), byteArray, index));
+            } else if (header.get().type == StreamObjectTypeHeaderStart.StorageIndexRevisionMapping) {
                 this.storageIndexRevisionMappingList.add(
-                        (StorageIndexRevisionMapping) StreamObject.parseStreamObject(header.get(),
-                                byteArray, index));
+                        (StorageIndexRevisionMapping) StreamObject.parseStreamObject(header.get(), byteArray, index));
             } else {
                 throw new DataElementParseErrorException(index.get() - headerLength,
-                        "Failed to parse StorageIndexDataElement, expect the inner object type " +
-                                "StorageIndexCellMapping or StorageIndexRevisionMapping, but actual type value is " +
-                                header.get().type, null);
+                        "Failed to parse StorageIndexDataElement, expect the inner object type "
+                                + "StorageIndexCellMapping or StorageIndexRevisionMapping, but actual type value is "
+                                + header.get().type,
+                        null);
             }
         }
 

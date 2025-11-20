@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,14 +22,13 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Parser to extract printable Latin1 strings from arbitrary files with pure java
@@ -115,8 +114,8 @@ public class Latin1StringsParser implements Parser {
 
         boolean[] isChar = new boolean[256];
         for (int c = Byte.MIN_VALUE; c <= Byte.MAX_VALUE; c++)
-            if ((c >= 0x20 && c <= 0x7E) || (c >= (byte) 0xC0 && c <= (byte) 0xFE) || c == 0x0A ||
-                    c == 0x0D || c == 0x09) {
+            if ((c >= 0x20 && c <= 0x7E) || (c >= (byte) 0xC0 && c <= (byte) 0xFE) || c == 0x0A || c == 0x0D
+                    || c == 0x09) {
                 isChar[c & 0xFF] = true;
             }
         return isChar;
@@ -193,8 +192,8 @@ public class Latin1StringsParser implements Parser {
      * org.apache.tika.parser.ParseContext)
      */
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException {
         /*
          * Creates a new instance because the object is not immutable.
          */
@@ -217,8 +216,8 @@ public class Latin1StringsParser implements Parser {
      * @throws IOException  if an io error occurs
      * @throws SAXException if a sax error occurs
      */
-    private void doParse(InputStream stream, ContentHandler handler, Metadata metadata,
-                         ParseContext context) throws IOException, SAXException {
+    private void doParse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException {
 
         tmpPos = 0;
         outPos = 0;
@@ -275,9 +274,9 @@ public class Latin1StringsParser implements Parser {
                     }
                 }
                 if (!utf8)
-                    /*
-                     * Test if the byte is a valid char.
-                     */ {
+                /*
+                 * Test if the byte is a valid char.
+                 */ {
                     if (isChar(c)) {
                         output[tmpPos++] = c;
                         if (tmpPos == BUF_SIZE) {
@@ -290,8 +289,8 @@ public class Latin1StringsParser implements Parser {
                          * ahead for a valid char, meaning it marks the
                          * transition between ISO-8859-1 and UTF16 sequences.
                          */
-                        if (c != 0 || (inPos >= 3 && isChar(input[inPos - 3])) ||
-                                (inPos + 1 < inSize && isChar(input[inPos + 1]))) {
+                        if (c != 0 || (inPos >= 3 && isChar(input[inPos - 3]))
+                                || (inPos + 1 < inSize && isChar(input[inPos + 1]))) {
 
                             if (tmpPos - outPos >= minSize) {
                                 output[tmpPos++] = 0x0A;

@@ -16,11 +16,10 @@
  */
 package org.apache.tika.parser.xml;
 
-import org.xml.sax.Attributes;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.xml.sax.Attributes;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * This adds Metadata entries with a specified name for
@@ -80,7 +79,6 @@ public class MetadataHandler extends DefaultHandler {
             addMetadata(attributes.getValue(i));
         }
     }
-
 
     @Override
     public void characters(char[] ch, int start, int length) {

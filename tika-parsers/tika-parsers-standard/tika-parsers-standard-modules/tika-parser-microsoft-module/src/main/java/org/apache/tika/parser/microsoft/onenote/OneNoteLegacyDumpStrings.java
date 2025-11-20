@@ -21,10 +21,9 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * OneNote versions before OneNote 2010 do not have a published OpenSpec document, and the older
@@ -47,8 +46,7 @@ class OneNoteLegacyDumpStrings {
     OneNoteDirectFileResource oneNoteDirectFileResource;
     XHTMLContentHandler xhtml;
 
-    public OneNoteLegacyDumpStrings(OneNoteDirectFileResource oneNoteDirectFileResource,
-                                    XHTMLContentHandler xhtml) {
+    public OneNoteLegacyDumpStrings(OneNoteDirectFileResource oneNoteDirectFileResource, XHTMLContentHandler xhtml) {
         this.oneNoteDirectFileResource = oneNoteDirectFileResource;
         this.xhtml = xhtml;
     }

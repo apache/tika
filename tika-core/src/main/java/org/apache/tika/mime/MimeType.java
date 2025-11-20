@@ -118,9 +118,9 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
         boolean slash = false;
         for (int i = 0; i < name.length(); i++) {
             char ch = name.charAt(i);
-            if (ch <= ' ' || ch >= 127 || ch == '(' || ch == ')' || ch == '<' || ch == '>' ||
-                    ch == '@' || ch == ',' || ch == ';' || ch == ':' || ch == '\\' || ch == '"' ||
-                    ch == '[' || ch == ']' || ch == '?' || ch == '=') {
+            if (ch <= ' ' || ch >= 127 || ch == '(' || ch == ')' || ch == '<' || ch == '>' || ch == '@' || ch == ','
+                    || ch == ';' || ch == ':' || ch == '\\' || ch == '"' || ch == '[' || ch == ']' || ch == '?'
+                    || ch == '=') {
                 return false;
             } else if (ch == '/') {
                 if (slash || i == 0 || i + 1 == name.length()) {
@@ -170,7 +170,6 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
         }
         this.description = description;
     }
-
 
     /**
      * Returns an acronym for this mime type.
@@ -238,7 +237,6 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
         copy.add(link);
         links = Collections.unmodifiableList(copy);
     }
-
 
     /**
      * Add some rootXML info to this mime-type
@@ -414,8 +412,7 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
 
         RootXML(MimeType type, String namespaceURI, String localName) {
             if (isEmpty(namespaceURI) && isEmpty(localName)) {
-                throw new IllegalArgumentException(
-                        "Both namespaceURI and localName cannot be empty");
+                throw new IllegalArgumentException("Both namespaceURI and localName cannot be empty");
             }
             this.type = type;
             this.namespaceURI = namespaceURI;

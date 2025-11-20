@@ -23,9 +23,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TemporaryResources;
@@ -38,6 +35,8 @@ import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.utils.FileProcessResult;
 import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This runs the linux 'file' command against a file.  If
@@ -74,7 +73,6 @@ public class FileCommandDetector implements Detector {
     public static boolean checkHasFile() {
         return checkHasFile(DEFAULT_FILE_COMMAND_PATH);
     }
-
 
     public static boolean checkHasFile(String fileCommandPath) {
         String[] commandline = new String[]{fileCommandPath, "-v"};
@@ -118,9 +116,8 @@ public class FileCommandDetector implements Detector {
 
     private MediaType detectOnPath(Path path, Metadata metadata) throws IOException {
 
-        String[] args =
-                new String[]{ProcessUtils.escapeCommandLine(fileCommandPath), "-b", "--mime-type",
-                        ProcessUtils.escapeCommandLine(path.toAbsolutePath().toString())};
+        String[] args = new String[]{ProcessUtils.escapeCommandLine(fileCommandPath), "-b", "--mime-type",
+                ProcessUtils.escapeCommandLine(path.toAbsolutePath().toString())};
         ProcessBuilder builder = new ProcessBuilder(args);
         FileProcessResult result = ProcessUtils.execute(builder, timeoutMs, 10000, 10000);
         if (result.isTimeout()) {

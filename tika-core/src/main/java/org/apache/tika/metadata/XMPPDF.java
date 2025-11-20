@@ -21,7 +21,6 @@ package org.apache.tika.metadata;
  */
 public interface XMPPDF {
 
-
     String PREFIX = "xmp" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "pdf"
             + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 

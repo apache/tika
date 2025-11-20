@@ -40,8 +40,7 @@ public class TestChmBlockInfo {
         ChmItsfHeader chmItsHeader = new ChmItsfHeader();
         // chmItsHeader.parse(Arrays.copyOfRange(data, 0,
         // ChmConstants.CHM_ITSF_V3_LEN - 1), chmItsHeader);
-        chmItsHeader.parse(ChmCommons.copyOfRange(data, 0, ChmConstants.CHM_ITSF_V3_LEN - 1),
-                chmItsHeader);
+        chmItsHeader.parse(ChmCommons.copyOfRange(data, 0, ChmConstants.CHM_ITSF_V3_LEN - 1), chmItsHeader);
         /* Creates and parses itsp block */
         ChmItspHeader chmItspHeader = new ChmItspHeader();
         // chmItspHeader.parse(Arrays.copyOfRange( data, (int)
@@ -54,17 +53,15 @@ public class TestChmBlockInfo {
         chmDirListCont = new ChmDirectoryListingSet(data, chmItsHeader, chmItspHeader);
         int indexOfControlData = chmDirListCont.getControlDataIndex();
 
-        int indexOfResetTable =
-                ChmCommons.indexOfResetTableBlock(data, ChmConstants.LZXC.getBytes(UTF_8));
+        int indexOfResetTable = ChmCommons.indexOfResetTableBlock(data, ChmConstants.LZXC.getBytes(UTF_8));
         byte[] dir_chunk = null;
         if (indexOfResetTable > 0) {
             // dir_chunk = Arrays.copyOfRange( data, indexOfResetTable,
             // indexOfResetTable
             // +
             // chmDirListCont.getDirectoryListingEntryList().get(indexOfControlData).getLength());
-            dir_chunk = ChmCommons.copyOfRange(data, indexOfResetTable, indexOfResetTable +
-                    chmDirListCont.getDirectoryListingEntryList().get(indexOfControlData)
-                            .getLength());
+            dir_chunk = ChmCommons.copyOfRange(data, indexOfResetTable, indexOfResetTable
+                    + chmDirListCont.getDirectoryListingEntryList().get(indexOfControlData).getLength());
         }
 
         /* Creates and parses control block */
@@ -72,12 +69,12 @@ public class TestChmBlockInfo {
         chmLzxcControlData.parse(dir_chunk, chmLzxcControlData);
 
         int indexOfFeList = chmDirListCont.getResetTableIndex();
-        int startIndex = (int) chmDirListCont.getDataOffset() +
-                chmDirListCont.getDirectoryListingEntryList().get(indexOfFeList).getOffset();
+        int startIndex = (int) chmDirListCont.getDataOffset()
+                + chmDirListCont.getDirectoryListingEntryList().get(indexOfFeList).getOffset();
         // dir_chunk = Arrays.copyOfRange(data, startIndex , startIndex +
         // chmDirListCont.getDirectoryListingEntryList().get(indexOfFeList).getLength());
-        dir_chunk = ChmCommons.copyOfRange(data, startIndex, startIndex +
-                chmDirListCont.getDirectoryListingEntryList().get(indexOfFeList).getLength());
+        dir_chunk = ChmCommons.copyOfRange(data, startIndex,
+                startIndex + chmDirListCont.getDirectoryListingEntryList().get(indexOfFeList).getLength());
         clrt = new ChmLzxcResetTable();
         clrt.parse(dir_chunk, clrt);
     }
@@ -92,15 +89,12 @@ public class TestChmBlockInfo {
 
     @Test
     public void testGetChmBlockInfo() throws ChmParsingException {
-        for (DirectoryListingEntry directoryListingEntry : chmDirListCont
-                .getDirectoryListingEntryList()) {
-            chmBlockInfo = ChmBlockInfo
-                    .getChmBlockInfoInstance(directoryListingEntry, (int) clrt.getBlockLen(),
-                            chmLzxcControlData, null);
+        for (DirectoryListingEntry directoryListingEntry : chmDirListCont.getDirectoryListingEntryList()) {
+            chmBlockInfo = ChmBlockInfo.getChmBlockInfoInstance(directoryListingEntry, (int) clrt.getBlockLen(),
+                    chmLzxcControlData, null);
             // Assert.assertTrue(!directoryListingEntry.getName().isEmpty() &&
             // chmBlockInfo.toString() != null);
-            assertTrue(!ChmCommons.isEmpty(directoryListingEntry.getName()) &&
-                    chmBlockInfo.toString() != null);
+            assertTrue(!ChmCommons.isEmpty(directoryListingEntry.getName()) && chmBlockInfo.toString() != null);
         }
     }
 

@@ -31,10 +31,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.LoggerConfig;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -47,6 +43,9 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class WordParserTest extends TikaTest {
 
@@ -181,10 +180,8 @@ public class WordParserTest extends TikaTest {
             new OfficeParser().parse(input, handler, metadata, new ParseContext());
 
             assertEquals("application/msword", metadata.get(Metadata.CONTENT_TYPE));
-            assertEquals("The quick brown fox jumps over the lazy dog",
-                    metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("Gym class featuring a brown fox and lazy dog",
-                    metadata.get(DublinCore.SUBJECT));
+            assertEquals("The quick brown fox jumps over the lazy dog", metadata.get(TikaCoreProperties.TITLE));
+            assertEquals("Gym class featuring a brown fox and lazy dog", metadata.get(DublinCore.SUBJECT));
             assertEquals("Nevin Nollop", metadata.get(TikaCoreProperties.CREATOR));
             assertContains("The quick brown fox jumps over the lazy dog", handler.toString());
         }
@@ -210,7 +207,6 @@ public class WordParserTest extends TikaTest {
         assertTrue(xml.contains("<i>ita<s>l<u>i</u></s>c</i>"));
         assertTrue(xml.contains("<i><u>unde<s>r</s>line</u></i>"));
     }
-
 
     //TIKA-2346
     @Test
@@ -249,8 +245,7 @@ public class WordParserTest extends TikaTest {
         assertContains("(Kramer)", content);
         assertContains("Row 1 Col 1 Row 1 Col 2 Row 1 Col 3 Row 2 Col 1 Row 2 Col 2 Row 2 Col 3",
                 content.replaceAll("\\s+", " "));
-        assertContains("Row 1 column 1 Row 2 column 1 Row 1 column 2 Row 2 column 2",
-                content.replaceAll("\\s+", " "));
+        assertContains("Row 1 column 1 Row 2 column 1 Row 1 column 2 Row 2 column 2", content.replaceAll("\\s+", " "));
         assertContains("This is a hyperlink", content);
         assertContains("Here is a list:", content);
         for (int row = 1; row <= 3; row++) {
@@ -283,12 +278,10 @@ public class WordParserTest extends TikaTest {
         // Special version of (GHQ)
         assertContains("\uff08\uff27\uff28\uff31\uff09", content);
         // 6 other characters
-        assertContains("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f",
-                content);
+        assertContains("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f", content);
 
         assertContains("And then some Gothic text:", content);
-        assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A",
-                content);
+        assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A", content);
     }
 
     @Test
@@ -379,8 +372,7 @@ public class WordParserTest extends TikaTest {
 
     @Test
     public void testTabularSymbol() throws Exception {
-        assertContains("one two",
-                getXML("testWORD_tabular_symbol.doc").xml.replaceAll("\\s+", " "));
+        assertContains("one two", getXML("testWORD_tabular_symbol.doc").xml.replaceAll("\\s+", " "));
     }
 
     /**
@@ -492,7 +484,6 @@ public class WordParserTest extends TikaTest {
         assertContains("1st.2.2someOtherText.1 1st.2.2someOtherText.1", xml);
         assertContains("5th 5th", xml);
 
-
         //Test 2
         assertContains("1.a.I 1.a.I", xml);
         //test no reset because level 2 is not sufficient to reset
@@ -541,25 +532,19 @@ public class WordParserTest extends TikaTest {
     @Test
     public void testOrigLocation() throws Exception {
         Metadata metadata = getXML("testException2.doc").metadata;
-        List<String> values =
-                Arrays.asList(metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
-        assertContains(
-                "C:\\Lab Documents\\Lab Manuals\\Physics 275-6\\276-s00\\" +
-                        "07-Force-on-a-current-S00.doc",
+        List<String> values = Arrays.asList(metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
+        assertContains("C:\\Lab Documents\\Lab Manuals\\Physics 275-6\\276-s00\\" + "07-Force-on-a-current-S00.doc",
                 values);
         assertContains("Hard Drive:Course Folders:276:276-s00:07-Force-on-a-current-S00", values);
     }
 
     @Test
     public void testOrigSourcePath() throws Exception {
-        Metadata embed1_zip_metadata = getRecursiveMetadata(
-                "test_recursive_embedded.doc").get(2);
-        assertContains(
-                "C:\\Users\\tallison\\AppData\\Local\\Temp\\embed1.zip", Arrays.asList(
-                embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
+        Metadata embed1_zip_metadata = getRecursiveMetadata("test_recursive_embedded.doc").get(2);
+        assertContains("C:\\Users\\tallison\\AppData\\Local\\Temp\\embed1.zip",
+                Arrays.asList(embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
         assertContains("C:\\Users\\tallison\\Desktop\\tmp\\New folder (2)\\embed1.zip",
-                Arrays.asList(
-                        embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
+                Arrays.asList(embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
     }
 
     @Test
@@ -568,9 +553,7 @@ public class WordParserTest extends TikaTest {
         String xml = getXML("testWORD_boldHyperlink.doc").xml;
         xml = xml.replaceAll("\\s+", " ");
         assertContains("<a href=\"http://tika.apache.org/\"><u>hyper <b>link</b></u></a>", xml);
-        assertContains(
-                "<a href=\"http://tika.apache.org/\"><b><u>hyper</u></b><u> link</u></a>; bold",
-                xml);
+        assertContains("<a href=\"http://tika.apache.org/\"><b><u>hyper</u></b><u> link</u></a>; bold", xml);
     }
 
     @Test
@@ -578,11 +561,8 @@ public class WordParserTest extends TikaTest {
         //TIKA-2599
         String xml = getXML("testWORD_italicsSurroundingHyperlink.doc").xml;
         xml = xml.replaceAll("\\s+", " ");
-        assertContains(
-                "<body><p><i>Italic Test before link </i><a href=\"http://www.google.com\"><b><i>" +
-                        "<u>hyperlink italics</u></i></b></a><i> Italic text after " +
-                        "hyperlink</i></p>",
-                xml);
+        assertContains("<body><p><i>Italic Test before link </i><a href=\"http://www.google.com\"><b><i>"
+                + "<u>hyperlink italics</u></i></b></a><i> Italic text after " + "hyperlink</i></p>", xml);
     }
 
     @Test
@@ -600,7 +580,6 @@ public class WordParserTest extends TikaTest {
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setExtractMacros(true);
         context.set(OfficeParserConfig.class, officeParserConfig);
-
 
         Metadata minExpected = new Metadata();
         minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Embolden()");
@@ -658,15 +637,13 @@ public class WordParserTest extends TikaTest {
         //current behavior:
         //EQ \\* jc2 \\* "Font:MS Mincho" \\* hps11 \\o\\ad(\\s\\up 10(とうきょう),東京)
         //We need to parse that string and separate content + phonetic
-        assertContains("\\s\\up 10(\u3068\u3046\u304D\u3087\u3046),\u6771\u4EAC",
-                getXML("testWORD_phonetic.doc").xml);
+        assertContains("\\s\\up 10(\u3068\u3046\u304D\u3087\u3046),\u6771\u4EAC", getXML("testWORD_phonetic.doc").xml);
     }
 
     @Test
     public void testSpecialControlCharacter() throws Exception {
         //TIKA-2459
-        assertContains("Paragraph one", getXML(
-                "testWORD_specialControlCharacter1415.doc").xml);
+        assertContains("Paragraph one", getXML("testWORD_specialControlCharacter1415.doc").xml);
     }
 
     @Test

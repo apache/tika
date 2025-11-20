@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.core.writer;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -26,14 +25,14 @@ import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
+import org.apache.tika.metadata.Metadata;
+
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.ext.MessageBodyWriter;
 import jakarta.ws.rs.ext.Provider;
-
-import org.apache.tika.metadata.Metadata;
 
 /**
  * Returns simple text string for a particular metadata value.
@@ -56,8 +55,9 @@ public class TextMessageBodyWriter implements MessageBodyWriter<Metadata> {
 
     @Override
     @SuppressWarnings("resource")
-    public void writeTo(Metadata metadata, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders,
-                        OutputStream entityStream) throws IOException, WebApplicationException {
+    public void writeTo(Metadata metadata, Class<?> type, Type genericType, Annotation[] annotations,
+            MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
+            throws IOException, WebApplicationException {
 
         if (metadata.names().length != 1) {
             throw new WebApplicationException("Metadata object must only have one entry!");
@@ -72,4 +72,3 @@ public class TextMessageBodyWriter implements MessageBodyWriter<Metadata> {
         writer.flush();
     }
 }
-

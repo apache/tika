@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.example;
 
 import java.io.IOException;
@@ -36,7 +35,6 @@ import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
-
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -63,7 +61,8 @@ public class RecentFiles {
             String nowDateTime = ISO8601.format(gc);
             gc.add(java.util.GregorianCalendar.MINUTE, -5);
             String fiveMinsAgo = ISO8601.format(gc);
-            TermRangeQuery query = new TermRangeQuery(TikaCoreProperties.CREATED.getName(), new BytesRef(fiveMinsAgo), new BytesRef(nowDateTime), true, true);
+            TermRangeQuery query = new TermRangeQuery(TikaCoreProperties.CREATED.getName(), new BytesRef(fiveMinsAgo),
+                    new BytesRef(nowDateTime), true, true);
             TopScoreDocCollector collector = TopScoreDocCollector.create(20, 10000);
             searcher.search(query, collector);
             ScoreDoc[] hits = collector.topDocs().scoreDocs;
@@ -92,7 +91,8 @@ public class RecentFiles {
         for (String topic : doc.getValues(TikaCoreProperties.SUBJECT.getName())) {
             output.append(emitTag("category", topic, null, null));
         }
-        output.append(emitTag("pubDate", rssDateFormat.format(ISO8601.parse(doc.get(TikaCoreProperties.CREATED.getName()))), null, null));
+        output.append(emitTag("pubDate",
+                rssDateFormat.format(ISO8601.parse(doc.get(TikaCoreProperties.CREATED.getName()))), null, null));
         output.append(emitTag("description", doc.get(TikaCoreProperties.TITLE.getName()), null, null));
         output.append("</item>");
         return output.toString();
@@ -104,7 +104,8 @@ public class RecentFiles {
         output.append("<rss version=\"2.0\">");
         output.append("  <channel>");
         output.append("     <title>Tika in Action: Recent Files Feed.</title>");
-        output.append("     <description>Chapter 6 Examples demonstrating " + "use of Tika Metadata for RSS.</description>");
+        output.append(
+                "     <description>Chapter 6 Examples demonstrating " + "use of Tika Metadata for RSS.</description>");
         output.append("     <link>tikainaction.rss</link>");
         output.append("     <lastBuildDate>");
         output.append(rssDateFormat.format(new Date()));

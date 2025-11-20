@@ -22,15 +22,14 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Parser for EPUB OPS <code>*.html</code> files.
@@ -43,12 +42,10 @@ public class EpubContentParser implements Parser {
         return Collections.emptySet(); // not a top-level parser
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
-        XMLReaderUtils
-                .parseSAX(CloseShieldInputStream.wrap(stream), handler,
-                        context);
+        XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream), handler, context);
     }
 
 }

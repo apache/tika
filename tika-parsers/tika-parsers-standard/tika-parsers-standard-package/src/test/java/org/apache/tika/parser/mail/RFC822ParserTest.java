@@ -23,10 +23,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import java.io.InputStream;
 import java.util.List;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
@@ -36,6 +32,9 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class RFC822ParserTest extends TikaTest {
 
@@ -44,8 +43,7 @@ public class RFC822ParserTest extends TikaTest {
     private static TikaConfig TIKA_CONFIG;
 
     private static InputStream getStream(String name) {
-        InputStream stream =
-                Thread.currentThread().getContextClassLoader().getResourceAsStream(name);
+        InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream(name);
         assertNotNull(stream, "Test file not found " + name);
         return stream;
     }
@@ -53,8 +51,7 @@ public class RFC822ParserTest extends TikaTest {
     @BeforeAll
     public static void setUp() throws Exception {
 
-        try (InputStream is = getStream(
-                "org/apache/tika/parser/mail/tika-config-extract-all-alternatives.xml")) {
+        try (InputStream is = getStream("org/apache/tika/parser/mail/tika-config-extract-all-alternatives.xml")) {
             TIKA_CONFIG = new TikaConfig(is);
         }
         EXTRACT_ALL_ALTERNATIVES_PARSER = new AutoDetectParser(TIKA_CONFIG);
@@ -142,21 +139,18 @@ public class RFC822ParserTest extends TikaTest {
         assertContains("TIKA-1028", handler.toString());
     }
 
-
     @Test
     public void testMainBody() throws Exception {
         //test that the first text or html chunk is processed in the main body
         //not treated as an attachment. TIKA-2547
         List<Metadata> metadataList = getRecursiveMetadata("testRFC822_oddfrom");
         assertEquals(7, metadataList.size());
-        assertContains("Air Quality Planning",
-                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("Air Quality Planning", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
 
         //Make sure text alternative doesn't get treated as an attachment
         metadataList = getRecursiveMetadata("testRFC822_normal_zip");
         assertEquals(3, metadataList.size());
-        assertContains("This is the HTML part",
-                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("This is the HTML part", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("application/zip", metadataList.get(2).get(Metadata.CONTENT_TYPE));
 
         metadataList = getRecursiveMetadata("testRFC822-txt-body");

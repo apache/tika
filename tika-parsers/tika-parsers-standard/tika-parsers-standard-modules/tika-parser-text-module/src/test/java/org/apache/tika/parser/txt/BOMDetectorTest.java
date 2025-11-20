@@ -28,30 +28,27 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.metadata.Metadata;
+import org.junit.jupiter.api.Test;
 
 public class BOMDetectorTest extends TikaTest {
     @Test
     public void testBasic() throws Exception {
         EncodingDetector detector = new BOMDetector();
-        for (ByteOrderMark bom : new ByteOrderMark[]{
-                ByteOrderMark.UTF_8, ByteOrderMark.UTF_16BE,
-                ByteOrderMark.UTF_16LE, ByteOrderMark.UTF_32BE, ByteOrderMark.UTF_32LE
-        }) {
+        for (ByteOrderMark bom : new ByteOrderMark[]{ByteOrderMark.UTF_8, ByteOrderMark.UTF_16BE,
+                ByteOrderMark.UTF_16LE, ByteOrderMark.UTF_32BE, ByteOrderMark.UTF_32LE}) {
             UnsynchronizedByteArrayOutputStream bos = createStream(bom);
-            try (BOMInputStream bomInputStream =
-                    BOMInputStream.builder().
-                            setInputStream(UnsynchronizedByteArrayInputStream.builder().setByteArray(bos.toByteArray()).get()).
-                            setByteOrderMarks(ByteOrderMark.UTF_8, ByteOrderMark.UTF_32BE, ByteOrderMark.UTF_32LE,
-                                 ByteOrderMark.UTF_16BE, ByteOrderMark.UTF_16LE).get()) {
+            try (BOMInputStream bomInputStream = BOMInputStream.builder()
+                    .setInputStream(UnsynchronizedByteArrayInputStream.builder().setByteArray(bos.toByteArray()).get())
+                    .setByteOrderMarks(ByteOrderMark.UTF_8, ByteOrderMark.UTF_32BE, ByteOrderMark.UTF_32LE,
+                            ByteOrderMark.UTF_16BE, ByteOrderMark.UTF_16LE)
+                    .get()) {
                 assertEquals(bom, bomInputStream.getBOM());
             }
-            try (UnsynchronizedByteArrayInputStream is =
-                         UnsynchronizedByteArrayInputStream.builder().setByteArray(bos.toByteArray()).get()) {
+            try (UnsynchronizedByteArrayInputStream is = UnsynchronizedByteArrayInputStream.builder()
+                    .setByteArray(bos.toByteArray()).get()) {
                 assertEquals(Charset.forName(bom.getCharsetName()), detector.detect(is, new Metadata()));
                 int cnt = 0;
                 int c = is.read();
@@ -67,14 +64,12 @@ public class BOMDetectorTest extends TikaTest {
     @Test
     public void testShort() throws Exception {
         EncodingDetector detector = new BOMDetector();
-        for (ByteOrderMark bom : new ByteOrderMark[] {
-                ByteOrderMark.UTF_8, ByteOrderMark.UTF_16BE, ByteOrderMark.UTF_16LE, ByteOrderMark.UTF_16BE,
-                ByteOrderMark.UTF_32LE
-        }) {
+        for (ByteOrderMark bom : new ByteOrderMark[]{ByteOrderMark.UTF_8, ByteOrderMark.UTF_16BE,
+                ByteOrderMark.UTF_16LE, ByteOrderMark.UTF_16BE, ByteOrderMark.UTF_32LE}) {
             byte[] bytes = new byte[3];
             System.arraycopy(bom.getBytes(), 0, bytes, 0, 1);
-            bytes[1] = (byte)32;
-            bytes[2] = (byte)32;
+            bytes[1] = (byte) 32;
+            bytes[2] = (byte) 32;
             try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get()) {
                 assertNull(detector.detect(is, new Metadata()));
             }

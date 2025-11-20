@@ -16,7 +16,6 @@
  */
 package org.apache.tika.eval.app.db;
 
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -70,4 +69,3 @@ public class TableInfo {
         return colNames.contains(cols);
     }
 }
-

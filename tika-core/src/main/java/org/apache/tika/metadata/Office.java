@@ -37,113 +37,109 @@ public interface Office {
      */
     String USER_DEFINED_METADATA_NAME_PREFIX = "custom:";
 
-
     /**
      * Keywords pertaining to a document. Also populates {@link DublinCore#SUBJECT}.
      */
-    Property KEYWORDS = Property.composite(Property.internalTextBag(
-            PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "keyword"),
+    Property KEYWORDS = Property.composite(
+            Property.internalTextBag(PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "keyword"),
             new Property[]{DublinCore.SUBJECT,});
 
     /**
      * Name of the initial creator/author of a document
      */
-    Property INITIAL_AUTHOR = Property.internalText(
-            PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "initial-author");
+    Property INITIAL_AUTHOR = Property
+            .internalText(PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "initial-author");
 
     /**
      * Name of the last (most recent) author of a document
      */
-    Property LAST_AUTHOR = Property.internalText(
-            PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "last-author");
+    Property LAST_AUTHOR = Property
+            .internalText(PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "last-author");
 
     /**
      * Name of the principal author(s) of a document
      */
-    Property AUTHOR = Property.internalTextBag(
-            PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "author");
-
+    Property AUTHOR = Property
+            .internalTextBag(PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "author");
 
     /**
      * When was the document created?
      */
-    Property CREATION_DATE = Property.internalDate(
-            PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "creation-date");
+    Property CREATION_DATE = Property
+            .internalDate(PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "creation-date");
 
     /**
      * When was the document last saved?
      */
-    Property SAVE_DATE = Property.internalDate(
-            PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "save-date");
+    Property SAVE_DATE = Property
+            .internalDate(PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "save-date");
 
     /**
      * When was the document last printed?
      */
-    Property PRINT_DATE = Property.internalDate(
-            PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "print-date");
-
+    Property PRINT_DATE = Property
+            .internalDate(PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "print-date");
 
     /**
      * The number of Slides are there in the (presentation) document
      */
-    Property SLIDE_COUNT = Property.internalInteger(
-            PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "slide-count");
+    Property SLIDE_COUNT = Property
+            .internalInteger(PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "slide-count");
 
     /**
      * The number of Pages are there in the (paged) document
      */
-    Property PAGE_COUNT = Property.internalInteger(
-            PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "page-count");
+    Property PAGE_COUNT = Property
+            .internalInteger(PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "page-count");
 
     /**
      * The number of individual Paragraphs in the document
      */
-    Property PARAGRAPH_COUNT = Property.internalInteger(
-            PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "paragraph-count");
+    Property PARAGRAPH_COUNT = Property
+            .internalInteger(PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "paragraph-count");
 
     /**
      * The number of lines in the document
      */
-    Property LINE_COUNT = Property.internalInteger(
-            PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "line-count");
+    Property LINE_COUNT = Property
+            .internalInteger(PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "line-count");
 
     /**
      * The number of Words in the document
      */
-    Property WORD_COUNT = Property.internalInteger(
-            PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "word-count");
+    Property WORD_COUNT = Property
+            .internalInteger(PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "word-count");
 
     /**
      * The number of Characters in the document
      */
-    Property CHARACTER_COUNT = Property.internalInteger(
-            PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "character-count");
+    Property CHARACTER_COUNT = Property
+            .internalInteger(PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "character-count");
 
     /**
      * The number of Characters in the document, including spaces
      */
     Property CHARACTER_COUNT_WITH_SPACES = Property.internalInteger(
-            PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "character-count-with-spaces");
+            PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "character-count-with-spaces");
 
     /**
      * The number of Tables in the document
      */
-    Property TABLE_COUNT = Property.internalInteger(
-            PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "table-count");
+    Property TABLE_COUNT = Property
+            .internalInteger(PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "table-count");
 
     /**
      * The number of Images in the document
      */
-    Property IMAGE_COUNT = Property.internalInteger(
-            PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "image-count");
+    Property IMAGE_COUNT = Property
+            .internalInteger(PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "image-count");
 
     /**
      * The number of Objects in the document. These are typically non-Image resources
      * embedded in the document, such as other documents or non-Image media.
      */
-    Property OBJECT_COUNT = Property.internalInteger(
-            PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "object-count");
+    Property OBJECT_COUNT = Property
+            .internalInteger(PREFIX_DOC_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "object-count");
 
     /**
      * Embedded files may have a "progID" associated with them, such as

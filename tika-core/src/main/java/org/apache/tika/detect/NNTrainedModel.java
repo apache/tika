@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.detect;
 
 public class NNTrainedModel extends TrainedModel {
@@ -25,8 +24,7 @@ public class NNTrainedModel extends TrainedModel {
     private final float[][] Theta1;
     private final float[][] Theta2;
 
-    public NNTrainedModel(final int nInput, final int nHidden, final int nOutput,
-                          final float[] nn_params) {
+    public NNTrainedModel(final int nInput, final int nHidden, final int nOutput, final float[] nn_params) {
         this.numOfInputs = nInput;
         this.numOfHidden = nHidden;
         this.numOfOutputs = nOutput;

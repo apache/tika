@@ -24,14 +24,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import com.epam.parso.Column;
-import com.epam.parso.DataWriterUtil;
-import com.epam.parso.SasFileProperties;
-import com.epam.parso.SasFileReader;
-import com.epam.parso.impl.SasFileReaderImpl;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Database;
 import org.apache.tika.metadata.HttpHeaders;
@@ -44,6 +36,14 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
+import com.epam.parso.Column;
+import com.epam.parso.DataWriterUtil;
+import com.epam.parso.SasFileProperties;
+import com.epam.parso.SasFileReader;
+import com.epam.parso.impl.SasFileReaderImpl;
 
 /**
  * Processes the SAS7BDAT data columnar database file used by SAS and
@@ -61,8 +61,8 @@ public class SAS7BDATParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         metadata.set(Metadata.CONTENT_TYPE, TYPE_SAS7BDAT.toString());
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
@@ -87,8 +87,9 @@ public class SAS7BDATParser implements Parser {
         metadata.set(OfficeOpenXMLExtended.APP_VERSION, props.getSasRelease());
         metadata.set(MachineMetadata.ARCHITECTURE_BITS, props.isU64() ? "64" : "32");
         metadata.set(MachineMetadata.ENDIAN,
-                props.getEndianness() == 1 ? MachineMetadata.Endian.LITTLE.getName() :
-                        MachineMetadata.Endian.BIG.getName());
+                props.getEndianness() == 1
+                        ? MachineMetadata.Endian.LITTLE.getName()
+                        : MachineMetadata.Endian.BIG.getName());
 
         // The following SAS Metadata fields are currently ignored:
         // compressionMethod
@@ -110,7 +111,6 @@ public class SAS7BDATParser implements Parser {
             }
             metadata.add(Database.COLUMN_NAME, name);
         }
-
 
         // Output file contents as a table
         xhtml.element("h1", props.getName());

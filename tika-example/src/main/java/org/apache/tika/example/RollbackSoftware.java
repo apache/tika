@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.example;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -29,9 +28,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -40,6 +36,8 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.Link;
 import org.apache.tika.sax.LinkContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Demonstrates Tika and its ability to sense symlinks.
@@ -61,9 +59,7 @@ public class RollbackSoftware {
         }
         links.sort(Comparator.comparing(Link::getText));
 
-        this.updateVersion(links
-                .get(links.size() - 2)
-                .getText());
+        this.updateVersion(links.get(links.size() - 2).getText());
     }
 
     private void updateVersion(String version) {
@@ -71,9 +67,7 @@ public class RollbackSoftware {
     }
 
     private boolean isSymlink(File f) throws IOException {
-        return !f
-                .getAbsolutePath()
-                .equals(f.getCanonicalPath());
+        return !f.getAbsolutePath().equals(f.getCanonicalPath());
     }
 
     class DeploymentAreaParser implements Parser {
@@ -95,7 +89,8 @@ public class RollbackSoftware {
          * @see org.apache.tika.parser.Parser#parse(java.io.InputStream,
          * org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata)
          */
-        public void parse(InputStream is, ContentHandler handler, Metadata metadata) throws IOException, SAXException, TikaException {
+        public void parse(InputStream is, ContentHandler handler, Metadata metadata)
+                throws IOException, SAXException, TikaException {
             parse(is, handler, metadata, new ParseContext());
         }
 
@@ -106,12 +101,11 @@ public class RollbackSoftware {
          * org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata,
          * org.apache.tika.parser.ParseContext)
          */
-        public void parse(InputStream is, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+        public void parse(InputStream is, ContentHandler handler, Metadata metadata, ParseContext context)
+                throws IOException, SAXException, TikaException {
 
             File deployArea = new File(IOUtils.toString(is, UTF_8));
-            File[] versions = deployArea.listFiles(pathname -> !pathname
-                    .getName()
-                    .startsWith("current"));
+            File[] versions = deployArea.listFiles(pathname -> !pathname.getName().startsWith("current"));
 
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();
@@ -119,10 +113,7 @@ public class RollbackSoftware {
                 if (isSymlink(v)) {
                     continue;
                 }
-                xhtml.startElement("a", "href", v
-                        .toURI()
-                        .toURL()
-                        .toExternalForm());
+                xhtml.startElement("a", "href", v.toURI().toURL().toExternalForm());
                 xhtml.characters(v.getName());
                 xhtml.endElement("a");
             }

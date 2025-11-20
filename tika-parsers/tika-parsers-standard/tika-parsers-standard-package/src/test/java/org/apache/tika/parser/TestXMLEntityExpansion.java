@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,16 +21,16 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+
 import javax.xml.XMLConstants;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.xml.sax.SAXParseException;
-
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * Tests to confirm defenses against entity expansion attacks.
@@ -38,30 +38,20 @@ import org.apache.tika.utils.XMLReaderUtils;
 
 public class TestXMLEntityExpansion extends XMLTestBase {
 
-    private static final byte[] ENTITY_EXPANSION_BOMB = new String(
-            "<!DOCTYPE kaboom [ " + "<!ENTITY a \"1234567890\" > " +
-                    "<!ENTITY b \"&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;\" >" +
-                    "<!ENTITY c \"&b;&b;&b;&b;&b;&b;&b;&b;&b;&b;\" > " +
-                    "<!ENTITY d \"&c;&c;&c;&c;&c;&c;&c;&c;&c;&c;\" > " +
-                    "<!ENTITY e \"&d;&d;&d;&d;&d;&d;&d;&d;&d;&d;\" > " +
-                    "<!ENTITY f \"&e;&e;&e;&e;&e;&e;&e;&e;&e;&e;\" > " +
-                    "<!ENTITY g \"&f;&f;&f;&f;&f;&f;&f;&f;&f;&f;\" > " +
-                    "<!ENTITY h \"&g;&g;&g;&g;&g;&g;&g;&g;&g;&g;\" > " +
-                    "<!ENTITY i \"&h;&h;&h;&h;&h;&h;&h;&h;&h;&h;\" > " +
-                    "<!ENTITY j \"&i;&i;&i;&i;&i;&i;&i;&i;&i;&i;\" > " +
-                    "<!ENTITY k \"&j;&j;&j;&j;&j;&j;&j;&j;&j;&j;\" > " +
-                    "<!ENTITY l \"&k;&k;&k;&k;&k;&k;&k;&k;&k;&k;\" > " +
-                    "<!ENTITY m \"&l;&l;&l;&l;&l;&l;&l;&l;&l;&l;\" > " +
-                    "<!ENTITY n \"&m;&m;&m;&m;&m;&m;&m;&m;&m;&m;\" > " +
-                    "<!ENTITY o \"&n;&n;&n;&n;&n;&n;&n;&n;&n;&n;\" > " +
-                    "<!ENTITY p \"&o;&o;&o;&o;&o;&o;&o;&o;&o;&o;\" > " +
-                    "<!ENTITY q \"&p;&p;&p;&p;&p;&p;&p;&p;&p;&p;\" > " +
-                    "<!ENTITY r \"&q;&q;&q;&q;&q;&q;&q;&q;&q;&q;\" > " +
-                    "<!ENTITY s \"&r;&r;&r;&r;&r;&r;&r;&r;&r;&r;\" > " + "]> " +
-                    "<kaboom>&s;</kaboom>").getBytes(StandardCharsets.UTF_8);
+    private static final byte[] ENTITY_EXPANSION_BOMB = new String("<!DOCTYPE kaboom [ "
+            + "<!ENTITY a \"1234567890\" > " + "<!ENTITY b \"&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;\" >"
+            + "<!ENTITY c \"&b;&b;&b;&b;&b;&b;&b;&b;&b;&b;\" > " + "<!ENTITY d \"&c;&c;&c;&c;&c;&c;&c;&c;&c;&c;\" > "
+            + "<!ENTITY e \"&d;&d;&d;&d;&d;&d;&d;&d;&d;&d;\" > " + "<!ENTITY f \"&e;&e;&e;&e;&e;&e;&e;&e;&e;&e;\" > "
+            + "<!ENTITY g \"&f;&f;&f;&f;&f;&f;&f;&f;&f;&f;\" > " + "<!ENTITY h \"&g;&g;&g;&g;&g;&g;&g;&g;&g;&g;\" > "
+            + "<!ENTITY i \"&h;&h;&h;&h;&h;&h;&h;&h;&h;&h;\" > " + "<!ENTITY j \"&i;&i;&i;&i;&i;&i;&i;&i;&i;&i;\" > "
+            + "<!ENTITY k \"&j;&j;&j;&j;&j;&j;&j;&j;&j;&j;\" > " + "<!ENTITY l \"&k;&k;&k;&k;&k;&k;&k;&k;&k;&k;\" > "
+            + "<!ENTITY m \"&l;&l;&l;&l;&l;&l;&l;&l;&l;&l;\" > " + "<!ENTITY n \"&m;&m;&m;&m;&m;&m;&m;&m;&m;&m;\" > "
+            + "<!ENTITY o \"&n;&n;&n;&n;&n;&n;&n;&n;&n;&n;\" > " + "<!ENTITY p \"&o;&o;&o;&o;&o;&o;&o;&o;&o;&o;\" > "
+            + "<!ENTITY q \"&p;&p;&p;&p;&p;&p;&p;&p;&p;&p;\" > " + "<!ENTITY r \"&q;&q;&q;&q;&q;&q;&q;&q;&q;&q;\" > "
+            + "<!ENTITY s \"&r;&r;&r;&r;&r;&r;&r;&r;&r;&r;\" > " + "]> " + "<kaboom>&s;</kaboom>")
+            .getBytes(StandardCharsets.UTF_8);
 
-    private static void test(String testFileName, byte[] bytes, Parser parser, ParseContext context)
-            throws Exception {
+    private static void test(String testFileName, byte[] bytes, Parser parser, ParseContext context) throws Exception {
         boolean ex = false;
         try {
             parse(testFileName, new ByteArrayInputStream(bytes), parser, context);
@@ -85,8 +75,7 @@ public class TestXMLEntityExpansion extends XMLTestBase {
 
         Thread thread = new Thread(() -> {
             try {
-                parse("injected", new ByteArrayInputStream(injected),
-                        new VulnerableSAXParser(), new ParseContext());
+                parse("injected", new ByteArrayInputStream(injected), new VulnerableSAXParser(), new ParseContext());
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

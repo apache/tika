@@ -41,12 +41,11 @@ import org.apache.pdfbox.pdmodel.documentinterchange.logicalstructure.PDStructur
 import org.apache.pdfbox.pdmodel.documentinterchange.markedcontent.PDMarkedContent;
 import org.apache.pdfbox.text.PDFMarkedContentExtractor;
 import org.apache.pdfbox.text.TextPosition;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * <p>This was added in Tika 1.24 as an alpha version of a text extractor
@@ -88,9 +87,8 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
     //this stores state as we recurse through the structure tag tree
     private State state = new State();
 
-    private PDFMarkedContent2XHTML(PDDocument document, ContentHandler handler,
-                                   ParseContext context, Metadata metadata, PDFParserConfig config)
-            throws IOException {
+    private PDFMarkedContent2XHTML(PDDocument document, ContentHandler handler, ParseContext context, Metadata metadata,
+            PDFParserConfig config) throws IOException {
         super(document, handler, context, metadata, config);
     }
 
@@ -106,15 +104,12 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
      * @throws SAXException  if the content handler fails to process SAX events
      * @throws TikaException if there was an exception outside of per page processing
      */
-    public static void process(PDDocument pdDocument, ContentHandler handler,
-                               ParseContext context,
-                               Metadata metadata, PDFParserConfig config)
-            throws SAXException, TikaException {
+    public static void process(PDDocument pdDocument, ContentHandler handler, ParseContext context, Metadata metadata,
+            PDFParserConfig config) throws SAXException, TikaException {
 
         PDFMarkedContent2XHTML pdfMarkedContent2XHTML = null;
         try {
-            pdfMarkedContent2XHTML =
-                    new PDFMarkedContent2XHTML(pdDocument, handler, context, metadata, config);
+            pdfMarkedContent2XHTML = new PDFMarkedContent2XHTML(pdDocument, handler, context, metadata, config);
         } catch (IOException e) {
             throw new TikaException("couldn't initialize PDFMarkedContent2XHTML", e);
         }
@@ -141,8 +136,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
         }
         if (!pdfMarkedContent2XHTML.exceptions.isEmpty()) {
             //throw the first
-            throw new TikaException("Unable to extract PDF content",
-                    pdfMarkedContent2XHTML.exceptions.get(0));
+            throw new TikaException("Unable to extract PDF content", pdfMarkedContent2XHTML.exceptions.get(0));
         }
     }
 
@@ -203,13 +197,11 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
         findPages(pageTree.getCOSObject().getDictionaryObject(COSName.KIDS), pageRefs);
         //confirm the right number of pages was found
         if (pageRefs.size() != pdDocument.getNumberOfPages()) {
-            throw new IOException(new TikaException(
-                    "Couldn't find the right number of page refs (" + pageRefs.size() +
-                            ") for pages (" + pdDocument.getNumberOfPages() + ")"));
+            throw new IOException(new TikaException("Couldn't find the right number of page refs (" + pageRefs.size()
+                    + ") for pages (" + pdDocument.getNumberOfPages() + ")"));
         }
 
-        PDStructureTreeRoot structureTreeRoot =
-                pdDocument.getDocumentCatalog().getStructureTreeRoot();
+        PDStructureTreeRoot structureTreeRoot = pdDocument.getDocumentCatalog().getStructureTreeRoot();
 
         //STEP 2: load the roleMap
         Map<String, HtmlTag> roleMap = loadRoleMap(structureTreeRoot.getRoleMap());
@@ -261,21 +253,18 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
 
     }
 
-    private void recurse(COSBase kids, ObjectRef currentPageRef, int depth,
-                         Map<MCID, String> paragraphs, Map<String, HtmlTag> roleMap)
-            throws IOException, SAXException {
+    private void recurse(COSBase kids, ObjectRef currentPageRef, int depth, Map<MCID, String> paragraphs,
+            Map<String, HtmlTag> roleMap) throws IOException, SAXException {
 
         if (depth > MAX_RECURSION_DEPTH) {
-            throw new IOException(
-                    new TikaException("Exceeded max recursion depth " + MAX_RECURSION_DEPTH));
+            throw new IOException(new TikaException("Exceeded max recursion depth " + MAX_RECURSION_DEPTH));
         }
 
         if (kids instanceof COSArray) {
             for (COSBase k : ((COSArray) kids)) {
                 recurse(k, currentPageRef, depth, paragraphs, roleMap);
             }
-        } else if (kids instanceof COSObject && 
-                ((COSObject) kids).getObject() instanceof COSDictionary) {
+        } else if (kids instanceof COSObject && ((COSObject) kids).getObject() instanceof COSDictionary) {
             //TODO should be merged with COSDictionary segment below?
             // and maybe dereference COSObject first, i.e. before the first "if"?
             // No, because we're using the object key for a map
@@ -285,8 +274,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
             COSDictionary dict = (COSDictionary) ((COSObject) kids).getObject();
             COSName type = dict.getCOSName(COSName.TYPE);
             if (COSName.OBJR.equals(type)) {
-                recurse(dict.getDictionaryObject(COSName.OBJ), currentPageRef, depth + 1, paragraphs,
-                        roleMap);
+                recurse(dict.getDictionaryObject(COSName.OBJ), currentPageRef, depth + 1, paragraphs, roleMap);
             }
 
             COSName n = dict.getCOSName(COSName.S);
@@ -364,11 +352,9 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                 state.uri = anchor.getString(COSName.URI);
             } else {
                 if (dict.containsKey(COSName.K)) {
-                    recurse(dict.getDictionaryObject(COSName.K), currentPageRef, depth + 1,
-                            paragraphs, roleMap);
+                    recurse(dict.getDictionaryObject(COSName.K), currentPageRef, depth + 1, paragraphs, roleMap);
                 } else if (dict.containsKey(COSName.OBJ)) {
-                    recurse(dict.getDictionaryObject(COSName.OBJ), currentPageRef, depth + 1,
-                            paragraphs, roleMap);
+                    recurse(dict.getDictionaryObject(COSName.OBJ), currentPageRef, depth + 1, paragraphs, roleMap);
                 }
             }
         } else {
@@ -443,13 +429,13 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                     TODO: do we want to do anything with these?
                     TODO: Are there other types of objects we need to handle here?
                     else if (o instanceof PDImageXObject) {
-
+                    
                     } else if (o instanceof PDTransparencyGroup) {
-
+                    
                     } else if (o instanceof PDMarkedContent) {
-
+                    
                     } else if (o instanceof PDFormXObject) {
-
+                    
                     } else {
                         throw new RuntimeException("can't handle "+o.getClass());
                     }*/

@@ -28,7 +28,6 @@ import java.util.Set;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.help.HelpFormatter;
 import org.apache.commons.io.FilenameUtils;
-
 import org.apache.tika.eval.app.db.ColInfo;
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.TableInfo;
@@ -47,34 +46,46 @@ import org.apache.tika.pipes.core.fetcher.FetchKey;
 
 public class ExtractComparer extends ProfilerBase {
 
-    private static final String DIGEST_KEY_PREFIX = TikaCoreProperties.TIKA_META_PREFIX + "digest" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    private static final String DIGEST_KEY_PREFIX = TikaCoreProperties.TIKA_META_PREFIX + "digest"
+            + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     private final static String FIELD_A = "fa";
     private final static String FIELD_B = "fb";
-    public static TableInfo REF_PAIR_NAMES = new TableInfo("pair_names", new ColInfo(Cols.DIR_NAME_A, Types.VARCHAR, 128), new ColInfo(Cols.DIR_NAME_B, Types.VARCHAR, 128));
-    public static TableInfo COMPARISON_CONTAINERS =
-            new TableInfo("containers", new ColInfo(Cols.CONTAINER_ID, Types.INTEGER, "PRIMARY KEY"), new ColInfo(Cols.FILE_PATH, Types.VARCHAR, FILE_PATH_MAX_LEN),
-                    new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 12), new ColInfo(Cols.LENGTH, Types.BIGINT), new ColInfo(Cols.EXTRACT_FILE_LENGTH_A, Types.BIGINT),
-                    new ColInfo(Cols.EXTRACT_FILE_LENGTH_B, Types.BIGINT));
-    public static TableInfo CONTENT_COMPARISONS =
-            new TableInfo("content_comparisons", new ColInfo(Cols.ID, Types.INTEGER, "PRIMARY KEY"), new ColInfo(Cols.TOP_10_UNIQUE_TOKEN_DIFFS_A, Types.VARCHAR, 1024),
-                    new ColInfo(Cols.TOP_10_UNIQUE_TOKEN_DIFFS_B, Types.VARCHAR, 1024), new ColInfo(Cols.TOP_10_MORE_IN_A, Types.VARCHAR, 1024),
-                    new ColInfo(Cols.TOP_10_MORE_IN_B, Types.VARCHAR, 1024), new ColInfo(Cols.DICE_COEFFICIENT, Types.FLOAT), new ColInfo(Cols.OVERLAP, Types.FLOAT));
+    public static TableInfo REF_PAIR_NAMES = new TableInfo("pair_names",
+            new ColInfo(Cols.DIR_NAME_A, Types.VARCHAR, 128), new ColInfo(Cols.DIR_NAME_B, Types.VARCHAR, 128));
+    public static TableInfo COMPARISON_CONTAINERS = new TableInfo("containers",
+            new ColInfo(Cols.CONTAINER_ID, Types.INTEGER, "PRIMARY KEY"),
+            new ColInfo(Cols.FILE_PATH, Types.VARCHAR, FILE_PATH_MAX_LEN),
+            new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 12), new ColInfo(Cols.LENGTH, Types.BIGINT),
+            new ColInfo(Cols.EXTRACT_FILE_LENGTH_A, Types.BIGINT),
+            new ColInfo(Cols.EXTRACT_FILE_LENGTH_B, Types.BIGINT));
+    public static TableInfo CONTENT_COMPARISONS = new TableInfo("content_comparisons",
+            new ColInfo(Cols.ID, Types.INTEGER, "PRIMARY KEY"),
+            new ColInfo(Cols.TOP_10_UNIQUE_TOKEN_DIFFS_A, Types.VARCHAR, 1024),
+            new ColInfo(Cols.TOP_10_UNIQUE_TOKEN_DIFFS_B, Types.VARCHAR, 1024),
+            new ColInfo(Cols.TOP_10_MORE_IN_A, Types.VARCHAR, 1024),
+            new ColInfo(Cols.TOP_10_MORE_IN_B, Types.VARCHAR, 1024), new ColInfo(Cols.DICE_COEFFICIENT, Types.FLOAT),
+            new ColInfo(Cols.OVERLAP, Types.FLOAT));
     public static TableInfo PROFILES_A = new TableInfo("profiles_a", ExtractProfiler.PROFILE_TABLE.getColInfos());
     public static TableInfo PROFILES_B = new TableInfo("profiles_b", ExtractProfiler.PROFILE_TABLE.getColInfos());
-    public static TableInfo EMBEDDED_FILE_PATH_TABLE_A = new TableInfo("emb_path_a", ExtractProfiler.EMBEDDED_FILE_PATH_TABLE.getColInfos());
-    public static TableInfo EMBEDDED_FILE_PATH_TABLE_B = new TableInfo("emb_path_b", ExtractProfiler.EMBEDDED_FILE_PATH_TABLE.getColInfos());
-    public static TableInfo CONTENTS_TABLE_A = new TableInfo("contents_a", ExtractProfiler.CONTENTS_TABLE.getColInfos());
-    public static TableInfo CONTENTS_TABLE_B = new TableInfo("contents_b", ExtractProfiler.CONTENTS_TABLE.getColInfos());
+    public static TableInfo EMBEDDED_FILE_PATH_TABLE_A = new TableInfo("emb_path_a",
+            ExtractProfiler.EMBEDDED_FILE_PATH_TABLE.getColInfos());
+    public static TableInfo EMBEDDED_FILE_PATH_TABLE_B = new TableInfo("emb_path_b",
+            ExtractProfiler.EMBEDDED_FILE_PATH_TABLE.getColInfos());
+    public static TableInfo CONTENTS_TABLE_A = new TableInfo("contents_a",
+            ExtractProfiler.CONTENTS_TABLE.getColInfos());
+    public static TableInfo CONTENTS_TABLE_B = new TableInfo("contents_b",
+            ExtractProfiler.CONTENTS_TABLE.getColInfos());
     public static TableInfo TAGS_TABLE_A = new TableInfo("tags_a", ExtractProfiler.TAGS_TABLE.getColInfos());
     public static TableInfo TAGS_TABLE_B = new TableInfo("tags_b", ExtractProfiler.TAGS_TABLE.getColInfos());
-    public static TableInfo EXCEPTION_TABLE_A = new TableInfo("exceptions_a", ExtractProfiler.EXCEPTION_TABLE.getColInfos());
-    public static TableInfo EXCEPTION_TABLE_B = new TableInfo("exceptions_b", ExtractProfiler.EXCEPTION_TABLE.getColInfos());
-    public static TableInfo EXTRACT_EXCEPTION_TABLE_A = new TableInfo("extract_exceptions_a", ExtractProfiler.EXTRACT_EXCEPTION_TABLE.getColInfos());
-    public static TableInfo EXTRACT_EXCEPTION_TABLE_B = new TableInfo("extract_exceptions_b", ExtractProfiler.EXTRACT_EXCEPTION_TABLE.getColInfos());
+    public static TableInfo EXCEPTION_TABLE_A = new TableInfo("exceptions_a",
+            ExtractProfiler.EXCEPTION_TABLE.getColInfos());
+    public static TableInfo EXCEPTION_TABLE_B = new TableInfo("exceptions_b",
+            ExtractProfiler.EXCEPTION_TABLE.getColInfos());
+    public static TableInfo EXTRACT_EXCEPTION_TABLE_A = new TableInfo("extract_exceptions_a",
+            ExtractProfiler.EXTRACT_EXCEPTION_TABLE.getColInfos());
+    public static TableInfo EXTRACT_EXCEPTION_TABLE_B = new TableInfo("extract_exceptions_b",
+            ExtractProfiler.EXTRACT_EXCEPTION_TABLE.getColInfos());
     static Options OPTIONS;
-
-
-
 
     //need to parameterize?
     private final Path inputDir;
@@ -83,7 +94,8 @@ public class ExtractComparer extends ProfilerBase {
     private final TokenContraster tokenContraster = new TokenContraster();
     private final ExtractReader extractReader;
 
-    public ExtractComparer(Path inputDir, Path extractsA, Path extractsB, ExtractReader extractReader, IDBWriter writer) {
+    public ExtractComparer(Path inputDir, Path extractsA, Path extractsB, ExtractReader extractReader,
+            IDBWriter writer) {
         super(writer);
         this.inputDir = inputDir;
         this.extractsA = extractsA;
@@ -93,8 +105,9 @@ public class ExtractComparer extends ProfilerBase {
 
     public static void USAGE() throws IOException {
         HelpFormatter helpFormatter = HelpFormatter.builder().get();
-        helpFormatter.printHelp("java -jar tika-eval-x.y.jar Compare -extractsA extractsA -extractsB extractsB -db mydb", 
-                "Tool: Compare", ExtractComparer.OPTIONS, 
+        helpFormatter.printHelp(
+                "java -jar tika-eval-x.y.jar Compare -extractsA extractsA -extractsB extractsB -db mydb",
+                "Tool: Compare", ExtractComparer.OPTIONS,
                 "Note: for the default h2 db, do not include the .mv.db at the end of the db name.", true);
     }
 
@@ -151,33 +164,29 @@ public class ExtractComparer extends ProfilerBase {
         //container table
         Map<Cols, String> contData = new HashMap<>();
         contData.put(Cols.CONTAINER_ID, containerID);
-        contData.put(Cols.FILE_PATH, fpsA
-                .getRelativeSourceFilePath()
-                .toString());
+        contData.put(Cols.FILE_PATH, fpsA.getRelativeSourceFilePath().toString());
         long srcFileLength = getSourceFileLength(metadataListA, metadataListB);
         contData.put(Cols.LENGTH, srcFileLength > NON_EXISTENT_FILE_LENGTH ? Long.toString(srcFileLength) : "");
-        contData.put(Cols.FILE_EXTENSION, FilenameUtils.getExtension(fpsA
-                .getRelativeSourceFilePath()
-                .getFileName()
-                .toString()));
+        contData.put(Cols.FILE_EXTENSION,
+                FilenameUtils.getExtension(fpsA.getRelativeSourceFilePath().getFileName().toString()));
 
         long extractFileLengthA = getFileLength(fpsA.getExtractFile());
-        contData.put(Cols.EXTRACT_FILE_LENGTH_A, extractFileLengthA > NON_EXISTENT_FILE_LENGTH ? Long.toString(extractFileLengthA) : "");
+        contData.put(Cols.EXTRACT_FILE_LENGTH_A,
+                extractFileLengthA > NON_EXISTENT_FILE_LENGTH ? Long.toString(extractFileLengthA) : "");
 
         long extractFileLengthB = getFileLength(fpsB.getExtractFile());
-        contData.put(Cols.EXTRACT_FILE_LENGTH_B, extractFileLengthB > NON_EXISTENT_FILE_LENGTH ? Long.toString(extractFileLengthB) : "");
+        contData.put(Cols.EXTRACT_FILE_LENGTH_B,
+                extractFileLengthB > NON_EXISTENT_FILE_LENGTH ? Long.toString(extractFileLengthB) : "");
 
         writer.writeRow(COMPARISON_CONTAINERS, contData);
 
         if (extractExceptionA != null) {
-            writeExtractException(EXTRACT_EXCEPTION_TABLE_A, containerID, fpsA
-                    .getRelativeSourceFilePath()
-                    .toString(), extractExceptionA);
+            writeExtractException(EXTRACT_EXCEPTION_TABLE_A, containerID, fpsA.getRelativeSourceFilePath().toString(),
+                    extractExceptionA);
         }
         if (extractExceptionB != null) {
-            writeExtractException(EXTRACT_EXCEPTION_TABLE_B, containerID, fpsB
-                    .getRelativeSourceFilePath()
-                    .toString(), extractExceptionB);
+            writeExtractException(EXTRACT_EXCEPTION_TABLE_B, containerID, fpsB.getRelativeSourceFilePath().toString(),
+                    extractExceptionB);
         }
 
         if (metadataListA == null && metadataListB == null) {
@@ -213,7 +222,8 @@ public class ExtractComparer extends ProfilerBase {
                 if (metadataB != null) {
                     contentTagsB = getContent(fpsB, metadataB);
                     writeTagData(fileId, contentTagsB, TAGS_TABLE_B);
-                    writeProfileData(fpsB, i, contentTagsB, metadataB, fileId, containerID, numAttachmentsB, PROFILES_B);
+                    writeProfileData(fpsB, i, contentTagsB, metadataB, fileId, containerID, numAttachmentsB,
+                            PROFILES_B);
                     writeExceptionData(fileId, metadataB, EXCEPTION_TABLE_B);
                 }
                 writeEmbeddedFilePathData(i, fileId, metadataA, metadataB);
@@ -238,7 +248,8 @@ public class ExtractComparer extends ProfilerBase {
                         Map<Cols, String> data = new HashMap<>();
                         data.put(Cols.ID, fileId);
 
-                        ContrastStatistics contrastStatistics = tokenContraster.calculateContrastStatistics(tokenCountsA, tokenCountsB);
+                        ContrastStatistics contrastStatistics = tokenContraster
+                                .calculateContrastStatistics(tokenCountsA, tokenCountsB);
 
                         writeContrasts(data, contrastStatistics);
                         writer.writeRow(CONTENT_COMPARISONS, data);
@@ -287,9 +298,7 @@ public class ExtractComparer extends ProfilerBase {
         }
         Set<String> digestA = new HashSet<>();
         if (metadataListA != null && !metadataListA.isEmpty()) {
-            for (String n : metadataListA
-                    .get(0)
-                    .names()) {
+            for (String n : metadataListA.get(0).names()) {
                 if (n.startsWith(DIGEST_KEY_PREFIX)) {
                     digestA.add(n);
                 }
@@ -347,7 +356,6 @@ public class ExtractComparer extends ProfilerBase {
         return getSourceFileLength(metadataListB);
     }
 
-
     /**
      * Try to find the matching metadata based on the AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH
      * If you can't find it, return -1;
@@ -357,7 +365,8 @@ public class ExtractComparer extends ProfilerBase {
      * @param metadataListB
      * @return
      */
-    private int getMatch(int aIndex, String sharedDigestKey, Set<Integer> handledB, List<Metadata> metadataListA, List<Metadata> metadataListB) {
+    private int getMatch(int aIndex, String sharedDigestKey, Set<Integer> handledB, List<Metadata> metadataListA,
+            List<Metadata> metadataListB) {
         //TODO: could make this more robust
         if (metadataListB == null || metadataListB.size() == 0) {
             return -1;
@@ -377,9 +386,7 @@ public class ExtractComparer extends ProfilerBase {
         String embeddedPath = thisMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
         if (embeddedPath != null) {
             for (int j = 0; j < metadataListB.size(); j++) {
-                String thatEmbeddedPath = metadataListB
-                        .get(j)
-                        .get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
+                String thatEmbeddedPath = metadataListB.get(j).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
                 if (embeddedPath.equals(thatEmbeddedPath)) {
                     return j;
                 }
@@ -394,7 +401,8 @@ public class ExtractComparer extends ProfilerBase {
         return -1;
     }
 
-    private int findMatchingDigests(String sharedDigestKey, Set<Integer> handledB, Metadata metadata, List<Metadata> metadataListB) {
+    private int findMatchingDigests(String sharedDigestKey, Set<Integer> handledB, Metadata metadata,
+            List<Metadata> metadataListB) {
         String digestA = metadata.get(sharedDigestKey);
         if (digestA == null) {
             return -1;
@@ -410,7 +418,8 @@ public class ExtractComparer extends ProfilerBase {
             String digestB = mB.get(sharedDigestKey);
             if (digestA.equalsIgnoreCase(digestB)) {
                 cand = i;
-                if (resourceName != null && resourceName.equals(mB.get(TikaCoreProperties.FINAL_EMBEDDED_RESOURCE_PATH))) {
+                if (resourceName != null
+                        && resourceName.equals(mB.get(TikaCoreProperties.FINAL_EMBEDDED_RESOURCE_PATH))) {
                     return i;
                 }
             }
@@ -436,10 +445,7 @@ public class ExtractComparer extends ProfilerBase {
             if (i++ > 0) {
                 sb.append(" | ");
             }
-            sb
-                    .append(p.getToken())
-                    .append(": ")
-                    .append(p.getValue());
+            sb.append(p.getToken()).append(": ").append(p.getValue());
         }
         data.put(col, sb.toString());
     }

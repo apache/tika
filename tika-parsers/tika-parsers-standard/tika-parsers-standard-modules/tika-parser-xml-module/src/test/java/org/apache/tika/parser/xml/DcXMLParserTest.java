@@ -22,15 +22,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class DcXMLParserTest extends TikaTest {
 
@@ -76,8 +75,7 @@ public class DcXMLParserTest extends TikaTest {
             Metadata metadata = new Metadata();
             new DcXMLParser().parse(input, new DefaultHandler(), metadata, new ParseContext());
 
-            final String expected =
-                    "Archim\u00E8de et Lius \u00E0 Ch\u00E2teauneuf testing chars en \u00E9t\u00E9";
+            final String expected = "Archim\u00E8de et Lius \u00E0 Ch\u00E2teauneuf testing chars en \u00E9t\u00E9";
             assertEquals(expected, metadata.get(TikaCoreProperties.RIGHTS));
         }
     }

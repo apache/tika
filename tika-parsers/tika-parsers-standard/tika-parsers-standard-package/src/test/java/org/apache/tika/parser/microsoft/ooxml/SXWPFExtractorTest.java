@@ -21,10 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.List;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -32,6 +28,9 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.EMFParser;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class SXWPFExtractorTest extends TikaTest {
 
@@ -67,15 +66,11 @@ public class SXWPFExtractorTest extends TikaTest {
         assertEquals("TestPdf.pdf", metadataList.get(4).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("testWORD123.docx", metadataList.get(6).get(TikaCoreProperties.RESOURCE_NAME_KEY));
 
-        assertEquals("/TestText.txt",
-                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
-        assertEquals("/TestPdf.pdf",
-                metadataList.get(4).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
-        assertEquals("/testWORD123.docx",
-                metadataList.get(6).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/TestText.txt", metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/TestPdf.pdf", metadataList.get(4).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/testWORD123.docx", metadataList.get(6).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
 
-        assertContains("This is Text File",
-                metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("This is Text File", metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
 
         assertContains("This is test PDF document for parser.",
                 metadataList.get(4).get(TikaCoreProperties.TIKA_CONTENT));

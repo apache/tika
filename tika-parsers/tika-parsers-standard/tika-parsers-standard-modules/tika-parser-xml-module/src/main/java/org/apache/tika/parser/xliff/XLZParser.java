@@ -25,9 +25,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -36,6 +33,8 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.EndDocumentShieldingContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Parser for XLZ Archives.
@@ -71,8 +70,8 @@ public class XLZParser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler baseHandler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler baseHandler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         ZipFile zipFile = null;
         ZipInputStream zipStream = null;
@@ -113,8 +112,7 @@ public class XLZParser implements Parser {
     }
 
     private void handleZipStream(ZipInputStream zipStream, Metadata metadata, ParseContext context,
-                                 EndDocumentShieldingContentHandler handler)
-            throws IOException, TikaException, SAXException {
+            EndDocumentShieldingContentHandler handler) throws IOException, TikaException, SAXException {
 
         ZipEntry entry = zipStream.getNextEntry();
         if (entry == null) {
@@ -129,8 +127,7 @@ public class XLZParser implements Parser {
     }
 
     private void handleZipFile(ZipFile zipFile, Metadata metadata, ParseContext context,
-                               EndDocumentShieldingContentHandler handler)
-            throws IOException, TikaException, SAXException {
+            EndDocumentShieldingContentHandler handler) throws IOException, TikaException, SAXException {
 
         Enumeration<? extends ZipEntry> entries = zipFile.entries();
         while (entries.hasMoreElements()) {

@@ -22,10 +22,6 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.jempbox.xmp.XMPMetadata;
-import org.junit.jupiter.api.Test;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -34,6 +30,9 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.junit.jupiter.api.Test;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 /**
  * This tests our custom schemas and PDF/A
@@ -71,8 +70,7 @@ public class CustomTikaXMPTest extends TikaTest {
     public void testPDFVT() throws Exception {
         Metadata metadata = extract("testPDFVT.xmp");
         assertEquals("PDF/VT-1", metadata.get(PDF.PDFVT_VERSION));
-        assertEquals("2018-08-06T11:53:12Z",
-                metadata.getDate(PDF.PDFVT_MODIFIED).toInstant().toString());
+        assertEquals("2018-08-06T11:53:12Z", metadata.getDate(PDF.PDFVT_MODIFIED).toInstant().toString());
     }
 
     /**

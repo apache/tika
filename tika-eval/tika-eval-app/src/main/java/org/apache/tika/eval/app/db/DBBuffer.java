@@ -16,7 +16,6 @@
  */
 package org.apache.tika.eval.app.db;
 
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -25,8 +24,10 @@ public class DBBuffer extends AbstractDBBuffer {
 
     private final PreparedStatement st;
 
-    public DBBuffer(Connection connection, String tableName, String idColumnName, String valueColumnName) throws SQLException {
-        st = connection.prepareStatement("insert into " + tableName + "( " + idColumnName + ", " + valueColumnName + ") values (?,?);");
+    public DBBuffer(Connection connection, String tableName, String idColumnName, String valueColumnName)
+            throws SQLException {
+        st = connection.prepareStatement(
+                "insert into " + tableName + "( " + idColumnName + ", " + valueColumnName + ") values (?,?);");
     }
 
     @Override
@@ -47,6 +48,5 @@ public class DBBuffer extends AbstractDBBuffer {
         st.close();
 
     }
-
 
 }

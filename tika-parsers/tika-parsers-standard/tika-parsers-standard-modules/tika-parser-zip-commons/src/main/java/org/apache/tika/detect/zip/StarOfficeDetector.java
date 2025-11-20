@@ -25,16 +25,15 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.StoppingEarlyException;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class StarOfficeDetector implements ZipContainerDetector {
 
@@ -43,14 +42,10 @@ public class StarOfficeDetector implements ZipContainerDetector {
     private static final int MAX_MANIFEST = 20 * 1024 * 1024;
 
     static {
-        STAR_OFFICE_X
-                .put("application/vnd.sun.xml.writer", MediaType.application("vnd.sun.xml.writer"));
-        STAR_OFFICE_X
-                .put("application/vnd.sun.xml.calc", MediaType.application("vnd.sun.xml.calc"));
-        STAR_OFFICE_X
-                .put("application/vnd.sun.xml.draw", MediaType.application("vnd.sun.xml.draw"));
-        STAR_OFFICE_X.put("application/vnd.sun.xml.impress",
-                MediaType.application("vnd.sun.xml.impress"));
+        STAR_OFFICE_X.put("application/vnd.sun.xml.writer", MediaType.application("vnd.sun.xml.writer"));
+        STAR_OFFICE_X.put("application/vnd.sun.xml.calc", MediaType.application("vnd.sun.xml.calc"));
+        STAR_OFFICE_X.put("application/vnd.sun.xml.draw", MediaType.application("vnd.sun.xml.draw"));
+        STAR_OFFICE_X.put("application/vnd.sun.xml.impress", MediaType.application("vnd.sun.xml.impress"));
         STAR_OFFICE_X.put("application/vnd.sun.star.configuration-data",
                 MediaType.application("vnd.openofficeorg.extension"));
     }
@@ -80,8 +75,7 @@ public class StarOfficeDetector implements ZipContainerDetector {
     }
 
     @Override
-    public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis,
-                                           StreamingDetectContext detectContext)
+    public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis, StreamingDetectContext detectContext)
             throws IOException {
         String name = zae.getName();
         if (!"META-INF/manifest.xml".equals(name)) {
@@ -109,8 +103,7 @@ public class StarOfficeDetector implements ZipContainerDetector {
         private MediaType mediaType = null;
 
         @Override
-        public void startElement(String uri, String localName, String name, Attributes attrs)
-                throws SAXException {
+        public void startElement(String uri, String localName, String name, Attributes attrs) throws SAXException {
             if (!"file-entry".equals(localName)) {
                 return;
             }

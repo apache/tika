@@ -37,10 +37,8 @@ import org.apache.tika.exception.TikaException;
 public class FetcherManager extends ConfigBase {
 
     public static FetcherManager load(Path p) throws IOException, TikaConfigException {
-        try (InputStream is =
-                     Files.newInputStream(p)) {
-            return FetcherManager.buildComposite("fetchers", FetcherManager.class,
-                    "fetcher", Fetcher.class, is);
+        try (InputStream is = Files.newInputStream(p)) {
+            return FetcherManager.buildComposite("fetchers", FetcherManager.class, "fetcher", Fetcher.class, is);
         }
     }
     private final Map<String, Fetcher> fetcherMap = new ConcurrentHashMap<>();
@@ -52,8 +50,7 @@ public class FetcherManager extends ConfigBase {
                 throw new TikaConfigException("fetcher name must not be blank");
             }
             if (fetcherMap.containsKey(fetcher.getName())) {
-                throw new TikaConfigException(
-                        "Multiple fetchers cannot support the same prefix: " + fetcher.getName());
+                throw new TikaConfigException("Multiple fetchers cannot support the same prefix: " + fetcher.getName());
             }
             fetcherMap.put(fetcher.getName(), fetcher);
         }
@@ -63,8 +60,7 @@ public class FetcherManager extends ConfigBase {
         Fetcher fetcher = fetcherMap.get(fetcherName);
         if (fetcher == null) {
             throw new IllegalArgumentException(
-                    "Can't find fetcher for fetcherName: " + fetcherName + ". I've loaded: " +
-                            fetcherMap.keySet());
+                    "Can't find fetcher for fetcherName: " + fetcherName + ". I've loaded: " + fetcherMap.keySet());
         }
         return fetcher;
     }
@@ -84,8 +80,7 @@ public class FetcherManager extends ConfigBase {
             throw new IllegalArgumentException("fetchers size must == 1 for the no arg call");
         }
         if (fetcherMap.size() > 1) {
-            throw new IllegalArgumentException("need to specify 'fetcherName' if > 1 fetchers are" +
-                    " available");
+            throw new IllegalArgumentException("need to specify 'fetcherName' if > 1 fetchers are" + " available");
         }
         for (Fetcher fetcher : fetcherMap.values()) {
             return fetcher;

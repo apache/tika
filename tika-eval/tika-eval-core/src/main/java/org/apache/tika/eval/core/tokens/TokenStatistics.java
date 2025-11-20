@@ -20,7 +20,6 @@ import java.util.Arrays;
 
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
-
 public class TokenStatistics {
 
     private final int totalTokens;
@@ -29,8 +28,8 @@ public class TokenStatistics {
     private final double entropy;
     private final SummaryStatistics summaryStatistics;
 
-    public TokenStatistics(int totalUniqueTokens, int totalTokens, TokenIntPair[] topN,
-                           double entropy, SummaryStatistics summaryStatistics) {
+    public TokenStatistics(int totalUniqueTokens, int totalTokens, TokenIntPair[] topN, double entropy,
+            SummaryStatistics summaryStatistics) {
         this.totalUniqueTokens = totalUniqueTokens;
         this.totalTokens = totalTokens;
         this.topN = topN;
@@ -69,9 +68,9 @@ public class TokenStatistics {
 
     @Override
     public String toString() {
-        return "TokenStatistics{" + "totalTokens=" + totalTokens + ", totalUniqueTokens=" +
-                totalUniqueTokens + ", topN=" + Arrays.toString(topN) + ", entropy=" + entropy +
-                ", summaryStatistics=" + summaryStatistics + '}';
+        return "TokenStatistics{" + "totalTokens=" + totalTokens + ", totalUniqueTokens=" + totalUniqueTokens
+                + ", topN=" + Arrays.toString(topN) + ", entropy=" + entropy + ", summaryStatistics="
+                + summaryStatistics + '}';
     }
 
     @Override
@@ -143,6 +142,5 @@ public class TokenStatistics {
         result = 31 * result + summaryStatistics.hashCode();
         return result;
     }
-
 
 }

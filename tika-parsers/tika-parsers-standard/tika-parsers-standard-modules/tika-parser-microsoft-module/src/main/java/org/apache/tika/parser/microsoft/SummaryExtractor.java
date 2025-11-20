@@ -33,9 +33,6 @@ import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
@@ -46,6 +43,8 @@ import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Extractor for Common OLE2 (HPSF) metadata
@@ -53,11 +52,10 @@ import org.apache.tika.utils.StringUtils;
 public class SummaryExtractor {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractPOIFSExtractor.class);
 
-    private static final String SUMMARY_INFORMATION =
-            SummaryInformation.DEFAULT_STREAM_NAME.toUpperCase(Locale.US);
+    private static final String SUMMARY_INFORMATION = SummaryInformation.DEFAULT_STREAM_NAME.toUpperCase(Locale.US);
 
-    private static final String DOCUMENT_SUMMARY_INFORMATION =
-            DocumentSummaryInformation.DEFAULT_STREAM_NAME.toUpperCase(Locale.US);
+    private static final String DOCUMENT_SUMMARY_INFORMATION = DocumentSummaryInformation.DEFAULT_STREAM_NAME
+            .toUpperCase(Locale.US);
 
     private final Metadata metadata;
 
@@ -80,7 +78,7 @@ public class SummaryExtractor {
         }
         for (String part : parts) {
             if (!seen.contains(part)) {
-                if (! StringUtils.isBlank(part)) {
+                if (!StringUtils.isBlank(part)) {
                     metadata.add(property, part);
                     seen.add(part);
                 }
@@ -97,8 +95,7 @@ public class SummaryExtractor {
         parseSummaryEntryIfExists(root, DOCUMENT_SUMMARY_INFORMATION);
     }
 
-    private void parseSummaryEntryIfExists(DirectoryNode root, String entryName)
-            throws IOException, TikaException {
+    private void parseSummaryEntryIfExists(DirectoryNode root, String entryName) throws IOException, TikaException {
         try {
             DocumentEntry entry = null;
 

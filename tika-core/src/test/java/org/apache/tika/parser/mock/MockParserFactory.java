@@ -23,7 +23,6 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserFactory;
 
-
 public class MockParserFactory extends ParserFactory {
 
     public MockParserFactory(Map<String, String> args) {

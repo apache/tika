@@ -38,11 +38,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -51,6 +46,10 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Parser that uses an external program (like catdoc or pdf2txt) to extract
@@ -184,8 +183,8 @@ public class ExternalParser implements Parser {
             // External process execution is banned by the security manager
             throw se;
         } catch (Error err) {
-            if (err.getMessage() != null && (err.getMessage().contains("posix_spawn") ||
-                    err.getMessage().contains("UNIXProcess"))) {
+            if (err.getMessage() != null
+                    && (err.getMessage().contains("posix_spawn") || err.getMessage().contains("UNIXProcess"))) {
                 LOG.debug("(TIKA-1526): exception trying to run: " + checkCmd[0], err);
                 //"Error forking command due to JVM locale bug
                 //(see TIKA-1526 and SOLR-6387)"
@@ -265,8 +264,8 @@ public class ExternalParser implements Parser {
      * Metadata is only extracted if {@link #setMetadataExtractionPatterns(Map)}
      * has been called to set patterns.
      */
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
 
         TemporaryResources tmp = new TemporaryResources();
@@ -277,8 +276,8 @@ public class ExternalParser implements Parser {
         }
     }
 
-    private void parse(TikaInputStream stream, XHTMLContentHandler xhtml, Metadata metadata,
-                       TemporaryResources tmp) throws IOException, SAXException, TikaException {
+    private void parse(TikaInputStream stream, XHTMLContentHandler xhtml, Metadata metadata, TemporaryResources tmp)
+            throws IOException, SAXException, TikaException {
         boolean inputToStdIn = true;
         boolean outputFromStdOut = true;
         boolean hasPatterns = (metadataPatterns != null && !metadataPatterns.isEmpty());
@@ -369,8 +368,7 @@ public class ExternalParser implements Parser {
      * @throws SAXException if the XHTML SAX events could not be handled
      * @throws IOException  if an input error occurred
      */
-    private void extractOutput(InputStream stream, XHTMLContentHandler xhtml)
-            throws SAXException, IOException {
+    private void extractOutput(InputStream stream, XHTMLContentHandler xhtml) throws SAXException, IOException {
         try (Reader reader = new InputStreamReader(stream, UTF_8)) {
             xhtml.startDocument();
             xhtml.startElement("p");
@@ -421,8 +419,7 @@ public class ExternalParser implements Parser {
                         Matcher m = entry.getKey().matcher(line);
                         if (m.find()) {
                             consumed = true;
-                            if (entry.getValue() != null &&
-                                    !entry.getValue().equals("")) {
+                            if (entry.getValue() != null && !entry.getValue().equals("")) {
                                 metadata.add(entry.getValue(), m.group(1));
                             } else {
                                 metadata.add(m.group(1), m.group(2));
@@ -467,6 +464,5 @@ public class ExternalParser implements Parser {
          */
         void consume(String line);
     }
-
 
 }

@@ -18,9 +18,8 @@ package org.apache.tika.parser.wordperfect;
 
 import java.io.IOException;
 
-import org.xml.sax.SAXException;
-
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Extracts WordPerfect Document Area text from a WordPerfect document.
@@ -31,8 +30,7 @@ abstract class WPDocumentAreaExtractor {
 
     boolean startedP = false;
 
-    public void extract(WPInputStream in, XHTMLContentHandler xhtml)
-            throws IOException, SAXException {
+    public void extract(WPInputStream in, XHTMLContentHandler xhtml) throws IOException, SAXException {
         int chunk = 4096;
         StringBuilder out = new StringBuilder(chunk);
         int c;
@@ -46,9 +44,8 @@ abstract class WPDocumentAreaExtractor {
         endParagraph(out, xhtml);
     }
 
-    protected abstract void extract(int c, WPInputStream in, StringBuilder out,
-                                    XHTMLContentHandler xhtml) throws IOException, SAXException;
-
+    protected abstract void extract(int c, WPInputStream in, StringBuilder out, XHTMLContentHandler xhtml)
+            throws IOException, SAXException;
 
     protected void lazilyStartParagraph(XHTMLContentHandler xhtml) throws SAXException {
         if (!startedP) {
@@ -66,8 +63,7 @@ abstract class WPDocumentAreaExtractor {
      * @param xhtml
      * @throws SAXException
      */
-    protected void endParagraph(StringBuilder buffer, XHTMLContentHandler xhtml)
-            throws SAXException {
+    protected void endParagraph(StringBuilder buffer, XHTMLContentHandler xhtml) throws SAXException {
         lazilyStartParagraph(xhtml);
 
         xhtml.characters(buffer.toString());

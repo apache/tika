@@ -27,11 +27,10 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Configuration for TesseractOCRParser.
@@ -53,11 +52,9 @@ public class TesseractOCRConfig implements Serializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(TesseractOCRConfig.class);
 
-    private static Pattern ALLOWABLE_PAGE_SEPARATORS_PATTERN =
-            Pattern.compile("(?i)^[-_/\\.A-Z0-9]+$");
+    private static Pattern ALLOWABLE_PAGE_SEPARATORS_PATTERN = Pattern.compile("(?i)^[-_/\\.A-Z0-9]+$");
 
-    private static Pattern ALLOWABLE_OTHER_PARAMS_PATTERN =
-            Pattern.compile("(?i)^[-_/\\.A-Z0-9]+$");
+    private static Pattern ALLOWABLE_OTHER_PARAMS_PATTERN = Pattern.compile("(?i)^[-_/\\.A-Z0-9]+$");
 
     // whether or not to apply rotation calculated by the rotation.py script
     private boolean applyRotation = false;
@@ -114,15 +111,13 @@ public class TesseractOCRConfig implements Serializable {
         language = language.replaceAll("\\s", "");
         // Test for leading or trailing +
         if (language.matches("\\+.*|.*\\+")) {
-            throw new IllegalArgumentException(
-                    "Invalid syntax - Can't start or end with +" + language);
+            throw new IllegalArgumentException("Invalid syntax - Can't start or end with +" + language);
         }
         // Split on the + sign
         final String[] langs = language.split("\\+");
         for (String lang : langs) {
             // First, make sure it conforms to the correct syntax
-            if (!lang.matches(
-                    "([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2})|script(/|\\\\)[A-Z][a-zA-Z_]+")) {
+            if (!lang.matches("([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2})|script(/|\\\\)[A-Z][a-zA-Z_]+")) {
                 invalidLangs.add(lang + " (invalid syntax)");
             } else {
                 validLangs.add(lang);
@@ -204,8 +199,8 @@ public class TesseractOCRConfig implements Serializable {
         }
         Matcher m = ALLOWABLE_PAGE_SEPARATORS_PATTERN.matcher(pageSeparator);
         if (!m.find()) {
-            throw new IllegalArgumentException(pageSeparator + " contains illegal characters.\n" +
-                    "If you trust this value, set it with setTrustedPageSeparator");
+            throw new IllegalArgumentException(pageSeparator + " contains illegal characters.\n"
+                    + "If you trust this value, set it with setTrustedPageSeparator");
         }
         setTrustedPageSeparator(pageSeparator);
         userConfigured.add("pageSeparator");
@@ -347,8 +342,7 @@ public class TesseractOCRConfig implements Serializable {
      */
     public void setDensity(int density) {
         if (density < 150 || density > 1200) {
-            throw new IllegalArgumentException(
-                    "Invalid density value. Valid range of values is 150-1200.");
+            throw new IllegalArgumentException("Invalid density value. Valid range of values is 150-1200.");
         }
         this.density = density;
         userConfigured.add("density");
@@ -374,8 +368,7 @@ public class TesseractOCRConfig implements Serializable {
                 return;
             }
         }
-        throw new IllegalArgumentException(
-                "Invalid depth value. Valid values are 2, 4, 8, 16, 32, 64, 256, 4096.");
+        throw new IllegalArgumentException("Invalid depth value. Valid values are 2, 4, 8, 16, 32, 64, 256, 4096.");
     }
 
     /**
@@ -394,8 +387,7 @@ public class TesseractOCRConfig implements Serializable {
             throw new IllegalArgumentException("Colorspace value cannot be null.");
         }
         if (!colorspace.matches("(?i)^[-_A-Z0-9]+$")) {
-            throw new IllegalArgumentException(
-                    "colorspace must match this pattern: (?i)^[-_A-Z0-9]+$");
+            throw new IllegalArgumentException("colorspace must match this pattern: (?i)^[-_A-Z0-9]+$");
         }
         this.colorspace = colorspace;
         userConfigured.add("colorspace");
@@ -415,14 +407,12 @@ public class TesseractOCRConfig implements Serializable {
      */
     public void setFilter(String filter) {
         if (filter.equals(null)) {
-            throw new IllegalArgumentException(
-                    "Filter value cannot be null. Valid values are point, hermite, " +
-                            "cubic, box, gaussian, catrom, triangle, quadratic and mitchell.");
+            throw new IllegalArgumentException("Filter value cannot be null. Valid values are point, hermite, "
+                    + "cubic, box, gaussian, catrom, triangle, quadratic and mitchell.");
         }
 
-        String[] allowedFilters =
-                {"Point", "Hermite", "Cubic", "Box", "Gaussian", "Catrom", "Triangle", "Quadratic",
-                        "Mitchell"};
+        String[] allowedFilters = {"Point", "Hermite", "Cubic", "Box", "Gaussian", "Catrom", "Triangle", "Quadratic",
+                "Mitchell"};
         for (String allowedFilter : allowedFilters) {
             if (filter.equalsIgnoreCase(allowedFilter)) {
                 this.filter = filter;
@@ -430,9 +420,8 @@ public class TesseractOCRConfig implements Serializable {
                 return;
             }
         }
-        throw new IllegalArgumentException(
-                "Invalid filter value. Valid values are point, hermite, " +
-                        "cubic, box, gaussian, catrom, triangle, quadratic and mitchell.");
+        throw new IllegalArgumentException("Invalid filter value. Valid values are point, hermite, "
+                + "cubic, box, gaussian, catrom, triangle, quadratic and mitchell.");
     }
 
     public boolean isSkipOcr() {
@@ -469,8 +458,7 @@ public class TesseractOCRConfig implements Serializable {
                 return;
             }
         }
-        throw new IllegalArgumentException(
-                "Invalid resize value. Valid range of values is 100-900.");
+        throw new IllegalArgumentException("Invalid resize value. Valid range of values is 100-900.");
     }
 
     /**
@@ -549,8 +537,7 @@ public class TesseractOCRConfig implements Serializable {
             if ("userConfigured".equals(field.getName())) {
                 continue;
             }
-            if ("otherTesseractConfig".equals(field.getName()) &&
-                    updates.userConfigured.contains(field.getName())) {
+            if ("otherTesseractConfig".equals(field.getName()) && updates.userConfigured.contains(field.getName())) {
                 //deep copy
                 for (Map.Entry<String, String> e : updates.getOtherTesseractConfig().entrySet()) {
                     updated.addOtherTesseractConfig(e.getKey(), e.getValue());

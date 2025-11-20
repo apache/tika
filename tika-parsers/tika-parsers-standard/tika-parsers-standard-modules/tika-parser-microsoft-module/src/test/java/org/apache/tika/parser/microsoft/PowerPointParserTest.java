@@ -24,10 +24,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.Metadata;
@@ -35,6 +31,9 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class PowerPointParserTest extends TikaTest {
 
@@ -98,25 +97,19 @@ public class PowerPointParserTest extends TikaTest {
 
         assertContains("Keyword1 Keyword2", xml);
         assertEquals("Keyword1 Keyword2", metadata.get(Office.KEYWORDS));
-        assertContains("Keyword1 Keyword2",
-                Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
-
+        assertContains("Keyword1 Keyword2", Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
 
         assertContains("Subject is here", xml);
-        assertContains("Subject is here",
-                Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
-
+        assertContains("Subject is here", Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
 
         assertContains("Suddenly some Japanese text:", xml);
         // Special version of (GHQ)
         assertContains("\uff08\uff27\uff28\uff31\uff09", xml);
         // 6 other characters
-        assertContains("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f",
-                xml);
+        assertContains("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f", xml);
 
         assertContains("And then some Gothic text:", xml);
-        assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A",
-                xml);
+        assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A", xml);
     }
 
     @Test
@@ -292,11 +285,9 @@ public class PowerPointParserTest extends TikaTest {
         officeParserConfig.setExtractMacros(true);
         parseContext.set(OfficeParserConfig.class, officeParserConfig);
 
-
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_macros.ppt", parseContext);
         assertContainsAtLeast(minExpected, metadataList);
     }
-
 
     @Test
     public void testSkippingBadCompressedObj() throws Exception {
@@ -304,16 +295,12 @@ public class PowerPointParserTest extends TikaTest {
         //TIKA-2130
         XMLResult r = getXML("testPPT_skipBadCompressedObject.ppt");
         assertContains("NASA Human", r.xml);
-        assertEquals(2, r.metadata
-                .getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
-        assertContains("incorrect data check",
-                r.metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        assertEquals(2, r.metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
+        assertContains("incorrect data check", r.metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
 
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_skipBadCompressedObject.ppt");
-        assertEquals(2, metadataList.get(0)
-                .getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
-        assertContains("incorrect data check",
-                metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        assertEquals(2, metadataList.get(0).getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
+        assertContains("incorrect data check", metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
     }
 
     @Test
@@ -332,7 +319,6 @@ public class PowerPointParserTest extends TikaTest {
         //i.e. POI has already included them in the slide's getTextParagraphs()
         assertContainsCount("Text box1", content, 1);
 
-
         //the WordArt and text box count tests will fail
         //if this content is available via getTextParagraphs() of the slide in POI
         //i.e. when POI is fixed, these tests will fail, and
@@ -349,11 +335,9 @@ public class PowerPointParserTest extends TikaTest {
         assertContains("tika", content);
         assertContains("MyTitle", content);
 
-        assertEquals("/embedded-1",
-                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/embedded-1", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
 
-        assertEquals("/embedded-2",
-                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/embedded-2", metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
 
     }
 

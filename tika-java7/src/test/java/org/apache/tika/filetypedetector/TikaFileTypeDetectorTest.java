@@ -54,8 +54,7 @@ public class TikaFileTypeDetectorTest {
 
     @Test
     public final void testDirectAccess() throws Exception {
-        String contentType =
-                new TikaFileTypeDetector().probeContentType(testDirectory.resolve(TEST_HTML));
+        String contentType = new TikaFileTypeDetector().probeContentType(testDirectory.resolve(TEST_HTML));
         assertNotNull(contentType);
         assertEquals("text/html", contentType);
     }
@@ -69,8 +68,7 @@ public class TikaFileTypeDetectorTest {
 
     @Test
     public final void testFilesProbeContentTypePathUnrecognised() throws Exception {
-        String contentType =
-                Files.probeContentType(testDirectory.resolve(TEST_UNRECOGNISED_EXTENSION));
+        String contentType = Files.probeContentType(testDirectory.resolve(TEST_UNRECOGNISED_EXTENSION));
         assertNotNull(contentType);
         assertEquals("text/html", contentType);
     }

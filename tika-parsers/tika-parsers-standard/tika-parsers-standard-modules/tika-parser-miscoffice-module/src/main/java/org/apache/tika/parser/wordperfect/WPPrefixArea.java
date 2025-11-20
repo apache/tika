@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.wordperfect;
 
-
 /**
  * Section of a WordPerfect file called "Prefix Area" containing
  * information about the specific file format/version.
@@ -38,7 +37,6 @@ class WPPrefixArea {
     public static final int WP6_FILE_TYPE = 36;
     public static final int WP6_MAJOR_VERSION = 2;
     public static final int WP6_MINOR_VERSION = 0;
-
 
     // Normal header
     private String fileId;
@@ -131,11 +129,10 @@ class WPPrefixArea {
 
     @Override
     public String toString() {
-        return "WP6FileHeader{" + "fileId='" + fileId + '\'' + ", docAreaPointer=" +
-                docAreaPointer + ", productType=" + productType + ", fileType=" + fileType +
-                ", majorVersion=" + majorVersion + ", minorVersion=" + minorVersion +
-                ", encrypted=" + encrypted + ", indexAreaPointer=" + indexAreaPointer +
-                ", fileSize=" + fileSize + '}';
+        return "WP6FileHeader{" + "fileId='" + fileId + '\'' + ", docAreaPointer=" + docAreaPointer + ", productType="
+                + productType + ", fileType=" + fileType + ", majorVersion=" + majorVersion + ", minorVersion="
+                + minorVersion + ", encrypted=" + encrypted + ", indexAreaPointer=" + indexAreaPointer + ", fileSize="
+                + fileSize + '}';
     }
 
     @Override
@@ -199,6 +196,5 @@ class WPPrefixArea {
         }
         return true;
     }
-
 
 }

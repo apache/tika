@@ -1,7 +1,7 @@
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright owlocationNameEntitieship.
+ * this work for additional information regarding copyright ownership.
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
@@ -24,12 +24,11 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ner.NamedEntityParser;
+import org.junit.jupiter.api.Test;
 
 public class NLTKNERecogniserTest {
 
@@ -38,8 +37,7 @@ public class NLTKNERecogniserTest {
         String text = "America is a big country.";
         System.setProperty(NamedEntityParser.SYS_PROP_NER_IMPL, NLTKNERecogniser.class.getName());
 
-        Tika tika = new Tika(
-                new TikaConfig(NamedEntityParser.class.getResourceAsStream("tika-config.xml")));
+        Tika tika = new Tika(new TikaConfig(NamedEntityParser.class.getResourceAsStream("tika-config.xml")));
         Metadata md = new Metadata();
         tika.parse(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)), md);
 

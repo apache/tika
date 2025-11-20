@@ -20,11 +20,10 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.xml.sax.ContentHandler;
 
 /**
  * Dummy parser that always throws a {@link TikaException} without even
@@ -42,8 +41,8 @@ public class ErrorParser implements Parser {
         return Collections.emptySet();
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws TikaException {
         throw new TikaException("Parse error");
     }
 }

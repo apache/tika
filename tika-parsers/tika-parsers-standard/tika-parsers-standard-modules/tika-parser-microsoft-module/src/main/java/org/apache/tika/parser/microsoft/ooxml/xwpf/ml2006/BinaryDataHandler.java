@@ -14,18 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
-
 
 import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -33,6 +28,8 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
 
 class BinaryDataHandler extends AbstractPartHandler {
 
@@ -43,13 +40,11 @@ class BinaryDataHandler extends AbstractPartHandler {
     private boolean inBinaryData = false;
     private StringBuilder buffer = new StringBuilder();
 
-
     public BinaryDataHandler(XHTMLContentHandler handler, Metadata metadata, ParseContext context) {
         this.handler = handler;
         this.metadata = metadata;
         this.parseContext = context;
     }
-
 
     @Override
     public void startDocument() throws SAXException {
@@ -63,8 +58,8 @@ class BinaryDataHandler extends AbstractPartHandler {
     @Override
     public void endPart() throws SAXException, TikaException {
         if (hasData()) {
-            EmbeddedDocumentExtractor embeddedDocumentExtractor =
-                    EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
+            EmbeddedDocumentExtractor embeddedDocumentExtractor = EmbeddedDocumentUtil
+                    .getEmbeddedDocumentExtractor(parseContext);
             Metadata embeddedMetadata = new Metadata();
             try (TikaInputStream stream = TikaInputStream.get(getInputStream())) {
                 embeddedDocumentExtractor.parseEmbedded(stream, handler, embeddedMetadata, true);
@@ -77,8 +72,7 @@ class BinaryDataHandler extends AbstractPartHandler {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes atts)
-            throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
 
         if (uri.equals(Word2006MLDocHandler.PKG_NS) && localName.equals("binaryData")) {
             inBinaryData = true;

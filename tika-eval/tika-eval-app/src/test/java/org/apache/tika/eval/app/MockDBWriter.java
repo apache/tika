@@ -16,7 +16,6 @@
  */
 package org.apache.tika.eval.app;
 
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,7 +25,6 @@ import java.util.Map;
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.TableInfo;
 import org.apache.tika.eval.app.io.IDBWriter;
-
 
 public class MockDBWriter implements IDBWriter {
     public Map<String, Integer> mimes = new HashMap<>();

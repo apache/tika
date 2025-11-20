@@ -23,9 +23,6 @@ import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.poi.util.StringUtil;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
@@ -34,6 +31,8 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * DWG (CAD Drawing) parser. This is a very basic parser, which just
@@ -50,7 +49,7 @@ public class DWGParser extends AbstractDWGParser {
     /**
      * The order of the fields in the header
      */
-    private static final Property[] HEADER_PROPERTIES_ENTRIES = { TikaCoreProperties.TITLE,
+    private static final Property[] HEADER_PROPERTIES_ENTRIES = {TikaCoreProperties.TITLE,
             TikaCoreProperties.DESCRIPTION, TikaCoreProperties.CREATOR, TikaCoreProperties.SUBJECT,
             TikaCoreProperties.COMMENTS, TikaCoreProperties.MODIFIER, null, // Unknown?
             TikaCoreProperties.RELATION, // Hyperlink
@@ -58,7 +57,7 @@ public class DWGParser extends AbstractDWGParser {
     /**
      * For the 2000 file, they're indexed
      */
-    private static final Property[] HEADER_2000_PROPERTIES_ENTRIES = { null, TikaCoreProperties.RELATION, // 0x01
+    private static final Property[] HEADER_2000_PROPERTIES_ENTRIES = {null, TikaCoreProperties.RELATION, // 0x01
             TikaCoreProperties.TITLE, // 0x02
             TikaCoreProperties.DESCRIPTION, // 0x03
             TikaCoreProperties.CREATOR, // 0x04
@@ -76,7 +75,7 @@ public class DWGParser extends AbstractDWGParser {
     /**
      * The value of padding bytes other than 0 in some DWG files.
      */
-    private static final int[] CUSTOM_PROPERTIES_ALT_PADDING_VALUES = new int[] { 0x2, 0, 0, 0 };
+    private static final int[] CUSTOM_PROPERTIES_ALT_PADDING_VALUES = new int[]{0x2, 0, 0, 0};
     private static MediaType TYPE = MediaType.image("vnd.dwg");
 
     static {
@@ -105,29 +104,30 @@ public class DWGParser extends AbstractDWGParser {
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();
 
-            switch (version) {
-                case "AC1015":
+            switch (version)
+            {
+                case "AC1015" :
                     metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
                     if (skipTo2000PropertyInfoSection(stream, header)) {
                         get2000Props(stream, metadata, xhtml);
                     }
                     break;
-                case "AC1018":
+                case "AC1018" :
                     metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
                     if (skipToPropertyInfoSection(stream, header)) {
                         get2004Props(stream, metadata, xhtml);
                     }
                     break;
-                case "AC1027":
-                case "AC1032":
-                case "AC1021":
-                case "AC1024":
+                case "AC1027" :
+                case "AC1032" :
+                case "AC1021" :
+                case "AC1024" :
                     metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
                     if (skipToPropertyInfoSection(stream, header)) {
                         get2007and2010Props(stream, metadata, xhtml);
                     }
                     break;
-                default:
+                default :
                     throw new TikaException("Unsupported AutoCAD drawing version: " + version);
             }
 

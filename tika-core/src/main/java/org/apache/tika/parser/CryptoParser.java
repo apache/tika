@@ -24,16 +24,16 @@ import java.security.Key;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.util.Set;
+
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Decrypts the incoming document stream and delegates further parsing to
@@ -69,8 +69,8 @@ public abstract class CryptoParser extends DelegatingParser {
         return types;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         try {
             Cipher cipher;
             if (provider != null) {

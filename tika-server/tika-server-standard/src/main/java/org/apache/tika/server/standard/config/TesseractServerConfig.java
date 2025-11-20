@@ -21,13 +21,13 @@ import static org.apache.tika.server.core.resource.TikaResource.processHeaderCon
 import java.util.List;
 import java.util.Map;
 
-import jakarta.ws.rs.core.MultivaluedMap;
 import org.apache.commons.lang3.Strings;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.server.core.ParseContextConfig;
+
+import jakarta.ws.rs.core.MultivaluedMap;
 
 /**
  * Tesseract configuration, for the request
@@ -56,10 +56,7 @@ public class TesseractServerConfig implements ParseContextConfig {
         for (Map.Entry<String, List<String>> kvp : httpHeaders.entrySet()) {
             if (Strings.CI.startsWith(kvp.getKey(), X_TIKA_OCR_HEADER_PREFIX)) {
                 ocrConfig = (ocrConfig == null) ? new TesseractOCRConfig() : ocrConfig;
-                processHeaderConfig(ocrConfig, kvp.getKey(), kvp
-                        .getValue()
-                        .get(0)
-                        .trim(), X_TIKA_OCR_HEADER_PREFIX);
+                processHeaderConfig(ocrConfig, kvp.getKey(), kvp.getValue().get(0).trim(), X_TIKA_OCR_HEADER_PREFIX);
             }
         }
         if (ocrConfig != null) {

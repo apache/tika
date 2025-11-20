@@ -27,8 +27,7 @@ class DBFRow {
         cells = new DBFCell[header.getCols().length];
         for (int i = 0; i < cells.length; i++) {
             DBFColumnHeader columnHeader = header.getCols()[i];
-            cells[i] = new DBFCell(columnHeader.getColType(), columnHeader.fieldLength,
-                    columnHeader.decimalCount);
+            cells[i] = new DBFCell(columnHeader.getColType(), columnHeader.fieldLength, columnHeader.decimalCount);
         }
     }
 

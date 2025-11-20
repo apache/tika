@@ -33,8 +33,7 @@ class MemoryURLStreamHandler extends URLStreamHandler {
 
     private static final AtomicInteger counter = new AtomicInteger();
 
-    private static final List<MemoryURLStreamRecord> records =
-            new LinkedList<>();
+    private static final List<MemoryURLStreamRecord> records = new LinkedList<>();
 
     public static URL createURL(byte[] data) {
         try {

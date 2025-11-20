@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.core.resource;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -22,17 +21,17 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
+import org.apache.tika.language.detect.LanguageResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
-import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
-import org.apache.tika.language.detect.LanguageResult;
 
 @Path("/language")
 public class LanguageResource {
@@ -77,9 +76,7 @@ public class LanguageResource {
     }
 
     private String detectString(String string) throws IOException {
-        LanguageResult language = new OptimaizeLangDetector()
-                .loadModels()
-                .detect(string);
+        LanguageResult language = new OptimaizeLangDetector().loadModels().detect(string);
         String detectedLang = language.getLanguage();
         LOG.info("Detecting language for incoming resource: [{}]", detectedLang);
         return detectedLang;

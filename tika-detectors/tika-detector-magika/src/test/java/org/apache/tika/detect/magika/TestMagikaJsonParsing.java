@@ -23,11 +23,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.utils.FileProcessResult;
+import org.junit.jupiter.api.Test;
 
 public class TestMagikaJsonParsing extends TikaTest {
 
@@ -63,7 +62,7 @@ public class TestMagikaJsonParsing extends TikaTest {
         assertEquals(true, Boolean.parseBoolean(metadata.get(MagikaDetector.MAGIKA_IS_TEXT)));
 
     }
-/*
+    /*
     @Test
     public void testErrors() throws Exception {
         FileProcessResult fileProcessResult = load("test-errors.json");
@@ -79,7 +78,7 @@ public class TestMagikaJsonParsing extends TikaTest {
         assertNull(metadata.get("sf:pronom:version"));
         assertEquals("empty source", metadata.get(SiegfriedDetector.SIEGFRIED_ERRORS));
     }
-
+    
     @Test
     public void testWarnings() throws Exception {
         FileProcessResult fileProcessResult = load("test-warnings.json");
@@ -96,13 +95,13 @@ public class TestMagikaJsonParsing extends TikaTest {
                 .startsWith("no match; possibilities based on extension are fmt/14, fmt/15, fmt/16, " +
                         "fmt/17, fmt/18, fmt/19"));
     }
-
-
-*/
+    
+    
+    */
 
     private FileProcessResult load(String jsonFileName) throws IOException {
-        String jsonString = IOUtils.toString(
-                getClass().getResourceAsStream("/json/" + jsonFileName), StandardCharsets.UTF_8);
+        String jsonString = IOUtils.toString(getClass().getResourceAsStream("/json/" + jsonFileName),
+                StandardCharsets.UTF_8);
         FileProcessResult r = new FileProcessResult();
         r.setStdout(jsonString);
         r.setExitValue(0);

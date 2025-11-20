@@ -23,15 +23,6 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Map;
 
-import com.azure.storage.blob.BlobClient;
-import com.azure.storage.blob.BlobClientBuilder;
-import com.azure.storage.blob.BlobContainerClient;
-import com.azure.storage.blob.BlobServiceClient;
-import com.azure.storage.blob.BlobServiceClientBuilder;
-import com.azure.storage.blob.models.BlobProperties;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -45,6 +36,15 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.azblob.config.AZBlobFetcherConfig;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.azure.storage.blob.BlobClient;
+import com.azure.storage.blob.BlobClientBuilder;
+import com.azure.storage.blob.BlobContainerClient;
+import com.azure.storage.blob.BlobServiceClient;
+import com.azure.storage.blob.BlobServiceClientBuilder;
+import com.azure.storage.blob.models.BlobProperties;
 
 /**
  * Fetches files from Azure blob storage.
@@ -80,7 +80,8 @@ public class AZBlobFetcher extends AbstractFetcher implements Initializable {
     private boolean spoolToTemp = true;
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
+    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext)
+            throws TikaException, IOException {
 
         LOGGER.debug("about to fetch fetchkey={} from endpoint ({})", fetchKey, endpoint);
 
@@ -90,9 +91,7 @@ public class AZBlobFetcher extends AbstractFetcher implements Initializable {
             if (extractUserMetadata) {
                 BlobProperties properties = blobClient.getProperties();
                 if (properties.getMetadata() != null) {
-                    for (Map.Entry<String, String> e : properties
-                            .getMetadata()
-                            .entrySet()) {
+                    for (Map.Entry<String, String> e : properties.getMetadata().entrySet()) {
                         metadata.add(PREFIX + ":" + e.getKey(), e.getValue());
                     }
                 }
@@ -144,7 +143,6 @@ public class AZBlobFetcher extends AbstractFetcher implements Initializable {
         this.extractUserMetadata = extractUserMetadata;
     }
 
-
     /**
      * This initializes the az blob container client
      *
@@ -165,7 +163,8 @@ public class AZBlobFetcher extends AbstractFetcher implements Initializable {
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         //if the user has set one of these, they need to have set all of them
-        if (!StringUtils.isBlank(this.sasToken) || !StringUtils.isBlank(this.endpoint) || !StringUtils.isBlank(this.container)) {
+        if (!StringUtils.isBlank(this.sasToken) || !StringUtils.isBlank(this.endpoint)
+                || !StringUtils.isBlank(this.container)) {
             mustNotBeEmpty("sasToken", this.sasToken);
             mustNotBeEmpty("endpoint", this.endpoint);
             mustNotBeEmpty("container", this.container);
@@ -181,9 +180,7 @@ public class AZBlobFetcher extends AbstractFetcher implements Initializable {
 
         private SingleBlobContainerFactory(String endpoint, String sasToken, String container) {
             //TODO -- allow authentication via other methods
-            BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
-                    .endpoint(endpoint)
-                    .sasToken(sasToken)
+            BlobServiceClient blobServiceClient = new BlobServiceClientBuilder().endpoint(endpoint).sasToken(sasToken)
                     .buildClient();
             blobContainerClient = blobServiceClient.getBlobContainerClient(container);
         }
@@ -198,9 +195,7 @@ public class AZBlobFetcher extends AbstractFetcher implements Initializable {
 
         @Override
         public BlobClient getClient(String fetchKey) {
-            return new BlobClientBuilder()
-                    .connectionString(fetchKey)
-                    .buildClient();
+            return new BlobClientBuilder().connectionString(fetchKey).buildClient();
         }
     }
 }

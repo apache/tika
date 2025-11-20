@@ -14,20 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.isatab;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.InputStream;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class ISArchiveParserTest {
 
@@ -36,8 +34,7 @@ public class ISArchiveParserTest {
         String path = "/test-documents/testISATab_BII-I-1/s_BII-S-1.txt";
 
         Parser parser = new ISArchiveParser(
-                ISArchiveParserTest.class.getResource("/test-documents/testISATab_BII-I-1/").toURI()
-                        .getPath());
+                ISArchiveParserTest.class.getResource("/test-documents/testISATab_BII-I-1/").toURI().getPath());
         //Parser parser = new AutoDetectParser();
 
         ContentHandler handler = new BodyContentHandler();
@@ -48,21 +45,17 @@ public class ISArchiveParserTest {
         }
 
         // INVESTIGATION
-        assertEquals("BII-I-1", metadata.get("Investigation Identifier"),
-                "Invalid Investigation Identifier");
+        assertEquals("BII-I-1", metadata.get("Investigation Identifier"), "Invalid Investigation Identifier");
         assertEquals("Growth control of the eukaryote cell: a systems biology study in yeast",
-                metadata.get("Investigation Title"),
-                "Invalid Investigation Title");
+                metadata.get("Investigation Title"), "Invalid Investigation Title");
 
         // INVESTIGATION PUBLICATIONS
-        assertEquals("17439666", metadata.get("Investigation PubMed ID"),
-                "Invalid Investigation PubMed ID");
-        assertEquals("doi:10.1186/jbiol54",
-                metadata.get("Investigation Publication DOI"),
+        assertEquals("17439666", metadata.get("Investigation PubMed ID"), "Invalid Investigation PubMed ID");
+        assertEquals("doi:10.1186/jbiol54", metadata.get("Investigation Publication DOI"),
                 "Invalid Investigation Publication DOI");
 
         // INVESTIGATION CONTACTS
-        assertEquals( "Oliver", metadata.get("Investigation Person Last Name"),
+        assertEquals("Oliver", metadata.get("Investigation Person Last Name"),
                 "Invalid Investigation Person Last Name");
         assertEquals("Stephen", metadata.get("Investigation Person First Name"),
                 "Invalid Investigation Person First Name");

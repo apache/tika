@@ -20,12 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-
+import org.junit.jupiter.api.Test;
 
 public class PListParserTest extends TikaTest {
 
@@ -43,7 +41,6 @@ public class PListParserTest extends TikaTest {
         //TODO -- bad encoding right after this...smart quote?
         assertContains("<string>90", content);
     }
-
 
     //TODO -- add unit tests for memgraph
     //TODO -- convert existing unit tests to xml plist and add unit tests.

@@ -81,7 +81,8 @@ public class ClassB extends ClassA {
         }
 
         ClassB classB = (ClassB) o;
-        return Objects.equals(s, classB.s) && Objects.equals(counts, classB.counts) && Arrays.equals(ints, classB.ints) && Objects.equals(floats, classB.floats);
+        return Objects.equals(s, classB.s) && Objects.equals(counts, classB.counts) && Arrays.equals(ints, classB.ints)
+                && Objects.equals(floats, classB.floats);
     }
 
     @Override

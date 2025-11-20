@@ -28,12 +28,10 @@ import org.apache.poi.ss.usermodel.Hyperlink;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-
 public class XLSXHREFFormatter implements XSLXCellFormatter {
     //xlsx files can only have this many hyperlinks
     //if they have more Excel can't read the file
     private static final int MAX_HYPERLINKS = 65000;
-
 
     private final String urlBase;
     private final HyperlinkType linkType;
@@ -61,18 +59,13 @@ public class XLSXHREFFormatter implements XSLXCellFormatter {
     @Override
     public void applyStyleAndValue(int dbColNum, ResultSet resultSet, Cell cell) throws SQLException {
         if (links < MAX_HYPERLINKS) {
-            Hyperlink hyperlink = workbook
-                    .getCreationHelper()
-                    .createHyperlink(linkType);
+            Hyperlink hyperlink = workbook.getCreationHelper().createHyperlink(linkType);
             String path = resultSet.getString(dbColNum);
             String address = urlBase + path;
             hyperlink.setAddress(address);
             cell.setHyperlink(hyperlink);
             cell.setCellStyle(style);
-            String fName = Paths
-                    .get(path)
-                    .getFileName()
-                    .toString();
+            String fName = Paths.get(path).getFileName().toString();
             cell.setCellValue(fName);
             links++;
         } else {

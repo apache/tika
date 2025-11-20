@@ -39,8 +39,7 @@ class MinShouldMatchClause implements Clause {
         }
 
         if (min > clauses.size()) {
-            throw new IllegalArgumentException(
-                    "min (" + min + ") cannot be > clauses.size (" + clauses.size() + ")");
+            throw new IllegalArgumentException("min (" + min + ") cannot be > clauses.size (" + clauses.size() + ")");
         } else if (min <= 0) {
             throw new IllegalArgumentException("min cannot be <= 0: " + min);
         }

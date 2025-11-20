@@ -24,6 +24,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.WriteOutContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+
 import de.l3s.boilerpipe.BoilerpipeExtractor;
 import de.l3s.boilerpipe.BoilerpipeProcessingException;
 import de.l3s.boilerpipe.document.TextBlock;
@@ -31,14 +39,6 @@ import de.l3s.boilerpipe.document.TextDocument;
 import de.l3s.boilerpipe.extractors.ArticleExtractor;
 import de.l3s.boilerpipe.extractors.DefaultExtractor;
 import de.l3s.boilerpipe.sax.BoilerpipeHTMLContentHandler;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.WriteOutContentHandler;
-import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Uses the <a href="http://code.google.com/p/boilerpipe/">boilerpipe</a>
@@ -144,8 +144,7 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes atts)
-            throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
         super.startElement(uri, localName, qName, atts);
 
         if (inHeader) {
@@ -228,13 +227,14 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
             int curCharsIndex = headerCharOffset;
 
             for (RecordedElement element : elements) {
-                switch (element.getElementType()) {
-                    case START:
-                        delegate.startElement(element.getUri(), element.getLocalName(),
-                                element.getQName(), element.getAttrs());
+                switch (element.getElementType())
+                {
+                    case START :
+                        delegate.startElement(element.getUri(), element.getLocalName(), element.getQName(),
+                                element.getAttrs());
                         // Fall through
 
-                    case CONTINUE:
+                    case CONTINUE :
                         // Now emit characters that are valid. Note that boilerpipe
                         // pre-increments the character index, so
                         // we have to follow suit.
@@ -245,14 +245,13 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
 
                             // https://issues.apache.org/jira/projects/TIKA/issues/TIKA-2683
                             // Allow exempted characters to be written
-                            if (isValidCharacterRun ||
-                                    (chars.length == 1 && ALLOWABLE_CHARS.contains(chars[0]))) {
+                            if (isValidCharacterRun || (chars.length == 1 && ALLOWABLE_CHARS.contains(chars[0]))) {
                                 delegate.characters(chars, 0, chars.length);
                             }
 
                             // https://issues.apache.org/jira/browse/TIKA-961
-                            if (isValidCharacterRun && i == element.getCharacters().size() - 1 &&
-                                    !Character.isWhitespace(chars[chars.length - 1])) {
+                            if (isValidCharacterRun && i == element.getCharacters().size() - 1
+                                    && !Character.isWhitespace(chars[chars.length - 1])) {
                                 // Only add whitespace for certain elements
                                 if (XHTMLContentHandler.ENDLINE.contains(element.getLocalName())) {
                                     delegate.ignorableWhitespace(NL, 0, NL.length);
@@ -261,16 +260,13 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
                         }
                         break;
 
-                    case END:
-                        delegate.endElement(element.getUri(), element.getLocalName(),
-                                element.getQName());
+                    case END :
+                        delegate.endElement(element.getUri(), element.getLocalName(), element.getQName());
                         break;
 
-                    default:
-                        throw new RuntimeException(
-                                "Unhandled element type: " + element.getElementType());
+                    default :
+                        throw new RuntimeException("Unhandled element type: " + element.getElementType());
                 }
-
 
             }
         } else {
@@ -316,7 +312,7 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
         }
 
         protected RecordedElement(String uri, String localName, String qName, Attributes attrs,
-                                  RecordedElement.ElementType elementType) {
+                RecordedElement.ElementType elementType) {
             this.uri = uri;
             this.localName = localName;
             this.qName = qName;

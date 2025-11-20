@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.example;
 
 import static org.apache.tika.TikaTest.assertContains;
@@ -25,11 +24,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.tika.exception.TikaException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
-
-import org.apache.tika.exception.TikaException;
 
 public class ContentHandlerExampleTest {
     ContentHandlerExample example;
@@ -41,17 +39,13 @@ public class ContentHandlerExampleTest {
 
     @Test
     public void testParseToPlainText() throws IOException, SAXException, TikaException {
-        String result = example
-                .parseToPlainText()
-                .trim();
+        String result = example.parseToPlainText().trim();
         assertEquals("test", result, "Expected 'test', but got '" + result + "'");
     }
 
     @Test
     public void testParseToHTML() throws IOException, SAXException, TikaException {
-        String result = example
-                .parseToHTML()
-                .trim();
+        String result = example.parseToHTML().trim();
 
         assertContains("<html", result);
         assertContains("<head>", result);
@@ -63,9 +57,7 @@ public class ContentHandlerExampleTest {
 
     @Test
     public void testParseBodyToHTML() throws IOException, SAXException, TikaException {
-        String result = example
-                .parseBodyToHTML()
-                .trim();
+        String result = example.parseBodyToHTML().trim();
 
         assertNotContained("<html", result);
         assertNotContained("<head>", result);
@@ -77,9 +69,7 @@ public class ContentHandlerExampleTest {
 
     @Test
     public void testParseOnePartToHTML() throws IOException, SAXException, TikaException {
-        String result = example
-                .parseOnePartToHTML()
-                .trim();
+        String result = example.parseOnePartToHTML().trim();
 
         assertNotContained("<html", result);
         assertNotContained("<head>", result);
@@ -91,7 +81,6 @@ public class ContentHandlerExampleTest {
         assertNotContained("<h1>Test Document", result);
         assertNotContained("<p>1 2 3", result);
     }
-
 
     @Test
     public void testParseToPlainTextChunks() throws IOException, SAXException, TikaException {

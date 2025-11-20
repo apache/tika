@@ -14,9 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.geo.topic;
-
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -29,9 +27,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.IOUtils;
+
 import opennlp.tools.namefind.NameFinderME;
 import opennlp.tools.util.Span;
-import org.apache.commons.io.IOUtils;
 
 public class NameEntityExtractor {
     private final NameFinderME nameFinder;
@@ -74,7 +73,6 @@ public class NameEntityExtractor {
             name = name.trim();
             this.locationNameEntities.add(name);
         }
-
 
     }
 

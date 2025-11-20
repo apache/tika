@@ -18,7 +18,6 @@ package org.apache.tika.server.client;
 
 public class TikaEmitterResult {
 
-
     private final STATUS status;
     private final String msg;//used for exceptions. will be null for status ok
     private final long timeElapsed;
@@ -31,7 +30,8 @@ public class TikaEmitterResult {
 
     @Override
     public String toString() {
-        return "TikaEmitterResult{" + "status=" + status + ", msg='" + msg + '\'' + ", timeElapsed=" + timeElapsed + '}';
+        return "TikaEmitterResult{" + "status=" + status + ", msg='" + msg + '\'' + ", timeElapsed=" + timeElapsed
+                + '}';
     }
 
     public STATUS getStatus() {
@@ -49,6 +49,5 @@ public class TikaEmitterResult {
     enum STATUS {
         OK, NOT_OK, EXCEEDED_MAX_RETRIES, TIMED_OUT_WAITING_FOR_TIKA
     }
-
 
 }

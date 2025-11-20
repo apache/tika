@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,7 +27,6 @@ import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.utils.StringUtils;
 
-
 public class FilenameUtils {
 
     private static final MimeTypes MIME_TYPES = MimeTypes.getDefaultMimeTypes();
@@ -35,13 +34,11 @@ public class FilenameUtils {
     /**
      * Reserved characters
      */
-    public final static char[] RESERVED_FILENAME_CHARACTERS =
-            {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
-                    0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A,
-                    0x1B, 0x1C, 0x1D, 0x1E, 0x1F, '?', ':', '*', '<', '>', '|', '"', '\''};
+    public final static char[] RESERVED_FILENAME_CHARACTERS = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+            0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A,
+            0x1B, 0x1C, 0x1D, 0x1E, 0x1F, '?', ':', '*', '<', '>', '|', '"', '\''};
 
     private final static HashSet<Character> RESERVED = new HashSet<>(38);
-
 
     static {
         for (char reservedFilenameCharacter : RESERVED_FILENAME_CHARACTERS) {
@@ -71,8 +68,7 @@ public class FilenameUtils {
 
         for (char c : name.toCharArray()) {
             if (RESERVED.contains(c)) {
-                sb.append('%').append((c < 16) ? "0" : "")
-                        .append(Integer.toHexString(c).toUpperCase(Locale.ROOT));
+                sb.append('%').append((c < 16) ? "0" : "").append(Integer.toHexString(c).toUpperCase(Locale.ROOT));
             } else {
                 sb.append(c);
             }
@@ -137,8 +133,7 @@ public class FilenameUtils {
         return StringUtils.EMPTY;
     }
 
-    public static String getSanitizedEmbeddedFileName(Metadata metadata,
-                                                      String defaultExtension, int maxLength) {
+    public static String getSanitizedEmbeddedFileName(Metadata metadata, String defaultExtension, int maxLength) {
         String path = getEmbeddedName(metadata);
         //fName could be a full path or null
         if (StringUtils.isBlank(path)) {
@@ -200,8 +195,7 @@ public class FilenameUtils {
      * @param maxLength
      * @return
      */
-    public static String getSanitizedEmbeddedFilePath(Metadata metadata,
-                                                      String defaultExtension, int maxLength) {
+    public static String getSanitizedEmbeddedFilePath(Metadata metadata, String defaultExtension, int maxLength) {
         String path = getEmbeddedPath(metadata);
         //fName could be a full path or null
         if (StringUtils.isBlank(path)) {
@@ -295,15 +289,15 @@ public class FilenameUtils {
         //potentially look for other values in embedded path or original file name, etc...
         //maybe different fallback order?
         String path = metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
-        if (! StringUtils.isBlank(path)) {
+        if (!StringUtils.isBlank(path)) {
             return path;
         }
         path = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-        if (! StringUtils.isBlank(path)) {
+        if (!StringUtils.isBlank(path)) {
             return path;
         }
         path = metadata.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID);
-        if (! StringUtils.isBlank(path)) {
+        if (!StringUtils.isBlank(path)) {
             return path;
         }
         return metadata.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME);
@@ -314,16 +308,16 @@ public class FilenameUtils {
         //potentially look for other values in embedded path or original file name, etc...
         //maybe different fallback order?
         String path = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-        if (! StringUtils.isBlank(path)) {
+        if (!StringUtils.isBlank(path)) {
             return path;
         }
         path = metadata.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID);
-        if (! StringUtils.isBlank(path)) {
+        if (!StringUtils.isBlank(path)) {
             return path;
         }
 
         path = metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
-        if (! StringUtils.isBlank(path)) {
+        if (!StringUtils.isBlank(path)) {
             return path;
         }
 
@@ -344,9 +338,7 @@ public class FilenameUtils {
             return defaultValue;
         }
         try {
-            String ext = MIME_TYPES
-                    .forName(mime)
-                    .getExtension();
+            String ext = MIME_TYPES.forName(mime).getExtension();
             if (ext == null) {
                 return ".bin";
             } else {

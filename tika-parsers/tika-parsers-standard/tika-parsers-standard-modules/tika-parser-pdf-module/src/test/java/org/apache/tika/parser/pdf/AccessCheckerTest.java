@@ -18,12 +18,11 @@ package org.apache.tika.parser.pdf;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.exception.AccessPermissionException;
 import org.apache.tika.metadata.AccessPermissions;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PropertyTypeException;
+import org.junit.jupiter.api.Test;
 
 public class AccessCheckerTest {
 
@@ -128,8 +127,7 @@ public class AccessCheckerTest {
     private Metadata getMetadata(boolean allowExtraction, boolean allowExtractionForAccessibility) {
         Metadata m = new Metadata();
         m.set(AccessPermissions.EXTRACT_CONTENT, Boolean.toString(allowExtraction));
-        m.set(AccessPermissions.EXTRACT_FOR_ACCESSIBILITY,
-                Boolean.toString(allowExtractionForAccessibility));
+        m.set(AccessPermissions.EXTRACT_FOR_ACCESSIBILITY, Boolean.toString(allowExtractionForAccessibility));
         return m;
     }
 }

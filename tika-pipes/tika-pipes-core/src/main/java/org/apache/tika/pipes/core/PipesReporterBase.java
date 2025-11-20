@@ -42,11 +42,10 @@ public abstract class PipesReporterBase extends PipesReporter implements Initial
         statusFilter = buildStatusFilter(includes, excludes);
     }
 
-    private StatusFilter buildStatusFilter(Set<PipesResult.STATUS> includes,
-                                           Set<PipesResult.STATUS> excludes) throws TikaConfigException {
+    private StatusFilter buildStatusFilter(Set<PipesResult.STATUS> includes, Set<PipesResult.STATUS> excludes)
+            throws TikaConfigException {
         if (includes.size() > 0 && excludes.size() > 0) {
-            throw new TikaConfigException("Only one of includes and excludes may have any " +
-                    "contents");
+            throw new TikaConfigException("Only one of includes and excludes may have any " + "contents");
         }
         if (includes.size() > 0) {
             return new IncludesFilter(includes);
@@ -57,8 +56,7 @@ public abstract class PipesReporterBase extends PipesReporter implements Initial
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
 
     }
 
@@ -80,8 +78,7 @@ public abstract class PipesReporterBase extends PipesReporter implements Initial
             } catch (IllegalArgumentException e) {
                 String optionString = getOptionString();
                 throw new TikaConfigException(
-                        "I regret I don't recognize " + s + ". I only understand: " + optionString,
-                        e);
+                        "I regret I don't recognize " + s + ". I only understand: " + optionString, e);
             }
         }
     }
@@ -95,8 +92,7 @@ public abstract class PipesReporterBase extends PipesReporter implements Initial
             } catch (IllegalArgumentException e) {
                 String optionString = getOptionString();
                 throw new TikaConfigException(
-                        "I regret I don't recognize " + s + ". I only understand: " + optionString,
-                        e);
+                        "I regret I don't recognize " + s + ". I only understand: " + optionString, e);
             }
         }
     }
@@ -150,6 +146,5 @@ public abstract class PipesReporterBase extends PipesReporter implements Initial
             return true;
         }
     }
-
 
 }

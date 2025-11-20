@@ -119,8 +119,7 @@ public class ContentHandlerDecorator extends DefaultHandler {
     }
 
     @Override
-    public void startElement(String uri, String localName, String name, Attributes atts)
-            throws SAXException {
+    public void startElement(String uri, String localName, String name, Attributes atts) throws SAXException {
         try {
             handler.startElement(uri, localName, name, atts);
         } catch (SAXException e) {
@@ -183,35 +182,34 @@ public class ContentHandlerDecorator extends DefaultHandler {
      */
     protected void handleException(SAXException exception) throws SAXException {
         if (handler instanceof ContentHandlerDecorator) {
-            ((ContentHandlerDecorator)handler).handleException(exception);
+            ((ContentHandlerDecorator) handler).handleException(exception);
         } else {
             throw exception;
         }
     }
 
     @Override
-    public void warning (SAXParseException exception) throws SAXException {
+    public void warning(SAXParseException exception) throws SAXException {
         if (handler instanceof ErrorHandler) {
-            ((ErrorHandler)handler).warning(exception);
+            ((ErrorHandler) handler).warning(exception);
         } else {
             super.warning(exception);
         }
     }
 
     @Override
-    public void error (SAXParseException exception) throws SAXException {
+    public void error(SAXParseException exception) throws SAXException {
         if (handler instanceof ErrorHandler) {
-            ((ErrorHandler)handler).error(exception);
+            ((ErrorHandler) handler).error(exception);
         } else {
             super.error(exception);
         }
     }
 
     @Override
-    public void fatalError (SAXParseException exception)
-            throws SAXException {
+    public void fatalError(SAXParseException exception) throws SAXException {
         if (handler instanceof ErrorHandler) {
-            ((ErrorHandler)handler).fatalError(exception);
+            ((ErrorHandler) handler).fatalError(exception);
         } else {
             super.fatalError(exception);
         }

@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+
 import javax.xml.namespace.QName;
 
 import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
@@ -32,9 +33,6 @@ import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.detect.XmlRootExtractor;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -43,6 +41,8 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * A parser for the IWork container files. This includes *.key, *.pages and *.numbers files.
@@ -60,8 +60,8 @@ public class IWorkPackageParser implements Parser {
     /**
      * Which files within an iWork file contain the actual content?
      */
-    public final static Set<String> IWORK_CONTENT_ENTRIES = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList("index.apxl", "index.xml", "presentation.apxl")));
+    public final static Set<String> IWORK_CONTENT_ENTRIES = Collections
+            .unmodifiableSet(new HashSet<>(Arrays.asList("index.apxl", "index.xml", "presentation.apxl")));
     /**
      * All iWork files contain one of these, so we can detect based on it
      */
@@ -75,16 +75,15 @@ public class IWorkPackageParser implements Parser {
      * This parser handles all iWorks formats.
      */
     private final static Set<MediaType> supportedTypes = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(MediaType.application("vnd.apple.iwork"),
-                    IWORKDocumentType.KEYNOTE.getType(), IWORKDocumentType.NUMBERS.getType(),
-                    IWORKDocumentType.PAGES.getType())));
+            new HashSet<>(Arrays.asList(MediaType.application("vnd.apple.iwork"), IWORKDocumentType.KEYNOTE.getType(),
+                    IWORKDocumentType.NUMBERS.getType(), IWORKDocumentType.PAGES.getType())));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return supportedTypes;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         ZipArchiveInputStream zip = new ZipArchiveInputStream(stream);
         ZipArchiveEntry entry = zip.getNextEntry();
 
@@ -103,29 +102,29 @@ public class IWorkPackageParser implements Parser {
                 XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
                 ContentHandler contentHandler;
 
-                switch (type) {
-                    case KEYNOTE:
+                switch (type)
+                {
+                    case KEYNOTE :
                         contentHandler = new KeynoteContentHandler(xhtml, metadata);
                         break;
-                    case NUMBERS:
+                    case NUMBERS :
                         contentHandler = new NumbersContentHandler(xhtml, metadata);
                         break;
-                    case PAGES:
+                    case PAGES :
                         contentHandler = new PagesContentHandler(xhtml, metadata);
                         break;
-                    case ENCRYPTED:
+                    case ENCRYPTED :
                         // We can't do anything for the file right now
                         contentHandler = null;
                         break;
-                    default:
+                    default :
                         throw new TikaException("Unhandled iWorks file " + type);
                 }
 
                 metadata.add(Metadata.CONTENT_TYPE, type.getType().toString());
                 xhtml.startDocument();
                 if (contentHandler != null) {
-                    XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(entryStream),
-                            contentHandler, context);
+                    XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(entryStream), contentHandler, context);
                 }
                 xhtml.endDocument();
             }
@@ -139,8 +138,8 @@ public class IWorkPackageParser implements Parser {
         byte[] bytes = new byte[markLimit];
         try {
             int read = IOUtils.read(entryStream, bytes, 0, markLimit);
-            try (InputStream bis = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes)
-                    .setOffset(0).setLength(read).get()) {
+            try (InputStream bis = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).setOffset(0)
+                    .setLength(read).get()) {
                 return IWORKDocumentType.detectType(bis);
             }
         } catch (UnsupportedZipFeatureException e) {
@@ -157,10 +156,8 @@ public class IWorkPackageParser implements Parser {
     public enum IWORKDocumentType {
         KEYNOTE("http://developer.apple.com/namespaces/keynote2", "presentation",
                 MediaType.application("vnd.apple.keynote")),
-        NUMBERS("http://developer.apple.com/namespaces/ls", "document",
-                MediaType.application("vnd.apple.numbers")),
-        PAGES("http://developer.apple.com/namespaces/sl", "document",
-                MediaType.application("vnd.apple.pages")),
+        NUMBERS("http://developer.apple.com/namespaces/ls", "document", MediaType.application("vnd.apple.numbers")),
+        PAGES("http://developer.apple.com/namespaces/sl", "document", MediaType.application("vnd.apple.pages")),
         ENCRYPTED(null, null, MediaType.application("x-tika-iworks-protected"));
 
         private final String namespace;
@@ -187,8 +184,7 @@ public class IWorkPackageParser implements Parser {
             }
         }
 
-        public static IWORKDocumentType detectType(ZipArchiveEntry entry,
-                                                   ZipArchiveInputStream zip) {
+        public static IWORKDocumentType detectType(ZipArchiveEntry entry, ZipArchiveInputStream zip) {
             if (entry == null) {
                 return null;
             }

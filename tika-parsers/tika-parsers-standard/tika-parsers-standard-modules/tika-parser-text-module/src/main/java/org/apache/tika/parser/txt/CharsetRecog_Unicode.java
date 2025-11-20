@@ -1,13 +1,19 @@
-// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
 /*
- *******************************************************************************
- * Copyright (C) 1996-2013, International Business Machines Corporation and    *
- * others. All Rights Reserved.                                                *
- *******************************************************************************
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
 package org.apache.tika.parser.txt;
 
 /**
@@ -141,7 +147,6 @@ abstract class CharsetRecog_Unicode extends CharsetRecognizer {
                 }
             }
 
-
             // Cook up some sort of confidence score, based on presence of a BOM
             //    and the existence of valid and/or invalid multi-byte sequences.
             if (hasBOM && numInvalid == 0) {
@@ -163,8 +168,8 @@ abstract class CharsetRecog_Unicode extends CharsetRecognizer {
 
     static class CharsetRecog_UTF_32_BE extends CharsetRecog_UTF_32 {
         int getChar(byte[] input, int index) {
-            return (input[index + 0] & 0xFF) << 24 | (input[index + 1] & 0xFF) << 16 |
-                    (input[index + 2] & 0xFF) << 8 | (input[index + 3] & 0xFF);
+            return (input[index + 0] & 0xFF) << 24 | (input[index + 1] & 0xFF) << 16 | (input[index + 2] & 0xFF) << 8
+                    | (input[index + 3] & 0xFF);
         }
 
         String getName() {
@@ -172,11 +177,10 @@ abstract class CharsetRecog_Unicode extends CharsetRecognizer {
         }
     }
 
-
     static class CharsetRecog_UTF_32_LE extends CharsetRecog_UTF_32 {
         int getChar(byte[] input, int index) {
-            return (input[index + 3] & 0xFF) << 24 | (input[index + 2] & 0xFF) << 16 |
-                    (input[index + 1] & 0xFF) << 8 | (input[index + 0] & 0xFF);
+            return (input[index + 3] & 0xFF) << 24 | (input[index + 2] & 0xFF) << 16 | (input[index + 1] & 0xFF) << 8
+                    | (input[index + 0] & 0xFF);
         }
 
         String getName() {

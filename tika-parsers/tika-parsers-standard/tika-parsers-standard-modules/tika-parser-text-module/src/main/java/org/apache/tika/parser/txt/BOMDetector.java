@@ -23,7 +23,6 @@ import java.nio.charset.UnsupportedCharsetException;
 
 import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.IOUtils;
-
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.metadata.Metadata;
 
@@ -31,13 +30,8 @@ public class BOMDetector implements EncodingDetector {
 
     private static final ByteOrderMark[] BOMS =
             //order matters -- have to try the 32 before the 16
-            new ByteOrderMark[] {
-                    ByteOrderMark.UTF_8,
-                    ByteOrderMark.UTF_32BE,
-                    ByteOrderMark.UTF_32LE,
-                    ByteOrderMark.UTF_16BE,
-                    ByteOrderMark.UTF_16LE
-            };
+            new ByteOrderMark[]{ByteOrderMark.UTF_8, ByteOrderMark.UTF_32BE, ByteOrderMark.UTF_32LE,
+                    ByteOrderMark.UTF_16BE, ByteOrderMark.UTF_16LE};
     private static final Charset[] CHARSETS = new Charset[BOMS.length];
 
     private static final int MIN_BYTES = 2;

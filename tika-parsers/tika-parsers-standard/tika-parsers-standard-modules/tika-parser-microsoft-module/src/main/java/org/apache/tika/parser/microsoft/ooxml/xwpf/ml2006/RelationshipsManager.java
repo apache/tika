@@ -14,9 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
-
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,8 +25,7 @@ class RelationshipsManager {
 
     Map<String, Map<String, Relationship>> map = new HashMap<>();
 
-    public void addRelationship(String relsFileName, String id, String type, String target,
-                                TargetMode targetMode) {
+    public void addRelationship(String relsFileName, String id, String type, String target, TargetMode targetMode) {
         String packageName = convertRelsFileNameToPackageName(relsFileName);
         Map<String, Relationship> thisPackageRels = map.get(packageName);
         if (thisPackageRels == null) {

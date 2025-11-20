@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,9 +32,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.IOUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -51,6 +48,8 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.SystemUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Parser that uses the "strings" (or strings-alternative) command to find the
@@ -66,8 +65,7 @@ public class StringsParser implements Parser, Initializable {
      */
     private static final long serialVersionUID = 802566634661575025L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.OCTET_STREAM);
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.OCTET_STREAM);
 
     private final StringsConfig defaultStringsConfig = new StringsConfig();
 
@@ -90,8 +88,8 @@ public class StringsParser implements Parser, Initializable {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         if (!stringsPresent) {
             return;
@@ -137,7 +135,6 @@ public class StringsParser implements Parser, Initializable {
     private void checkForStrings() {
         String stringsProg = getStringsPath() + getStringsProg();
 
-
         String[] checkCmd = {stringsProg, "--version"};
         try {
             stringsPresent = ExternalParser.check(checkCmd);
@@ -146,11 +143,8 @@ public class StringsParser implements Parser, Initializable {
             }
             // Check if the -e option (encoding) is supported
             if (!SystemUtils.IS_OS_WINDOWS) {
-                String[] checkOpt =
-                        {stringsProg, "-e", "" + defaultStringsConfig.getEncoding().get(),
-                                "/dev/null"};
-                int[] errorValues =
-                        {1, 2}; // Exit status code: 1 = general error; 2 = incorrect usage.
+                String[] checkOpt = {stringsProg, "-e", "" + defaultStringsConfig.getEncoding().get(), "/dev/null"};
+                int[] errorValues = {1, 2}; // Exit status code: 1 = general error; 2 = incorrect usage.
                 hasEncodingOption = ExternalParser.check(checkOpt, errorValues);
             }
         } catch (NoClassDefFoundError ncdfe) {
@@ -214,8 +208,7 @@ public class StringsParser implements Parser, Initializable {
         return totalBytes.get();
     }
 
-    private Thread logStream(final InputStream stream, final ContentHandler handler,
-                             final AtomicInteger totalBytes) {
+    private Thread logStream(final InputStream stream, final ContentHandler handler, final AtomicInteger totalBytes) {
         return new Thread(() -> {
             Reader reader = new InputStreamReader(stream, UTF_8);
             char[] buffer = new char[1024];
@@ -285,7 +278,6 @@ public class StringsParser implements Parser, Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
     }
 }

@@ -18,12 +18,11 @@ package org.apache.tika.parser.image;
 
 import java.io.InputStream;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Test class for the ICNSParser
@@ -42,9 +41,7 @@ public class ICNSParserTest {
         metadata.set("Icons count", "1");
         metadata.set("Icons details", "512x512 (JPEG 2000 or PNG format)");
 
-
-        try (InputStream stream = getClass()
-                .getResourceAsStream("/test-documents/testICNS_basic.icns")) {
+        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testICNS_basic.icns")) {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
     }
@@ -60,7 +57,6 @@ public class ICNSParserTest {
         metadata.set("Icons details", "16x16 (24 bpp), 32x32 (24 bpp)");
         metadata.set("Masked icon count", "2");
         metadata.set("Masked icon details", "16x16 (8 bpp), 32x32 (8 bpp)");
-
 
         try (InputStream stream = getClass().getResourceAsStream("/test-documents/testICNS.icns")) {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());

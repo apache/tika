@@ -37,33 +37,20 @@ public class MailDateParserTest {
         String expected = "2016-05-09T01:32:00Z";
 
         //try with timezones
-        for (String dateString : new String[] {
+        for (String dateString : new String[]{
                 // with timezone info:
-                "Mon, 9 May 16 01:32:00 GMT",
-                "9 May 16 01:32:00 GMT",
-                "Monday, 9 May 16 01:32:00 GMT",
-                "Mon, 9 May 2016 01:32:00 UTC",
-                "9 May 2016 01:32:00 UTC",
-                "09 May 2016 01:32:00 UTC",
-                "Mon, 9 May 2016 01:32:00Z",
-                "Mon, 9 May 2016 01:32:00 Z",
-                "Mon, 9 May 2016 01:32:00 GMT",
-                "Mon, 9 May 2016 01:32:00GMT",
-                "Mon, 9 May 2016 01:32:00 UTC",
-                "Mon, 9 May 2016 01:32:00UTC",
+                "Mon, 9 May 16 01:32:00 GMT", "9 May 16 01:32:00 GMT", "Monday, 9 May 16 01:32:00 GMT",
+                "Mon, 9 May 2016 01:32:00 UTC", "9 May 2016 01:32:00 UTC", "09 May 2016 01:32:00 UTC",
+                "Mon, 9 May 2016 01:32:00Z", "Mon, 9 May 2016 01:32:00 Z", "Mon, 9 May 2016 01:32:00 GMT",
+                "Mon, 9 May 2016 01:32:00GMT", "Mon, 9 May 2016 01:32:00 UTC", "Mon, 9 May 2016 01:32:00UTC",
 
-                "Mon, 9 May 2016 3:32:00 GMT+0200",
-                "Mon, 9 May 2016 3:32:00 UTC+0200",
+                "Mon, 9 May 2016 3:32:00 GMT+0200", "Mon, 9 May 2016 3:32:00 UTC+0200",
                 "Mon, 9 May 2016 7:32:00 UTC+0600 (BST)",
 
                 //try with leading space
                 //"      Mon, 9 May 2016 3:32:00 +0200",
-                "       9 May 2016 3:32:00 +0200",
-                "Mon, 9 May 2016 3:32:00 +02:00",
-                "9 May 2016 3:32:00 +02:00",
-                "Mon, 9 May 2016 3:32:00+02:00",
-                "Mon, 9 May 2016 3:32:00+0200",
-                "      Sun, 8 May 2016 21:32:00 EST",
+                "       9 May 2016 3:32:00 +0200", "Mon, 9 May 2016 3:32:00 +02:00", "9 May 2016 3:32:00 +02:00",
+                "Mon, 9 May 2016 3:32:00+02:00", "Mon, 9 May 2016 3:32:00+0200", "      Sun, 8 May 2016 21:32:00 EST",
                 //need to add am/pm format times?  I hope not.
 
         }) {
@@ -71,9 +58,9 @@ public class MailDateParserTest {
         }
     }
 
-    @Test// for dev purposes
+    @Test // for dev purposes
     public void oneOff() throws Exception {
-  /*      SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss z");
+        /*      SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss z");
         System.out.println(simpleDateFormat.format(new Date()));
         DateTimeFormatter formatter = DateTimeFormatter
                 .ofPattern("yyyy-MM-dd'T'HH:mm:ss.S OOOO")
@@ -81,7 +68,7 @@ public class MailDateParserTest {
         String date = formatter.format(ZonedDateTime.now(ZoneOffset.UTC));
         System.out.println("String: " + date);
         System.out.println("parsed: " + formatter.parse(date) + " from " + date);
-*/
+        */
         String s = "Mon, 6 Sep 2010 05:25:34 -0400 (EDT)";
         s = "Tue, 9 Jun 2009 23:58:45 -0400";
 
@@ -93,8 +80,7 @@ public class MailDateParserTest {
         }
         try {
             Date d = MailDateParser.parseDateLenient(s);
-            DateFormat df =
-                    new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", new DateFormatSymbols(Locale.US));
+            DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", new DateFormatSymbols(Locale.US));
             df.setTimeZone(TimeZone.getTimeZone("UTC"));
             String dateString = df.format(d);
             System.out.println("dev parser lenient: " + dateString);
@@ -107,10 +93,8 @@ public class MailDateParserTest {
     public void testDateTimesWithNoTimeZone() throws Exception {
         String expected = "2016-05-09T01:32:00Z";
 
-        for (String dateString : new String[]{
-                "Mon, 9 May 2016 01:32:00",
-                "Monday, 9 May 2016 1:32 AM", "May 9 2016 1:32am", "May 9 2016 1:32 am",
-                "2016-05-09 01:32:00"}) {
+        for (String dateString : new String[]{"Mon, 9 May 2016 01:32:00", "Monday, 9 May 2016 1:32 AM",
+                "May 9 2016 1:32am", "May 9 2016 1:32 am", "2016-05-09 01:32:00"}) {
             testDate(dateString, expected, true);
         }
     }
@@ -119,10 +103,7 @@ public class MailDateParserTest {
     public void testDates() throws Exception {
         //now try days without times
         String expected = "2016-05-15T12:00:00Z";
-        for (String dateString : new String[]{
-                "May 15, 2016", "Sun, 15 May 2016", "15 May 2016",
-                "2016-05-15"
-        }) {
+        for (String dateString : new String[]{"May 15, 2016", "Sun, 15 May 2016", "15 May 2016", "2016-05-15"}) {
             testDate(dateString, expected, true);
 
         }
@@ -134,31 +115,16 @@ public class MailDateParserTest {
         //make sure there are no mis-parses of e.g. 90 = year 90 A.D, not 1990
         Date date1980 = df.parse("1980-01-01");
         Date date2010 = df.parse("2010-01-01");
-        for (String dateString : new String[]{
-                "11/14/08",
-                "1/14/08",
-                "1/2/08",
-                "12/1/2008",
-                "12/02/1996",
-                "96/1/02",
-                "96/12/02",
-                "96/12/2",
-                "1996/12/02",
-                "Mon, 29 Jan 96 14:02 GMT",
-                "7/20/95 1:12PM",
-                "08/14/2000  12:48 AM",
-                "8/4/2000  1:48 AM",
-                "06/24/2008, Tuesday, 11 AM",
-                }) {
+        for (String dateString : new String[]{"11/14/08", "1/14/08", "1/2/08", "12/1/2008", "12/02/1996", "96/1/02",
+                "96/12/02", "96/12/2", "1996/12/02", "Mon, 29 Jan 96 14:02 GMT", "7/20/95 1:12PM",
+                "08/14/2000  12:48 AM", "8/4/2000  1:48 AM", "06/24/2008, Tuesday, 11 AM",}) {
             Date parsedDate = MailDateParser.parseDateLenient(dateString);
             assertNotNull(parsedDate);
             if (parsedDate != null) {
                 assertTrue(parsedDate.getTime() > date1980.getTime(),
-                        "date must be after 1980:" + dateString + " >> + " +
-                                parsedDate);
+                        "date must be after 1980:" + dateString + " >> + " + parsedDate);
                 assertTrue(parsedDate.getTime() < date2010.getTime(),
-                        "date must be before 2020: " + dateString + " >> + " +
-                                parsedDate);
+                        "date must be before 2020: " + dateString + " >> + " + parsedDate);
             }
         }
         //TODO: mime4j misparses these to pre 1980 dates
@@ -179,8 +145,7 @@ public class MailDateParserTest {
     private void testDate(String dateString, String expected, boolean useUTC) throws Exception {
         Date parsedDate = MailDateParser.parseDateLenient(dateString);
         assertNotNull(parsedDate, "couldn't parse " + dateString);
-        DateFormat df =
-                new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", new DateFormatSymbols(Locale.US));
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", new DateFormatSymbols(Locale.US));
         if (useUTC) {
             df.setTimeZone(TimeZone.getTimeZone("UTC"));
         }

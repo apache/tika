@@ -23,7 +23,6 @@ import java.util.Map;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.util.FastMath;
-
 import org.apache.tika.eval.core.tokens.CommonTokenCountManager;
 import org.apache.tika.eval.core.tokens.LangModel;
 import org.apache.tika.eval.core.tokens.TokenCounts;
@@ -39,8 +38,7 @@ public class CommonTokensCosine implements LanguageAwareTokenCountStats<Double> 
 
     @Override
     public Double calculate(List<LanguageResult> languages, TokenCounts tokenCounts) {
-        Pair<String, LangModel> pair =
-                commonTokenCountManager.getLangTokens(languages.get(0).getLanguage());
+        Pair<String, LangModel> pair = commonTokenCountManager.getLangTokens(languages.get(0).getLanguage());
         LangModel model = pair.getValue();
         double kl = 0.0;
         if (tokenCounts.getTokens().entrySet().size() == 0) {
