@@ -1447,16 +1447,20 @@
       <plugin>
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>
-        <version>3.0.0</version>
+        <version>3.1.0</version>
         <configuration>
+          <!--<java>
+            <googleJavaFormat/>
+          </java> -->
           <java>
             <licenseHeader>
               <file>${maven.multiModuleProjectDirectory}/tika-parent/license-header.txt</file>
               <delimiter>package </delimiter>
             </licenseHeader>
-            <!-- Use Eclipse formatter with Google style -->
+
             <eclipse>
-              <!-- Use Google style configuration -->
+              <!-- find the versions here: https://download.eclipse.org/eclipse/downloads/ -->
+              <version>4.37</version>
               <file>${maven.multiModuleProjectDirectory}/tika-parent/google-style-eclipse.xml</file>
             </eclipse>
 
