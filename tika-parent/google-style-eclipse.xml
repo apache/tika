@@ -152,9 +152,9 @@
   <!-- line wrapping -->
   <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_allocation_expression" value="0"/>
   <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_allocation_expression.count_dependent" value="0|-1|0"/>
-  <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_explicit_constructor_call" value="0"/>
+  <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_explicit_constructor_call" value="32"/>
   <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_explicit_constructor_call.count_dependent" value="0|-1|0"/>
-  <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_method_invocation" value="0"/>
+  <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_method_invocation" value="32"/>
   <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_method_invocation.count_dependent" value="0|-1|0"/>
   <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_qualified_allocation_expression" value="0"/>
   <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_qualified_allocation_expression.count_dependent" value="0|-1|0"/>
@@ -176,9 +176,9 @@
   <setting id="org.eclipse.jdt.core.formatter.alignment_for_multiple_fields" value="16"/>
   <setting id="org.eclipse.jdt.core.formatter.alignment_for_multiple_fields.count_dependent" value="16|-1|16"/>
   <setting id="org.eclipse.jdt.core.formatter.alignment_for_new_anonymous_class" value="20"/>
-  <setting id="org.eclipse.jdt.core.formatter.alignment_for_parameters_in_constructor_declaration" value="0"/>
+  <setting id="org.eclipse.jdt.core.formatter.alignment_for_parameters_in_constructor_declaration" value="17"/>
   <setting id="org.eclipse.jdt.core.formatter.alignment_for_parameters_in_constructor_declaration.count_dependent" value="0|-1|0"/>
-  <setting id="org.eclipse.jdt.core.formatter.alignment_for_parameters_in_method_declaration" value="0"/>
+  <setting id="org.eclipse.jdt.core.formatter.alignment_for_parameters_in_method_declaration" value="17"/>
   <setting id="org.eclipse.jdt.core.formatter.alignment_for_parameters_in_method_declaration.count_dependent" value="0|-1|0"/>
   <setting id="org.eclipse.jdt.core.formatter.alignment_for_resources_in_try" value="80"/>
   <setting id="org.eclipse.jdt.core.formatter.alignment_for_selector_in_method_invocation" value="16"/>
@@ -191,8 +191,7 @@
   <setting id="org.eclipse.jdt.core.formatter.alignment_for_throws_clause_in_method_declaration" value="16"/>
   <setting id="org.eclipse.jdt.core.formatter.alignment_for_throws_clause_in_method_declaration.count_dependent" value="16|4|48"/>
   <setting id="org.eclipse.jdt.core.formatter.alignment_for_union_type_in_multicatch" value="16"/>
-  <setting id="org.eclipse.jdt.core.formatter.lineSplit" value="100"/>
-  <setting id="org.eclipse.jdt.core.formatter.line_width" value="180"/>
+  <setting id="org.eclipse.jdt.core.formatter.lineSplit" value="180"/>
 
   <setting id="org.eclipse.jdt.core.formatter.wrap_before_binary_operator" value="true"/>
   <setting id="org.eclipse.jdt.core.formatter.wrap_before_or_operator_multicatch" value="true"/>
