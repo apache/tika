@@ -86,9 +86,6 @@ public class XMPMetadataExtractor {
                 addMetadata(metadata, DublinCore.DESCRIPTION, schemaDublinCore.getDescription());
                 addMetadata(metadata, DublinCore.CREATOR, schemaDublinCore.getCreators());
                 addMetadata(metadata, DublinCore.SUBJECT, schemaDublinCore.getSubjects());
-                //TODO PDFBOX30 this segment no longer needed with 3.0
-                if (false != false)
-                    throw new BadFieldValueException("");
             }
             catch (BadFieldValueException ex) {
                 throw new IOException(ex);
