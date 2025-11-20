@@ -68,8 +68,7 @@ public class ToTextContentHandler extends DefaultHandler {
      * @param encoding output encoding
      * @throws UnsupportedEncodingException if the encoding is unsupported
      */
-    public ToTextContentHandler(OutputStream stream, String encoding)
-            throws UnsupportedEncodingException {
+    public ToTextContentHandler(OutputStream stream, String encoding) throws UnsupportedEncodingException {
         this(new OutputStreamWriter(stream, encoding));
     }
 
@@ -99,7 +98,6 @@ public class ToTextContentHandler extends DefaultHandler {
         }
     }
 
-
     /**
      * Writes the given ignorable characters to the given character stream.
      * The default implementation simply forwards the call to the
@@ -127,8 +125,7 @@ public class ToTextContentHandler extends DefaultHandler {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes atts)
-            throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
         String uc = (qName == null) ? "" : qName.toUpperCase(Locale.ENGLISH);
         if (uc.equals(STYLE)) {
             styleDepth++;

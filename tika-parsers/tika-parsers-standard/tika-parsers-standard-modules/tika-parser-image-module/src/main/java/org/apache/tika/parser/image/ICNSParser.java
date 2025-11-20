@@ -25,9 +25,6 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.metadata.Metadata;
@@ -35,6 +32,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * A basic parser class for Apple ICNS icon files
@@ -43,19 +42,17 @@ public class ICNSParser implements Parser {
     public static final String ICNS_MIME_TYPE = "image/icns";
     private static final long serialVersionUID = 922010233654248327L;
     private static final long MAX_IMAGE_LENGTH_BYTES = 10485760;// 10MB
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.image("icns"));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.image("icns"));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         byte[] header = new byte[4];
         IOUtils.read(stream, header, 0, 4); // Extract magic byte
-        if (header[0] == (byte) 'i' && header[1] == (byte) 'c' && header[2] == (byte) 'n' &&
-                header[3] == (byte) 's') {
+        if (header[0] == (byte) 'i' && header[1] == (byte) 'c' && header[2] == (byte) 'n' && header[3] == (byte) 's') {
             // Good, signature found
         } else {
             throw new TikaException("ICNS magic signature invalid");
@@ -74,7 +71,7 @@ public class ICNSParser implements Parser {
         ArrayList<ICNSType> icons = new ArrayList<>();
         ArrayList<ICNSType> icon_masks = new ArrayList<>();
         byte[] tempByteArray = new byte[4];
-        for (int offset = 0; offset < image_length - 8; ) {
+        for (int offset = 0; offset < image_length - 8;) {
             //Read the ResType/OSTYpe identifier for sub-icon
             tempByteArray[0] = full_file[offset];
             tempByteArray[1] = full_file[offset + 1];
@@ -108,22 +105,15 @@ public class ICNSParser implements Parser {
         String bitsPerPixel;
         String dimensions;
         for (ICNSType icon : icons) {
-            bitsPerPixel = (icon.getBitsPerPixel() != 0) ? icon.getBitsPerPixel() + " bpp" :
-                    "JPEG 2000 or PNG format";
-            dimensions = (!icon.hasRetinaDisplay()) ? (icon.getHeight() + "x" + icon.getWidth()) :
-                    (icon.getHeight() + "x" + icon.getWidth() + "@2X");
+            bitsPerPixel = (icon.getBitsPerPixel() != 0) ? icon.getBitsPerPixel() + " bpp" : "JPEG 2000 or PNG format";
+            dimensions = (!icon.hasRetinaDisplay())
+                    ? (icon.getHeight() + "x" + icon.getWidth())
+                    : (icon.getHeight() + "x" + icon.getWidth() + "@2X");
             icon_details.append(", ").append(dimensions).append(" (").append(bitsPerPixel).append(")");
         }
         for (ICNSType icon : icon_masks) {
-            iconmask_details
-                    .append(", ")
-                    .append(icon.getHeight())
-                    .append("x")
-                    .append(icon.getWidth())
-                    .append(" (")
-                    .append(icon.getBitsPerPixel())
-                    .append(" bpp")
-                    .append(")");
+            iconmask_details.append(", ").append(icon.getHeight()).append("x").append(icon.getWidth()).append(" (")
+                    .append(icon.getBitsPerPixel()).append(" bpp").append(")");
         }
 
         metadata.set(Metadata.CONTENT_TYPE, ICNS_MIME_TYPE);

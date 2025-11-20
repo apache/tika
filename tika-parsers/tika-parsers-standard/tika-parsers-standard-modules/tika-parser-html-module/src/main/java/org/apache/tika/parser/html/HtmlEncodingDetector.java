@@ -48,8 +48,7 @@ public class HtmlEncodingDetector implements EncodingDetector {
 
     // TIKA-357 - use bigger buffer for meta tag sniffing (was 4K)
     private static final int DEFAULT_MARK_LIMIT = 8192;
-    private static final Pattern HTTP_META_PATTERN =
-            Pattern.compile("(?is)<\\s*meta(?:/|\\s+)([^<>]+)");
+    private static final Pattern HTTP_META_PATTERN = Pattern.compile("(?is)<\\s*meta(?:/|\\s+)([^<>]+)");
     //this should match both the older:
     //<meta http-equiv="content-type" content="text/html; charset=xyz"/>
     //and
@@ -60,8 +59,8 @@ public class HtmlEncodingDetector implements EncodingDetector {
     //following http://docs.oracle.com/javase/7/docs/api/java/nio/charset/Charset.html
     //For a more general "not" matcher, try:
     //("(?is)charset\\s*=\\s*['\\\"]?\\s*([^<>\\s'\\\";]+)")
-    private static final Pattern FLEXIBLE_CHARSET_ATTR_PATTERN =
-            Pattern.compile(("(?is)\\bcharset\\s*=\\s*(?:['\\\"]\\s*)?([-_:\\.a-z0-9]+)"));
+    private static final Pattern FLEXIBLE_CHARSET_ATTR_PATTERN = Pattern
+            .compile(("(?is)\\bcharset\\s*=\\s*(?:['\\\"]\\s*)?([-_:\\.a-z0-9]+)"));
     private static final Charset ASCII = Charset.forName("US-ASCII");
     /**
      * HTML can include non-iana supported charsets that Java
@@ -74,8 +73,7 @@ public class HtmlEncodingDetector implements EncodingDetector {
     static {
         Set<String> unsupported = new HashSet<>();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-                HtmlEncodingDetector.class
-                        .getResourceAsStream("StandardCharsets_unsupported_by_IANA.txt"),
+                HtmlEncodingDetector.class.getResourceAsStream("StandardCharsets_unsupported_by_IANA.txt"),
                 StandardCharsets.UTF_8))) {
             String line = reader.readLine();
             while (line != null) {

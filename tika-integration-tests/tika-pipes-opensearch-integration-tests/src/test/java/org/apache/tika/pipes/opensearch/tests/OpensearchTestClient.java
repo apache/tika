@@ -22,8 +22,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -32,10 +30,12 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.util.EntityUtils;
-
 import org.apache.tika.pipes.emitter.opensearch.JsonResponse;
 import org.apache.tika.pipes.emitter.opensearch.OpenSearchClient;
 import org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitter;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * This expands on the OpenSearchClient for testing purposes.
@@ -44,9 +44,8 @@ import org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitter;
 public class OpensearchTestClient extends OpenSearchClient {
 
     public OpensearchTestClient(String openSearchUrl, HttpClient httpClient,
-                                OpenSearchEmitter.AttachmentStrategy attachmentStrategy,
-                                OpenSearchEmitter.UpdateStrategy updateStrategy,
-                                String embeddedFileFieldName) {
+            OpenSearchEmitter.AttachmentStrategy attachmentStrategy, OpenSearchEmitter.UpdateStrategy updateStrategy,
+            String embeddedFileFieldName) {
         super(openSearchUrl, httpClient, attachmentStrategy, updateStrategy, embeddedFileFieldName);
     }
 
@@ -68,20 +67,18 @@ public class OpensearchTestClient extends OpenSearchClient {
             int status = response.getStatusLine().getStatusCode();
             if (status == 200) {
                 try (Reader reader = new BufferedReader(
-                        new InputStreamReader(response.getEntity().getContent(),
-                                StandardCharsets.UTF_8))) {
+                        new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8))) {
                     ObjectMapper mapper = new ObjectMapper();
                     JsonNode node = mapper.readTree(reader);
                     return new JsonResponse(200, node);
                 }
             } else {
                 return new JsonResponse(status,
-                        new String(EntityUtils.toByteArray(response.getEntity()),
-                                StandardCharsets.UTF_8));
+                        new String(EntityUtils.toByteArray(response.getEntity()), StandardCharsets.UTF_8));
             }
         } finally {
             if (response != null && response instanceof CloseableHttpResponse) {
-                ((CloseableHttpResponse)response).close();
+                ((CloseableHttpResponse) response).close();
             }
             httpRequest.releaseConnection();
         }
@@ -103,20 +100,18 @@ public class OpensearchTestClient extends OpenSearchClient {
             int status = response.getStatusLine().getStatusCode();
             if (status == 200) {
                 try (Reader reader = new BufferedReader(
-                        new InputStreamReader(response.getEntity().getContent(),
-                                StandardCharsets.UTF_8))) {
+                        new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8))) {
                     ObjectMapper mapper = new ObjectMapper();
                     JsonNode node = mapper.readTree(reader);
                     return new JsonResponse(200, node);
                 }
             } else {
                 return new JsonResponse(status,
-                        new String(EntityUtils.toByteArray(response.getEntity()),
-                                StandardCharsets.UTF_8));
+                        new String(EntityUtils.toByteArray(response.getEntity()), StandardCharsets.UTF_8));
             }
         } finally {
             if (response != null && response instanceof CloseableHttpResponse) {
-                ((CloseableHttpResponse)response).close();
+                ((CloseableHttpResponse) response).close();
             }
             httpRequest.releaseConnection();
         }
@@ -130,20 +125,18 @@ public class OpensearchTestClient extends OpenSearchClient {
             int status = response.getStatusLine().getStatusCode();
             if (status == 200) {
                 try (Reader reader = new BufferedReader(
-                        new InputStreamReader(response.getEntity().getContent(),
-                                StandardCharsets.UTF_8))) {
+                        new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8))) {
                     ObjectMapper mapper = new ObjectMapper();
                     JsonNode node = mapper.readTree(reader);
                     return new JsonResponse(200, node);
                 }
             } else {
                 return new JsonResponse(status,
-                        new String(EntityUtils.toByteArray(response.getEntity()),
-                                StandardCharsets.UTF_8));
+                        new String(EntityUtils.toByteArray(response.getEntity()), StandardCharsets.UTF_8));
             }
         } finally {
             if (response != null && response instanceof CloseableHttpResponse) {
-                ((CloseableHttpResponse)response).close();
+                ((CloseableHttpResponse) response).close();
             }
             httpRequest.releaseConnection();
         }

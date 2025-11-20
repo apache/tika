@@ -35,9 +35,8 @@ public class ChmAssert {
      * @param lzxcBlockLength int
      * @throws TikaException
      */
-    public static final void assertChmBlockSegment(byte[] data, ChmLzxcResetTable resetTable,
-                                                   int blockNumber, int lzxcBlockOffset,
-                                                   int lzxcBlockLength) throws TikaException {
+    public static final void assertChmBlockSegment(byte[] data, ChmLzxcResetTable resetTable, int blockNumber,
+            int lzxcBlockOffset, int lzxcBlockLength) throws TikaException {
         if ((data == null)) {
             throw new TikaException("data[] is null");
         }
@@ -51,8 +50,7 @@ public class ChmAssert {
         }
 
         if (resetTable.getBlockAddress().length <= 1) {
-            throw new TikaException(
-                    "resetTable.getBlockAddress().length should be greater than zero");
+            throw new TikaException("resetTable.getBlockAddress().length should be greater than zero");
         }
 
         if (blockNumber < 0) {
@@ -89,8 +87,8 @@ public class ChmAssert {
      * @param count
      * @throws ChmParsingException
      */
-    public static final void assertChmAccessorParameters(byte[] data, ChmAccessor<?> chmAccessor,
-                                                         int count) throws ChmParsingException {
+    public static final void assertChmAccessorParameters(byte[] data, ChmAccessor<?> chmAccessor, int count)
+            throws ChmParsingException {
         assertByteArrayNotNull(data);
         assertChmAccessorNotNull(chmAccessor);
     }
@@ -113,8 +111,7 @@ public class ChmAssert {
      * @param chmAccessor
      * @throws ChmParsingException
      */
-    public static final void assertChmAccessorNotNull(ChmAccessor<?> chmAccessor)
-            throws ChmParsingException {
+    public static final void assertChmAccessorNotNull(ChmAccessor<?> chmAccessor) throws ChmParsingException {
         if (chmAccessor == null) {
             throw new ChmParsingException("chm header is null");
         }
@@ -131,9 +128,8 @@ public class ChmAssert {
      * @param length
      * @throws ChmParsingException
      */
-    public static final void assertDirectoryListingEntry(int name_length, String name,
-                                                         ChmCommons.EntryType entryType, int offset,
-                                                         int length) throws ChmParsingException {
+    public static final void assertDirectoryListingEntry(int name_length, String name, ChmCommons.EntryType entryType,
+            int offset, int length) throws ChmParsingException {
         if (name_length < 0) {
             throw new ChmParsingException("invalid name length");
         }
@@ -141,11 +137,9 @@ public class ChmAssert {
             throw new ChmParsingException("invalid name");
         }
 
-        if ((entryType != ChmCommons.EntryType.COMPRESSED) &&
-                (entryType != ChmCommons.EntryType.UNCOMPRESSED)) {
+        if ((entryType != ChmCommons.EntryType.COMPRESSED) && (entryType != ChmCommons.EntryType.UNCOMPRESSED)) {
             throw new ChmParsingException(
-                    "invalid compressed type, should be EntryType.COMPRESSED | EntryType" +
-                            ".UNCOMPRESSED");
+                    "invalid compressed type, should be EntryType.COMPRESSED | EntryType" + ".UNCOMPRESSED");
         }
 
         if (offset < 0) {
@@ -157,8 +151,7 @@ public class ChmAssert {
         }
     }
 
-    public static void assertCopyingDataIndex(int index, int dataLength)
-            throws ChmParsingException {
+    public static void assertCopyingDataIndex(int index, int dataLength) throws ChmParsingException {
         if (index >= dataLength) {
             throw new ChmParsingException("cannot parse chm file index > data.length");
         }
@@ -173,8 +166,7 @@ public class ChmAssert {
      */
     public static void assertPositiveInt(int param) throws ChmParsingException {
         if (param <= 0) {
-            throw new ChmParsingException(
-                    "resetTable.getBlockAddress().length should be greater than zero");
+            throw new ChmParsingException("resetTable.getBlockAddress().length should be greater than zero");
         }
     }
 }

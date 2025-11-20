@@ -30,14 +30,13 @@ import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.extractor.EmbeddedStreamTranslator;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.microsoft.OfficeParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
 
@@ -49,8 +48,7 @@ public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
         if ("application/vnd.openxmlformats-officedocument.oleObject".equals(contentType)) {
             return true;
         } else {
-            return tis.getOpenContainer() != null &&
-                    tis.getOpenContainer() instanceof DirectoryEntry;
+            return tis.getOpenContainer() != null && tis.getOpenContainer() instanceof DirectoryEntry;
         }
     }
 
@@ -82,8 +80,7 @@ public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
             os.write(data);
             os.flush();
         } else {
-            if (tis.getOpenContainer() != null &&
-                    tis.getOpenContainer() instanceof DirectoryEntry) {
+            if (tis.getOpenContainer() != null && tis.getOpenContainer() instanceof DirectoryEntry) {
                 try (POIFSFileSystem fs = new POIFSFileSystem()) {
                     copy((DirectoryEntry) tis.getOpenContainer(), fs.getRoot());
                     fs.writeFilesystem(CloseShieldOutputStream.wrap(os));

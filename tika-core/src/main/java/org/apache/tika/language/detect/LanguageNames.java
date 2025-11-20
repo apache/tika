@@ -30,9 +30,7 @@ import java.util.Locale;
 public class LanguageNames {
 
     public static String makeName(String language, String script, String region) {
-        Locale locale =
-                new Locale.Builder().setLanguage(language).setScript(script).setRegion(region)
-                        .build();
+        Locale locale = new Locale.Builder().setLanguage(language).setScript(script).setRegion(region).build();
         return locale.toLanguageTag();
     }
 

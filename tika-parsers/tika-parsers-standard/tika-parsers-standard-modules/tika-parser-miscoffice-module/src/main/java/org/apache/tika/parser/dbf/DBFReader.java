@@ -130,8 +130,7 @@ class DBFReader {
             }
             return false;
         } else {
-            throw new TikaException(
-                    "Expecting space or asterisk at beginning of record, not:" + isDeletedByte);
+            throw new TikaException("Expecting space or asterisk at beginning of record, not:" + isDeletedByte);
         }
         row.setDeleted(isDeleted);
 
@@ -154,17 +153,14 @@ class DBFReader {
 
     enum Version {
 
-        FOXBASE(0x02, "FoxBASE", ""), FOXBASE_PLUS(0x03, "FoxBASE_plus", ""),
-        VISUAL_FOXPRO(0x30, "Visual_FoxPro", ""),
+        FOXBASE(0x02, "FoxBASE", ""), FOXBASE_PLUS(0x03, "FoxBASE_plus", ""), VISUAL_FOXPRO(0x30, "Visual_FoxPro", ""),
         VISUAL_FOXPRO_AUTOINCREMENT(0x31, "Visual_FoxPro", "autoincrement"),
         VISUAL_FOXPRO_VAR(0x32, "Visual_FoxPro", "Varchar_or_Varbinary"),
-        DBASE_IV_SQL_TABLE(0x43, "dBASE_IV_SQL", "table"),
-        DBASE_IV_SQL_SYSTEM(0x63, "dBASE_IV_SQL", "system"),
-        FOX_BASE_PLUS_WITH_MEMO(0x83, "FoxBASE_plus", "memo"),
-        DBASE_IV_WITH_MEMO(0x8B, "dBASE_IV", "memo"),
+        DBASE_IV_SQL_TABLE(0x43, "dBASE_IV_SQL", "table"), DBASE_IV_SQL_SYSTEM(0x63, "dBASE_IV_SQL", "system"),
+        FOX_BASE_PLUS_WITH_MEMO(0x83, "FoxBASE_plus", "memo"), DBASE_IV_WITH_MEMO(0x8B, "dBASE_IV", "memo"),
         DBASE_IV_SQL_TABLE_WITH_MEMO(0xCB, "dBASE_IV_SQL", "table_with_memo"),
-        FOXPRO_2x_WITH_MEMO(0xF5, "FoxPro_2.x", "memo"),
-        HIPER_SIZ_WITH_SMT_MEMO(0xE5, "HiPer-Siz", "SMT_memo"), FOXBASE2(0xFB, "FoxBASE", "");
+        FOXPRO_2x_WITH_MEMO(0xF5, "FoxPro_2.x", "memo"), HIPER_SIZ_WITH_SMT_MEMO(0xE5, "HiPer-Siz", "SMT_memo"),
+        FOXBASE2(0xFB, "FoxBASE", "");
 
         private final int id;
         private final String format;

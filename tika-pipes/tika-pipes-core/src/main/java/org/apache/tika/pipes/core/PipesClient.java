@@ -16,7 +16,6 @@
  */
 package org.apache.tika.pipes.core;
 
-
 import static org.apache.tika.pipes.core.PipesServer.STATUS.CALL;
 import static org.apache.tika.pipes.core.PipesServer.STATUS.PING;
 import static org.apache.tika.pipes.core.PipesServer.STATUS.READY;
@@ -44,9 +43,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -55,6 +51,8 @@ import org.apache.tika.pipes.core.emitter.EmitData;
 import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The PipesClient is designed to be single-threaded. It only allots
@@ -128,10 +126,9 @@ public class PipesClient implements Closeable {
         boolean restart = false;
         if (!ping()) {
             restart = true;
-        } else if (pipesConfig.getMaxFilesProcessedPerProcess() > 0 &&
-                filesProcessed >= pipesConfig.getMaxFilesProcessedPerProcess()) {
-            LOG.info("pipesClientId={}: restarting server after hitting max files: {}",
-                    pipesClientId, filesProcessed);
+        } else if (pipesConfig.getMaxFilesProcessedPerProcess() > 0
+                && filesProcessed >= pipesConfig.getMaxFilesProcessedPerProcess()) {
+            LOG.info("pipesClientId={}: restarting server after hitting max files: {}", pipesClientId, filesProcessed);
             restart = true;
         }
         if (restart) {
@@ -141,8 +138,8 @@ public class PipesClient implements Closeable {
                     restart();
                     successfulRestart = true;
                 } catch (TimeoutException e) {
-                    LOG.warn("pipesClientId={}: couldn't restart within {} ms (startupTimeoutMillis)",
-                            pipesClientId, pipesConfig.getStartupTimeoutMillis());
+                    LOG.warn("pipesClientId={}: couldn't restart within {} ms (startupTimeoutMillis)", pipesClientId,
+                            pipesConfig.getStartupTimeoutMillis());
                     Thread.sleep(pipesConfig.getSleepOnStartupTimeoutMillis());
                 }
             }
@@ -166,8 +163,7 @@ public class PipesClient implements Closeable {
             output.write(bytes);
             output.flush();
             if (LOG.isTraceEnabled()) {
-                LOG.trace("pipesClientId={}: timer -- write tuple: {} ms",
-                        pipesClientId,
+                LOG.trace("pipesClientId={}: timer -- write tuple: {} ms", pipesClientId,
                         System.currentTimeMillis() - start);
             }
             long readStart = System.currentTimeMillis();
@@ -185,8 +181,7 @@ public class PipesClient implements Closeable {
             }
 
             if (LOG.isTraceEnabled()) {
-                LOG.trace("pipesClientId={}: timer -- read result: {} ms",
-                        pipesClientId,
+                LOG.trace("pipesClientId={}: timer -- read result: {} ms", pipesClientId,
                         System.currentTimeMillis() - readStart);
             }
             if (result.getStatus() == PipesResult.STATUS.OOM) {
@@ -197,8 +192,7 @@ public class PipesClient implements Closeable {
 
         try {
             if (closed) {
-                throw new IllegalArgumentException("pipesClientId=" + pipesClientId +
-                        ": PipesClient closed");
+                throw new IllegalArgumentException("pipesClientId=" + pipesClientId + ": PipesClient closed");
             }
             executorService.execute(futureTask);
             long timeout = TikaTaskTimeout.getTimeoutMillis(t.getParseContext(), pipesConfig.getTimeoutMillis());
@@ -211,32 +205,29 @@ public class PipesClient implements Closeable {
             long elapsed = System.currentTimeMillis() - start;
             pauseThenDestroy();
             if (!process.isAlive() && TIMEOUT_EXIT_CODE == process.exitValue()) {
-                LOG.warn("pipesClientId={} server timeout: {} in {} ms", pipesClientId, t.getId(),
-                        elapsed);
+                LOG.warn("pipesClientId={} server timeout: {} in {} ms", pipesClientId, t.getId(), elapsed);
                 return buildFatalResult(PipesResult.TIMEOUT, intermediateResult);
             }
             process.waitFor(500, TimeUnit.MILLISECONDS);
             if (process.isAlive()) {
-                LOG.warn("pipesClientId={} crash: {} in {} ms with no exit code available",
-                        pipesClientId, t.getId(), elapsed);
+                LOG.warn("pipesClientId={} crash: {} in {} ms with no exit code available", pipesClientId, t.getId(),
+                        elapsed);
             } else {
-                LOG.warn("pipesClientId={} crash: {} in {} ms with exit code {}", pipesClientId,
-                        t.getId(), elapsed, process.exitValue());
+                LOG.warn("pipesClientId={} crash: {} in {} ms with exit code {}", pipesClientId, t.getId(), elapsed,
+                        process.exitValue());
             }
             return buildFatalResult(PipesResult.UNSPECIFIED_CRASH, intermediateResult);
         } catch (TimeoutException e) {
             long elapsed = System.currentTimeMillis() - start;
             destroyForcibly();
-            LOG.warn("pipesClientId={} client timeout: {} in {} ms", pipesClientId, t.getId(),
-                    elapsed);
+            LOG.warn("pipesClientId={} client timeout: {} in {} ms", pipesClientId, t.getId(), elapsed);
             return buildFatalResult(PipesResult.TIMEOUT, intermediateResult);
         } finally {
             futureTask.cancel(true);
         }
     }
 
-    private PipesResult buildFatalResult(PipesResult result,
-                                         PipesResult[] intermediateResult) {
+    private PipesResult buildFatalResult(PipesResult result, PipesResult[] intermediateResult) {
 
         if (intermediateResult[0] == null) {
             return result;
@@ -244,10 +235,9 @@ public class PipesClient implements Closeable {
             if (LOG.isTraceEnabled()) {
                 LOG.trace("intermediate result: {}", intermediateResult[0].getEmitData());
             }
-            intermediateResult[0].getEmitData().getMetadataList().get(0).set(
-                    TikaCoreProperties.PIPES_RESULT, result.getStatus().toString());
-            return new PipesResult(result.getStatus(),
-                    intermediateResult[0].getEmitData(), true);
+            intermediateResult[0].getEmitData().getMetadataList().get(0).set(TikaCoreProperties.PIPES_RESULT,
+                    result.getStatus().toString());
+            return new PipesResult(result.getStatus(), intermediateResult[0].getEmitData(), true);
         }
     }
 
@@ -293,69 +283,61 @@ public class PipesClient implements Closeable {
         } catch (IllegalArgumentException e) {
             String byteString = "-1";
             if (statusByte > -1) {
-                byteString = String.format(Locale.US, "%02x", (byte)statusByte);
+                byteString = String.format(Locale.US, "%02x", (byte) statusByte);
             }
             throw new IOException("problem reading response from server: " + byteString, e);
         }
 
-        switch (status) {
-            case OOM:
+        switch (status)
+        {
+            case OOM :
                 LOG.warn("pipesClientId={} oom: {} in {} ms", pipesClientId, t.getId(), millis);
                 return PipesResult.OOM;
-            case TIMEOUT:
-                LOG.warn("pipesClientId={} server response timeout: {} in {} ms", pipesClientId,
-                        t.getId(), millis);
+            case TIMEOUT :
+                LOG.warn("pipesClientId={} server response timeout: {} in {} ms", pipesClientId, t.getId(), millis);
                 return PipesResult.TIMEOUT;
-            case EMIT_EXCEPTION:
-                LOG.warn("pipesClientId={} emit exception: {} in {} ms", pipesClientId, t.getId(),
-                        millis);
+            case EMIT_EXCEPTION :
+                LOG.warn("pipesClientId={} emit exception: {} in {} ms", pipesClientId, t.getId(), millis);
                 return readMessage(PipesResult.STATUS.EMIT_EXCEPTION);
-            case EMITTER_NOT_FOUND:
-                LOG.warn("pipesClientId={} emitter not found: {} in {} ms", pipesClientId,
-                        t.getId(), millis);
+            case EMITTER_NOT_FOUND :
+                LOG.warn("pipesClientId={} emitter not found: {} in {} ms", pipesClientId, t.getId(), millis);
                 return readMessage(PipesResult.STATUS.NO_EMITTER_FOUND);
-            case FETCHER_NOT_FOUND:
-                LOG.warn("pipesClientId={} fetcher not found: {} in {} ms", pipesClientId,
-                        t.getId(), millis);
+            case FETCHER_NOT_FOUND :
+                LOG.warn("pipesClientId={} fetcher not found: {} in {} ms", pipesClientId, t.getId(), millis);
                 return readMessage(PipesResult.STATUS.NO_FETCHER_FOUND);
-            case FETCHER_INITIALIZATION_EXCEPTION:
-                LOG.warn("pipesClientId={} fetcher initialization exception: {} in {} ms",
-                        pipesClientId, t.getId(), millis);
+            case FETCHER_INITIALIZATION_EXCEPTION :
+                LOG.warn("pipesClientId={} fetcher initialization exception: {} in {} ms", pipesClientId, t.getId(),
+                        millis);
                 return readMessage(PipesResult.STATUS.FETCHER_INITIALIZATION_EXCEPTION);
-            case FETCH_EXCEPTION:
-                LOG.warn("pipesClientId={} fetch exception: {} in {} ms", pipesClientId, t.getId(),
-                        millis);
+            case FETCH_EXCEPTION :
+                LOG.warn("pipesClientId={} fetch exception: {} in {} ms", pipesClientId, t.getId(), millis);
                 return readMessage(PipesResult.STATUS.FETCH_EXCEPTION);
-            case INTERMEDIATE_RESULT:
-                LOG.debug("pipesClientId={} intermediate success: {} in {} ms", pipesClientId,
-                        t.getId(), millis);
+            case INTERMEDIATE_RESULT :
+                LOG.debug("pipesClientId={} intermediate success: {} in {} ms", pipesClientId, t.getId(), millis);
                 return deserializeIntermediateResult(t.getEmitKey(), t.getParseContext());
-            case PARSE_SUCCESS:
+            case PARSE_SUCCESS :
                 //there may have been a parse exception, but the parse didn't crash
-                LOG.debug("pipesClientId={} parse success: {} in {} ms", pipesClientId, t.getId(),
-                        millis);
+                LOG.debug("pipesClientId={} parse success: {} in {} ms", pipesClientId, t.getId(), millis);
                 return deserializeEmitData(PipesResult.STATUS.PARSE_SUCCESS);
-            case EMIT_SUCCESS_PASS_BACK:
-                LOG.debug("pipesClientId={} emit success with passback: {} in {} ms", pipesClientId, t.getId(),
-                        millis);
+            case EMIT_SUCCESS_PASS_BACK :
+                LOG.debug("pipesClientId={} emit success with passback: {} in {} ms", pipesClientId, t.getId(), millis);
                 return deserializeEmitData(PipesResult.STATUS.EMIT_SUCCESS_PASSBACK);
-            case PARSE_EXCEPTION_NO_EMIT:
+            case PARSE_EXCEPTION_NO_EMIT :
                 return readMessage(PipesResult.STATUS.PARSE_EXCEPTION_NO_EMIT);
-            case EMIT_SUCCESS:
-                LOG.debug("pipesClientId={} emit success: {} in {} ms", pipesClientId, t.getId(),
-                        millis);
+            case EMIT_SUCCESS :
+                LOG.debug("pipesClientId={} emit success: {} in {} ms", pipesClientId, t.getId(), millis);
                 return PipesResult.EMIT_SUCCESS;
-            case EMIT_SUCCESS_PARSE_EXCEPTION:
+            case EMIT_SUCCESS_PARSE_EXCEPTION :
                 return readMessage(PipesResult.STATUS.EMIT_SUCCESS_PARSE_EXCEPTION);
-            case EMPTY_OUTPUT:
+            case EMPTY_OUTPUT :
                 return PipesResult.EMPTY_OUTPUT;
             //fall through
-            case READY:
-            case CALL:
-            case PING:
-            case FAILED_TO_START:
+            case READY :
+            case CALL :
+            case PING :
+            case FAILED_TO_START :
                 throw new IOException("Not expecting this status: " + status);
-            default:
+            default :
                 throw new IOException("Need to handle procesing for: " + status);
         }
 
@@ -396,7 +378,6 @@ public class PipesClient implements Closeable {
         }
     }
 
-
     private PipesResult deserializeIntermediateResult(EmitKey emitKey, ParseContext parseContext) throws IOException {
 
         int length = input.readInt();
@@ -419,18 +400,17 @@ public class PipesClient implements Closeable {
             LOG.debug("process still alive; trying to destroy it");
             destroyForcibly();
             boolean processEnded = process.waitFor(30, TimeUnit.SECONDS);
-            if (! processEnded) {
+            if (!processEnded) {
                 LOG.warn("pipesClientId={}: process has not yet ended", pipesClientId);
             }
             executorService.shutdownNow();
             boolean shutdown = executorService.awaitTermination(30, TimeUnit.SECONDS);
-            if (! shutdown) {
+            if (!shutdown) {
                 LOG.warn("pipesClientId={}: executorService has not yet shutdown", pipesClientId);
             }
             synchronized (executorServiceLock) {
                 if (closed) {
-                    throw new IllegalArgumentException("pipesClientId=" + pipesClientId +
-                            ": PipesClient closed");
+                    throw new IllegalArgumentException("pipesClientId=" + pipesClientId + ": PipesClient closed");
                 }
                 executorService = Executors.newFixedThreadPool(1);
             }
@@ -459,23 +439,22 @@ public class PipesClient implements Closeable {
             while (read < MAX_BYTES_BEFORE_READY && b != READY.getByte()) {
 
                 if (b == -1) {
-                    throw new RuntimeException(getMsg("pipesClientId=" + pipesClientId + ": " +
-                            "Couldn't start server -- read EOF before 'ready' byte.\n" +
-                            " process isAlive=" + process.isAlive(), bos));
+                    throw new RuntimeException(getMsg("pipesClientId=" + pipesClientId + ": "
+                            + "Couldn't start server -- read EOF before 'ready' byte.\n" + " process isAlive="
+                            + process.isAlive(), bos));
                 }
                 bos.write(b);
                 b = input.read();
                 read++;
             }
             if (read >= MAX_BYTES_BEFORE_READY) {
-                throw new RuntimeException(getMsg("pipesClientId=" + pipesClientId + ": " +
-                        "Couldn't start server: read too many bytes before 'ready' byte.\n" +
-                        " Make absolutely certain that your logger is not writing to " +
-                        "stdout.\n", bos));
+                throw new RuntimeException(getMsg("pipesClientId=" + pipesClientId + ": "
+                        + "Couldn't start server: read too many bytes before 'ready' byte.\n"
+                        + " Make absolutely certain that your logger is not writing to " + "stdout.\n", bos));
             }
             if (bos.size() > 0) {
-                LOG.warn("pipesClientId={}: From forked process before start byte: {}",
-                        pipesClientId, bos.toString(StandardCharsets.UTF_8));
+                LOG.warn("pipesClientId={}: From forked process before start byte: {}", pipesClientId,
+                        bos.toString(StandardCharsets.UTF_8));
             }
             return 1;
         });
@@ -492,10 +471,11 @@ public class PipesClient implements Closeable {
             throw new RuntimeException(e);
         } catch (TimeoutException e) {
             long elapsed = System.currentTimeMillis() - start;
-            LOG.error("pipesClientId={} didn't receive ready byte from server within " +
-                            "StartupTimeoutMillis {}; ms elapsed {}; did read >{}<",
-                    pipesClientId, pipesConfig.getStartupTimeoutMillis(),
-                    elapsed, bos.toString(StandardCharsets.UTF_8));
+            LOG.error(
+                    "pipesClientId={} didn't receive ready byte from server within "
+                            + "StartupTimeoutMillis {}; ms elapsed {}; did read >{}<",
+                    pipesClientId, pipesConfig.getStartupTimeoutMillis(), elapsed,
+                    bos.toString(StandardCharsets.UTF_8));
             destroyForcibly();
             throw e;
         } finally {
@@ -527,8 +507,7 @@ public class PipesClient implements Closeable {
             if (arg.equals("-cp") || arg.equals("--classpath")) {
                 hasClassPath = true;
             }
-            if (arg.equals("-XX:+ExitOnOutOfMemoryError") ||
-                    arg.equals("-XX:+CrashOnOutOfMemoryError")) {
+            if (arg.equals("-XX:+ExitOnOutOfMemoryError") || arg.equals("-XX:+CrashOnOutOfMemoryError")) {
                 hasExitOnOOM = true;
             }
             if (arg.startsWith("-Dlog4j.configuration")) {
@@ -556,20 +535,17 @@ public class PipesClient implements Closeable {
             commandLine.add("-Djava.awt.headless=true");
         }
         if (hasExitOnOOM) {
-            LOG.warn(
-                    "I notice that you have a jdk setting to exit/crash on OOM. If you run heavy external processes " +
-                            "like tesseract, this setting may result in orphaned processes which could be disastrous" +
-                            " for performance.");
+            LOG.warn("I notice that you have a jdk setting to exit/crash on OOM. If you run heavy external processes "
+                    + "like tesseract, this setting may result in orphaned processes which could be disastrous"
+                    + " for performance.");
         }
         if (!hasLog4j) {
-            commandLine.add(
-                    "-Dlog4j.configurationFile=classpath:pipes-fork-server-default-log4j2.xml");
+            commandLine.add("-Dlog4j.configurationFile=classpath:pipes-fork-server-default-log4j2.xml");
         }
         commandLine.add("-DpipesClientId=" + pipesClientId);
         commandLine.addAll(configArgs);
         commandLine.add("org.apache.tika.pipes.core.PipesServer");
-        commandLine.add(ProcessUtils.escapeCommandLine(
-                pipesConfig.getTikaConfig().toAbsolutePath().toString()));
+        commandLine.add(ProcessUtils.escapeCommandLine(pipesConfig.getTikaConfig().toAbsolutePath().toString()));
 
         commandLine.add(Long.toString(pipesConfig.getMaxForEmitBatchBytes()));
         commandLine.add(Long.toString(pipesConfig.getTimeoutMillis()));

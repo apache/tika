@@ -21,15 +21,14 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * <p>Parser for Corel QuattroPro documents (part of Corel WordPerfect
@@ -47,7 +46,6 @@ public class QuattroProParser implements Parser {
     public final static MediaType QP_9 = new MediaType(QP_BASE, "version", "9");
     public static final MediaType QP_7_8 = new MediaType(QP_BASE, "version", "7-8");
 
-
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(QP_9);
 
     @Override
@@ -56,8 +54,8 @@ public class QuattroProParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         if (metadata.get(Metadata.CONTENT_TYPE) == null) {
             metadata.set(Metadata.CONTENT_TYPE, QP_9.toString());

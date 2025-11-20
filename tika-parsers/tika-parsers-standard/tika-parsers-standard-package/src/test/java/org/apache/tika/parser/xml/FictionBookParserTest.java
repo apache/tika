@@ -20,19 +20,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.InputStream;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
+import org.junit.jupiter.api.Test;
 
 public class FictionBookParserTest {
 
     @Test
     public void testEmbedded() throws Exception {
-        try (InputStream input = FictionBookParserTest.class
-                .getResourceAsStream("/test-documents/test.fb2")) {
+        try (InputStream input = FictionBookParserTest.class.getResourceAsStream("/test-documents/test.fb2")) {
             ContainerExtractor extractor = new ParserContainerExtractor();
             TikaInputStream stream = TikaInputStream.get(input);
 

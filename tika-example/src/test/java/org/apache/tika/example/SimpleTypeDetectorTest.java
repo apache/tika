@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.example;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -22,9 +21,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
+import org.junit.jupiter.api.Test;
 
 @SuppressWarnings("deprecation")
 public class SimpleTypeDetectorTest extends TikaTest {
@@ -40,9 +38,7 @@ public class SimpleTypeDetectorTest extends TikaTest {
 
         System.setOut(out);
 
-        assertContains("pom.xml: application/xml", buffer
-                .toString(UTF_8.name())
-                .trim());
+        assertContains("pom.xml: application/xml", buffer.toString(UTF_8.name()).trim());
     }
 
 }

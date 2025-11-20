@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.eval.app;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -28,10 +27,9 @@ import java.util.Set;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.eval.core.tokens.AlphaIdeographFilterFactory;
 import org.apache.tika.eval.core.tokens.AnalyzerManager;
+import org.junit.jupiter.api.Test;
 
 public class AnalyzerManagerTest {
 
@@ -86,9 +84,7 @@ public class AnalyzerManagerTest {
         for (int i = 0; i < 1001000; i++) {
             sb.append("the ");
         }
-        TokenStream ts = analyzerManager
-                .getGeneralAnalyzer()
-                .tokenStream("f", sb.toString());
+        TokenStream ts = analyzerManager.getGeneralAnalyzer().tokenStream("f", sb.toString());
         ts.reset();
         CharTermAttribute termAtt = ts.getAttribute(CharTermAttribute.class);
         int tokens = 0;

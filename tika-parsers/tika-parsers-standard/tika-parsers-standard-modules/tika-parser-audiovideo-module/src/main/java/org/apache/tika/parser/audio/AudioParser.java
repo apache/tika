@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
 import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFileFormat.Type;
 import javax.sound.sampled.AudioFormat;
@@ -33,9 +34,6 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.ProxyInputStream;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -44,6 +42,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class AudioParser implements Parser {
 
@@ -52,23 +52,22 @@ public class AudioParser implements Parser {
      */
     private static final long serialVersionUID = -6015684081240882695L;
 
-    private static final String UNSUPPORTED_AUDIO_FILE_EXCEPTION = "An " +
-            "UnsupportedAudioFileException was thrown.  This could mean that the underlying " +
-            "parser hit an EndOfFileException or that the file is unsupported. ¯\\_(ツ)_/¯";
+    private static final String UNSUPPORTED_AUDIO_FILE_EXCEPTION = "An "
+            + "UnsupportedAudioFileException was thrown.  This could mean that the underlying "
+            + "parser hit an EndOfFileException or that the file is unsupported. ¯\\_(ツ)_/¯";
 
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<>(
-                    Arrays.asList(MediaType.audio("basic"), MediaType.audio("vnd.wave"),
-                            // Official, fixed in Tika 1.16
-                            MediaType.audio("x-wav"),    // Older, used until Tika 1.16
-                            MediaType.audio("x-aiff"))));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections
+            .unmodifiableSet(new HashSet<>(Arrays.asList(MediaType.audio("basic"), MediaType.audio("vnd.wave"),
+                    // Official, fixed in Tika 1.16
+                    MediaType.audio("x-wav"), // Older, used until Tika 1.16
+                    MediaType.audio("x-aiff"))));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         // AudioSystem expects the stream to support the mark feature
         if (!stream.markSupported()) {
             stream = new BufferedInputStream(stream);
@@ -127,8 +126,7 @@ public class AudioParser implements Parser {
             // just being unsupported. So we do nothing.
             // In Java 8, the AIFFReader throws an EOF, but
             // in Java 11, that EOF is swallowed and an UAFE is thrown.
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    UNSUPPORTED_AUDIO_FILE_EXCEPTION);
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, UNSUPPORTED_AUDIO_FILE_EXCEPTION);
         }
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);

@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.util.Arrays;
@@ -46,7 +45,6 @@ public class DataNodeObjectData {
      * Initializes a new instance of the DataNodeObjectData class.
      */
     DataNodeObjectData() {
-        this.exGuid =
-                new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());
+        this.exGuid = new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());
     }
 }

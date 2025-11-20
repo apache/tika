@@ -23,9 +23,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TailStream;
@@ -37,6 +34,8 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.mp3.ID3Tags.ID3Comment;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * The <code>Mp3Parser</code> is used to parse ID3 Version 1 Tag information
@@ -53,8 +52,7 @@ public class Mp3Parser implements Parser {
      */
     private static final long serialVersionUID = 8537074922934844370L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.audio("mpeg"));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.audio("mpeg"));
 
     /**
      * Scans the MP3 frames for ID3 tags, and creates ID3Tag Handlers
@@ -139,8 +137,8 @@ public class Mp3Parser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         metadata.set(Metadata.CONTENT_TYPE, "audio/mpeg");
         metadata.set(XMPDM.AUDIO_COMPRESSOR, "MP3");
 
@@ -160,8 +158,7 @@ public class Mp3Parser implements Parser {
             metadata.set("channels", String.valueOf(audioAndTags.audio.getChannels()));
             metadata.set("version", audioAndTags.audio.getVersion());
 
-            metadata.set(XMPDM.AUDIO_SAMPLE_RATE,
-                    Integer.toString(audioAndTags.audio.getSampleRate()));
+            metadata.set(XMPDM.AUDIO_SAMPLE_RATE, Integer.toString(audioAndTags.audio.getSampleRate()));
             if (audioAndTags.audio.getChannels() == 1) {
                 metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, "Mono");
             } else if (audioAndTags.audio.getChannels() == 2) {
@@ -223,7 +220,6 @@ public class Mp3Parser implements Parser {
 
             xhtml.element("h1", tag.getTitle());
             xhtml.element("p", tag.getArtist());
-
 
             xhtml.element("p", sb.toString());
 

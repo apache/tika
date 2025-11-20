@@ -14,16 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.extractor;
 
 import java.io.IOException;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public interface EmbeddedDocumentExtractor {
     boolean shouldParseEmbedded(Metadata metadata);
@@ -38,7 +36,6 @@ public interface EmbeddedDocumentExtractor {
      * @throws org.xml.sax.SAXException
      * @throws java.io.IOException
      */
-    void parseEmbedded(
-            TikaInputStream stream, ContentHandler handler, Metadata metadata, boolean outputHtml)
+    void parseEmbedded(TikaInputStream stream, ContentHandler handler, Metadata metadata, boolean outputHtml)
             throws SAXException, IOException;
 }

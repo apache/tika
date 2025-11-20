@@ -24,11 +24,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.utils.FileProcessResult;
+import org.junit.jupiter.api.Test;
 
 public class TestSiegfriedJsonParsing extends TikaTest {
 
@@ -77,17 +76,13 @@ public class TestSiegfriedJsonParsing extends TikaTest {
         assertNull(metadata.get("sf:pronom:format"));
         assertNull(metadata.get("sf:pronom:mime"));
         assertNull(metadata.get("sf:pronom:version"));
-        assertTrue(metadata.get("sf:pronom:warning")
-                .startsWith("no match; possibilities based on extension are fmt/14, fmt/15, fmt/16, " +
-                        "fmt/17, fmt/18, fmt/19"));
+        assertTrue(metadata.get("sf:pronom:warning").startsWith(
+                "no match; possibilities based on extension are fmt/14, fmt/15, fmt/16, " + "fmt/17, fmt/18, fmt/19"));
     }
 
-
-
-
     private FileProcessResult load(String jsonFileName) throws IOException {
-        String jsonString = IOUtils.toString(
-                getClass().getResourceAsStream("/json/" + jsonFileName), StandardCharsets.UTF_8);
+        String jsonString = IOUtils.toString(getClass().getResourceAsStream("/json/" + jsonFileName),
+                StandardCharsets.UTF_8);
         FileProcessResult r = new FileProcessResult();
         r.setStdout(jsonString);
         r.setExitValue(0);

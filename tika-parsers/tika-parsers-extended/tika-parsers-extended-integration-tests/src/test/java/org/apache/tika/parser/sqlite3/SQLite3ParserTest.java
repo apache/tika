@@ -27,9 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.EmbeddedResourceHandler;
 import org.apache.tika.extractor.ParserContainerExtractor;
@@ -45,6 +42,8 @@ import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class SQLite3ParserTest extends TikaTest {
 
@@ -119,10 +118,8 @@ public class SQLite3ParserTest extends TikaTest {
         String xml = handler.toString();
         //just includes headers for embedded documents
         assertContains("<table name=\"my_table1\"><thead><tr>", xml);
-        assertContains(
-                "<td><span type=\"blob\" column_name=\"BYTES_COL\" row_number=\"0\">" +
-                        "<div class=\"package-entry\"><h1>BYTES_COL_0.doc</h1>",
-                xml);
+        assertContains("<td><span type=\"blob\" column_name=\"BYTES_COL\" row_number=\"0\">"
+                + "<div class=\"package-entry\"><h1>BYTES_COL_0.doc</h1>", xml);
         //but no other content
         assertNotContained("dog", xml);
         assertNotContained("alt=\"image1.png\"", xml);
@@ -154,14 +151,11 @@ public class SQLite3ParserTest extends TikaTest {
         String table2 = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         assertContains("do eiusmod tempor\n", table2);
 
-        assertContains("The quick brown fox",
-                metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
-        assertContains("The quick brown fox",
-                metadataList.get(4).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("The quick brown fox", metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("The quick brown fox", metadataList.get(4).get(TikaCoreProperties.TIKA_CONTENT));
 
         //confirm .doc was added to blob
-        assertEquals("/BYTES_COL_0.doc/image1.png",
-                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/BYTES_COL_0.doc/image1.png", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
     }
 
     @Test
@@ -185,9 +179,8 @@ public class SQLite3ParserTest extends TikaTest {
             String s = new String(byteArr, 0, Math.min(byteArr.length, 1000), UTF_8);
             strings[i] = s;
         }
-        byte[] oleBytes =
-                new byte[]{(byte) -48, (byte) -49, (byte) 17, (byte) -32, (byte) -95, (byte) -79,
-                        (byte) 26, (byte) -31, (byte) 0, (byte) 0,};
+        byte[] oleBytes = new byte[]{(byte) -48, (byte) -49, (byte) 17, (byte) -32, (byte) -95, (byte) -79, (byte) 26,
+                (byte) -31, (byte) 0, (byte) 0,};
         //test OLE
         for (int i = 0; i < 10; i++) {
             assertEquals(oleBytes[i], byteCopier.bytes.get(0)[i]);
@@ -217,7 +210,6 @@ public class SQLite3ParserTest extends TikaTest {
         }
         assertEquals(8, byteCopier.bytes.size());
     }
-
 
     public static class InputStreamResettingHandler implements EmbeddedResourceHandler {
 

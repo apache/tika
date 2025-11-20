@@ -136,15 +136,15 @@ public class ChmSection {
     public BigInteger unmarshalUlong() {
         return getBigInteger(8);
     }
-
+    
     public long unmarshalUInt() {
         return getBigInteger(4).longValue();
     }
-
+    
     public int unmarshalInt() {
         return getBigInteger(4).intValue();
     }
-*/
+    */
     public byte[] unmarshalBytes(int i) throws TikaException {
         if (i > 8) {
             throw new TikaMemoryLimitException("Must be <= 8");
@@ -172,9 +172,9 @@ public class ChmSection {
         return bi;
     }
 
-//    private void setData(byte[] data) {
-//        this.data = data;
-//    }
+    //    private void setData(byte[] data) {
+    //        this.data = data;
+    //    }
 
     public char unmarshalUtfChar() {
         byte ob;
@@ -183,7 +183,8 @@ public class ChmSection {
         ob = this.getByte();
         if (ob < 0) {
             i = 2;
-            while ((ob << (24 + i)) < 0) i++;
+            while ((ob << (24 + i)) < 0)
+                i++;
         }
         ba = new byte[i];
         ba[0] = ob;
@@ -199,7 +200,8 @@ public class ChmSection {
             int n;
             n = ba[0] & 15; // 00001111b, gets last 4 bits
             j = 1;
-            while (j < i) n = (n << 6) + (ba[j++] & 63);// 00111111b,gets last 6 bits
+            while (j < i)
+                n = (n << 6) + (ba[j++] & 63);// 00111111b,gets last 6 bits
             return (char) n;
         }
     }

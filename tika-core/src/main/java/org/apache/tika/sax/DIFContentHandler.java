@@ -18,13 +18,12 @@ package org.apache.tika.sax;
 
 import java.util.Stack;
 
+import org.apache.tika.metadata.Metadata;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
-
-import org.apache.tika.metadata.Metadata;
 
 public class DIFContentHandler extends DefaultHandler {
 
@@ -65,10 +64,10 @@ public class DIFContentHandler extends DefaultHandler {
             this.delegate.characters(title.toCharArray(), 0, title.length());
             this.delegate.endElement("", "h3", "h3");
         }
-        if (this.treeStack.peek().equals("Southernmost_Latitude") ||
-                this.treeStack.peek().equals("Northernmost_Latitude") ||
-                this.treeStack.peek().equals("Westernmost_Longitude") ||
-                this.treeStack.peek().equals("Easternmost_Longitude")) {
+        if (this.treeStack.peek().equals("Southernmost_Latitude")
+                || this.treeStack.peek().equals("Northernmost_Latitude")
+                || this.treeStack.peek().equals("Westernmost_Longitude")
+                || this.treeStack.peek().equals("Easternmost_Longitude")) {
             this.delegate.characters(NEWLINE, 0, NEWLINE.length);
             this.delegate.characters(TABSPACE, 0, TABSPACE.length);
             this.delegate.characters(TABSPACE, 0, TABSPACE.length);
@@ -90,8 +89,7 @@ public class DIFContentHandler extends DefaultHandler {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes attributes)
-            throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
         this.isLeaf = true;
         if (localName.equals("Spatial_Coverage")) {
             this.delegate.characters(NEWLINE, 0, NEWLINE.length);

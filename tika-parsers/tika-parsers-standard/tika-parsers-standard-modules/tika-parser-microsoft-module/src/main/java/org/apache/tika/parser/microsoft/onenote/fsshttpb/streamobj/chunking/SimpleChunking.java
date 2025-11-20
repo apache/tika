@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.chunking;
 
 import java.util.ArrayList;
@@ -22,7 +21,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.codec.digest.DigestUtils;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.LeafNodeObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.SignatureObject;
@@ -48,8 +46,7 @@ public class SimpleChunking extends AbstractChunking {
     public List<LeafNodeObject> chunking() throws TikaException {
         int maxChunkSize = 1 * 1024 * 1024;
         java.util.List<LeafNodeObject> list = new ArrayList<>();
-        LeafNodeObject.IntermediateNodeObjectBuilder builder =
-                new LeafNodeObject.IntermediateNodeObjectBuilder();
+        LeafNodeObject.IntermediateNodeObjectBuilder builder = new LeafNodeObject.IntermediateNodeObjectBuilder();
         int chunkStart = 0;
 
         if (this.fileContent.length <= maxChunkSize) {
@@ -59,8 +56,9 @@ public class SimpleChunking extends AbstractChunking {
         }
 
         while (chunkStart < this.fileContent.length) {
-            int chunkLength = chunkStart + maxChunkSize >= this.fileContent.length ?
-                    this.fileContent.length - chunkStart : maxChunkSize;
+            int chunkLength = chunkStart + maxChunkSize >= this.fileContent.length
+                    ? this.fileContent.length - chunkStart
+                    : maxChunkSize;
             byte[] temp = Arrays.copyOfRange(this.fileContent, chunkStart, chunkLength);
             list.add(builder.Build(temp, this.getSignature(temp)));
             chunkStart += chunkLength;

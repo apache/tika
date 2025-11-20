@@ -20,13 +20,12 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.Locale;
 
+import org.apache.tika.sax.ContentHandlerDecorator;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
-
-import org.apache.tika.sax.ContentHandlerDecorator;
 
 /**
  * Content handler decorator that:<ul>
@@ -55,19 +54,17 @@ public class NSNormalizerContentHandler extends ContentHandlerDecorator {
     }
 
     @Override
-    public void startElement(String namespaceURI, String localName, String qName, Attributes atts)
-            throws SAXException {
+    public void startElement(String namespaceURI, String localName, String qName, Attributes atts) throws SAXException {
         AttributesImpl natts = new AttributesImpl();
         for (int i = 0; i < atts.getLength(); i++) {
-            natts.addAttribute(mapOldNS(atts.getURI(i)), atts.getLocalName(i), atts.getQName(i),
-                    atts.getType(i), atts.getValue(i));
+            natts.addAttribute(mapOldNS(atts.getURI(i)), atts.getLocalName(i), atts.getQName(i), atts.getType(i),
+                    atts.getValue(i));
         }
         super.startElement(mapOldNS(namespaceURI), localName, qName, atts);
     }
 
     @Override
-    public void endElement(String namespaceURI, String localName, String qName)
-            throws SAXException {
+    public void endElement(String namespaceURI, String localName, String qName) throws SAXException {
         super.endElement(mapOldNS(namespaceURI), localName, qName);
     }
 
@@ -81,10 +78,9 @@ public class NSNormalizerContentHandler extends ContentHandlerDecorator {
      * returning a empty string as InputSource
      */
     @Override
-    public InputSource resolveEntity(String publicId, String systemId)
-            throws IOException, SAXException {
-        if ((systemId != null && systemId.toLowerCase(Locale.ROOT).endsWith(".dtd")) ||
-                DTD_PUBLIC_ID.equals(publicId)) {
+    public InputSource resolveEntity(String publicId, String systemId) throws IOException, SAXException {
+        if ((systemId != null && systemId.toLowerCase(Locale.ROOT).endsWith(".dtd"))
+                || DTD_PUBLIC_ID.equals(publicId)) {
             return new InputSource(new StringReader(""));
         } else {
             return super.resolveEntity(publicId, systemId);

@@ -26,7 +26,6 @@ public class LangModel {
     private final long totalTokens;
     private final double unseenPercentage;
 
-
     private Map<String, Double> percentages = new HashMap<>();
     private Map<String, Long> counts = new HashMap<>();
 
@@ -34,7 +33,6 @@ public class LangModel {
         this.totalTokens = totalTokens;
         this.unseenPercentage = (double) 1 / (double) totalTokens;
     }
-
 
     public boolean contains(String token) {
         return (percentages.containsKey(token));

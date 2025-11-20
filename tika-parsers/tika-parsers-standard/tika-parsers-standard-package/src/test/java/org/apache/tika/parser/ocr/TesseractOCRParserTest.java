@@ -23,9 +23,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
@@ -41,6 +38,8 @@ import org.apache.tika.parser.image.ImageMetadataExtractor;
 import org.apache.tika.parser.image.ImageParser;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class TesseractOCRParserTest extends TikaTest {
 
@@ -48,7 +47,6 @@ public class TesseractOCRParserTest extends TikaTest {
         TesseractOCRParser p = new TesseractOCRParser();
         return p.hasTesseract();
     }
-
 
     /*
     Check that if Tesseract is told to skip OCR,
@@ -120,9 +118,8 @@ public class TesseractOCRParserTest extends TikaTest {
         String resource = "testOCR.pdf";
 
         String[] nonOCRContains = new String[0];
-        String contents =
-                runOCR(resource, nonOCRContains, 2, BasicContentHandlerFactory.HANDLER_TYPE.XML,
-                        TesseractOCRConfig.OUTPUT_TYPE.HOCR);
+        String contents = runOCR(resource, nonOCRContains, 2, BasicContentHandlerFactory.HANDLER_TYPE.XML,
+                TesseractOCRConfig.OUTPUT_TYPE.HOCR);
 
         assertContains("<span class=\"ocrx_word\" id=\"word_1_1\"", contents);
         assertContains("Happy</span>", contents);
@@ -140,12 +137,11 @@ public class TesseractOCRParserTest extends TikaTest {
                 metadata.get(0).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
-    private void testBasicOCR(String resource, String[] nonOCRContains, int numMetadatas)
-            throws Exception {
+    private void testBasicOCR(String resource, String[] nonOCRContains, int numMetadatas) throws Exception {
         assumeTrue(canRun(), "can run OCR");
 
-        String contents = runOCR(resource, nonOCRContains, numMetadatas,
-                BasicContentHandlerFactory.HANDLER_TYPE.TEXT, TesseractOCRConfig.OUTPUT_TYPE.TXT);
+        String contents = runOCR(resource, nonOCRContains, numMetadatas, BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                TesseractOCRConfig.OUTPUT_TYPE.TXT);
         if (canRun()) {
             if (resource.substring(resource.lastIndexOf('.')).equals(".jpg")) {
                 assertContains("Apache", contents);
@@ -156,8 +152,8 @@ public class TesseractOCRParserTest extends TikaTest {
     }
 
     private String runOCR(String resource, String[] nonOCRContains, int numMetadatas,
-                          BasicContentHandlerFactory.HANDLER_TYPE handlerType,
-                          TesseractOCRConfig.OUTPUT_TYPE outputType) throws Exception {
+            BasicContentHandlerFactory.HANDLER_TYPE handlerType, TesseractOCRConfig.OUTPUT_TYPE outputType)
+            throws Exception {
         TesseractOCRConfig config = new TesseractOCRConfig();
         config.setOutputType(outputType);
 
@@ -168,8 +164,7 @@ public class TesseractOCRParserTest extends TikaTest {
         parseContext.set(TesseractOCRConfig.class, config);
         parseContext.set(PDFParserConfig.class, pdfConfig);
 
-        List<Metadata> metadataList =
-                getRecursiveMetadata(resource, AUTO_DETECT_PARSER, handlerType, parseContext);
+        List<Metadata> metadataList = getRecursiveMetadata(resource, AUTO_DETECT_PARSER, handlerType, parseContext);
         assertEquals(numMetadatas, metadataList.size());
 
         StringBuilder contents = new StringBuilder();
@@ -210,7 +205,6 @@ public class TesseractOCRParserTest extends TikaTest {
 
         assertNotContained("<meta name=\"Content-Type\" content=\"image/ocr-jpeg\" />", xml);
     }
-
 
     @Test
     public void getNormalMetadataToo() throws Exception {

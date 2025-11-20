@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+
 import javax.xml.stream.XMLStreamException;
 
 import org.apache.commons.io.IOUtils;
@@ -95,10 +96,6 @@ import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.tools.imageio.ImageIOUtil;
 import org.apache.pdfbox.util.Matrix;
 import org.apache.pdfbox.util.Vector;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -132,6 +129,9 @@ import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 class AbstractPDF2XHTML extends PDFTextStripper {
 
@@ -167,8 +167,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
      * Format used for signature dates
      * TODO Make this thread-safe
      */
-    private final SimpleDateFormat dateFormat =
-            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.ROOT);
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.ROOT);
     private final Set<String> fontNames = new TreeSet<>();
     private final Set<String> annotationTypes = new TreeSet<>();
     private final Set<String> annotationSubtypes = new TreeSet<>();
@@ -198,8 +197,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
     int num3DAnnotations = 0;
 
-    AbstractPDF2XHTML(PDDocument pdDocument, ContentHandler handler, ParseContext context,
-                      Metadata metadata, PDFParserConfig config) throws IOException {
+    AbstractPDF2XHTML(PDDocument pdDocument, ContentHandler handler, ParseContext context, Metadata metadata,
+            PDFParserConfig config) throws IOException {
         this.pdDocument = pdDocument;
         this.xhtml = new XHTMLContentHandler(handler, metadata);
         this.context = context;
@@ -251,8 +250,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         writeParagraphStart();
     }
 
-    private void extractXMPXFA(PDDocument pdfDocument, Metadata parentMetadata,
-                               ParseContext context) throws IOException, SAXException {
+    private void extractXMPXFA(PDDocument pdfDocument, Metadata parentMetadata, ParseContext context)
+            throws IOException, SAXException {
         Set<MediaType> supportedTypes = Collections.EMPTY_SET;
         Parser embeddedParser = context.get(Parser.class);
         if (embeddedParser != null) {
@@ -266,8 +265,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         if (supportedTypes.contains(XMP_MEDIA_TYPE)) {
             //try the main metadata
             if (pdfDocument.getDocumentCatalog().getMetadata() != null) {
-                try (TikaInputStream tis = TikaInputStream.get(
-                        pdfDocument.getDocumentCatalog().getMetadata().exportXMPMetadata())) {
+                try (TikaInputStream tis = TikaInputStream
+                        .get(pdfDocument.getDocumentCatalog().getMetadata().exportXMPMetadata())) {
                     extractXMPAsEmbeddedFile(tis, XMP_DOCUMENT_CATALOG_LOCATION);
                 } catch (IOException e) {
                     EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
@@ -288,15 +287,14 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
 
         //now try the xfa
-        if (pdfDocument.getDocumentCatalog().getAcroForm(null) != null &&
-                pdfDocument.getDocumentCatalog().getAcroForm(null).getXFA() != null) {
+        if (pdfDocument.getDocumentCatalog().getAcroForm(null) != null
+                && pdfDocument.getDocumentCatalog().getAcroForm(null).getXFA() != null) {
 
             Metadata xfaMetadata = new Metadata();
             xfaMetadata.set(Metadata.CONTENT_TYPE, XFA_MEDIA_TYPE.toString());
             xfaMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.METADATA.toString());
-            if (embeddedDocumentExtractor.shouldParseEmbedded(xfaMetadata) &&
-                    supportedTypes.contains(XFA_MEDIA_TYPE)) {
+            if (embeddedDocumentExtractor.shouldParseEmbedded(xfaMetadata) && supportedTypes.contains(XFA_MEDIA_TYPE)) {
                 byte[] bytes = null;
                 try {
                     bytes = pdfDocument.getDocumentCatalog().getAcroForm(null).getXFA().getBytes();
@@ -312,8 +310,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
     }
 
-    private void extractXMPAsEmbeddedFile(TikaInputStream tis, String location)
-            throws IOException, SAXException {
+    private void extractXMPAsEmbeddedFile(TikaInputStream tis, String location) throws IOException, SAXException {
         if (tis == null) {
             return;
         }
@@ -328,18 +325,15 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
     }
 
-    private void parseMetadata(TikaInputStream tis, Metadata embeddedMetadata)
-            throws IOException, SAXException {
+    private void parseMetadata(TikaInputStream tis, Metadata embeddedMetadata) throws IOException, SAXException {
         try {
-            embeddedDocumentExtractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),
-                    embeddedMetadata, true);
+            embeddedDocumentExtractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml), embeddedMetadata, true);
         } catch (IOException e) {
             handleCatchableIOE(e);
         }
     }
 
-    private void extractEmbeddedDocuments(PDDocument document)
-            throws IOException, SAXException, TikaException {
+    private void extractEmbeddedDocuments(PDDocument document) throws IOException, SAXException, TikaException {
         //See 14.13.10 for the 2.0 spec.  Associated files can show up in lots of places...even
         // streams.
         // It would be great to get more context from the /AF info, but we risk missing files
@@ -371,8 +365,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         //use a list instead of a name-based map in case there are key collisions
         //that could hide attachments
         List<NameSpecTuple> specs = new ArrayList<>();
-        extractFilesfromEFTree(document.getDocumentCatalog().getNames().getEmbeddedFiles(), specs,
-                0);
+        extractFilesfromEFTree(document.getDocumentCatalog().getNames().getEmbeddedFiles(), specs, 0);
         //this avoids duplication with the above /FileSpec searching, but also in the case
         //where the same underlying file has different names in the EFTree
         for (NameSpecTuple nameSpecTuple : specs) {
@@ -385,8 +378,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     }
 
     private void processDocOnAction(String name, String annotationType, PDFileSpecification spec,
-                                    AttributesImpl attributes)
-            throws TikaException, SAXException, IOException {
+            AttributesImpl attributes) throws TikaException, SAXException, IOException {
         if (spec == null) {
             return;
         }
@@ -394,8 +386,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         extractedFiles.add(spec.getCOSObject());
     }
 
-    private void processDoc(String name, String annotationType, PDFileSpecification spec,
-                            AttributesImpl attributes)
+    private void processDoc(String name, String annotationType, PDFileSpecification spec, AttributesImpl attributes)
             throws TikaException, SAXException, IOException {
         if (spec == null) {
             return;
@@ -413,14 +404,12 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             if (attributes.getIndex("source") < 0) {
                 attributes.addAttribute("", "source", "source", "CDATA", "attachment");
             }
-            extractMultiOSPDEmbeddedFiles(name, annotationType, (PDComplexFileSpecification) spec,
-                    attributes);
+            extractMultiOSPDEmbeddedFiles(name, annotationType, (PDComplexFileSpecification) spec, attributes);
         }
     }
 
     private void extractMultiOSPDEmbeddedFiles(String displayName, String annotationType,
-                                               PDComplexFileSpecification spec,
-                                               AttributesImpl attributes)
+            PDComplexFileSpecification spec, AttributesImpl attributes)
             throws IOException, SAXException, TikaException {
 
         if (spec == null) {
@@ -428,22 +417,20 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
 
         //current strategy is to pull all, not just first non-null
-        extractPDEmbeddedFile(displayName, annotationType, spec, spec.getFile(),
-                spec.getEmbeddedFile(), attributes);
-        extractPDEmbeddedFile(displayName, annotationType, spec, spec.getFileMac(),
-                spec.getEmbeddedFileMac(), attributes);
-        extractPDEmbeddedFile(displayName, annotationType, spec, spec.getFileDos(),
-                spec.getEmbeddedFileDos(), attributes);
-        extractPDEmbeddedFile(displayName, annotationType, spec, spec.getFileUnix(),
-                spec.getEmbeddedFileUnix(), attributes);
+        extractPDEmbeddedFile(displayName, annotationType, spec, spec.getFile(), spec.getEmbeddedFile(), attributes);
+        extractPDEmbeddedFile(displayName, annotationType, spec, spec.getFileMac(), spec.getEmbeddedFileMac(),
+                attributes);
+        extractPDEmbeddedFile(displayName, annotationType, spec, spec.getFileDos(), spec.getEmbeddedFileDos(),
+                attributes);
+        extractPDEmbeddedFile(displayName, annotationType, spec, spec.getFileUnix(), spec.getEmbeddedFileUnix(),
+                attributes);
 
         //Check for /Thumb (thumbnail image);
         // /CI (collection item) adobe specific, can have /adobe:DisplayName and a summary
     }
 
-    private void extractPDEmbeddedFile(String displayName, String annotationType,
-                                       PDComplexFileSpecification spec, String fileName,
-                                       PDEmbeddedFile pdEmbeddedFile, AttributesImpl attributes)
+    private void extractPDEmbeddedFile(String displayName, String annotationType, PDComplexFileSpecification spec,
+            String fileName, PDEmbeddedFile pdEmbeddedFile, AttributesImpl attributes)
             throws SAXException, IOException {
 
         if (pdEmbeddedFile == null) {
@@ -451,8 +438,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             return;
         }
 
-        fileName =
-                (fileName == null || "".equals(fileName.trim())) ? spec.getFileUnicode() : fileName;
+        fileName = (fileName == null || "".equals(fileName.trim())) ? spec.getFileUnicode() : fileName;
         fileName = (fileName == null || "".equals(fileName.trim())) ? displayName : fileName;
 
         // TODO: other metadata?
@@ -500,8 +486,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         xhtml.endElement("div");
 
         try {
-            embeddedDocumentExtractor.parseEmbedded(stream, new EmbeddedContentHandler(xhtml),
-                    embeddedMetadata, false);
+            embeddedDocumentExtractor.parseEmbedded(stream, new EmbeddedContentHandler(xhtml), embeddedMetadata, false);
         } finally {
             IOUtils.closeQuietly(stream);
         }
@@ -543,10 +528,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         if (!ocrParser.getSupportedTypes(context).contains(ocrImageMediaType)) {
             if (ocrStrategy == OCR_ONLY || ocrStrategy == OCR_AND_TEXT_EXTRACTION) {
                 throw new TikaException(
-                        "" + "I regret that I couldn't find an OCR parser to handle " +
-                                ocrImageMediaType + "." +
-                                "Please set the OCR_STRATEGY to NO_OCR or configure your" +
-                                "OCR parser correctly");
+                        "" + "I regret that I couldn't find an OCR parser to handle " + ocrImageMediaType + "."
+                                + "Please set the OCR_STRATEGY to NO_OCR or configure your" + "OCR parser correctly");
             } else if (ocrStrategy == AUTO) {
                 //silently skip if there's no parser to run ocr
                 return;
@@ -557,10 +540,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             try (RenderResult renderResult = renderCurrentPage(pdPage, context, tmp)) {
                 Metadata renderMetadata = renderResult.getMetadata();
                 try (TikaInputStream tis = renderResult.getInputStream()) {
-                    renderMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
-                            ocrImageMediaType.toString());
-                    ocrParser.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
-                            renderMetadata, context);
+                    renderMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, ocrImageMediaType.toString());
+                    ocrParser.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(xhtml)), renderMetadata,
+                            context);
                 }
             }
         } catch (IOException e) {
@@ -570,8 +552,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
     }
 
-    private RenderResult renderCurrentPage(PDPage pdPage, ParseContext parseContext,
-                                           TemporaryResources tmpResources)
+    private RenderResult renderCurrentPage(PDPage pdPage, ParseContext parseContext, TemporaryResources tmpResources)
             throws IOException, TikaException {
         PDFRenderingState renderingState = parseContext.get(PDFRenderingState.class);
         if (renderingState == null) {
@@ -594,24 +575,21 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         Metadata pageMetadata = getCurrentPageMetadata(pdPage);
         Renderer thisRenderer = getPDFRenderer(config.getRenderer());
         //if there's a configured renderer and if the rendering strategy is "all"
-        if (thisRenderer != null &&
-                config.getOcrRenderingStrategy() == PDFParserConfig.OCR_RENDERING_STRATEGY.ALL) {
-            PageRangeRequest pageRangeRequest =
-                    new PageRangeRequest(getCurrentPageNo(), getCurrentPageNo());
+        if (thisRenderer != null && config.getOcrRenderingStrategy() == PDFParserConfig.OCR_RENDERING_STRATEGY.ALL) {
+            PageRangeRequest pageRangeRequest = new PageRangeRequest(getCurrentPageNo(), getCurrentPageNo());
             if (thisRenderer instanceof PDDocumentRenderer) {
                 //do not do autocloseable.  We need to leave the pdDocument open!
                 TikaInputStream tis = TikaInputStream.get(new byte[0]);
                 tis.setOpenContainer(pdDocument);
-                return thisRenderer.render(tis, pageMetadata, parseContext, pageRangeRequest)
-                        .getResults().get(0);
+                return thisRenderer.render(tis, pageMetadata, parseContext, pageRangeRequest).getResults().get(0);
 
             } else {
                 PDFRenderingState state = context.get(PDFRenderingState.class);
                 if (state == null) {
                     throw new IllegalArgumentException("RenderingState must not be null");
                 }
-                return thisRenderer.render(state.getTikaInputStream(), pageMetadata, parseContext,
-                        pageRangeRequest).getResults().get(0);
+                return thisRenderer.render(state.getTikaInputStream(), pageMetadata, parseContext, pageRangeRequest)
+                        .getResults().get(0);
             }
         } else {
             return noContextRenderCurrentPage(pageMetadata, parseContext, tmpResources);
@@ -630,7 +608,6 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         return null;
     }
 
-
     private Metadata getCurrentPageMetadata(PDPage pdPage) {
         Metadata pageMetadata = new Metadata();
         pageMetadata.set(TikaCoreProperties.TYPE, PDFParser.MEDIA_TYPE.toString());
@@ -639,22 +616,21 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         return pageMetadata;
     }
 
-    private RenderResult noContextRenderCurrentPage(Metadata pageMetadata,
-                                                    ParseContext parseContext,
-                                                    TemporaryResources tmpResources)
-            throws IOException, TikaException {
+    private RenderResult noContextRenderCurrentPage(Metadata pageMetadata, ParseContext parseContext,
+            TemporaryResources tmpResources) throws IOException, TikaException {
         PDFRenderer renderer = null;
-        switch (config.getOcrRenderingStrategy()) {
-            case NO_TEXT:
+        switch (config.getOcrRenderingStrategy())
+        {
+            case NO_TEXT :
                 renderer = new NoTextPDFRenderer(pdDocument);
                 break;
-            case TEXT_ONLY:
+            case TEXT_ONLY :
                 renderer = new TextOnlyPDFRenderer(pdDocument);
                 break;
-            case VECTOR_GRAPHICS_ONLY:
+            case VECTOR_GRAPHICS_ONLY :
                 renderer = new VectorGraphicsOnlyPDFRenderer(pdDocument);
                 break;
-            case ALL:
+            case ALL :
                 renderer = new PDFRenderer(pdDocument);
                 break;
         }
@@ -670,15 +646,13 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         int id = renderingTracker.getNextId();
 
         try {
-            BufferedImage image =
-                    renderer.renderImageWithDPI(pageIndex, dpi, config.getOcrImageType().getImageType());
+            BufferedImage image = renderer.renderImageWithDPI(pageIndex, dpi, config.getOcrImageType().getImageType());
 
             //TODO -- get suffix based on OcrImageType
             tmpFile = tmpResources.createTempFile();
             try (OutputStream os = Files.newOutputStream(tmpFile)) {
                 //TODO: get output format from TesseractConfig
-                ImageIOUtil.writeImage(image, config.getOcrImageFormatName(), os, dpi,
-                        config.getOcrImageQuality());
+                ImageIOUtil.writeImage(image, config.getOcrImageFormatName(), os, dpi, config.getOcrImageQuality());
             }
         } catch (SecurityException e) {
             //throw SecurityExceptions immediately
@@ -687,8 +661,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             //image rendering can throw a variety of runtime exceptions, not just
             // IOExceptions...
             //need to have a wide catch
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM,
-                    ExceptionUtils.getStackTrace(e));
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM, ExceptionUtils.getStackTrace(e));
 
             return new RenderResult(RenderResult.STATUS.EXCEPTION, id, null, pageMetadata);
         }
@@ -700,7 +673,6 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         metadata.add(PDF.CHARACTERS_PER_PAGE, totalCharsPerPage);
         metadata.add(PDF.UNMAPPED_UNICODE_CHARS_PER_PAGE, unmappedUnicodeCharsPerPage);
 
-
         try {
             for (PDAnnotation annotation : page.getAnnotations()) {
                 processPageAnnotation(annotation);
@@ -711,16 +683,13 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 boolean unmappedExceedsLimit = false;
                 if (totalCharsPerPage > config.getOcrStrategyAuto().getTotalCharsPerPage()) {
                     // There are enough characters to not have to do OCR.  Check number of unmapped characters
-                    final float percentUnmapped =
-                            (float) unmappedUnicodeCharsPerPage / totalCharsPerPage;
-                    final float unmappedCharacterLimit =
-                            config.getOcrStrategyAuto().getUnmappedUnicodeCharsPerPage();
-                    unmappedExceedsLimit = (unmappedCharacterLimit < 1) ?
-                            percentUnmapped > unmappedCharacterLimit :
-                            unmappedUnicodeCharsPerPage > unmappedCharacterLimit;
+                    final float percentUnmapped = (float) unmappedUnicodeCharsPerPage / totalCharsPerPage;
+                    final float unmappedCharacterLimit = config.getOcrStrategyAuto().getUnmappedUnicodeCharsPerPage();
+                    unmappedExceedsLimit = (unmappedCharacterLimit < 1)
+                            ? percentUnmapped > unmappedCharacterLimit
+                            : unmappedUnicodeCharsPerPage > unmappedCharacterLimit;
                 }
-                if (totalCharsPerPage <= config.getOcrStrategyAuto().getTotalCharsPerPage() ||
-                        unmappedExceedsLimit) {
+                if (totalCharsPerPage <= config.getOcrStrategyAuto().getTotalCharsPerPage() || unmappedExceedsLimit) {
                     doOCROnCurrentPage(page, AUTO);
                 }
             }
@@ -782,8 +751,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         } else {
             if (annotationSubtype == null) {
                 annotationSubtype = "unknown";
-            } else if (annotationSubtype.equals(THREE_D) ||
-                    annotation.getCOSObject().containsKey(COSName.THREE_DD)) {
+            } else if (annotationSubtype.equals(THREE_D) || annotation.getCOSObject().containsKey(COSName.THREE_DD)) {
                 //To make this stricter, we could get the 3DD stream object and see if the
                 //subtype is U3D or PRC or model/ (prefix for model mime type)
                 extractOnInstantiate(annotation);
@@ -797,11 +765,10 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             for (COSDictionary fileSpec : findFileSpecs(annotation.getCOSObject())) {
                 AttributesImpl attributes = new AttributesImpl();
                 attributes.addAttribute("", "source", "source", "CDATA", annotationSubtype);
-                processDocOnAction("", annotationSubtype, createFileSpecification(fileSpec),
-                        attributes);
+                processDocOnAction("", annotationSubtype, createFileSpecification(fileSpec), attributes);
             }
         }
-        if (! config.isExtractAnnotationText()) {
+        if (!config.isExtractAnnotationText()) {
             return;
         }
         // TODO: remove once PDFBOX-1143 is fixed:
@@ -877,8 +844,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         return PDFDOMUtil.findType(cosDict, types, MAX_RECURSION_DEPTH);
     }
 
-    private void extractFilesfromEFTree(PDNameTreeNode efTree,
-                                        List<NameSpecTuple> embeddedFileNames, int depth)
+    private void extractFilesfromEFTree(PDNameTreeNode efTree, List<NameSpecTuple> embeddedFileNames, int depth)
             throws IOException {
         if (depth > MAX_RECURSION_DEPTH) {
             throw new IOException("Hit max recursion depth");
@@ -905,9 +871,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
     }
 
-
-    private void handleWidget(PDAnnotationWidget widget)
-            throws TikaException, SAXException, IOException {
+    private void handleWidget(PDAnnotationWidget widget) throws TikaException, SAXException, IOException {
         if (widget == null) {
             return;
         }
@@ -915,7 +879,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         handlePDAnnotationAdditionalActions(widget.getActions());
     }
 
-    private void handlePDAnnotationAdditionalActions(PDAnnotationAdditionalActions annotationActions) throws TikaException, IOException, SAXException {
+    private void handlePDAnnotationAdditionalActions(PDAnnotationAdditionalActions annotationActions)
+            throws TikaException, IOException, SAXException {
         if (annotationActions == null) {
             return;
         }
@@ -937,8 +902,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             xhtml.startDocument();
             extractJavaScriptFromNameTreeNode(pdf);
             try {
-                handleDestinationOrAction(pdf.getDocumentCatalog().getOpenAction(),
-                        ActionTrigger.DOCUMENT_OPEN);
+                handleDestinationOrAction(pdf.getDocumentCatalog().getOpenAction(), ActionTrigger.DOCUMENT_OPEN);
             } catch (IOException e) {
                 //See PDFBOX-3773
                 //swallow -- no need to report this
@@ -949,7 +913,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     }
 
     private void extractJavaScriptFromNameTreeNode(PDDocument pdf) throws SAXException {
-        if (! config.isExtractActions()) {
+        if (!config.isExtractActions()) {
             return;
         }
         if (pdf.getDocumentCatalog() == null || pdf.getDocumentCatalog().getNames() == null
@@ -985,7 +949,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
     }
 
-    private void processJavascriptNameTreeNodeKids(List<PDNameTreeNode<PDActionJavaScript>> kids, int depth) throws IOException, SAXException {
+    private void processJavascriptNameTreeNodeKids(List<PDNameTreeNode<PDActionJavaScript>> kids, int depth)
+            throws IOException, SAXException {
 
         if (kids == null) {
             return;
@@ -996,14 +961,13 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             //return silently for now...maybe throw Exception?
             return;
         }
-        for (PDNameTreeNode<PDActionJavaScript> pdntn: kids) {
+        for (PDNameTreeNode<PDActionJavaScript> pdntn : kids) {
             addJavaScript(pdntn.getNames());
             processJavascriptNameTreeNodeKids(pdntn.getKids(), depth + 1);
-        };
+        } ;
     }
 
-    private void handleDestinationOrAction(PDDestinationOrAction action,
-                                           ActionTrigger actionTrigger)
+    private void handleDestinationOrAction(PDDestinationOrAction action, ActionTrigger actionTrigger)
             throws IOException, SAXException, TikaException {
         if (action == null || !config.isExtractActions()) {
             return;
@@ -1037,7 +1001,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             processDocOnAction("", "", remoteGoTo.getFile(), attributes);
         } else if (action instanceof PDActionJavaScript) {
             processJavaScriptAction(actionTrigger.name(), null, (PDActionJavaScript) action, attributes);
-        /*} else if (action instanceof PDActionSubmitForm) {
+            /*} else if (action instanceof PDActionSubmitForm) {
             PDActionSubmitForm submitForm = (PDActionSubmitForm) action;
             //these are typically urls, not actual file specification
             PDFileSpecification fileSpecification = submitForm.getFile();
@@ -1048,7 +1012,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
     }
 
-    private void processJavaScriptAction(String trigger, String jsActionName, PDActionJavaScript jsAction, AttributesImpl attrs) throws IOException, SAXException {
+    private void processJavaScriptAction(String trigger, String jsActionName, PDActionJavaScript jsAction,
+            AttributesImpl attrs) throws IOException, SAXException {
         Metadata m = getJavascriptMetadata(trigger, jsActionName, StandardCharsets.UTF_8);
         String js = jsAction.getAction();
         js = (js == null) ? "" : js;
@@ -1056,7 +1021,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             try (TikaInputStream tis = TikaInputStream.get(js.getBytes(StandardCharsets.UTF_8))) {
                 embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, true);
             }
-        };
+        } ;
         addNonNullAttribute("class", "javascript", attrs);
         addNonNullAttribute("type", jsAction.getType(), attrs);
         addNonNullAttribute("subtype", jsAction.getSubType(), attrs);
@@ -1068,9 +1033,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         Metadata m = new Metadata();
         m.set(Metadata.CONTENT_TYPE, "application/javascript");
         m.set(PDF.ACTION_TRIGGER, trigger);
-        m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                TikaCoreProperties.EmbeddedResourceType.MACRO.name());
-        if (! StringUtils.isBlank(jsActionName)) {
+        m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.MACRO.name());
+        if (!StringUtils.isBlank(jsActionName)) {
             m.set(PDF.JS_NAME, jsActionName);
         }
         if (charset != null) {
@@ -1109,17 +1073,12 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                     handleCatchableIOE(e);
                 }
             }
-            PDDocumentCatalogAdditionalActions additionalActions =
-                    pdf.getDocumentCatalog().getActions();
-            handleDestinationOrAction(additionalActions.getDP(),
-                    ActionTrigger.AFTER_DOCUMENT_PRINT);
+            PDDocumentCatalogAdditionalActions additionalActions = pdf.getDocumentCatalog().getActions();
+            handleDestinationOrAction(additionalActions.getDP(), ActionTrigger.AFTER_DOCUMENT_PRINT);
             handleDestinationOrAction(additionalActions.getDS(), ActionTrigger.AFTER_DOCUMENT_SAVE);
-            handleDestinationOrAction(additionalActions.getWC(),
-                    ActionTrigger.BEFORE_DOCUMENT_CLOSE);
-            handleDestinationOrAction(additionalActions.getWP(),
-                    ActionTrigger.BEFORE_DOCUMENT_PRINT);
-            handleDestinationOrAction(additionalActions.getWS(),
-                    ActionTrigger.BEFORE_DOCUMENT_SAVE);
+            handleDestinationOrAction(additionalActions.getWC(), ActionTrigger.BEFORE_DOCUMENT_CLOSE);
+            handleDestinationOrAction(additionalActions.getWP(), ActionTrigger.BEFORE_DOCUMENT_PRINT);
+            handleDestinationOrAction(additionalActions.getWS(), ActionTrigger.BEFORE_DOCUMENT_SAVE);
             //now record annotationtypes and subtypes
             for (String annotationType : annotationTypes) {
                 metadata.add(PDF.ANNOTATION_TYPES, annotationType);
@@ -1158,8 +1117,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         if (!config.isParseIncrementalUpdates()) {
             return;
         }
-        IncrementalUpdateRecord incrementalUpdateRecord =
-                context.get(IncrementalUpdateRecord.class);
+        IncrementalUpdateRecord incrementalUpdateRecord = context.get(IncrementalUpdateRecord.class);
         if (incrementalUpdateRecord == null) {
             //should log
             return;
@@ -1290,13 +1248,15 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             }
         }
 
-        @SuppressWarnings("rawtypes") List fields = form.getFields();
+        @SuppressWarnings("rawtypes")
+        List fields = form.getFields();
 
         if (fields == null) {
             return;
         }
 
-        @SuppressWarnings("rawtypes") ListIterator itr = fields.listIterator();
+        @SuppressWarnings("rawtypes")
+        ListIterator itr = fields.listIterator();
 
         if (itr == null) {
             return;
@@ -1324,21 +1284,16 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
         PDFormFieldAdditionalActions pdFormFieldAdditionalActions = field.getActions();
         if (pdFormFieldAdditionalActions != null) {
-            handleDestinationOrAction(pdFormFieldAdditionalActions.getC(),
-                    ActionTrigger.FORM_FIELD_RECALCULATE);
-            handleDestinationOrAction(pdFormFieldAdditionalActions.getF(),
-                    ActionTrigger.FORM_FIELD_FORMATTED);
-            handleDestinationOrAction(pdFormFieldAdditionalActions.getK(),
-                    ActionTrigger.FORM_FIELD_KEYSTROKE);
-            handleDestinationOrAction(pdFormFieldAdditionalActions.getV(),
-                    ActionTrigger.FORM_FIELD_VALUE_CHANGE);
+            handleDestinationOrAction(pdFormFieldAdditionalActions.getC(), ActionTrigger.FORM_FIELD_RECALCULATE);
+            handleDestinationOrAction(pdFormFieldAdditionalActions.getF(), ActionTrigger.FORM_FIELD_FORMATTED);
+            handleDestinationOrAction(pdFormFieldAdditionalActions.getK(), ActionTrigger.FORM_FIELD_KEYSTROKE);
+            handleDestinationOrAction(pdFormFieldAdditionalActions.getV(), ActionTrigger.FORM_FIELD_VALUE_CHANGE);
         }
         if (field.getWidgets() != null) {
             for (PDAnnotationWidget widget : field.getWidgets()) {
                 handleWidget(widget);
             }
         }
-
 
         addFieldString(field);
         if (field instanceof PDNonTerminalField) {
@@ -1383,8 +1338,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
     }
 
-    private void handleSignature(AttributesImpl parentAttributes, PDSignatureField sigField)
-            throws SAXException {
+    private void handleSignature(AttributesImpl parentAttributes, PDSignatureField sigField) throws SAXException {
 
         PDSignature sig = sigField.getSignature();
         if (sig == null) {
@@ -1461,21 +1415,20 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     @Override
     public void setStartBookmark(PDOutlineItem pdOutlineItem) {
         throw new UnsupportedOperationException(
-                "We don't currently support this -- See PDFTextStripper's processPages() for how " +
-                        "to implement this.");
+                "We don't currently support this -- See PDFTextStripper's processPages() for how "
+                        + "to implement this.");
     }
 
     @Override
     public void setEndBookmark(PDOutlineItem pdOutlineItem) {
         throw new UnsupportedOperationException(
-                "We don't currently support this -- See PDFTextStripper's processPages() for how " +
-                        "to implement this.");
+                "We don't currently support this -- See PDFTextStripper's processPages() for how "
+                        + "to implement this.");
     }
 
-
     @Override
-    protected void showGlyph(Matrix textRenderingMatrix, PDFont font, int code,
-                             Vector displacement) throws IOException {
+    protected void showGlyph(Matrix textRenderingMatrix, PDFont font, int code, Vector displacement)
+            throws IOException {
         super.showGlyph(textRenderingMatrix, font, code, displacement);
         String unicode = font.toUnicode(code);
         if (unicode == null || unicode.isEmpty()) {
@@ -1522,11 +1475,10 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
     enum ActionTrigger {
         AFTER_DOCUMENT_PRINT, AFTER_DOCUMENT_SAVE, ANNOTATION_CURSOR_ENTERS, ANNOTATION_CURSOR_EXIT,
-        ANNOTATION_LOSE_INPUT_FOCUS, ANNOTATION_MOUSE_CLICK, ANNOTATION_MOUSE_RELEASED,
-        ANNOTATION_PAGE_CLOSED, ANNOTATION_PAGE_NO_LONGER_VISIBLE, ANNOTATION_PAGE_OPENED,
-        ANNOTATION_PAGE_VISIBLE, ANNOTATION_RECEIVES_FOCUS, ANNOTATION_WIDGET,
-        BEFORE_DOCUMENT_CLOSE, BEFORE_DOCUMENT_PRINT, BEFORE_DOCUMENT_SAVE, DOCUMENT_OPEN,
-        FORM_FIELD, FORM_FIELD_FORMATTED, FORM_FIELD_KEYSTROKE, FORM_FIELD_RECALCULATE,
-        FORM_FIELD_VALUE_CHANGE, PAGE_CLOSE, PAGE_OPEN, BOOKMARK,
+        ANNOTATION_LOSE_INPUT_FOCUS, ANNOTATION_MOUSE_CLICK, ANNOTATION_MOUSE_RELEASED, ANNOTATION_PAGE_CLOSED,
+        ANNOTATION_PAGE_NO_LONGER_VISIBLE, ANNOTATION_PAGE_OPENED, ANNOTATION_PAGE_VISIBLE, ANNOTATION_RECEIVES_FOCUS,
+        ANNOTATION_WIDGET, BEFORE_DOCUMENT_CLOSE, BEFORE_DOCUMENT_PRINT, BEFORE_DOCUMENT_SAVE, DOCUMENT_OPEN,
+        FORM_FIELD, FORM_FIELD_FORMATTED, FORM_FIELD_KEYSTROKE, FORM_FIELD_RECALCULATE, FORM_FIELD_VALUE_CHANGE,
+        PAGE_CLOSE, PAGE_OPEN, BOOKMARK,
     }
 }

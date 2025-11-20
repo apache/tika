@@ -27,9 +27,17 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+
 import javax.xml.XMLConstants;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.tika.config.Field;
+import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractEncodingDetectorParser;
+import org.apache.tika.parser.ParseContext;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Attribute;
 import org.jsoup.nodes.DataNode;
@@ -44,15 +52,6 @@ import org.jsoup.select.NodeTraversor;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
-
-import org.apache.tika.config.Field;
-import org.apache.tika.detect.EncodingDetector;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractEncodingDetectorParser;
-import org.apache.tika.parser.ParseContext;
-
 
 /**
  * HTML parser. Uses JSoup to turn the input document to HTML SAX events,
@@ -72,8 +71,8 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
     private static final MediaType WAP_XHTML = MediaType.application("vnd.wap.xhtml+xml");
     private static final MediaType X_ASP = MediaType.application("x-asp");
 
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<MediaType>(Arrays.asList(MediaType.text("html"), XHTML, WAP_XHTML, X_ASP)));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections
+            .unmodifiableSet(new HashSet<MediaType>(Arrays.asList(MediaType.text("html"), XHTML, WAP_XHTML, X_ASP)));
 
     private static final TagSet SELF_CLOSEABLE_TAGS = TagSet.Html();
 
@@ -125,9 +124,8 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
         this.extractScripts = extractScripts;
     }
 
-
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         EncodingDetector encodingDetector = getEncodingDetector(context);
         Charset charset = encodingDetector.detect(stream, metadata);
@@ -176,7 +174,8 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
         }
     }
 
-    public void parseString(String html, ContentHandler handler, Metadata metadata, ParseContext context) throws SAXException {
+    public void parseString(String html, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws SAXException {
         // Get the HTML mapper from the parse context
         HtmlMapper mapper = context.get(HtmlMapper.class, new DefaultHtmlMapper());
 
@@ -238,12 +237,10 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
             Iterator<Attribute> jsoupAttrs = node.attributes().iterator();
             while (jsoupAttrs.hasNext()) {
                 Attribute jsoupAttr = jsoupAttrs.next();
-                attributes.addAttribute("", jsoupAttr.getKey(), jsoupAttr.getKey(), "",
-                        jsoupAttr.getValue());
+                attributes.addAttribute("", jsoupAttr.getKey(), jsoupAttr.getKey(), "", jsoupAttr.getValue());
             }
             try {
-                handler.startElement(XMLConstants.NULL_NS_URI, node.nodeName(), node.nodeName(),
-                        attributes);
+                handler.startElement(XMLConstants.NULL_NS_URI, node.nodeName(), node.nodeName(), attributes);
             } catch (SAXException e) {
                 throw new RuntimeSAXException(e);
             }

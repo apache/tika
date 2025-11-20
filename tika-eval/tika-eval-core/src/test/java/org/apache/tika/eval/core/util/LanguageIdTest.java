@@ -20,11 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-
 import org.apache.tika.eval.core.langid.LanguageIDWrapper;
 import org.apache.tika.language.detect.LanguageResult;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 public class LanguageIdTest {
     @Test

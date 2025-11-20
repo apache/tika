@@ -14,21 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.InputStream;
 
-import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.Tika;
 import org.apache.tika.server.core.resource.TikaVersion;
+import org.junit.jupiter.api.Test;
+
+import jakarta.ws.rs.core.Response;
 
 public class TikaVersionTest extends CXFTestBase {
     protected static final String VERSION_PATH = "/version";
@@ -45,11 +44,7 @@ public class TikaVersionTest extends CXFTestBase {
 
     @Test
     public void testGetVersion() throws Exception {
-        Response response = WebClient
-                .create(endPoint + VERSION_PATH)
-                .type("text/plain")
-                .accept("text/plain")
-                .get();
+        Response response = WebClient.create(endPoint + VERSION_PATH).type("text/plain").accept("text/plain").get();
 
         assertEquals(Tika.getString(), getStringFromInputStream((InputStream) response.getEntity()));
     }

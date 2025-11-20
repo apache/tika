@@ -27,17 +27,9 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
-import com.azure.core.credential.AzureSasCredential;
-import com.azure.storage.blob.BlobClient;
-import com.azure.storage.blob.BlobContainerClient;
-import com.azure.storage.blob.BlobServiceClient;
-import com.azure.storage.blob.BlobServiceClientBuilder;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -52,7 +44,14 @@ import org.apache.tika.pipes.core.emitter.StreamEmitter;
 import org.apache.tika.pipes.core.emitter.TikaEmitterException;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.azure.core.credential.AzureSasCredential;
+import com.azure.storage.blob.BlobClient;
+import com.azure.storage.blob.BlobContainerClient;
+import com.azure.storage.blob.BlobServiceClient;
+import com.azure.storage.blob.BlobServiceClientBuilder;
 
 /**
  * Emit files to Azure blob storage. Must set endpoint, sasToken and container via config.
@@ -82,15 +81,14 @@ public class AZBlobEmitter extends AbstractEmitter implements Initializable, Str
      * @throws TikaEmitterException
      */
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException, TikaEmitterException {
+    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext)
+            throws IOException, TikaEmitterException {
         if (metadataList == null || metadataList.isEmpty()) {
             throw new TikaEmitterException("metadata list must not be null or of size 0");
         }
         //TODO: estimate size of metadata list.  Above a certain size,
         //create a temp file?
-        UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream
-                .builder()
-                .get();
+        UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
         try (Writer writer = new OutputStreamWriter(bos, StandardCharsets.UTF_8)) {
             JsonMetadataList.toJson(metadataList, writer);
         } catch (IOException e) {
@@ -114,7 +112,8 @@ public class AZBlobEmitter extends AbstractEmitter implements Initializable, Str
      * @throws TikaEmitterException if there is a Runtime client exception
      */
     @Override
-    public void emit(String path, InputStream is, Metadata userMetadata, ParseContext parseContext) throws IOException, TikaEmitterException {
+    public void emit(String path, InputStream is, Metadata userMetadata, ParseContext parseContext)
+            throws IOException, TikaEmitterException {
         String lengthString = userMetadata.get(Metadata.CONTENT_LENGTH);
         long length = -1;
         if (lengthString != null) {
@@ -130,9 +129,7 @@ public class AZBlobEmitter extends AbstractEmitter implements Initializable, Str
             LOGGER.debug("relying on the content-length set in the metadata object: {}", length);
             write(path, userMetadata, is, length);
         } else {
-            try (UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream
-                    .builder()
-                    .get()) {
+            try (UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get()) {
                 IOUtils.copy(is, bos);
                 write(path, userMetadata, bos.toByteArray());
             }
@@ -153,9 +150,7 @@ public class AZBlobEmitter extends AbstractEmitter implements Initializable, Str
         BlobClient blobClient = blobContainerClient.getBlobClient(actualPath);
         updateMetadata(blobClient, userMetadata);
 
-        blobClient.uploadFromFile(file
-                .toAbsolutePath()
-                .toString(), overwriteExisting);
+        blobClient.uploadFromFile(file.toAbsolutePath().toString(), overwriteExisting);
     }
 
     private void write(String path, Metadata userMetadata, byte[] bytes) throws IOException {
@@ -163,7 +158,8 @@ public class AZBlobEmitter extends AbstractEmitter implements Initializable, Str
         LOGGER.debug("about to emit to target container: ({}) path:({})", container, actualPath);
         BlobClient blobClient = blobContainerClient.getBlobClient(actualPath);
         updateMetadata(blobClient, userMetadata);
-        blobClient.upload(UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get(), bytes.length, overwriteExisting);
+        blobClient.upload(UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get(), bytes.length,
+                overwriteExisting);
     }
 
     private void updateMetadata(BlobClient blobClient, Metadata userMetadata) {
@@ -175,10 +171,7 @@ public class AZBlobEmitter extends AbstractEmitter implements Initializable, Str
             if (vals.length > 1) {
                 LOGGER.warn("Can only write the first value for key {}. I see {} values.", n, vals.length);
             }
-            blobClient
-                    .getProperties()
-                    .getMetadata()
-                    .put(n, vals[0]);
+            blobClient.getProperties().getMetadata().put(n, vals[0]);
         }
 
     }
@@ -238,7 +231,6 @@ public class AZBlobEmitter extends AbstractEmitter implements Initializable, Str
         this.fileExtension = fileExtension;
     }
 
-
     /**
      * This initializes the az blob container client
      *
@@ -248,10 +240,8 @@ public class AZBlobEmitter extends AbstractEmitter implements Initializable, Str
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         //TODO -- allow authentication via other methods
-        blobServiceClient = new BlobServiceClientBuilder()
-                .endpoint(endpoint)
-                .credential(new AzureSasCredential(sasToken))
-                .buildClient();
+        blobServiceClient = new BlobServiceClientBuilder().endpoint(endpoint)
+                .credential(new AzureSasCredential(sasToken)).buildClient();
         blobContainerClient = blobServiceClient.getBlobContainerClient(container);
     }
 

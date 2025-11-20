@@ -16,7 +16,6 @@
  */
 package org.apache.tika.eval.core.tokens;
 
-
 public class TokenIntPair implements Comparable<TokenIntPair> {
 
     final String token;
@@ -34,7 +33,6 @@ public class TokenIntPair implements Comparable<TokenIntPair> {
     public String getToken() {
         return token;
     }
-
 
     @Override
     public boolean equals(Object o) {

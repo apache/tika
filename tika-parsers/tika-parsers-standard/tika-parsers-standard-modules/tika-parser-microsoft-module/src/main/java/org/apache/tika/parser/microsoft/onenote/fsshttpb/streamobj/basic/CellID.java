@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.io.IOException;
@@ -87,10 +86,9 @@ public class CellID extends BasicObject {
         }
         CellID another = (CellID) obj;
 
-        if (another.extendGUID1 != null && another.extendGUID2 != null &&
-                this.extendGUID1 != null && this.extendGUID2 != null) {
-            return another.extendGUID1.equals(this.extendGUID1) &&
-                    another.extendGUID2.equals(this.extendGUID2);
+        if (another.extendGUID1 != null && another.extendGUID2 != null && this.extendGUID1 != null
+                && this.extendGUID2 != null) {
+            return another.extendGUID1.equals(this.extendGUID1) && another.extendGUID2.equals(this.extendGUID2);
         }
 
         return false;
@@ -114,8 +112,7 @@ public class CellID extends BasicObject {
      * @return Return the length in byte of the CellID basic object.
      */
     @Override
-    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex)
-            throws TikaException, IOException {
+    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(startIndex);
 
         this.extendGUID1 = BasicObject.parse(byteArray, index, ExGuid.class);

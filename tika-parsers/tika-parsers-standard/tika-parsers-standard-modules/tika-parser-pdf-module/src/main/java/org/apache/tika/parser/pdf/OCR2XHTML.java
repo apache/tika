@@ -23,13 +23,11 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.text.TextPosition;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Utility class that overrides the {@link PDFTextStripper} functionality
@@ -37,8 +35,8 @@ import org.apache.tika.parser.ParseContext;
  */
 class OCR2XHTML extends AbstractPDF2XHTML {
 
-    private OCR2XHTML(PDDocument document, ContentHandler handler, ParseContext context,
-                      Metadata metadata, PDFParserConfig config) throws IOException {
+    private OCR2XHTML(PDDocument document, ContentHandler handler, ParseContext context, Metadata metadata,
+            PDFParserConfig config) throws IOException {
         super(document, handler, context, metadata, config);
     }
 
@@ -52,10 +50,8 @@ class OCR2XHTML extends AbstractPDF2XHTML {
      * @throws SAXException  if the content handler fails to process SAX events
      * @throws TikaException if there was an exception outside of per page processing
      */
-    public static void process(PDDocument document, ContentHandler handler, ParseContext context,
-                               Metadata metadata,
-                               PDFParserConfig config)
-            throws SAXException, TikaException {
+    public static void process(PDDocument document, ContentHandler handler, ParseContext context, Metadata metadata,
+            PDFParserConfig config) throws SAXException, TikaException {
         OCR2XHTML ocr2XHTML = null;
 
         try {
@@ -82,8 +78,7 @@ class OCR2XHTML extends AbstractPDF2XHTML {
         }
         if (ocr2XHTML.exceptions.size() > 0) {
             //throw the first
-            throw new TikaException("Unable to extract all PDF content",
-                    ocr2XHTML.exceptions.get(0));
+            throw new TikaException("Unable to extract all PDF content", ocr2XHTML.exceptions.get(0));
         }
     }
 
@@ -121,4 +116,3 @@ class OCR2XHTML extends AbstractPDF2XHTML {
     }
 
 }
-

@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.example;
 
 import java.io.BufferedInputStream;
@@ -99,7 +98,8 @@ public class StandardsExtractionExample {
         // The StandardsExtractingContentHandler will examine any characters for
         // standard references before passing them
         // to the underlying Handler.
-        StandardsExtractingContentHandler handler = new StandardsExtractingContentHandler(new BodyContentHandler(-1), metadata);
+        StandardsExtractingContentHandler handler = new StandardsExtractingContentHandler(new BodyContentHandler(-1),
+                metadata);
         handler.setThreshold(0.75);
         try (InputStream stream = new BufferedInputStream(Files.newInputStream(path))) {
             parser.parse(stream, handler, metadata, new ParseContext());

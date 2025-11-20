@@ -20,10 +20,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test case for parsing universal executable files.

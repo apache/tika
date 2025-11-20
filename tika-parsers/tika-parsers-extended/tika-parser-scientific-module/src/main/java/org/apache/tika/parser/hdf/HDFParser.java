@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.hdf;
 
 //JDK imports
@@ -26,12 +25,6 @@ import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import ucar.nc2.Attribute;
-import ucar.nc2.Group;
-import ucar.nc2.NetcdfFile;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -40,6 +33,12 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.netcdf.NetCDFParser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
+import ucar.nc2.Attribute;
+import ucar.nc2.Group;
+import ucar.nc2.NetcdfFile;
 
 /**
  * Since the {@link NetCDFParser} depends on the <a
@@ -55,8 +54,7 @@ public class HDFParser implements Parser {
      */
     private static final long serialVersionUID = 1091208208003437549L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.application("x-hdf"));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.application("x-hdf"));
 
     /*
      * (non-Javadoc)
@@ -77,8 +75,8 @@ public class HDFParser implements Parser {
      * org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata,
      * org.apache.tika.parser.ParseContext)
      */
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         UnsynchronizedByteArrayOutputStream os = UnsynchronizedByteArrayOutputStream.builder().get();
         IOUtils.copy(stream, os);
 

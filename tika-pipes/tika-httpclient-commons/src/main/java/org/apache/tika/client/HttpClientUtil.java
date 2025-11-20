@@ -28,8 +28,7 @@ import org.apache.http.util.EntityUtils;
 
 public class HttpClientUtil {
 
-    public static boolean postJson(HttpClient client, String url, String json)
-            throws IOException, TikaClientException {
+    public static boolean postJson(HttpClient client, String url, String json) throws IOException, TikaClientException {
         HttpPost post = new HttpPost(url);
         post.setHeader("Content-Encoding", "gzip");
         StringEntity entity = new StringEntity(json, StandardCharsets.UTF_8);
@@ -38,11 +37,9 @@ public class HttpClientUtil {
         post.setHeader("Content-Type", "application/json");
         HttpResponse response = client.execute(post);
 
-
         if (response.getStatusLine().getStatusCode() != 200) {
             String msg = EntityUtils.toString(response.getEntity());
-            throw new TikaClientException(
-                    "Bad status: " + response.getStatusLine().getStatusCode() + " : " + msg);
+            throw new TikaClientException("Bad status: " + response.getStatusLine().getStatusCode() + " : " + msg);
         } else {
             String msg = EntityUtils.toString(response.getEntity());
             System.out.println("httputil: " + msg);
@@ -62,11 +59,9 @@ public class HttpClientUtil {
         post.setHeader("Content-Type", "application/json");
         HttpResponse response = client.execute(post);
 
-
         if (response.getStatusLine().getStatusCode() != 200) {
             String msg = EntityUtils.toString(response.getEntity());
-            throw new TikaClientException(
-                    "Bad status: " + response.getStatusLine().getStatusCode() + " : " + msg);
+            throw new TikaClientException("Bad status: " + response.getStatusLine().getStatusCode() + " : " + msg);
         } else {
             String msg = EntityUtils.toString(response.getEntity());
             System.out.println("httputil: " + msg);

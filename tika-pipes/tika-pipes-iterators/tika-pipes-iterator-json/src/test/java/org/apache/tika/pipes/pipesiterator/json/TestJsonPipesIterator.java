@@ -14,16 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.pipes.pipesiterator.json;
 
 import java.nio.file.Paths;
 import java.util.Iterator;
 
+import org.apache.tika.pipes.core.FetchEmitTuple;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
-import org.apache.tika.pipes.core.FetchEmitTuple;
 
 @Disabled("until we can write actual tests")
 public class TestJsonPipesIterator {
@@ -31,13 +29,8 @@ public class TestJsonPipesIterator {
     @Test
     public void testBasic() throws Exception {
         JsonPipesIterator pipesIterator = new JsonPipesIterator();
-        pipesIterator.setJsonPath(Paths
-                .get(this
-                        .getClass()
-                        .getResource("/test-documents/test.json")
-                        .toURI())
-                .toAbsolutePath()
-                .toString());
+        pipesIterator.setJsonPath(Paths.get(this.getClass().getResource("/test-documents/test.json").toURI())
+                .toAbsolutePath().toString());
         Iterator<FetchEmitTuple> it = pipesIterator.iterator();
         while (it.hasNext()) {
             //System.out.println(it.next());
@@ -47,19 +40,14 @@ public class TestJsonPipesIterator {
     @Test
     public void testWithEmbDocBytes() throws Exception {
         JsonPipesIterator pipesIterator = new JsonPipesIterator();
-        pipesIterator.setJsonPath(Paths
-                .get(this
-                        .getClass()
-                        .getResource("/test-documents/test-with-embedded-bytes.json")
-                        .toURI())
-                .toAbsolutePath()
-                .toString());
+        pipesIterator.setJsonPath(
+                Paths.get(this.getClass().getResource("/test-documents/test-with-embedded-bytes.json").toURI())
+                        .toAbsolutePath().toString());
         Iterator<FetchEmitTuple> it = pipesIterator.iterator();
         while (it.hasNext()) {
             //System.out.println(it.next());
         }
     }
-
 
     /*
     //use this to generate test files

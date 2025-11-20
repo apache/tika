@@ -43,9 +43,7 @@ public class TikaJsonDeserializer {
         if (!root.has(TikaJsonSerializer.INSTANTIATED_CLASS_KEY)) {
             throw new IllegalArgumentException("need to specify: " + TikaJsonSerializer.INSTANTIATED_CLASS_KEY);
         }
-        String className = root
-                .get(TikaJsonSerializer.INSTANTIATED_CLASS_KEY)
-                .asText();
+        String className = root.get(TikaJsonSerializer.INSTANTIATED_CLASS_KEY).asText();
 
         try {
             return Optional.of(deserialize(Class.forName(className), root));
@@ -55,9 +53,7 @@ public class TikaJsonDeserializer {
     }
 
     public static <T> T deserialize(Class<? extends T> clazz, JsonNode root) throws ReflectiveOperationException {
-        T obj = clazz
-                .getDeclaredConstructor()
-                .newInstance();
+        T obj = clazz.getDeclaredConstructor().newInstance();
         Map<String, List<Method>> setters = getSetters(obj);
         if (!root.isObject()) {
             throw new IllegalArgumentException("must be object");
@@ -75,9 +71,7 @@ public class TikaJsonDeserializer {
 
     private static Map<String, List<Method>> getSetters(Object obj) {
         Map<String, List<Method>> setters = new HashMap<>();
-        for (Method m : obj
-                .getClass()
-                .getMethods()) {
+        for (Method m : obj.getClass().getMethods()) {
             String n = m.getName();
             if (n.startsWith(TikaJsonSerializer.SET) && n.length() > 3 && Character.isUpperCase(n.charAt(3))) {
                 if (m.getParameters().length == 1) {
@@ -94,7 +88,8 @@ public class TikaJsonDeserializer {
         return setters;
     }
 
-    private static void setValue(String name, JsonNode node, Object obj, Map<String, List<Method>> setters) throws ReflectiveOperationException {
+    private static void setValue(String name, JsonNode node, Object obj, Map<String, List<Method>> setters)
+            throws ReflectiveOperationException {
         List<Method> mySetters = setters.get(name);
         if (mySetters == null || mySetters.isEmpty()) {
             throw new IllegalArgumentException("can't find any setter for " + name);
@@ -125,7 +120,8 @@ public class TikaJsonDeserializer {
         }
     }
 
-    private static void tryArray(String name, JsonNode node, Object obj, Method setter) throws InvocationTargetException, IllegalAccessException {
+    private static void tryArray(String name, JsonNode node, Object obj, Method setter)
+            throws InvocationTargetException, IllegalAccessException {
         Class argClass = setter.getParameterTypes()[0];
         Class componentType = argClass.getComponentType();
         if (argClass.isArray()) {
@@ -172,8 +168,8 @@ public class TikaJsonDeserializer {
                     return optional.get();
                 }
             } else {
-                throw new IllegalArgumentException("I see a json object, but I don't see " +
-                        TikaJsonSerializer.INSTANTIATED_CLASS_KEY + ": " + node);
+                throw new IllegalArgumentException("I see a json object, but I don't see "
+                        + TikaJsonSerializer.INSTANTIATED_CLASS_KEY + ": " + node);
             }
         }
         //add short, boolean
@@ -193,9 +189,7 @@ public class TikaJsonDeserializer {
         }
         for (Method m : mySetters) {
             Class argClass = m.getParameters()[0].getType();
-            if (argClass.isAssignableFrom(object
-                    .get()
-                    .getClass())) {
+            if (argClass.isAssignableFrom(object.get().getClass())) {
                 try {
                     m.invoke(obj, object.get());
                     return;
@@ -212,9 +206,7 @@ public class TikaJsonDeserializer {
         //for now, we're just doing <String,String>
         Map<String, String> val = new HashMap<>();
         for (Map.Entry<String, JsonNode> e : node.properties()) {
-            val.put(e.getKey(), e
-                    .getValue()
-                    .textValue());
+            val.put(e.getKey(), e.getValue().textValue());
         }
         for (Method m : setters) {
             try {
@@ -227,7 +219,8 @@ public class TikaJsonDeserializer {
         throw new IllegalArgumentException("can't find map setter for: " + name);
     }
 
-    private static void setBoolean(String name, JsonNode node, Object obj, List<Method> setters) throws ReflectiveOperationException {
+    private static void setBoolean(String name, JsonNode node, Object obj, List<Method> setters)
+            throws ReflectiveOperationException {
         for (Method m : setters) {
             Class argClass = m.getParameters()[0].getType();
             if (argClass.equals(Boolean.class) || argClass.equals(boolean.class)) {
@@ -256,7 +249,8 @@ public class TikaJsonDeserializer {
         throw new IllegalArgumentException("can't set null on " + name);
     }
 
-    private static void setStringValue(String name, String txt, Object obj, List<Method> setters) throws ReflectiveOperationException {
+    private static void setStringValue(String name, String txt, Object obj, List<Method> setters)
+            throws ReflectiveOperationException {
 
         //try for exact match first
         for (Method m : setters) {
@@ -340,7 +334,8 @@ public class TikaJsonDeserializer {
 
     }
 
-    private static void setNumericValue(String name, JsonNode node, Object obj, List<Method> setters) throws ReflectiveOperationException {
+    private static void setNumericValue(String name, JsonNode node, Object obj, List<Method> setters)
+            throws ReflectiveOperationException {
 
         //try numeric and equals first
         for (Method m : setters) {

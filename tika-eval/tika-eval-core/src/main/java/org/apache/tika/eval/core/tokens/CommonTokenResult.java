@@ -16,7 +16,6 @@
  */
 package org.apache.tika.eval.core.tokens;
 
-
 public class CommonTokenResult {
 
     private final String langCode;
@@ -25,8 +24,8 @@ public class CommonTokenResult {
     private final int uniqueAlphabeticTokens;
     private final int alphabeticTokens;
 
-    public CommonTokenResult(String langCode, int uniqueCommonTokens, int commonTokens,
-                             int uniqueAlphabeticTokens, int alphabeticTokens) {
+    public CommonTokenResult(String langCode, int uniqueCommonTokens, int commonTokens, int uniqueAlphabeticTokens,
+            int alphabeticTokens) {
         this.langCode = langCode;
         this.uniqueCommonTokens = uniqueCommonTokens;
         this.commonTokens = commonTokens;

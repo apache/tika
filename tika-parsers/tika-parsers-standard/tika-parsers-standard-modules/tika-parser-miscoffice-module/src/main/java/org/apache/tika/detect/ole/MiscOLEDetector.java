@@ -29,7 +29,6 @@ import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
@@ -52,7 +51,6 @@ public class MiscOLEDetector implements Detector {
      */
     public static final MediaType OLE = application("x-tika-msoffice");
 
-
     /**
      * Hangul Word Processor (Korean)
      */
@@ -62,7 +60,6 @@ public class MiscOLEDetector implements Detector {
      * Base QuattroPro mime
      */
     public static final MediaType QUATTROPRO = application("x-quattro-pro");
-
 
     @Field
     private int markLimit = 16 * 1024 * 1024;
@@ -188,9 +185,9 @@ public class MiscOLEDetector implements Detector {
             // Check if the document starts with the OLE header
             input.mark(8);
             try {
-                if (input.read() != 0xd0 || input.read() != 0xcf || input.read() != 0x11 ||
-                        input.read() != 0xe0 || input.read() != 0xa1 || input.read() != 0xb1 ||
-                        input.read() != 0x1a || input.read() != 0xe1) {
+                if (input.read() != 0xd0 || input.read() != 0xcf || input.read() != 0x11 || input.read() != 0xe0
+                        || input.read() != 0xa1 || input.read() != 0xb1 || input.read() != 0x1a
+                        || input.read() != 0xe1) {
                     return MediaType.OCTET_STREAM;
                 }
             } catch (IOException e) {
@@ -207,8 +204,7 @@ public class MiscOLEDetector implements Detector {
         }
 
         // Detect based on the names (as available)
-        if (tis != null && tis.getOpenContainer() != null &&
-                tis.getOpenContainer() instanceof POIFSFileSystem) {
+        if (tis != null && tis.getOpenContainer() != null && tis.getOpenContainer() instanceof POIFSFileSystem) {
             return detect(names, ((POIFSFileSystem) tis.getOpenContainer()).getRoot());
         } else {
             return detect(names, null);

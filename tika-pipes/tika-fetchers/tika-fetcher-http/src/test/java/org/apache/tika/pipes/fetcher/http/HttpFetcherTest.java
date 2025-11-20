@@ -40,7 +40,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -54,13 +53,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.protocol.HttpContext;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.exception.TikaException;
@@ -74,6 +66,14 @@ import org.apache.tika.pipes.core.fetcher.config.FetcherConfigContainer;
 import org.apache.tika.pipes.fetcher.http.config.HttpFetcherConfig;
 import org.apache.tika.pipes.fetcher.http.config.HttpHeaders;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtGenerator;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 class HttpFetcherTest extends TikaTest {
     private static final String TEST_URL = "wontbecalled";
@@ -99,7 +99,8 @@ class HttpFetcherTest extends TikaTest {
         httpFetcherConfig.setMaxSpoolSize(-1L);
 
         httpFetcher = new HttpFetcher();
-        final HttpResponse mockResponse = buildMockResponse(HttpStatus.SC_OK, IOUtils.toInputStream(CONTENT, Charset.defaultCharset()));
+        final HttpResponse mockResponse = buildMockResponse(HttpStatus.SC_OK,
+                IOUtils.toInputStream(CONTENT, Charset.defaultCharset()));
 
         mockClientResponse(mockResponse);
     }
@@ -155,9 +156,7 @@ class HttpFetcherTest extends TikaTest {
             assertEquals("fileName", meta.get(TikaCoreProperties.RESOURCE_NAME_KEY));
         }
 
-        Mockito
-                .verify(httpFetcher.jwtGenerator)
-                .jwt();
+        Mockito.verify(httpFetcher.jwtGenerator).jwt();
     }
 
     @Test
@@ -210,29 +209,26 @@ class HttpFetcherTest extends TikaTest {
         HttpGet httpGet = httpGetArgumentCaptor.getValue();
         Assertions.assertEquals("fromFetchRequestValue1", httpGet.getHeaders("fromFetchRequestHeader1")[0].getValue());
         List<String> fromFetchRequestHeader2s = Arrays.stream(httpGet.getHeaders("fromFetchRequestHeader2"))
-                .map(Header::getValue)
-                .sorted()
-                .collect(Collectors.toList());
+                .map(Header::getValue).sorted().collect(Collectors.toList());
         Assertions.assertEquals(2, fromFetchRequestHeader2s.size());
         Assertions.assertEquals("fromFetchRequestValue2", fromFetchRequestHeader2s.get(0));
         Assertions.assertEquals("fromFetchRequestValue3", fromFetchRequestHeader2s.get(1));
         // also make sure the headers from the fetcher config level are specified - see src/test/resources/tika-config-http.xml
         Assertions.assertEquals("fromFetchConfigValue1", httpGet.getHeaders("fromFetchConfig1")[0].getValue());
-        List<String> fromFetchConfig2s = Arrays.stream(httpGet.getHeaders("fromFetchConfig2"))
-                                    .map(Header::getValue)
-                                    .sorted()
-                                    .collect(Collectors.toList());
+        List<String> fromFetchConfig2s = Arrays.stream(httpGet.getHeaders("fromFetchConfig2")).map(Header::getValue)
+                .sorted().collect(Collectors.toList());
         Assertions.assertEquals(2, fromFetchConfig2s.size());
         Assertions.assertEquals("fromFetchConfigValue2", fromFetchConfig2s.get(0));
         Assertions.assertEquals("fromFetchConfigValue3", fromFetchConfig2s.get(1));
 
-        metadata.set(Property.externalText("httpRequestHeaders"), new String[] {" nick1 :   val1", "nick2:   val2"});
+        metadata.set(Property.externalText("httpRequestHeaders"), new String[]{" nick1 :   val1", "nick2:   val2"});
         httpFetcher.fetch("http://localhost", metadata, parseContext);
         httpGet = httpGetArgumentCaptor.getValue();
         Assertions.assertEquals("val1", httpGet.getHeaders("nick1")[0].getValue());
         Assertions.assertEquals("val2", httpGet.getHeaders("nick2")[0].getValue());
         // also make sure the headers from the fetcher config level are specified - see src/test/resources/tika-config-http.xml
-        Assertions.assertEquals("headerValueFromFetcherConfig", httpGet.getHeaders("headerNameFromFetcherConfig")[0].getValue());
+        Assertions.assertEquals("headerValueFromFetcherConfig",
+                httpGet.getHeaders("headerNameFromFetcherConfig")[0].getValue());
     }
 
     @Test
@@ -266,9 +262,7 @@ class HttpFetcherTest extends TikaTest {
     }
 
     FetcherManager getFetcherManager(String path) throws Exception {
-        return FetcherManager.load(Paths.get(HttpFetcherTest.class
-                .getResource("/" + path)
-                .toURI()));
+        return FetcherManager.load(Paths.get(HttpFetcherTest.class.getResource("/" + path).toURI()));
     }
 
     private void mockClientResponse(final HttpResponse response) throws Exception {

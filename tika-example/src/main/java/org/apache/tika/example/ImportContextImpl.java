@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.example;
 
 import java.io.BufferedInputStream;
@@ -23,6 +22,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
+
 import javax.jcr.Item;
 
 import org.apache.jackrabbit.server.io.DefaultIOListener;
@@ -30,13 +30,12 @@ import org.apache.jackrabbit.server.io.IOListener;
 import org.apache.jackrabbit.server.io.IOUtil;
 import org.apache.jackrabbit.server.io.ImportContext;
 import org.apache.jackrabbit.webdav.io.InputContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.detect.Detector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <code>ImportContextImpl</code>...
@@ -68,7 +67,8 @@ public class ImportContextImpl implements ImportContext {
      * @throws IOException
      * @see ImportContext#informCompleted(boolean)
      */
-    public ImportContextImpl(Item importRoot, String systemId, InputContext ctx, InputStream stream, IOListener ioListener, Detector detector) throws IOException {
+    public ImportContextImpl(Item importRoot, String systemId, InputContext ctx, InputStream stream,
+            IOListener ioListener, Detector detector) throws IOException {
         this.importRoot = importRoot;
         this.systemId = systemId;
         this.inputCtx = ctx;

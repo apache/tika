@@ -30,9 +30,6 @@ import org.apache.jempbox.xmp.ResourceRef;
 import org.apache.jempbox.xmp.XMPMetadata;
 import org.apache.jempbox.xmp.XMPSchemaDublinCore;
 import org.apache.jempbox.xmp.XMPSchemaMediaManagement;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -41,6 +38,8 @@ import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.DateUtils;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 public class JempboxExtractor {
 
@@ -132,20 +131,18 @@ public class JempboxExtractor {
         if (mmSchema != null) {
             addMetadata(metadata, XMPMM.DOCUMENTID, mmSchema.getDocumentID());
             //not currently supported by JempBox...
-//          metadata.set(XMPMM.INSTANCEID, mmSchema.getInstanceID());
+            //          metadata.set(XMPMM.INSTANCEID, mmSchema.getInstanceID());
 
             ResourceRef derivedFrom = mmSchema.getDerivedFrom();
             if (derivedFrom != null) {
                 try {
-                    addMetadata(metadata, XMPMM.DERIVED_FROM_DOCUMENTID,
-                            derivedFrom.getDocumentID());
+                    addMetadata(metadata, XMPMM.DERIVED_FROM_DOCUMENTID, derivedFrom.getDocumentID());
                 } catch (NullPointerException e) {
                     //swallow
                 }
 
                 try {
-                    addMetadata(metadata, XMPMM.DERIVED_FROM_INSTANCEID,
-                            derivedFrom.getInstanceID());
+                    addMetadata(metadata, XMPMM.DERIVED_FROM_INSTANCEID, derivedFrom.getInstanceID());
                 } catch (NullPointerException e) {
                     //swallow
                 }

@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.sax;
 
 import java.io.Writer;
@@ -40,8 +39,7 @@ public class RichTextContentHandler extends WriteOutContentHandler {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes attributes)
-            throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
         super.startElement(uri, localName, qName, attributes);
 
         if ("img".equals(localName) && attributes.getValue("alt") != null) {

@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.csv;
 
 import java.io.BufferedReader;
@@ -30,7 +29,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.input.ProxyReader;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -94,8 +92,8 @@ class CSVSniffer {
             return CSVResult.TEXT;
         }
         // TIKA-4278: colon isn't reliable, e.g. govdocs1/242/242970.txt
-        if (results.size() > 1 && bestResult.getDelimiter().equals(':') &&
-                Math.abs(results.get(1).getConfidence() - bestResult.getConfidence()) < 0.0001) {
+        if (results.size() > 1 && bestResult.getDelimiter().equals(':')
+                && Math.abs(results.get(1).getConfidence() - bestResult.getConfidence()) < 0.0001) {
             return results.get(1);
         }
         return bestResult;
@@ -160,8 +158,7 @@ class CSVSniffer {
                         handleUnquoted(unquoted);
                         //test to make sure there isn't an unencapsulated quote character
                         // in the middle of a cell
-                        if (lastC > -1 && lastC != delimiter && lastC != NEW_LINE &&
-                                lastC != CARRIAGE_RETURN) {
+                        if (lastC > -1 && lastC != delimiter && lastC != NEW_LINE && lastC != CARRIAGE_RETURN) {
                             parseException = true;
                             return calcResult();
                         }
@@ -241,7 +238,6 @@ class CSVSniffer {
             unread(reader, c);
         }
 
-
         /**
          * @param reader
          * @param quoteCharacter
@@ -319,7 +315,6 @@ class CSVSniffer {
             }
             unread(reader, c);
         }
-
 
         void endColumn() {
             colCount++;

@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.geoinfo;
 
 import java.io.File;
@@ -39,6 +38,15 @@ import org.apache.sis.storage.DataStoreException;
 import org.apache.sis.storage.DataStores;
 import org.apache.sis.storage.UnsupportedStorageException;
 import org.apache.sis.util.collection.CodeListSet;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.DateUtils;
 import org.opengis.metadata.Identifier;
 import org.opengis.metadata.citation.Citation;
 import org.opengis.metadata.citation.CitationDate;
@@ -61,24 +69,11 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TemporaryResources;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.DateUtils;
-
-
 public class GeographicInformationParser implements Parser {
 
     public static final String geoInfoType = "text/iso19139+xml";
     private static final Logger LOG = LoggerFactory.getLogger(GeographicInformationParser.class);
-    private final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.text("iso19139+xml"));
-
+    private final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.text("iso19139+xml"));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext parseContext) {
@@ -87,12 +82,11 @@ public class GeographicInformationParser implements Parser {
 
     @Override
     public void parse(InputStream inputStream, ContentHandler contentHandler, Metadata metadata,
-                      ParseContext parseContext) throws IOException, SAXException, TikaException {
+            ParseContext parseContext) throws IOException, SAXException, TikaException {
         metadata.set(Metadata.CONTENT_TYPE, geoInfoType);
         XHTMLContentHandler xhtmlContentHandler = new XHTMLContentHandler(contentHandler, metadata);
 
-        TemporaryResources tmp =
-                TikaInputStream.isTikaInputStream(inputStream) ? null : new TemporaryResources();
+        TemporaryResources tmp = TikaInputStream.isTikaInputStream(inputStream) ? null : new TemporaryResources();
         try (TikaInputStream tikaInputStream = TikaInputStream.get(inputStream, tmp, metadata)) {
             File file = tikaInputStream.getFile();
             try (DataStore dataStore = DataStores.open(file)) {
@@ -111,8 +105,8 @@ public class GeographicInformationParser implements Parser {
         }
     }
 
-    private void extract(XHTMLContentHandler xhtmlContentHandler, Metadata metadata,
-                         DefaultMetadata defaultMetadata) throws SAXException {
+    private void extract(XHTMLContentHandler xhtmlContentHandler, Metadata metadata, DefaultMetadata defaultMetadata)
+            throws SAXException {
         getMetaDataCharacterSet(metadata, defaultMetadata);
         getMetaDataContact(metadata, defaultMetadata);
         getMetaDataIdentificationInfo(metadata, defaultMetadata);
@@ -125,43 +119,38 @@ public class GeographicInformationParser implements Parser {
         extractContent(xhtmlContentHandler, defaultMetadata);
     }
 
-    private void extractContent(XHTMLContentHandler xhtmlContentHandler,
-                                DefaultMetadata defaultMetadata) throws SAXException {
+    private void extractContent(XHTMLContentHandler xhtmlContentHandler, DefaultMetadata defaultMetadata)
+            throws SAXException {
         xhtmlContentHandler.startDocument();
         xhtmlContentHandler.newline();
 
         xhtmlContentHandler.newline();
-        ArrayList<Identification> identifications =
-                (ArrayList<Identification>) defaultMetadata.getIdentificationInfo();
+        ArrayList<Identification> identifications = (ArrayList<Identification>) defaultMetadata.getIdentificationInfo();
         for (Identification i : identifications) {
             xhtmlContentHandler.startElement("h1");
             xhtmlContentHandler.characters(i.getCitation().getTitle().toString());
             xhtmlContentHandler.endElement("h1");
             xhtmlContentHandler.newline();
 
-            ArrayList<ResponsibleParty> responsiblePartyArrayList =
-                    (ArrayList<ResponsibleParty>) i.getCitation().getCitedResponsibleParties();
+            ArrayList<ResponsibleParty> responsiblePartyArrayList = (ArrayList<ResponsibleParty>) i.getCitation()
+                    .getCitedResponsibleParties();
             for (ResponsibleParty r : responsiblePartyArrayList) {
                 xhtmlContentHandler.startElement("h3");
                 xhtmlContentHandler.newline();
-                xhtmlContentHandler
-                        .characters("CitedResponsiblePartyRole " + r.getRole().toString());
-                xhtmlContentHandler
-                        .characters("CitedResponsiblePartyName " + r.getIndividualName());
+                xhtmlContentHandler.characters("CitedResponsiblePartyRole " + r.getRole().toString());
+                xhtmlContentHandler.characters("CitedResponsiblePartyName " + r.getIndividualName());
                 xhtmlContentHandler.endElement("h3");
                 xhtmlContentHandler.newline();
             }
 
             xhtmlContentHandler.startElement("p");
             xhtmlContentHandler.newline();
-            xhtmlContentHandler
-                    .characters("IdentificationInfoAbstract " + i.getAbstract().toString());
+            xhtmlContentHandler.characters("IdentificationInfoAbstract " + i.getAbstract().toString());
             xhtmlContentHandler.endElement("p");
             xhtmlContentHandler.newline();
             Collection<Extent> extentList = ((DefaultDataIdentification) i).getExtents();
             for (Extent e : extentList) {
-                ArrayList<GeographicExtent> geoElements =
-                        (ArrayList<GeographicExtent>) e.getGeographicElements();
+                ArrayList<GeographicExtent> geoElements = (ArrayList<GeographicExtent>) e.getGeographicElements();
                 for (GeographicExtent g : geoElements) {
 
                     if (g instanceof DefaultGeographicBoundingBox) {
@@ -170,8 +159,8 @@ public class GeographicInformationParser implements Parser {
                         xhtmlContentHandler.characters("GeographicElementWestBoundLatitude");
                         xhtmlContentHandler.endElement("td");
                         xhtmlContentHandler.startElement("td");
-                        xhtmlContentHandler.characters(String.valueOf(
-                                ((DefaultGeographicBoundingBox) g).getWestBoundLongitude()));
+                        xhtmlContentHandler
+                                .characters(String.valueOf(((DefaultGeographicBoundingBox) g).getWestBoundLongitude()));
                         xhtmlContentHandler.endElement("td");
                         xhtmlContentHandler.endElement("tr");
                         xhtmlContentHandler.startElement("tr");
@@ -179,8 +168,8 @@ public class GeographicInformationParser implements Parser {
                         xhtmlContentHandler.characters("GeographicElementEastBoundLatitude");
                         xhtmlContentHandler.endElement("td");
                         xhtmlContentHandler.startElement("td");
-                        xhtmlContentHandler.characters(String.valueOf(
-                                ((DefaultGeographicBoundingBox) g).getEastBoundLongitude()));
+                        xhtmlContentHandler
+                                .characters(String.valueOf(((DefaultGeographicBoundingBox) g).getEastBoundLongitude()));
                         xhtmlContentHandler.endElement("td");
                         xhtmlContentHandler.endElement("tr");
                         xhtmlContentHandler.startElement("tr");
@@ -188,8 +177,8 @@ public class GeographicInformationParser implements Parser {
                         xhtmlContentHandler.characters("GeographicElementNorthBoundLatitude");
                         xhtmlContentHandler.endElement("td");
                         xhtmlContentHandler.startElement("td");
-                        xhtmlContentHandler.characters(String.valueOf(
-                                ((DefaultGeographicBoundingBox) g).getNorthBoundLatitude()));
+                        xhtmlContentHandler
+                                .characters(String.valueOf(((DefaultGeographicBoundingBox) g).getNorthBoundLatitude()));
                         xhtmlContentHandler.endElement("td");
                         xhtmlContentHandler.endElement("tr");
                         xhtmlContentHandler.startElement("tr");
@@ -197,8 +186,8 @@ public class GeographicInformationParser implements Parser {
                         xhtmlContentHandler.characters("GeographicElementSouthBoundLatitude");
                         xhtmlContentHandler.endElement("td");
                         xhtmlContentHandler.startElement("td");
-                        xhtmlContentHandler.characters(String.valueOf(
-                                ((DefaultGeographicBoundingBox) g).getSouthBoundLatitude()));
+                        xhtmlContentHandler
+                                .characters(String.valueOf(((DefaultGeographicBoundingBox) g).getSouthBoundLatitude()));
                         xhtmlContentHandler.endElement("td");
                         xhtmlContentHandler.endElement("tr");
                     }
@@ -216,10 +205,8 @@ public class GeographicInformationParser implements Parser {
         }
     }
 
-
     private void getMetaDataContact(Metadata metadata, DefaultMetadata defaultMetaData) {
-        Collection<ResponsibleParty> contactSet =
-                (Collection<ResponsibleParty>) defaultMetaData.getContacts();
+        Collection<ResponsibleParty> contactSet = (Collection<ResponsibleParty>) defaultMetaData.getContacts();
         for (ResponsibleParty rparty : contactSet) {
             if (rparty.getRole() != null) {
                 metadata.add("ContactRole", rparty.getRole().name());
@@ -231,25 +218,22 @@ public class GeographicInformationParser implements Parser {
     }
 
     private void getMetaDataIdentificationInfo(Metadata metadata, DefaultMetadata defaultMetaData) {
-        ArrayList<Identification> identifications =
-                (ArrayList<Identification>) defaultMetaData.getIdentificationInfo();
+        ArrayList<Identification> identifications = (ArrayList<Identification>) defaultMetaData.getIdentificationInfo();
         for (Identification i : identifications) {
             DefaultDataIdentification defaultDataIdentification = (DefaultDataIdentification) i;
             if (i.getCitation() != null && i.getCitation().getTitle() != null) {
-                metadata.add("IdentificationInfoCitationTitle ",
-                        i.getCitation().getTitle().toString());
+                metadata.add("IdentificationInfoCitationTitle ", i.getCitation().getTitle().toString());
             }
 
-            ArrayList<CitationDate> dateArrayList =
-                    (ArrayList<CitationDate>) i.getCitation().getDates();
+            ArrayList<CitationDate> dateArrayList = (ArrayList<CitationDate>) i.getCitation().getDates();
             for (CitationDate d : dateArrayList) {
                 if (d.getDateType() != null) {
                     String date = DateUtils.formatDate(d.getDate());
                     metadata.add("CitationDate ", d.getDateType().name() + "-->" + date);
                 }
             }
-            ArrayList<ResponsibleParty> responsiblePartyArrayList =
-                    (ArrayList<ResponsibleParty>) i.getCitation().getCitedResponsibleParties();
+            ArrayList<ResponsibleParty> responsiblePartyArrayList = (ArrayList<ResponsibleParty>) i.getCitation()
+                    .getCitedResponsibleParties();
             for (ResponsibleParty r : responsiblePartyArrayList) {
                 if (r.getRole() != null) {
                     metadata.add("CitedResponsiblePartyRole ", r.getRole().toString());
@@ -258,12 +242,10 @@ public class GeographicInformationParser implements Parser {
                     metadata.add("CitedResponsiblePartyName ", r.getIndividualName());
                 }
                 if (r.getOrganisationName() != null) {
-                    metadata.add("CitedResponsiblePartyOrganizationName ",
-                            r.getOrganisationName().toString());
+                    metadata.add("CitedResponsiblePartyOrganizationName ", r.getOrganisationName().toString());
                 }
                 if (r.getPositionName() != null) {
-                    metadata.add("CitedResponsiblePartyPositionName ",
-                            r.getPositionName().toString());
+                    metadata.add("CitedResponsiblePartyPositionName ", r.getPositionName().toString());
                 }
 
                 if (r.getContactInfo() != null) {
@@ -281,17 +263,15 @@ public class GeographicInformationParser implements Parser {
             ArrayList<Format> formatArrayList = (ArrayList<Format>) i.getResourceFormats();
             for (Format f : formatArrayList) {
                 if (f.getName() != null) {
-                    metadata.add("ResourceFormatSpecificationAlternativeTitle ",
-                            f.getName().toString());
+                    metadata.add("ResourceFormatSpecificationAlternativeTitle ", f.getName().toString());
                 }
             }
-            Map<Locale, Charset> localeCharsetMap =
-                    defaultDataIdentification.getLocalesAndCharsets();
+            Map<Locale, Charset> localeCharsetMap = defaultDataIdentification.getLocalesAndCharsets();
             for (Locale l : localeCharsetMap.keySet()) {
                 metadata.add("IdentificationInfoLanguage-->", l.getDisplayLanguage(Locale.ENGLISH));
             }
-            CodeListSet<TopicCategory> categoryList =
-                    (CodeListSet<TopicCategory>) defaultDataIdentification.getTopicCategories();
+            CodeListSet<TopicCategory> categoryList = (CodeListSet<TopicCategory>) defaultDataIdentification
+                    .getTopicCategories();
             for (TopicCategory t : categoryList) {
                 metadata.add("IdentificationInfoTopicCategory-->", t.name());
             }
@@ -299,8 +279,7 @@ public class GeographicInformationParser implements Parser {
             int j = 1;
             for (Keywords k : keywordList) {
                 j++;
-                ArrayList<InternationalString> stringList =
-                        (ArrayList<InternationalString>) k.getKeywords();
+                ArrayList<InternationalString> stringList = (ArrayList<InternationalString>) k.getKeywords();
                 for (InternationalString s : stringList) {
                     metadata.add("Keywords " + j, s.toString());
                 }
@@ -308,17 +287,14 @@ public class GeographicInformationParser implements Parser {
                     metadata.add("KeywordsType " + j, k.getType().name());
                 }
                 if (k.getThesaurusName() != null && k.getThesaurusName().getTitle() != null) {
-                    metadata.add("ThesaurusNameTitle " + j,
-                            k.getThesaurusName().getTitle().toString());
+                    metadata.add("ThesaurusNameTitle " + j, k.getThesaurusName().getTitle().toString());
                 }
-                if (k.getThesaurusName() != null &&
-                        k.getThesaurusName().getAlternateTitles() != null) {
+                if (k.getThesaurusName() != null && k.getThesaurusName().getAlternateTitles() != null) {
                     metadata.add("ThesaurusNameAlternativeTitle " + j,
                             k.getThesaurusName().getAlternateTitles().toString());
                 }
 
-                ArrayList<CitationDate> citationDates =
-                        (ArrayList<CitationDate>) k.getThesaurusName().getDates();
+                ArrayList<CitationDate> citationDates = (ArrayList<CitationDate>) k.getThesaurusName().getDates();
                 for (CitationDate cd : citationDates) {
                     if (cd.getDateType() != null) {
                         String date = DateUtils.formatDate(cd.getDate());
@@ -326,8 +302,8 @@ public class GeographicInformationParser implements Parser {
                     }
                 }
             }
-            ArrayList<DefaultLegalConstraints> constraintList =
-                    (ArrayList<DefaultLegalConstraints>) i.getResourceConstraints();
+            ArrayList<DefaultLegalConstraints> constraintList = (ArrayList<DefaultLegalConstraints>) i
+                    .getResourceConstraints();
 
             for (DefaultLegalConstraints c : constraintList) {
                 for (Restriction r : c.getAccessConstraints()) {
@@ -343,35 +319,29 @@ public class GeographicInformationParser implements Parser {
             }
             Collection<Extent> extentList = ((DefaultDataIdentification) i).getExtents();
             for (Extent e : extentList) {
-                ArrayList<GeographicExtent> geoElements =
-                        (ArrayList<GeographicExtent>) e.getGeographicElements();
+                ArrayList<GeographicExtent> geoElements = (ArrayList<GeographicExtent>) e.getGeographicElements();
                 for (GeographicExtent g : geoElements) {
 
                     if (g instanceof DefaultGeographicDescription) {
-                        if (((DefaultGeographicDescription) g).getGeographicIdentifier() != null &&
-                                ((DefaultGeographicDescription) g).getGeographicIdentifier()
-                                        .getCode() != null) {
+                        if (((DefaultGeographicDescription) g).getGeographicIdentifier() != null
+                                && ((DefaultGeographicDescription) g).getGeographicIdentifier().getCode() != null) {
                             metadata.add("GeographicIdentifierCode ",
-                                    ((DefaultGeographicDescription) g).getGeographicIdentifier()
-                                            .getCode());
+                                    ((DefaultGeographicDescription) g).getGeographicIdentifier().getCode());
                         }
-                        if (((DefaultGeographicDescription) g).getGeographicIdentifier() != null &&
-                                ((DefaultGeographicDescription) g).getGeographicIdentifier()
-                                        .getAuthority() != null &&
-                                ((DefaultGeographicDescription) g).getGeographicIdentifier()
-                                        .getAuthority().getTitle() != null) {
-                            metadata.add("GeographicIdentifierAuthorityTitle ",
-                                    ((DefaultGeographicDescription) g).getGeographicIdentifier()
-                                            .getAuthority().getTitle().toString());
+                        if (((DefaultGeographicDescription) g).getGeographicIdentifier() != null
+                                && ((DefaultGeographicDescription) g).getGeographicIdentifier().getAuthority() != null
+                                && ((DefaultGeographicDescription) g).getGeographicIdentifier().getAuthority()
+                                        .getTitle() != null) {
+                            metadata.add("GeographicIdentifierAuthorityTitle ", ((DefaultGeographicDescription) g)
+                                    .getGeographicIdentifier().getAuthority().getTitle().toString());
                         }
 
-                        for (InternationalString s : ((DefaultGeographicDescription) g)
-                                .getGeographicIdentifier().getAuthority().getAlternateTitles()) {
-                            metadata.add("GeographicIdentifierAuthorityAlternativeTitle ",
-                                    s.toString());
+                        for (InternationalString s : ((DefaultGeographicDescription) g).getGeographicIdentifier()
+                                .getAuthority().getAlternateTitles()) {
+                            metadata.add("GeographicIdentifierAuthorityAlternativeTitle ", s.toString());
                         }
-                        for (CitationDate cd : ((DefaultGeographicDescription) g)
-                                .getGeographicIdentifier().getAuthority().getDates()) {
+                        for (CitationDate cd : ((DefaultGeographicDescription) g).getGeographicIdentifier()
+                                .getAuthority().getDates()) {
                             if (cd.getDateType() != null && cd.getDate() != null) {
                                 String date = DateUtils.formatDate(cd.getDate());
                                 metadata.add("GeographicIdentifierAuthorityDate ",
@@ -386,32 +356,27 @@ public class GeographicInformationParser implements Parser {
 
     private void getMetaDataDistributionInfo(Metadata metadata, DefaultMetadata defaultMetaData) {
         Distribution distribution = defaultMetaData.getDistributionInfo();
-        ArrayList<Format> distributionFormat =
-                (ArrayList<Format>) distribution.getDistributionFormats();
+        ArrayList<Format> distributionFormat = (ArrayList<Format>) distribution.getDistributionFormats();
         for (Format f : distributionFormat) {
             if (f.getName() != null) {
-                metadata.add("DistributionFormatSpecificationAlternativeTitle ",
-                        f.getName().toString());
+                metadata.add("DistributionFormatSpecificationAlternativeTitle ", f.getName().toString());
             }
         }
-        ArrayList<Distributor> distributorList =
-                (ArrayList<Distributor>) distribution.getDistributors();
+        ArrayList<Distributor> distributorList = (ArrayList<Distributor>) distribution.getDistributors();
         for (Distributor d : distributorList) {
-            if (d != null && d.getDistributorContact() != null &&
-                    d.getDistributorContact().getRole() != null) {
+            if (d != null && d.getDistributorContact() != null && d.getDistributorContact().getRole() != null) {
                 metadata.add("Distributor Contact ", d.getDistributorContact().getRole().name());
             }
-            if (d != null && d.getDistributorContact() != null &&
-                    d.getDistributorContact().getOrganisationName() != null) {
+            if (d != null && d.getDistributorContact() != null
+                    && d.getDistributorContact().getOrganisationName() != null) {
                 metadata.add("Distributor Organization Name ",
                         d.getDistributorContact().getOrganisationName().toString());
             }
         }
-        ArrayList<DigitalTransferOptions> transferOptionsList =
-                (ArrayList<DigitalTransferOptions>) distribution.getTransferOptions();
+        ArrayList<DigitalTransferOptions> transferOptionsList = (ArrayList<DigitalTransferOptions>) distribution
+                .getTransferOptions();
         for (DigitalTransferOptions d : transferOptionsList) {
-            ArrayList<OnlineResource> onlineResourceList =
-                    (ArrayList<OnlineResource>) d.getOnLines();
+            ArrayList<OnlineResource> onlineResourceList = (ArrayList<OnlineResource>) d.getOnLines();
             for (OnlineResource or : onlineResourceList) {
                 if (or.getLinkage() != null) {
                     metadata.add("TransferOptionsOnlineLinkage ", or.getLinkage().toString());
@@ -426,8 +391,7 @@ public class GeographicInformationParser implements Parser {
                     metadata.add("TransferOptionsOnlineName ", or.getName());
                 }
                 if (or.getDescription() != null) {
-                    metadata.add("TransferOptionsOnlineDescription ",
-                            or.getDescription().toString());
+                    metadata.add("TransferOptionsOnlineDescription ", or.getDescription().toString());
                 }
                 if (or.getFunction() != null) {
                     metadata.add("TransferOptionsOnlineFunction ", or.getFunction().name());
@@ -438,8 +402,7 @@ public class GeographicInformationParser implements Parser {
     }
 
     private void getMetaDataDateInfo(Metadata metadata, DefaultMetadata defaultMetaData) {
-        ArrayList<CitationDate> citationDateList =
-                (ArrayList<CitationDate>) defaultMetaData.getDateInfo();
+        ArrayList<CitationDate> citationDateList = (ArrayList<CitationDate>) defaultMetaData.getDateInfo();
         for (CitationDate c : citationDateList) {
             if (c.getDateType() != null) {
                 String date = DateUtils.formatDate(c.getDate());
@@ -449,8 +412,8 @@ public class GeographicInformationParser implements Parser {
     }
 
     private void getMetaDataResourceScope(Metadata metadata, DefaultMetadata defaultMetaData) {
-        ArrayList<DefaultMetadataScope> scopeList =
-                (ArrayList<DefaultMetadataScope>) defaultMetaData.getMetadataScopes();
+        ArrayList<DefaultMetadataScope> scopeList = (ArrayList<DefaultMetadataScope>) defaultMetaData
+                .getMetadataScopes();
         for (DefaultMetadataScope d : scopeList) {
             if (d.getResourceScope() != null) {
                 metadata.add("MetaDataResourceScope ", d.getResourceScope().name());
@@ -458,8 +421,7 @@ public class GeographicInformationParser implements Parser {
         }
     }
 
-    private void getMetaDataParentMetaDataTitle(Metadata metadata,
-                                                DefaultMetadata defaultMetaData) {
+    private void getMetaDataParentMetaDataTitle(Metadata metadata, DefaultMetadata defaultMetaData) {
         Citation parentMetaData = defaultMetaData.getParentMetadata();
         if (parentMetaData != null && parentMetaData.getTitle() != null) {
             metadata.add("ParentMetaDataTitle", parentMetaData.getTitle().toString());
@@ -474,8 +436,7 @@ public class GeographicInformationParser implements Parser {
     }
 
     private void getMetaDataStandard(Metadata metadata, DefaultMetadata defaultMetaData) {
-        ArrayList<Citation> citationList =
-                (ArrayList<Citation>) defaultMetaData.getMetadataStandards();
+        ArrayList<Citation> citationList = (ArrayList<Citation>) defaultMetaData.getMetadataStandards();
         for (Citation c : citationList) {
             if (c.getTitle() != null) {
                 metadata.add("MetaDataStandardTitle ", c.getTitle().toString());

@@ -30,22 +30,19 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.utils.XMLReaderUtils;
-
-
 public abstract class ConfigBase {
 
-    private static Class[] SUPPORTED_PRIMITIVES =
-            new Class[]{String.class, boolean.class, long.class, int.class, double.class,
-                    float.class};
+    private static Class[] SUPPORTED_PRIMITIVES = new Class[]{String.class, boolean.class, long.class, int.class,
+            double.class, float.class};
 
     /**
      * Use this to build a single class, where the user specifies the instance class, e.g.
@@ -81,8 +78,8 @@ public abstract class ConfigBase {
      * @throws TikaConfigException
      * @throws IOException
      */
-    protected static <T> T buildSingle(String itemName, Class<T> itemClass, Element properties,
-                                       T defaultValue) throws TikaConfigException, IOException {
+    protected static <T> T buildSingle(String itemName, Class<T> itemClass, Element properties, T defaultValue)
+            throws TikaConfigException, IOException {
 
         NodeList children = properties.getChildNodes();
         T toConfigure = null;
@@ -93,8 +90,7 @@ public abstract class ConfigBase {
             }
             if (itemName.equals(child.getLocalName())) {
                 if (toConfigure != null) {
-                    throw new TikaConfigException(
-                            "There can only be one " + itemName + " in a config");
+                    throw new TikaConfigException("There can only be one " + itemName + " in a config");
                 }
                 T item = buildClass(child, itemName, itemClass);
                 setParams(item, child, new HashSet<>());
@@ -110,7 +106,6 @@ public abstract class ConfigBase {
         return toConfigure;
     }
 
-
     /**
      * Use this to build a list of components for a composite item (e.g.
      * CompositeMetadataFilter, FetcherManager), each with their own configurations
@@ -121,9 +116,8 @@ public abstract class ConfigBase {
      * @throws TikaConfigException
      * @throws IOException
      */
-    protected static <P, T> P buildComposite(String compositeElementName, Class<P> compositeClass,
-                                             String itemName, Class<T> itemClass, InputStream is)
-            throws TikaConfigException, IOException {
+    protected static <P, T> P buildComposite(String compositeElementName, Class<P> compositeClass, String itemName,
+            Class<T> itemClass, InputStream is) throws TikaConfigException, IOException {
         Element properties = null;
         try {
             properties = XMLReaderUtils.buildDOM(is).getDocumentElement();
@@ -132,14 +126,11 @@ public abstract class ConfigBase {
         } catch (TikaException e) {
             throw new TikaConfigException("problem loading xml to dom", e);
         }
-        return buildComposite(compositeElementName, compositeClass, itemName, itemClass,
-                properties);
+        return buildComposite(compositeElementName, compositeClass, itemName, itemClass, properties);
     }
 
-    protected static <P, T> P buildComposite(String compositeElementName, Class<P> compositeClass,
-                                             String itemName, Class<T> itemClass,
-                                             Element properties)
-            throws TikaConfigException, IOException {
+    protected static <P, T> P buildComposite(String compositeElementName, Class<P> compositeClass, String itemName,
+            Class<T> itemClass, Element properties) throws TikaConfigException, IOException {
 
         if (!properties.getLocalName().equals("properties")) {
             throw new TikaConfigException("expect properties as root node");
@@ -159,8 +150,8 @@ public abstract class ConfigBase {
                     P composite = (P) constructor.newInstance(components);
                     setParams(composite, child, new HashSet<>(), itemName);
                     return composite;
-                } catch (NoSuchMethodException | InvocationTargetException |
-                         InstantiationException | IllegalAccessException e) {
+                } catch (NoSuchMethodException | InvocationTargetException | InstantiationException
+                        | IllegalAccessException e) {
                     throw new TikaConfigException("can't build composite class", e);
                 }
             }
@@ -168,8 +159,7 @@ public abstract class ConfigBase {
         throw new TikaConfigException("could not find " + compositeElementName);
     }
 
-    private static <T> List<T> loadComposite(Node composite, String itemName,
-                                             Class<? extends T> itemClass)
+    private static <T> List<T> loadComposite(Node composite, String itemName, Class<? extends T> itemClass)
             throws TikaConfigException {
         NodeList children = composite.getChildNodes();
         List<T> items = new ArrayList<>();
@@ -187,8 +177,7 @@ public abstract class ConfigBase {
         return items;
     }
 
-    private static <T> T buildClass(Node node, String elementName, Class itemClass)
-            throws TikaConfigException {
+    private static <T> T buildClass(Node node, String elementName, Class itemClass) throws TikaConfigException {
         String className = itemClass.getName();
         Node classNameNode = node.getAttributes().getNamedItem("class");
 
@@ -198,25 +187,22 @@ public abstract class ConfigBase {
         try {
             Class clazz = Class.forName(className);
             if (!itemClass.isAssignableFrom(clazz)) {
-                throw new TikaConfigException(
-                        elementName + " with class name " + className + " must be of type '" +
-                                itemClass.getName() + "'");
+                throw new TikaConfigException(elementName + " with class name " + className + " must be of type '"
+                        + itemClass.getName() + "'");
             }
             return (T) clazz.getDeclaredConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException |
-                 NoSuchMethodException | InvocationTargetException e) {
-            throw new TikaConfigException("problem loading " + elementName +
-                    " with class " + itemClass.getName(), e);
+        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException
+                | InvocationTargetException e) {
+            throw new TikaConfigException("problem loading " + elementName + " with class " + itemClass.getName(), e);
         }
     }
 
-    private static void setParams(Object object, Node targetNode, Set<String> settings)
-            throws TikaConfigException {
+    private static void setParams(Object object, Node targetNode, Set<String> settings) throws TikaConfigException {
         setParams(object, targetNode, settings, null);
     }
 
-    private static void setParams(Object object, Node targetNode, Set<String> settings,
-                                  String exceptNodeName) throws TikaConfigException {
+    private static void setParams(Object object, Node targetNode, Set<String> settings, String exceptNodeName)
+            throws TikaConfigException {
         NodeList children = targetNode.getChildNodes();
         List<Node> params = new ArrayList<>();
         for (int i = 0; i < children.getLength(); i++) {
@@ -295,13 +281,11 @@ public abstract class ConfigBase {
         return false;
     }
 
-    private static SetterClassPair findSetterClassPair(Object object, String itemName)
-            throws TikaConfigException {
+    private static SetterClassPair findSetterClassPair(Object object, String itemName) throws TikaConfigException {
 
         //TODO -- we could do more with info from the node -- is it complex, does it have
         //a text value, does it have a class, etc...  This works for now.
-        String setter =
-                "set" + itemName.substring(0, 1).toUpperCase(Locale.US) + itemName.substring(1);
+        String setter = "set" + itemName.substring(0, 1).toUpperCase(Locale.US) + itemName.substring(1);
         Class itemClass = null;
         Method setterMethod = null;
         for (Method method : object.getClass().getMethods()) {
@@ -320,8 +304,7 @@ public abstract class ConfigBase {
             return new SetterClassPair(setterMethod, itemClass);
         }
         //now try adders
-        String adder =
-                "add" + itemName.substring(0, 1).toUpperCase(Locale.US) + itemName.substring(1);
+        String adder = "add" + itemName.substring(0, 1).toUpperCase(Locale.US) + itemName.substring(1);
         for (Method method : object.getClass().getMethods()) {
             if (adder.equals(method.getName())) {
                 Class<?>[] classes = method.getParameterTypes();
@@ -335,9 +318,8 @@ public abstract class ConfigBase {
             }
         }
         if (setterMethod == null && itemClass == null) {
-            throw new TikaConfigException(
-                    "Couldn't find setter '" + setter + "' or adder '" + adder + "' for " + itemName +
-                            " of class: " + object.getClass());
+            throw new TikaConfigException("Couldn't find setter '" + setter + "' or adder '" + adder + "' for "
+                    + itemName + " of class: " + object.getClass());
         }
         return new SetterClassPair(setterMethod, itemClass);
     }
@@ -368,8 +350,7 @@ public abstract class ConfigBase {
     private static void tryToSetClassList(Object object, Node node) throws TikaConfigException {
         String name = node.getLocalName();
         try {
-            Class interfaze =
-                    Class.forName(node.getAttributes().getNamedItem("class").getTextContent());
+            Class interfaze = Class.forName(node.getAttributes().getNamedItem("class").getTextContent());
             List items = new ArrayList<Object>();
             NodeList nodeList = node.getChildNodes();
             for (int i = 0; i < nodeList.getLength(); i++) {
@@ -385,8 +366,8 @@ public abstract class ConfigBase {
             Method m = object.getClass().getMethod(setter, List.class);
             m.invoke(object, items);
 
-        } catch (ClassNotFoundException | InvocationTargetException | NoSuchMethodException |
-                 IllegalAccessException e) {
+        } catch (ClassNotFoundException | InvocationTargetException | NoSuchMethodException
+                | IllegalAccessException e) {
             throw new TikaConfigException("couldn't build class for " + name, e);
         }
     }
@@ -467,11 +448,11 @@ public abstract class ConfigBase {
             Node n = nodeList.item(i);
             if (n.getNodeType() == 1) {
                 if (n.hasAttributes()) {
-                    if (n.getAttributes().getNamedItem("from") != null &&
-                            n.getAttributes().getNamedItem("to") != null) {
+                    if (n.getAttributes().getNamedItem("from") != null
+                            && n.getAttributes().getNamedItem("to") != null) {
                         return true;
-                    } else if (n.getAttributes().getNamedItem("k") != null &&
-                            n.getAttributes().getNamedItem("v") != null) {
+                    } else if (n.getAttributes().getNamedItem("k") != null
+                            && n.getAttributes().getNamedItem("v") != null) {
                         return true;
                     }
                 }
@@ -480,8 +461,8 @@ public abstract class ConfigBase {
         return false;
     }
 
-    private static void tryToSetPrimitive(Object object, SetterClassPair setterClassPair,
-                                          String value) throws TikaConfigException {
+    private static void tryToSetPrimitive(Object object, SetterClassPair setterClassPair, String value)
+            throws TikaConfigException {
         try {
             if (setterClassPair.itemClass == int.class) {
                 setterClassPair.setterMethod.invoke(object, Integer.parseInt(value));
@@ -500,7 +481,6 @@ public abstract class ConfigBase {
             throw new TikaConfigException("bad parameter " + setterClassPair + " " + value, e);
         }
     }
-
 
     /**
      * This should be overridden to do something with the settings
@@ -521,8 +501,7 @@ public abstract class ConfigBase {
      * @throws TikaConfigException
      * @throws IOException
      */
-    protected Set<String> configure(String nodeName, InputStream is)
-            throws TikaConfigException, IOException {
+    protected Set<String> configure(String nodeName, InputStream is) throws TikaConfigException, IOException {
         Set<String> settings = new HashSet<>();
 
         Node properties = null;
@@ -559,8 +538,7 @@ public abstract class ConfigBase {
 
         @Override
         public String toString() {
-            return "SetterClassPair{" + "setterMethod=" + setterMethod + ", itemClass=" +
-                    itemClass + '}';
+            return "SetterClassPair{" + "setterMethod=" + setterMethod + ", itemClass=" + itemClass + '}';
         }
     }
 }

@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.gdal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -25,13 +24,12 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.InputStream;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test harness for the GDAL parser.
@@ -91,8 +89,7 @@ public class TestGDALParser extends TikaTest {
     @Test
     public void testParseMetadata() {
         assumeTrue(canRun());
-        final String expectedNcInst =
-                "NCAR (National Center for Atmospheric Research, Boulder, CO, USA)";
+        final String expectedNcInst = "NCAR (National Center for Atmospheric Research, Boulder, CO, USA)";
         final String expectedModelNameEnglish = "NCAR CCSM";
         final String expectedProgramId = "Source file unknown Version unknown Date unknown";
         final String expectedProjectId = "IPCC Fourth Assessment";

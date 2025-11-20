@@ -26,15 +26,14 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.poi.hssf.extractor.OldExcelExtractor;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * A POI-powered Tika Parser for very old versions of Excel, from
@@ -43,12 +42,10 @@ import org.apache.tika.sax.XHTMLContentHandler;
 public class OldExcelParser implements Parser {
     private static final long serialVersionUID = 4611820730372823452L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(MediaType.application("vnd.ms-excel.sheet.4"),
-                    MediaType.application("vnd.ms-excel.workspace.4"),
-                    MediaType.application("vnd.ms-excel.sheet.3"),
-                    MediaType.application("vnd.ms-excel.workspace.3"),
-                    MediaType.application("vnd.ms-excel.sheet.2"))));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections
+            .unmodifiableSet(new HashSet<>(Arrays.asList(MediaType.application("vnd.ms-excel.sheet.4"),
+                    MediaType.application("vnd.ms-excel.workspace.4"), MediaType.application("vnd.ms-excel.sheet.3"),
+                    MediaType.application("vnd.ms-excel.workspace.3"), MediaType.application("vnd.ms-excel.sheet.2"))));
 
     protected static void parse(OldExcelExtractor extractor, XHTMLContentHandler xhtml)
             throws TikaException, IOException, SAXException {
@@ -71,8 +68,8 @@ public class OldExcelParser implements Parser {
     /**
      * Extracts properties and text from an MS Document input stream
      */
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         // Open the POI provided extractor
         OldExcelExtractor extractor = new OldExcelExtractor(stream);
 

@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -29,8 +28,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.junit.jupiter.api.Test;
 
 import org.apache.tika.Tika;
 import org.apache.tika.detect.CompositeEncodingDetector;
@@ -49,6 +46,7 @@ import org.apache.tika.parser.html.HtmlEncodingDetector;
 import org.apache.tika.parser.txt.Icu4jEncodingDetector;
 import org.apache.tika.parser.txt.TXTParser;
 import org.apache.tika.parser.txt.UniversalEncodingDetector;
+import org.junit.jupiter.api.Test;
 
 public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
 
@@ -73,8 +71,7 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
 
         EncodingDetector detector1 = detectors.get(0);
         assertTrue(detector1 instanceof CompositeEncodingDetector);
-        List<EncodingDetector> detectors1Children =
-                ((CompositeEncodingDetector) detector1).getDetectors();
+        List<EncodingDetector> detectors1Children = ((CompositeEncodingDetector) detector1).getDetectors();
         assertEquals(2, detectors1Children.size());
         assertTrue(detectors1Children.get(0) instanceof UniversalEncodingDetector);
         assertTrue(detectors1Children.get(1) instanceof Icu4jEncodingDetector);
@@ -96,16 +93,15 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
 
     @Test
     public void testEncodingDetectorsAreLoaded() {
-        EncodingDetector encodingDetector =
-                ((AbstractEncodingDetectorParser) new TXTParser()).getEncodingDetector();
+        EncodingDetector encodingDetector = ((AbstractEncodingDetectorParser) new TXTParser()).getEncodingDetector();
 
         assertTrue(encodingDetector instanceof CompositeEncodingDetector);
     }
 
     @Test
     public void testEncodingDetectorConfigurability() throws Exception {
-        TikaConfig tikaConfig = new TikaConfig(getResourceAsStream(
-                "/org/apache/tika/config/TIKA-2273-no-icu4j-encoding-detector.xml"));
+        TikaConfig tikaConfig = new TikaConfig(
+                getResourceAsStream("/org/apache/tika/config/TIKA-2273-no-icu4j-encoding-detector.xml"));
         AutoDetectParser p = new AutoDetectParser(tikaConfig);
 
         try {
@@ -130,12 +126,10 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
         }
     }
 
-
     @Test
     public void testNonDetectingDetectorParams() throws Exception {
         TikaConfig tikaConfig = null;
-        try (InputStream is = getResourceAsStream(
-                "/org/apache/tika/config/TIKA-2273-non-detecting-params.xml")) {
+        try (InputStream is = getResourceAsStream("/org/apache/tika/config/TIKA-2273-non-detecting-params.xml")) {
             tikaConfig = new TikaConfig(is);
         }
         AutoDetectParser p = new AutoDetectParser(tikaConfig);
@@ -143,16 +137,13 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
         findEncodingDetectionParsers(p, parsers);
 
         assertEquals(5, parsers.size());
-        EncodingDetector encodingDetector =
-                ((AbstractEncodingDetectorParser) parsers.get(0)).getEncodingDetector();
+        EncodingDetector encodingDetector = ((AbstractEncodingDetectorParser) parsers.get(0)).getEncodingDetector();
         assertTrue(encodingDetector instanceof CompositeEncodingDetector);
         assertEquals(1, ((CompositeEncodingDetector) encodingDetector).getDetectors().size());
-        EncodingDetector child =
-                ((CompositeEncodingDetector) encodingDetector).getDetectors().get(0);
+        EncodingDetector child = ((CompositeEncodingDetector) encodingDetector).getDetectors().get(0);
         assertTrue(child instanceof NonDetectingEncodingDetector);
 
-        assertEquals(StandardCharsets.UTF_16LE,
-                ((NonDetectingEncodingDetector) child).getCharset());
+        assertEquals(StandardCharsets.UTF_16LE, ((NonDetectingEncodingDetector) child).getCharset());
 
     }
 
@@ -168,8 +159,8 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
 
     @Test
     public void testConfigurabilityOfUserSpecified() throws Exception {
-        TikaConfig tikaConfig = new TikaConfig(getResourceAsStream(
-                "/org/apache/tika/config/TIKA-2273-encoding-detector-outside-static-init.xml"));
+        TikaConfig tikaConfig = new TikaConfig(
+                getResourceAsStream("/org/apache/tika/config/TIKA-2273-encoding-detector-outside-static-init.xml"));
         AutoDetectParser p = new AutoDetectParser(tikaConfig);
 
         //make sure that all static and non-static parsers are using the same encoding detector!
@@ -179,13 +170,11 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
         assertEquals(6, parsers.size());
 
         for (Parser encodingDetectingParser : parsers) {
-            EncodingDetector encodingDetector =
-                    ((AbstractEncodingDetectorParser) encodingDetectingParser)
-                            .getEncodingDetector();
+            EncodingDetector encodingDetector = ((AbstractEncodingDetectorParser) encodingDetectingParser)
+                    .getEncodingDetector();
             assertTrue(encodingDetector instanceof CompositeEncodingDetector);
             assertEquals(2, ((CompositeEncodingDetector) encodingDetector).getDetectors().size());
-            for (EncodingDetector child : ((CompositeEncodingDetector) encodingDetector)
-                    .getDetectors()) {
+            for (EncodingDetector child : ((CompositeEncodingDetector) encodingDetector).getDetectors()) {
                 assertNotContained("cu4j", child.getClass().getCanonicalName());
             }
         }
@@ -202,31 +191,27 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
 
     @Test
     public void testMarkLimitUnit() throws Exception {
-        TikaConfig tikaConfig = new TikaConfig(getResourceAsStream(
-                "/org/apache/tika/config/TIKA-2485-encoding-detector-mark-limits.xml"));
+        TikaConfig tikaConfig = new TikaConfig(
+                getResourceAsStream("/org/apache/tika/config/TIKA-2485-encoding-detector-mark-limits.xml"));
         AutoDetectParser p = new AutoDetectParser(tikaConfig);
         List<Parser> parsers = new ArrayList<>();
         findEncodingDetectionParsers(p, parsers);
 
         assertEquals(5, parsers.size());
         for (Parser childParser : parsers) {
-            EncodingDetector encodingDetector =
-                    ((AbstractEncodingDetectorParser) childParser).getEncodingDetector();
+            EncodingDetector encodingDetector = ((AbstractEncodingDetectorParser) childParser).getEncodingDetector();
             assertTrue(encodingDetector instanceof CompositeEncodingDetector);
             assertEquals(3, ((CompositeEncodingDetector) encodingDetector).getDetectors().size());
-            for (EncodingDetector childEncodingDetector :
-                    ((CompositeEncodingDetector) encodingDetector).getDetectors()) {
+            for (EncodingDetector childEncodingDetector : ((CompositeEncodingDetector) encodingDetector)
+                    .getDetectors()) {
                 if (childEncodingDetector instanceof HtmlEncodingDetector) {
-                    assertEquals(64000,
-                            ((HtmlEncodingDetector) childEncodingDetector).getMarkLimit(),
+                    assertEquals(64000, ((HtmlEncodingDetector) childEncodingDetector).getMarkLimit(),
                             childParser.getClass().toString());
                 } else if (childEncodingDetector instanceof UniversalEncodingDetector) {
-                    assertEquals(64001,
-                            ((UniversalEncodingDetector) childEncodingDetector).getMarkLimit(),
+                    assertEquals(64001, ((UniversalEncodingDetector) childEncodingDetector).getMarkLimit(),
                             childParser.getClass().toString());
                 } else if (childEncodingDetector instanceof Icu4jEncodingDetector) {
-                    assertEquals(64002,
-                            ((Icu4jEncodingDetector) childEncodingDetector).getMarkLimit(),
+                    assertEquals(64002, ((Icu4jEncodingDetector) childEncodingDetector).getMarkLimit(),
                             childParser.getClass().toString());
                 }
             }
@@ -260,8 +245,8 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
         assertNotContained("g\u00E5 til", xml);
 
         //now test that fix works
-        TikaConfig tikaConfig = new TikaConfig(getResourceAsStream(
-                "/org/apache/tika/config/TIKA-2485-encoding-detector-mark-limits.xml"));
+        TikaConfig tikaConfig = new TikaConfig(
+                getResourceAsStream("/org/apache/tika/config/TIKA-2485-encoding-detector-mark-limits.xml"));
         p = new AutoDetectParser(tikaConfig);
 
         metadata = new Metadata();
@@ -272,7 +257,6 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
         assertContains("gr\u00F8nt", xml);
         assertContains("g\u00E5 til", xml);
     }
-
 
     private void findEncodingDetectionParsers(Parser p, List<Parser> encodingDetectionParsers) {
 

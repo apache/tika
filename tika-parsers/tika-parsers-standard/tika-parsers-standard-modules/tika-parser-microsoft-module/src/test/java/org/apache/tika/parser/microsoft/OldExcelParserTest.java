@@ -19,10 +19,6 @@ package org.apache.tika.parser.microsoft;
 import static org.apache.tika.parser.microsoft.AbstractPOIContainerExtractionTest.getTestFile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
@@ -32,6 +28,9 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 /**
  * Tests for the Old Excel (2-4) parser
@@ -43,8 +42,7 @@ public class OldExcelParserTest extends TikaTest {
     public void testDetection() throws Exception {
         Detector detector = new DefaultDetector();
         try (TikaInputStream stream = getTestFile(file)) {
-            assertEquals(MediaType.application("vnd.ms-excel.sheet.4"),
-                    detector.detect(stream, new Metadata()));
+            assertEquals(MediaType.application("vnd.ms-excel.sheet.4"), detector.detect(stream, new Metadata()));
         }
     }
 
@@ -111,7 +109,6 @@ public class OldExcelParserTest extends TikaTest {
         assertContains("<p>(1)</p>", xml);
         assertContains("<p>5.0</p>", xml);
     }
-
 
     @Test
     public void testToXMLInOldExcelParser() throws Exception {

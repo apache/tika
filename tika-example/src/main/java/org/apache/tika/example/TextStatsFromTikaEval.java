@@ -25,7 +25,6 @@ import org.apache.tika.eval.core.textstats.CompositeTextStatsCalculator;
 import org.apache.tika.eval.core.textstats.TextStatsCalculator;
 import org.apache.tika.eval.core.tokens.CommonTokenResult;
 
-
 /**
  * These examples create a new {@link CompositeTextStatsCalculator}
  * for each call.  This is extremely inefficient because the lang id
@@ -50,9 +49,9 @@ public class TextStatsFromTikaEval {
         /*
             Note that the OOV requires language id, so you can also
             retrieve the detected languages with this:
-
+        
             List<Language> detectedLanguages = (List<Language>) results.get(LanguageIDWrapper.class);
-
+        
          */
 
         CommonTokenResult result = (CommonTokenResult) results.get(CommonTokens.class);

@@ -18,6 +18,12 @@ package org.apache.tika.server.standard.resource;
 
 import java.io.InputStream;
 
+import org.apache.cxf.jaxrs.ext.multipart.Attachment;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.server.core.resource.MetadataResource;
+import org.apache.tika.server.core.resource.TikaResource;
+import org.apache.tika.server.core.resource.TikaServerResource;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
@@ -28,12 +34,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
-import org.apache.cxf.jaxrs.ext.multipart.Attachment;
-
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.server.core.resource.MetadataResource;
-import org.apache.tika.server.core.resource.TikaResource;
-import org.apache.tika.server.core.resource.TikaServerResource;
 
 public class XMPMetadataResource extends MetadataResource implements TikaServerResource {
 
@@ -41,7 +41,8 @@ public class XMPMetadataResource extends MetadataResource implements TikaServerR
     @Path("{field}")
     @Produces({"application/rdf+xml"})
     @Override
-    public Response getMetadataField(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info, @PathParam("field") String field) throws Exception {
+    public Response getMetadataField(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info,
+            @PathParam("field") String field) throws Exception {
         return super.getMetadataField(is, httpHeaders, info, field);
     }
 
@@ -50,17 +51,16 @@ public class XMPMetadataResource extends MetadataResource implements TikaServerR
     @Produces({"application/rdf+xml"})
     @Path("form")
     public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info) throws Exception {
-        return Response
-                .ok(parseMetadata(att.getObject(InputStream.class), new Metadata(), att.getHeaders(), info))
+        return Response.ok(parseMetadata(att.getObject(InputStream.class), new Metadata(), att.getHeaders(), info))
                 .build();
     }
 
     @PUT
     @Produces({"application/rdf+xml"})
-    public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+    public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info)
+            throws Exception {
         Metadata metadata = new Metadata();
-        return Response
-                .ok(parseMetadata(TikaResource.getInputStream(is, metadata, httpHeaders, info), metadata, httpHeaders.getRequestHeaders(), info))
-                .build();
+        return Response.ok(parseMetadata(TikaResource.getInputStream(is, metadata, httpHeaders, info), metadata,
+                httpHeaders.getRequestHeaders(), info)).build();
     }
 }

@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.standard;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,19 +23,20 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.gagravarr.tika.OggDetector;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.detect.microsoft.POIFSContainerDetector;
 import org.apache.tika.detect.zip.DefaultZipContainerDetector;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.resource.TikaDetectors;
+import org.gagravarr.tika.OggDetector;
+import org.junit.jupiter.api.Test;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.ws.rs.core.Response;
 
 public class TikaDetectorsTest extends CXFTestBase {
 
@@ -54,11 +54,7 @@ public class TikaDetectorsTest extends CXFTestBase {
 
     @Test
     public void testGetPlainText() throws Exception {
-        Response response = WebClient
-                .create(endPoint + DETECTORS_PATH)
-                .type("text/plain")
-                .accept("text/plain")
-                .get();
+        Response response = WebClient.create(endPoint + DETECTORS_PATH).type("text/plain").accept("text/plain").get();
 
         String text = getStringFromInputStream((InputStream) response.getEntity());
         assertContains("org.apache.tika.detect.DefaultDetector (Composite Detector)", text);
@@ -70,11 +66,7 @@ public class TikaDetectorsTest extends CXFTestBase {
 
     @Test
     public void testGetHTML() throws Exception {
-        Response response = WebClient
-                .create(endPoint + DETECTORS_PATH)
-                .type("text/html")
-                .accept("text/html")
-                .get();
+        Response response = WebClient.create(endPoint + DETECTORS_PATH).type("text/html").accept("text/html").get();
 
         String text = getStringFromInputStream((InputStream) response.getEntity());
         assertContains("<h2>DefaultDetector</h2>", text);
@@ -93,16 +85,12 @@ public class TikaDetectorsTest extends CXFTestBase {
     @Test
     @SuppressWarnings("unchecked")
     public void testGetJSON() throws Exception {
-        Response response = WebClient
-                .create(endPoint + DETECTORS_PATH)
+        Response response = WebClient.create(endPoint + DETECTORS_PATH)
                 .type(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
-                .accept(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
-                .get();
+                .accept(jakarta.ws.rs.core.MediaType.APPLICATION_JSON).get();
 
         String jsonStr = getStringFromInputStream((InputStream) response.getEntity());
-        Map<String, Object> json = new ObjectMapper()
-                .readerFor(Map.class)
-                .readValue(jsonStr);
+        Map<String, Object> json = new ObjectMapper().readerFor(Map.class).readValue(jsonStr);
 
         // Should have a nested structure
         assertTrue(json.containsKey("name"));
@@ -123,24 +111,16 @@ public class TikaDetectorsTest extends CXFTestBase {
             assertEquals(false, d.containsKey("children"));
 
             String name = (String) d.get("name");
-            if (OggDetector.class
-                    .getName()
-                    .equals(name)) {
+            if (OggDetector.class.getName().equals(name)) {
                 hasOgg = true;
             }
-            if (POIFSContainerDetector.class
-                    .getName()
-                    .equals(name)) {
+            if (POIFSContainerDetector.class.getName().equals(name)) {
                 hasPOIFS = true;
             }
-            if (DefaultZipContainerDetector.class
-                    .getName()
-                    .equals(name)) {
+            if (DefaultZipContainerDetector.class.getName().equals(name)) {
                 hasZIP = true;
             }
-            if (MimeTypes.class
-                    .getName()
-                    .equals(name)) {
+            if (MimeTypes.class.getName().equals(name)) {
                 hasMime = true;
             }
         }

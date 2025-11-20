@@ -21,12 +21,12 @@ import static org.apache.tika.serialization.ParseContextSerializer.PARSE_CONTEXT
 import java.io.IOException;
 import java.util.Locale;
 
+import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.utils.StringUtils;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
-
-import org.apache.tika.pipes.core.FetchEmitTuple;
-import org.apache.tika.utils.StringUtils;
 
 public class FetchEmitTupleSerializer extends JsonSerializer<FetchEmitTuple> {
     public static final String ID = "id";
@@ -39,7 +39,8 @@ public class FetchEmitTupleSerializer extends JsonSerializer<FetchEmitTuple> {
     public static final String METADATA_KEY = "metadata";
     public static final String ON_PARSE_EXCEPTION = "onParseException";
 
-    public void serialize(FetchEmitTuple t, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+    public void serialize(FetchEmitTuple t, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
+            throws IOException {
 
         jsonGenerator.writeStartObject();
         jsonGenerator.writeStringField(ID, t.getId());

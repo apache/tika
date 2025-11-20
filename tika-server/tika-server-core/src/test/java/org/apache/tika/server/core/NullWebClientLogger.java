@@ -27,7 +27,6 @@ import org.apache.cxf.common.logging.AbstractDelegatingLogger;
  */
 public class NullWebClientLogger extends AbstractDelegatingLogger {
 
-
     public NullWebClientLogger(String name, String resourceBundleName) {
         super(name, resourceBundleName);
     }

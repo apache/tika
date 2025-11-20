@@ -23,8 +23,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.DefaultParser;
@@ -33,6 +31,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.executable.ExecutableParser;
 import org.apache.tika.parser.xml.XMLParser;
+import org.junit.jupiter.api.Test;
 
 /**
  * Junit test class for {@link TikaConfig}, which cover things
@@ -51,7 +50,6 @@ public class TikaParserConfigTest extends AbstractTikaConfigTest {
         MediaType PDF = MediaType.application("pdf");
         MediaType JPEG = MediaType.image("jpeg");
 
-
         // Has two parsers
         assertEquals(CompositeParser.class, parser.getClass());
         CompositeParser cParser = (CompositeParser) parser;
@@ -63,7 +61,6 @@ public class TikaParserConfigTest extends AbstractTikaConfigTest {
         ParserDecorator p0 = (ParserDecorator) cParser.getAllComponentParsers().get(0);
         ParserDecorator p1 = (ParserDecorator) cParser.getAllComponentParsers().get(1);
 
-
         // DefaultParser will be wrapped with excludes
         assertEquals(DefaultParser.class, p0.getWrappedParser().getClass());
 
@@ -71,7 +68,6 @@ public class TikaParserConfigTest extends AbstractTikaConfigTest {
         assertContains(PDF, p0.getWrappedParser().getSupportedTypes(context));
         assertNotContained(JPEG, p0.getSupportedTypes(context));
         assertContains(JPEG, p0.getWrappedParser().getSupportedTypes(context));
-
 
         // Will have an empty parser for PDF
         assertEquals(EmptyParser.class, p1.getWrappedParser().getClass());
@@ -90,16 +86,13 @@ public class TikaParserConfigTest extends AbstractTikaConfigTest {
         MediaType PE_EXE = MediaType.application("x-msdownload");
         MediaType ELF = MediaType.application("x-elf");
 
-
         // Get the DefaultParser from the config
-        ParserDecorator confWrappedParser =
-                (ParserDecorator) parser.getParsers().get(MediaType.APPLICATION_XML);
+        ParserDecorator confWrappedParser = (ParserDecorator) parser.getParsers().get(MediaType.APPLICATION_XML);
         assertNotNull(confWrappedParser);
         DefaultParser confParser = (DefaultParser) confWrappedParser.getWrappedParser();
 
         // Get a fresh "default" DefaultParser
         DefaultParser normParser = new DefaultParser(config.getMediaTypeRegistry());
-
 
         // The default one will offer the Executable Parser
         assertContains(PE_EXE, normParser.getSupportedTypes(context));
@@ -113,7 +106,6 @@ public class TikaParserConfigTest extends AbstractTikaConfigTest {
             }
         }
         assertTrue(hasExec);
-
 
         // The one from the config won't
         assertNotContained(PE_EXE, confParser.getSupportedTypes(context));

@@ -55,7 +55,6 @@ public abstract class PipesReporter implements Closeable {
     //crashes if that is the desired behavior.
     public abstract void report(FetchEmitTuple t, PipesResult result, long elapsed);
 
-
     /**
      * No-op implementation. Override for custom behavior
      * and make sure to override {@link #supportsTotalCount()}

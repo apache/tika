@@ -24,16 +24,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-import com.azure.core.http.rest.PagedIterable;
-import com.azure.storage.blob.BlobContainerClient;
-import com.azure.storage.blob.BlobServiceClient;
-import com.azure.storage.blob.BlobServiceClientBuilder;
-import com.azure.storage.blob.models.BlobItem;
-import com.azure.storage.blob.models.BlobListDetails;
-import com.azure.storage.blob.models.ListBlobsOptions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -47,6 +37,16 @@ import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.storage.blob.BlobContainerClient;
+import com.azure.storage.blob.BlobServiceClient;
+import com.azure.storage.blob.BlobServiceClientBuilder;
+import com.azure.storage.blob.models.BlobItem;
+import com.azure.storage.blob.models.BlobListDetails;
+import com.azure.storage.blob.models.ListBlobsOptions;
 
 public class AZBlobPipesIterator extends PipesIterator implements Initializable {
 
@@ -96,25 +96,17 @@ public class AZBlobPipesIterator extends PipesIterator implements Initializable 
         PagedIterable<BlobItem> blobs = null;
         if (StringUtils.isBlank(prefix)) {
             ListBlobsOptions options = new ListBlobsOptions().setDetails(new BlobListDetails()
-                    .setRetrieveDeletedBlobs(false)
-                    .setRetrieveMetadata(false)
-                    .setRetrieveSnapshots(false));
+                    .setRetrieveDeletedBlobs(false).setRetrieveMetadata(false).setRetrieveSnapshots(false));
             blobs = blobContainerClient.listBlobs(options, Duration.of(timeoutMillis, ChronoUnit.MILLIS));
         } else {
-            ListBlobsOptions options = new ListBlobsOptions()
-                    .setPrefix(prefix)
-                    .setDetails(new BlobListDetails()
-                            .setRetrieveDeletedBlobs(false)
-                            .setRetrieveMetadata(false)
-                            .setRetrieveSnapshots(false));
+            ListBlobsOptions options = new ListBlobsOptions().setPrefix(prefix).setDetails(new BlobListDetails()
+                    .setRetrieveDeletedBlobs(false).setRetrieveMetadata(false).setRetrieveSnapshots(false));
             blobs = blobContainerClient.listBlobs(options, Duration.of(timeoutMillis, ChronoUnit.MILLIS));
         }
 
         for (BlobItem blob : blobs) {
             //tried blob.isPrefix() and got NPE ... user error?
-            if (blob == null || blob.getProperties() == null || blob
-                    .getProperties()
-                    .getContentLength() == 0) {
+            if (blob == null || blob.getProperties() == null || blob.getProperties().getContentLength() == 0) {
                 continue;
             }
             long elapsed = System.currentTimeMillis() - start;
@@ -124,8 +116,8 @@ public class AZBlobPipesIterator extends PipesIterator implements Initializable 
             //TODO -- extract metadata about content length etc from properties
             ParseContext parseContext = new ParseContext();
             parseContext.set(HandlerConfig.class, handlerConfig);
-            tryToAdd(new FetchEmitTuple(blob.getName(), new FetchKey(fetcherName, blob.getName()), new EmitKey(emitterName, blob.getName()), new Metadata(), parseContext,
-                    getOnParseException()));
+            tryToAdd(new FetchEmitTuple(blob.getName(), new FetchKey(fetcherName, blob.getName()),
+                    new EmitKey(emitterName, blob.getName()), new Metadata(), parseContext, getOnParseException()));
             count++;
         }
         long elapsed = System.currentTimeMillis() - start;
@@ -135,10 +127,7 @@ public class AZBlobPipesIterator extends PipesIterator implements Initializable 
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         //TODO -- allow authentication via other methods
-        blobServiceClient = new BlobServiceClientBuilder()
-                .endpoint(endpoint)
-                .sasToken(sasToken)
-                .buildClient();
+        blobServiceClient = new BlobServiceClientBuilder().endpoint(endpoint).sasToken(sasToken).buildClient();
         blobContainerClient = blobServiceClient.getBlobContainerClient(container);
     }
 

@@ -26,19 +26,17 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class OneOffMimeTest extends TikaTest {
 
-    @Disabled("use for development purposes on local files that " +
-            "cannot be added to Tika's repo.")
+    @Disabled("use for development purposes on local files that " + "cannot be added to Tika's repo.")
     @Test
     public void testOne() throws Exception {
         Path baseDir = Paths.get("");
@@ -68,8 +66,7 @@ public class OneOffMimeTest extends TikaTest {
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, p.getFileName().toString());
         assertEquals(expected,
                 getRecursiveMetadata(UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[0]).get(),
-                        metadata,
-                        new ParseContext(), true).get(0).get(Metadata.CONTENT_TYPE));
+                        metadata, new ParseContext(), true).get(0).get(Metadata.CONTENT_TYPE));
     }
 
     private void assertByData(String expected, Path p) throws Exception {

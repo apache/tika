@@ -16,18 +16,14 @@
  */
 package org.apache.tika.config;
 
-
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.exception.TikaConfigException;
-
+import org.slf4j.LoggerFactory;
 
 /**
  * This is to be used to handle potential recoverable problems that
  * might arise during initialization.
  */
 public interface InitializableProblemHandler {
-
 
     /**
      * Strategy that simply ignores all problems.
@@ -70,8 +66,7 @@ public interface InitializableProblemHandler {
         }
     };
     InitializableProblemHandler THROW = new InitializableProblemHandler() {
-        public void handleInitializableProblem(String classname, String message)
-                throws TikaConfigException {
+        public void handleInitializableProblem(String classname, String message) throws TikaConfigException {
             throw new TikaConfigException(message);
         }
 

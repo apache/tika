@@ -18,18 +18,19 @@ package org.apache.tika.serialization;
 
 import java.io.IOException;
 
+import org.apache.tika.metadata.Metadata;
+
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 
-import org.apache.tika.metadata.Metadata;
-
 public class MetadataDeserializer extends JsonDeserializer<Metadata> {
 
     @Override
-    public Metadata deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JacksonException {
+    public Metadata deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
+            throws IOException, JacksonException {
         Metadata metadata = new Metadata();
         boolean keepGoing = true;
         while (keepGoing) {

@@ -22,8 +22,6 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.FetchEmitTuple;
@@ -31,6 +29,7 @@ import org.apache.tika.pipes.core.HandlerConfig;
 import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
 import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.junit.jupiter.api.Test;
 
 public class JsonFetchEmitTupleTest {
 
@@ -45,11 +44,12 @@ public class JsonFetchEmitTupleTest {
 
         ParseContext parseContext = new ParseContext();
 
-        HandlerConfig h = new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML, HandlerConfig.PARSE_MODE.CONCATENATE, 10000, 10, true);
+        HandlerConfig h = new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML,
+                HandlerConfig.PARSE_MODE.CONCATENATE, 10000, 10, true);
         parseContext.set(HandlerConfig.class, h);
 
-        FetchEmitTuple t = new FetchEmitTuple("my_id", new FetchKey("my_fetcher", "fetchKey1"), new EmitKey("my_emitter", "emitKey1"), m, parseContext,
-                FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
+        FetchEmitTuple t = new FetchEmitTuple("my_id", new FetchKey("my_fetcher", "fetchKey1"),
+                new EmitKey("my_emitter", "emitKey1"), m, parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
         Reader reader = new StringReader(writer.toString());
@@ -72,8 +72,8 @@ public class JsonFetchEmitTupleTest {
          *                         HandlerConfig.PARSE_MODE.CONCATENATE,
          *                         10000,10, true),
          */
-        FetchEmitTuple t = new FetchEmitTuple("my_id", new FetchKey("my_fetcher", "fetchKey1", 10, 1000), new EmitKey("my_emitter", "emitKey1"), m, new ParseContext(),
-                FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
+        FetchEmitTuple t = new FetchEmitTuple("my_id", new FetchKey("my_fetcher", "fetchKey1", 10, 1000),
+                new EmitKey("my_emitter", "emitKey1"), m, new ParseContext(), FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
         Reader reader = new StringReader(writer.toString());
@@ -91,7 +91,8 @@ public class JsonFetchEmitTupleTest {
          *                         HandlerConfig.PARSE_MODE.CONCATENATE,
          *                         10000,10, true)
          */
-        FetchEmitTuple t = new FetchEmitTuple("my_id", new FetchKey("my_fetcher", "fetchKey1", 10, 1000), new EmitKey("my_emitter", "emitKey1"), new Metadata(), new ParseContext(),
+        FetchEmitTuple t = new FetchEmitTuple("my_id", new FetchKey("my_fetcher", "fetchKey1", 10, 1000),
+                new EmitKey("my_emitter", "emitKey1"), new Metadata(), new ParseContext(),
                 FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);

@@ -23,9 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -33,6 +30,8 @@ import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 /**
  * Tests for Microsoft Project (MPP) Files.
@@ -44,16 +43,14 @@ public class ProjectParserTest {
 
     @Test
     public void testProject2003() throws Exception {
-        try (InputStream input = ProjectParserTest.class
-                .getResourceAsStream("/test-documents/testPROJECT2003.mpp")) {
+        try (InputStream input = ProjectParserTest.class.getResourceAsStream("/test-documents/testPROJECT2003.mpp")) {
             doTestProject(input);
         }
     }
 
     @Test
     public void testProject2007() throws Exception {
-        try (InputStream input = ProjectParserTest.class
-                .getResourceAsStream("/test-documents/testPROJECT2007.mpp")) {
+        try (InputStream input = ProjectParserTest.class.getResourceAsStream("/test-documents/testPROJECT2007.mpp")) {
             doTestProject(input);
         }
     }
@@ -65,14 +62,11 @@ public class ProjectParserTest {
 
         assertEquals("application/vnd.ms-project", metadata.get(Metadata.CONTENT_TYPE));
 
-        assertEquals("The quick brown fox jumps over the lazy dog",
-                metadata.get(TikaCoreProperties.TITLE));
-        assertEquals("Pangram, fox, dog",
-                metadata.get(Office.KEYWORDS));
+        assertEquals("The quick brown fox jumps over the lazy dog", metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("Pangram, fox, dog", metadata.get(Office.KEYWORDS));
         assertEquals("Nevin Nollop", metadata.get(TikaCoreProperties.CREATOR));
         assertNull(metadata.get(TikaCoreProperties.MODIFIER));
-        assertContains("Pangram, fox, dog",
-                Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
+        assertContains("Pangram, fox, dog", Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
         assertContains("Gym class featuring a brown fox and lazy dog",
                 Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
         assertEquals("Comment Vulpes vulpes comment", metadata.get(TikaCoreProperties.COMMENTS));

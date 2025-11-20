@@ -18,8 +18,6 @@ package org.apache.tika.ossfuzz;
 
 import java.io.InputStream;
 
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -28,7 +26,7 @@ import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.ToTextContentHandler;
-
+import org.xml.sax.ContentHandler;
 
 class ParserFuzzer {
 
@@ -36,7 +34,6 @@ class ParserFuzzer {
         parseBytes(parser, bytes, parseContext);
         parseFile(parser, bytes, parseContext);
     }
-
 
     public static void parseOne(Parser parser, byte[] bytes) throws Throwable {
         parseBytes(parser, bytes, new ParseContext());

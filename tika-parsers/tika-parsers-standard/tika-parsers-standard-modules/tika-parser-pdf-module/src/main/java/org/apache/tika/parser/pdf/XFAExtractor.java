@@ -21,18 +21,18 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * This class offers an initial capability to
@@ -54,10 +54,8 @@ import org.apache.tika.utils.XMLReaderUtils;
  */
 class XFAExtractor {
 
-    private static final Pattern XFA_TEMPLATE_ANY_VERSION =
-            Pattern.compile("^http://www.xfa.org/schema/xfa-template");
-    private static final Pattern TEXT_PATTERN =
-            Pattern.compile("^(speak|text|contents-richtext|toolTip|exData)$");
+    private static final Pattern XFA_TEMPLATE_ANY_VERSION = Pattern.compile("^http://www.xfa.org/schema/xfa-template");
+    private static final Pattern TEXT_PATTERN = Pattern.compile("^(speak|text|contents-richtext|toolTip|exData)$");
 
     private static final String XFA_DATA_NS = "http://www.xfa.org/schema/xfa-data/1.0/";
 
@@ -91,12 +89,13 @@ class XFAExtractor {
 
         XMLStreamReader reader = XMLReaderUtils.getXMLInputFactory(context).createXMLStreamReader(xfaIs);
         while (reader.hasNext()) {
-            switch (reader.next()) {
-                case XMLStreamConstants.START_ELEMENT:
+            switch (reader.next())
+            {
+                case XMLStreamConstants.START_ELEMENT :
                     QName name = reader.getName();
                     String localName = name.getLocalPart();
-                    if (xfaTemplateMatcher.reset(name.getNamespaceURI()).find() &&
-                            FIELD_LN.equals(name.getLocalPart())) {
+                    if (xfaTemplateMatcher.reset(name.getNamespaceURI()).find()
+                            && FIELD_LN.equals(name.getLocalPart())) {
                         handleField(reader, namedFields);
                     } else if (XFA_DATA.equals(name)) { //full qname match is important!
                         loadData(reader, pdfObjRToValues);
@@ -104,7 +103,7 @@ class XFAExtractor {
                         scrapeTextUntil(reader, xhtml, name);
                     }
                     break;
-                case XMLStreamConstants.END_ELEMENT:
+                case XMLStreamConstants.END_ELEMENT :
                     break;
             }
         }
@@ -120,9 +119,7 @@ class XFAExtractor {
         for (Map.Entry<String, XFAField> e : namedFields.entrySet()) {
             String fieldName = e.getKey();
             XFAField field = e.getValue();
-            String displayFieldName =
-                    (field.toolTip == null || field.toolTip.isBlank()) ? fieldName :
-                            field.toolTip;
+            String displayFieldName = (field.toolTip == null || field.toolTip.isBlank()) ? fieldName : field.toolTip;
             String[] fieldValues = pdfObjRToValues.getValues(fieldName);
             if (fieldValues.length == 0) {
                 fieldValues = new String[]{""};
@@ -148,27 +145,28 @@ class XFAExtractor {
     }
 
     //try to scrape the text until the endElement
-    private void scrapeTextUntil(XMLStreamReader reader, XHTMLContentHandler xhtml,
-                                 QName endElement) throws XMLStreamException, SAXException {
+    private void scrapeTextUntil(XMLStreamReader reader, XHTMLContentHandler xhtml, QName endElement)
+            throws XMLStreamException, SAXException {
         StringBuilder buffer = new StringBuilder();
         boolean keepGoing = true;
         while (reader.hasNext() && keepGoing) {
-            switch (reader.next()) {
-                case XMLStreamConstants.START_ELEMENT:
+            switch (reader.next())
+            {
+                case XMLStreamConstants.START_ELEMENT :
                     break;
-                case XMLStreamConstants.CHARACTERS:
+                case XMLStreamConstants.CHARACTERS :
                     int start = reader.getTextStart();
                     int length = reader.getTextLength();
                     buffer.append(reader.getTextCharacters(), start, length);
                     break;
 
-                case XMLStreamConstants.CDATA:
+                case XMLStreamConstants.CDATA :
                     start = reader.getTextStart();
                     length = reader.getTextLength();
                     buffer.append(reader.getTextCharacters(), start, length);
                     break;
 
-                case (XMLStreamConstants.END_ELEMENT):
+                case (XMLStreamConstants.END_ELEMENT) :
                     if (reader.getName().equals(endElement)) {
                         keepGoing = false;
                     } else if ("p".equals(reader.getName().getLocalPart())) {
@@ -184,28 +182,27 @@ class XFAExtractor {
         }
     }
 
-
-    private String scrapeTextUntil(XMLStreamReader reader, QName endElement)
-            throws XMLStreamException {
+    private String scrapeTextUntil(XMLStreamReader reader, QName endElement) throws XMLStreamException {
         StringBuilder buffer = new StringBuilder();
         boolean keepGoing = true;
         while (reader.hasNext() && keepGoing) {
-            switch (reader.next()) {
-                case XMLStreamConstants.START_ELEMENT:
+            switch (reader.next())
+            {
+                case XMLStreamConstants.START_ELEMENT :
                     break;
-                case XMLStreamConstants.CHARACTERS:
+                case XMLStreamConstants.CHARACTERS :
                     int start = reader.getTextStart();
                     int length = reader.getTextLength();
                     buffer.append(reader.getTextCharacters(), start, length);
                     break;
 
-                case XMLStreamConstants.CDATA:
+                case XMLStreamConstants.CDATA :
                     start = reader.getTextStart();
                     length = reader.getTextLength();
                     buffer.append(reader.getTextCharacters(), start, length);
                     break;
 
-                case (XMLStreamConstants.END_ELEMENT):
+                case (XMLStreamConstants.END_ELEMENT) :
                     if (reader.getName().equals(endElement)) {
                         keepGoing = false;
                     } else if ("p".equals(reader.getName().getLocalPart())) {
@@ -217,28 +214,28 @@ class XFAExtractor {
         return buffer.toString();
     }
 
-    private void loadData(XMLStreamReader reader, Metadata pdfObjRToValues)
-            throws XMLStreamException {
+    private void loadData(XMLStreamReader reader, Metadata pdfObjRToValues) throws XMLStreamException {
         //reader is at the "xfa:data" element
         //scrape the contents from the text containing nodes
         StringBuilder buffer = new StringBuilder();
         while (reader.hasNext()) {
-            switch (reader.next()) {
-                case (XMLStreamConstants.START_ELEMENT):
+            switch (reader.next())
+            {
+                case (XMLStreamConstants.START_ELEMENT) :
                     break;
-                case XMLStreamConstants.CHARACTERS:
+                case XMLStreamConstants.CHARACTERS :
                     int start = reader.getTextStart();
                     int length = reader.getTextLength();
                     buffer.append(reader.getTextCharacters(), start, length);
                     break;
 
-                case XMLStreamConstants.CDATA:
+                case XMLStreamConstants.CDATA :
                     start = reader.getTextStart();
                     length = reader.getTextLength();
                     buffer.append(reader.getTextCharacters(), start, length);
                     break;
 
-                case (XMLStreamConstants.END_ELEMENT):
+                case (XMLStreamConstants.END_ELEMENT) :
                     if (buffer.length() > 0) {
                         String localName = reader.getLocalName();
                         pdfObjRToValues.add(localName, buffer.toString());
@@ -253,30 +250,30 @@ class XFAExtractor {
         }
     }
 
-    private void handleField(XMLStreamReader reader, Map<String, XFAField> fields)
-            throws XMLStreamException {
+    private void handleField(XMLStreamReader reader, Map<String, XFAField> fields) throws XMLStreamException {
         //reader is set to the field element
         String fieldName = findFirstAttributeValue(reader, "name");
         String pdfObjRef = "";
         String toolTip = "";
         while (reader.hasNext()) {
-            switch (reader.next()) {
-                case XMLStreamConstants.START_ELEMENT:
+            switch (reader.next())
+            {
+                case XMLStreamConstants.START_ELEMENT :
                     if ("toolTip".equals(reader.getName().getLocalPart())) {
                         toolTip = scrapeTextUntil(reader, reader.getName());
                     }
                     // add checkbutton, etcif (reader.getName().equals())
                     break;
-                case XMLStreamConstants.END_ELEMENT:
-                    if (xfaTemplateMatcher.reset(reader.getName().getNamespaceURI()).find() &&
-                            FIELD_LN.equals(reader.getName().getLocalPart())) {
+                case XMLStreamConstants.END_ELEMENT :
+                    if (xfaTemplateMatcher.reset(reader.getName().getNamespaceURI()).find()
+                            && FIELD_LN.equals(reader.getName().getLocalPart())) {
                         if (fieldName != null) {
                             fields.put(fieldName, new XFAField(fieldName, toolTip, pdfObjRef));
                         }
                         return;
                     }
                     break;
-                case XMLStreamConstants.PROCESSING_INSTRUCTION:
+                case XMLStreamConstants.PROCESSING_INSTRUCTION :
                     if ("PDF_OBJR".equals(reader.getPITarget())) {
                         pdfObjRef = reader.getPIData();
                     }
@@ -310,8 +307,8 @@ class XFAExtractor {
 
         @Override
         public String toString() {
-            return "XFAField{" + "fieldName='" + fieldName + '\'' + ", toolTip='" + toolTip + '\'' +
-                    ", pdfObjRef='" + pdfObjRef + '\'' + ", value='" + value + '\'' + '}';
+            return "XFAField{" + "fieldName='" + fieldName + '\'' + ", toolTip='" + toolTip + '\'' + ", pdfObjRef='"
+                    + pdfObjRef + '\'' + ", value='" + value + '\'' + '}';
         }
     }
 }

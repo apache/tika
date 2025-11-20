@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.journal;
 
 import java.io.File;
@@ -23,19 +22,19 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
 
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
 import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 public class GrobidRESTParser {
 
@@ -66,8 +65,7 @@ public class GrobidRESTParser {
 
     private static String readRestUrl() throws IOException {
         Properties grobidProperties = new Properties();
-        grobidProperties
-                .load(GrobidRESTParser.class.getResourceAsStream("GrobidExtractor.properties"));
+        grobidProperties.load(GrobidRESTParser.class.getResourceAsStream("GrobidExtractor.properties"));
 
         return grobidProperties.getProperty("grobid.server.url");
     }
@@ -84,8 +82,8 @@ public class GrobidRESTParser {
         }
     }
 
-    public void parse(String filePath, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws FileNotFoundException {
+    public void parse(String filePath, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws FileNotFoundException {
 
         File pdfFile = new File(filePath);
         ContentDisposition cd = new ContentDisposition(
@@ -95,12 +93,10 @@ public class GrobidRESTParser {
 
         try {
             checkMode();
-            Response response = WebClient.create(restHostUrlStr +
-                            (legacyMode ? GROBID_LEGACY_PROCESSHEADER_PATH : GROBID_PROCESSHEADER_PATH))
-                    .accept(MediaType.APPLICATION_XML)
-                    .type(MediaType.MULTIPART_FORM_DATA)
-                    .post(body);
-
+            Response response = WebClient
+                    .create(restHostUrlStr
+                            + (legacyMode ? GROBID_LEGACY_PROCESSHEADER_PATH : GROBID_PROCESSHEADER_PATH))
+                    .accept(MediaType.APPLICATION_XML).type(MediaType.MULTIPART_FORM_DATA).post(body);
 
             String resp = response.readEntity(String.class);
             Metadata teiMet = new TEIDOMParser().parse(resp, context);

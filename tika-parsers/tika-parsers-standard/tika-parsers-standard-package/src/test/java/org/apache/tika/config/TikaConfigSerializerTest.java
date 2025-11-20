@@ -37,21 +37,19 @@ public class TikaConfigSerializerTest {
         TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
         StringWriter writer = new StringWriter();
 
-        TikaConfigSerializer.serialize(tikaConfig, TikaConfigSerializer.Mode.STATIC_FULL,
-                writer, StandardCharsets.UTF_8);
+        TikaConfigSerializer.serialize(tikaConfig, TikaConfigSerializer.Mode.STATIC_FULL, writer,
+                StandardCharsets.UTF_8);
         String xml = writer.toString().replaceAll("\\s+", " ");
-        String encodingNeedle = "<encodingDetector class=\"org.apache.tika.parser.txt" +
-                ".Icu4jEncodingDetector\">" +
-                " <params> <param name=\"ignoreCharsets\" type=\"list\"/>";
+        String encodingNeedle = "<encodingDetector class=\"org.apache.tika.parser.txt" + ".Icu4jEncodingDetector\">"
+                + " <params> <param name=\"ignoreCharsets\" type=\"list\"/>";
         assertContains(encodingNeedle, xml);
 
-        String detectorNeedle = "<detector class=\"org.apache.tika.detect.zip.DefaultZipContainerDetector\">" +
-                " <params> <param name=\"markLimit\" type=\"int\">16777216</param> </params>";
+        String detectorNeedle = "<detector class=\"org.apache.tika.detect.zip.DefaultZipContainerDetector\">"
+                + " <params> <param name=\"markLimit\" type=\"int\">16777216</param> </params>";
         assertContains(detectorNeedle, xml);
 
-        String parserNeedle = "<parser class=\"org.apache.tika.parser.pdf.PDFParser\">" +
-                " <params> <param name=\"allowExtractionForAccessibility\" " +
-                "type=\"bool\">true</param>";
+        String parserNeedle = "<parser class=\"org.apache.tika.parser.pdf.PDFParser\">"
+                + " <params> <param name=\"allowExtractionForAccessibility\" " + "type=\"bool\">true</param>";
 
         assertContains(parserNeedle, xml);
         //TODO This is still to be implemented -- we do not want to show the default renderer here
@@ -69,11 +67,10 @@ public class TikaConfigSerializerTest {
         TikaConfig tikaConfig = new TikaConfig(getPath("tika-config-tesseract-arbitrary.xml"));
         StringWriter writer = new StringWriter();
 
-        TikaConfigSerializer.serialize(tikaConfig, TikaConfigSerializer.Mode.STATIC,
-                writer, StandardCharsets.UTF_8);
+        TikaConfigSerializer.serialize(tikaConfig, TikaConfigSerializer.Mode.STATIC, writer, StandardCharsets.UTF_8);
         String xml = writer.toString().replaceAll("\\s+", " ");
-        String needle = "<param name=\"otherTesseractSettings\" type=\"list\"> " +
-                "<string>textord_initialx_ile 0.75</string> <string>textord_noise_hfract 0.15625</string> </param>";
+        String needle = "<param name=\"otherTesseractSettings\" type=\"list\"> "
+                + "<string>textord_initialx_ile 0.75</string> <string>textord_noise_hfract 0.15625</string> </param>";
         assertContains(needle, xml);
         //For now, make sure that deserialization basically works;
         //add many more unit tests!
@@ -86,16 +83,14 @@ public class TikaConfigSerializerTest {
     public void testOfficeParserParams() throws Exception {
         TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
         StringWriter writer = new StringWriter();
-        TikaConfigSerializer.serialize(tikaConfig, TikaConfigSerializer.Mode.STATIC_FULL,
-                writer, StandardCharsets.UTF_8);
-        assertContainsCount("<param name=\"concatenatePhoneticRuns\" type=\"bool\">true</param>",
-                writer.toString(), 3);
+        TikaConfigSerializer.serialize(tikaConfig, TikaConfigSerializer.Mode.STATIC_FULL, writer,
+                StandardCharsets.UTF_8);
+        assertContainsCount("<param name=\"concatenatePhoneticRuns\" type=\"bool\">true</param>", writer.toString(), 3);
     }
 
     private Path getPath(String config) {
         try {
-            return Paths.get(TikaConfigSerializerTest.class.getResource("/configs/" + config)
-                    .toURI());
+            return Paths.get(TikaConfigSerializerTest.class.getResource("/configs/" + config).toURI());
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }

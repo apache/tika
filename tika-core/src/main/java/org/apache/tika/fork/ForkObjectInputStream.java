@@ -92,8 +92,7 @@ class ForkObjectInputStream extends ObjectInputStream {
         byte[] data = new byte[n];
         input.readFully(data);
 
-        ObjectInputStream deserializer =
-                new ForkObjectInputStream(new ByteArrayInputStream(data), loader);
+        ObjectInputStream deserializer = new ForkObjectInputStream(new ByteArrayInputStream(data), loader);
         return deserializer.readObject();
     }
 

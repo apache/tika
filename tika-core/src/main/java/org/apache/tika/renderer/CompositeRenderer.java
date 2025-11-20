@@ -13,7 +13,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */package org.apache.tika.renderer;
+ */
+package org.apache.tika.renderer;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,8 +61,8 @@ public class CompositeRenderer implements Renderer, Initializable {
     }
 
     @Override
-    public RenderResults render(InputStream is, Metadata metadata, ParseContext parseContext,
-                                RenderRequest... requests) throws IOException, TikaException {
+    public RenderResults render(InputStream is, Metadata metadata, ParseContext parseContext, RenderRequest... requests)
+            throws IOException, TikaException {
 
         String mediaTypeString = metadata.get(TikaCoreProperties.TYPE);
         if (mediaTypeString == null) {
@@ -87,14 +88,12 @@ public class CompositeRenderer implements Renderer, Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
 
     }
 
     private static List<Renderer> getDefaultRenderers(ServiceLoader loader) {
-        List<Renderer> staticRenderers =
-                loader.loadStaticServiceProviders(Renderer.class);
+        List<Renderer> staticRenderers = loader.loadStaticServiceProviders(Renderer.class);
 
         ServiceLoaderUtils.sortLoadedClasses(staticRenderers);
         return staticRenderers;

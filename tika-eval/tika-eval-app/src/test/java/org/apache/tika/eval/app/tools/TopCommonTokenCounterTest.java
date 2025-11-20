@@ -26,12 +26,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.tika.TikaTest;
+import org.apache.tika.utils.ProcessUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-
-import org.apache.tika.TikaTest;
-import org.apache.tika.utils.ProcessUtils;
 
 public class TopCommonTokenCounterTest extends TikaTest {
     private final static String INPUT_FILE = "lang_file.txt";
@@ -42,8 +41,8 @@ public class TopCommonTokenCounterTest extends TikaTest {
 
     @BeforeAll
     public static void setUp() throws Exception {
-        String[] docs =
-                new String[]{"th quick brown fox", "jumped over th brown lazy", "brown lazy fox", "\u666e\u6797\u65af\u987f\u5927\u5b66", "\u666e\u6797\u65af\u987f\u5927\u5b66"};
+        String[] docs = new String[]{"th quick brown fox", "jumped over th brown lazy", "brown lazy fox",
+                "\u666e\u6797\u65af\u987f\u5927\u5b66", "\u666e\u6797\u65af\u987f\u5927\u5b66"};
 
         try (BufferedWriter writer = Files.newBufferedWriter(WORKING_DIR.resolve(INPUT_FILE), StandardCharsets.UTF_8)) {
             //do this 10 times to bump the numbers above the TopCommonTokenCounter's MIN_DOC_FREQ
@@ -55,21 +54,15 @@ public class TopCommonTokenCounterTest extends TikaTest {
             }
             writer.flush();
         }
-        TopCommonTokenCounter.main(new String[]{ProcessUtils.escapeCommandLine(WORKING_DIR
-                .resolve(COMMON_TOKENS_FILE)
-                .toAbsolutePath()
-                .toString()), ProcessUtils.escapeCommandLine(WORKING_DIR
-                .resolve(INPUT_FILE)
-                .toAbsolutePath()
-                .toString())});
+        TopCommonTokenCounter.main(new String[]{
+                ProcessUtils.escapeCommandLine(WORKING_DIR.resolve(COMMON_TOKENS_FILE).toAbsolutePath().toString()),
+                ProcessUtils.escapeCommandLine(WORKING_DIR.resolve(INPUT_FILE).toAbsolutePath().toString())});
     }
-
 
     @Test
     public void testSimple() throws Exception {
-        List<String> rows = FileUtils.readLines(WORKING_DIR
-                .resolve(COMMON_TOKENS_FILE)
-                .toFile(), StandardCharsets.UTF_8);
+        List<String> rows = FileUtils.readLines(WORKING_DIR.resolve(COMMON_TOKENS_FILE).toFile(),
+                StandardCharsets.UTF_8);
         List<String> tokens = new ArrayList<>();
         for (String row : rows) {
             if (!row.startsWith("#")) {

@@ -29,6 +29,8 @@ import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.tika.cli.TikaCLI;
+import org.apache.tika.pipes.core.HandlerConfig;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -39,6 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.ComposeContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
+
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.ResponseBytes;
@@ -52,9 +55,6 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-import org.apache.tika.cli.TikaCLI;
-import org.apache.tika.pipes.core.HandlerConfig;
-
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Testcontainers(disabledWithoutDocker = true)
 class S3PipeIntegrationTest {
@@ -62,8 +62,8 @@ class S3PipeIntegrationTest {
 
     public static final int MAX_STARTUP_TIMEOUT = 120;
     private static final ComposeContainer minioContainer = new ComposeContainer(
-            new File("src/test/resources/docker-compose.yml")).withStartupTimeout(
-                    Duration.of(MAX_STARTUP_TIMEOUT, ChronoUnit.SECONDS))
+            new File("src/test/resources/docker-compose.yml"))
+            .withStartupTimeout(Duration.of(MAX_STARTUP_TIMEOUT, ChronoUnit.SECONDS))
             .withExposedService("minio-service", 9000);
     private static final String MINIO_ENDPOINT = "http://localhost:9000";
     private static final String ACCESS_KEY = "minio";
@@ -110,10 +110,9 @@ class S3PipeIntegrationTest {
         // https://github.com/aws/aws-sdk-java-v2/discussions/3536
         StaticCredentialsProvider credentialsProvider = StaticCredentialsProvider.create(awsCreds);
         S3Configuration s3c = S3Configuration.builder().pathStyleAccessEnabled(true).build(); // SO11228792
-        s3Client = S3Client.builder().
-                requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED). // https://stackoverflow.com/a/79488850/535646
-                serviceConfiguration(s3c).region(REGION).
-                credentialsProvider(credentialsProvider).endpointOverride(new URI(MINIO_ENDPOINT)).build();
+        s3Client = S3Client.builder().requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED). // https://stackoverflow.com/a/79488850/535646
+                serviceConfiguration(s3c).region(REGION).credentialsProvider(credentialsProvider)
+                .endpointOverride(new URI(MINIO_ENDPOINT)).build();
     }
 
     @Test
@@ -129,20 +128,17 @@ class S3PipeIntegrationTest {
         // Let's fetch it
         File tikaConfigFile = new File("target", "ta.xml");
         File log4jPropFile = new File("target", "tmp-log4j2.xml");
-        try (InputStream is = this.getClass()
-                .getResourceAsStream("/pipes-fork-server-custom-log4j2.xml")) {
+        try (InputStream is = this.getClass().getResourceAsStream("/pipes-fork-server-custom-log4j2.xml")) {
             Assertions.assertNotNull(is);
             FileUtils.copyInputStreamToFile(is, log4jPropFile);
         }
         String tikaConfigTemplateXml;
-        try (InputStream is = this.getClass()
-                .getResourceAsStream("/tika-config-s3-integration-test.xml")) {
+        try (InputStream is = this.getClass().getResourceAsStream("/tika-config-s3-integration-test.xml")) {
             assert is != null;
             tikaConfigTemplateXml = IOUtils.toString(is, StandardCharsets.UTF_8);
         }
         try {
-            String tikaConfigXml =
-                    createTikaConfigXml(tikaConfigFile, log4jPropFile, tikaConfigTemplateXml);
+            String tikaConfigXml = createTikaConfigXml(tikaConfigFile, log4jPropFile, tikaConfigTemplateXml);
 
             FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);
             TikaCLI.main(new String[]{"-a", "-c", tikaConfigFile.getAbsolutePath()});
@@ -151,25 +147,23 @@ class S3PipeIntegrationTest {
         }
 
         for (String testFile : testFiles) {
-            GetObjectRequest objectRequest = GetObjectRequest.builder().bucket(EMIT_BUCKET).key(testFile + ".json").build();
+            GetObjectRequest objectRequest = GetObjectRequest.builder().bucket(EMIT_BUCKET).key(testFile + ".json")
+                    .build();
             ResponseBytes<GetObjectResponse> objectAsBytes = s3Client.getObjectAsBytes(objectRequest);
             String data = objectAsBytes.asString(StandardCharsets.UTF_8);
             Assertions.assertTrue(data.contains("body-of-" + testFile),
-                        "Should be able to read the parsed body of the HTML file as the body of the document");
+                    "Should be able to read the parsed body of the HTML file as the body of the document");
         }
     }
 
-    @NotNull
-    private String createTikaConfigXml(File tikaConfigFile, File log4jPropFile,
-                                       String tikaConfigTemplateXml) {
+    @NotNull private String createTikaConfigXml(File tikaConfigFile, File log4jPropFile, String tikaConfigTemplateXml) {
         return tikaConfigTemplateXml.replace("{TIKA_CONFIG}", tikaConfigFile.getAbsolutePath())
                 .replace("{LOG4J_PROPERTIES_FILE}", log4jPropFile.getAbsolutePath())
                 .replace("{PATH_TO_DOCS}", testFileFolder.getAbsolutePath())
                 .replace("{PARSE_MODE}", HandlerConfig.PARSE_MODE.RMETA.name())
-                .replace("{PIPE_ITERATOR_BUCKET}", FETCH_BUCKET)
-                .replace("{EMIT_BUCKET}", EMIT_BUCKET).replace("{FETCH_BUCKET}", FETCH_BUCKET)
-                .replace("{ACCESS_KEY}", ACCESS_KEY).replace("{SECRET_KEY}", SECRET_KEY)
-                .replace("{ENDPOINT_CONFIGURATION_SERVICE}", MINIO_ENDPOINT)
+                .replace("{PIPE_ITERATOR_BUCKET}", FETCH_BUCKET).replace("{EMIT_BUCKET}", EMIT_BUCKET)
+                .replace("{FETCH_BUCKET}", FETCH_BUCKET).replace("{ACCESS_KEY}", ACCESS_KEY)
+                .replace("{SECRET_KEY}", SECRET_KEY).replace("{ENDPOINT_CONFIGURATION_SERVICE}", MINIO_ENDPOINT)
                 .replace("{REGION}", REGION.id());
     }
 }

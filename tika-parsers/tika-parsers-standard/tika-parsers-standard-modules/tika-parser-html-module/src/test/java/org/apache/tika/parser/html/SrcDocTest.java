@@ -14,29 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.html;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.Test;
 
 public class SrcDocTest extends TikaTest {
-
 
     @Test
     public void testBasic() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testSrcDoc.html");
         assertEquals(2, metadataList.size());
         assertContains("outside", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
-        assertContains("this is the iframe content",
-                metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("this is the iframe content", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
                 metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }

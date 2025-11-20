@@ -42,11 +42,11 @@ public class EmitData implements Serializable {
         this(emitKey, metadataList, containerStackTrace, new ParseContext());
     }
 
-    public EmitData(EmitKey emitKey, List<Metadata> metadataList, String containerStackTrace, ParseContext parseContext) {
+    public EmitData(EmitKey emitKey, List<Metadata> metadataList, String containerStackTrace,
+            ParseContext parseContext) {
         this.emitKey = emitKey;
         this.metadataList = metadataList;
-        this.containerStackTrace = (containerStackTrace == null) ? StringUtils.EMPTY :
-                containerStackTrace;
+        this.containerStackTrace = (containerStackTrace == null) ? StringUtils.EMPTY : containerStackTrace;
         this.parseContext = parseContext;
     }
 
@@ -74,8 +74,7 @@ public class EmitData implements Serializable {
         return parseContext;
     }
 
-    private static long estimateSizeInBytes(String id, List<Metadata> metadataList,
-                                            String containerStackTrace) {
+    private static long estimateSizeInBytes(String id, List<Metadata> metadataList, String containerStackTrace) {
         long sz = 36 + id.length() * 2;
         sz += 36 + containerStackTrace.length() * 2;
         for (Metadata m : metadataList) {
@@ -91,7 +90,7 @@ public class EmitData implements Serializable {
 
     @Override
     public String toString() {
-        return "EmitData{" + "emitKey=" + emitKey + ", metadataList=" + metadataList +
-                ", containerStackTrace='" + containerStackTrace + '\'' + '}';
+        return "EmitData{" + "emitKey=" + emitKey + ", metadataList=" + metadataList + ", containerStackTrace='"
+                + containerStackTrace + '\'' + '}';
     }
 }

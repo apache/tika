@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.core.writer;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -27,7 +26,10 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Map;
 
+import org.apache.tika.metadata.Metadata;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
@@ -35,12 +37,9 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.ext.MessageBodyWriter;
 import jakarta.ws.rs.ext.Provider;
 
-import org.apache.tika.metadata.Metadata;
-
 @Provider
 @Produces(MediaType.APPLICATION_JSON)
 public class JSONObjWriter implements MessageBodyWriter<Map<String, Object>> {
-
 
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
         return Map.class.isAssignableFrom(type);
@@ -51,13 +50,12 @@ public class JSONObjWriter implements MessageBodyWriter<Map<String, Object>> {
     }
 
     @Override
-    public void writeTo(Map<String, Object> map, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders,
-                        OutputStream entityStream) throws IOException, WebApplicationException {
+    public void writeTo(Map<String, Object> map, Class<?> type, Type genericType, Annotation[] annotations,
+            MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
+            throws IOException, WebApplicationException {
         try (Writer writer = new OutputStreamWriter(entityStream, UTF_8)) {
             ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper
-                    .writerWithDefaultPrettyPrinter()
-                    .writeValue(writer, map);
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(writer, map);
         }
     }
 }

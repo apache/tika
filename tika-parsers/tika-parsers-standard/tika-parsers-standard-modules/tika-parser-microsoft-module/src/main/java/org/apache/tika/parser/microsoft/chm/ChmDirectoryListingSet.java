@@ -24,10 +24,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.tika.exception.TikaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.apache.tika.exception.TikaException;
 
 /**
  * Holds chm listing entries
@@ -55,8 +54,8 @@ public class ChmDirectoryListingSet {
      * @param chmItspHeader
      * @throws TikaException
      */
-    public ChmDirectoryListingSet(byte[] data, ChmItsfHeader chmItsHeader,
-                                  ChmItspHeader chmItspHeader) throws TikaException {
+    public ChmDirectoryListingSet(byte[] data, ChmItsfHeader chmItsHeader, ChmItspHeader chmItspHeader)
+            throws TikaException {
         setDirectoryListingEntryList(new ArrayList<>());
         ChmCommons.assertByteArrayNotNull(data);
         setData(data);
@@ -75,11 +74,9 @@ public class ChmDirectoryListingSet {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("list:=")
-                .append(getDirectoryListingEntryList().toString())
+        sb.append("list:=").append(getDirectoryListingEntryList().toString())
                 .append(System.getProperty("line.separator"));
-        sb.append("number of list items:=")
-                .append(getDirectoryListingEntryList().size());
+        sb.append("number of list items:=").append(getDirectoryListingEntryList().size());
         return sb.toString();
     }
 
@@ -134,8 +131,7 @@ public class ChmDirectoryListingSet {
      * @param chmItsHeader  chm itsf PMGLheader
      * @param chmItspHeader chm itsp PMGLheader
      */
-    private void enumerateChmDirectoryListingList(ChmItsfHeader chmItsHeader,
-                                                  ChmItspHeader chmItspHeader)
+    private void enumerateChmDirectoryListingList(ChmItsfHeader chmItsHeader, ChmItspHeader chmItspHeader)
             throws TikaException {
         try {
             int startPmgl = chmItspHeader.getIndex_head();
@@ -146,10 +142,9 @@ public class ChmDirectoryListingSet {
             /* loops over all pmgls */
             byte[] dir_chunk = null;
             Set<Integer> processed = new HashSet<>();
-            for (int i = startPmgl; i >= 0; ) {
+            for (int i = startPmgl; i >= 0;) {
                 int start = i * (int) chmItspHeader.getBlock_len() + dir_offset;
-                dir_chunk = ChmCommons
-                        .copyOfRange(getData(), start, start + (int) chmItspHeader.getBlock_len());
+                dir_chunk = ChmCommons.copyOfRange(getData(), start, start + (int) chmItspHeader.getBlock_len());
 
                 PMGLheader = new ChmPmglHeader();
                 PMGLheader.parse(dir_chunk, PMGLheader);
@@ -204,7 +199,7 @@ public class ChmDirectoryListingSet {
      * @param dir_chunk
      */
     private void enumerateOneSegment(byte[] dir_chunk) throws ChmParsingException, TikaException {
-//        try {
+        //        try {
         if (dir_chunk != null) {
             int header_len;
             if (startsWith(dir_chunk, ChmConstants.CHM_PMGI_MARKER)) {
@@ -219,7 +214,7 @@ public class ChmDirectoryListingSet {
             placeHolder = header_len;
             //setPlaceHolder(header_len);
             while (placeHolder > 0 && placeHolder < dir_chunk.length - PMGLheader.getFreeSpace()
-                /*&& dir_chunk[placeHolder - 1] != 115*/) {
+            /*&& dir_chunk[placeHolder - 1] != 115*/) {
                 //get entry name length
                 int strlen = 0;// = getEncint(data);
                 byte temp;
@@ -236,9 +231,8 @@ public class ChmDirectoryListingSet {
 
                 DirectoryListingEntry dle = new DirectoryListingEntry();
                 dle.setNameLength(strlen);
-                dle.setName(new String(ChmCommons
-                        .copyOfRange(dir_chunk, placeHolder, (placeHolder + dle.getNameLength())),
-                        UTF_8));
+                dle.setName(new String(
+                        ChmCommons.copyOfRange(dir_chunk, placeHolder, (placeHolder + dle.getNameLength())), UTF_8));
 
                 checkControlData(dle);
                 checkResetTable(dle);
@@ -257,66 +251,65 @@ public class ChmDirectoryListingSet {
                 getDirectoryListingEntryList().add(dle);
             }
 
-//                int indexWorkData = ChmCommons.indexOf(dir_chunk,
-//                        "::".getBytes(UTF_8));
-//                int indexUserData = ChmCommons.indexOf(dir_chunk,
-//                        "/".getBytes(UTF_8));
-//
-//                if (indexUserData>=0 && indexUserData < indexWorkData)
-//                    setPlaceHolder(indexUserData);
-//                else if (indexWorkData>=0) {
-//                    setPlaceHolder(indexWorkData);
-//                }
-//                else {
-//                    setPlaceHolder(indexUserData);
-//                }
-//
-//                if (placeHolder > 0 && placeHolder < dir_chunk.length - PMGLheader.getFreeSpace()
-//                        && dir_chunk[placeHolder - 1] != 115) {// #{
-//                    do {
-//                        if (dir_chunk[placeHolder - 1] > 0) {
-//                            DirectoryListingEntry dle = new DirectoryListingEntry();
-//
-//                            // two cases: 1. when dir_chunk[placeHolder -
-//                            // 1] == 0x73
-//                            // 2. when dir_chunk[placeHolder + 1] == 0x2f
-//                            doNameCheck(dir_chunk, dle);
-//
-//                            // dle.setName(new
-//                            // String(Arrays.copyOfRange(dir_chunk,
-//                            // placeHolder, (placeHolder +
-//                            // dle.getNameLength()))));
-//                            dle.setName(new String(ChmCommons.copyOfRange(
-//                                    dir_chunk, placeHolder,
-//                                    (placeHolder + dle.getNameLength())), UTF_8));
-//                            checkControlData(dle);
-//                            checkResetTable(dle);
-//                            setPlaceHolder(placeHolder
-//                                    + dle.getNameLength());
-//
-//                            /* Sets entry type */
-//                            if (placeHolder < dir_chunk.length
-//                                    && dir_chunk[placeHolder] == 0)
-//                                dle.setEntryType(ChmCommons.EntryType.UNCOMPRESSED);
-//                            else
-//                                dle.setEntryType(ChmCommons.EntryType.COMPRESSED);
-//
-//                            setPlaceHolder(placeHolder + 1);
-//                            dle.setOffset(getEncint(dir_chunk));
-//                            dle.setLength(getEncint(dir_chunk));
-//                            getDirectoryListingEntryList().add(dle);
-//                        } else
-//                            setPlaceHolder(placeHolder + 1);
-//
-//                    } while (nextEntry(dir_chunk));
-//                }
+            //                int indexWorkData = ChmCommons.indexOf(dir_chunk,
+            //                        "::".getBytes(UTF_8));
+            //                int indexUserData = ChmCommons.indexOf(dir_chunk,
+            //                        "/".getBytes(UTF_8));
+            //
+            //                if (indexUserData>=0 && indexUserData < indexWorkData)
+            //                    setPlaceHolder(indexUserData);
+            //                else if (indexWorkData>=0) {
+            //                    setPlaceHolder(indexWorkData);
+            //                }
+            //                else {
+            //                    setPlaceHolder(indexUserData);
+            //                }
+            //
+            //                if (placeHolder > 0 && placeHolder < dir_chunk.length - PMGLheader.getFreeSpace()
+            //                        && dir_chunk[placeHolder - 1] != 115) {// #{
+            //                    do {
+            //                        if (dir_chunk[placeHolder - 1] > 0) {
+            //                            DirectoryListingEntry dle = new DirectoryListingEntry();
+            //
+            //                            // two cases: 1. when dir_chunk[placeHolder -
+            //                            // 1] == 0x73
+            //                            // 2. when dir_chunk[placeHolder + 1] == 0x2f
+            //                            doNameCheck(dir_chunk, dle);
+            //
+            //                            // dle.setName(new
+            //                            // String(Arrays.copyOfRange(dir_chunk,
+            //                            // placeHolder, (placeHolder +
+            //                            // dle.getNameLength()))));
+            //                            dle.setName(new String(ChmCommons.copyOfRange(
+            //                                    dir_chunk, placeHolder,
+            //                                    (placeHolder + dle.getNameLength())), UTF_8));
+            //                            checkControlData(dle);
+            //                            checkResetTable(dle);
+            //                            setPlaceHolder(placeHolder
+            //                                    + dle.getNameLength());
+            //
+            //                            /* Sets entry type */
+            //                            if (placeHolder < dir_chunk.length
+            //                                    && dir_chunk[placeHolder] == 0)
+            //                                dle.setEntryType(ChmCommons.EntryType.UNCOMPRESSED);
+            //                            else
+            //                                dle.setEntryType(ChmCommons.EntryType.COMPRESSED);
+            //
+            //                            setPlaceHolder(placeHolder + 1);
+            //                            dle.setOffset(getEncint(dir_chunk));
+            //                            dle.setLength(getEncint(dir_chunk));
+            //                            getDirectoryListingEntryList().add(dle);
+            //                        } else
+            //                            setPlaceHolder(placeHolder + 1);
+            //
+            //                    } while (nextEntry(dir_chunk));
+            //                }
         }
 
-//        } catch (Exception e) {
-//                LOG.warn("problem parsing", e);
-//        }
+        //        } catch (Exception e) {
+        //                LOG.warn("problem parsing", e);
+        //        }
     }
-
 
     /**
      * Returns encrypted integer

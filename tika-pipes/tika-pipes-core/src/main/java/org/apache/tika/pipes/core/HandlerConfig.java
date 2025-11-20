@@ -29,9 +29,8 @@ public class HandlerConfig implements Serializable {
      */
     private static final long serialVersionUID = -3861669115439125268L;
 
-    public static final HandlerConfig DEFAULT_HANDLER_CONFIG =
-            new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, PARSE_MODE.RMETA,
-                    -1, -1, true);
+    public static final HandlerConfig DEFAULT_HANDLER_CONFIG = new HandlerConfig(
+            BasicContentHandlerFactory.HANDLER_TYPE.TEXT, PARSE_MODE.RMETA, -1, -1, true);
 
     /**
      * {@link PARSE_MODE#RMETA} "recursive metadata" is the same as the -J option
@@ -46,8 +45,7 @@ public class HandlerConfig implements Serializable {
      * embedded objects and silently skips exceptions in embedded objects.
      */
     public enum PARSE_MODE {
-        RMETA,
-        CONCATENATE;
+        RMETA, CONCATENATE;
 
         public static PARSE_MODE parseMode(String modeString) {
             for (PARSE_MODE m : PARSE_MODE.values()) {
@@ -63,13 +61,12 @@ public class HandlerConfig implements Serializable {
                 }
                 sb.append(m.name().toLowerCase(Locale.US));
             }
-            throw new IllegalArgumentException("mode must be one of: (" + sb +
-                    "). I regret I do not understand: " + modeString);
+            throw new IllegalArgumentException(
+                    "mode must be one of: (" + sb + "). I regret I do not understand: " + modeString);
         }
     }
 
-    private BasicContentHandlerFactory.HANDLER_TYPE type =
-            BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
+    private BasicContentHandlerFactory.HANDLER_TYPE type = BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
 
     int writeLimit = -1;
     int maxEmbeddedResources = -1;
@@ -77,14 +74,12 @@ public class HandlerConfig implements Serializable {
     boolean throwOnWriteLimitReached = true;
     PARSE_MODE parseMode = PARSE_MODE.RMETA;
 
-
     public HandlerConfig() {
 
     }
 
-    public HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE type, PARSE_MODE parseMode,
-                         int writeLimit,
-                         int maxEmbeddedResources, boolean throwOnWriteLimitReached) {
+    public HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE type, PARSE_MODE parseMode, int writeLimit,
+            int maxEmbeddedResources, boolean throwOnWriteLimitReached) {
         this.type = type;
         this.parseMode = parseMode;
         this.writeLimit = writeLimit;
@@ -142,8 +137,9 @@ public class HandlerConfig implements Serializable {
 
     @Override
     public String toString() {
-        return "HandlerConfig{" + "type=" + type + ", writeLimit=" + writeLimit + ", maxEmbeddedResources=" + maxEmbeddedResources +
-                ", throwOnWriteLimitReached=" + throwOnWriteLimitReached + ", parseMode=" + parseMode + '}';
+        return "HandlerConfig{" + "type=" + type + ", writeLimit=" + writeLimit + ", maxEmbeddedResources="
+                + maxEmbeddedResources + ", throwOnWriteLimitReached=" + throwOnWriteLimitReached + ", parseMode="
+                + parseMode + '}';
     }
 
     @Override
@@ -156,8 +152,9 @@ public class HandlerConfig implements Serializable {
         }
 
         HandlerConfig that = (HandlerConfig) o;
-        return writeLimit == that.writeLimit && maxEmbeddedResources == that.maxEmbeddedResources && throwOnWriteLimitReached == that.throwOnWriteLimitReached &&
-                type == that.type && parseMode == that.parseMode;
+        return writeLimit == that.writeLimit && maxEmbeddedResources == that.maxEmbeddedResources
+                && throwOnWriteLimitReached == that.throwOnWriteLimitReached && type == that.type
+                && parseMode == that.parseMode;
     }
 
     @Override

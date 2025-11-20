@@ -41,7 +41,6 @@ public class MockFetcher extends AbstractFetcher implements Initializable {
     @Field
     private boolean throwOnCheck = false;
 
-
     public void setThrowOnCheck(boolean throwOnCheck) {
         this.throwOnCheck = throwOnCheck;
     }
@@ -56,17 +55,17 @@ public class MockFetcher extends AbstractFetcher implements Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         if (throwOnCheck) {
             throw new TikaConfigException("throw on check");
         }
     }
 
-
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
-        return byteString == null ? new ByteArrayInputStream(new byte[0]) :
-                new ByteArrayInputStream(byteString.getBytes(StandardCharsets.UTF_8));
+    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext)
+            throws TikaException, IOException {
+        return byteString == null
+                ? new ByteArrayInputStream(new byte[0])
+                : new ByteArrayInputStream(byteString.getBytes(StandardCharsets.UTF_8));
     }
 }

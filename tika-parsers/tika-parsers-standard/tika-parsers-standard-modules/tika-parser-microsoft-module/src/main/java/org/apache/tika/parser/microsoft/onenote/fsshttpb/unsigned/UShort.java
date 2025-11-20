@@ -13,10 +13,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Copyright (c) Data Geekery GmbH (http://www.datageekery.com)
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.unsigned;
 
 import java.math.BigInteger;

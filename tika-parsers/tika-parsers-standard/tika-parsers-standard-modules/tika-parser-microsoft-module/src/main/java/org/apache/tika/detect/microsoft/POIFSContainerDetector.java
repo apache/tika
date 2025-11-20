@@ -40,9 +40,6 @@ import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.DocumentNode;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.BoundedInputStream;
@@ -50,6 +47,8 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.microsoft.OfficeParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A detector that works on a POIFS OLE2 document
@@ -80,8 +79,7 @@ public class POIFSContainerDetector implements Detector {
     /**
      * An OLE10 Native embedded document within another OLE2 document
      */
-    public static final MediaType OLE10_NATIVE =
-            new MediaType(GENERAL_EMBEDDED, "format", "ole10_native");
+    public static final MediaType OLE10_NATIVE = new MediaType(GENERAL_EMBEDDED, "format", "ole10_native");
     /**
      * Some other kind of embedded document, in a CompObj container within another OLE2 document
      */
@@ -244,8 +242,7 @@ public class POIFSContainerDetector implements Detector {
      * An ASCII String "MSGraph.Chart" for embedded MSGraph files
      * The full designator includes a version, e.g. MSGraph.Chart.8
      */
-    private static final byte[] MS_GRAPH_CHART_BYTES =
-            "MSGraph.Chart".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] MS_GRAPH_CHART_BYTES = "MSGraph.Chart".getBytes(StandardCharsets.US_ASCII);
 
     /**
      * Regexp for matching the MPP Project Data stream
@@ -253,7 +250,6 @@ public class POIFSContainerDetector implements Detector {
     private static final Pattern mppDataMatch = Pattern.compile("\\s\\s\\s\\d+");
 
     private static final Logger LOG = LoggerFactory.getLogger(POIFSContainerDetector.class);
-
 
     @Field
     private int markLimit = -1;
@@ -367,9 +363,8 @@ public class POIFSContainerDetector implements Detector {
             //  of embedded non-office file inside an OLE2 document
             // This is most commonly triggered on nested directories
             return OLE;
-        } else if (ucNames.contains(COMP_OBJ_STRING) &&
-                (ucNames.contains(PROPS) || ucNames.contains(PROPS_9) ||
-                        ucNames.contains(PROPS_12))) {
+        } else if (ucNames.contains(COMP_OBJ_STRING)
+                && (ucNames.contains(PROPS) || ucNames.contains(PROPS_9) || ucNames.contains(PROPS_12))) {
             // Could be Project, look for common name patterns
             for (String name : ucNames) {
                 if (mppDataMatch.matcher(name).matches()) {
@@ -381,8 +376,7 @@ public class POIFSContainerDetector implements Detector {
             //maybe add those if we get false positives?
             //in other test files there was a single entry for "Layer"
             return ESRI_LAYER;
-        } else if (ucNames.contains(DGN_MF) && ucNames.contains(DGN_S) &&
-                ucNames.contains(DGN_H)) {
+        } else if (ucNames.contains(DGN_MF) && ucNames.contains(DGN_S) && ucNames.contains(DGN_H)) {
             return DGN_8;
         } else {
             for (String name : ucNames) {
@@ -391,7 +385,6 @@ public class POIFSContainerDetector implements Detector {
                 }
             }
         }
-
 
         // Couldn't detect a more specific type
         return OLE;
@@ -449,8 +442,7 @@ public class POIFSContainerDetector implements Detector {
      * @param maxDepth maximum allowed depth
      * @return
      */
-    private static boolean findRecursively(Entry entry, String targetName, int depth,
-                                           int maxDepth) {
+    private static boolean findRecursively(Entry entry, String targetName, int depth, int maxDepth) {
         if (entry == null) {
             return false;
         }
@@ -461,7 +453,7 @@ public class POIFSContainerDetector implements Detector {
             return false;
         }
         if (entry instanceof DirectoryEntry) {
-            for (Iterator<Entry> it = ((DirectoryEntry)entry).getEntries(); it.hasNext(); ) {
+            for (Iterator<Entry> it = ((DirectoryEntry) entry).getEntries(); it.hasNext();) {
                 Entry child = it.next();
                 if (findRecursively(child, targetName, depth + 1, maxDepth)) {
                     return true;
@@ -514,7 +506,6 @@ public class POIFSContainerDetector implements Detector {
         }
         return OLE;
     }
-
 
     // poor man's search for byte arrays, replace with some library call if
     // you know one without adding new dependencies
@@ -575,8 +566,8 @@ public class POIFSContainerDetector implements Detector {
 
         //if the stream was longer than markLimit, don't detect
         if (file == null) {
-            LOG.warn("File length exceeds marklimit. Skipping detection on this file. " +
-                    "If you need precise detection, consider increasing the marklimit or setting it to -1");
+            LOG.warn("File length exceeds marklimit. Skipping detection on this file. "
+                    + "If you need precise detection, consider increasing the marklimit or setting it to -1");
             return Collections.emptySet();
         }
 
@@ -651,7 +642,7 @@ public class POIFSContainerDetector implements Detector {
         Set<String> names = tryOpenContainerOnTikaInputStream(tis, metadata);
 
         //if that didn't work, confirm the bytes are OLE
-        if (names == null && ! isOleHeader(tis)) {
+        if (names == null && !isOleHeader(tis)) {
             return OCTET_STREAM;
         }
 
@@ -662,8 +653,7 @@ public class POIFSContainerDetector implements Detector {
         }
 
         // Detect based on the names (as available)
-        if (tis.getOpenContainer() != null &&
-                tis.getOpenContainer() instanceof POIFSFileSystem) {
+        if (tis.getOpenContainer() != null && tis.getOpenContainer() instanceof POIFSFileSystem) {
             return detect(names, ((POIFSFileSystem) tis.getOpenContainer()).getRoot());
         } else {
             return detect(names, null);
@@ -673,13 +663,12 @@ public class POIFSContainerDetector implements Detector {
     private boolean isOleHeader(InputStream input) throws IOException {
         input.mark(8);
         try {
-            return (input.read() == 0xd0 && input.read() == 0xcf && input.read() == 0x11 && input.read() == 0xe0 && input.read() == 0xa1 && input.read() == 0xb1 &&
-                    input.read() == 0x1a && input.read() == 0xe1);
+            return (input.read() == 0xd0 && input.read() == 0xcf && input.read() == 0x11 && input.read() == 0xe0
+                    && input.read() == 0xa1 && input.read() == 0xb1 && input.read() == 0x1a && input.read() == 0xe1);
         } finally {
             input.reset();
         }
     }
-
 
     public static Set<String> tryOpenContainerOnTikaInputStream(InputStream input, Metadata metadata) {
         // If this is a TikaInputStream wrapping an already
@@ -697,6 +686,5 @@ public class POIFSContainerDetector implements Detector {
         }
         return null;
     }
-
 
 }

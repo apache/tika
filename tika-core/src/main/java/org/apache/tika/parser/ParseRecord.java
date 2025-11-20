@@ -103,7 +103,6 @@ public class ParseRecord {
         return warnings;
     }
 
-
     public boolean isWriteLimitReached() {
         return writeLimitReached;
     }

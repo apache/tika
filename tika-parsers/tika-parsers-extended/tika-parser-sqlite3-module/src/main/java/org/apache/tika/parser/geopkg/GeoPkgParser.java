@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.geopkg;
 
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -24,9 +23,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -37,6 +33,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.sqlite3.SQLite3Parser;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Customization of sqlite parser to skip certain common blob columns.
@@ -76,7 +74,6 @@ public class GeoPkgParser extends SQLite3Parser {
 
     private static final Set<MediaType> SUPPORTED_TYPES;
 
-
     static {
         SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE);
     }
@@ -98,8 +95,8 @@ public class GeoPkgParser extends SQLite3Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         GeoPkgDBParser p = new GeoPkgDBParser(ignoreBlobColumns);
         p.parse(stream, handler, metadata, context);
     }
@@ -121,7 +118,6 @@ public class GeoPkgParser extends SQLite3Parser {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
     }
 }

@@ -47,8 +47,8 @@ class PDFDOMUtil {
         return found;
     }
 
-    private static void find(COSBase cosBase, Set<COSName> types, int depth, int maxDepth,
-                             Set<COSBase> seen, List<COSDictionary> found) {
+    private static void find(COSBase cosBase, Set<COSName> types, int depth, int maxDepth, Set<COSBase> seen,
+            List<COSDictionary> found) {
         if (seen.contains(cosBase)) {
             return;
         }
@@ -57,15 +57,15 @@ class PDFDOMUtil {
         }
         seen.add(cosBase);
         if (cosBase instanceof COSObject) {
-            COSBase dereferencedBase = ((COSObject)cosBase).getObject();
+            COSBase dereferencedBase = ((COSObject) cosBase).getObject();
             find(dereferencedBase, types, depth + 1, maxDepth, seen, found);
         } else if (cosBase instanceof COSDictionary) {
-            COSDictionary dict = (COSDictionary)cosBase;
+            COSDictionary dict = (COSDictionary) cosBase;
             COSName value = dict.getCOSName(COSName.TYPE);
             if (value != null && types.contains(value)) {
                 found.add(dict);
-            } else if (value != null && (value.equals(COSName.P) || value.equals(COSName.PAGE)
-                    || value.equals(COSName.PARENT))) {
+            } else if (value != null
+                    && (value.equals(COSName.P) || value.equals(COSName.PAGE) || value.equals(COSName.PARENT))) {
                 //don't descend page, p, or parent
                 return;
             } else {
@@ -74,7 +74,7 @@ class PDFDOMUtil {
                 }
             }
         } else if (cosBase instanceof COSArray) {
-            for (COSBase item : ((COSArray)cosBase)) {
+            for (COSBase item : ((COSArray) cosBase)) {
                 find(item, types, depth + 1, maxDepth, seen, found);
             }
         }

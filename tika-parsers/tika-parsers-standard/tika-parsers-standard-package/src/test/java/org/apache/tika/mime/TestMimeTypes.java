@@ -30,14 +30,13 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test Suite for the {@link MimeTypes} repository.
@@ -100,19 +99,15 @@ public class TestMimeTypes {
         // http://blogs.msdn.com/vsofficedeveloper/pages/Office-2007-Open-XML-MIME-Types.aspx
         assertTypeByName("application/msword", "x.doc");
         assertTypeByName("application/msword", "x.dot");
-        assertTypeByName("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                "x.docx");
-        assertTypeByName("application/vnd.openxmlformats-officedocument.wordprocessingml.template",
-                "x.dotx");
+        assertTypeByName("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "x.docx");
+        assertTypeByName("application/vnd.openxmlformats-officedocument.wordprocessingml.template", "x.dotx");
         assertTypeByName("application/vnd.ms-word.document.macroenabled.12", "x.docm");
         assertTypeByName("application/vnd.ms-word.template.macroenabled.12", "x.dotm");
         assertTypeByName("application/vnd.ms-excel", "x.xls");
         assertTypeByName("application/vnd.ms-excel", "x.xlt");
         assertTypeByName("application/vnd.ms-excel", "x.xla");
-        assertTypeByName("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "x.xlsx");
-        assertTypeByName("application/vnd.openxmlformats-officedocument.spreadsheetml.template",
-                "x.xltx");
+        assertTypeByName("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "x.xlsx");
+        assertTypeByName("application/vnd.openxmlformats-officedocument.spreadsheetml.template", "x.xltx");
         assertTypeByName("application/vnd.ms-excel.sheet.macroenabled.12", "x.xlsm");
         assertTypeByName("application/vnd.ms-excel.template.macroenabled.12", "x.xltm");
         assertTypeByName("application/vnd.ms-excel.addin.macroenabled.12", "x.xlam");
@@ -121,13 +116,9 @@ public class TestMimeTypes {
         assertTypeByName("application/vnd.ms-powerpoint", "x.pot");
         assertTypeByName("application/vnd.ms-powerpoint", "x.pps");
         assertTypeByName("application/vnd.ms-powerpoint", "x.ppa");
-        assertTypeByName(
-                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                "x.pptx");
-        assertTypeByName("application/vnd.openxmlformats-officedocument.presentationml.template",
-                "x.potx");
-        assertTypeByName("application/vnd.openxmlformats-officedocument.presentationml.slideshow",
-                "x.ppsx");
+        assertTypeByName("application/vnd.openxmlformats-officedocument.presentationml.presentation", "x.pptx");
+        assertTypeByName("application/vnd.openxmlformats-officedocument.presentationml.template", "x.potx");
+        assertTypeByName("application/vnd.openxmlformats-officedocument.presentationml.slideshow", "x.ppsx");
         assertTypeByName("application/vnd.ms-powerpoint.addin.macroenabled.12", "x.ppam");
         assertTypeByName("application/vnd.ms-powerpoint.presentation.macroenabled.12", "x.pptm");
         assertTypeByName("application/vnd.ms-powerpoint.template.macroenabled.12", "x.potm");
@@ -150,7 +141,6 @@ public class TestMimeTypes {
         // As such, our mime magic can't figure it out...
         assertTypeByData("application/x-tika-msoffice", "testWORD.doc");
         assertTypeByData("application/x-tika-msoffice", "testPPT.ppt");
-
 
         // By name + data:
 
@@ -251,9 +241,8 @@ public class TestMimeTypes {
                 "application/vnd.stardivision.calc", "application/vnd.stardivision.calc");
         assertTypeDetection("testStarOffice-5.2-draw.sda", "application/vnd.stardivision.draw",
                 "application/vnd.stardivision.draw", "application/vnd.stardivision.draw");
-        assertTypeDetection("testStarOffice-5.2-impress.sdd",
-                "application/vnd.stardivision.impress", "application/vnd.stardivision.impress",
-                "application/vnd.stardivision.impress");
+        assertTypeDetection("testStarOffice-5.2-impress.sdd", "application/vnd.stardivision.impress",
+                "application/vnd.stardivision.impress", "application/vnd.stardivision.impress");
         assertTypeDetection("testStarOffice-5.2-writer.sdw", "application/vnd.stardivision.writer",
                 "application/vnd.stardivision.writer", "application/vnd.stardivision.writer");
     }
@@ -275,8 +264,8 @@ public class TestMimeTypes {
                 "application/vnd.ms-works");
 
         // files in version 4.0 are no different from those in version 3.0
-        assertTypeDetection("testWORKSWordProcessor4.0.wps", "application/vnd.ms-works",
-                "application/vnd.ms-works", "application/vnd.ms-works");
+        assertTypeDetection("testWORKSWordProcessor4.0.wps", "application/vnd.ms-works", "application/vnd.ms-works",
+                "application/vnd.ms-works");
     }
 
     /**
@@ -323,27 +312,20 @@ public class TestMimeTypes {
 
         // If we give the filename as well as the data, we can
         //  specialise the ooxml generic one to the correct type
-        assertTypeByNameAndData("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "testEXCEL.xlsx");
-        assertTypeByNameAndData(
-                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        assertTypeByNameAndData("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "testEXCEL.xlsx");
+        assertTypeByNameAndData("application/vnd.openxmlformats-officedocument.presentationml.presentation",
                 "testPPT.pptx");
-        assertTypeByNameAndData(
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        assertTypeByNameAndData("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 "testWORD.docx");
 
         assertTypeByNameAndData("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 "testEXCEL_poi.xlsx");
 
         // Test a few of the less usual ones
-        assertTypeByNameAndData("application/vnd.ms-excel.sheet.binary.macroenabled.12",
-                "testEXCEL.xlsb");
-        assertTypeByNameAndData("application/vnd.ms-powerpoint.presentation.macroenabled.12",
-                "testPPT.pptm");
-        assertTypeByNameAndData("application/vnd.ms-powerpoint.template.macroenabled.12",
-                "testPPT.potm");
-        assertTypeByNameAndData("application/vnd.ms-powerpoint.slideshow.macroenabled.12",
-                "testPPT.ppsm");
+        assertTypeByNameAndData("application/vnd.ms-excel.sheet.binary.macroenabled.12", "testEXCEL.xlsb");
+        assertTypeByNameAndData("application/vnd.ms-powerpoint.presentation.macroenabled.12", "testPPT.pptm");
+        assertTypeByNameAndData("application/vnd.ms-powerpoint.template.macroenabled.12", "testPPT.potm");
+        assertTypeByNameAndData("application/vnd.ms-powerpoint.slideshow.macroenabled.12", "testPPT.ppsm");
     }
 
     /**
@@ -363,14 +345,11 @@ public class TestMimeTypes {
 
         // By Name and Data, should get it right
         assertTypeByNameAndData("application/vnd.visio", "testVISIO.vsd");
-        assertTypeByNameAndData("application/vnd.ms-visio.drawing.macroenabled.12",
-                "testVISIO.vsdm");
+        assertTypeByNameAndData("application/vnd.ms-visio.drawing.macroenabled.12", "testVISIO.vsdm");
         assertTypeByNameAndData("application/vnd.ms-visio.drawing", "testVISIO.vsdx");
-        assertTypeByNameAndData("application/vnd.ms-visio.stencil.macroenabled.12",
-                "testVISIO.vssm");
+        assertTypeByNameAndData("application/vnd.ms-visio.stencil.macroenabled.12", "testVISIO.vssm");
         assertTypeByNameAndData("application/vnd.ms-visio.stencil", "testVISIO.vssx");
-        assertTypeByNameAndData("application/vnd.ms-visio.template.macroenabled.12",
-                "testVISIO.vstm");
+        assertTypeByNameAndData("application/vnd.ms-visio.template.macroenabled.12", "testVISIO.vstm");
         assertTypeByNameAndData("application/vnd.ms-visio.template", "testVISIO.vstx");
 
         // By Data only, will get the container parent
@@ -423,8 +402,7 @@ public class TestMimeTypes {
         assertTypeByData("application/x-archive", "testARofSND.ar");
         assertTypeByData("application/zip", "test-documents.zip");
         assertTypeByData("application/x-gtar", "test-documents.tar"); // GNU TAR
-        assertTypeByData("application/gzip",
-                "test-documents.tgz"); // See GZIP, not tar contents of it
+        assertTypeByData("application/gzip", "test-documents.tgz"); // See GZIP, not tar contents of it
         assertTypeByData("application/x-cpio", "test-documents.cpio");
         assertTypeByData("application/vnd.ms-cab-compressed", "test-documents.cab");
 
@@ -744,45 +722,32 @@ public class TestMimeTypes {
         //assertTypeDetection("AutoDetectParser.class", "application/java-vm");
 
         // OSX Native Extension
-        assertTypeDetection("testJNILIB.jnilib",
-                "application/x-java-jnilib",
-                "application/x-mach-o-universal",
+        assertTypeDetection("testJNILIB.jnilib", "application/x-java-jnilib", "application/x-mach-o-universal",
                 "application/x-java-jnilib");
     }
 
     @Test
     public void testMachO() throws Exception {
-        assertTypeDetection("testMacOS-x86_64-arm64",
-                "application/octet-stream",
-                "application/x-mach-o-universal",
+        assertTypeDetection("testMacOS-x86_64-arm64", "application/octet-stream", "application/x-mach-o-universal",
                 "application/x-mach-o-universal");
-        assertTypeDetection("testMacOS-x86_64",
-                "application/octet-stream",
-                "application/x-mach-o-executable",
+        assertTypeDetection("testMacOS-x86_64", "application/octet-stream", "application/x-mach-o-executable",
                 "application/x-mach-o-executable");
-        assertTypeDetection("testMacOS-arm64",
-                "application/octet-stream",
-                "application/x-mach-o-executable",
+        assertTypeDetection("testMacOS-arm64", "application/octet-stream", "application/x-mach-o-executable",
                 "application/x-mach-o-executable");
     }
 
     @Test
     public void testXmlAndHtmlDetection() throws Exception {
         assertTypeByData("application/xml",
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?><records><record/></records>"
-                        .getBytes(UTF_8));
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?><records><record/></records>".getBytes(UTF_8));
         assertTypeByData("application/xml",
-                "\uFEFF<?xml version=\"1.0\" encoding=\"UTF-16\"?><records><record/></records>"
-                        .getBytes(UTF_16LE));
+                "\uFEFF<?xml version=\"1.0\" encoding=\"UTF-16\"?><records><record/></records>".getBytes(UTF_16LE));
         assertTypeByData("application/xml",
-                "\uFEFF<?xml version=\"1.0\" encoding=\"UTF-16\"?><records><record/></records>"
-                        .getBytes(UTF_16BE));
+                "\uFEFF<?xml version=\"1.0\" encoding=\"UTF-16\"?><records><record/></records>".getBytes(UTF_16BE));
         assertTypeByData("application/xml",
-                "<!-- XML without processing instructions --><records><record/></records>"
-                        .getBytes(UTF_8));
+                "<!-- XML without processing instructions --><records><record/></records>".getBytes(UTF_8));
         assertTypeByData("text/html", "<html><body>HTML</body></html>".getBytes(UTF_8));
-        assertTypeByData("text/html",
-                "<!-- HTML comment --><html><body>HTML</body></html>".getBytes(UTF_8));
+        assertTypeByData("text/html", "<!-- HTML comment --><html><body>HTML</body></html>".getBytes(UTF_8));
     }
 
     @Test
@@ -848,15 +813,12 @@ public class TestMimeTypes {
 
         // These are all children of the official type
         assertEquals("application/dita+xml",
-                repo.getMediaTypeRegistry().getSupertype(getTypeByNameAndData("testDITA.ditamap"))
-                        .toString());
+                repo.getMediaTypeRegistry().getSupertype(getTypeByNameAndData("testDITA.ditamap")).toString());
         assertEquals("application/dita+xml",
-                repo.getMediaTypeRegistry().getSupertype(getTypeByNameAndData("testDITA.dita"))
-                        .toString());
+                repo.getMediaTypeRegistry().getSupertype(getTypeByNameAndData("testDITA.dita")).toString());
         // Concept inherits from topic
         assertEquals("application/dita+xml; format=topic",
-                repo.getMediaTypeRegistry().getSupertype(getTypeByNameAndData("testDITA2.dita"))
-                        .toString());
+                repo.getMediaTypeRegistry().getSupertype(getTypeByNameAndData("testDITA2.dita")).toString());
     }
 
     /**
@@ -925,21 +887,18 @@ public class TestMimeTypes {
 
         assertTypeByName("application/x-font-printer-metric", "x.pfm");
         // TODO Get a sample .pfm file
-        assertTypeByData("application/x-font-printer-metric",
-                new byte[]{0x00, 0x01, 256 - 0xb1, 0x0a, 0x00, 0x00, 0x43, 0x6f, 0x70, 0x79, 0x72,
-                        0x69, 0x67, 0x68, 0x74, 0x20});
+        assertTypeByData("application/x-font-printer-metric", new byte[]{0x00, 0x01, 256 - 0xb1, 0x0a, 0x00, 0x00, 0x43,
+                0x6f, 0x70, 0x79, 0x72, 0x69, 0x67, 0x68, 0x74, 0x20});
 
         assertTypeByName("application/x-font-type1", "x.pfa");
         // TODO Get a sample .pfa file
-        assertTypeByData("application/x-font-type1",
-                new byte[]{0x25, 0x21, 0x50, 0x53, 0x2d, 0x41, 0x64, 0x6f, 0x62, 0x65, 0x46, 0x6f,
-                        0x6e, 0x74, 0x2d, 0x31, 0x2e, 0x30, 0x20, 0x20, 0x2d, 0x2a, 0x2d, 0x20});
+        assertTypeByData("application/x-font-type1", new byte[]{0x25, 0x21, 0x50, 0x53, 0x2d, 0x41, 0x64, 0x6f, 0x62,
+                0x65, 0x46, 0x6f, 0x6e, 0x74, 0x2d, 0x31, 0x2e, 0x30, 0x20, 0x20, 0x2d, 0x2a, 0x2d, 0x20});
 
         assertTypeByName("application/x-font-type1", "x.pfb");
         // TODO Get a sample .pfm file
-        assertTypeByData("application/x-font-type1",
-                new byte[]{-0x80, 0x01, 0x09, 0x05, 0x00, 0x00, 0x25, 0x21, 0x50, 0x53, 0x2d, 0x41,
-                        0x64, 0x6f, 0x62, 0x65, 0x46, 0x6f, 0x6e, 0x74, 0x2d, 0x31, 0x2e, 0x30});
+        assertTypeByData("application/x-font-type1", new byte[]{-0x80, 0x01, 0x09, 0x05, 0x00, 0x00, 0x25, 0x21, 0x50,
+                0x53, 0x2d, 0x41, 0x64, 0x6f, 0x62, 0x65, 0x46, 0x6f, 0x6e, 0x74, 0x2d, 0x31, 0x2e, 0x30});
     }
 
     /**
@@ -1031,7 +990,6 @@ public class TestMimeTypes {
         // MBOX
         assertTypeDetection("testMBOX_lengthy_x-headers.mbox", "application/mbox");
 
-
         // Thunderbird
         assertTypeDetection("testThunderbirdEml.eml", "message/rfc822");
 
@@ -1116,15 +1074,11 @@ public class TestMimeTypes {
 
     @Test
     public void testBerkeleyDB() throws IOException {
-        assertTypeByData("application/x-berkeley-db; format=btree; version=2",
-                "testBDB_btree_2.db");
-        assertTypeByData("application/x-berkeley-db; format=btree; version=3",
-                "testBDB_btree_3.db");
-        assertTypeByData("application/x-berkeley-db; format=btree; version=4",
-                "testBDB_btree_4.db");
+        assertTypeByData("application/x-berkeley-db; format=btree; version=2", "testBDB_btree_2.db");
+        assertTypeByData("application/x-berkeley-db; format=btree; version=3", "testBDB_btree_3.db");
+        assertTypeByData("application/x-berkeley-db; format=btree; version=4", "testBDB_btree_4.db");
         // V4 and V5 share the same btree format
-        assertTypeByData("application/x-berkeley-db; format=btree; version=4",
-                "testBDB_btree_5.db");
+        assertTypeByData("application/x-berkeley-db; format=btree; version=4", "testBDB_btree_5.db");
 
         assertTypeByData("application/x-berkeley-db; format=hash; version=2", "testBDB_hash_2.db");
         assertTypeByData("application/x-berkeley-db; format=hash; version=3", "testBDB_hash_3.db");
@@ -1436,8 +1390,8 @@ public class TestMimeTypes {
         assertTypeDetection(filename, type, type, type);
     }
 
-    private void assertTypeDetection(String filename, String byName, String byData,
-                                     String byNameAndData) throws IOException {
+    private void assertTypeDetection(String filename, String byName, String byData, String byNameAndData)
+            throws IOException {
         assertTypeByName(byName, filename);
         assertTypeByData(byData, filename);
         assertTypeByNameAndData(byNameAndData, filename);

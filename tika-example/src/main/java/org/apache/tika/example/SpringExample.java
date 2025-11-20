@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.example;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -22,19 +21,20 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.ByteArrayInputStream;
 import java.io.OutputStreamWriter;
 
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.WriteOutContentHandler;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class SpringExample {
     public static void main(String[] args) throws Exception {
-        ApplicationContext context = new ClassPathXmlApplicationContext(new String[]{"org/apache/tika/example/spring.xml"});
+        ApplicationContext context = new ClassPathXmlApplicationContext(
+                new String[]{"org/apache/tika/example/spring.xml"});
         Parser parser = context.getBean("tika", Parser.class);
-        parser.parse(new ByteArrayInputStream("Hello, World!".getBytes(UTF_8)), new WriteOutContentHandler(new OutputStreamWriter(System.out, UTF_8)), new Metadata(),
+        parser.parse(new ByteArrayInputStream("Hello, World!".getBytes(UTF_8)),
+                new WriteOutContentHandler(new OutputStreamWriter(System.out, UTF_8)), new Metadata(),
                 new ParseContext());
     }
 }

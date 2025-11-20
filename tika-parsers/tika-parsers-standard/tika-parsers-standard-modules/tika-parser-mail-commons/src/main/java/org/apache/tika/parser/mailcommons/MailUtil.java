@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.mailcommons;
 
 import java.util.regex.Matcher;
@@ -37,8 +36,8 @@ public class MailUtil {
      * @param emailProperty
      * @param metadata
      */
-    public static void setPersonAndEmail(String string, Property personProperty,
-                                         Property emailProperty, Metadata metadata) {
+    public static void setPersonAndEmail(String string, Property personProperty, Property emailProperty,
+            Metadata metadata) {
 
         StringBuffer sb = new StringBuffer();
         String email = extractEmail(string, sb);
@@ -62,8 +61,8 @@ public class MailUtil {
      * @param emailProperty
      * @param metadata
      */
-    public static void addPersonAndEmail(String string, Property personProperty,
-                                         Property emailProperty, Metadata metadata) {
+    public static void addPersonAndEmail(String string, Property personProperty, Property emailProperty,
+            Metadata metadata) {
 
         StringBuffer sb = new StringBuffer();
         String email = extractEmail(string, sb);

@@ -16,20 +16,19 @@
  */
 package org.apache.tika.server.core;
 
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 
+import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.UnsupportedFormatException;
+
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
-
-import org.apache.tika.exception.EncryptedDocumentException;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.exception.UnsupportedFormatException;
 
 @Provider
 public class TikaServerParseExceptionMapper implements ExceptionMapper<TikaServerParseException> {
@@ -41,9 +40,7 @@ public class TikaServerParseExceptionMapper implements ExceptionMapper<TikaServe
     }
 
     public Response toResponse(TikaServerParseException e) {
-        if (e.getMessage() != null && e
-                .getMessage()
-                .equals(Response.Status.UNSUPPORTED_MEDIA_TYPE.toString())) {
+        if (e.getMessage() != null && e.getMessage().equals(Response.Status.UNSUPPORTED_MEDIA_TYPE.toString())) {
             return buildResponse(e, 415);
         }
         Throwable cause = e.getCause();
@@ -81,19 +78,11 @@ public class TikaServerParseExceptionMapper implements ExceptionMapper<TikaServe
                 result.flush();
             } catch (IOException e) {
                 //something went seriously wrong
-                return Response
-                        .status(500)
-                        .build();
+                return Response.status(500).build();
             }
-            return Response
-                    .status(i)
-                    .entity(result.toString())
-                    .type("text/plain")
-                    .build();
+            return Response.status(i).entity(result.toString()).type("text/plain").build();
         } else {
-            return Response
-                    .status(i)
-                    .build();
+            return Response.status(i).build();
         }
     }
 }

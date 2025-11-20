@@ -60,87 +60,88 @@ final class FndStructureConstants {
     }
 
     static String nameOf(long type) {
-        switch (Long.valueOf(type).intValue()) {
-            case (int) ObjectSpaceManifestRootFND:
+        switch (Long.valueOf(type).intValue())
+        {
+            case (int) ObjectSpaceManifestRootFND :
                 return "ObjectSpaceManifestRootFND";
-            case (int) ObjectSpaceManifestListReferenceFND:
+            case (int) ObjectSpaceManifestListReferenceFND :
                 return "ObjectSpaceManifestListReferenceFND";
-            case (int) ObjectSpaceManifestListStartFND:
+            case (int) ObjectSpaceManifestListStartFND :
                 return "ObjectSpaceManifestListStartFND";
-            case (int) RevisionManifestListReferenceFND:
+            case (int) RevisionManifestListReferenceFND :
                 return "RevisionManifestListReferenceFND";
-            case (int) RevisionManifestListStartFND:
+            case (int) RevisionManifestListStartFND :
                 return "RevisionManifestListStartFND";
-            case (int) RevisionManifestStart4FND:
+            case (int) RevisionManifestStart4FND :
                 return "RevisionManifestStart4FND";
-            case (int) RevisionManifestEndFND:
+            case (int) RevisionManifestEndFND :
                 return "RevisionManifestEndFND";
-            case (int) RevisionManifestStart6FND:
+            case (int) RevisionManifestStart6FND :
                 return "RevisionManifestStart6FND";
-            case (int) RevisionManifestStart7FND:
+            case (int) RevisionManifestStart7FND :
                 return "RevisionManifestStart7FND";
-            case (int) GlobalIdTableStartFNDX:
+            case (int) GlobalIdTableStartFNDX :
                 return "GlobalIdTableStartFNDX";
-            case (int) GlobalIdTableStart2FND:
+            case (int) GlobalIdTableStart2FND :
                 return "GlobalIdTableStart2FND";
-            case (int) GlobalIdTableEntryFNDX:
+            case (int) GlobalIdTableEntryFNDX :
                 return "GlobalIdTableEntryFNDX";
-            case (int) GlobalIdTableEntry2FNDX:
+            case (int) GlobalIdTableEntry2FNDX :
                 return "GlobalIdTableEntry2FNDX";
-            case (int) GlobalIdTableEntry3FNDX:
+            case (int) GlobalIdTableEntry3FNDX :
                 return "GlobalIdTableEntry3FNDX";
-            case (int) GlobalIdTableEndFNDX:
+            case (int) GlobalIdTableEndFNDX :
                 return "GlobalIdTableEndFNDX";
-            case (int) CanRevise.ObjectDeclarationWithRefCountFNDX:
+            case (int) CanRevise.ObjectDeclarationWithRefCountFNDX :
                 return "ObjectDeclarationWithRefCountFNDX";
-            case (int) CanRevise.ObjectDeclarationWithRefCount2FNDX:
+            case (int) CanRevise.ObjectDeclarationWithRefCount2FNDX :
                 return "ObjectDeclarationWithRefCount2FNDX";
-            case (int) CanRevise.ObjectRevisionWithRefCountFNDX:
+            case (int) CanRevise.ObjectRevisionWithRefCountFNDX :
                 return "ObjectRevisionWithRefCountFNDX";
-            case (int) CanRevise.ObjectRevisionWithRefCount2FNDX:
+            case (int) CanRevise.ObjectRevisionWithRefCount2FNDX :
                 return "ObjectRevisionWithRefCount2FNDX";
-            case (int) CanRevise.ObjectDeclaration2RefCountFND:
+            case (int) CanRevise.ObjectDeclaration2RefCountFND :
                 return "ObjectDeclaration2RefCountFND";
-            case (int) CanRevise.ObjectDeclaration2LargeRefCountFND:
+            case (int) CanRevise.ObjectDeclaration2LargeRefCountFND :
                 return "ObjectDeclaration2LargeRefCountFND";
-            case (int) CanRevise.ReadOnlyObjectDeclaration2RefCountFND:
+            case (int) CanRevise.ReadOnlyObjectDeclaration2RefCountFND :
                 return "ReadOnlyObjectDeclaration2RefCountFND";
-            case (int) CanRevise.ReadOnlyObjectDeclaration2LargeRefCountFND:
+            case (int) CanRevise.ReadOnlyObjectDeclaration2LargeRefCountFND :
                 return "ReadOnlyObjectDeclaration2LargeRefCountFND";
-            case (int) CanRevise.ObjectDeclarationFileData3RefCountFND:
+            case (int) CanRevise.ObjectDeclarationFileData3RefCountFND :
                 return "ObjectDeclarationFileData3RefCountFND";
-            case (int) CanRevise.ObjectDeclarationFileData3LargeRefCountFND:
+            case (int) CanRevise.ObjectDeclarationFileData3LargeRefCountFND :
                 return "ObjectDeclarationFileData3LargeRefCountFND";
-            case (int) RootObjectReference2FNDX:
+            case (int) RootObjectReference2FNDX :
                 return "RootObjectReference2FNDX";
-            case (int) RootObjectReference3FND:
+            case (int) RootObjectReference3FND :
                 return "RootObjectReference3FND";
-            case (int) RevisionRoleDeclarationFND:
+            case (int) RevisionRoleDeclarationFND :
                 return "RevisionRoleDeclarationFND";
-            case (int) RevisionRoleAndContextDeclarationFND:
+            case (int) RevisionRoleAndContextDeclarationFND :
                 return "RevisionRoleAndContextDeclarationFND";
-            case (int) ObjectDataEncryptionKeyV2FNDX:
+            case (int) ObjectDataEncryptionKeyV2FNDX :
                 return "ObjectDataEncryptionKeyV2FNDX";
-            case (int) ObjectInfoDependencyOverridesFND:
+            case (int) ObjectInfoDependencyOverridesFND :
                 return "ObjectInfoDependencyOverridesFND";
-            case (int) DataSignatureGroupDefinitionFND:
+            case (int) DataSignatureGroupDefinitionFND :
                 return "DataSignatureGroupDefinitionFND";
-            case (int) FileDataStoreListReferenceFND:
+            case (int) FileDataStoreListReferenceFND :
                 return "FileDataStoreListReferenceFND";
-            case (int) FileDataStoreObjectReferenceFND:
+            case (int) FileDataStoreObjectReferenceFND :
                 return "FileDataStoreObjectReferenceFND";
-            case (int) ObjectGroupListReferenceFND:
+            case (int) ObjectGroupListReferenceFND :
                 return "ObjectGroupListReferenceFND";
-            case (int) ObjectGroupStartFND:
+            case (int) ObjectGroupStartFND :
                 return "ObjectGroupStartFND";
-            case (int) ObjectGroupEndFND:
+            case (int) ObjectGroupEndFND :
                 return "ObjectGroupEndFND";
-            case (int) HashedChunkDescriptor2FND:
+            case (int) HashedChunkDescriptor2FND :
                 return "HashedChunkDescriptor2FND";
 
-            case (int) ChunkTerminatorFND:
+            case (int) ChunkTerminatorFND :
                 return "ChunkTerminatorFND";
-            default:
+            default :
                 return "UnknownFND";
         }
     }

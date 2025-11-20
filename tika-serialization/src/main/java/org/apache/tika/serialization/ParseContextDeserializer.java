@@ -21,18 +21,19 @@ import static org.apache.tika.serialization.ParseContextSerializer.PARSE_CONTEXT
 import java.io.IOException;
 import java.util.Map;
 
+import org.apache.tika.parser.ParseContext;
+
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import org.apache.tika.parser.ParseContext;
-
 public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
 
     @Override
-    public ParseContext deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JacksonException {
+    public ParseContext deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
+            throws IOException, JacksonException {
         JsonNode root = jsonParser.getCodec().readTree(jsonParser);
         return readParseContext(root);
     }
@@ -62,7 +63,8 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
         return parseContext;
     }
 
-    private static String readVal(String key, JsonNode jsonObj, String defaultRet, boolean isRequired) throws IOException {
+    private static String readVal(String key, JsonNode jsonObj, String defaultRet, boolean isRequired)
+            throws IOException {
         JsonNode valNode = jsonObj.get(key);
         if (valNode == null) {
             if (isRequired) {

@@ -59,7 +59,8 @@ public class MicrosoftGraphFetcherConfig extends AbstractConfig {
         return clientSecretCredentialsConfig;
     }
 
-    public MicrosoftGraphFetcherConfig setClientSecretCredentialsConfig(ClientSecretCredentialsConfig clientSecretCredentialsConfig) {
+    public MicrosoftGraphFetcherConfig setClientSecretCredentialsConfig(
+            ClientSecretCredentialsConfig clientSecretCredentialsConfig) {
         this.clientSecretCredentialsConfig = clientSecretCredentialsConfig;
         return this;
     }
@@ -68,7 +69,8 @@ public class MicrosoftGraphFetcherConfig extends AbstractConfig {
         return clientCertificateCredentialsConfig;
     }
 
-    public MicrosoftGraphFetcherConfig setClientCertificateCredentialsConfig(ClientCertificateCredentialsConfig clientCertificateCredentialsConfig) {
+    public MicrosoftGraphFetcherConfig setClientCertificateCredentialsConfig(
+            ClientCertificateCredentialsConfig clientCertificateCredentialsConfig) {
         this.clientCertificateCredentialsConfig = clientCertificateCredentialsConfig;
         return this;
     }

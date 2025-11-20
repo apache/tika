@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.example;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -24,10 +23,9 @@ import java.io.File;
 import java.io.PrintStream;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.tika.TikaTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Isolated;
-
-import org.apache.tika.TikaTest;
 
 // because System is caught
 // https://junit.org/junit5/docs/snapshot/user-guide/#writing-tests-parallel-execution-synchronization
@@ -35,8 +33,9 @@ import org.apache.tika.TikaTest;
 public class SimpleTextExtractorTest extends TikaTest {
     @Test
     public void testSimpleTextExtractor() throws Exception {
-        String message =
-                "This is Tika - Hello, World! This is simple UTF-8 text" + " content written in English to test autodetection of" + " the character encoding of the input stream.";
+        String message = "This is Tika - Hello, World! This is simple UTF-8 text"
+                + " content written in English to test autodetection of"
+                + " the character encoding of the input stream.";
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
         PrintStream out = System.out;
@@ -49,8 +48,6 @@ public class SimpleTextExtractorTest extends TikaTest {
 
         System.setOut(out);
 
-        assertContains(message, buffer
-                .toString(UTF_8.name())
-                .trim());
+        assertContains(message, buffer.toString(UTF_8.name()).trim());
     }
 }

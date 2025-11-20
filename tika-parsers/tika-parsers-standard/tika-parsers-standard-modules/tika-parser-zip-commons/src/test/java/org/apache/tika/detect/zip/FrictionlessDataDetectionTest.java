@@ -20,11 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test case for detecting wacz and other frictionless data packages.
@@ -34,8 +33,7 @@ public class FrictionlessDataDetectionTest extends TikaTest {
     @Test
     public void testWACZDetection() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testWACZ.wacz");
-        assertEquals("application/x-wacz",
-                metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("application/x-wacz", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
     }
 
 }

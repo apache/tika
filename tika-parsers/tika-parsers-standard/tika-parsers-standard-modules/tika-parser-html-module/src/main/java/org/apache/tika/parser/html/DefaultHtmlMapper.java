@@ -35,7 +35,8 @@ public class DefaultHtmlMapper implements HtmlMapper {
      */
     public static final HtmlMapper INSTANCE = new DefaultHtmlMapper();
     // Based on http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd
-    private static final Map<String, String> SAFE_ELEMENTS = new HashMap<String, String>() {{
+    private static final Map<String, String> SAFE_ELEMENTS = new HashMap<String, String>() {
+        {
             put("H1", "h1");
             put("H2", "h2");
             put("H3", "h3");
@@ -79,38 +80,39 @@ public class DefaultHtmlMapper implements HtmlMapper {
             put("PARAM", "param");
             put("INS", "ins");
             put("DEL", "del");
-        }};
-    private static final Set<String> DISCARDABLE_ELEMENTS = new HashSet<String>() {{
+        }
+    };
+    private static final Set<String> DISCARDABLE_ELEMENTS = new HashSet<String>() {
+        {
             add("STYLE");
             add("SCRIPT");
-        }};
+        }
+    };
     // For information on tags & attributes, see:
     // http://www.w3.org/TR/2002/REC-xhtml1-20020801/dtds.html#a_dtd_XHTML-1.0-Strict
     // http://www.w3schools.com/TAGS/
-    private static final Map<String, Set<String>> SAFE_ATTRIBUTES =
-            new HashMap<String, Set<String>>() {{
-                    put("a", attrSet("charset", "type", "name", "href", "hreflang", "rel", "rev",
-                            "shape", "coords"));
-                    put("img", attrSet("src", "alt",  "longdesc", "height", "width", "usemap",
-                            "ismap"));
-                    put("frame", attrSet("longdesc", "name", "src", "frameborder", "marginwidth",
-                            "marginheight", "noresize", "scrolling"));
-                    put("iframe", attrSet("longdesc", "name", "src", "frameborder", "marginwidth",
-                            "marginheight", "scrolling", "align", "height", "width"));
-                    put("link", attrSet("charset", "href", "hreflang", "type", "rel", "rev", "media"));
-                    put("map", attrSet("id", "class", "style", "title", "name"));
-                    put("area", attrSet("shape", "coords", "href", "nohref", "alt"));
-                    put("object", attrSet("declare", "classid", "codebase", "data", "type",
-                            "codetype", "archive", "standby", "height", "width",
-                            "usemap", "name", "tabindex", "align", "border", "hspace", "vspace"));
-                    put("param", attrSet("id", "name", "value", "valuetype", "type"));
-                    put("blockquote", attrSet("cite"));
-                    put("ins", attrSet("cite", "datetime"));
-                    put("del", attrSet("cite", "datetime"));
-                    put("q", attrSet("cite"));
+    private static final Map<String, Set<String>> SAFE_ATTRIBUTES = new HashMap<String, Set<String>>() {
+        {
+            put("a", attrSet("charset", "type", "name", "href", "hreflang", "rel", "rev", "shape", "coords"));
+            put("img", attrSet("src", "alt", "longdesc", "height", "width", "usemap", "ismap"));
+            put("frame", attrSet("longdesc", "name", "src", "frameborder", "marginwidth", "marginheight", "noresize",
+                    "scrolling"));
+            put("iframe", attrSet("longdesc", "name", "src", "frameborder", "marginwidth", "marginheight", "scrolling",
+                    "align", "height", "width"));
+            put("link", attrSet("charset", "href", "hreflang", "type", "rel", "rev", "media"));
+            put("map", attrSet("id", "class", "style", "title", "name"));
+            put("area", attrSet("shape", "coords", "href", "nohref", "alt"));
+            put("object", attrSet("declare", "classid", "codebase", "data", "type", "codetype", "archive", "standby",
+                    "height", "width", "usemap", "name", "tabindex", "align", "border", "hspace", "vspace"));
+            put("param", attrSet("id", "name", "value", "valuetype", "type"));
+            put("blockquote", attrSet("cite"));
+            put("ins", attrSet("cite", "datetime"));
+            put("del", attrSet("cite", "datetime"));
+            put("q", attrSet("cite"));
 
-                // TODO - fill out this set. Include core, i18n, etc sets where appropriate.
-                }};
+            // TODO - fill out this set. Include core, i18n, etc sets where appropriate.
+        }
+    };
 
     private static Set<String> attrSet(String... attrs) {
         return new HashSet<>(Arrays.asList(attrs));

@@ -16,22 +16,20 @@
  */
 package org.apache.tika.parser.microsoft.xml;
 
-
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Set;
-
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Parses wordml 2003 format Excel files.  These are single xml files
@@ -55,11 +53,9 @@ public class SpreadsheetMLParser extends AbstractXML2003Parser {
     }
 
     @Override
-    protected ContentHandler getContentHandler(ContentHandler ch, Metadata metadata,
-                                               ParseContext context) {
+    protected ContentHandler getContentHandler(ContentHandler ch, Metadata metadata, ParseContext context) {
 
-        return new TeeContentHandler(super.getContentHandler(ch, metadata, context),
-                new ExcelMLHandler(ch));
+        return new TeeContentHandler(super.getContentHandler(ch, metadata, context), new ExcelMLHandler(ch));
     }
 
     @Override
@@ -79,36 +75,36 @@ public class SpreadsheetMLParser extends AbstractXML2003Parser {
         }
 
         @Override
-        public void startElement(String uri, String localName, String qName, Attributes attrs)
-                throws SAXException {
+        public void startElement(String uri, String localName, String qName, Attributes attrs) throws SAXException {
             localName = localName.toLowerCase(Locale.US);
 
             if (MS_SPREADSHEET_URN.equals(uri)) {
-                switch (localName) {
-                    case BODY:
+                switch (localName)
+                {
+                    case BODY :
                         inBody = true;
                         break;
-                    case TABLE:
+                    case TABLE :
                         handler.startElement(XHTMLContentHandler.XHTML, TABLE, TABLE, EMPTY_ATTRS);
                         handler.startElement(XHTMLContentHandler.XHTML, TBODY, TBODY, EMPTY_ATTRS);
                         break;
-                    case WORKSHEET:
+                    case WORKSHEET :
                         String worksheetName = attrs.getValue(MS_SPREADSHEET_URN, "Name");
                         AttributesImpl xhtmlAttrs = new AttributesImpl();
                         if (worksheetName != null) {
-                            xhtmlAttrs.addAttribute(XHTMLContentHandler.XHTML, NAME_ATTR, NAME_ATTR,
-                                    CDATA, worksheetName);
+                            xhtmlAttrs.addAttribute(XHTMLContentHandler.XHTML, NAME_ATTR, NAME_ATTR, CDATA,
+                                    worksheetName);
                         }
                         handler.startElement(XHTMLContentHandler.XHTML, DIV, DIV, xhtmlAttrs);
                         break;
-                    case ROW:
+                    case ROW :
                         handler.startElement(XHTMLContentHandler.XHTML, TR, TR, EMPTY_ATTRS);
                         break;
-                    case CELL:
+                    case CELL :
                         href = attrs.getValue(MS_SPREADSHEET_URN, "HRef");
                         handler.startElement(XHTMLContentHandler.XHTML, TD, TD, EMPTY_ATTRS);
                         break;
-                    case DATA:
+                    case DATA :
                         inData = true;
                         break;
                 }
@@ -128,22 +124,23 @@ public class SpreadsheetMLParser extends AbstractXML2003Parser {
         public void endElement(String uri, String localName, String qName) throws SAXException {
             localName = localName.toLowerCase(Locale.US);
             if (MS_SPREADSHEET_URN.equals(uri)) {
-                switch (localName) {
-                    case TABLE:
+                switch (localName)
+                {
+                    case TABLE :
                         handler.endElement(XHTMLContentHandler.XHTML, TBODY, TBODY);
                         handler.endElement(XHTMLContentHandler.XHTML, TABLE, TABLE);
 
                         break;
-                    case WORKSHEET:
+                    case WORKSHEET :
                         handler.endElement(XHTMLContentHandler.XHTML, DIV, DIV);
                         break;
-                    case ROW:
+                    case ROW :
                         handler.endElement(XHTMLContentHandler.XHTML, TR, TR);
                         break;
-                    case CELL:
+                    case CELL :
                         handler.endElement(XHTMLContentHandler.XHTML, TD, TD);
                         break;
-                    case DATA:
+                    case DATA :
                         if (href != null) {
                             AttributesImpl attrs = new AttributesImpl();
                             attrs.addAttribute(XHTMLContentHandler.XHTML, HREF, HREF, CDATA, href);

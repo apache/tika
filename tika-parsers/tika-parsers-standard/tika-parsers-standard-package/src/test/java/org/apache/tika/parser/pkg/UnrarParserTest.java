@@ -22,15 +22,13 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import java.io.InputStream;
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.external.ExternalParser;
-
+import org.junit.jupiter.api.Test;
 
 /**
  * Test case for parsing rar files.
@@ -46,7 +44,7 @@ public class UnrarParserTest extends AbstractPkgTest {
         assumeTrue(ExternalParser.check("unrar"));
 
         // Expected embedded resources in test-documents.rar file.
-        String[] expectedResources = { "testHTML.html", "testEXCEL.xls", "testOpenOffice2.odt", "testPDF.pdf",
+        String[] expectedResources = {"testHTML.html", "testEXCEL.xls", "testOpenOffice2.odt", "testPDF.pdf",
                 "testPPT.ppt", "testRTF.rtf", "testTXT.txt", "testWORD.doc", "testXML.xml"};
 
         TikaConfig tikaConfig = null;
@@ -60,9 +58,8 @@ public class UnrarParserTest extends AbstractPkgTest {
         assertEquals(12, metadataList.size());
 
         for (String resource : expectedResources) {
-            assertEquals(1, metadataList.stream()
-                    .filter(m -> m.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME) != null &&
-                            m.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME).contains(resource)).count());
+            assertEquals(1, metadataList.stream().filter(m -> m.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME) != null
+                    && m.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME).contains(resource)).count());
         }
     }
 

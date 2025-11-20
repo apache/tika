@@ -45,9 +45,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-
 import org.apache.tika.pipes.core.FetchEmitTuple;
 import org.apache.tika.pipes.core.PipesReporter;
 import org.apache.tika.pipes.core.PipesResult;
@@ -55,7 +52,8 @@ import org.apache.tika.pipes.core.async.AsyncConfig;
 import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
 import org.apache.tika.pipes.core.pipesiterator.TotalCountResult;
-
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class TestJDBCPipesReporter {
 
@@ -92,8 +90,7 @@ public class TestJDBCPipesReporter {
         Path config = tmpDir.resolve("tika-config.xml");
         String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
 
-        writeConfig("/configs/tika-config-includes.xml",
-                connectionString, config);
+        writeConfig("/configs/tika-config-includes.xml", connectionString, config);
 
         AsyncConfig asyncConfig = AsyncConfig.load(config);
         PipesReporter reporter = asyncConfig.getPipesReporter();
@@ -124,8 +121,7 @@ public class TestJDBCPipesReporter {
         Path config = tmpDir.resolve("tika-config.xml");
         String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
 
-        writeConfig("/configs/tika-config-excludes.xml",
-                connectionString, config);
+        writeConfig("/configs/tika-config-excludes.xml", connectionString, config);
         AsyncConfig asyncConfig = AsyncConfig.load(config);
         PipesReporter reporter = asyncConfig.getPipesReporter();
         int numThreads = 10;
@@ -156,21 +152,19 @@ public class TestJDBCPipesReporter {
         Path config = tmpDir.resolve("tika-config.xml");
         String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
 
-        writeConfig("/configs/tika-config-advanced.xml",
-                connectionString, config);
+        writeConfig("/configs/tika-config-advanced.xml", connectionString, config);
 
         //build the table outside of the reporter -- we set createTable=false
         try (Connection connection = DriverManager.getConnection(connectionString)) {
             try (Statement st = connection.createStatement()) {
-                st.execute("create table my_tika_status (id varchar(256), status varchar" +
-                        "(256), timestamp timestamp with time zone)");
+                st.execute("create table my_tika_status (id varchar(256), status varchar"
+                        + "(256), timestamp timestamp with time zone)");
             }
         }
 
         AsyncConfig asyncConfig = AsyncConfig.load(config);
-        JDBCPipesReporter reporter = (JDBCPipesReporter)asyncConfig.getPipesReporter();
-        assertEquals("update my_tika_status set status=?, timestamp=? where id=?",
-                reporter.getReportSql());
+        JDBCPipesReporter reporter = (JDBCPipesReporter) asyncConfig.getPipesReporter();
+        assertEquals("update my_tika_status set status=?, timestamp=? where id=?", reporter.getReportSql());
         assertFalse(reporter.isCreateTable());
 
         List<String> expected = new ArrayList<>();
@@ -181,9 +175,7 @@ public class TestJDBCPipesReporter {
         assertEquals(expected, reporter.getReportVariables());
     }
 
-
-    private Map<PipesResult.STATUS, Long> countReported(String connectionString) throws
-            SQLException {
+    private Map<PipesResult.STATUS, Long> countReported(String connectionString) throws SQLException {
         Map<PipesResult.STATUS, Long> counts = new HashMap<>();
         try (Connection connection = DriverManager.getConnection(connectionString)) {
             try (Statement st = connection.createStatement()) {
@@ -207,13 +199,10 @@ public class TestJDBCPipesReporter {
         return counts;
     }
 
-    private Map<PipesResult.STATUS, Long> runBatch(PipesReporter reporter,
-                                                   int numThreads,
-                                                   int numIterations)
+    private Map<PipesResult.STATUS, Long> runBatch(PipesReporter reporter, int numThreads, int numIterations)
             throws ExecutionException, InterruptedException {
         ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
-        ExecutorCompletionService<Integer> executorCompletionService =
-                new ExecutorCompletionService(executorService);
+        ExecutorCompletionService<Integer> executorCompletionService = new ExecutorCompletionService(executorService);
         List<ReportWorker> workerList = new ArrayList<>();
         for (int i = 0; i < numThreads; i++) {
             ReportWorker reportWorker = new ReportWorker(reporter, numIterations);
@@ -262,10 +251,8 @@ public class TestJDBCPipesReporter {
                 PipesResult.STATUS status = statuses[random.nextInt(statuses.length)];
                 PipesResult pipesResult = new PipesResult(status);
                 String id = "id " + TOTAL_ADDED.getAndIncrement();
-                FetchEmitTuple t = new FetchEmitTuple(id,
-                        new FetchKey("fetcher", "fetchKey"),
-                        new EmitKey("emitter", id)
-                );
+                FetchEmitTuple t = new FetchEmitTuple(id, new FetchKey("fetcher", "fetchKey"),
+                        new EmitKey("emitter", id));
 
                 reporter.report(t, pipesResult, 100L);
                 Long cnt = written.get(status);

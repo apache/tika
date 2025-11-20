@@ -30,15 +30,14 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * <p>
@@ -69,8 +68,7 @@ public class FLVParser implements Parser {
      * Serial version UID
      */
     private static final long serialVersionUID = -8718013155719197679L;
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.video("x-flv"));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.video("x-flv"));
     private static int TYPE_METADATA = 0x12;
     private static byte MASK_AUDIO = 1;
     private static byte MASK_VIDEO = 4;
@@ -95,26 +93,27 @@ public class FLVParser implements Parser {
         if (type == -1) {
             type = input.readUnsignedByte();
         }
-        switch (type) {
-            case 0:
+        switch (type)
+        {
+            case 0 :
                 return input.readDouble();
-            case 1:
+            case 1 :
                 return input.readUnsignedByte() == 1;
-            case 2:
+            case 2 :
                 return readAMFString(input);
-            case 3:
+            case 3 :
                 return readAMFObject(input);
-            case 8:
+            case 8 :
                 return readAMFEcmaArray(input);
-            case 10:
+            case 10 :
                 return readAMFStrictArray(input);
-            case 11:
+            case 11 :
                 final Date date = new Date((long) input.readDouble());
                 input.readShort(); // time zone
                 return date;
-            case 13:
+            case 13 :
                 return "UNDEFINED";
-            default:
+            default :
                 return null;
         }
     }
@@ -127,7 +126,6 @@ public class FLVParser implements Parser {
         }
         return list;
     }
-
 
     private String readAMFString(DataInputStream input) throws IOException {
         int size = input.readUnsignedShort();
@@ -164,8 +162,8 @@ public class FLVParser implements Parser {
         return fis.read() == 'F' && fis.read() == 'L' && fis.read() == 'V';
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         DataInputStream datainput = new DataInputStream(stream);
         if (!checkSignature(datainput)) {
             throw new TikaException("FLV signature not detected");
@@ -214,7 +212,7 @@ public class FLVParser implements Parser {
             if (type == TYPE_METADATA) {
                 // found metadata Tag, read content to buffer
                 byte[] metaBytes = new byte[datalen];
-                for (int readCount = 0; readCount < datalen; ) {
+                for (int readCount = 0; readCount < datalen;) {
                     int r = stream.read(metaBytes, readCount, datalen - readCount);
                     if (r != -1) {
                         readCount += r;
@@ -224,11 +222,8 @@ public class FLVParser implements Parser {
                     }
                 }
 
-                try (
-                        UnsynchronizedByteArrayInputStream is =
-                                UnsynchronizedByteArrayInputStream.builder().setByteArray(metaBytes).get();
-                        DataInputStream dis = new DataInputStream(is);
-                ) {
+                try (UnsynchronizedByteArrayInputStream is = UnsynchronizedByteArrayInputStream.builder()
+                        .setByteArray(metaBytes).get(); DataInputStream dis = new DataInputStream(is);) {
                     Object data = null;
 
                     for (int i = 0; i < 2; i++) {

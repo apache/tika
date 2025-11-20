@@ -20,11 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.language.translate.DefaultTranslator;
 import org.apache.tika.language.translate.EmptyTranslator;
+import org.junit.jupiter.api.Test;
 
 /**
  * Junit test class for {@link TikaConfig}, which cover things

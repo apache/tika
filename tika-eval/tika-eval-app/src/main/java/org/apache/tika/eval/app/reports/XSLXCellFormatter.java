@@ -16,7 +16,6 @@
  */
 package org.apache.tika.eval.app.reports;
 
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 

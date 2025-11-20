@@ -24,7 +24,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-
 public class NonValidatingContentHandler extends ContentHandlerDecorator {
     class ClosedInputStream extends InputStream {
 
@@ -60,8 +59,7 @@ public class NonValidatingContentHandler extends ContentHandlerDecorator {
     }
 
     @Override
-    public InputSource resolveEntity(String publicId, String systemId)
-            throws SAXException, IOException {
+    public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
         return new InputSource(new ClosedInputStream());
     }
 

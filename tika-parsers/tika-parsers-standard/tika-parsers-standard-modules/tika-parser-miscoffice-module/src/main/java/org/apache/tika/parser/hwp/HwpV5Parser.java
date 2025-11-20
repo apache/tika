@@ -21,22 +21,20 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class HwpV5Parser implements Parser {
 
     public static final String HWP_MIME_TYPE = "application/x-hwp-v5";
     private static final long serialVersionUID = 1L;
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.application("x-hwp-v5"));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.application("x-hwp-v5"));
     private HwpTextExtractorV5 extractor;
 
     public HwpV5Parser() {
@@ -49,8 +47,8 @@ public class HwpV5Parser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         metadata.set(Metadata.CONTENT_TYPE, HWP_MIME_TYPE);
 

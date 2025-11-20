@@ -27,9 +27,7 @@ import org.apache.tika.utils.StringUtils;
 public class AsyncStatus {
 
     public enum ASYNC_STATUS {
-        STARTED,
-        COMPLETED,
-        CRASHED
+        STARTED, COMPLETED, CRASHED
     }
     private final Instant started;
 
@@ -45,8 +43,8 @@ public class AsyncStatus {
         lastUpdate = started;
     }
 
-    public synchronized void update(Map<PipesResult.STATUS, Long> statusCounts,
-                                    TotalCountResult totalCountResult, ASYNC_STATUS status) {
+    public synchronized void update(Map<PipesResult.STATUS, Long> statusCounts, TotalCountResult totalCountResult,
+            ASYNC_STATUS status) {
         this.lastUpdate = Instant.now();
         this.statusCounts = statusCounts;
         this.totalCountResult = totalCountResult;
@@ -83,8 +81,8 @@ public class AsyncStatus {
 
     @Override
     public String toString() {
-        return "AsyncStatus{" + "started=" + started + ", lastUpdate=" + lastUpdate +
-                ", totalCountResult=" + totalCountResult + ", statusCounts=" + statusCounts +
-                ", asyncStatus=" + asyncStatus + ", crashMessage='" + crashMessage + '\'' + '}';
+        return "AsyncStatus{" + "started=" + started + ", lastUpdate=" + lastUpdate + ", totalCountResult="
+                + totalCountResult + ", statusCounts=" + statusCounts + ", asyncStatus=" + asyncStatus
+                + ", crashMessage='" + crashMessage + '\'' + '}';
     }
 }

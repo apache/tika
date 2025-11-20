@@ -13,7 +13,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 package org.apache.tika.parser.envi;
 
@@ -26,11 +25,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
@@ -39,14 +33,17 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class EnviHeaderParser extends AbstractEncodingDetectorParser {
 
     public static final String ENVI_MIME_TYPE = "application/envi.hdr";
     private static final long serialVersionUID = -1479368523072408091L;
     private static final Logger LOG = LoggerFactory.getLogger(EnviHeaderParser.class);
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.application("envi.hdr"));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.application("envi.hdr"));
 
     private List<String> multiLineFieldValueList = new ArrayList<>();
 
@@ -66,16 +63,16 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         // Only outputting the MIME type as metadata
         metadata.set(Metadata.CONTENT_TYPE, ENVI_MIME_TYPE);
 
         // The following code was taken from the TXTParser
         // Automatically detect the character encoding
-        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream),
-                metadata, getEncodingDetector(context))) {
+        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream), metadata,
+                getEncodingDetector(context))) {
             Charset charset = reader.getCharset();
             // deprecated, see TIKA-431
             metadata.set(Metadata.CONTENT_ENCODING, charset.name());
@@ -89,8 +86,7 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
 
     }
 
-    private void readLines(AutoDetectReader reader, Metadata metadata)
-            throws IOException, SAXException {
+    private void readLines(AutoDetectReader reader, Metadata metadata) throws IOException, SAXException {
         // text contents of the xhtml
         String line;
         while ((line = reader.readLine()) != null) {
@@ -115,22 +111,19 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
                 if (keyValue[0].trim().equals("map info")) {
                     String[] mapInfoValues = parseMapInfoContents(keyValue[1]);
                     if (mapInfoValues[0].equals("UTM")) {
-                        metadata.set("envi." + keyValue[0].trim().replace(" ", "."),
-                                keyValue[1].trim());
-                        String[] latLonStringArray =
-                                convertMapInfoValuesToLatLngAndSetMetadata(mapInfoValues, metadata);
-                        String xhtmlLatLongLine = "lat/lon = { " + latLonStringArray[0] + ", " +
-                                latLonStringArray[1] + " }";
+                        metadata.set("envi." + keyValue[0].trim().replace(" ", "."), keyValue[1].trim());
+                        String[] latLonStringArray = convertMapInfoValuesToLatLngAndSetMetadata(mapInfoValues,
+                                metadata);
+                        String xhtmlLatLongLine = "lat/lon = { " + latLonStringArray[0] + ", " + latLonStringArray[1]
+                                + " }";
                         xhtml.startElement("p");
                         xhtml.characters(xhtmlLatLongLine);
                         xhtml.endElement("p");
                     } else {
-                        metadata.set("envi." + keyValue[0].trim().replace(" ", "."),
-                                keyValue[1].trim());
+                        metadata.set("envi." + keyValue[0].trim().replace(" ", "."), keyValue[1].trim());
                     }
                 } else {
-                    metadata.set("envi." + keyValue[0].trim().replace(" ", "."),
-                            keyValue[1].trim());
+                    metadata.set("envi." + keyValue[0].trim().replace(" ", "."), keyValue[1].trim());
                 }
             }
         }
@@ -142,8 +135,7 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
     private String[] parseMapInfoContents(String mapInfoValue) {
         StringBuilder mapInfoValueStringBuilder = new StringBuilder();
         for (int i = 0; i < mapInfoValue.length(); ++i) {
-            if (mapInfoValue.charAt(i) != '{' && mapInfoValue.charAt(i) != '}' &&
-                    mapInfoValue.charAt(i) != ' ') {
+            if (mapInfoValue.charAt(i) != '{' && mapInfoValue.charAt(i) != '}' && mapInfoValue.charAt(i) != ' ') {
                 mapInfoValueStringBuilder.append(mapInfoValue.charAt(i));
             }
         }
@@ -151,8 +143,7 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
     }
 
     // Conversion logic taken from https://stackoverflow.com/questions/343865/how-to-convert-from-utm-to-latlng-in-python-or-javascript/344083#344083
-    private String[] convertMapInfoValuesToLatLngAndSetMetadata(String[] mapInfoValues,
-                                                                Metadata metadata) {
+    private String[] convertMapInfoValuesToLatLngAndSetMetadata(String[] mapInfoValues, Metadata metadata) {
         // Based on the map info data, pixelEasting is at index 3 and pixelNorthing is at index 4
         double pixelEasting = Double.parseDouble(mapInfoValues[3].trim());
         double pixelNorthing = Double.parseDouble(mapInfoValues[4].trim());
@@ -167,25 +158,22 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
         double k0 = 0.9996;
 
         double arc = pixelNorthing / k0;
-        double mu = arc / (a * (1.0 - Math.pow(e, 2.0) / 4.0 - 3.0 * Math.pow(e, 4.0) / 64.0 -
-                5.0 * Math.pow(e, 6.0) / 256.0));
+        double mu = arc
+                / (a * (1.0 - Math.pow(e, 2.0) / 4.0 - 3.0 * Math.pow(e, 4.0) / 64.0 - 5.0 * Math.pow(e, 6.0) / 256.0));
 
-        double ei = (1.0 - Math.pow((1.0 - e * e), (1.0 / 2.0))) /
-                (1.0 + Math.pow((1.0 - e * e), (1.0 / 2.0)));
+        double ei = (1.0 - Math.pow((1.0 - e * e), (1.0 / 2.0))) / (1.0 + Math.pow((1.0 - e * e), (1.0 / 2.0)));
 
         double ca = 3.0 * ei / 2.0 - 27.0 * Math.pow(ei, 3.0) / 32.0;
 
         double cb = 21.0 * Math.pow(ei, 2.0) / 16.0 - 55.0 * Math.pow(ei, 4.0) / 32.0;
         double cc = 151.0 * Math.pow(ei, 3.0) / 96.0;
         double cd = 1097.0 * Math.pow(ei, 4.0) / 512.0;
-        double phi1 =
-                mu + ca * Math.sin(2.0 * mu) + cb * Math.sin(4.0 * mu) + cc * Math.sin(6.0 * mu) +
-                        cd * Math.sin(8.0 * mu);
+        double phi1 = mu + ca * Math.sin(2.0 * mu) + cb * Math.sin(4.0 * mu) + cc * Math.sin(6.0 * mu)
+                + cd * Math.sin(8.0 * mu);
 
         double n0 = a / Math.pow((1.0 - Math.pow((e * Math.sin(phi1)), 2.0)), (1.0 / 2.0));
 
-        double r0 = a * (1.0 - e * e) /
-                Math.pow((1.0 - Math.pow((e * Math.sin(phi1)), 2.0)), (3.0 / 2.0));
+        double r0 = a * (1.0 - e * e) / Math.pow((1.0 - Math.pow((e * Math.sin(phi1)), 2.0)), (3.0 / 2.0));
         double fact1 = n0 * Math.tan(phi1) / r0;
 
         double _a1 = 500000.0 - pixelEasting;
@@ -193,16 +181,13 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
         double fact2 = dd0 * dd0 / 2.0;
         double t0 = Math.pow(Math.tan(phi1), 2.0);
         double Q0 = e1sq * Math.pow(Math.cos(phi1), 2.0);
-        double fact3 =
-                (5.0 + 3.0 * t0 + 10.0 * Q0 - 4.0 * Q0 * Q0 - 9.0 * e1sq) * Math.pow(dd0, 4.0) /
-                        24.0;
-        double fact4 =
-                (61.0 + 90.0 * t0 + 298.0 * Q0 + 45.0 * t0 * t0 - 252.0 * e1sq - 3.0 * Q0 * Q0) *
-                        Math.pow(dd0, 6.0) / 720.0;
+        double fact3 = (5.0 + 3.0 * t0 + 10.0 * Q0 - 4.0 * Q0 * Q0 - 9.0 * e1sq) * Math.pow(dd0, 4.0) / 24.0;
+        double fact4 = (61.0 + 90.0 * t0 + 298.0 * Q0 + 45.0 * t0 * t0 - 252.0 * e1sq - 3.0 * Q0 * Q0)
+                * Math.pow(dd0, 6.0) / 720.0;
         double lof1 = _a1 / (n0 * k0);
         double lof2 = (1.0 + 2.0 * t0 + Q0) * Math.pow(dd0, 3.0) / 6.0;
-        double lof3 = (5.0 - 2.0 * Q0 + 28.0 * t0 - 3.0 * Math.pow(Q0, 2.0) + 8.0 * e1sq +
-                24.0 * Math.pow(t0, 2.0)) * Math.pow(dd0, 5.0) / 120.0;
+        double lof3 = (5.0 - 2.0 * Q0 + 28.0 * t0 - 3.0 * Math.pow(Q0, 2.0) + 8.0 * e1sq + 24.0 * Math.pow(t0, 2.0))
+                * Math.pow(dd0, 5.0) / 120.0;
         double _a2 = (lof1 - lof2 + lof3) / Math.cos(phi1);
         double _a3 = _a2 * 180.0 / Math.PI;
         double zoneCM = (zone > 0) ? 6 * zone - 183.0 : 3.0;

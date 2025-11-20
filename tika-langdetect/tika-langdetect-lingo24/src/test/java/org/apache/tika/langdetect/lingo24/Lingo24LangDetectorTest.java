@@ -26,12 +26,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.langdetect.LanguageDetectorTest;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.language.detect.LanguageWriter;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test harness for the {@link org.apache.tika.langdetect.lingo24.Lingo24LangDetector}.
@@ -48,20 +47,17 @@ public class Lingo24LangDetectorTest {
         assertTrue(detector.hasModel("de"));
     }
 
-
     @Test
     public void testLanguageDetection() throws Exception {
         // Reusing the test data from OptimaizeLangDetectorTest
         // Test taht we can at least read the test file
         List<String> lines = IOUtils.readLines(new InputStreamReader(
-                LanguageDetectorTest.class.getResourceAsStream("text-test.tsv"),
-                StandardCharsets.UTF_8));
+                LanguageDetectorTest.class.getResourceAsStream("text-test.tsv"), StandardCharsets.UTF_8));
         assertEquals(18, lines.size());
 
         LanguageDetector detector = new Lingo24LangDetector();
         assumeTrue(((Lingo24LangDetector) detector).isAvailable());
         LanguageWriter writer = new LanguageWriter(detector);
-
 
         for (String line : lines) {
             String[] data = line.split("\t");

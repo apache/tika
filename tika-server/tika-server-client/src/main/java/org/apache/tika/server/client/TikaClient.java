@@ -33,12 +33,12 @@ public class TikaClient {
     private final Random random = new Random();
     private final List<TikaPipesHttpClient> clients;
 
-
     private TikaClient(List<TikaPipesHttpClient> clients) {
         this.clients = clients;
     }
 
-    public static TikaClient get(HttpClientFactory httpClientFactory, List<String> tikaServers) throws TikaConfigException {
+    public static TikaClient get(HttpClientFactory httpClientFactory, List<String> tikaServers)
+            throws TikaConfigException {
         List clients = new ArrayList<>();
         for (String url : tikaServers) {
             //client factory is not thread safe, create a copy per client
@@ -49,7 +49,7 @@ public class TikaClient {
 
     /*public List<Metadata> parse(InputStream is, Metadata metadata)
     throws IOException, TikaException {
-
+    
     }*/
 
     public TikaEmitterResult parse(FetchEmitTuple fetchEmit) throws IOException, TikaException {

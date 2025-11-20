@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.html;
 
 import java.io.InputStream;
@@ -22,11 +21,9 @@ import java.util.Arrays;
 import java.util.Objects;
 
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-
 import org.apache.tika.mime.MediaType;
 
 public class DataURIScheme {
-
 
     private final String rawMediaTypeString;
     private final boolean isBase64;
@@ -66,9 +63,8 @@ public class DataURIScheme {
             return false;
         }
         DataURIScheme that = (DataURIScheme) o;
-        return isBase64() == that.isBase64() &&
-                Objects.equals(rawMediaTypeString, that.rawMediaTypeString) &&
-                Arrays.equals(data, that.data);
+        return isBase64() == that.isBase64() && Objects.equals(rawMediaTypeString, that.rawMediaTypeString)
+                && Arrays.equals(data, that.data);
     }
 
     @Override

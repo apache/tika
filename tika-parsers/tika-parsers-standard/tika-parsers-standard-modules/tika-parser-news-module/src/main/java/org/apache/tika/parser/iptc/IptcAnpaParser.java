@@ -29,9 +29,6 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -39,6 +36,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Parser for IPTC ANPA New Wire Feeds
@@ -52,50 +51,50 @@ public class IptcAnpaParser implements Parser {
     private static final MediaType TYPE = MediaType.text("vnd.iptc.anpa");
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(TYPE);
-    private final static char SOH = 0x01;    // start of header (ctrl-a)
-    private final static char STX = 0x02;    // start of text (ctrl-b)
-    private final static char ETX = 0x03;    // end of text (ctrl-c)
-    private final static char EOT = 0x04;    // the tab character (ctrl-d)
-    private final static char SYN = 0x16;    // synchronous idle (ctrl-v)
-    private final static char BS = 0x08;    // the backspace character (used for diacriticals)
-    private final static char TB = 0x09;    // the tab character
-    private final static char LF = 0x0A;    // line feed
-    private final static char FF = 0x0C;    // form feed
-    private final static char CR = 0x0D;    // carriage return
-    private final static char XQ = 0x11;    // device control (ctrl-q)
-    private final static char XS = 0x13;    // device control (ctrl-s)
-    private final static char FS = 0x1F;    // a field delimiter
-    private final static char HY = 0x2D;    // hyphen
-    private final static char SP = 0x20;    // the blank space
-    private final static char LT = 0x3C;    // less than
-    private final static char EQ = 0x3D;    // less than
-    private final static char CT = 0x5E;    // carat
-    private final static char SL = 0x91;    // single-quote left
-    private final static char SR = 0x92;    // single-quote right
-    private final static char DL = 0x93;    // double-quote left
-    private final static char DR = 0x94;    // double-quote right
-    private int FMT_ANPA_1312 = 0x00;   // "NAA 89-3 (ANPA 1312)"
-    private int FMT_ANPA_UPI = 0x01;   // "United Press International ANPA 1312 variant"
-    private int FMT_ANPA_UPI_DL = 0x02;   // "United Press International Down-Load Message"
-    private int FMT_IPTC_7901 = 0x03;   // "IPTC7901 Recommended Message Format"
-    private int FMT_IPTC_PHOTO = 0x04;   // "IPTC-NAA Digital Newsphoto Parameter Record"
+    private final static char SOH = 0x01; // start of header (ctrl-a)
+    private final static char STX = 0x02; // start of text (ctrl-b)
+    private final static char ETX = 0x03; // end of text (ctrl-c)
+    private final static char EOT = 0x04; // the tab character (ctrl-d)
+    private final static char SYN = 0x16; // synchronous idle (ctrl-v)
+    private final static char BS = 0x08; // the backspace character (used for diacriticals)
+    private final static char TB = 0x09; // the tab character
+    private final static char LF = 0x0A; // line feed
+    private final static char FF = 0x0C; // form feed
+    private final static char CR = 0x0D; // carriage return
+    private final static char XQ = 0x11; // device control (ctrl-q)
+    private final static char XS = 0x13; // device control (ctrl-s)
+    private final static char FS = 0x1F; // a field delimiter
+    private final static char HY = 0x2D; // hyphen
+    private final static char SP = 0x20; // the blank space
+    private final static char LT = 0x3C; // less than
+    private final static char EQ = 0x3D; // less than
+    private final static char CT = 0x5E; // carat
+    private final static char SL = 0x91; // single-quote left
+    private final static char SR = 0x92; // single-quote right
+    private final static char DL = 0x93; // double-quote left
+    private final static char DR = 0x94; // double-quote right
+    private int FMT_ANPA_1312 = 0x00; // "NAA 89-3 (ANPA 1312)"
+    private int FMT_ANPA_UPI = 0x01; // "United Press International ANPA 1312 variant"
+    private int FMT_ANPA_UPI_DL = 0x02; // "United Press International Down-Load Message"
+    private int FMT_IPTC_7901 = 0x03; // "IPTC7901 Recommended Message Format"
+    private int FMT_IPTC_PHOTO = 0x04; // "IPTC-NAA Digital Newsphoto Parameter Record"
     private int FMT_IPTC_CHAR = 0x05;
-            // "IPTC Unstructured Character Oriented File Format (UCOFF)"
-    private int FMT_NITF = 0x06;   // "News Industry Text Format (NITF)"
-    private int FMT_NITF_TT = 0x07;   // "Tidningarnas Telegrambyra NITF version (TTNITF DTD)"
-    private int FMT_NITF_RB = 0x08;   // "Ritzaus Bureau NITF version (RBNITF DTD)"
-    private int FMT_IPTC_AP = 0x09;   // "Associated Press news wire format"
-    private int FMT_IPTC_BLM = 0x0A;   // "Bloomberg News news wire format"
-    private int FMT_IPTC_NYT = 0x0B;   // "New York Times news wire format"
-    private int FMT_IPTC_RTR = 0x0C;   // "Reuters news wire format"
-    private int FORMAT = FMT_ANPA_1312;    // assume the default format to be ANPA-1312
+    // "IPTC Unstructured Character Oriented File Format (UCOFF)"
+    private int FMT_NITF = 0x06; // "News Industry Text Format (NITF)"
+    private int FMT_NITF_TT = 0x07; // "Tidningarnas Telegrambyra NITF version (TTNITF DTD)"
+    private int FMT_NITF_RB = 0x08; // "Ritzaus Bureau NITF version (RBNITF DTD)"
+    private int FMT_IPTC_AP = 0x09; // "Associated Press news wire format"
+    private int FMT_IPTC_BLM = 0x0A; // "Bloomberg News news wire format"
+    private int FMT_IPTC_NYT = 0x0B; // "New York Times news wire format"
+    private int FMT_IPTC_RTR = 0x0C; // "Reuters news wire format"
+    private int FORMAT = FMT_ANPA_1312; // assume the default format to be ANPA-1312
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         HashMap<String, String> properties = this.loadProperties(stream);
         this.setMetadata(metadata, properties);
@@ -144,17 +143,16 @@ public class IptcAnpaParser implements Parser {
         return (properties);
     }
 
-
     private int scanFormat(InputStream is) {
         int format = this.FORMAT;
-        int maxsize = 524288;     //  512K
+        int maxsize = 524288; //  512K
 
         byte[] buf = new byte[maxsize];
         try {
             if (is.markSupported()) {
                 is.mark(maxsize);
             }
-            int msgsize = is.read(buf);                // read in at least the full data
+            int msgsize = is.read(buf); // read in at least the full data
 
             String message = (new String(buf, UTF_8)).toLowerCase(Locale.ROOT);
             // these are not if-then-else, because we want to go from most common
@@ -188,11 +186,9 @@ public class IptcAnpaParser implements Parser {
         return (format);
     }
 
-
     private void setFormat(int format) {
         this.FORMAT = format;
     }
-
 
     private String getFormatName() {
 
@@ -211,66 +207,59 @@ public class IptcAnpaParser implements Parser {
         return (name);
     }
 
-
     private byte[] getSection(InputStream is, String name) {
 
         byte[] value = new byte[0];
 
-        switch (name) {
-            case "residual": {
+        switch (name)
+        {
+            case "residual" : {
                 // the header shouldn't be more than 1k, but just being generous here
-                int maxsize = 8192;     //  8K
+                int maxsize = 8192; //  8K
 
-                byte bstart =
-                        SYN;     // check for SYN [0x16 : ctrl-v] (may have leftover residue from
+                byte bstart = SYN; // check for SYN [0x16 : ctrl-v] (may have leftover residue from
 
                 // preceding message)
-                byte bfinish =
-                        SOH;     // check for SOH [0x01 : ctrl-a] (typically follows a pair of SYN
+                byte bfinish = SOH; // check for SOH [0x01 : ctrl-a] (typically follows a pair of SYN
 
                 // [0x16 : ctrl-v])
                 value = getSection(is, maxsize, bstart, bfinish, true);
                 break;
             }
-            case "header": {
+            case "header" : {
                 // the header shouldn't be more than 1k, but just being generous here
-                int maxsize = 8192;     //  8K
+                int maxsize = 8192; //  8K
 
-                byte bstart =
-                        SOH;     // check for SOH [0x01 : ctrl-a] (typically follows a pair of SYN
+                byte bstart = SOH; // check for SOH [0x01 : ctrl-a] (typically follows a pair of SYN
 
                 // [0x16 : ctrl-v])
-                byte bfinish =
-                        STX;     // check for STX [0x02 : ctrl-b] (marks end of header, beginning of
+                byte bfinish = STX; // check for STX [0x02 : ctrl-b] (marks end of header, beginning of
 
                 // message)
                 value = getSection(is, maxsize, bstart, bfinish, true);
                 break;
             }
-            case "body": {
+            case "body" : {
                 // the message shouldn't be more than 16k (?), leaving plenty of space
-                int maxsize = 524288;     //  512K
+                int maxsize = 524288; //  512K
 
-                byte bstart =
-                        STX;     // check for STX [0x02 : ctrl-b] (marks end of header, beginning of
+                byte bstart = STX; // check for STX [0x02 : ctrl-b] (marks end of header, beginning of
 
                 // message)
-                byte bfinish =
-                        ETX;     // check for ETX [0x03 : ctrl-c] (marks end of message, beginning of
+                byte bfinish = ETX; // check for ETX [0x03 : ctrl-c] (marks end of message, beginning of
 
                 // footer)
                 value = getSection(is, maxsize, bstart, bfinish, true);
                 break;
             }
-            case "footer": {
+            case "footer" : {
                 // the footer shouldn't be more than 1k , leaving plenty of space
-                int maxsize = 8192;     //  8K
+                int maxsize = 8192; //  8K
 
-                byte bstart =
-                        ETX;     // check for ETX [0x03 : ctrl-c] (marks end of message, beginning of
+                byte bstart = ETX; // check for ETX [0x03 : ctrl-c] (marks end of message, beginning of
 
                 // footer)
-                byte bfinish = EOT;     // check for EOT [0x04 : ctrl-d] (marks end of transmission)
+                byte bfinish = EOT; // check for EOT [0x04 : ctrl-d] (marks end of transmission)
 
                 value = getSection(is, maxsize, bstart, bfinish, true);
                 break;
@@ -280,16 +269,14 @@ public class IptcAnpaParser implements Parser {
         return (value);
     }
 
-
-    private byte[] getSection(InputStream is, int maxsize, byte bstart, byte bfinish,
-                              boolean ifincomplete) {
+    private byte[] getSection(InputStream is, int maxsize, byte bstart, byte bfinish, boolean ifincomplete) {
         byte[] value = new byte[0];
 
         try {
-            boolean started = false;                   // check if we have found the start flag
-            boolean finished = false;                  // check if we have found the finish flag
-            int read = 0;                              // the number of bytes we read
-            int start = 0;                             // the position after the start flag
+            boolean started = false; // check if we have found the start flag
+            boolean finished = false; // check if we have found the finish flag
+            int read = 0; // the number of bytes we read
+            int start = 0; // the position after the start flag
 
             // TODO: this only pulls back 8K of data on a read, regardless of buffer size
             //       more nefariously, it caps at a total 8K, through all sections
@@ -301,8 +288,7 @@ public class IptcAnpaParser implements Parser {
             int totsize = 0;
             int remainder = maxsize - totsize;
             while (remainder > 0) {
-                int msgsize = is.read(buf, maxsize - remainder,
-                        maxsize);    // read in at least the full data
+                int msgsize = is.read(buf, maxsize - remainder, maxsize); // read in at least the full data
                 if (msgsize == -1) {
                     remainder = msgsize = 0;
                 }
@@ -321,14 +307,14 @@ public class IptcAnpaParser implements Parser {
                 }
 
                 if (finished = (b == bfinish)) {
-/*
-               is.reset();
-               long skipped = is.skip((long)read);
-               if (skipped != read) {
-                  // we are in an unstable state
-               }
-               is.mark(1);
- */
+                    /*
+                                   is.reset();
+                                   long skipped = is.skip((long)read);
+                                   if (skipped != read) {
+                                      // we are in an unstable state
+                                   }
+                                   is.mark(1);
+                     */
                     break;
                 }
 
@@ -358,7 +344,6 @@ public class IptcAnpaParser implements Parser {
         return (value);
     }
 
-
     private boolean parseHeader(byte[] value, HashMap<String, String> properties) {
         boolean added = false;
 
@@ -378,8 +363,7 @@ public class IptcAnpaParser implements Parser {
             while (read < value.length) {
                 byte val_next = value[read++];
                 if (val_next != FS) {
-                    env_serviceid +=
-                            (char) (val_next & 0xff);  // convert the byte to an unsigned int
+                    env_serviceid += (char) (val_next & 0xff); // convert the byte to an unsigned int
                 } else {
                     break;
                 }
@@ -388,11 +372,10 @@ public class IptcAnpaParser implements Parser {
             // pull apart the envelope, getting the category  (....\x13\x11)
             while (read < value.length) {
                 byte val_next = value[read++];
-                if (val_next != XS) {   // the end of the envelope is marked (\x13)
-                    env_category +=
-                            (char) (val_next & 0xff);  // convert the byte to an unsigned int
+                if (val_next != XS) { // the end of the envelope is marked (\x13)
+                    env_category += (char) (val_next & 0xff); // convert the byte to an unsigned int
                 } else {
-                    val_next = value[read];  // get the remaining byte (\x11)
+                    val_next = value[read]; // get the remaining byte (\x11)
                     if (val_next == XQ) {
                         read++;
                     }
@@ -404,15 +387,14 @@ public class IptcAnpaParser implements Parser {
             while (read < value.length) {
                 boolean subject = true;
                 byte val_next = value[read++];
-                while ((subject) && (val_next != SP) &&
-                        (val_next != 0x00)) {  // ignore the envelope subject
-                    hdr_subject.append((char) (val_next & 0xff));  // convert the byte to an unsigned int
+                while ((subject) && (val_next != SP) && (val_next != 0x00)) { // ignore the envelope subject
+                    hdr_subject.append((char) (val_next & 0xff)); // convert the byte to an unsigned int
                     val_next = (read < value.length) ? value[read++] : 0x00;
-                    while (val_next == SP) {  // consume all the spaces
+                    while (val_next == SP) { // consume all the spaces
                         subject = false;
                         val_next = (read < value.length) ? value[read++] : 0x00;
                         if (val_next != SP) {
-                            --read;  // otherwise we eat into the next section
+                            --read; // otherwise we eat into the next section
                         }
                     }
                 }
@@ -428,11 +410,11 @@ public class IptcAnpaParser implements Parser {
                     while (((val_next >= (byte) 0x30) && (val_next <= (byte) 0x39))
                             // consume all numerics and hyphens
                             || (val_next == HY)) {
-                        hdr_date.append((char) (val_next & 0xff));  // convert the byte to an unsigned int
+                        hdr_date.append((char) (val_next & 0xff)); // convert the byte to an unsigned int
                         val_next = (read < value.length) ? value[read++] : 0x00;
                     }
                 } else if (val_next == SP) {
-                    while (val_next == SP) {  // consume all the spaces
+                    while (val_next == SP) { // consume all the spaces
                         val_next = (read < value.length) ? value[read++] : 0x00;
                     }
                     continue;
@@ -440,7 +422,7 @@ public class IptcAnpaParser implements Parser {
                     while (((val_next >= (byte) 0x30) && (val_next <= (byte) 0x39))
                             // consume all numerics and hyphens
                             || (val_next == HY)) {
-                        hdr_time.append((char) (val_next & 0xff));  // convert the byte to an unsigned int
+                        hdr_time.append((char) (val_next & 0xff)); // convert the byte to an unsigned int
                         val_next = (read < value.length) ? value[read++] : 0x00;
                     }
                 }
@@ -450,8 +432,8 @@ public class IptcAnpaParser implements Parser {
 
         // if we were saving any of these values, we would set the properties map here
 
-        added = (env_serviceid.length() + env_category.length() + hdr_subject.length() +
-                hdr_date.length() + hdr_time.length()) > 0;
+        added = (env_serviceid.length() + env_category.length() + hdr_subject.length() + hdr_date.length()
+                + hdr_time.length()) > 0;
         return added;
     }
 
@@ -472,24 +454,22 @@ public class IptcAnpaParser implements Parser {
             // pull apart the body, getting the heading (^....\x0d\x0a)
             while (read < value.length) {
                 byte val_next = value[read++];
-                if (val_next == CT) {      //  start of a new section , first is the heading
+                if (val_next == CT) { //  start of a new section , first is the heading
                     val_next = (read < value.length) ? value[read++] : 0x00;
                     // AP, NYT, and Bloomberg end with < , Reuters with EOL
-                    while ((val_next != LT) && (val_next != CR) &&
-                            (val_next != LF)) {   // less than delimiter (\x3c) and not EOL
-                        bdy_heading.append((char) (val_next & 0xff));  // convert the byte to an unsigned int
+                    while ((val_next != LT) && (val_next != CR) && (val_next != LF)) { // less than delimiter (\x3c) and not EOL
+                        bdy_heading.append((char) (val_next & 0xff)); // convert the byte to an unsigned int
                         val_next = (read < value.length) ? value[read++] : 0x00;
                         if (read >= value.length) {
                             break;
-                        }  // shouldn't ever hit this, but save a NPE
+                        } // shouldn't ever hit this, but save a NPE
                     }
                     if (val_next == LT) {
                         // hit the delimiter, carry on
                         val_next = (read < value.length) ? value[read++] : 0x00;
                     }
                     while (bdy_heading.length() > 0 && ((val_next == CR) || (val_next == LF))) {
-                        val_next =
-                                (read < value.length) ? value[read++] : 0x00;  // skip the new lines
+                        val_next = (read < value.length) ? value[read++] : 0x00; // skip the new lines
                         if ((val_next != CR) && (val_next != LF)) {
                             --read;
                         }
@@ -503,8 +483,7 @@ public class IptcAnpaParser implements Parser {
                         if (val_next != CT) {
                             // for any non-whitespace, we need to go back an additional step to
                             // non destroy the data
-                            if ((val_next != SP) && (val_next != TB) && (val_next != CR) &&
-                                    (val_next != LF)) {
+                            if ((val_next != SP) && (val_next != TB) && (val_next != CR) && (val_next != LF)) {
                                 // if the very first byte is data, we have to shift the whole
                                 // array, and stuff in a carat
                                 if (read == 1) {
@@ -524,20 +503,18 @@ public class IptcAnpaParser implements Parser {
             // pull apart the body, getting the title (^....\x0d\x0a)
             while (read < value.length) {
                 byte val_next = value[read++];
-                if (val_next == CT) {      //  start of a new section , first is the heading
+                if (val_next == CT) { //  start of a new section , first is the heading
                     val_next = (read < value.length) ? value[read++] : 0x00;
                     // AP, NYT, and Bloomberg end with < , Reuters with EOL
-                    while ((val_next != LT) && (val_next != CT) && (val_next != CR) && (val_next !=
-                            LF)) {   // less than delimiter (\x3c), or carat (\x5e) and not EOL
-                        bdy_title.append((char) (val_next & 0xff));  // convert the byte to an unsigned int
+                    while ((val_next != LT) && (val_next != CT) && (val_next != CR) && (val_next != LF)) { // less than delimiter (\x3c), or carat (\x5e) and not EOL
+                        bdy_title.append((char) (val_next & 0xff)); // convert the byte to an unsigned int
                         val_next = (read < value.length) ? value[read++] : 0x00;
                         if (read >= value.length) {
                             break;
-                        }  // shouldn't ever hit this, but save a NPE
+                        } // shouldn't ever hit this, but save a NPE
                     }
 
-                    if (val_next ==
-                            CT) {      //  start of a new section , when first didn't finish cleanly
+                    if (val_next == CT) { //  start of a new section , when first didn't finish cleanly
                         --read;
                     }
 
@@ -547,8 +524,7 @@ public class IptcAnpaParser implements Parser {
                     }
 
                     while (bdy_title.length() > 0 && ((val_next == CR) || (val_next == LF))) {
-                        val_next =
-                                (read < value.length) ? value[read++] : 0x00;  // skip the new lines
+                        val_next = (read < value.length) ? value[read++] : 0x00; // skip the new lines
                         if ((val_next != CR) && (val_next != LF)) {
                             --read;
                         }
@@ -571,8 +547,7 @@ public class IptcAnpaParser implements Parser {
                         if (val_next != CT) {
                             // for any non-whitespace, we need to go back an additional step to
                             // non destroy the data
-                            if ((val_next != SP) && (val_next != TB) && (val_next != CR) &&
-                                    (val_next != LF)) {
+                            if ((val_next != SP) && (val_next != TB) && (val_next != CR) && (val_next != LF)) {
                                 --read;
                             }
                             value[--read] = CT;
@@ -582,7 +557,6 @@ public class IptcAnpaParser implements Parser {
                 }
                 break;
             }
-
 
             // at this point, we have a variable number of metadata lines, with various orders
             // we scan the start of each line for the special character, and run to the end
@@ -599,22 +573,20 @@ public class IptcAnpaParser implements Parser {
                     continue;
                 }
 
-                if (val_next ==
-                        CT) {      //  start of a new section , could be authors, sources, etc
+                if (val_next == CT) { //  start of a new section , could be authors, sources, etc
                     val_next = (read < value.length) ? value[read++] : 0x00;
                     StringBuilder tmp_line = new StringBuilder();
-                    while ((val_next != LT) && (val_next != CT) && (val_next != CR) &&
-                            (val_next != LF) && (val_next != 0)) {
+                    while ((val_next != LT) && (val_next != CT) && (val_next != CR) && (val_next != LF)
+                            && (val_next != 0)) {
                         // less than delimiter (\x3c), maybe also badly formed with just new line
-                        tmp_line.append((char) (val_next & 0xff));  // convert the byte to an unsigned int
+                        tmp_line.append((char) (val_next & 0xff)); // convert the byte to an unsigned int
                         val_next = (read < value.length) ? value[read++] : 0x00;
                         if (read >= value.length) {
                             break;
-                        }  // shouldn't ever hit this, but save a NPE
+                        } // shouldn't ever hit this, but save a NPE
                     }
 
-                    if (val_next ==
-                            CT) {      //  start of a new section , when first didn't finish cleanly
+                    if (val_next == CT) { //  start of a new section , when first didn't finish cleanly
                         --read;
                     }
 
@@ -624,14 +596,13 @@ public class IptcAnpaParser implements Parser {
                     }
 
                     while ((val_next == CR) || (val_next == LF)) {
-                        val_next =
-                                (read < value.length) ? value[read++] : 0x00;  // skip the new lines
+                        val_next = (read < value.length) ? value[read++] : 0x00; // skip the new lines
                         if ((val_next != CR) && (val_next != LF)) {
                             --read;
                         }
                     }
-                    if (tmp_line.toString().toLowerCase(Locale.ROOT).startsWith("by") ||
-                            longline.equals("bdy_author")) {
+                    if (tmp_line.toString().toLowerCase(Locale.ROOT).startsWith("by")
+                            || longline.equals("bdy_author")) {
                         longkey = "bdy_author";
 
                         // prepend a space to subsequent line, so it gets parsed consistent with
@@ -640,38 +611,31 @@ public class IptcAnpaParser implements Parser {
 
                         // we have an author candidate
                         int term = tmp_line.length();
-                        term = Math.min(term,
-                                (tmp_line.toString().contains("<") ? tmp_line.indexOf("<") : term));
-                        term = Math.min(term,
-                                (tmp_line.toString().contains("=") ? tmp_line.indexOf("=") : term));
-                        term = Math.min(term,
-                                (tmp_line.toString().contains("\n") ? tmp_line.indexOf("\n") : term));
+                        term = Math.min(term, (tmp_line.toString().contains("<") ? tmp_line.indexOf("<") : term));
+                        term = Math.min(term, (tmp_line.toString().contains("=") ? tmp_line.indexOf("=") : term));
+                        term = Math.min(term, (tmp_line.toString().contains("\n") ? tmp_line.indexOf("\n") : term));
                         term = (term > 0) ? term : tmp_line.length();
                         bdy_author.append(tmp_line.substring(tmp_line.indexOf(" "), term));
                         metastarted = true;
-                        longline =
-                                ((tmp_line.toString().contains("=")) && (!longline.equals(longkey)) ? longkey :
-                                        "");
+                        longline = ((tmp_line.toString().contains("=")) && (!longline.equals(longkey)) ? longkey : "");
                     } else if (FORMAT == this.FMT_IPTC_BLM) {
                         String byline = "   by ";
                         if (tmp_line.toString().toLowerCase(Locale.ROOT).contains(byline)) {
                             longkey = "bdy_author";
 
                             int term = tmp_line.length();
-                            term = Math.min(term,
-                                    (tmp_line.toString().contains("<") ? tmp_line.indexOf("<") : term));
-                            term = Math.min(term,
-                                    (tmp_line.toString().contains("=") ? tmp_line.indexOf("=") : term));
-                            term = Math.min(term,
-                                    (tmp_line.toString().contains("\n") ? tmp_line.indexOf("\n") : term));
+                            term = Math.min(term, (tmp_line.toString().contains("<") ? tmp_line.indexOf("<") : term));
+                            term = Math.min(term, (tmp_line.toString().contains("=") ? tmp_line.indexOf("=") : term));
+                            term = Math.min(term, (tmp_line.toString().contains("\n") ? tmp_line.indexOf("\n") : term));
                             term = (term > 0) ? term : tmp_line.length();
                             // for bloomberg, the author line sits below their copyright statement
                             bdy_author.append(tmp_line.substring(
-                                    tmp_line.toString().toLowerCase(Locale.ROOT).indexOf(byline) +
-                                    byline.length(), term)).append(" ");
+                                    tmp_line.toString().toLowerCase(Locale.ROOT).indexOf(byline) + byline.length(),
+                                    term)).append(" ");
                             metastarted = true;
-                            longline = ((tmp_line.toString().contains("=")) && (!longline.equals(longkey)) ?
-                                    longkey : "");
+                            longline = ((tmp_line.toString().contains("=")) && (!longline.equals(longkey))
+                                    ? longkey
+                                    : "");
                         } else if (tmp_line.toString().toLowerCase(Locale.ROOT).startsWith("c.")) {
                             // the author line for bloomberg is a multiline starting with c.2011
                             // Bloomberg News
@@ -680,8 +644,8 @@ public class IptcAnpaParser implements Parser {
                                 value[--read] = CT;
                                 continue;
                             }
-                        } else if (tmp_line.toString().toLowerCase(Locale.ROOT).trim().startsWith("(") &&
-                                   tmp_line.toString().toLowerCase(Locale.ROOT).trim().endsWith(")")) {
+                        } else if (tmp_line.toString().toLowerCase(Locale.ROOT).trim().startsWith("(")
+                                && tmp_line.toString().toLowerCase(Locale.ROOT).trim().endsWith(")")) {
                             // the author line may have one or more comment lines between the
                             // copyright
                             // statement, and the By AUTHORNAME line
@@ -690,8 +654,8 @@ public class IptcAnpaParser implements Parser {
                                 continue;
                             }
                         }
-                    } else if (tmp_line.toString().toLowerCase(Locale.ROOT).startsWith("eds") ||
-                               longline.equals("bdy_source")) {
+                    } else if (tmp_line.toString().toLowerCase(Locale.ROOT).startsWith("eds")
+                            || longline.equals("bdy_source")) {
                         longkey = "bdy_source";
                         // prepend a space to subsequent line, so it gets parsed consistent with
                         // the lead line
@@ -699,12 +663,10 @@ public class IptcAnpaParser implements Parser {
 
                         // we have a source candidate
                         int term = tmp_line.length();
-                        term = Math.min(term,
-                                (tmp_line.toString().contains("<") ? tmp_line.indexOf("<") : term));
-                        term = Math.min(term,
-                                (tmp_line.toString().contains("=") ? tmp_line.indexOf("=") : term));
-//                  term = Math.min(term, (tmp_line.indexOf("\n") > -1 ? tmp_line.indexOf("\n") :
-//                  term));
+                        term = Math.min(term, (tmp_line.toString().contains("<") ? tmp_line.indexOf("<") : term));
+                        term = Math.min(term, (tmp_line.toString().contains("=") ? tmp_line.indexOf("=") : term));
+                        //                  term = Math.min(term, (tmp_line.indexOf("\n") > -1 ? tmp_line.indexOf("\n") :
+                        //                  term));
                         term = (term > 0) ? term : tmp_line.length();
                         bdy_source.append(tmp_line.substring(tmp_line.indexOf(" ") + 1, term)).append(" ");
                         metastarted = true;
@@ -713,24 +675,22 @@ public class IptcAnpaParser implements Parser {
                         // this has fallen all the way through.  trap it as part of the subject,
                         // rather than just losing it
                         if (!metastarted) {
-                            bdy_title.append(" , ").append(tmp_line);     //  not sure where else to put this but in the
+                            bdy_title.append(" , ").append(tmp_line); //  not sure where else to put this but in the
                             // title
                         } else {
                             // what to do with stuff that is metadata, which falls after metadata
                             // lines started?
-                            bdy_body.append(" ")
-                                    .append(tmp_line)
-                                    .append(" , ");     //  not sure where else to put this but in the title
+                            bdy_body.append(" ").append(tmp_line).append(" , "); //  not sure where else to put this but in the title
                         }
                     }
-                } else {  // we're on to the main body
+                } else { // we're on to the main body
                     while ((read < value.length) && (val_next != 0)) {
                         // read until the train runs out of tracks
-                        bdy_body.append((char) (val_next & 0xff));  // convert the byte to an unsigned int
+                        bdy_body.append((char) (val_next & 0xff)); // convert the byte to an unsigned int
                         val_next = (read < value.length) ? value[read++] : 0x00;
                         if (read >= value.length) {
                             break;
-                        }  // shouldn't ever hit this, but save a NPE
+                        } // shouldn't ever hit this, but save a NPE
                     }
 
                 }
@@ -744,11 +704,10 @@ public class IptcAnpaParser implements Parser {
         properties.put("author", bdy_author.toString());
         properties.put("source", bdy_source.toString());
 
-        added = (bdy_body.length() + bdy_title.length() + bdy_heading.length() +
-                bdy_author.length() + bdy_source.length()) > 0;
+        added = (bdy_body.length() + bdy_title.length() + bdy_heading.length() + bdy_author.length()
+                + bdy_source.length()) > 0;
         return added;
     }
-
 
     private boolean parseFooter(byte[] value, HashMap<String, String> properties) {
         boolean added = false;
@@ -763,27 +722,24 @@ public class IptcAnpaParser implements Parser {
 
             // pull apart the footer, getting the news feed source (^....\x0d\x0a)
             byte val_next = value[read++];
-            byte val_peek = (read < value.length) ? value[read + 1] : 0x00;  // skip the new lines
+            byte val_peek = (read < value.length) ? value[read + 1] : 0x00; // skip the new lines
 
-            while (((val_next < (byte) 0x30) || (val_next > (byte) 0x39)) &&
-                    (val_next != 0)) {  // consume all non-numerics first
-                ftr_source.append((char) (val_next & 0xff));  // convert the byte to an unsigned int
-                val_next = (read < value.length) ? value[read] :
-                        0x00;  // attempt to read until end of stream
+            while (((val_next < (byte) 0x30) || (val_next > (byte) 0x39)) && (val_next != 0)) { // consume all non-numerics first
+                ftr_source.append((char) (val_next & 0xff)); // convert the byte to an unsigned int
+                val_next = (read < value.length) ? value[read] : 0x00; // attempt to read until end of stream
                 read++;
                 if (read >= value.length) {
                     break;
-                }  // shouldn't ever hit this, but save a NPE
+                } // shouldn't ever hit this, but save a NPE
             }
 
-            while ((val_next != LT) && (val_next != CR) && (val_next != LF) &&
-                    (val_next != 0)) {  // get as much timedate as possible
+            while ((val_next != LT) && (val_next != CR) && (val_next != LF) && (val_next != 0)) { // get as much timedate as possible
                 // this is an american format, so arrives as mm-dd-yy HHiizzz
-                ftr_datetime += (char) (val_next & 0xff);  // convert the byte to an unsigned int
-                val_next = (read < value.length) ? value[read++] : 0x00;  // skip the new lines
+                ftr_datetime += (char) (val_next & 0xff); // convert the byte to an unsigned int
+                val_next = (read < value.length) ? value[read++] : 0x00; // skip the new lines
                 if (read >= value.length) {
                     break;
-                }  // shouldn't ever hit this, but save a NPE
+                } // shouldn't ever hit this, but save a NPE
             }
             if (val_next == LT) {
                 // hit the delimiter, carry on
@@ -813,7 +769,7 @@ public class IptcAnpaParser implements Parser {
                 ftr_datetime = dfo.format(dateunix);
             }
             while ((val_next == CR) || (val_next == LF)) {
-                val_next = (read < value.length) ? value[read++] : 0x00;  // skip the new lines
+                val_next = (read < value.length) ? value[read++] : 0x00; // skip the new lines
                 if ((val_next != CR) && (val_next != LF)) {
                     --read;
                 }
@@ -829,7 +785,6 @@ public class IptcAnpaParser implements Parser {
         return added;
     }
 
-
     private void setMetadata(Metadata metadata, HashMap<String, String> properties) {
 
         // every property that gets set must be non-null, or it will cause NPE
@@ -841,15 +796,15 @@ public class IptcAnpaParser implements Parser {
         metadata.set(TikaCoreProperties.CREATED, clean(properties.get("created")));
         metadata.set(TikaCoreProperties.MODIFIED, clean(properties.get("modified")));
         metadata.set(TikaCoreProperties.SOURCE, clean(properties.get("source")));
-//      metadata.set(TikaCoreProperties.PUBLISHER,     clean(properties.get("publisher")));
+        //      metadata.set(TikaCoreProperties.PUBLISHER,     clean(properties.get("publisher")));
         metadata.set(TikaCoreProperties.PUBLISHER, clean(this.getFormatName()));
 
-/*
+        /*
         metadata.set(TikaCoreProperties.DATE, font.getHeader().getCreated().getTime());
         metadata.set(
                 Property.internalDate(TikaCoreProperties.MODIFIED),
                 font.getHeader().getModified().getTime());
-*/
+        */
     }
 
     private String clean(String value) {

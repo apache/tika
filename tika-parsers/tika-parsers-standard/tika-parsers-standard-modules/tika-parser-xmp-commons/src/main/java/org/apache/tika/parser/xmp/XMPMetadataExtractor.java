@@ -22,17 +22,16 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.apache.xmpbox.XMPMetadata;
-import org.apache.xmpbox.schema.DublinCoreSchema;
-import org.apache.xmpbox.schema.XMPBasicSchema;
-import org.apache.xmpbox.type.BadFieldValueException;
-import org.apache.xmpbox.xml.DomXmpParser;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.XMP;
+import org.apache.xmpbox.XMPMetadata;
+import org.apache.xmpbox.schema.DublinCoreSchema;
+import org.apache.xmpbox.schema.XMPBasicSchema;
+import org.apache.xmpbox.type.BadFieldValueException;
+import org.apache.xmpbox.xml.DomXmpParser;
 
 /**
  * XMP Metadata Extractor based on Apache XmpBox.
@@ -86,8 +85,7 @@ public class XMPMetadataExtractor {
                 addMetadata(metadata, DublinCore.DESCRIPTION, schemaDublinCore.getDescription());
                 addMetadata(metadata, DublinCore.CREATOR, schemaDublinCore.getCreators());
                 addMetadata(metadata, DublinCore.SUBJECT, schemaDublinCore.getSubjects());
-            }
-            catch (BadFieldValueException ex) {
+            } catch (BadFieldValueException ex) {
                 throw new IOException(ex);
             }
         }

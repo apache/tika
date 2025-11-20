@@ -27,7 +27,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class StandardWriteFilterFactory implements MetadataWriteFilterFactory {
 
-
     public static int DEFAULT_MAX_KEY_SIZE = 1024;
     public static int DEFAULT_MAX_FIELD_SIZE = 100 * 1024;
     public static int DEFAULT_TOTAL_ESTIMATED_BYTES = 10 * 1024 * 1024;
@@ -55,9 +54,8 @@ public class StandardWriteFilterFactory implements MetadataWriteFilterFactory {
             throw new IllegalArgumentException("max estimated size must be > 0");
         }
 
-        return new StandardWriteFilter(maxKeySize, maxFieldSize,
-                maxTotalEstimatedBytes, maxValuesPerField, includeFields,
-                excludeFields, includeEmpty);
+        return new StandardWriteFilter(maxKeySize, maxFieldSize, maxTotalEstimatedBytes, maxValuesPerField,
+                includeFields, excludeFields, includeEmpty);
     }
 
     public void setIncludeFields(List<String> includeFields) {
@@ -118,9 +116,8 @@ public class StandardWriteFilterFactory implements MetadataWriteFilterFactory {
 
     @Override
     public String toString() {
-        return "StandardWriteFilterFactory{" + "includeFields=" + includeFields + ", maxKeySize=" +
-                maxKeySize + ", maxFieldSize=" + maxFieldSize + ", maxTotalEstimatedBytes=" +
-                maxTotalEstimatedBytes + ", maxValuesPerField=" + maxValuesPerField +
-                ", includeEmpty=" + includeEmpty + '}';
+        return "StandardWriteFilterFactory{" + "includeFields=" + includeFields + ", maxKeySize=" + maxKeySize
+                + ", maxFieldSize=" + maxFieldSize + ", maxTotalEstimatedBytes=" + maxTotalEstimatedBytes
+                + ", maxValuesPerField=" + maxValuesPerField + ", includeEmpty=" + includeEmpty + '}';
     }
 }

@@ -47,8 +47,7 @@ class Patterns implements Serializable {
     /**
      * Index of generic glob patterns, sorted by length.
      */
-    private final SortedMap<String, MimeType> globs =
-            new TreeMap<>(new LengthComparator());
+    private final SortedMap<String, MimeType> globs = new TreeMap<>(new LengthComparator());
     private int minExtensionLength = Integer.MAX_VALUE;
     private int maxExtensionLength = 0;
 
@@ -71,11 +70,10 @@ class Patterns implements Serializable {
             addGlob(pattern, type);
         } else {
 
-            if (pattern.indexOf('*') == -1 && pattern.indexOf('?') == -1 &&
-                    pattern.indexOf('[') == -1) {
+            if (pattern.indexOf('*') == -1 && pattern.indexOf('?') == -1 && pattern.indexOf('[') == -1) {
                 addName(pattern, type);
-            } else if (pattern.startsWith("*") && pattern.indexOf('*', 1) == -1 &&
-                    pattern.indexOf('?') == -1 && pattern.indexOf('[') == -1) {
+            } else if (pattern.startsWith("*") && pattern.indexOf('*', 1) == -1 && pattern.indexOf('?') == -1
+                    && pattern.indexOf('[') == -1) {
                 String extension = pattern.substring(1);
                 addExtension(extension, type);
                 type.addExtension(extension);
@@ -89,8 +87,7 @@ class Patterns implements Serializable {
         MimeType previous = names.get(name);
         if (previous == null || registry.isSpecializationOf(previous.getType(), type.getType())) {
             names.put(name, type);
-        } else if (previous == type ||
-                registry.isSpecializationOf(type.getType(), previous.getType())) {
+        } else if (previous == type || registry.isSpecializationOf(type.getType(), previous.getType())) {
             // do nothing
         } else {
             throw new MimeTypeException("Conflicting name pattern: " + name);
@@ -104,8 +101,7 @@ class Patterns implements Serializable {
             int length = extension.length();
             minExtensionLength = Math.min(minExtensionLength, length);
             maxExtensionLength = Math.max(maxExtensionLength, length);
-        } else if (previous == type ||
-                registry.isSpecializationOf(type.getType(), previous.getType())) {
+        } else if (previous == type || registry.isSpecializationOf(type.getType(), previous.getType())) {
             // do nothing
         } else {
             throw new MimeTypeException("Conflicting extension pattern: " + extension);
@@ -116,8 +112,7 @@ class Patterns implements Serializable {
         MimeType previous = globs.get(glob);
         if (previous == null || registry.isSpecializationOf(previous.getType(), type.getType())) {
             globs.put(glob, type);
-        } else if (previous == type ||
-                registry.isSpecializationOf(type.getType(), previous.getType())) {
+        } else if (previous == type || registry.isSpecializationOf(type.getType(), previous.getType())) {
             // do nothing
         } else {
             throw new MimeTypeException("Conflicting glob pattern: " + glob);

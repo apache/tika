@@ -61,9 +61,7 @@ public interface TikaCoreProperties {
      * <p/>
      * For a more robust path, see {@link TikaCoreProperties#EMBEDDED_ID_PATH}.
      */
-    Property EMBEDDED_RESOURCE_PATH =
-            Property.internalText(TIKA_META_PREFIX + "embedded_resource_path");
-
+    Property EMBEDDED_RESOURCE_PATH = Property.internalText(TIKA_META_PREFIX + "embedded_resource_path");
 
     /**
      * This is calculated in {@link org.apache.tika.sax.RecursiveParserWrapperHandler}.
@@ -84,21 +82,18 @@ public interface TikaCoreProperties {
      *
      * For a more robust path, see {@link TikaCoreProperties#EMBEDDED_ID_PATH}.
      */
-    Property FINAL_EMBEDDED_RESOURCE_PATH =
-            Property.internalText(TIKA_META_PREFIX + "final_embedded_resource_path");
+    Property FINAL_EMBEDDED_RESOURCE_PATH = Property.internalText(TIKA_META_PREFIX + "final_embedded_resource_path");
 
     /**
      * This tracks the embedded file paths based on the embedded file's
      * {@link TikaCoreProperties#EMBEDDED_ID}.
      */
-    Property EMBEDDED_ID_PATH =
-            Property.internalText(TIKA_META_PREFIX + "embedded_id_path");
+    Property EMBEDDED_ID_PATH = Property.internalText(TIKA_META_PREFIX + "embedded_id_path");
 
     /**
      * This is a 1-index counter for embedded files, used by the RecursiveParserWrapper
      */
-    Property EMBEDDED_ID =
-            Property.internalInteger(TIKA_META_PREFIX + "embedded_id");
+    Property EMBEDDED_ID = Property.internalInteger(TIKA_META_PREFIX + "embedded_id");
 
     Property PARSE_TIME_MILLIS = Property.internalText(TIKA_META_PREFIX + "parse_time_millis");
     /**
@@ -117,47 +112,41 @@ public interface TikaCoreProperties {
     String TIKA_META_WARN_PREFIX = TIKA_META_PREFIX + "WARN" + NAMESPACE_PREFIX_DELIMITER;
 
     //exception in main file
-    Property CONTAINER_EXCEPTION =
-            Property.internalText(TIKA_META_EXCEPTION_PREFIX + "container_exception");
+    Property CONTAINER_EXCEPTION = Property.internalText(TIKA_META_EXCEPTION_PREFIX + "container_exception");
 
     //exception in an embedded file
-    Property EMBEDDED_EXCEPTION =
-            Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "embedded_exception");
+    Property EMBEDDED_EXCEPTION = Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "embedded_exception");
 
     //exception handling the raw bytes of an embedded file by an EmbeddedDocumentByteStore
-    Property EMBEDDED_BYTES_EXCEPTION =
-            Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "embedded_bytes_exception");
+    Property EMBEDDED_BYTES_EXCEPTION = Property
+            .internalTextBag(TIKA_META_EXCEPTION_PREFIX + "embedded_bytes_exception");
 
     //warning while parsing in an embedded file
-    Property EMBEDDED_WARNING =
-            Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "embedded_warning");
+    Property EMBEDDED_WARNING = Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "embedded_warning");
 
-    Property WRITE_LIMIT_REACHED =
-            Property.internalBoolean(TIKA_META_EXCEPTION_PREFIX + "write_limit_reached");
+    Property WRITE_LIMIT_REACHED = Property.internalBoolean(TIKA_META_EXCEPTION_PREFIX + "write_limit_reached");
     /**
      * Use this to store exceptions caught during a parse that are
      * non-fatal, e.g. if a parser is in lenient mode and more
      * content can be extracted if we ignore an exception thrown by
      * a dependency.
      */
-    Property TIKA_META_EXCEPTION_WARNING =
-            Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "warn");
+    Property TIKA_META_EXCEPTION_WARNING = Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "warn");
 
     /**
      * This means that metadata keys or metadata values were truncated.
      * If there is an "include" filter, this should not be set if
      * a field is not in the "include" set.
      */
-    Property TRUNCATED_METADATA =
-            Property.internalBoolean(TIKA_META_WARN_PREFIX + "truncated_metadata");
+    Property TRUNCATED_METADATA = Property.internalBoolean(TIKA_META_WARN_PREFIX + "truncated_metadata");
 
     /**
      * Use this to store exceptions caught while trying to read the
      * stream of an embedded resource.  Do not use this if there is
      * a parse exception on the embedded resource.
      */
-    Property TIKA_META_EXCEPTION_EMBEDDED_STREAM =
-            Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX + "embedded_stream_exception");
+    Property TIKA_META_EXCEPTION_EMBEDDED_STREAM = Property
+            .internalTextBag(TIKA_META_EXCEPTION_PREFIX + "embedded_stream_exception");
     Property TIKA_PARSED_BY = Property.internalTextBag(TIKA_META_PREFIX + "Parsed-By");
 
     /**
@@ -166,14 +155,13 @@ public interface TikaCoreProperties {
      */
     Property TIKA_PARSED_BY_FULL_SET = Property.internalTextBag(TIKA_META_PREFIX + "Parsed-By-Full-Set");
 
-    Property TIKA_DETECTED_LANGUAGE = Property.externalTextBag(TIKA_META_PREFIX +
-            "detected_language");
+    Property TIKA_DETECTED_LANGUAGE = Property.externalTextBag(TIKA_META_PREFIX + "detected_language");
 
-    Property TIKA_DETECTED_LANGUAGE_CONFIDENCE = Property.externalTextBag(TIKA_META_PREFIX +
-            "detected_language_confidence");
+    Property TIKA_DETECTED_LANGUAGE_CONFIDENCE = Property
+            .externalTextBag(TIKA_META_PREFIX + "detected_language_confidence");
 
-    Property TIKA_DETECTED_LANGUAGE_CONFIDENCE_RAW = Property.externalRealSeq(TIKA_META_PREFIX +
-            "detected_language_confidence_raw");
+    Property TIKA_DETECTED_LANGUAGE_CONFIDENCE_RAW = Property
+            .externalRealSeq(TIKA_META_PREFIX + "detected_language_confidence_raw");
 
     Property RESOURCE_NAME_KEY = Property.internalText(TIKA_META_PREFIX + "resourceName");
     Property EMBEDDED_RELATIONSHIP_ID = Property.internalText(TIKA_META_PREFIX + "embeddedRelationshipId");
@@ -184,8 +172,7 @@ public interface TikaCoreProperties {
      * file name/location or about their attachment's original file name/location
      * within the file.
      */
-    Property ORIGINAL_RESOURCE_NAME =
-            Property.internalTextBag(TIKA_META_PREFIX + "origResourceName");
+    Property ORIGINAL_RESOURCE_NAME = Property.internalTextBag(TIKA_META_PREFIX + "origResourceName");
     /**
      * This should be used to store the path (relative or full)
      * of the source file, including the file name,
@@ -205,14 +192,12 @@ public interface TikaCoreProperties {
     /**
      * This is used by users to override detection with the override detector.
      */
-    Property CONTENT_TYPE_USER_OVERRIDE =
-            Property.internalText(HttpHeaders.CONTENT_TYPE + "-Override");
+    Property CONTENT_TYPE_USER_OVERRIDE = Property.internalText(HttpHeaders.CONTENT_TYPE + "-Override");
     /**
      * This is used by parsers to override detection of embedded resources
      * with the override detector.
      */
-    Property CONTENT_TYPE_PARSER_OVERRIDE =
-            Property.internalText(HttpHeaders.CONTENT_TYPE + "-Parser-Override");
+    Property CONTENT_TYPE_PARSER_OVERRIDE = Property.internalText(HttpHeaders.CONTENT_TYPE + "-Parser-Override");
     /**
      * @see DublinCore#FORMAT
      */
@@ -305,7 +290,6 @@ public interface TikaCoreProperties {
      */
     Property LATITUDE = Geographic.LATITUDE;
 
-
     // Geographic related properties
     /**
      * @see Geographic#LONGITUDE
@@ -360,7 +344,6 @@ public interface TikaCoreProperties {
      */
     Property DETECTED_ENCODING = Property.externalText(TIKA_META_PREFIX + "detectedEncoding");
 
-
     /**
      * This should be the simple class name for the EncodingDetectors whose detected encoding
      * was used in the parse.
@@ -404,10 +387,10 @@ public interface TikaCoreProperties {
      */
     enum EmbeddedResourceType {
         INLINE, //image that is intended to be displayed in a rendering of the file
-        ATTACHMENT,//standard attachment as in email
+        ATTACHMENT, //standard attachment as in email
         MACRO, //any code that is intended to be run by the application
         METADATA, //e.g. xmp, xfa
-        FONT,//embedded font files
+        FONT, //embedded font files
         THUMBNAIL, //TODO: set this in parsers that handle thumbnails
         RENDERING, //if a file has been rendered
         VERSION, //an earlier version of a file

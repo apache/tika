@@ -14,9 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.pkg;
-
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -26,14 +24,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.zip.CompressorConstants;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class CompressorParserTest extends TikaTest {
     //These compressed stream types can't currently
@@ -75,8 +72,7 @@ public class CompressorParserTest extends TikaTest {
     @Test
     public void testQuineXHTML() throws Exception {
         //Anti-virus can surreptitiously remove this file
-        assumeTrue(
-                CompressorParserTest.class.getResourceAsStream("/test-documents/quine.gz") != null);
+        assumeTrue(CompressorParserTest.class.getResourceAsStream("/test-documents/quine.gz") != null);
 
         //https://blog.matthewbarber.io/2019/07/22/how-to-make-compressed-file-quines
         assertThrows(TikaException.class, () -> {
@@ -87,8 +83,7 @@ public class CompressorParserTest extends TikaTest {
     @Test
     public void testQuineRecursive() throws Exception {
         //Anti-virus can surreptitiously remove this file
-        assumeTrue(
-                CompressorParserTest.class.getResourceAsStream("/test-documents/quine.gz") != null);
+        assumeTrue(CompressorParserTest.class.getResourceAsStream("/test-documents/quine.gz") != null);
         //https://blog.matthewbarber.io/2019/07/22/how-to-make-compressed-file-quines
         getRecursiveMetadata("quine.gz");
     }

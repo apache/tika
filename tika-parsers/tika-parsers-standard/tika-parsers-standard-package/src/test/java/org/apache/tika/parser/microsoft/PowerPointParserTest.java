@@ -20,19 +20,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.Test;
 
 public class PowerPointParserTest extends TikaTest {
 
     @Test
     public void testEmbeddedPDF() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.ppt");
-        assertContains("Apache Tika project",
-                metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("Apache Tika project", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("3.pdf", metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertContains("Hello World", metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("4.pdf", metadataList.get(2).get(TikaCoreProperties.RESOURCE_NAME_KEY));

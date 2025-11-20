@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.ooxml.xwpf;
 
 import java.io.Closeable;
@@ -37,11 +36,6 @@ import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
-import org.apache.xmlbeans.XmlException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.RuntimeSAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
@@ -51,6 +45,10 @@ import org.apache.tika.parser.microsoft.ooxml.ParagraphProperties;
 import org.apache.tika.parser.microsoft.ooxml.RunProperties;
 import org.apache.tika.parser.microsoft.ooxml.XWPFListManager;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.apache.xmlbeans.XmlException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
 
 //TODO: move this into POI?
 
@@ -64,8 +62,7 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
     private OPCPackage container;
     private POIXMLProperties properties;
 
-    public XWPFEventBasedWordExtractor(OPCPackage container)
-            throws XmlException, OpenXML4JException, IOException {
+    public XWPFEventBasedWordExtractor(OPCPackage container) throws XmlException, OpenXML4JException, IOException {
         this.container = container;
         this.properties = new POIXMLProperties(container);
     }
@@ -91,13 +88,11 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
         return null;
     }
 
-
     @Override
     public String getText() {
         StringBuilder sb = new StringBuilder();
         //handle main document
-        List<PackagePart> pps =
-                container.getPartsByContentType(XWPFRelation.DOCUMENT.getContentType());
+        List<PackagePart> pps = container.getPartsByContentType(XWPFRelation.DOCUMENT.getContentType());
         if (pps != null) {
             for (PackagePart pp : pps) {
                 //likely only one, but why not...
@@ -156,7 +151,6 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
         return null;
     }
 
-
     private void handleDocumentPart(PackagePart documentPart, StringBuilder sb)
             throws IOException, SAXException, TikaException {
         //load the numbering/list manager and styles from the main document part
@@ -166,8 +160,8 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
 
         //headers
         try {
-            PackageRelationshipCollection headersPRC =
-                    documentPart.getRelationshipsByType(XWPFRelation.HEADER.getRelation());
+            PackageRelationshipCollection headersPRC = documentPart
+                    .getRelationshipsByType(XWPFRelation.HEADER.getRelation());
             if (headersPRC != null) {
                 for (int i = 0; i < headersPRC.size(); i++) {
                     PackagePart header = documentPart.getRelatedPart(headersPRC.getRelationship(i));
@@ -182,15 +176,13 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
         handlePart(documentPart, xwpfListManager, sb);
 
         //for now, just dump other components at end
-        for (XWPFRelation rel : new XWPFRelation[]{XWPFRelation.FOOTNOTE, XWPFRelation.COMMENT,
-                XWPFRelation.FOOTER, XWPFRelation.ENDNOTE}) {
+        for (XWPFRelation rel : new XWPFRelation[]{XWPFRelation.FOOTNOTE, XWPFRelation.COMMENT, XWPFRelation.FOOTER,
+                XWPFRelation.ENDNOTE}) {
             try {
-                PackageRelationshipCollection prc =
-                        documentPart.getRelationshipsByType(rel.getRelation());
+                PackageRelationshipCollection prc = documentPart.getRelationshipsByType(rel.getRelation());
                 if (prc != null) {
                     for (int i = 0; i < prc.size(); i++) {
-                        PackagePart packagePart =
-                                documentPart.getRelatedPart(prc.getRelationship(i));
+                        PackagePart packagePart = documentPart.getRelatedPart(prc.getRelationship(i));
                         handlePart(packagePart, xwpfListManager, sb);
                     }
                 }
@@ -200,14 +192,14 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
         }
     }
 
-    private void handlePart(PackagePart packagePart, XWPFListManager xwpfListManager,
-                            StringBuilder buffer) throws IOException, SAXException, TikaException {
+    private void handlePart(PackagePart packagePart, XWPFListManager xwpfListManager, StringBuilder buffer)
+            throws IOException, SAXException, TikaException {
 
         Map<String, String> hyperlinks = loadHyperlinkRelationships(packagePart);
         try (InputStream stream = packagePart.getInputStream()) {
             XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
-                    new OOXMLWordAndPowerPointTextHandler(new XWPFToTextContentHandler(buffer),
-                    hyperlinks), new ParseContext());
+                    new OOXMLWordAndPowerPointTextHandler(new XWPFToTextContentHandler(buffer), hyperlinks),
+                    new ParseContext());
         }
 
     }
@@ -215,8 +207,7 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
     private Map<String, String> loadHyperlinkRelationships(PackagePart bodyPart) {
         Map<String, String> hyperlinks = new HashMap<>();
         try {
-            PackageRelationshipCollection prc =
-                    bodyPart.getRelationshipsByType(XWPFRelation.HYPERLINK.getRelation());
+            PackageRelationshipCollection prc = bodyPart.getRelationshipsByType(XWPFRelation.HYPERLINK.getRelation());
             for (int i = 0; i < prc.size(); i++) {
                 PackageRelationship pr = prc.getRelationship(i);
                 if (pr == null) {
@@ -236,8 +227,8 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
 
     private XWPFNumbering loadNumbering(PackagePart packagePart) throws IOException {
         try {
-            PackageRelationshipCollection numberingParts =
-                    packagePart.getRelationshipsByType(XWPFRelation.NUMBERING.getRelation());
+            PackageRelationshipCollection numberingParts = packagePart
+                    .getRelationshipsByType(XWPFRelation.NUMBERING.getRelation());
             if (numberingParts.size() > 0) {
                 PackageRelationship numberingRelationShip = numberingParts.getRelationship(0);
                 if (numberingRelationShip == null) {
@@ -255,8 +246,7 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
         return null;
     }
 
-    private static class XWPFToTextContentHandler
-            implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
+    private static class XWPFToTextContentHandler implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
         private final StringBuilder buffer;
 
         public XWPFToTextContentHandler(StringBuilder buffer) {
@@ -329,8 +319,7 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
         }
 
         @Override
-        public void startEditedSection(String editor, Date date,
-                                       OOXMLWordAndPowerPointTextHandler.EditType editType) {
+        public void startEditedSection(String editor, Date date, OOXMLWordAndPowerPointTextHandler.EditType editType) {
 
         }
 
@@ -380,4 +369,3 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
         }
     }
 }
-

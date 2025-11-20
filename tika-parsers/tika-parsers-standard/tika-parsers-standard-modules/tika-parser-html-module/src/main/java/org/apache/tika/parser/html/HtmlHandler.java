@@ -30,11 +30,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -48,14 +43,16 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.TextContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 class HtmlHandler extends TextContentHandler {
 
     // List of attributes that need to be resolved.
-    private static final Set<String> URI_ATTRIBUTES =
-            new HashSet<>(Arrays.asList("src", "href", "longdesc", "cite"));
-    private static final Pattern ICBM =
-            Pattern.compile("\\s*(-?\\d+\\.\\d+)[,\\s]+(-?\\d+\\.\\d+)\\s*");
+    private static final Set<String> URI_ATTRIBUTES = new HashSet<>(Arrays.asList("src", "href", "longdesc", "cite"));
+    private static final Pattern ICBM = Pattern.compile("\\s*(-?\\d+\\.\\d+)[,\\s]+(-?\\d+\\.\\d+)\\s*");
 
     private static final Map<String, Property> META_HEADER_MAPPINGS = new HashMap<>();
 
@@ -82,8 +79,8 @@ class HtmlHandler extends TextContentHandler {
     private Attributes scriptAtts = EMPTY_ATTS;//attributes from outermost script element
     private boolean isTitleSetToMetadata = false;
 
-    private HtmlHandler(HtmlMapper mapper, XHTMLContentHandler xhtml, Metadata metadata,
-                        ParseContext context, boolean extractScripts) {
+    private HtmlHandler(HtmlMapper mapper, XHTMLContentHandler xhtml, Metadata metadata, ParseContext context,
+            boolean extractScripts) {
         super(xhtml);
         this.mapper = mapper;
         this.xhtml = xhtml;
@@ -105,14 +102,13 @@ class HtmlHandler extends TextContentHandler {
         }
     }
 
-    public HtmlHandler(HtmlMapper mapper, ContentHandler handler, Metadata metadata,
-                       ParseContext context, boolean extractScripts) {
+    public HtmlHandler(HtmlMapper mapper, ContentHandler handler, Metadata metadata, ParseContext context,
+            boolean extractScripts) {
         this(mapper, new XHTMLContentHandler(handler, metadata), metadata, context, extractScripts);
     }
 
     @Override
-    public void startElement(String uri, String local, String name, Attributes atts)
-            throws SAXException {
+    public void startElement(String uri, String local, String name, Attributes atts) throws SAXException {
 
         if ("HTML".equals(name) && atts.getValue("lang") != null) {
             metadata.set(Metadata.CONTENT_LANGUAGE, atts.getValue("lang"));
@@ -275,8 +271,7 @@ class HtmlHandler extends TextContentHandler {
                     newAttributes.setValue(att, resolve(newAttributes.getValue(att)));
                 } else if (isObject && "codebase".equals(normAttrName)) {
                     newAttributes.setValue(att, codebase);
-                } else if (isObject &&
-                        ("data".equals(normAttrName) || "classid".equals(normAttrName))) {
+                } else if (isObject && ("data".equals(normAttrName) || "classid".equals(normAttrName))) {
                     newAttributes.setValue(att, resolve(codebase, newAttributes.getValue(att)));
                 }
             }
@@ -333,12 +328,11 @@ class HtmlHandler extends TextContentHandler {
     }
     private void handleSrcDoc(String string) throws SAXException {
         Metadata m = new Metadata();
-        m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+        m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
         m.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, "text/html");
         //TODO add metadata about iframe content?
-        EmbeddedDocumentExtractor embeddedDocumentExtractor =
-                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        EmbeddedDocumentExtractor embeddedDocumentExtractor = EmbeddedDocumentUtil
+                .getEmbeddedDocumentExtractor(context);
         if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
             try (TikaInputStream tis = TikaInputStream.get(string.getBytes(StandardCharsets.UTF_8))) {
                 embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, true);
@@ -359,13 +353,12 @@ class HtmlHandler extends TextContentHandler {
 
         //do anything with attrs?
         Metadata m = new Metadata();
-        m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+        m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
         if (dataURIScheme.getMediaType() != null) {
             m.set(Metadata.CONTENT_TYPE, dataURIScheme.getMediaType().toString());
         }
-        EmbeddedDocumentExtractor embeddedDocumentExtractor =
-                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        EmbeddedDocumentExtractor embeddedDocumentExtractor = EmbeddedDocumentUtil
+                .getEmbeddedDocumentExtractor(context);
         if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
             try (TikaInputStream tis = TikaInputStream.get(dataURIScheme.getInputStream())) {
                 embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, true);
@@ -383,15 +376,14 @@ class HtmlHandler extends TextContentHandler {
         }
         //do anything with attrs?
         Metadata m = new Metadata();
-        m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
+        m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
         String src = scriptAtts.getValue("src");
         if (src != null) {
             m.set(HTML.SCRIPT_SOURCE, src);
         }
 
-        EmbeddedDocumentExtractor embeddedDocumentExtractor =
-                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        EmbeddedDocumentExtractor embeddedDocumentExtractor = EmbeddedDocumentUtil
+                .getEmbeddedDocumentExtractor(context);
         //try to scrape dataURISchemes from javascript
         List<DataURIScheme> dataURISchemes = dataURISchemeUtil.extract(script.toString());
         for (DataURIScheme dataURIScheme : dataURISchemes) {
@@ -401,8 +393,7 @@ class HtmlHandler extends TextContentHandler {
             dataUriMetadata.set(Metadata.CONTENT_TYPE, dataURIScheme.getMediaType().toString());
             if (embeddedDocumentExtractor.shouldParseEmbedded(dataUriMetadata)) {
                 try (TikaInputStream tis = TikaInputStream.get(dataURIScheme.getInputStream())) {
-                    embeddedDocumentExtractor
-                            .parseEmbedded(tis, xhtml, dataUriMetadata, true);
+                    embeddedDocumentExtractor.parseEmbedded(tis, xhtml, dataUriMetadata, true);
                 } catch (IOException e) {
                     //swallow
                 }
@@ -449,9 +440,8 @@ class HtmlHandler extends TextContentHandler {
         // Return the URL as-is if no base URL is available or if the URL
         // matches a common non-hierarchical or pseudo URI prefix
         String lower = url.toLowerCase(Locale.ENGLISH);
-        if (base == null || lower.startsWith("urn:") || lower.startsWith("mailto:") ||
-                lower.startsWith("tel:") || lower.startsWith("data:") ||
-                lower.startsWith("javascript:") || lower.startsWith("about:")) {
+        if (base == null || lower.startsWith("urn:") || lower.startsWith("mailto:") || lower.startsWith("tel:")
+                || lower.startsWith("data:") || lower.startsWith("javascript:") || lower.startsWith("about:")) {
             return url;
         }
 
@@ -464,8 +454,8 @@ class HtmlHandler extends TextContentHandler {
             // portion of the path, which we don't want.
             String path = baseURL.getPath();
             if (url.startsWith("?") && path.length() > 0 && !path.endsWith("/")) {
-                return new URL(baseURL.getProtocol(), baseURL.getHost(), baseURL.getPort(),
-                        baseURL.getPath() + url).toExternalForm();
+                return new URL(baseURL.getProtocol(), baseURL.getHost(), baseURL.getPort(), baseURL.getPath() + url)
+                        .toExternalForm();
             } else {
                 return new URL(baseURL, url).toExternalForm();
             }

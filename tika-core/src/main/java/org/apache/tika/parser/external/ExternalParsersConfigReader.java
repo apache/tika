@@ -26,19 +26,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
+
 import javax.xml.parsers.DocumentBuilder;
 
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MimeTypeException;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MimeTypeException;
-import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * Builds up ExternalParser instances based on XML file(s)
@@ -85,9 +85,8 @@ public final class ExternalParsersConfigReader implements ExternalParsersConfigR
                 }
             }
         } else {
-            throw new MimeTypeException(
-                    "Not a <" + EXTERNAL_PARSERS_TAG + "/> configuration document: " +
-                            (element != null ? element.getTagName() : "n/a"));
+            throw new MimeTypeException("Not a <" + EXTERNAL_PARSERS_TAG + "/> configuration document: "
+                    + (element != null ? element.getTagName() : "n/a"));
         }
 
         return parsers;
@@ -105,23 +104,24 @@ public final class ExternalParsersConfigReader implements ExternalParsersConfigR
             Node node = children.item(i);
             if (node.getNodeType() == Node.ELEMENT_NODE) {
                 Element child = (Element) node;
-                switch (child.getTagName()) {
-                    case CHECK_TAG:
+                switch (child.getTagName())
+                {
+                    case CHECK_TAG :
                         boolean present = readCheckTagAndCheck(child);
                         if (!present) {
                             return null;
                         }
                         break;
-                    case COMMAND_TAG:
+                    case COMMAND_TAG :
                         parser.setCommand(getString(child));
                         break;
-                    case MIMETYPES_TAG:
+                    case MIMETYPES_TAG :
                         parser.setSupportedTypes(readMimeTypes(child));
                         break;
-                    case METADATA_TAG:
+                    case METADATA_TAG :
                         parser.setMetadataExtractionPatterns(readMetadataPatterns(child));
                         break;
-                    default:
+                    default :
                         throw new IllegalArgumentException("reaction not defined for " + child.getTagName());
                 }
             }

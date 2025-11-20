@@ -21,15 +21,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 class PagesContentHandler extends DefaultHandler {
 
@@ -66,8 +65,7 @@ class PagesContentHandler extends DefaultHandler {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes attributes)
-            throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
         if (parseProperty) {
             String value = parsePrimitiveElementValue(qName, attributes);
             if (value != null) {
@@ -121,8 +119,8 @@ class PagesContentHandler extends DefaultHandler {
         } else if ("sf:footer".equals(qName)) {
             inPart = footers.identifyPart(attributes.getValue("sf:name"));
         } else if ("sf:page-number".equals(qName)) {
-            if (inPart == DocumentPart.FOOTER_ODD || inPart == DocumentPart.FOOTER_FIRST ||
-                    inPart == DocumentPart.FOOTER_EVEN) {
+            if (inPart == DocumentPart.FOOTER_ODD || inPart == DocumentPart.FOOTER_FIRST
+                    || inPart == DocumentPart.FOOTER_EVEN) {
                 // We are in a footer
                 footers.hasAutoPageNumber = true;
                 footers.autoPageNumberFormat = attributes.getValue("sf:format");
@@ -335,8 +333,8 @@ class PagesContentHandler extends DefaultHandler {
      * The (interesting) part of the document we're in. Should be more structured...
      */
     private enum DocumentPart {
-        METADATA, PARSABLE_TEXT, HEADERS, HEADER_ODD, HEADER_EVEN, HEADER_FIRST, FOOTERS,
-        FOOTER_ODD, FOOTER_EVEN, FOOTER_FIRST, FOOTNOTES, ANNOTATIONS
+        METADATA, PARSABLE_TEXT, HEADERS, HEADER_ODD, HEADER_EVEN, HEADER_FIRST, FOOTERS, FOOTER_ODD, FOOTER_EVEN,
+        FOOTER_FIRST, FOOTNOTES, ANNOTATIONS
     }
 
     /**
@@ -426,8 +424,7 @@ class PagesContentHandler extends DefaultHandler {
                     } else if (autoPageNumberFormat.equals("upper-roman")) {
                         xhtml.characters("\t" + AutoPageNumberUtils.asRomanNumerals(pageCount));
                     } else if (autoPageNumberFormat.equals("lower-roman")) {
-                        xhtml.characters(
-                                "\t" + AutoPageNumberUtils.asRomanNumeralsLower(pageCount));
+                        xhtml.characters("\t" + AutoPageNumberUtils.asRomanNumeralsLower(pageCount));
                     } else if (autoPageNumberFormat.equals("upper-alpha")) {
                         xhtml.characters("\t" + AutoPageNumberUtils.asAlphaNumeric(pageCount));
                     } else if (autoPageNumberFormat.equals("lower-alpha")) {

@@ -38,20 +38,18 @@ public class EmittingEmbeddedDocumentBytesHandler extends AbstractEmbeddedDocume
     private static final Metadata METADATA = new Metadata();
     private static final ParseContext PARSE_CONTEXT = new ParseContext();
 
-    public EmittingEmbeddedDocumentBytesHandler(FetchEmitTuple fetchEmitTuple,
-                                                EmitterManager emitterManager) throws TikaConfigException {
+    public EmittingEmbeddedDocumentBytesHandler(FetchEmitTuple fetchEmitTuple, EmitterManager emitterManager)
+            throws TikaConfigException {
 
         this.containerEmitKey = fetchEmitTuple.getEmitKey();
         this.embeddedDocumentBytesConfig = fetchEmitTuple.getParseContext().get(EmbeddedDocumentBytesConfig.class);
         if (this.embeddedDocumentBytesConfig == null) {
             throw new TikaConfigException("EmbeddedDocumentBytesConfig must not be null!");
         }
-        Emitter tmpEmitter =
-                emitterManager.getEmitter(embeddedDocumentBytesConfig.getEmitter());
-        if (! (tmpEmitter instanceof StreamEmitter)) {
-            throw new TikaConfigException("Emitter " +
-                    embeddedDocumentBytesConfig.getEmitter()
-                    + " must implement a StreamEmitter");
+        Emitter tmpEmitter = emitterManager.getEmitter(embeddedDocumentBytesConfig.getEmitter());
+        if (!(tmpEmitter instanceof StreamEmitter)) {
+            throw new TikaConfigException(
+                    "Emitter " + embeddedDocumentBytesConfig.getEmitter() + " must implement a StreamEmitter");
         }
         this.emitter = (StreamEmitter) tmpEmitter;
     }
@@ -59,8 +57,7 @@ public class EmittingEmbeddedDocumentBytesHandler extends AbstractEmbeddedDocume
     @Override
     public void add(int id, Metadata metadata, InputStream inputStream) throws IOException {
         //intentionally do not call super.add, because we want the ids list to be empty
-        String emitKey = getEmitKey(containerEmitKey.getEmitKey(),
-                id, embeddedDocumentBytesConfig, metadata);
+        String emitKey = getEmitKey(containerEmitKey.getEmitKey(), id, embeddedDocumentBytesConfig, metadata);
         try {
             emitter.emit(emitKey, inputStream, METADATA, PARSE_CONTEXT);
         } catch (TikaEmitterException e) {

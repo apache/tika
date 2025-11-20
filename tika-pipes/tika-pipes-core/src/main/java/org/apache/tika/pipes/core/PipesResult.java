@@ -23,31 +23,23 @@ public class PipesResult {
     private boolean intermediate = false;
 
     public enum STATUS {
-        CLIENT_UNAVAILABLE_WITHIN_MS,
-        FETCHER_INITIALIZATION_EXCEPTION,
-        FETCH_EXCEPTION,
-        EMPTY_OUTPUT,
+        CLIENT_UNAVAILABLE_WITHIN_MS, FETCHER_INITIALIZATION_EXCEPTION, FETCH_EXCEPTION, EMPTY_OUTPUT,
         PARSE_EXCEPTION_NO_EMIT, //within the pipes server
         PARSE_EXCEPTION_EMIT, //within the pipes server
         PARSE_SUCCESS, //when passed back to the async processor for emit
-        PARSE_SUCCESS_WITH_EXCEPTION,//when passed back to the async processor for emit
-        OOM, TIMEOUT, UNSPECIFIED_CRASH,
-        NO_EMITTER_FOUND,
-        EMIT_SUCCESS, EMIT_SUCCESS_PARSE_EXCEPTION, EMIT_EXCEPTION,
-        EMIT_SUCCESS_PASSBACK,//emit happened and some data is returned
-        INTERRUPTED_EXCEPTION, NO_FETCHER_FOUND,
-        INTERMEDIATE_RESULT;
+        PARSE_SUCCESS_WITH_EXCEPTION, //when passed back to the async processor for emit
+        OOM, TIMEOUT, UNSPECIFIED_CRASH, NO_EMITTER_FOUND, EMIT_SUCCESS, EMIT_SUCCESS_PARSE_EXCEPTION, EMIT_EXCEPTION,
+        EMIT_SUCCESS_PASSBACK, //emit happened and some data is returned
+        INTERRUPTED_EXCEPTION, NO_FETCHER_FOUND, INTERMEDIATE_RESULT;
     }
 
-    public static final PipesResult CLIENT_UNAVAILABLE_WITHIN_MS =
-            new PipesResult(STATUS.CLIENT_UNAVAILABLE_WITHIN_MS);
+    public static final PipesResult CLIENT_UNAVAILABLE_WITHIN_MS = new PipesResult(STATUS.CLIENT_UNAVAILABLE_WITHIN_MS);
     public static final PipesResult TIMEOUT = new PipesResult(STATUS.TIMEOUT);
     public static final PipesResult OOM = new PipesResult(STATUS.OOM);
     public static final PipesResult UNSPECIFIED_CRASH = new PipesResult(STATUS.UNSPECIFIED_CRASH);
     public static final PipesResult EMIT_SUCCESS = new PipesResult(STATUS.EMIT_SUCCESS);
     public static final PipesResult INTERRUPTED_EXCEPTION = new PipesResult(STATUS.INTERRUPTED_EXCEPTION);
-    public static final PipesResult EMPTY_OUTPUT =
-            new PipesResult(STATUS.EMPTY_OUTPUT);
+    public static final PipesResult EMPTY_OUTPUT = new PipesResult(STATUS.EMPTY_OUTPUT);
     private final STATUS status;
     private final EmitData emitData;
     private final String message;
@@ -109,7 +101,7 @@ public class PipesResult {
 
     @Override
     public String toString() {
-        return "PipesResult{" + "intermediate=" + intermediate + ", status=" + status +
-                ", emitData=" + emitData + ", message='" + message + '\'' + '}';
+        return "PipesResult{" + "intermediate=" + intermediate + ", status=" + status + ", emitData=" + emitData
+                + ", message='" + message + '\'' + '}';
     }
 }

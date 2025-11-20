@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.metadata.filter;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -25,13 +24,12 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.AbstractTikaConfigTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.junit.jupiter.api.Test;
 
 public class TestMetadataFilter extends AbstractTikaConfigTest {
 
@@ -256,8 +254,8 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         assertEquals(0, metadata.names().length);
 
         metadata = new Metadata();
-        metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.ALTERNATE_FORMAT_CHUNK
-                .name());
+        metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.ALTERNATE_FORMAT_CHUNK.name());
         metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
         filter.filter(metadata);
         assertEquals(2, metadata.names().length);

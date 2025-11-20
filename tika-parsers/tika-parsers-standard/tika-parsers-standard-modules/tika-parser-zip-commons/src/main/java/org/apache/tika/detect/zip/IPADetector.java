@@ -25,7 +25,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
-
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 
@@ -72,8 +71,7 @@ public class IPADetector implements ZipContainerDetector {
     }
 
     @Override
-    public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis,
-                                           StreamingDetectContext detectContext) {
+    public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis, StreamingDetectContext detectContext) {
         String name = zae.getName();
         TmpPatterns tmp = detectContext.get(TmpPatterns.class);
         if (tmp == null) {

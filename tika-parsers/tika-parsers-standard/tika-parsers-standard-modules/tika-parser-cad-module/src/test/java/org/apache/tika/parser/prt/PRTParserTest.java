@@ -20,14 +20,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.InputStream;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class PRTParserTest extends TikaTest {
     /**
@@ -78,8 +77,7 @@ public class PRTParserTest extends TikaTest {
 
             // File has both a date and a description
             assertEquals("1997-04-01T08:59:00", metadata.get(TikaCoreProperties.CREATED));
-            assertEquals("TIKA TEST PART DESCRIPTION INFORMATION\r\n",
-                    metadata.get(TikaCoreProperties.DESCRIPTION));
+            assertEquals("TIKA TEST PART DESCRIPTION INFORMATION\r\n", metadata.get(TikaCoreProperties.DESCRIPTION));
 
             String contents = handler.toString();
 

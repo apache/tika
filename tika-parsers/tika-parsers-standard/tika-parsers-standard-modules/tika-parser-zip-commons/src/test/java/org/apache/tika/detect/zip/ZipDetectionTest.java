@@ -25,26 +25,23 @@ import java.nio.file.Files;
 import java.util.List;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test cases for detecting zip-based files.
  */
 public class ZipDetectionTest extends TikaTest {
 
-
     @Test
     public void testKMZDetection() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testKMZ.kmz");
-        assertEquals("application/vnd.google-earth.kmz",
-                metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("application/vnd.google-earth.kmz", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
     }
 
     @Test
@@ -61,7 +58,7 @@ public class ZipDetectionTest extends TikaTest {
             assertExpected(detector, is, "application/java-archive", expectedDigest);
         }
 
-        for (int markLimit : new int[]{-1,0,10,100,1000}) {
+        for (int markLimit : new int[]{-1, 0, 10, 100, 1000}) {
             detector = new DefaultZipContainerDetector();
             //mark limit is ignored for a TikaInputStream
             try (InputStream is = TikaInputStream.get(getStream("testJAR.jar"))) {
@@ -79,7 +76,8 @@ public class ZipDetectionTest extends TikaTest {
 
         detector = new DefaultZipContainerDetector();
         //try on a file that isn't a TikaInputStream
-        try (InputStream is = new BufferedInputStream(Files.newInputStream(TikaInputStream.get(getStream("testJAR.jar")).getPath()))) {
+        try (InputStream is = new BufferedInputStream(
+                Files.newInputStream(TikaInputStream.get(getStream("testJAR.jar")).getPath()))) {
             assertExpected(detector, is, "application/java-archive", expectedDigest);
         }
 
@@ -111,7 +109,8 @@ public class ZipDetectionTest extends TikaTest {
         return ZipDetectionTest.class.getResourceAsStream("/test-documents/" + fileName);
     }
 
-    private void assertExpected(Detector detector, InputStream is, String expectedMime, String expectedDigest) throws IOException {
+    private void assertExpected(Detector detector, InputStream is, String expectedMime, String expectedDigest)
+            throws IOException {
         MediaType mt = detector.detect(is, new Metadata());
         assertEquals(expectedMime, mt.toString());
         assertEquals(expectedDigest, digest(is));

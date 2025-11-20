@@ -160,8 +160,7 @@ public class SafeContentHandler extends ContentHandlerDecorator {
     }
 
     @Override
-    public void startElement(String uri, String localName, String name, Attributes atts)
-            throws SAXException {
+    public void startElement(String uri, String localName, String name, Attributes atts) throws SAXException {
         // TODO: enable this, but some parsers currently
         // trip it
         //assert verifyStartElement(name);
@@ -178,8 +177,8 @@ public class SafeContentHandler extends ContentHandlerDecorator {
                         filter(value.toCharArray(), 0, value.length(), buffer);
                         value = buffer.toString();
                     }
-                    filtered.addAttribute(atts.getURI(j), atts.getLocalName(j), atts.getQName(j),
-                            atts.getType(j), value);
+                    filtered.addAttribute(atts.getURI(j), atts.getLocalName(j), atts.getQName(j), atts.getType(j),
+                            value);
                 }
                 atts = filtered;
                 break;
@@ -196,10 +195,9 @@ public class SafeContentHandler extends ContentHandlerDecorator {
         super.endElement(uri, localName, name);
     }
 
-
     /*
     private final List<String> elements = new ArrayList<String>();
-
+    
     // Called only from assert
     private boolean verifyStartElement(String name) {
         // TODO: we could strengthen this to do full
@@ -212,7 +210,7 @@ public class SafeContentHandler extends ContentHandlerDecorator {
         elements.add(name);
         return true;
     }
-
+    
     // Called only from assert
     private boolean verifyEndElement(String name) {
         assert elements.size() > 0: "end tag=" + name + " with no startElement";
@@ -222,7 +220,7 @@ public class SafeContentHandler extends ContentHandlerDecorator {
         elements.remove(elements.size()-1);
         return true;
     }
-
+    
     // Called only from assert
     private boolean verifyEndDocument() {
         assert elements.size() == 0;

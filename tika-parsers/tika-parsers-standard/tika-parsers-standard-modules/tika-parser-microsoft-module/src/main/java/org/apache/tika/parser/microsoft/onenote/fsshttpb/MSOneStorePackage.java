@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb;
 
 import static org.apache.tika.parser.microsoft.onenote.OneNoteParser.ONE_NOTE_PREFIX;
@@ -31,8 +30,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -61,6 +58,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.Propert
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.unsigned.Unsigned;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.SAXException;
 
 public class MSOneStorePackage {
     /**
@@ -75,8 +73,7 @@ public class MSOneStorePackage {
      * .EPOCH.
      */
     private static final long DATETIME_EPOCH_DIFF_1601;
-    private static final Pattern HYPERLINK_PATTERN =
-            Pattern.compile("\uFDDFHYPERLINK\\s+\"([^\"]+)\"([^\"]+)$");
+    private static final Pattern HYPERLINK_PATTERN = Pattern.compile("\uFDDFHYPERLINK\\s+\"([^\"]+)\"([^\"]+)$");
     private static final String P = "p";
 
     static {
@@ -125,8 +122,7 @@ public class MSOneStorePackage {
         StorageIndexCellMapping storageIndexCellMapping = null;
         if (this.storageIndex != null) {
             storageIndexCellMapping = this.storageIndex.storageIndexCellMappingList.stream()
-                    .filter(s -> s.cellID.equals(cellID)).findFirst()
-                    .orElse(new StorageIndexCellMapping());
+                    .filter(s -> s.cellID.equals(cellID)).findFirst().orElse(new StorageIndexCellMapping());
         }
         return storageIndexCellMapping;
     }
@@ -137,8 +133,7 @@ public class MSOneStorePackage {
      * @param revisionExtendedGUID Specify the Revision Mapping Extended GUID.
      * @return Return the instance of Storage Index Revision Mapping.
      */
-    public StorageIndexRevisionMapping findStorageIndexRevisionMapping(
-            ExGuid revisionExtendedGUID) {
+    public StorageIndexRevisionMapping findStorageIndexRevisionMapping(ExGuid revisionExtendedGUID) {
         StorageIndexRevisionMapping instance = null;
         if (this.storageIndex != null) {
             instance = this.storageIndex.storageIndexRevisionMappingList.stream()
@@ -156,28 +151,25 @@ public class MSOneStorePackage {
      * @return Is it binary?
      */
     private boolean propertyIsBinary(OneNotePropertyEnum property) {
-        return property == OneNotePropertyEnum.RgOutlineIndentDistance ||
-                property == OneNotePropertyEnum.NotebookManagementEntityGuid ||
-                property == OneNotePropertyEnum.RichEditTextUnicode;
+        return property == OneNotePropertyEnum.RgOutlineIndentDistance
+                || property == OneNotePropertyEnum.NotebookManagementEntityGuid
+                || property == OneNotePropertyEnum.RichEditTextUnicode;
     }
 
-    public void walkTree(OneNoteTreeWalkerOptions options, Metadata metadata,
-                         XHTMLContentHandler xhtml)
+    public void walkTree(OneNoteTreeWalkerOptions options, Metadata metadata, XHTMLContentHandler xhtml)
             throws SAXException, TikaException, IOException {
         for (RevisionStoreObjectGroup revisionStoreObjectGroup : OtherFileNodeList) {
             for (RevisionStoreObject revisionStoreObject : revisionStoreObjectGroup.objects) {
-                PropertySet propertySet =
-                        revisionStoreObject.propertySet.objectSpaceObjectPropSet.body;
+                PropertySet propertySet = revisionStoreObject.propertySet.objectSpaceObjectPropSet.body;
                 for (int i = 0; i < propertySet.rgData.size(); ++i) {
                     IProperty property = propertySet.rgData.get(i);
                     PropertyID propertyID = propertySet.rgPrids[i];
                     PropertyType propertyType = PropertyType.fromIntVal(propertyID.type);
-                    OneNotePropertyEnum oneNotePropertyEnum =
-                            OneNotePropertyEnum.of(Unsigned.uint(propertyID.value).longValue());
+                    OneNotePropertyEnum oneNotePropertyEnum = OneNotePropertyEnum
+                            .of(Unsigned.uint(propertyID.value).longValue());
                     if (oneNotePropertyEnum == OneNotePropertyEnum.LastModifiedTimeStamp) {
                         long fullval = getScalar(property);
-                        Instant instant = Instant.ofEpochSecond(
-                                fullval / 10000000 + DATETIME_EPOCH_DIFF_1601);
+                        Instant instant = Instant.ofEpochSecond(fullval / 10000000 + DATETIME_EPOCH_DIFF_1601);
                         if (instant.isAfter(lastModifiedTimestamp)) {
                             lastModifiedTimestamp = instant;
                         }
@@ -202,9 +194,8 @@ public class MSOneStorePackage {
                         }
                         metadata.set(TikaCoreProperties.MODIFIED, String.valueOf(lastModified));
                     } else if (oneNotePropertyEnum == OneNotePropertyEnum.Author) {
-                        String author =
-                                new String(((PrtFourBytesOfLengthFollowedByData) property).data,
-                                        StandardCharsets.UTF_8);
+                        String author = new String(((PrtFourBytesOfLengthFollowedByData) property).data,
+                                StandardCharsets.UTF_8);
                         if (mostRecentAuthorProp) {
                             mostRecentAuthors.add(author);
                         } else if (originalAuthorProp) {
@@ -218,27 +209,22 @@ public class MSOneStorePackage {
                         originalAuthorProp = true;
                     } else if (propertyType == PropertyType.FourBytesOfLengthFollowedByData) {
                         boolean isBinary = propertyIsBinary(oneNotePropertyEnum);
-                        PrtFourBytesOfLengthFollowedByData dataProperty =
-                                (PrtFourBytesOfLengthFollowedByData) property;
-                        if ((dataProperty.data.length & 1) == 0 &&
-                                oneNotePropertyEnum != OneNotePropertyEnum.TextExtendedAscii &&
-                                !isBinary) {
+                        PrtFourBytesOfLengthFollowedByData dataProperty = (PrtFourBytesOfLengthFollowedByData) property;
+                        if ((dataProperty.data.length & 1) == 0
+                                && oneNotePropertyEnum != OneNotePropertyEnum.TextExtendedAscii && !isBinary) {
                             if (options.getUtf16PropertiesToPrint().contains(oneNotePropertyEnum)) {
                                 xhtml.startElement(P);
-                                xhtml.characters(
-                                        new String(dataProperty.data, StandardCharsets.UTF_16LE));
+                                xhtml.characters(new String(dataProperty.data, StandardCharsets.UTF_16LE));
                                 xhtml.endElement(P);
                             }
                         } else if (oneNotePropertyEnum == OneNotePropertyEnum.TextExtendedAscii) {
                             xhtml.startElement(P);
-                            xhtml.characters(
-                                    new String(dataProperty.data, StandardCharsets.US_ASCII));
+                            xhtml.characters(new String(dataProperty.data, StandardCharsets.US_ASCII));
                             xhtml.endElement(P);
                         } else if (!isBinary) {
                             if (options.getUtf16PropertiesToPrint().contains(oneNotePropertyEnum)) {
                                 xhtml.startElement(P);
-                                xhtml.characters(
-                                        new String(dataProperty.data, StandardCharsets.UTF_16LE));
+                                xhtml.characters(new String(dataProperty.data, StandardCharsets.UTF_16LE));
                                 xhtml.endElement(P);
                             }
                         } else {
@@ -266,7 +252,6 @@ public class MSOneStorePackage {
                     originalAuthors.toArray(new String[]{}));
         }
     }
-
 
     private void handleRichEditTextUnicode(byte[] arr, XHTMLContentHandler xhtml)
             throws SAXException, IOException, TikaException {

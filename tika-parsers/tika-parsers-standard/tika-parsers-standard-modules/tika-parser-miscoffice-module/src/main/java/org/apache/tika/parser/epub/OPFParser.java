@@ -16,11 +16,6 @@
  */
 package org.apache.tika.parser.epub;
 
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.metadata.Epub;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -28,6 +23,10 @@ import org.apache.tika.parser.xml.DcXMLParser;
 import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Use this to parse the .opf files
@@ -35,12 +34,10 @@ import org.apache.tika.utils.XMLReaderUtils;
 public class OPFParser extends DcXMLParser {
 
     @Override
-    protected ContentHandler getContentHandler(ContentHandler handler, Metadata metadata,
-                                               ParseContext context) {
+    protected ContentHandler getContentHandler(ContentHandler handler, Metadata metadata, ParseContext context) {
         //set default.  This will be overwritten if it is pre-paginated
         metadata.set(Epub.RENDITION_LAYOUT, "reflowable");
-        return new TeeContentHandler(super.getContentHandler(handler, metadata, context),
-                new OPFHandler(metadata));
+        return new TeeContentHandler(super.getContentHandler(handler, metadata, context), new OPFHandler(metadata));
     }
 
     private static class OPFHandler extends DefaultHandler {

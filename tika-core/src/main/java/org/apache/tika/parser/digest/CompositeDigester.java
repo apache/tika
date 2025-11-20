@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.digest;
 
 import java.io.IOException;
@@ -26,7 +25,6 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
-
 
 public class CompositeDigester implements DigestingParser.Digester {
 

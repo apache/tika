@@ -26,9 +26,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Epub;
@@ -37,6 +34,8 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class EpubParserTest extends TikaTest {
 
@@ -100,7 +99,6 @@ public class EpubParserTest extends TikaTest {
         }
     }
 
-
     @Test
     public void testTruncated() throws Exception {
         Parser p = new EpubParser();
@@ -120,8 +118,7 @@ public class EpubParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testEPUB_xml_ext.epub");
         assertEquals(1, metadataList.size());
         assertEquals("2.0", metadataList.get(0).get(Epub.VERSION));
-        assertContains("It was a bright cold day in April",
-                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("It was a bright cold day in April", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Test
@@ -147,11 +144,13 @@ public class EpubParserTest extends TikaTest {
                 "Graeme Mackreth", "Distributed Proofreaders", "Szymon Szott", "David Reimer");
         Set<String> creators = Set.of("Joseph Conrad", "Ford Madox Ford");
         Set<String> languages = Set.of("en-GB", "en-US");
-        Set<String> descriptions = Set.of("A young writer dabbling in journalism meets a strange, otherworldly woman with long-term political goals.",
+        Set<String> descriptions = Set.of(
+                "A young writer dabbling in journalism meets a strange, otherworldly woman with long-term political goals.",
                 "additional description");
-        Set<String> sources = Set.of("https://www.gutenberg.org/ebooks/14888", "https://archive.org/details/inheritorsanext01fordgoog/");
-        Set<String> identifiers = Set.of("https://standardebooks.org/ebooks/joseph-conrad_ford-madox-ford/the-inheritors",
-                "isbn:0571225470");
+        Set<String> sources = Set.of("https://www.gutenberg.org/ebooks/14888",
+                "https://archive.org/details/inheritorsanext01fordgoog/");
+        Set<String> identifiers = Set.of(
+                "https://standardebooks.org/ebooks/joseph-conrad_ford-madox-ford/the-inheritors", "isbn:0571225470");
         Set<String> subjects = Set.of("Science fiction");
 
         Metadata m = metadataList.get(0);

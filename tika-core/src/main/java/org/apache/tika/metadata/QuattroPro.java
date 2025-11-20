@@ -13,8 +13,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Copyright 2016 Norconex Inc.
  */
 package org.apache.tika.metadata;
 
@@ -29,24 +27,21 @@ public interface QuattroPro {
     /**
      * ID.
      */
-    Property ID = Property.internalText(
-            QUATTROPRO_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Id");
+    Property ID = Property
+            .internalText(QUATTROPRO_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Id");
     /**
      * Version.
      */
     Property VERSION = Property.internalInteger(
-            QUATTROPRO_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "Version");
+            QUATTROPRO_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Version");
     /**
      * Build.
      */
-    Property BUILD = Property.internalInteger(
-            QUATTROPRO_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "Build");
+    Property BUILD = Property
+            .internalInteger(QUATTROPRO_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Build");
     /**
      * Lowest version.
      */
     Property LOWEST_VERSION = Property.internalInteger(
-            QUATTROPRO_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "LowestVersion");
+            QUATTROPRO_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LowestVersion");
 }

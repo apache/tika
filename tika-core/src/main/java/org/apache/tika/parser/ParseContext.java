@@ -91,8 +91,7 @@ public class ParseContext implements Serializable {
 
     //this should really only be used for serialization
     public Set<String> keySet() {
-        return Collections
-                .unmodifiableSet(context.keySet());
+        return Collections.unmodifiableSet(context.keySet());
     }
 
     @Override

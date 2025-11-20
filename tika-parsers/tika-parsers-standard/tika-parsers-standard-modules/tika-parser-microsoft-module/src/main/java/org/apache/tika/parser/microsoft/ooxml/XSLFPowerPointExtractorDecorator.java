@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import javax.xml.namespace.QName;
 
 import org.apache.poi.common.usermodel.Hyperlink;
@@ -56,6 +57,12 @@ import org.apache.poi.xslf.usermodel.XSLFTableRow;
 import org.apache.poi.xslf.usermodel.XSLFTextParagraph;
 import org.apache.poi.xslf.usermodel.XSLFTextRun;
 import org.apache.poi.xslf.usermodel.XSLFTextShape;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.StringUtils;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.openxmlformats.schemas.presentationml.x2006.main.CTCommentAuthor;
@@ -67,26 +74,16 @@ import org.openxmlformats.schemas.presentationml.x2006.main.CTSlideIdListEntry;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Office;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.StringUtils;
-
 public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
-    private final static String HANDOUT_MASTER =
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/handoutMaster";
+    private final static String HANDOUT_MASTER = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/handoutMaster";
 
     private Metadata metadata;
 
-    public XSLFPowerPointExtractorDecorator(Metadata metadata, ParseContext context,
-                                            XSLFExtractor extractor) {
+    public XSLFPowerPointExtractorDecorator(Metadata metadata, ParseContext context, XSLFExtractor extractor) {
         super(context, extractor);
         this.metadata = metadata;
     }
-
 
     /**
      * @see XSLFExtractor#getText()
@@ -106,7 +103,8 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         }
     }
 
-    private void handleSlide(XSLFSlide slide, XHTMLContentHandler xhtml, AtomicInteger hiddenSlideCounter) throws SAXException {
+    private void handleSlide(XSLFSlide slide, XHTMLContentHandler xhtml, AtomicInteger hiddenSlideCounter)
+            throws SAXException {
         String slideDesc;
         if (slide.getPackagePart() != null && slide.getPackagePart().getPartName() != null) {
             slideDesc = getJustFileName(slide.getPackagePart().getPartName().toString());
@@ -182,16 +180,12 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             }
         }
         //now dump diagram data
-        handleGeneralTextContainingPart(RELATION_DIAGRAM_DATA, "diagram-data",
-                slide.getPackagePart(), metadata,
-                new OOXMLWordAndPowerPointTextHandler(new OOXMLTikaBodyPartHandler(xhtml),
-                        new HashMap<>()//empty
+        handleGeneralTextContainingPart(RELATION_DIAGRAM_DATA, "diagram-data", slide.getPackagePart(), metadata,
+                new OOXMLWordAndPowerPointTextHandler(new OOXMLTikaBodyPartHandler(xhtml), new HashMap<>()//empty
                 ));
         //now dump chart data
-        handleGeneralTextContainingPart(XSLFRelation.CHART.getRelation(), "chart",
-                slide.getPackagePart(), metadata,
-                new OOXMLWordAndPowerPointTextHandler(new OOXMLTikaBodyPartHandler(xhtml),
-                        new HashMap<>()//empty
+        handleGeneralTextContainingPart(XSLFRelation.CHART.getRelation(), "chart", slide.getPackagePart(), metadata,
+                new OOXMLWordAndPowerPointTextHandler(new OOXMLTikaBodyPartHandler(xhtml), new HashMap<>()//empty
                 ));
 
         CTSlide ctSlide = slide.getXmlObject();
@@ -220,8 +214,8 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         }
     }
 
-    private void extractContent(List<? extends XSLFShape> shapes, boolean skipPlaceholders,
-                                XHTMLContentHandler xhtml, String slideDesc) throws SAXException {
+    private void extractContent(List<? extends XSLFShape> shapes, boolean skipPlaceholders, XHTMLContentHandler xhtml,
+            String slideDesc) throws SAXException {
         for (XSLFShape sh : shapes) {
 
             if (sh instanceof XSLFTextShape) {
@@ -242,8 +236,8 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                         //external and not footnote refs via the current hack
                         Hyperlink hyperlink = run.getHyperlink();
 
-                        if (hyperlink != null && hyperlink.getAddress() != null &&
-                                !hyperlink.getAddress().contains("#_ftn")) {
+                        if (hyperlink != null && hyperlink.getAddress() != null
+                                && !hyperlink.getAddress().contains("#_ftn")) {
                             xhtml.startElement("a", "href", hyperlink.getAddress());
                             inHyperlink = true;
                         }
@@ -268,9 +262,8 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                         "declare namespace p='http://schemas.openxmlformats.org/presentationml/2006/main' .//*/p:oleObj");
                 if (sp != null) {
                     for (XmlObject emb : sp) {
-                        XmlObject relIDAtt = emb.selectAttribute(new QName(
-                                "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-                                "id"));
+                        XmlObject relIDAtt = emb.selectAttribute(
+                                new QName("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id"));
                         if (relIDAtt != null) {
                             String relID = relIDAtt.getDomNode().getNodeValue();
                             if (slideDesc != null) {
@@ -367,11 +360,9 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
         for (String rel : new String[]{XSLFRelation.SLIDE_MASTER.getRelation(), HANDOUT_MASTER}) {
             try {
-                PackageRelationshipCollection prc =
-                        document.getPackagePart().getRelationshipsByType(rel);
+                PackageRelationshipCollection prc = document.getPackagePart().getRelationshipsByType(rel);
                 for (int i = 0; i < prc.size(); i++) {
-                    PackagePart pp =
-                            document.getPackagePart().getRelatedPart(prc.getRelationship(i));
+                    PackagePart pp = document.getPackagePart().getRelatedPart(prc.getRelationship(i));
                     if (pp != null) {
                         parts.add(pp);
                     }
@@ -385,7 +376,6 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         return parts;
     }
 
-
     private void addSlideParts(PackagePart slidePart, List<PackagePart> parts) {
 
         for (String relation : new String[]{XSLFRelation.VML_DRAWING.getRelation(),
@@ -393,11 +383,9 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 XSLFRelation.NOTES.getRelation(), XSLFRelation.CHART.getRelation(),
                 XSLFRelation.DIAGRAM_DRAWING.getRelation()}) {
             try {
-                for (PackageRelationship packageRelationship : slidePart
-                        .getRelationshipsByType(relation)) {
+                for (PackageRelationship packageRelationship : slidePart.getRelationshipsByType(relation)) {
                     if (packageRelationship.getTargetMode() == TargetMode.INTERNAL) {
-                        PackagePartName relName = PackagingURIHelper
-                                .createPartName(packageRelationship.getTargetURI());
+                        PackagePartName relName = PackagingURIHelper.createPartName(packageRelationship.getTargetURI());
                         parts.add(packageRelationship.getPackage().getPart(relName));
                     }
                 }

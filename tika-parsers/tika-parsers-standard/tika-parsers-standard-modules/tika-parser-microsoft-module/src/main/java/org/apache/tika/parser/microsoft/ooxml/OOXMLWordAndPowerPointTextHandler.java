@@ -14,19 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.ooxml;
-
 
 import java.util.Date;
 import java.util.Map;
 
 import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
+import org.apache.tika.utils.DateUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-
-import org.apache.tika.utils.DateUtils;
 
 /**
  * This class is intended to handle anything that might contain IBodyElements:
@@ -49,9 +46,7 @@ import org.apache.tika.utils.DateUtils;
 
 public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
 
-
-    public final static String W_NS =
-            "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+    public final static String W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
     private final static String R = "r";
     private final static String FLD = "fld";
     private final static String RPR = "rPr";
@@ -87,16 +82,13 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private static final String VAL = "val";
     private static final String SLIDE = "sld";
     private static final String SHOW = "show";
-    private final static String MC_NS =
-            "http://schemas.openxmlformats.org/markup-compatibility/2006";
+    private final static String MC_NS = "http://schemas.openxmlformats.org/markup-compatibility/2006";
     private final static String O_NS = "urn:schemas-microsoft-com:office:office";
     private final static String PIC_NS = "http://schemas.openxmlformats.org/drawingml/2006/picture";
-    private final static String DRAWING_MAIN_NS =
-            "http://schemas.openxmlformats.org/drawingml/2006/main";
+    private final static String DRAWING_MAIN_NS = "http://schemas.openxmlformats.org/drawingml/2006/main";
     private final static String V_NS = "urn:schemas-microsoft-com:vml";
     private final static String C_NS = "http://schemas.openxmlformats.org/drawingml/2006/chart";
-    private final static String OFFICE_DOC_RELATIONSHIP_NS =
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+    private final static String OFFICE_DOC_RELATIONSHIP_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
     private final static char[] TAB_CHAR = new char[]{'\t'};
     private final static char NEWLINE = '\n';
     private final static String BOOKMARK_START = "bookmarkStart";
@@ -146,20 +138,18 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private boolean inHlinkClick = false;
     private boolean inTextBox = false;
     private boolean inV = false; //in c:v in chart file
-    private OOXMLWordAndPowerPointTextHandler.EditType editType =
-            OOXMLWordAndPowerPointTextHandler.EditType.NONE;
+    private OOXMLWordAndPowerPointTextHandler.EditType editType = OOXMLWordAndPowerPointTextHandler.EditType.NONE;
     private DateUtils dateUtils = new DateUtils();
 
     private boolean hiddenSlide = false;
 
     public OOXMLWordAndPowerPointTextHandler(XWPFBodyContentsHandler bodyContentsHandler,
-                                             Map<String, String> hyperlinks) {
+            Map<String, String> hyperlinks) {
         this(bodyContentsHandler, hyperlinks, true, true);
     }
 
     public OOXMLWordAndPowerPointTextHandler(XWPFBodyContentsHandler bodyContentsHandler,
-                                             Map<String, String> hyperlinks, boolean includeTextBox,
-                                             boolean concatenatePhoneticRuns) {
+            Map<String, String> hyperlinks, boolean includeTextBox, boolean concatenatePhoneticRuns) {
         this.bodyContentsHandler = bodyContentsHandler;
         this.linkedRelationships = hyperlinks;
         this.includeTextBox = includeTextBox;
@@ -183,8 +173,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes atts)
-            throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
         //TODO: checkBox, textBox, sym, headerReference, footerReference, commentRangeEnd
 
         if (lastStartElementWasP && !PPR.equals(localName)) {
@@ -320,8 +309,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
                 String attValue = atts.getValue(i);
                 if (attLocalName.equals("Type")) {
                     type = attValue;
-                } else if (OFFICE_DOC_RELATIONSHIP_NS.equals(atts.getURI(i)) &&
-                        attLocalName.equals("id")) {
+                } else if (OFFICE_DOC_RELATIONSHIP_NS.equals(atts.getURI(i)) && attLocalName.equals("id")) {
                     refId = attValue;
                 }
             }
@@ -428,8 +416,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             handleEndOfRun();
         } else if (DEL_TEXT.equals(localName)) {
             inDelText = false;
-        } else if (INS.equals(localName) || DEL.equals(localName) || MOVE_TO.equals(localName) ||
-                MOVE_FROM.equals(localName)) {
+        } else if (INS.equals(localName) || DEL.equals(localName) || MOVE_TO.equals(localName)
+                || MOVE_FROM.equals(localName)) {
             editType = EditType.NONE;
         } else if (HYPERLINK.equals(localName)) {
             bodyContentsHandler.hyperlinkEnd();

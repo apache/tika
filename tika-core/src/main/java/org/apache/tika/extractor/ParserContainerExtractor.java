@@ -21,10 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
@@ -38,6 +34,9 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.StatefulParser;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * An implementation of {@link ContainerExtractor} powered by the regular
@@ -60,8 +59,7 @@ public class ParserContainerExtractor implements ContainerExtractor {
     }
 
     public ParserContainerExtractor(TikaConfig config) {
-        this(new AutoDetectParser(config),
-                new DefaultDetector(config.getMimeRepository()));
+        this(new AutoDetectParser(config), new DefaultDetector(config.getMimeRepository()));
     }
 
     public ParserContainerExtractor(Parser parser, Detector detector) {
@@ -76,9 +74,7 @@ public class ParserContainerExtractor implements ContainerExtractor {
     }
 
     @Override
-    public void extract(
-            TikaInputStream stream, ContainerExtractor recurseExtractor,
-            EmbeddedResourceHandler handler)
+    public void extract(TikaInputStream stream, ContainerExtractor recurseExtractor, EmbeddedResourceHandler handler)
             throws IOException, TikaException {
         ParseContext context = new ParseContext();
         context.set(Parser.class, new RecursiveParser(parser, recurseExtractor, handler));
@@ -95,9 +91,7 @@ public class ParserContainerExtractor implements ContainerExtractor {
 
         private final EmbeddedResourceHandler handler;
 
-        private RecursiveParser(Parser statelessParser,
-                ContainerExtractor extractor,
-                EmbeddedResourceHandler handler) {
+        private RecursiveParser(Parser statelessParser, ContainerExtractor extractor, EmbeddedResourceHandler handler) {
             super(statelessParser);
             this.extractor = extractor;
             this.handler = handler;
@@ -109,9 +103,7 @@ public class ParserContainerExtractor implements ContainerExtractor {
         }
 
         @Override
-        public void parse(
-                InputStream stream, ContentHandler ignored,
-                Metadata metadata, ParseContext context)
+        public void parse(InputStream stream, ContentHandler ignored, Metadata metadata, ParseContext context)
                 throws IOException, SAXException, TikaException {
             TemporaryResources tmp = new TemporaryResources();
             try {

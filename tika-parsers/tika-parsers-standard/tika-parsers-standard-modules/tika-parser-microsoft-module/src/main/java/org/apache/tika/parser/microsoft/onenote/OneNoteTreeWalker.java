@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote;
 
 import java.io.IOException;
@@ -36,9 +35,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -48,6 +44,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Walk the one note tree and create a Map while it goes.
@@ -68,8 +66,7 @@ class OneNoteTreeWalker {
      * .EPOCH.
      */
     private static final long DATETIME_EPOCH_DIFF_1601;
-    private static final Pattern HYPERLINK_PATTERN =
-            Pattern.compile("\uFDDFHYPERLINK\\s+\"([^\"]+)\"([^\"]+)$");
+    private static final Pattern HYPERLINK_PATTERN = Pattern.compile("\uFDDFHYPERLINK\\s+\"([^\"]+)\"([^\"]+)$");
 
     static {
         LocalDateTime time32Epoch1980 = LocalDateTime.of(1980, Month.JANUARY, 1, 0, 0);
@@ -117,17 +114,15 @@ class OneNoteTreeWalker {
      *                        crawling all root file nodes, and don't care about revisions.
      */
     public OneNoteTreeWalker(OneNoteTreeWalkerOptions options, OneNoteDocument oneNoteDocument,
-                             OneNoteDirectFileResource dif, XHTMLContentHandler xhtml,
-                             Metadata parentMetadata, ParseContext parseContext,
-                             Pair<Long, ExtendedGUID> roleAndContext) {
+            OneNoteDirectFileResource dif, XHTMLContentHandler xhtml, Metadata parentMetadata,
+            ParseContext parseContext, Pair<Long, ExtendedGUID> roleAndContext) {
         this.options = options;
         this.oneNoteDocument = oneNoteDocument;
         this.dif = dif;
         this.roleAndContext = roleAndContext;
         this.xhtml = xhtml;
         this.parentMetadata = parentMetadata;
-        this.embeddedDocumentExtractor =
-                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
+        this.embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
     }
 
     /**
@@ -150,8 +145,7 @@ class OneNoteTreeWalker {
      * @return List of the root file nodes.
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
-    public List<Map<String, Object>> walkRootFileNodes()
-            throws IOException, TikaException, SAXException {
+    public List<Map<String, Object>> walkRootFileNodes() throws IOException, TikaException, SAXException {
         List<Map<String, Object>> res = new ArrayList<>();
         if (options.isCrawlAllFileNodesFromRoot()) {
             res.add(walkFileNodeList(oneNoteDocument.root, null));
@@ -160,8 +154,7 @@ class OneNoteTreeWalker {
                 Map<String, Object> structure = new HashMap<>();
                 structure.put("oneNoteType", "Revision");
                 structure.put("revisionListGuid", revisionListGuid.toString());
-                FileNodePtr fileNodePtr =
-                        oneNoteDocument.revisionManifestLists.get(revisionListGuid);
+                FileNodePtr fileNodePtr = oneNoteDocument.revisionManifestLists.get(revisionListGuid);
                 structure.put("fileNode", walkRevision(fileNodePtr));
                 res.add(structure);
             }
@@ -188,8 +181,7 @@ class OneNoteTreeWalker {
      * @return A map of the parsed data.
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
-    private Map<String, Object> walkRevision(FileNodePtr fileNodePtr)
-            throws IOException, TikaException, SAXException {
+    private Map<String, Object> walkRevision(FileNodePtr fileNodePtr) throws IOException, TikaException, SAXException {
         Map<String, Object> structure = new HashMap<>();
         structure.put("oneNoteType", "FileNodePointer");
         structure.put("offsets", fileNodePtr.nodeListPositions);
@@ -215,25 +207,23 @@ class OneNoteTreeWalker {
         List<Map<String, Object>> children = new ArrayList<>();
         boolean okGroup = false;
         for (FileNode child : revisionFileNode.childFileNodeList.children) {
-            if (child.id == FndStructureConstants.RevisionManifestStart4FND ||
-                    child.id == FndStructureConstants.RevisionManifestStart6FND ||
-                    child.id == FndStructureConstants.RevisionManifestStart7FND) {
+            if (child.id == FndStructureConstants.RevisionManifestStart4FND
+                    || child.id == FndStructureConstants.RevisionManifestStart6FND
+                    || child.id == FndStructureConstants.RevisionManifestStart7FND) {
                 okGroup = validRevisions.contains(child.gosid);
             }
             if (okGroup) {
-                if ((child.id == FndStructureConstants.RootObjectReference2FNDX ||
-                        child.id == FndStructureConstants.RootObjectReference3FND) &&
-                        child.subType.rootObjectReference.rootObjectReferenceBase.rootRole == 1) {
-                    FileNodePtr childFileNodePointer =
-                            oneNoteDocument.guidToObject.get(child.gosid);
+                if ((child.id == FndStructureConstants.RootObjectReference2FNDX
+                        || child.id == FndStructureConstants.RootObjectReference3FND)
+                        && child.subType.rootObjectReference.rootObjectReferenceBase.rootRole == 1) {
+                    FileNodePtr childFileNodePointer = oneNoteDocument.guidToObject.get(child.gosid);
                     children.add(walkFileNodePtr(childFileNodePointer, null));
                 }
             }
         }
         if (!children.isEmpty()) {
             Map<String, Object> childFileNodeListMap = new HashMap<>();
-            childFileNodeListMap.put("fileNodeListHeader",
-                    revisionFileNode.childFileNodeList.fileNodeListHeader);
+            childFileNodeListMap.put("fileNodeListHeader", revisionFileNode.childFileNodeList.fileNodeListHeader);
             childFileNodeListMap.put("children", children);
             structure.put("revisionFileNodeList", childFileNodeListMap);
         }
@@ -248,8 +238,7 @@ class OneNoteTreeWalker {
      * @return Returns a map of the main data.
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
-    public Map<String, Object> walkFileNodePtr(FileNodePtr fileNodePtr,
-                                               OneNotePropertyId parentPropertyId)
+    public Map<String, Object> walkFileNodePtr(FileNodePtr fileNodePtr, OneNotePropertyId parentPropertyId)
             throws IOException, TikaException, SAXException {
         if (fileNodePtr != null) {
             FileNode fileNode = fileNodePtr.dereference(oneNoteDocument);
@@ -288,8 +277,7 @@ class OneNoteTreeWalker {
      * @return Map which is result of the parsed file node.
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
-    public Map<String, Object> walkFileNode(FileNode fileNode,
-                                            OneNotePropertyId parentPropertyId)
+    public Map<String, Object> walkFileNode(FileNode fileNode, OneNotePropertyId parentPropertyId)
             throws IOException, TikaException, SAXException {
         Map<String, Object> structure = new HashMap<>();
         structure.put("oneNoteType", "FileNode");
@@ -300,8 +288,7 @@ class OneNoteTreeWalker {
         structure.put("fileNodeBaseType", "0x" + Long.toHexString(fileNode.baseType));
         structure.put("isFileData", fileNode.isFileData);
         structure.put("idDesc", fileNode.idDesc);
-        if (fileNode.childFileNodeList != null &&
-                fileNode.childFileNodeList.fileNodeListHeader != null) {
+        if (fileNode.childFileNodeList != null && fileNode.childFileNodeList.fileNodeListHeader != null) {
             structure.put("childFileNodeList", walkFileNodeList(fileNode.childFileNodeList, parentPropertyId));
         }
         if (fileNode.propertySet != null) {
@@ -310,10 +297,10 @@ class OneNoteTreeWalker {
                 structure.put("propertySet", propSet);
             }
         }
-        if (fileNode.subType.fileDataStoreObjectReference.ref != null && !FileChunkReference.nil()
-                .equals(fileNode.subType.fileDataStoreObjectReference.ref.fileData)) {
-            structure.put("fileDataStoreObjectReference", walkFileDataStoreObjectReference(
-                    fileNode.subType.fileDataStoreObjectReference));
+        if (fileNode.subType.fileDataStoreObjectReference.ref != null
+                && !FileChunkReference.nil().equals(fileNode.subType.fileDataStoreObjectReference.ref.fileData)) {
+            structure.put("fileDataStoreObjectReference",
+                    walkFileDataStoreObjectReference(fileNode.subType.fileDataStoreObjectReference));
         }
         return structure;
     }
@@ -326,15 +313,13 @@ class OneNoteTreeWalker {
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
     private Map<String, Object> walkFileDataStoreObjectReference(
-            FileDataStoreObjectReference fileDataStoreObjectReference)
-            throws IOException, SAXException, TikaException {
+            FileDataStoreObjectReference fileDataStoreObjectReference) throws IOException, SAXException, TikaException {
         Map<String, Object> structure = new HashMap<>();
         OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
         content.reposition(fileDataStoreObjectReference.ref.fileData);
         if (fileDataStoreObjectReference.ref.fileData.cb > dif.size()) {
-            throw new TikaMemoryLimitException(
-                    "File data store cb " + fileDataStoreObjectReference.ref.fileData.cb +
-                            " exceeds document size: " + dif.size());
+            throw new TikaMemoryLimitException("File data store cb " + fileDataStoreObjectReference.ref.fileData.cb
+                    + " exceeds document size: " + dif.size());
         }
         handleEmbedded((int) fileDataStoreObjectReference.ref.fileData.cb);
         structure.put("fileDataStoreObjectMetadata", fileDataStoreObjectReference);
@@ -359,8 +344,7 @@ class OneNoteTreeWalker {
             xhtml.startElement("div", attributes);
             xhtml.endElement("div");
             stream = TikaInputStream.get(buf.array());
-            embeddedDocumentExtractor.parseEmbedded(stream, new EmbeddedContentHandler(xhtml),
-                    embeddedMetadata, false);
+            embeddedDocumentExtractor.parseEmbedded(stream, new EmbeddedContentHandler(xhtml), embeddedMetadata, false);
         } finally {
             IOUtils.closeQuietly(stream);
         }
@@ -373,8 +357,7 @@ class OneNoteTreeWalker {
      * @return
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
-    private List<Map<String, Object>> processPropertySet(PropertySet propertySet,
-                                                         OneNotePropertyId parentPropertyId)
+    private List<Map<String, Object>> processPropertySet(PropertySet propertySet, OneNotePropertyId parentPropertyId)
             throws IOException, TikaException, SAXException {
         List<Map<String, Object>> propValues = new ArrayList<>();
         for (int i = 0; i < propertySet.rgPridsData.size(); ++i) {
@@ -391,10 +374,10 @@ class OneNoteTreeWalker {
      * @return Is it binary?
      */
     private boolean propertyIsBinary(OneNotePropertyEnum property) {
-        return property == OneNotePropertyEnum.RgOutlineIndentDistance ||
-                property == OneNotePropertyEnum.NotebookManagementEntityGuid ||
-                property == OneNotePropertyEnum.RichEditTextUnicode ||
-                property == OneNotePropertyEnum.CachedTitleString;
+        return property == OneNotePropertyEnum.RgOutlineIndentDistance
+                || property == OneNotePropertyEnum.NotebookManagementEntityGuid
+                || property == OneNotePropertyEnum.RichEditTextUnicode
+                || property == OneNotePropertyEnum.CachedTitleString;
     }
 
     /**
@@ -408,8 +391,7 @@ class OneNoteTreeWalker {
      * @return The map parsed by this property value.
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
-    private Map<String, Object> processPropertyValue(PropertyValue propertyValue,
-                                                     OneNotePropertyId parentPropertyId)
+    private Map<String, Object> processPropertyValue(PropertyValue propertyValue, OneNotePropertyId parentPropertyId)
             throws IOException, TikaException, SAXException {
         Map<String, Object> propMap = new HashMap<>();
         propMap.put("oneNoteType", "PropertyValue");
@@ -460,12 +442,11 @@ class OneNoteTreeWalker {
             content.reposition(propertyValue.rawData);
             boolean isBinary = propertyIsBinary(propertyValue.propertyId.propertyEnum);
             propMap.put("isBinary", isBinary);
-            if ((content.size() & 1) == 0 && propertyValue.propertyId.propertyEnum !=
-                    OneNotePropertyEnum.TextExtendedAscii && !isBinary) {
+            if ((content.size() & 1) == 0
+                    && propertyValue.propertyId.propertyEnum != OneNotePropertyEnum.TextExtendedAscii && !isBinary) {
                 if (content.size() > dif.size()) {
                     throw new TikaMemoryLimitException(
-                            "File data store cb " + content.size() + " exceeds document size: " +
-                                    dif.size());
+                            "File data store cb " + content.size() + " exceeds document size: " + dif.size());
                 }
                 ByteBuffer buf = ByteBuffer.allocate(content.size());
                 dif.read(buf);
@@ -475,12 +456,10 @@ class OneNoteTreeWalker {
                     xhtml.characters((String) propMap.get("dataUnicode16LE"));
                     xhtml.endElement(P);
                 }
-            } else if (propertyValue.propertyId.propertyEnum ==
-                    OneNotePropertyEnum.TextExtendedAscii) {
+            } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.TextExtendedAscii) {
                 if (content.size() > dif.size()) {
                     throw new TikaMemoryLimitException(
-                            "File data store cb " + content.size() + " exceeds document size: " +
-                                    dif.size());
+                            "File data store cb " + content.size() + " exceeds document size: " + dif.size());
                 }
                 ByteBuffer buf = ByteBuffer.allocate(content.size());
                 dif.read(buf);
@@ -491,8 +470,7 @@ class OneNoteTreeWalker {
             } else if (!isBinary) {
                 if (content.size() > dif.size()) {
                     throw new TikaMemoryLimitException(
-                            "File data store cb " + content.size() + " exceeds document size: " +
-                                    dif.size());
+                            "File data store cb " + content.size() + " exceeds document size: " + dif.size());
                 }
                 ByteBuffer buf = ByteBuffer.allocate(content.size());
                 dif.read(buf);
@@ -505,16 +483,12 @@ class OneNoteTreeWalker {
             } else {
                 if (content.size() > dif.size()) {
                     throw new TikaMemoryLimitException(
-                            "File data store cb " + content.size() + " exceeds document size: " +
-                                    dif.size());
+                            "File data store cb " + content.size() + " exceeds document size: " + dif.size());
                 }
-                if (propertyValue.propertyId.propertyEnum ==
-                        OneNotePropertyEnum.RichEditTextUnicode
-                        || propertyValue.propertyId.propertyEnum ==
-                        OneNotePropertyEnum.CachedTitleString) {
-                    if (!options.isOnlyLatestRevision()
-                            || (parentPropertyId != null &&
-                            parentPropertyId.propertyEnum != OneNotePropertyEnum.ElementChildNodesOfVersionHistory)) {
+                if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.RichEditTextUnicode
+                        || propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.CachedTitleString) {
+                    if (!options.isOnlyLatestRevision() || (parentPropertyId != null
+                            && parentPropertyId.propertyEnum != OneNotePropertyEnum.ElementChildNodesOfVersionHistory)) {
                         // only handle text for the latest revision, unless the options
                         // have the onlyLatestRevision = false
                         handleRichEditTextUnicode(content.size());
@@ -551,22 +525,19 @@ class OneNoteTreeWalker {
      * @param propertyValue The property value of an author.
      * @return Resulting author string in UTF-16LE format.
      */
-    private String getAuthor(PropertyValue propertyValue)
-            throws IOException, TikaMemoryLimitException {
+    private String getAuthor(PropertyValue propertyValue) throws IOException, TikaMemoryLimitException {
         OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
         content.reposition(propertyValue.rawData);
         if (content.size() > dif.size()) {
             throw new TikaMemoryLimitException(
-                    "File data store cb " + content.size() + " exceeds document size: " +
-                            dif.size());
+                    "File data store cb " + content.size() + " exceeds document size: " + dif.size());
         }
         ByteBuffer buf = ByteBuffer.allocate(content.size());
         dif.read(buf);
         return new String(buf.array(), StandardCharsets.UTF_16LE);
     }
 
-    private void handleRichEditTextUnicode(int length)
-            throws SAXException, IOException {
+    private void handleRichEditTextUnicode(int length) throws SAXException, IOException {
         if (!textAlreadyFetched.add(Pair.of(dif.position(), length))) {
             // do not revisit already visited text, as you may encounter references to the same file nodes
             // while walking the tree.

@@ -78,8 +78,7 @@ class ClassLoaderResource implements ForkResource {
      * @param stream the stream to be sent
      * @throws IOException if the stream could not be sent
      */
-    private void writeAndCloseStream(DataOutputStream output, InputStream stream)
-            throws IOException {
+    private void writeAndCloseStream(DataOutputStream output, InputStream stream) throws IOException {
         try {
             byte[] buffer = new byte[0x10000 - 1];
             int n;

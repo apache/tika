@@ -24,11 +24,10 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.pipes.core.FetchEmitTuple;
 import org.apache.tika.pipes.pipesiterator.filelist.FileListPipesIterator;
+import org.junit.jupiter.api.Test;
 
 public class FileListPipesIteratorTest {
 

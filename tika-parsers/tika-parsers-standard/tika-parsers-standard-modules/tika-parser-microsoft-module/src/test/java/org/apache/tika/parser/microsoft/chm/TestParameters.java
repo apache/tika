@@ -21,7 +21,6 @@ import java.io.InputStream;
 
 import org.apache.commons.io.IOUtils;
 
-
 /**
  * Holds test parameters such as verification points
  */

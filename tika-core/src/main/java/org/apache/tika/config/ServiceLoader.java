@@ -64,7 +64,7 @@ public class ServiceLoader {
     private final boolean dynamic;
 
     public ServiceLoader(ClassLoader loader, LoadErrorHandler handler,
-                         InitializableProblemHandler initializableProblemHandler, boolean dynamic) {
+            InitializableProblemHandler initializableProblemHandler, boolean dynamic) {
         this.loader = loader;
         this.handler = handler;
         this.initializableProblemHandler = initializableProblemHandler;
@@ -81,14 +81,17 @@ public class ServiceLoader {
 
     public ServiceLoader(ClassLoader loader) {
         this(loader,
-                Boolean.getBoolean("org.apache.tika.service.error.warn") ? LoadErrorHandler.WARN :
-                        LoadErrorHandler.IGNORE);
+                Boolean.getBoolean("org.apache.tika.service.error.warn")
+                        ? LoadErrorHandler.WARN
+                        : LoadErrorHandler.IGNORE);
     }
 
     public ServiceLoader() {
         this(getContextClassLoader(),
-                Boolean.getBoolean("org.apache.tika.service.error.warn") ? LoadErrorHandler.WARN :
-                        LoadErrorHandler.IGNORE, true);
+                Boolean.getBoolean("org.apache.tika.service.error.warn")
+                        ? LoadErrorHandler.WARN
+                        : LoadErrorHandler.IGNORE,
+                true);
     }
 
     /**
@@ -208,8 +211,7 @@ public class ServiceLoader {
      * @since Apache Tika 1.1
      */
     @SuppressWarnings("unchecked")
-    public <T> Class<? extends T> getServiceClass(Class<T> iface, String name)
-            throws ClassNotFoundException {
+    public <T> Class<? extends T> getServiceClass(Class<T> iface, String name) throws ClassNotFoundException {
         if (loader == null) {
             throw new ClassNotFoundException("Service class " + name + " is not available");
         }
@@ -217,8 +219,7 @@ public class ServiceLoader {
         if (klass.isInterface()) {
             throw new ClassNotFoundException("Service class " + name + " is an interface");
         } else if (!iface.isAssignableFrom(klass)) {
-            throw new ClassNotFoundException(
-                    "Service class " + name + " does not implement " + iface.getName());
+            throw new ClassNotFoundException("Service class " + name + " does not implement " + iface.getName());
         } else {
             return (Class<? extends T>) klass;
         }
@@ -256,7 +257,7 @@ public class ServiceLoader {
         List<T> providers = new ArrayList<>();
         Set<String> seen = new HashSet<>();
         for (T provider : tmp) {
-            if (! seen.contains(provider.getClass().getCanonicalName())) {
+            if (!seen.contains(provider.getClass().getCanonicalName())) {
                 providers.add(provider);
                 seen.add(provider.getClass().getCanonicalName());
             }
@@ -337,8 +338,7 @@ public class ServiceLoader {
      * @since Apache Tika 1.2
      */
     @SuppressWarnings("unchecked")
-    public <T> List<T> loadStaticServiceProviders(Class<T> iface,
-                                                  Collection<Class<? extends T>> excludes) {
+    public <T> List<T> loadStaticServiceProviders(Class<T> iface, Collection<Class<? extends T>> excludes) {
         List<T> providers = new ArrayList<>();
 
         if (loader != null) {
@@ -358,14 +358,12 @@ public class ServiceLoader {
                             T instance = ServiceLoaderUtils.newInstance(klass, this);
                             if (instance instanceof Initializable) {
                                 ((Initializable) instance).initialize(Collections.EMPTY_MAP);
-                                ((Initializable) instance)
-                                        .checkInitialization(initializableProblemHandler);
+                                ((Initializable) instance).checkInitialization(initializableProblemHandler);
                             }
                             providers.add(instance);
                         }
                     } else {
-                        throw new TikaConfigException(
-                                "Class " + name + " is not of type: " + iface);
+                        throw new TikaConfigException("Class " + name + " is not of type: " + iface);
                     }
                 } catch (Throwable t) {
                     handler.handleLoadError(name, t);
@@ -375,8 +373,7 @@ public class ServiceLoader {
         return providers;
     }
 
-    private void collectServiceClassNames(URL resource, Collection<String> names)
-            throws IOException {
+    private void collectServiceClassNames(URL resource, Collection<String> names) throws IOException {
         try (InputStream stream = resource.openStream();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(stream, UTF_8))) {
             String line = reader.readLine();

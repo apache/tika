@@ -27,6 +27,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.Property.PropertyType;
+import org.apache.tika.metadata.PropertyTypeException;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.xmp.convert.TikaToXMP;
+
 import com.adobe.internal.xmp.XMPDateTime;
 import com.adobe.internal.xmp.XMPException;
 import com.adobe.internal.xmp.XMPIterator;
@@ -38,14 +46,6 @@ import com.adobe.internal.xmp.options.IteratorOptions;
 import com.adobe.internal.xmp.options.PropertyOptions;
 import com.adobe.internal.xmp.options.SerializeOptions;
 import com.adobe.internal.xmp.properties.XMPProperty;
-
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
-import org.apache.tika.metadata.Property.PropertyType;
-import org.apache.tika.metadata.PropertyTypeException;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.xmp.convert.TikaToXMP;
 
 /**
  * Provides a conversion of the Metadata map from Tika to the XMP data model by also providing the
@@ -112,8 +112,7 @@ public class XMPMetadata extends Metadata {
      * namespace hasn't been registered before, otherwise the existing prefix.
      * @throws XMPException If the parameters are not accordingly set
      */
-    public static String registerNamespace(String namespaceURI, String suggestedPrefix)
-            throws XMPException {
+    public static String registerNamespace(String namespaceURI, String suggestedPrefix) throws XMPException {
         return registry.registerNamespace(namespaceURI, suggestedPrefix);
     }
 
@@ -490,8 +489,8 @@ public class XMPMetadata extends Metadata {
      */
     @Override
     public void setAll(Properties properties) {
-        @SuppressWarnings("unchecked") Enumeration<String> names =
-                (Enumeration<String>) properties.propertyNames();
+        @SuppressWarnings("unchecked")
+        Enumeration<String> names = (Enumeration<String>) properties.propertyNames();
 
         while (names.hasMoreElements()) {
             String name = names.nextElement();
@@ -544,8 +543,7 @@ public class XMPMetadata extends Metadata {
 
         try {
             // Get an iterator for the XMP packet, starting at the top level schema nodes
-            XMPIterator nsIter = xmpData.iterator(
-                    new IteratorOptions().setJustChildren(true).setOmitQualifiers(true));
+            XMPIterator nsIter = xmpData.iterator(new IteratorOptions().setJustChildren(true).setOmitQualifiers(true));
             // iterate all top level namespaces
             while (nsIter.hasNext()) {
                 nsIter.next();
@@ -644,14 +642,15 @@ public class XMPMetadata extends Metadata {
      */
     private int tikaToXMPArrayType(PropertyType type) {
         int result = 0;
-        switch (type) {
-            case BAG:
+        switch (type)
+        {
+            case BAG :
                 result = PropertyOptions.ARRAY;
                 break;
-            case SEQ:
+            case SEQ :
                 result = PropertyOptions.ARRAY_ORDERED;
                 break;
-            case ALT:
+            case ALT :
                 result = PropertyOptions.ARRAY_ALTERNATE;
                 break;
         }

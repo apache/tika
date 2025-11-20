@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.eval.core.util;
 
 import java.io.IOException;
@@ -24,8 +23,13 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+
 import javax.xml.XMLConstants;
 
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.ToTextContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Attribute;
 import org.jsoup.nodes.DataNode;
@@ -39,11 +43,6 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.ToTextContentHandler;
-import org.apache.tika.utils.XMLReaderUtils;
-
 public class ContentTagParser {
 
     private static final ParseContext EMPTY_PARSE_CONTEXT = new ParseContext();
@@ -51,18 +50,15 @@ public class ContentTagParser {
     public static ContentTags parseXML(String html, Set<String> uppercaseTagsOfInterest)
             throws TikaException, IOException, SAXException {
         Map<String, Integer> tags = new HashMap<>();
-        XHTMLContentTagHandler xhtmlContentTagHandler =
-                new XHTMLContentTagHandler(uppercaseTagsOfInterest, tags);
-        XMLReaderUtils.parseSAX(new StringReader(html),
-                xhtmlContentTagHandler, EMPTY_PARSE_CONTEXT);
+        XHTMLContentTagHandler xhtmlContentTagHandler = new XHTMLContentTagHandler(uppercaseTagsOfInterest, tags);
+        XMLReaderUtils.parseSAX(new StringReader(html), xhtmlContentTagHandler, EMPTY_PARSE_CONTEXT);
         return new ContentTags(xhtmlContentTagHandler.toString(), tags);
     }
 
     public static ContentTags parseHTML(String html, Set<String> uppercaseTagsOfInterest)
             throws SAXException, IOException {
         Map<String, Integer> tags = new HashMap<>();
-        XHTMLContentTagHandler xhtmlContentTagHandler =
-                new XHTMLContentTagHandler(uppercaseTagsOfInterest, tags);
+        XHTMLContentTagHandler xhtmlContentTagHandler = new XHTMLContentTagHandler(uppercaseTagsOfInterest, tags);
         Document document = Jsoup.parse(html);
         NodeTraversor.filter(new TikaNodeFilter(xhtmlContentTagHandler), document);
 
@@ -116,9 +112,7 @@ public class ContentTagParser {
                 return NodeFilter.FilterResult.CONTINUE;
             }
             AttributesImpl attributes = new AttributesImpl();
-            Iterator<Attribute> jsoupAttrs = node
-                    .attributes()
-                    .iterator();
+            Iterator<Attribute> jsoupAttrs = node.attributes().iterator();
             while (jsoupAttrs.hasNext()) {
                 Attribute jsoupAttr = jsoupAttrs.next();
                 attributes.addAttribute("", jsoupAttr.getKey(), jsoupAttr.getKey(), "", jsoupAttr.getValue());
@@ -172,15 +166,13 @@ public class ContentTagParser {
         private final Map<String, Integer> tags;
         private final Set<String> uppercaseTagsOfInterest;
 
-        public XHTMLContentTagHandler(Set<String> uppercaseTagsOfInterest,
-                                      Map<String, Integer> tags) {
+        public XHTMLContentTagHandler(Set<String> uppercaseTagsOfInterest, Map<String, Integer> tags) {
             this.uppercaseTagsOfInterest = uppercaseTagsOfInterest;
             this.tags = tags;
         }
 
         @Override
-        public void startElement(String uri, String localName, String qName, Attributes atts)
-                throws SAXException {
+        public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
             super.startElement(uri, localName, qName, atts);
             String uc = (qName == null) ? "" : qName.toUpperCase(Locale.ENGLISH);
             if (uppercaseTagsOfInterest.contains(uc)) {

@@ -38,7 +38,6 @@ import java.sql.SQLException;
 
 import org.apache.commons.io.input.TaggedInputStream;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.Parser;
@@ -360,8 +359,8 @@ public class TikaInputStream extends TaggedInputStream {
      */
     public static TikaInputStream get(byte[] data, Metadata metadata) {
         metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(data.length));
-        return new TikaInputStream(new UnsynchronizedByteArrayInputStream(data), new TemporaryResources(),
-                data.length, getExtension(metadata));
+        return new TikaInputStream(new UnsynchronizedByteArrayInputStream(data), new TemporaryResources(), data.length,
+                getExtension(metadata));
     }
 
     /**
@@ -401,8 +400,7 @@ public class TikaInputStream extends TaggedInputStream {
         return new TikaInputStream(path);
     }
 
-    public static TikaInputStream get(Path path, Metadata metadata, TemporaryResources tmp)
-            throws IOException {
+    public static TikaInputStream get(Path path, Metadata metadata, TemporaryResources tmp) throws IOException {
         long length = Files.size(path);
         if (StringUtils.isBlank(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY))) {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, path.getFileName().toString());
@@ -472,8 +470,7 @@ public class TikaInputStream extends TaggedInputStream {
      * of buffering (eg File) are slower than just getting a fresh
      * new stream each time.
      */
-    public static TikaInputStream get(InputStreamFactory factory, TemporaryResources tmp)
-            throws IOException {
+    public static TikaInputStream get(InputStreamFactory factory, TemporaryResources tmp) throws IOException {
         TikaInputStream stream = get(factory.getInputStream(), tmp, null);
         stream.streamFactory = factory;
         return stream;
@@ -525,9 +522,8 @@ public class TikaInputStream extends TaggedInputStream {
             // the offset in Blob.getBytes() starts at 1
             return get(blob.getBytes(1, (int) length), metadata);
         } else {
-            return new TikaInputStream(new BufferedInputStream(blob.getBinaryStream()),
-                    new TemporaryResources(), length,
-                    getExtension(metadata));
+            return new TikaInputStream(new BufferedInputStream(blob.getBinaryStream()), new TemporaryResources(),
+                    length, getExtension(metadata));
         }
     }
 
@@ -639,8 +635,8 @@ public class TikaInputStream extends TaggedInputStream {
             metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(length));
         }
 
-        return new TikaInputStream(new BufferedInputStream(connection.getInputStream()),
-                new TemporaryResources(), length, getExtension(metadata));
+        return new TikaInputStream(new BufferedInputStream(connection.getInputStream()), new TemporaryResources(),
+                length, getExtension(metadata));
     }
 
     /**
@@ -724,7 +720,6 @@ public class TikaInputStream extends TaggedInputStream {
     public boolean hasFile() {
         return path != null;
     }
-
 
     /**
      * If the user created this TikaInputStream with a file,
@@ -924,9 +919,8 @@ public class TikaInputStream extends TaggedInputStream {
         } else {
             consecutiveEOFs++;
             if (consecutiveEOFs > MAX_CONSECUTIVE_EOFS) {
-                throw new IOException("Read too many -1 (EOFs); there could be an infinite loop." +
-                        "If you think your file is not corrupt, please open an issue on Tika's " +
-                        "JIRA");
+                throw new IOException("Read too many -1 (EOFs); there could be an infinite loop."
+                        + "If you think your file is not corrupt, please open an issue on Tika's " + "JIRA");
             }
         }
     }

@@ -132,8 +132,7 @@ public class ChmLzxcResetTable implements ChmAccessor<ChmLzxcResetTable> {
      * @return boolean
      * @throws TikaException
      */
-    private boolean validateParamaters(byte[] data, ChmLzxcResetTable chmLzxcResetTable)
-            throws TikaException {
+    private boolean validateParamaters(byte[] data, ChmLzxcResetTable chmLzxcResetTable) throws TikaException {
         int goodParameter = 0;
         ChmAssert.assertByteArrayNotNull(data);
         ++goodParameter;
@@ -144,10 +143,8 @@ public class ChmLzxcResetTable implements ChmAccessor<ChmLzxcResetTable> {
 
     private long unmarshalUInt32(byte[] data, long dest) throws TikaException {
         ChmAssert.assertByteArrayNotNull(data);
-        dest = (data[this.getCurrentPlace()] & 0xff) |
-                (data[this.getCurrentPlace() + 1] & 0xff) << 8 |
-                (data[this.getCurrentPlace() + 2] & 0xff) << 16 |
-                (data[this.getCurrentPlace() + 3] & 0xff) << 24;
+        dest = (data[this.getCurrentPlace()] & 0xff) | (data[this.getCurrentPlace() + 1] & 0xff) << 8
+                | (data[this.getCurrentPlace() + 2] & 0xff) << 16 | (data[this.getCurrentPlace() + 3] & 0xff) << 24;
 
         setDataRemained(this.getDataRemained() - 4);
         this.setCurrentPlace(this.getCurrentPlace() + 4);
@@ -304,15 +301,11 @@ public class ChmLzxcResetTable implements ChmAccessor<ChmLzxcResetTable> {
         if (validateParamaters(data, chmLzxcResetTable)) {
             /* unmarshal fields */
             chmLzxcResetTable.setVersion(unmarshalUInt32(data, chmLzxcResetTable.getVersion()));
-            chmLzxcResetTable
-                    .setBlockCount(unmarshalUInt32(data, chmLzxcResetTable.getBlockCount()));
+            chmLzxcResetTable.setBlockCount(unmarshalUInt32(data, chmLzxcResetTable.getBlockCount()));
             chmLzxcResetTable.setUnknown(unmarshalUInt32(data, chmLzxcResetTable.getUnknown()));
-            chmLzxcResetTable
-                    .setTableOffset(unmarshalUInt32(data, chmLzxcResetTable.getTableOffset()));
-            chmLzxcResetTable.setUncompressedLen(
-                    unmarshalUint64(data, chmLzxcResetTable.getUncompressedLen()));
-            chmLzxcResetTable
-                    .setCompressedLen(unmarshalUint64(data, chmLzxcResetTable.getCompressedLen()));
+            chmLzxcResetTable.setTableOffset(unmarshalUInt32(data, chmLzxcResetTable.getTableOffset()));
+            chmLzxcResetTable.setUncompressedLen(unmarshalUint64(data, chmLzxcResetTable.getUncompressedLen()));
+            chmLzxcResetTable.setCompressedLen(unmarshalUint64(data, chmLzxcResetTable.getCompressedLen()));
             chmLzxcResetTable.setBlockLlen(unmarshalUint64(data, chmLzxcResetTable.getBlockLen()));
             chmLzxcResetTable.setBlockAddress(enumerateBlockAddresses(data));
         }

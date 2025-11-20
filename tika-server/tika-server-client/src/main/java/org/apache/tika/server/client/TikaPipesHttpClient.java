@@ -26,12 +26,11 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Low-level class to handle the http layer.
@@ -80,7 +79,6 @@ class TikaPipesHttpClient {
         return httpClientFactory.build();
     }
 
-
     public TikaEmitterResult postJson(String jsonRequest) {
         return postJson(endPointUrl, jsonRequest);
     }
@@ -110,9 +108,7 @@ class TikaPipesHttpClient {
                 }
                 long elapsed = System.currentTimeMillis() - start;
                 TikaEmitterResult.STATUS status = TikaEmitterResult.STATUS.OK;
-                if (response
-                        .getStatusLine()
-                        .getStatusCode() != 200) {
+                if (response.getStatusLine().getStatusCode() != 200) {
                     status = TikaEmitterResult.STATUS.NOT_OK;
                 } else {
                     //pull out stacktrace from parse exception?
@@ -126,7 +122,6 @@ class TikaPipesHttpClient {
         long elapsed = System.currentTimeMillis() - start;
         return new TikaEmitterResult(TikaEmitterResult.STATUS.EXCEEDED_MAX_RETRIES, elapsed, "");
     }
-
 
     private void waitForServer() throws TimeoutWaitingForTikaException {
         long start = System.currentTimeMillis();
@@ -142,9 +137,7 @@ class TikaPipesHttpClient {
             HttpGet get = new HttpGet(tikaUrl);
             try {
                 HttpResponse response = httpClient.execute(get);
-                if (response
-                        .getStatusLine()
-                        .getStatusCode() == 200) {
+                if (response.getStatusLine().getStatusCode() == 200) {
                     LOGGER.debug("server back up");
                     return;
                 }

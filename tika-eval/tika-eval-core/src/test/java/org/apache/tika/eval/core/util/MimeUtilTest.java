@@ -14,20 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.eval.core.util;
-
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 @Disabled("Fix mimetype.getExtension to work with these and then we can get rid of MimeUtil")
 public class MimeUtilTest {
@@ -59,7 +56,7 @@ public class MimeUtilTest {
         MimeTypes r = tikaConfig.getMimeRepository();
         MimeType mt = r.forName(contentType);
 
-//        String ext = MimeUtil.getExtension(contentType, config);
+        //        String ext = MimeUtil.getExtension(contentType, config);
         assertEquals(expected, mt.getExtension());
     }
 }

@@ -18,12 +18,11 @@ package org.apache.tika.parser.image;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPMM;
+import org.junit.jupiter.api.Test;
 
 public class JXLTest extends TikaTest {
 
@@ -31,7 +30,6 @@ public class JXLTest extends TikaTest {
     public void testBasicXMP() throws Exception {
         Metadata metadata = getXML("testJXL_ISOBMFF.jxl").metadata;
         assertEquals("Unknown Title", metadata.get(TikaCoreProperties.TITLE));
-        assertEquals("adobe:docid:photoshop:162ca2dc-6a89-9c46-8fcc-3a7f0e6deb18",
-                metadata.get(XMPMM.DOCUMENTID));
+        assertEquals("adobe:docid:photoshop:162ca2dc-6a89-9c46-8fcc-3a7f0e6deb18", metadata.get(XMPMM.DOCUMENTID));
     }
 }

@@ -27,14 +27,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.drew.metadata.mp4.Mp4Directory;
-import com.drew.metadata.mp4.media.Mp4MetaDirectory;
-import com.drew.metadata.mp4.media.Mp4SoundDirectory;
-import com.drew.metadata.mp4.media.Mp4VideoDirectory;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -43,7 +35,14 @@ import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.xml.sax.ContentHandler;
 
+import com.drew.metadata.mp4.Mp4Directory;
+import com.drew.metadata.mp4.media.Mp4MetaDirectory;
+import com.drew.metadata.mp4.media.Mp4SoundDirectory;
+import com.drew.metadata.mp4.media.Mp4VideoDirectory;
 
 /**
  * Test case for parsing mp4 files.
@@ -56,7 +55,7 @@ public class MP4ParserTest extends TikaTest {
     /*
     @Before
     public void setUp() {
-
+    
         skipKeysB.add("X-TIKA:Parsed-By");
         skipKeysA.add("X-TIKA:parse_time_millis");
         skipKeysB.add("X-TIKA:content_handler");
@@ -105,7 +104,6 @@ public class MP4ParserTest extends TikaTest {
         assertEquals("6", metadata.get(XMPDM.DISC_NUMBER));
         assertEquals("0", metadata.get(XMPDM.COMPILATION));
 
-
         assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
         assertEquals("Stereo", metadata.get(XMPDM.AUDIO_CHANNEL_TYPE));
         assertEquals("M4A", metadata.get(XMPDM.AUDIO_COMPRESSOR));
@@ -117,8 +115,7 @@ public class MP4ParserTest extends TikaTest {
                 Arrays.asList(metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY)));
 
         // Check again by file, rather than stream
-        TikaInputStream tstream =
-                TikaInputStream.get(getResourceAsStream("/test-documents/testMP4.m4a"));
+        TikaInputStream tstream = TikaInputStream.get(getResourceAsStream("/test-documents/testMP4.m4a"));
         tstream.getFile();
         ContentHandler handler = new BodyContentHandler();
         try {
@@ -159,8 +156,8 @@ public class MP4ParserTest extends TikaTest {
 
     @Test
     public void testVideoDirectoriesNotConsideredAudio() {
-        final Collection<Mp4Directory> directories =
-                List.of(new Mp4VideoDirectory(), new Mp4VideoDirectory(), new Mp4SoundDirectory());
+        final Collection<Mp4Directory> directories = List.of(new Mp4VideoDirectory(), new Mp4VideoDirectory(),
+                new Mp4SoundDirectory());
 
         assertFalse(MP4Parser.isAudioOnly(directories));
     }
@@ -170,21 +167,21 @@ public class MP4ParserTest extends TikaTest {
         assertFalse(MP4Parser.isAudioOnly(Collections.emptyList()));
     }
 
-/*
-
+    /*
+    
     @Test
     public void compareMetadata() throws Exception {
         Path dir = Paths.get("/data/mp4s");
         processDir(dir);
-
+    
     }
-
+    
     private void processDir(Path dir) {
         for (File f : dir.toFile().listFiles()) {
             if (f.isDirectory()) {
                 processDir(f.toPath());
             } else {
-
+    
                 if (! f.getName().contains("MB3EOKALN337SEYQE6WXIGMY5VQ2ZU7M")) {
                    // continue;
                 }
@@ -194,9 +191,9 @@ public class MP4ParserTest extends TikaTest {
             }
         }
     }
-
+    
     private void processFile(Path p) {
-
+    
         Metadata a;
         Metadata b;
         try {
@@ -211,7 +208,7 @@ public class MP4ParserTest extends TikaTest {
             e.printStackTrace();
             return;
         }
-
+    
         try {
             List<Metadata> metadataList = getRecursiveMetadata(p);
             if (metadataList.size() > 0) {
@@ -226,7 +223,7 @@ public class MP4ParserTest extends TikaTest {
         }
         compare(p, a, b);
     }
-
+    
     private void compare(Path p, Metadata a, Metadata b) {
        /* System.out.println("A");
         debug(a);
@@ -262,7 +259,7 @@ public class MP4ParserTest extends TikaTest {
             }
         }
     }
-
+    
     private Set<String> getKeys(Metadata m, Set<String> skipFields) {
         Set<String> keys = new HashSet<>();
         for (String n : m.names()) {
@@ -271,9 +268,9 @@ public class MP4ParserTest extends TikaTest {
             }
         }
         return keys;
-
+    
     }
-
+    
     private Set<String> getVals(Metadata m, String k) {
         Set<String> vals = new HashSet<>();
         for (String v : m.getValues(k)) {

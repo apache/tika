@@ -25,15 +25,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
-
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Handles an individual page.  For now, this marks up
@@ -95,15 +93,14 @@ class XPSPageContentHandler extends DefaultHandler {
 
     //sort based on y coordinate of first element in each row
     //this requires every row to have at least one element
-    private static Comparator<? super List<GlyphRun>> ROW_SORTER =
-            (Comparator<List<GlyphRun>>) (o1, o2) -> {
-                if (o1.get(0).originY < o2.get(0).originY) {
-                    return -1;
-                } else if (o1.get(0).originY > o2.get(0).originY) {
-                    return 1;
-                }
-                return 0;
-            };
+    private static Comparator<? super List<GlyphRun>> ROW_SORTER = (Comparator<List<GlyphRun>>) (o1, o2) -> {
+        if (o1.get(0).originY < o2.get(0).originY) {
+            return -1;
+        } else if (o1.get(0).originY > o2.get(0).originY) {
+            return 1;
+        }
+        return 0;
+    };
     private static Comparator<GlyphRun> LTR_SORTER = new Comparator<GlyphRun>() {
         @Override
         public int compare(GlyphRun a, GlyphRun b) {
@@ -143,8 +140,7 @@ class XPSPageContentHandler extends DefaultHandler {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes atts)
-            throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
         if (CANVAS.equals(localName)) {
             String clip = getVal(CLIP, atts);
             if (clip == null) {
@@ -382,27 +378,12 @@ class XPSPageContentHandler extends DefaultHandler {
                     width += index.advance;
                 }
                 if (index.advance > SPLIT_THRESHOLD) {
-                    newRuns.add(new GlyphRun(
-                            run.name,
-                            run.originY,
-                            run.originX,
-                            run.unicodeString.substring(0, i + 1),
-                            null,
-                            run.indices.subList(0, i + 1),
-                            run.fontSize,
-                            run.fontUri
-                    ));
+                    newRuns.add(new GlyphRun(run.name, run.originY, run.originX, run.unicodeString.substring(0, i + 1),
+                            null, run.indices.subList(0, i + 1), run.fontSize, run.fontUri));
                     run.indices.set(i, new GlyphIndex(0.0f));
-                    run = new GlyphRun(
-                        run.name,
-                        run.originY,
-                        run.originX + width * run.fontSize,
-                        run.unicodeString.substring(i + 1, run.unicodeString.length()),
-                        null,
-                        run.indices.subList(i + 1, run.indices.size()),
-                        run.fontSize,
-                        run.fontUri
-                    );
+                    run = new GlyphRun(run.name, run.originY, run.originX + width * run.fontSize,
+                            run.unicodeString.substring(i + 1, run.unicodeString.length()), null,
+                            run.indices.subList(i + 1, run.indices.size()), run.fontSize, run.fontUri);
                     i = 0;
                     width = 0f;
                 }
@@ -414,7 +395,7 @@ class XPSPageContentHandler extends DefaultHandler {
 
     private static void sortRow(List<GlyphRun> row) {
         boolean allRTL = true;
-        for (GlyphRun run : row)  {
+        for (GlyphRun run : row) {
             if (run.unicodeString.isBlank()) {
                 // ignore whitespace for all RTL check
                 continue;
@@ -510,8 +491,8 @@ class XPSPageContentHandler extends DefaultHandler {
         // Not used currently
         private final String fontUri;
 
-        private GlyphRun(String name, float originY, float originX, String unicodeString,
-                         Integer bidiLevel, List<GlyphIndex> indices, float fontSize, String fontUri) {
+        private GlyphRun(String name, float originY, float originX, String unicodeString, Integer bidiLevel,
+                List<GlyphIndex> indices, float fontSize, String fontUri) {
             this.name = name;
             this.unicodeString = unicodeString;
             this.originY = originY;
@@ -571,7 +552,7 @@ class XPSPageContentHandler extends DefaultHandler {
 
     final static class GlyphIndex {
         // TODO: Parse other elements of GlyphIndex
-        
+
         // private int index;
         // private int clusterCodeUnitCount;
         // private int clusterGlyphCount;

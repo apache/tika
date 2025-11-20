@@ -24,9 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.client.TikaClientException;
 import org.apache.tika.config.Field;
@@ -40,6 +37,8 @@ import org.apache.tika.pipes.core.FetchEmitTuple;
 import org.apache.tika.pipes.core.PipesReporter;
 import org.apache.tika.pipes.core.PipesResult;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * As of the 2.5.0 release, this is ALPHA version.  There may be breaking changes
@@ -69,18 +68,17 @@ public class OpenSearchPipesReporter extends PipesReporter implements Initializa
 
     private boolean includeRouting = false;
 
-
     @Override
     public void report(FetchEmitTuple t, PipesResult result, long elapsed) {
-        if (! shouldReport(result)) {
+        if (!shouldReport(result)) {
             return;
         }
 
         Metadata metadata = new Metadata();
         metadata.set(parseStatusKey, result.getStatus().name());
         metadata.set(parseTimeKey, Long.toString(elapsed));
-        if (result.getEmitData() != null && result.getEmitData().getMetadataList() != null &&
-                result.getEmitData().getMetadataList().size() > 0) {
+        if (result.getEmitData() != null && result.getEmitData().getMetadataList() != null
+                && result.getEmitData().getMetadataList().size() > 0) {
             Metadata m = result.getEmitData().getMetadataList().get(0);
             if (m.get(ExternalProcess.EXIT_VALUE) != null) {
                 metadata.set(exitValueKey, m.get(ExternalProcess.EXIT_VALUE));
@@ -89,16 +87,13 @@ public class OpenSearchPipesReporter extends PipesReporter implements Initializa
         //TODO -- we're not currently doing anything with the message
         try {
             if (includeRouting) {
-                openSearchClient.emitDocument(t.getEmitKey().getEmitKey(),
-                        t.getEmitKey().getEmitKey(), metadata);
+                openSearchClient.emitDocument(t.getEmitKey().getEmitKey(), t.getEmitKey().getEmitKey(), metadata);
             } else {
-                openSearchClient.emitDocument(t.getEmitKey().getEmitKey(),
-                        null, metadata);
+                openSearchClient.emitDocument(t.getEmitKey().getEmitKey(), null, metadata);
 
             }
         } catch (IOException | TikaClientException e) {
-            LOG.warn("failed to report status for '" +
-                    t.getId() + "'", e);
+            LOG.warn("failed to report status for '" + t.getId() + "'", e);
         }
     }
 
@@ -198,20 +193,16 @@ public class OpenSearchPipesReporter extends PipesReporter implements Initializa
         if (StringUtils.isBlank(openSearchUrl)) {
             throw new TikaConfigException("Must specify an open search url!");
         } else {
-            openSearchClient =
-                    new OpenSearchClient(openSearchUrl,
-                            httpClientFactory.build());
+            openSearchClient = new OpenSearchClient(openSearchUrl, httpClientFactory.build());
         }
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         mustNotBeEmpty("openSearchUrl", this.openSearchUrl);
         for (String status : includeStatus) {
             if (excludeStatus.contains(status)) {
-                throw new TikaConfigException("Can't have a status in both include and exclude: " +
-                        status);
+                throw new TikaConfigException("Can't have a status in both include and exclude: " + status);
             }
         }
         Set<String> statuses = new HashSet<>();
@@ -226,17 +217,15 @@ public class OpenSearchPipesReporter extends PipesReporter implements Initializa
             sb.append(status.name());
         }
         for (String include : includeStatus) {
-            if (! statuses.contains(include)) {
-                throw new TikaConfigException("I regret I don't recognize '" +
-                        include + "' in the include list. " +
-                        "I recognize: " + sb.toString());
+            if (!statuses.contains(include)) {
+                throw new TikaConfigException("I regret I don't recognize '" + include + "' in the include list. "
+                        + "I recognize: " + sb.toString());
             }
         }
         for (String exclude : excludeStatus) {
-            if (! statuses.contains(exclude)) {
-                throw new TikaConfigException("I regret I don't recognize '" +
-                        exclude + "' in the exclude list. " +
-                        "I recognize: " + sb.toString());
+            if (!statuses.contains(exclude)) {
+                throw new TikaConfigException("I regret I don't recognize '" + exclude + "' in the exclude list. "
+                        + "I recognize: " + sb.toString());
             }
         }
     }

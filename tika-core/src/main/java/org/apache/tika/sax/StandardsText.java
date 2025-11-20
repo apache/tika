@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.sax;
 
 import java.util.ArrayList;
@@ -52,19 +51,16 @@ import org.apache.tika.sax.StandardReference.StandardReferenceBuilder;
  */
 public class StandardsText {
     // Regular expression to match uppercase headers
-    private static final String REGEX_HEADER =
-            "(\\d{1,10}+\\.(\\d{1,10}+\\.?){0,10}+)\\p{Blank}+([A-Z]{1,64}+(\\s[A-Z]{1,64}+){0," +
-                    "256}+){5,10}+";
+    private static final String REGEX_HEADER = "(\\d{1,10}+\\.(\\d{1,10}+\\.?){0,10}+)\\p{Blank}+([A-Z]{1,64}+(\\s[A-Z]{1,64}+){0,"
+            + "256}+){5,10}+";
 
     // Regular expression to match the "APPLICABLE DOCUMENTS" and equivalent
     // sections
-    private static final String REGEX_APPLICABLE_DOCUMENTS =
-            "(?i:.*APPLICABLE\\sDOCUMENTS|REFERENCE|STANDARD|REQUIREMENT|GUIDELINE|COMPLIANCE.*)";
+    private static final String REGEX_APPLICABLE_DOCUMENTS = "(?i:.*APPLICABLE\\sDOCUMENTS|REFERENCE|STANDARD|REQUIREMENT|GUIDELINE|COMPLIANCE.*)";
 
     // Regular expression to match the alphanumeric identifier of the standard
-    private static final String REGEX_IDENTIFIER =
-            "(?<identifier>([0-9]{3,64}+|([A-Z]{1,64}+(-|_|\\.)?[0-9]{2,64}+))((-|_|\\.)" +
-                    "?[A-Z0-9]{1,64}+){0,64}+)";
+    private static final String REGEX_IDENTIFIER = "(?<identifier>([0-9]{3,64}+|([A-Z]{1,64}+(-|_|\\.)?[0-9]{2,64}+))((-|_|\\.)"
+            + "?[A-Z0-9]{1,64}+){0,64}+)";
 
     // Regular expression to match the standard organization
     private static final String REGEX_ORGANIZATION = StandardOrganizations.getOrganzationsRegex();
@@ -75,15 +71,13 @@ public class StandardsText {
 
     // Regular expression to match a string that is supposed to be a standard
     // reference
-    private static final String REGEX_FALLBACK = "\\(?" + "(?<mainOrganization>[A-Z]\\w{1,64}+)" +
-            "\\)?((\\s?(?<separator>\\/)\\s?)(\\w{1,64}+\\s)*\\(?" + "(?<secondOrganization>[A-Z" +
-            "]\\w{1,64}+)" +
-            "\\)?)?" + REGEX_STANDARD_TYPE + "?" + "(-|\\s)?" + REGEX_IDENTIFIER;
+    private static final String REGEX_FALLBACK = "\\(?" + "(?<mainOrganization>[A-Z]\\w{1,64}+)"
+            + "\\)?((\\s?(?<separator>\\/)\\s?)(\\w{1,64}+\\s)*\\(?" + "(?<secondOrganization>[A-Z" + "]\\w{1,64}+)"
+            + "\\)?)?" + REGEX_STANDARD_TYPE + "?" + "(-|\\s)?" + REGEX_IDENTIFIER;
 
     // Regular expression to match the standard organization within a string
     // that is supposed to be a standard reference
-    private static final String REGEX_STANDARD =
-            ".*" + REGEX_ORGANIZATION + ".+" + REGEX_ORGANIZATION + "?.*";
+    private static final String REGEX_STANDARD = ".*" + REGEX_ORGANIZATION + ".+" + REGEX_ORGANIZATION + "?.*";
 
     /**
      * Extracts the standard references found within the given text.
@@ -96,8 +90,7 @@ public class StandardsText {
      *                  will be returned.
      * @return the list of standard references extracted from the given text.
      */
-    public static ArrayList<StandardReference> extractStandardReferences(String text,
-                                                                         double threshold) {
+    public static ArrayList<StandardReference> extractStandardReferences(String text, double threshold) {
         Map<Integer, String> headers = findHeaders(text);
 
         return findStandards(text, headers, threshold);
@@ -132,9 +125,8 @@ public class StandardsText {
      *                  threshold.
      * @return the list of standard references extracted from the given text.
      */
-    private static ArrayList<StandardReference> findStandards(String text,
-                                                              Map<Integer, String> headers,
-                                                              double threshold) {
+    private static ArrayList<StandardReference> findStandards(String text, Map<Integer, String> headers,
+            double threshold) {
         ArrayList<StandardReference> standards = new ArrayList<>();
         double score = 0;
 
@@ -144,8 +136,7 @@ public class StandardsText {
         while (matcher.find()) {
             StandardReferenceBuilder builder = new StandardReference.StandardReferenceBuilder(
                     matcher.group("mainOrganization"), matcher.group("identifier"))
-                    .setSecondOrganization(matcher.group("separator"),
-                            matcher.group("secondOrganization"));
+                    .setSecondOrganization(matcher.group("separator"), matcher.group("secondOrganization"));
             score = 0.25;
 
             // increases by 0.25 the score of references which include the name of a known

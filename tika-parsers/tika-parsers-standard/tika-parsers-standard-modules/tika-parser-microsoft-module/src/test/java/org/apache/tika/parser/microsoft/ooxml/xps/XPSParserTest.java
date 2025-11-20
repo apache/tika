@@ -25,11 +25,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.Test;
 
 public class XPSParserTest extends TikaTest {
 
@@ -50,7 +49,6 @@ public class XPSParserTest extends TikaTest {
 
         assertContains("tika content", content);
 
-
         assertEquals("image/jpeg", metadataList.get(1).get(Metadata.CONTENT_TYPE));
     }
 
@@ -61,17 +59,15 @@ public class XPSParserTest extends TikaTest {
         assertEquals(4, metadataList.size());
 
         //now check for content in the right order
-        String quickBrownFox =
-                "\u0644\u062B\u0639\u0644\u0628\u0020" + "\u0627\u0644\u0628\u0646\u064A\u0020" +
-                        "\u0627\u0644\u0633\u0631\u064A\u0639";
+        String quickBrownFox = "\u0644\u062B\u0639\u0644\u0628\u0020" + "\u0627\u0644\u0628\u0646\u064A\u0020"
+                + "\u0627\u0644\u0633\u0631\u064A\u0639";
 
         String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         assertContains(quickBrownFox, content);
 
         assertContains("The \u0627\u0644\u0628\u0646\u064A fox", content);
 
-        assertContains("\u0644\u062B\u0639\u0644\u0628 brown \u0627\u0644\u0633\u0631\u064A\u0639",
-                content);
+        assertContains("\u0644\u062B\u0639\u0644\u0628 brown \u0627\u0644\u0633\u0631\u064A\u0639", content);
 
         //make sure the urls come through
         assertContains("<a href=\"http://tika.apache.org/\">http://tika.apache.org/</a>", content);
@@ -80,7 +76,6 @@ public class XPSParserTest extends TikaTest {
         assertEquals("Allison, Timothy B.", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("2017-12-12T11:15:38Z", metadata.get(TikaCoreProperties.CREATED));
         assertEquals("2017-12-12T11:15:38Z", metadata.get(TikaCoreProperties.MODIFIED));
-
 
         assertEquals("image/png", metadataList.get(1).get(Metadata.CONTENT_TYPE));
 
@@ -91,29 +86,24 @@ public class XPSParserTest extends TikaTest {
                 inlineJpeg.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
 
         assertEquals("image/jpeg", metadataList.get(3).get(Metadata.CONTENT_TYPE));
-//        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
+        //        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
         //              inlineJpeg.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
-
 
     }
 
     @Test
     public void testXPSWithDataDescriptor() throws Exception {
-        Path path = Paths.get(
-                XPSParserTest.class.getResource("/test-documents/testXPSWithDataDescriptor.xps")
-                        .toURI());
+        Path path = Paths.get(XPSParserTest.class.getResource("/test-documents/testXPSWithDataDescriptor.xps").toURI());
         //test both path and stream based
         List<Metadata> metadataList = getRecursiveMetadata(path);
         assertEquals(2, metadataList.size());
-        assertContains("This is my XPS document test",
-                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("This is my XPS document test", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         Files.copy(path, bos);
         metadataList = getRecursiveMetadata(new ByteArrayInputStream(bos.toByteArray()), false);
         assertEquals(2, metadataList.size());
-        assertContains("This is my XPS document test",
-                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("This is my XPS document test", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
 
         assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
                 metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
@@ -121,20 +111,17 @@ public class XPSParserTest extends TikaTest {
 
     @Test
     public void testOpenXPSWithDataDescriptor() throws Exception {
-        Path path = Paths.get(
-                XPSParserTest.class.getResource("/test-documents/testXPSWithDataDescriptor2.xps")
-                        .toURI());
+        Path path = Paths
+                .get(XPSParserTest.class.getResource("/test-documents/testXPSWithDataDescriptor2.xps").toURI());
         List<Metadata> metadataList = getRecursiveMetadata(path);
         assertEquals(2, metadataList.size());
-        assertContains("How was I supposed to know",
-                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("How was I supposed to know", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         Files.copy(path, bos);
         metadataList = getRecursiveMetadata(new ByteArrayInputStream(bos.toByteArray()), false);
         assertEquals(2, metadataList.size());
-        assertContains("How was I supposed to know",
-                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("How was I supposed to know", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Test

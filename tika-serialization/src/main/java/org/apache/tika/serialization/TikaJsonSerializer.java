@@ -27,10 +27,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 
 /**
  * This is a basic serializer that requires that an object:
@@ -43,18 +43,22 @@ import org.slf4j.LoggerFactory;
 public class TikaJsonSerializer {
 
     public static String INSTANTIATED_CLASS_KEY = "_class";
-    static Set<Class> PRIMITIVES = Set.of(int.class, double.class, float.class, long.class, short.class, boolean.class, String.class, byte.class, char.class);
-    static Set<Class> BOXED = Set.of(Integer.class, Double.class, Float.class, Long.class, Short.class, Boolean.class, Byte.class, Character.class);
+    static Set<Class> PRIMITIVES = Set.of(int.class, double.class, float.class, long.class, short.class, boolean.class,
+            String.class, byte.class, char.class);
+    static Set<Class> BOXED = Set.of(Integer.class, Double.class, Float.class, Long.class, Short.class, Boolean.class,
+            Byte.class, Character.class);
     static String SET = "set";
     private static Logger LOG = LoggerFactory.getLogger(TikaJsonSerializer.class);
     private static String GET = "get";
     private static String IS = "is";
 
-    public static void serialize(Object obj, JsonGenerator jsonGenerator) throws TikaSerializationException, IOException {
+    public static void serialize(Object obj, JsonGenerator jsonGenerator)
+            throws TikaSerializationException, IOException {
         serialize(null, obj, jsonGenerator);
     }
 
-    public static void serialize(String fieldName, Object obj, JsonGenerator jsonGenerator) throws TikaSerializationException, IOException {
+    public static void serialize(String fieldName, Object obj, JsonGenerator jsonGenerator)
+            throws TikaSerializationException, IOException {
         if (obj == null) {
             if (fieldName == null) {
                 jsonGenerator.writeNull();
@@ -69,9 +73,7 @@ public class TikaJsonSerializer {
             }
         } else if (isCollection(obj)) {
             serializeCollection(fieldName, obj, jsonGenerator);
-        } else if (obj
-                .getClass()
-                .isEnum()) {
+        } else if (obj.getClass().isEnum()) {
             jsonGenerator.writeStringField(fieldName, ((Enum) obj).name());
         } else {
             serializeObject(fieldName, obj, jsonGenerator);
@@ -89,40 +91,32 @@ public class TikaJsonSerializer {
         return clazz.isArray() || List.class.isAssignableFrom(clazz) || Map.class.isAssignableFrom(clazz);
     }
 
-
     /**
      * @param fieldName     can be null -- used only for logging and debugging
      * @param obj
      * @param jsonGenerator
      * @throws TikaSerializationException
      */
-    public static void serializeObject(String fieldName, Object obj, JsonGenerator jsonGenerator) throws TikaSerializationException {
-
+    public static void serializeObject(String fieldName, Object obj, JsonGenerator jsonGenerator)
+            throws TikaSerializationException {
 
         try {
-            Constructor constructor = obj
-                    .getClass()
-                    .getConstructor();
+            Constructor constructor = obj.getClass().getConstructor();
         } catch (NoSuchMethodException e) {
-            throw new IllegalArgumentException("class (" + obj.getClass() + ") doesn't have a no-arg constructor. Respectfully not serializing.");
+            throw new IllegalArgumentException(
+                    "class (" + obj.getClass() + ") doesn't have a no-arg constructor. Respectfully not serializing.");
         }
         try {
             if (fieldName != null) {
                 jsonGenerator.writeFieldName(fieldName);
             }
             jsonGenerator.writeStartObject();
-            jsonGenerator.writeStringField(INSTANTIATED_CLASS_KEY, obj
-                    .getClass()
-                    .getName());
-            Map<String, Method> matches = getGetters(obj
-                    .getClass()
-                    .getMethods());
+            jsonGenerator.writeStringField(INSTANTIATED_CLASS_KEY, obj.getClass().getName());
+            Map<String, Method> matches = getGetters(obj.getClass().getMethods());
             //iterate through the getters
             for (Map.Entry<String, Method> e : matches.entrySet()) {
                 try {
-                    Object methodVal = e
-                            .getValue()
-                            .invoke(obj);
+                    Object methodVal = e.getValue().invoke(obj);
                     serialize(e.getKey(), methodVal, jsonGenerator);
                 } catch (IllegalAccessException | InvocationTargetException ex) {
                     throw new TikaSerializationException("couldn't write paramName=" + e.getKey(), ex);
@@ -174,9 +168,7 @@ public class TikaJsonSerializer {
             for (Method getter : e.getValue()) {
                 for (Method setter : setterList) {
                     Class setClass = setter.getParameters()[0].getType();
-                    if (getter
-                            .getReturnType()
-                            .equals(setClass)) {
+                    if (getter.getReturnType().equals(setClass)) {
                         ret.put(paramName, getter);
                     }
                 }
@@ -185,7 +177,8 @@ public class TikaJsonSerializer {
         return ret;
     }
 
-    private static void serializeCollection(String fieldName, Object obj, JsonGenerator jsonGenerator) throws IOException, TikaSerializationException {
+    private static void serializeCollection(String fieldName, Object obj, JsonGenerator jsonGenerator)
+            throws IOException, TikaSerializationException {
         if (fieldName != null) {
             jsonGenerator.writeFieldName(fieldName);
         }
@@ -215,7 +208,8 @@ public class TikaJsonSerializer {
         }
     }
 
-    private static void serializePrimitiveAndBoxed(String paramName, Object obj, JsonGenerator jsonGenerator) throws IOException {
+    private static void serializePrimitiveAndBoxed(String paramName, Object obj, JsonGenerator jsonGenerator)
+            throws IOException {
         Class clazz = obj.getClass();
         if (paramName != null) {
             jsonGenerator.writeFieldName(paramName);
@@ -263,9 +257,7 @@ public class TikaJsonSerializer {
 
     static String getParam(String prefix, String name) {
         String ret = name.substring(prefix.length());
-        ret = ret
-                .substring(0, 1)
-                .toLowerCase(Locale.ROOT) + ret.substring(1);
+        ret = ret.substring(0, 1).toLowerCase(Locale.ROOT) + ret.substring(1);
         return ret;
     }
 

@@ -77,8 +77,7 @@ public class TeeContentHandler extends DefaultHandler {
     }
 
     @Override
-    public void startElement(String uri, String localName, String name, Attributes atts)
-            throws SAXException {
+    public void startElement(String uri, String localName, String name, Attributes atts) throws SAXException {
         for (ContentHandler handler : handlers) {
             handler.startElement(uri, localName, name, atts);
         }

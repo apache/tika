@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.language.translate.impl;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -25,15 +24,16 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Properties;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.tika.exception.TikaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.exception.TikaException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 /**
  * An implementation of a REST client for the
@@ -45,8 +45,7 @@ public class Lingo24Translator extends AbstractTranslator {
 
     private static final Logger LOG = LoggerFactory.getLogger(Lingo24Translator.class);
 
-    private static final String LINGO24_TRANSLATE_URL_BASE =
-            "https://api.lingo24.com/mt/v1/translate";
+    private static final String LINGO24_TRANSLATE_URL_BASE = "https://api.lingo24.com/mt/v1/translate";
 
     private static final String DEFAULT_KEY = "dummy-key";
 
@@ -61,8 +60,7 @@ public class Lingo24Translator extends AbstractTranslator {
         this.isAvailable = true;
         Properties config = new Properties();
         try {
-            config.load(
-                    Lingo24Translator.class.getResourceAsStream("translator.lingo24.properties"));
+            config.load(Lingo24Translator.class.getResourceAsStream("translator.lingo24.properties"));
             this.userKey = config.getProperty("translator.user-key");
             if (this.userKey.equals(DEFAULT_KEY)) {
                 this.isAvailable = false;
@@ -80,11 +78,9 @@ public class Lingo24Translator extends AbstractTranslator {
             return text;
         }
         Response response = client.accept(MediaType.APPLICATION_JSON).query("user_key", userKey)
-                .query("source", sourceLanguage).query("target", targetLanguage).query("q", text)
-                .get();
+                .query("source", sourceLanguage).query("target", targetLanguage).query("q", text).get();
         StringBuilder responseText = new StringBuilder();
-        try (InputStreamReader inputStreamReader = new InputStreamReader(
-                (InputStream) response.getEntity(), UTF_8);
+        try (InputStreamReader inputStreamReader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
                 BufferedReader reader = new BufferedReader(inputStreamReader)) {
             String line;
             while ((line = reader.readLine()) != null) {

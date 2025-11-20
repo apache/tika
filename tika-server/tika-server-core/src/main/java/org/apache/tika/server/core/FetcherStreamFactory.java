@@ -22,13 +22,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -36,6 +30,12 @@ import org.apache.tika.pipes.core.fetcher.Fetcher;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.pipes.core.fetcher.RangeFetcher;
 import org.apache.tika.server.core.resource.TikaResource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.UriInfo;
 
 /**
  * This class looks for &quot;fetcherName&quot; in the http header.  If it is not null
@@ -79,7 +79,8 @@ public class FetcherStreamFactory implements InputStreamFactory {
     }
 
     @Override
-    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders, UriInfo uriInfo) throws IOException {
+    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders, UriInfo uriInfo)
+            throws IOException {
         MultivaluedMap params = (uriInfo == null) ? null : uriInfo.getQueryParameters();
         String fetcherName = getParam("fetcherName", httpHeaders, params);
         String fetchKey = getParam("fetchKey", httpHeaders, params);
@@ -92,7 +93,8 @@ public class FetcherStreamFactory implements InputStreamFactory {
         long fetchRangeStart = getLong(getParam("fetchRangeStart", httpHeaders, params));
         long fetchRangeEnd = getLong(getParam("fetchRangeEnd", httpHeaders, params));
         if (StringUtils.isBlank(fetcherName) != StringUtils.isBlank(fetchKey)) {
-            throw new IOException("Must specify both a 'fetcherName' and a 'fetchKey'. I see: " + " fetcherName:" + fetcherName + " and fetchKey:" + fetchKey);
+            throw new IOException("Must specify both a 'fetcherName' and a 'fetchKey'. I see: " + " fetcherName:"
+                    + fetcherName + " and fetchKey:" + fetchKey);
         }
         if (fetchRangeStart < 0 && fetchRangeEnd > -1) {
             throw new IllegalArgumentException("fetchRangeStart must be > -1 if a fetchRangeEnd " + "is specified");
@@ -107,8 +109,8 @@ public class FetcherStreamFactory implements InputStreamFactory {
                 LOG.debug("going to fetch '{}' from fetcher: {}", fetchKey, fetcherName);
                 Fetcher fetcher = fetcherManager.getFetcher(fetcherName);
                 if (fetchRangeStart > -1 && fetchRangeEnd > -1 && !(fetcher instanceof RangeFetcher)) {
-                    throw new IllegalArgumentException(
-                            "Can't call a fetch with a range on a fetcher that" + " is not a RangeFetcher: name=" + fetcher.getName() + " class=" + fetcher.getClass());
+                    throw new IllegalArgumentException("Can't call a fetch with a range on a fetcher that"
+                            + " is not a RangeFetcher: name=" + fetcher.getName() + " class=" + fetcher.getClass());
                 }
                 return fetcher.fetch(fetchKey, metadata, parseContext);
             } catch (TikaException e) {

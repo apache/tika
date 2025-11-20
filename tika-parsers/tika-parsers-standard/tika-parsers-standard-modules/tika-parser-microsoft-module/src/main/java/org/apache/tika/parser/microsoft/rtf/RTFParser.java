@@ -22,9 +22,6 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.commons.io.input.TaggedInputStream;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -32,6 +29,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * RTF parser
@@ -43,8 +42,7 @@ public class RTFParser implements Parser {
      */
     private static final long serialVersionUID = -4165069489372320313L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.application("rtf"));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.application("rtf"));
     /**
      * maximum number of bytes per embedded object/pict (default: 20MB)
      */
@@ -60,8 +58,8 @@ public class RTFParser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         metadata.set(Metadata.CONTENT_TYPE, "application/rtf");
         TaggedInputStream tagged = new TaggedInputStream(stream);
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
@@ -89,8 +87,7 @@ public class RTFParser implements Parser {
      */
     public void parseInline(InputStream is, ContentHandler handler, Metadata metadata, ParseContext context)
             throws TikaException, IOException, SAXException {
-        RTFEmbObjHandler embObjHandler =
-                new RTFEmbObjHandler(handler, metadata, context, getMemoryLimitInKb());
+        RTFEmbObjHandler embObjHandler = new RTFEmbObjHandler(handler, metadata, context, getMemoryLimitInKb());
         final TextExtractor ert = new TextExtractor(handler, metadata, embObjHandler);
         ert.setIgnoreListMarkup(ignoreListMarkup);
         ert.extract(is);

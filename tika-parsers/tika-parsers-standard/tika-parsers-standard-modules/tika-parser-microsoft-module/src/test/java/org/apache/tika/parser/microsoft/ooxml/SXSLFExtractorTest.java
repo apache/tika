@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.ooxml;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -27,11 +26,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -43,7 +37,10 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
-
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class SXSLFExtractorTest extends TikaTest {
 
@@ -75,8 +72,7 @@ public class SXSLFExtractorTest extends TikaTest {
         //hyperlink
         assertContains("<a href=\"http://tika.apache.org/\">tika_hyperlink</a>", mainContent);
         //hyperlink in cell
-        assertContains("<a href=\"http://lucene.apache.org/\">lucene_hyperlink</a>",
-                mainContent);
+        assertContains("<a href=\"http://lucene.apache.org/\">lucene_hyperlink</a>", mainContent);
 
         //text box
         assertContains("Slide2TextBox", mainContent);
@@ -97,8 +93,7 @@ public class SXSLFExtractorTest extends TikaTest {
 
         //comments
         assertContains(
-                "<p class=\"slide-comment\"><b>Timothy Allison (TA)</b>This is a reply to the " +
-                        "initial comment</p>",
+                "<p class=\"slide-comment\"><b>Timothy Allison (TA)</b>This is a reply to the " + "initial comment</p>",
                 mainContent);
 
         //HandoutMaster
@@ -117,11 +112,9 @@ public class SXSLFExtractorTest extends TikaTest {
         assertContains("<p>12/16/2016</p>", mainContent);
         assertContains("<p>8</p>", mainContent);
 
-
         assertContains("<td>NotesTableSlide2", mainContent);
 
         assertContains("MASTERFOOTERMSG", mainContent);
-
 
         //should not include boilerplate from master
         assertNotContained("Click to edit Master", mainContent);
@@ -151,8 +144,7 @@ public class SXSLFExtractorTest extends TikaTest {
                 //"xps" // TIKA-418: Not yet supported by POI
         };
 
-        String[] mimeTypes = new String[]{
-                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        String[] mimeTypes = new String[]{"application/vnd.openxmlformats-officedocument.presentationml.presentation",
                 "application/vnd.ms-powerpoint.presentation.macroenabled.12",
                 "application/vnd.ms-powerpoint.slideshow.macroenabled.12",
                 "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
@@ -168,8 +160,7 @@ public class SXSLFExtractorTest extends TikaTest {
             try (InputStream input = getResourceAsStream("/test-documents/" + filename)) {
                 AUTO_DETECT_PARSER.parse(input, handler, metadata, parseContext);
 
-                assertEquals(mimeTypes[i], metadata.get(Metadata.CONTENT_TYPE),
-                        "Mime-type checking for " + filename);
+                assertEquals(mimeTypes[i], metadata.get(Metadata.CONTENT_TYPE), "Mime-type checking for " + filename);
                 assertEquals("Attachment Test", metadata.get(TikaCoreProperties.TITLE));
                 assertEquals("Rajiv", metadata.get(TikaCoreProperties.CREATOR));
 
@@ -178,16 +169,13 @@ public class SXSLFExtractorTest extends TikaTest {
                 if (extension.equals("thmx")) {
                     assertEquals("", content);
                 } else {
-                    assertTrue(content.contains("Attachment Test"),
-                            "Text missing for " + filename + "\n" + content);
+                    assertTrue(content.contains("Attachment Test"), "Text missing for " + filename + "\n" + content);
                     assertTrue(content.contains("This is a test file data with the same content"),
                             "Text missing for " + filename + "\n" + content);
-                    assertTrue(content.contains("content parsing"),
-                            "Text missing for " + filename + "\n" + content);
+                    assertTrue(content.contains("content parsing"), "Text missing for " + filename + "\n" + content);
                     assertTrue(content.contains("Different words to test against"),
                             "Text missing for " + filename + "\n" + content);
-                    assertTrue(content.contains("Mystery"),
-                            "Text missing for " + filename + "\n" + content);
+                    assertTrue(content.contains("Mystery"), "Text missing for " + filename + "\n" + content);
                 }
             }
         }
@@ -258,8 +246,7 @@ public class SXSLFExtractorTest extends TikaTest {
                 AUTO_DETECT_PARSER.parse(input, handler, metadata, parseContext);
 
                 // Should get the metadata
-                assertEquals(mimeTypes[i], metadata.get(Metadata.CONTENT_TYPE),
-                        "Mime-type checking for " + filename);
+                assertEquals(mimeTypes[i], metadata.get(Metadata.CONTENT_TYPE), "Mime-type checking for " + filename);
 
                 // But that's about it
             }
@@ -314,12 +301,10 @@ public class SXSLFExtractorTest extends TikaTest {
         // Special version of (GHQ)
         assertContains("\uff08\uff27\uff28\uff31\uff09", xml);
         // 6 other characters
-        assertContains("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f",
-                xml);
+        assertContains("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f", xml);
 
         assertContains("And then some Gothic text:", xml);
-        assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A",
-                xml);
+        assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A", xml);
     }
 
     @Test
@@ -331,8 +316,7 @@ public class SXSLFExtractorTest extends TikaTest {
     @Test
     public void testMasterFooter() throws Exception {
 
-        assertContains("Master footer is here",
-                getXML("testPPT_masterFooter.pptx", parseContext).xml);
+        assertContains("Master footer is here", getXML("testPPT_masterFooter.pptx", parseContext).xml);
     }
 
     @Test
@@ -357,8 +341,7 @@ public class SXSLFExtractorTest extends TikaTest {
      */
     @Test
     public void testMasterText() throws Exception {
-        assertContains("Text that I added to the master slide",
-                getXML("testPPT_masterText.pptx", parseContext).xml);
+        assertContains("Text that I added to the master slide", getXML("testPPT_masterText.pptx", parseContext).xml);
 
         //now test turning off master content
         OfficeParserConfig config = new OfficeParserConfig();
@@ -372,8 +355,7 @@ public class SXSLFExtractorTest extends TikaTest {
 
     @Test
     public void testMasterText2() throws Exception {
-        assertContains("Text that I added to the master slide",
-                getXML("testPPT_masterText2.pptx", parseContext).xml);
+        assertContains("Text that I added to the master slide", getXML("testPPT_masterText2.pptx", parseContext).xml);
 
         //now test turning off master content
         OfficeParserConfig config = new OfficeParserConfig();
@@ -458,8 +440,7 @@ public class SXSLFExtractorTest extends TikaTest {
     @Test
     public void testPPTXThumbnail() throws Exception {
         String xml = getXML("testPPTX_Thumbnail.pptx", parseContext).xml;
-        int a = xml.indexOf(
-                "<body><div class=\"slide-content\"><p>This file contains an embedded thumbnail");
+        int a = xml.indexOf("<body><div class=\"slide-content\"><p>This file contains an embedded thumbnail");
         int b = xml.indexOf("<div class=\"embedded\" id=\"/docProps/thumbnail.jpeg\" />");
         assertTrue(a != -1);
         assertTrue(b != -1);
@@ -504,7 +485,6 @@ public class SXSLFExtractorTest extends TikaTest {
         }
 
     }
-
 
     @Test
     public void testMacrosInPptm() throws Exception {
@@ -568,8 +548,7 @@ public class SXSLFExtractorTest extends TikaTest {
 
     @Test
     public void testEmbeddedMedia() throws Exception {
-        List<Metadata> metadataList =
-                getRecursiveMetadata("testPPT_embeddedMP3.pptx", parseContext);
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_embeddedMP3.pptx", parseContext);
         assertEquals(4, metadataList.size());
         assertEquals("application/vnd.openxmlformats-officedocument.presentationml.presentation",
                 metadataList.get(0).get(Metadata.CONTENT_TYPE));
@@ -593,16 +572,13 @@ public class SXSLFExtractorTest extends TikaTest {
         assertContains("Text box4", content);
         assertContains("Text box5", content);
 
-
         assertContains("href=\"http://tika.apache.org", content);
         assertContains("smart1", content);
         assertContains("MyTitle", content);
 
-        assertEquals("/image1.jpg",
-                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/image1.jpg", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
 
-        assertEquals("/thumbnail.jpeg",
-                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/thumbnail.jpeg", metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
     }
 
 }

@@ -14,20 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.language.translate.impl;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-import com.memetix.mst.language.Language;
-import com.memetix.mst.translate.Translate;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.language.translate.Translator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.language.translate.Translator;
+import com.memetix.mst.language.Language;
+import com.memetix.mst.translate.Translate;
 
 /**
  * Wrapper class to access the Windows translation service. This class uses the com.memetix.mst
@@ -43,8 +42,8 @@ public class MicrosoftTranslator implements Translator {
     public static final String DEFAULT_ID = "dummy-id";
     public static final String DEFAULT_SECRET = "dummy-secret";
     private static final Logger LOG = LoggerFactory.getLogger(MicrosoftTranslator.class);
-    boolean available;              // Flag for whether or not translation is available.
-    String clientId, clientSecret;  // Keys used for the API calls.
+    boolean available; // Flag for whether or not translation is available.
+    String clientId, clientSecret; // Keys used for the API calls.
 
     /**
      * Create a new MicrosoftTranslator with the client keys specified in
@@ -156,7 +155,7 @@ public class MicrosoftTranslator implements Translator {
     }
 
     private boolean checkAvailable() {
-        return clientId != null && !clientId.equals(DEFAULT_ID) && clientSecret != null &&
-                !clientSecret.equals(DEFAULT_SECRET);
+        return clientId != null && !clientId.equals(DEFAULT_ID) && clientSecret != null
+                && !clientSecret.equals(DEFAULT_SECRET);
     }
 }

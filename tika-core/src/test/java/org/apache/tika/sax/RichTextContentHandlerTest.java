@@ -22,10 +22,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
 
+import org.apache.tika.metadata.Metadata;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.AttributesImpl;
-
-import org.apache.tika.metadata.Metadata;
 
 /**
  * Test cases for the {@link RichTextContentHandler} class.
@@ -39,8 +38,8 @@ public class RichTextContentHandlerTest {
     public void aTagTest() throws Exception {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(new RichTextContentHandler(
-                new OutputStreamWriter(buffer, UTF_8)), new Metadata());
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(
+                new RichTextContentHandler(new OutputStreamWriter(buffer, UTF_8)), new Metadata());
         xhtml.startDocument();
         AttributesImpl attributes = new AttributesImpl();
         attributes.addAttribute("", "", "name", "", "value");
@@ -57,8 +56,8 @@ public class RichTextContentHandlerTest {
     public void imgTagTest() throws Exception {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(new RichTextContentHandler(
-                new OutputStreamWriter(buffer, UTF_8)), new Metadata());
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(
+                new RichTextContentHandler(new OutputStreamWriter(buffer, UTF_8)), new Metadata());
         xhtml.startDocument();
         AttributesImpl attributes = new AttributesImpl();
         attributes.addAttribute("", "", "alt", "", "value");

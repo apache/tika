@@ -22,20 +22,17 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
-
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class HeifParser extends AbstractImageParser {
 
-    private static final Set<MediaType> SUPPORTED_TYPES = new HashSet<>(
-            Arrays.asList(MediaType.image("heif"), MediaType.image("heif-sequence"),
-                    MediaType.image("heic"), MediaType.image("heic-sequence")));
+    private static final Set<MediaType> SUPPORTED_TYPES = new HashSet<>(Arrays.asList(MediaType.image("heif"),
+            MediaType.image("heif-sequence"), MediaType.image("heic"), MediaType.image("heic-sequence")));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -44,10 +41,8 @@ public class HeifParser extends AbstractImageParser {
 
     @Override
     void extractMetadata(InputStream stream, ContentHandler contentHandler, Metadata metadata,
-                         ParseContext parseContext)
-            throws IOException, SAXException, TikaException {
+            ParseContext parseContext) throws IOException, SAXException, TikaException {
         new ImageMetadataExtractor(metadata).parseHeif(stream);
     }
-
 
 }

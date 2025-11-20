@@ -14,25 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.core;
 
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.Tika;
 import org.apache.tika.server.core.resource.DetectorResource;
 import org.apache.tika.server.core.resource.MetadataResource;
 import org.apache.tika.server.core.resource.TikaVersion;
 import org.apache.tika.server.core.resource.TikaWelcome;
+import org.junit.jupiter.api.Test;
+
+import jakarta.ws.rs.core.Response;
 
 public class TikaWelcomeTest extends CXFTestBase {
     protected static final String WELCOME_PATH = "/";
@@ -57,12 +56,7 @@ public class TikaWelcomeTest extends CXFTestBase {
 
     @Test
     public void testGetHTMLWelcome() throws Exception {
-        String html = WebClient
-                .create(endPoint + WELCOME_PATH)
-                .type("text/html")
-                .accept("text/html")
-                .get(String.class);
-
+        String html = WebClient.create(endPoint + WELCOME_PATH).type("text/html").accept("text/html").get(String.class);
 
         assertContains(Tika.getString(), html);
         assertContains("href=\"http", html);
@@ -78,11 +72,7 @@ public class TikaWelcomeTest extends CXFTestBase {
 
     @Test
     public void testGetTextWelcome() throws Exception {
-        Response response = WebClient
-                .create(endPoint + WELCOME_PATH)
-                .type("text/plain")
-                .accept("text/plain")
-                .get();
+        Response response = WebClient.create(endPoint + WELCOME_PATH).type("text/plain").accept("text/plain").get();
 
         String text = getStringFromInputStream((InputStream) response.getEntity());
         assertContains(Tika.getString(), text);
@@ -95,14 +85,9 @@ public class TikaWelcomeTest extends CXFTestBase {
         assertContains("GET " + VERSION_PATH, text);
     }
 
-
     @Test
     public void testProperPathWelcome() throws Exception {
-        Response response = WebClient
-                .create(endPoint + WELCOME_PATH)
-                .type("text/html")
-                .accept("text/html")
-                .get();
+        Response response = WebClient.create(endPoint + WELCOME_PATH).type("text/html").accept("text/html").get();
 
         String html = getStringFromInputStream((InputStream) response.getEntity());
         assertContains(PATH_RESOURCE, html);

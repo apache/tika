@@ -20,9 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.InputStream;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -30,13 +27,15 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class EmptyAndDuplicateElementsXMLParserTest extends TikaTest {
 
-    private Property FIRST_NAME = Property.internalTextBag(
-            "custom" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "FirstName");
-    private Property LAST_NAME = Property.internalTextBag(
-            "custom" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LastName");
+    private Property FIRST_NAME = Property
+            .internalTextBag("custom" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "FirstName");
+    private Property LAST_NAME = Property
+            .internalTextBag("custom" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LastName");
 
     @Test
     public void testDefaultBehavior() throws Exception {
@@ -67,8 +66,7 @@ public class EmptyAndDuplicateElementsXMLParserTest extends TikaTest {
         try (InputStream input = getResourceAsStream("/test-documents/testXML3.xml")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new AllowEmptiesAndDuplicatesCustomXMLTestParser()
-                    .parse(input, handler, metadata, new ParseContext());
+            new AllowEmptiesAndDuplicatesCustomXMLTestParser().parse(input, handler, metadata, new ParseContext());
 
             assertEquals(4, metadata.getValues(FIRST_NAME).length);
             assertEquals(4, metadata.getValues(LAST_NAME).length);
@@ -91,14 +89,12 @@ public class EmptyAndDuplicateElementsXMLParserTest extends TikaTest {
 
         private static final long serialVersionUID = 2458579047014545931L;
 
-        protected ElementMetadataHandler getCustomElementHandler(Metadata metadata,
-                                                                 Property tikaProperty,
-                                                                 String localPart) {
+        protected ElementMetadataHandler getCustomElementHandler(Metadata metadata, Property tikaProperty,
+                String localPart) {
             return new ElementMetadataHandler("http://custom", localPart, metadata, tikaProperty);
         }
 
-        protected ContentHandler getContentHandler(ContentHandler handler, Metadata metadata,
-                                                   ParseContext context) {
+        protected ContentHandler getContentHandler(ContentHandler handler, Metadata metadata, ParseContext context) {
             return new TeeContentHandler(super.getContentHandler(handler, metadata, context),
                     getCustomElementHandler(metadata, FIRST_NAME, "FirstName"),
                     getCustomElementHandler(metadata, LAST_NAME, "LastName"));
@@ -109,13 +105,10 @@ public class EmptyAndDuplicateElementsXMLParserTest extends TikaTest {
 
         private static final long serialVersionUID = 3735646809954466229L;
 
-        protected ElementMetadataHandler getCustomElementHandler(Metadata metadata,
-                                                                 Property tikaProperty,
-                                                                 String localPart) {
-            return new ElementMetadataHandler("http://custom", localPart, metadata, tikaProperty,
-                    true, true);
+        protected ElementMetadataHandler getCustomElementHandler(Metadata metadata, Property tikaProperty,
+                String localPart) {
+            return new ElementMetadataHandler("http://custom", localPart, metadata, tikaProperty, true, true);
         }
     }
-
 
 }

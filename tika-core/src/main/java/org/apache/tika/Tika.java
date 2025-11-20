@@ -25,8 +25,6 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.Properties;
 
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
@@ -41,6 +39,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParsingReader;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Facade class for accessing Tika functionality. This class hides much of
@@ -129,7 +128,6 @@ public class Tika {
     public Tika(Detector detector) {
         this(detector, new AutoDetectParser(detector));
     }
-
 
     /**
      * Detects the media type of the given document. The type detection is
@@ -284,8 +282,8 @@ public class Tika {
      */
     public String detect(File file) throws IOException {
         Metadata metadata = new Metadata();
-        try (@SuppressWarnings("deprecation") InputStream stream = TikaInputStream
-                .get(file, metadata)) {
+        try (@SuppressWarnings("deprecation")
+        InputStream stream = TikaInputStream.get(file, metadata)) {
             return detect(stream, metadata);
         }
     }
@@ -363,7 +361,6 @@ public class Tika {
         }
     }
 
-
     /**
      * Parses the given document and returns the extracted text content.
      * Input metadata like a file name or a content type hint can be passed
@@ -440,7 +437,8 @@ public class Tika {
      * @see #parse(Path)
      */
     public Reader parse(File file, Metadata metadata) throws IOException {
-        @SuppressWarnings("deprecation") InputStream stream = TikaInputStream.get(file, metadata);
+        @SuppressWarnings("deprecation")
+        InputStream stream = TikaInputStream.get(file, metadata);
         return parse(stream, metadata);
     }
 
@@ -490,8 +488,7 @@ public class Tika {
      * @throws IOException   if the document can not be read
      * @throws TikaException if the document can not be parsed
      */
-    public String parseToString(InputStream stream, Metadata metadata)
-            throws IOException, TikaException {
+    public String parseToString(InputStream stream, Metadata metadata) throws IOException, TikaException {
         return parseToString(stream, metadata, maxStringLength);
     }
 
@@ -590,7 +587,8 @@ public class Tika {
      */
     public String parseToString(File file) throws IOException, TikaException {
         Metadata metadata = new Metadata();
-        @SuppressWarnings("deprecation") InputStream stream = TikaInputStream.get(file, metadata);
+        @SuppressWarnings("deprecation")
+        InputStream stream = TikaInputStream.get(file, metadata);
         return parseToString(stream, metadata);
     }
 

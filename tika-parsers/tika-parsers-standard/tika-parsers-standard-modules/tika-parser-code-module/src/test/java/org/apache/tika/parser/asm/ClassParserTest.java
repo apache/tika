@@ -19,11 +19,10 @@ package org.apache.tika.parser.asm;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test case for parsing Java class files.
@@ -40,13 +39,11 @@ public class ClassParserTest extends TikaTest {
         assertTrue(content.contains("package org.apache.tika.parser;"));
         assertTrue(content.contains("class AutoDetectParser extends CompositeParser"));
         assertTrue(content.contains("private org.apache.tika.mime.MimeTypes types"));
-        assertTrue(content.contains(
-                "public void parse(" + "java.io.InputStream, org.xml.sax.ContentHandler," +
-                        " org.apache.tika.metadata.Metadata) throws" +
-                        " java.io.IOException, org.xml.sax.SAXException," +
-                        " org.apache.tika.exception.TikaException;"));
-        assertTrue(content.contains("private byte[] getPrefix(java.io.InputStream, int)" +
-                " throws java.io.IOException;"));
+        assertTrue(content.contains("public void parse(" + "java.io.InputStream, org.xml.sax.ContentHandler,"
+                + " org.apache.tika.metadata.Metadata) throws" + " java.io.IOException, org.xml.sax.SAXException,"
+                + " org.apache.tika.exception.TikaException;"));
+        assertTrue(content
+                .contains("private byte[] getPrefix(java.io.InputStream, int)" + " throws java.io.IOException;"));
     }
 
     @Test

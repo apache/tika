@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.nio.charset.StandardCharsets;
@@ -47,16 +46,15 @@ public class StorageManifestSchemaGUID extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) {
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems) {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         byte[] temp = Arrays.copyOf(byteArray, 16);
         this.guid = UUID.nameUUIDFromBytes(temp);
         index.addAndGet(16);
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
-            throw new StreamObjectParseErrorException(currentIndex.get(),
-                    "StorageManifestSchemaGUID", "Stream object over-parse error", null);
+            throw new StreamObjectParseErrorException(currentIndex.get(), "StorageManifestSchemaGUID",
+                    "Stream object over-parse error", null);
         }
 
         currentIndex.set(index.get());
@@ -70,8 +68,7 @@ public class StorageManifestSchemaGUID extends StreamObject {
      */
     @Override
     protected int serializeItemsToByteList(List<Byte> byteList) {
-        byteList.addAll(
-                ByteUtil.toListOfByte(this.guid.toString().getBytes(StandardCharsets.UTF_8)));
+        byteList.addAll(ByteUtil.toListOfByte(this.guid.toString().getBytes(StandardCharsets.UTF_8)));
         return 16;
     }
 }

@@ -43,8 +43,6 @@ import org.apache.james.mime4j.message.MaximalBodyDescriptor;
 import org.apache.james.mime4j.parser.ContentHandler;
 import org.apache.james.mime4j.stream.BodyDescriptor;
 import org.apache.james.mime4j.stream.Field;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -66,6 +64,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
+import org.xml.sax.SAXException;
 
 /**
  * Bridge between mime4j's content handler and the generic Sax content handler
@@ -88,9 +87,8 @@ class MailContentHandler implements ContentHandler {
     //keeps track of multipart/alternative and its children
     private Stack<Part> alternativePartBuffer = new Stack<>();
     private Stack<BodyDescriptor> parts = new Stack<>();
-    MailContentHandler(XHTMLContentHandler xhtml, Detector detector, Metadata metadata,
-                       ParseContext context, boolean strictParsing,
-                       boolean extractAllAlternatives) {
+    MailContentHandler(XHTMLContentHandler xhtml, Detector detector, Metadata metadata, ParseContext context,
+            boolean strictParsing, boolean extractAllAlternatives) {
         this.handler = xhtml;
         this.metadata = metadata;
         this.parseContext = context;
@@ -121,7 +119,7 @@ class MailContentHandler implements ContentHandler {
             submd.set(Message.MULTIPART_BOUNDARY, parts.peek().getBoundary());
         }
         if (body instanceof MaximalBodyDescriptor) {
-            handleMaximalBodyDescriptor((MaximalBodyDescriptor)body, submd);
+            handleMaximalBodyDescriptor((MaximalBodyDescriptor) body, submd);
         }
         //if we're in a multipart/alternative or any one of its children
         //add the bodypart to the latest that was added
@@ -164,11 +162,10 @@ class MailContentHandler implements ContentHandler {
                 submd.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                         TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
             }
-            Map<String, String> contentDispositionParameters =
-                    body.getContentDispositionParameters();
+            Map<String, String> contentDispositionParameters = body.getContentDispositionParameters();
             for (Entry<String, String> param : contentDispositionParameters.entrySet()) {
-                contentDisposition.append("; ").append(param.getKey()).append("=\"")
-                        .append(param.getValue()).append('"');
+                contentDisposition.append("; ").append(param.getKey()).append("=\"").append(param.getValue())
+                        .append('"');
                 if ("creation-date".equalsIgnoreCase(param.getKey())) {
                     tryToAddDate(param.getValue(), TikaCoreProperties.CREATED, submd);
                 } else if ("modification-date".equalsIgnoreCase(param.getKey())) {
@@ -234,8 +231,7 @@ class MailContentHandler implements ContentHandler {
         return false;
     }
 
-    private void handleEmbedded(TikaInputStream tis, Metadata metadata)
-            throws MimeException, IOException {
+    private void handleEmbedded(TikaInputStream tis, Metadata metadata) throws MimeException, IOException {
 
         if (metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE) == null) {
             metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
@@ -324,23 +320,21 @@ class MailContentHandler implements ContentHandler {
         try {
             String fieldname = field.getName();
 
-            ParsedField parsedField =
-                    LenientFieldParser.getParser().parse(field, DecodeMonitor.SILENT);
+            ParsedField parsedField = LenientFieldParser.getParser().parse(field, DecodeMonitor.SILENT);
             if (fieldname.equalsIgnoreCase("From")) {
                 MailboxListField fromField = (MailboxListField) parsedField;
                 MailboxList mailboxList = fromField.getMailboxList();
                 if (fromField.isValidField() && mailboxList != null) {
                     for (Address address : mailboxList) {
                         String from = getDisplayString(address);
-                        MailUtil.setPersonAndEmail(from, Message.MESSAGE_FROM_NAME,
-                                Message.MESSAGE_FROM_EMAIL, metadata);
+                        MailUtil.setPersonAndEmail(from, Message.MESSAGE_FROM_NAME, Message.MESSAGE_FROM_EMAIL,
+                                metadata);
                         metadata.add(Metadata.MESSAGE_FROM, from);
                         metadata.add(TikaCoreProperties.CREATOR, from);
                     }
                 } else {
                     String from = stripOutFieldPrefix(field, "From:");
-                    MailUtil.setPersonAndEmail(from, Message.MESSAGE_FROM_NAME,
-                            Message.MESSAGE_FROM_EMAIL, metadata);
+                    MailUtil.setPersonAndEmail(from, Message.MESSAGE_FROM_NAME, Message.MESSAGE_FROM_EMAIL, metadata);
 
                     if (from.startsWith("<")) {
                         from = from.substring(1);
@@ -367,11 +361,9 @@ class MailContentHandler implements ContentHandler {
 
                 if (contentType.getType().equalsIgnoreCase("multipart")) {
                     metadata.set(Message.MULTIPART_SUBTYPE, contentType.getSubtype());
-                    metadata.set(Message.MULTIPART_BOUNDARY,
-                            contentType.getParameters().get("boundary"));
+                    metadata.set(Message.MULTIPART_BOUNDARY, contentType.getParameters().get("boundary"));
                 } else {
-                    metadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX + parsedField.getName(),
-                            field.getBody());
+                    metadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX + parsedField.getName(), field.getBody());
                 }
             } else if (fieldname.equalsIgnoreCase("Date")) {
                 String dateBody = parsedField.getBody();
@@ -385,8 +377,7 @@ class MailContentHandler implements ContentHandler {
                     //swallow
                 }
             } else {
-                metadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX + parsedField.getName(),
-                        field.getBody());
+                metadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX + parsedField.getName(), field.getBody());
             }
         } catch (RuntimeException me) {
             if (strictParsing) {
@@ -459,8 +450,7 @@ class MailContentHandler implements ContentHandler {
     public void startMultipart(BodyDescriptor descr) throws MimeException {
         parts.push(descr);
         if (!extractAllAlternatives) {
-            if (alternativePartBuffer.size() == 0 &&
-                    MULTIPART_ALTERNATIVE.equalsIgnoreCase(descr.getMimeType())) {
+            if (alternativePartBuffer.size() == 0 && MULTIPART_ALTERNATIVE.equalsIgnoreCase(descr.getMimeType())) {
                 Part part = new Part(descr);
                 alternativePartBuffer.push(part);
             } else if (alternativePartBuffer.size() > 0) {
@@ -494,7 +484,6 @@ class MailContentHandler implements ContentHandler {
             return;
         }
 
-
         if (MULTIPART_ALTERNATIVE.equalsIgnoreCase(part.bodyDescriptor.getMimeType())) {
             int bestPartScore = -1;
             Part bestPart = null;
@@ -518,18 +507,14 @@ class MailContentHandler implements ContentHandler {
         Parser parser = null;
         boolean inlineText = false;
         if (MediaType.TEXT_HTML.toString().equalsIgnoreCase(contentType)) {
-            parser = EmbeddedDocumentUtil
-                    .tryToFindExistingLeafParser(JSoupParser.class, parseContext);
+            parser = EmbeddedDocumentUtil.tryToFindExistingLeafParser(JSoupParser.class, parseContext);
         } else if (MediaType.TEXT_PLAIN.toString().equalsIgnoreCase(contentType)) {
-            parser =
-                    EmbeddedDocumentUtil.tryToFindExistingLeafParser(TXTParser.class, parseContext);
+            parser = EmbeddedDocumentUtil.tryToFindExistingLeafParser(TXTParser.class, parseContext);
             if (parser == null) {
-                parser = EmbeddedDocumentUtil
-                        .tryToFindExistingLeafParser(TextAndCSVParser.class, parseContext);
+                parser = EmbeddedDocumentUtil.tryToFindExistingLeafParser(TextAndCSVParser.class, parseContext);
                 inlineText = true;
             }
         }
-
 
         if (parser == null) {
             //back off and treat it as an embedded chunk
@@ -546,8 +531,8 @@ class MailContentHandler implements ContentHandler {
                             MediaType.TEXT_PLAIN.toString());
                 }
                 try (TikaInputStream tis = TikaInputStream.get(part.bytes)) {
-                    parser.parse(tis,
-                            new EmbeddedContentHandler(new BodyContentHandler(handler)), inlineMetadata, parseContext);
+                    parser.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(handler)), inlineMetadata,
+                            parseContext);
                 }
             } catch (SAXException | TikaException e) {
                 throw new MimeException(e);

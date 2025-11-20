@@ -24,13 +24,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLParserTest;
+import org.junit.jupiter.api.Test;
 
 public class AutoDetectParserConfigTest extends TikaTest {
 
@@ -38,16 +37,14 @@ public class AutoDetectParserConfigTest extends TikaTest {
     public void testConfiguringEmbeddedDocExtractor() throws Exception {
 
         TikaConfig tikaConfig = null;
-        try (InputStream is = OOXMLParserTest.class.getResourceAsStream(
-                "/configs/tika-config-no-names.xml")) {
+        try (InputStream is = OOXMLParserTest.class.getResourceAsStream("/configs/tika-config-no-names.xml")) {
             tikaConfig = new TikaConfig(is);
         }
         Parser p = new AutoDetectParser(tikaConfig);
         String xml = getXML("testEmbedded.zip", p).xml;
         assertNotContained("<h1>image3.jpg</h1>", xml);
 
-        try (InputStream is = OOXMLParserTest.class.getResourceAsStream(
-                "/configs/tika-config-with-names.xml")) {
+        try (InputStream is = OOXMLParserTest.class.getResourceAsStream("/configs/tika-config-with-names.xml")) {
             tikaConfig = new TikaConfig(is);
         }
         p = new AutoDetectParser(tikaConfig);
@@ -58,8 +55,8 @@ public class AutoDetectParserConfigTest extends TikaTest {
     @Test
     public void testContentHandlerDecoratorFactory() throws Exception {
         TikaConfig tikaConfig = null;
-        try (InputStream is = OOXMLParserTest.class.getResourceAsStream(
-                "/configs/tika-config-upcasing-custom-handler-decorator.xml")) {
+        try (InputStream is = OOXMLParserTest.class
+                .getResourceAsStream("/configs/tika-config-upcasing-custom-handler-decorator.xml")) {
             tikaConfig = new TikaConfig(is);
         }
         Parser p = new AutoDetectParser(tikaConfig);
@@ -73,18 +70,15 @@ public class AutoDetectParserConfigTest extends TikaTest {
     @Test
     public void testRecursiveContentHandlerDecoratorFactory() throws Exception {
         TikaConfig tikaConfig = null;
-        try (InputStream is = OOXMLParserTest.class.getResourceAsStream(
-                "/configs/tika-config-doubling-custom-handler-decorator.xml")) {
+        try (InputStream is = OOXMLParserTest.class
+                .getResourceAsStream("/configs/tika-config-doubling-custom-handler-decorator.xml")) {
             tikaConfig = new TikaConfig(is);
         }
         Parser p = new AutoDetectParser(tikaConfig);
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", p);
-        assertContainsCount("IMAGE2.EMF",
-                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT), 2);
-        assertContainsCount("15.9.2007 11:02",
-                metadataList.get(4).get(TikaCoreProperties.TIKA_CONTENT), 2);
-        assertContainsCount("HELLO WORLD",
-                metadataList.get(5).get(TikaCoreProperties.TIKA_CONTENT), 4);
+        assertContainsCount("IMAGE2.EMF", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT), 2);
+        assertContainsCount("15.9.2007 11:02", metadataList.get(4).get(TikaCoreProperties.TIKA_CONTENT), 2);
+        assertContainsCount("HELLO WORLD", metadataList.get(5).get(TikaCoreProperties.TIKA_CONTENT), 4);
     }
 
     @Test
@@ -92,8 +86,8 @@ public class AutoDetectParserConfigTest extends TikaTest {
         //test to make sure that the decorator is only applied once for
         //legacy (e.g. not RecursiveParserWrapperHandler) parsing
         TikaConfig tikaConfig = null;
-        try (InputStream is = OOXMLParserTest.class.getResourceAsStream(
-                "/configs/tika-config-doubling-custom-handler-decorator.xml")) {
+        try (InputStream is = OOXMLParserTest.class
+                .getResourceAsStream("/configs/tika-config-doubling-custom-handler-decorator.xml")) {
             tikaConfig = new TikaConfig(is);
         }
         Parser p = new AutoDetectParser(tikaConfig);
@@ -107,8 +101,8 @@ public class AutoDetectParserConfigTest extends TikaTest {
         //test to make sure that the decorator is only applied once for
         //legacy (e.g. not RecursiveParserWrapperHandler) parsing
         TikaConfig tikaConfig = null;
-        try (InputStream is = AutoDetectParserConfigTest.class.getResourceAsStream(
-                "/configs/tika-config-digests.xml")) {
+        try (InputStream is = AutoDetectParserConfigTest.class
+                .getResourceAsStream("/configs/tika-config-digests.xml")) {
             tikaConfig = new TikaConfig(is);
         }
         Parser p = new AutoDetectParser(tikaConfig);
@@ -116,13 +110,11 @@ public class AutoDetectParserConfigTest extends TikaTest {
         assertEquals("SO67W5OGGMOFPMFQTHTNL5YU5EQXWPMNEPU7HKOZX2ULHRQICRZA====",
                 metadataList.get(0).get("X-TIKA:digest:SHA256"));
 
-        assertEquals("a16f14215ebbfa47bd995e799f03cb18",
-                metadataList.get(0).get("X-TIKA:digest:MD5"));
+        assertEquals("a16f14215ebbfa47bd995e799f03cb18", metadataList.get(0).get("X-TIKA:digest:MD5"));
 
         assertEquals("Q7D3RFV6DNGZ4BQIS6UKNWX4CDIKPIGDU2D7ADBUDVOBYSZHF7FQ====",
                 metadataList.get(6).get("X-TIKA:digest:SHA256"));
-        assertEquals("90a8b249a6d6b6cb127c59e01cef3aaa",
-                metadataList.get(6).get("X-TIKA:digest:MD5"));
+        assertEquals("90a8b249a6d6b6cb127c59e01cef3aaa", metadataList.get(6).get("X-TIKA:digest:MD5"));
     }
 
     @Test
@@ -130,8 +122,8 @@ public class AutoDetectParserConfigTest extends TikaTest {
         //test to make sure that the decorator is only applied once for
         //legacy (e.g. not RecursiveParserWrapperHandler) parsing
         TikaConfig tikaConfig = null;
-        try (InputStream is = AutoDetectParserConfigTest.class.getResourceAsStream(
-                "/configs/tika-config-digests-skip-container.xml")) {
+        try (InputStream is = AutoDetectParserConfigTest.class
+                .getResourceAsStream("/configs/tika-config-digests-skip-container.xml")) {
             tikaConfig = new TikaConfig(is);
         }
         Parser p = new AutoDetectParser(tikaConfig);
@@ -141,25 +133,21 @@ public class AutoDetectParserConfigTest extends TikaTest {
 
         assertEquals("Q7D3RFV6DNGZ4BQIS6UKNWX4CDIKPIGDU2D7ADBUDVOBYSZHF7FQ====",
                 metadataList.get(6).get("X-TIKA:digest:SHA256"));
-        assertEquals("90a8b249a6d6b6cb127c59e01cef3aaa",
-                metadataList.get(6).get("X-TIKA:digest:MD5"));
+        assertEquals("90a8b249a6d6b6cb127c59e01cef3aaa", metadataList.get(6).get("X-TIKA:digest:MD5"));
     }
 
     @Test
     public void testDigestsEmptyParser() throws Exception {
         //TIKA-3939 -- ensure that digesting happens even with EmptyParser
         TikaConfig tikaConfig = null;
-        try (InputStream is = OOXMLParserTest.class.getResourceAsStream(
-                "/configs/tika-config-digests-pdf-only.xml")) {
+        try (InputStream is = OOXMLParserTest.class.getResourceAsStream("/configs/tika-config-digests-pdf-only.xml")) {
             tikaConfig = new TikaConfig(is);
         }
         Parser p = new AutoDetectParser(tikaConfig);
         List<Metadata> metadataList = getRecursiveMetadata("testPDF.pdf", p);
         assertEquals(1, metadataList.size());
-        assertEquals("4ef0d3bdb12ba603f4caf7d2e2c6112e",
-                metadataList.get(0).get("X-TIKA:digest:MD5"));
-        assertEquals("org.apache.tika.parser.EmptyParser",
-                metadataList.get(0).get("X-TIKA:Parsed-By"));
+        assertEquals("4ef0d3bdb12ba603f4caf7d2e2c6112e", metadataList.get(0).get("X-TIKA:digest:MD5"));
+        assertEquals("org.apache.tika.parser.EmptyParser", metadataList.get(0).get("X-TIKA:Parsed-By"));
     }
 
     @Test
@@ -167,14 +155,13 @@ public class AutoDetectParserConfigTest extends TikaTest {
         Path tmp = Files.createTempFile("tika-test", "");
         try {
             TikaConfig tikaConfig = null;
-            try (InputStream is = AutoDetectParserConfigTest.class.getResourceAsStream(
-                    "/configs/tika-config-digests.xml")) {
+            try (InputStream is = AutoDetectParserConfigTest.class
+                    .getResourceAsStream("/configs/tika-config-digests.xml")) {
                 tikaConfig = new TikaConfig(is);
             }
             Parser p = new AutoDetectParser(tikaConfig);
             List<Metadata> metadataList = getRecursiveMetadata(tmp, p, true);
-            assertEquals("d41d8cd98f00b204e9800998ecf8427e",
-                    metadataList.get(0).get("X-TIKA:digest:MD5"));
+            assertEquals("d41d8cd98f00b204e9800998ecf8427e", metadataList.get(0).get("X-TIKA:digest:MD5"));
             assertEquals("0", metadataList.get(0).get(Metadata.CONTENT_LENGTH));
         } finally {
             Files.delete(tmp);

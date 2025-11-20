@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,12 +30,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Executor;
 
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.BodyContentHandler;
+import org.xml.sax.ContentHandler;
 
 /**
  * Reader for the text content from a given binary stream. This class
@@ -145,8 +144,8 @@ public class ParsingReader extends Reader {
      * @param metadata document metadata
      * @throws IOException if the document can not be parsed
      */
-    public ParsingReader(Parser parser, InputStream stream, final Metadata metadata,
-                         ParseContext context) throws IOException {
+    public ParsingReader(Parser parser, InputStream stream, final Metadata metadata, ParseContext context)
+            throws IOException {
         this(parser, stream, metadata, context, command -> {
             String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
             if (name != null) {
@@ -180,8 +179,8 @@ public class ParsingReader extends Reader {
      * @throws IOException if the document can not be parsed
      * @since Apache Tika 0.4
      */
-    public ParsingReader(Parser parser, InputStream stream, Metadata metadata, ParseContext context,
-                         Executor executor) throws IOException {
+    public ParsingReader(Parser parser, InputStream stream, Metadata metadata, ParseContext context, Executor executor)
+            throws IOException {
         this.parser = parser;
         PipedReader pipedReader = new PipedReader();
         this.reader = new BufferedReader(pipedReader);

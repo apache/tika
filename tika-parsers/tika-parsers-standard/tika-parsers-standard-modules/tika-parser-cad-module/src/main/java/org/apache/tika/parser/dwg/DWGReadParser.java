@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.dwg;
 
 import java.io.BufferedReader;
@@ -35,19 +34,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.core.json.JsonReadFeature;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -57,10 +46,16 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.FileProcessResult;
 import org.apache.tika.utils.ProcessUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
-
-
-
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.json.JsonReadFeature;
 
 /**
  * DWGReadParser (CAD Drawing) parser. This extends the original DWGParser if in 
@@ -109,7 +104,6 @@ public class DWGReadParser extends AbstractDWGParser {
         File tmpFileOutCleaned = Files.createTempFile(uuid + "dwgreadoutclean", ".json").toFile();
         File tmpFileIn = Files.createTempFile(uuid + "dwgreadin", ".dwg").toFile();
         try {
-            
 
             FileUtils.copyInputStreamToFile(stream, tmpFileIn);
 
@@ -124,30 +118,22 @@ public class DWGReadParser extends AbstractDWGParser {
                     // dwgread sometimes creates strings with invalid utf-8 sequences or invalid
                     // json (nan instead of NaN). replace them
                     // with empty string.
-                    LOG.debug("Cleaning Json Output - Replace: " + dwgc.getCleanDwgReadRegexToReplace() 
-                              + " with: " + dwgc.getCleanDwgReadReplaceWith());
-                    try ( BufferedReader br = new BufferedReader(
-                              new InputStreamReader(
-                                      Files.newInputStream(tmpFileOut.toPath()),
-                              StandardCharsets.UTF_8));
-                            
-                            BufferedWriter out = new BufferedWriter(
-                                    new OutputStreamWriter(
-                                            new FileOutputStream(tmpFileOutCleaned, true), 
-                                            StandardCharsets.UTF_8),32768))
-                    {
+                    LOG.debug("Cleaning Json Output - Replace: " + dwgc.getCleanDwgReadRegexToReplace() + " with: "
+                            + dwgc.getCleanDwgReadReplaceWith());
+                    try (BufferedReader br = new BufferedReader(
+                            new InputStreamReader(Files.newInputStream(tmpFileOut.toPath()), StandardCharsets.UTF_8));
+
+                            BufferedWriter out = new BufferedWriter(new OutputStreamWriter(
+                                    new FileOutputStream(tmpFileOutCleaned, true), StandardCharsets.UTF_8), 32768)) {
 
                         String sCurrentLine;
-                        while ((sCurrentLine = br.readLine()) != null) 
-                        {
+                        while ((sCurrentLine = br.readLine()) != null) {
                             sCurrentLine = sCurrentLine
-                                            .replaceAll( dwgc.getCleanDwgReadRegexToReplace(), 
-                                                    dwgc.getCleanDwgReadReplaceWith())
-                                            .replaceAll("\\bnan\\b", " 0,")
-                                            .replaceAll("\\.,", " \\. ,") + "\n";
+                                    .replaceAll(dwgc.getCleanDwgReadRegexToReplace(), dwgc.getCleanDwgReadReplaceWith())
+                                    .replaceAll("\\bnan\\b", " 0,").replaceAll("\\.,", " \\. ,") + "\n";
                             out.write(sCurrentLine);
-                        }                            
-                                 
+                        }
+
                     } finally {
                         FileUtils.deleteQuietly(tmpFileIn);
                         FileUtils.deleteQuietly(tmpFileOut);
@@ -155,29 +141,24 @@ public class DWGReadParser extends AbstractDWGParser {
                     }
 
                 } else {
-                    LOG.debug(
-                            "Json wasn't cleaned, "
+                    LOG.debug("Json wasn't cleaned, "
                             + "if json parsing fails consider reviewing dwgread json output to check it's valid");
                 }
             } else if (fpr.isTimeout()) {
                 throw new TikaException(
-                        "DWGRead Failed - Timeout setting exceeded current setting of " + dwgc.getDwgReadTimeout() );
-            }
-            else {
+                        "DWGRead Failed - Timeout setting exceeded current setting of " + dwgc.getDwgReadTimeout());
+            } else {
                 throw new TikaException(
-                        "DWGRead Failed - Exit Code is:" + fpr.getExitValue() + " Exe error is: " + fpr.getStderr() );
+                        "DWGRead Failed - Exit Code is:" + fpr.getExitValue() + " Exe error is: " + fpr.getStderr());
             }
 
             // we can't guarantee the json output is correct so we try to ignore as many
             // errors as we can
             JsonFactory jfactory = JsonFactory.builder()
-                    .enable(JsonReadFeature.ALLOW_MISSING_VALUES, 
-                            JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS,
-                            JsonReadFeature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER, 
-                            JsonReadFeature.ALLOW_UNQUOTED_FIELD_NAMES, 
-                            JsonReadFeature.ALLOW_TRAILING_COMMA,
-                            JsonReadFeature.ALLOW_NON_NUMERIC_NUMBERS, 
-                            JsonReadFeature.ALLOW_LEADING_ZEROS_FOR_NUMBERS)
+                    .enable(JsonReadFeature.ALLOW_MISSING_VALUES, JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS,
+                            JsonReadFeature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER,
+                            JsonReadFeature.ALLOW_UNQUOTED_FIELD_NAMES, JsonReadFeature.ALLOW_TRAILING_COMMA,
+                            JsonReadFeature.ALLOW_NON_NUMERIC_NUMBERS, JsonReadFeature.ALLOW_LEADING_ZEROS_FOR_NUMBERS)
                     .build();
             JsonParser jParser;
             try {

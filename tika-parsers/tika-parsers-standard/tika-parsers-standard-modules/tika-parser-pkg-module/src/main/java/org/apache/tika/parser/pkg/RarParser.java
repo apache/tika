@@ -21,12 +21,6 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
-import com.github.junrar.Archive;
-import com.github.junrar.exception.RarException;
-import com.github.junrar.rarfile.FileHeader;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.UnsupportedFormatException;
@@ -39,6 +33,12 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
+import com.github.junrar.Archive;
+import com.github.junrar.exception.RarException;
+import com.github.junrar.rarfile.FileHeader;
 
 /**
  * Parser for Rar files.
@@ -46,8 +46,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 public class RarParser implements Parser {
     private static final long serialVersionUID = 6157727985054451501L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.application("x-rar-compressed"));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections
+            .singleton(MediaType.application("x-rar-compressed"));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext arg0) {
@@ -55,14 +55,13 @@ public class RarParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
-        EmbeddedDocumentExtractor extractor =
-                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        EmbeddedDocumentExtractor extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         String mediaType = metadata.get(Metadata.CONTENT_TYPE);
 
         if (mediaType != null && mediaType.contains("version=5")) {
@@ -83,9 +82,8 @@ public class RarParser implements Parser {
             FileHeader header = rar.nextFileHeader();
             while (header != null && !Thread.currentThread().isInterrupted()) {
                 if (!header.isDirectory()) {
-                    Metadata entrydata = PackageParser.handleEntryMetadata(header.getFileName(),
-                            header.getCTime(), header.getMTime(), header.getFullUnpackSize(),
-                            xhtml);
+                    Metadata entrydata = PackageParser.handleEntryMetadata(header.getFileName(), header.getCTime(),
+                            header.getMTime(), header.getFullUnpackSize(), xhtml);
                     try (TikaInputStream rarTis = TikaInputStream.get(rar.getInputStream(header))) {
                         if (extractor.shouldParseEmbedded(entrydata)) {
                             extractor.parseEmbedded(rarTis, handler, entrydata, true);

@@ -18,9 +18,8 @@ package org.apache.tika.parser.pdf.xmpschemas;
 
 import org.apache.jempbox.xmp.XMPMetadata;
 import org.apache.jempbox.xmp.XMPSchema;
-import org.w3c.dom.Element;
-
 import org.apache.tika.mime.MediaType;
+import org.w3c.dom.Element;
 
 public class XMPSchemaIllustrator extends XMPSchema {
     public static final String NAMESPACE_URI = "http://ns.adobe.com/illustrator/1.0/";

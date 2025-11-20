@@ -5,16 +5,15 @@
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.msg;
 
 import java.util.ArrayList;
@@ -60,11 +59,14 @@ public final class TikaNameIdChunks implements ChunkGroup {
     }
 
     public enum PredefinedPropertySet {
-        PSETID_COMMON("00062008-0000-0000-C000-000000000046"), PSETID_ADDRESS("00062004-0000-0000-C000-000000000046"), PSETID_APPOINTMENT("00062002-0000-0000-C000-000000000046"),
-        PSETID_MEETING("6ED8DA90-450B-101B-98DA-00AA003F1305"), PSETID_LOG("0006200A-0000-0000-C000-000000000046"), PSETID_MESSAGING("41F28F13-83F4-4114-A584-EEDB5A6B0BFF"),
-        PSETID_NOTE("0006200E-0000-0000-C000-000000000046"), PSETID_POST_RSS("00062041-0000-0000-C000-000000000046"), PSETID_TASK("00062003-0000-0000-C000-000000000046"),
-        PSETID_UNIFIED_MESSAGING("4442858E-A9E3-4E80-B900-317A210CC15B"), PSETID_AIR_SYNC("71035549-0739-4DCB-9163-00F0580DBBDF"),
-        PSETID_SHARING("00062040-0000-0000-C000-000000000046"), PSETID_XML_EXTRACTED_ENTITIES("23239608-685D-4732-9C55-4C95CB4E8E33"),
+        PSETID_COMMON("00062008-0000-0000-C000-000000000046"), PSETID_ADDRESS("00062004-0000-0000-C000-000000000046"),
+        PSETID_APPOINTMENT("00062002-0000-0000-C000-000000000046"),
+        PSETID_MEETING("6ED8DA90-450B-101B-98DA-00AA003F1305"), PSETID_LOG("0006200A-0000-0000-C000-000000000046"),
+        PSETID_MESSAGING("41F28F13-83F4-4114-A584-EEDB5A6B0BFF"), PSETID_NOTE("0006200E-0000-0000-C000-000000000046"),
+        PSETID_POST_RSS("00062041-0000-0000-C000-000000000046"), PSETID_TASK("00062003-0000-0000-C000-000000000046"),
+        PSETID_UNIFIED_MESSAGING("4442858E-A9E3-4E80-B900-317A210CC15B"),
+        PSETID_AIR_SYNC("71035549-0739-4DCB-9163-00F0580DBBDF"), PSETID_SHARING("00062040-0000-0000-C000-000000000046"),
+        PSETID_XML_EXTRACTED_ENTITIES("23239608-685D-4732-9C55-4C95CB4E8E33"),
         PSETID_ATTACHMENT("96357F7F-59E1-47D0-99A7-46515C183B54"), //add this to POI
         PSETID_CALENDAR_ASSISTANT("11000E07-B51B-40D6-AF21-CAA85EDAB1D0");
 
@@ -109,14 +111,15 @@ public final class TikaNameIdChunks implements ChunkGroup {
     @Override
     public void record(Chunk chunk) {
         if (chunk.getType() == Types.BINARY) {
-            switch (chunk.getChunkId()) {
-                case 2:
+            switch (chunk.getChunkId())
+            {
+                case 2 :
                     guidStream = (ByteChunk) chunk;
                     break;
-                case 3:
+                case 3 :
                     entryStream = (ByteChunk) chunk;
                     break;
-                case 4:
+                case 4 :
                     stringStream = (ByteChunk) chunk;
                     break;
             }
@@ -158,11 +161,11 @@ public final class TikaNameIdChunks implements ChunkGroup {
             // fetch and match property GUID
             ClassID guid = getPropertyGUID(guidIndex);
 
-
             // fetch property name / stream ID
             final String[] propertyName = {null};
             final long[] propertyNameCRC32 = {-1L};
-            long streamID = getStreamID(propertyKind, (int) nameOffset, guid, guidIndex, n -> propertyName[0] = n, c -> propertyNameCRC32[0] = c);
+            long streamID = getStreamID(propertyKind, (int) nameOffset, guid, guidIndex, n -> propertyName[0] = n,
+                    c -> propertyNameCRC32[0] = c);
 
             long tag = -1;
             // find property index in matching stream entry
@@ -193,7 +196,8 @@ public final class TikaNameIdChunks implements ChunkGroup {
      */
     public long getPropertyTag(ClassID guid, String name, long id) {
         final byte[] entryStreamBytes = (entryStream == null) ? null : entryStream.getValue();
-        if (guidStream == null || entryStream == null || stringStream == null || guid == null || entryStreamBytes == null) {
+        if (guidStream == null || entryStream == null || stringStream == null || guid == null
+                || entryStreamBytes == null) {
             return 0;
         }
 
@@ -213,7 +217,8 @@ public final class TikaNameIdChunks implements ChunkGroup {
             // fetch property name / stream ID
             final String[] propertyName = {null};
             final long[] propertyNameCRC32 = {-1L};
-            long streamID = getStreamID(propertyKind, (int) nameOffset, guid, guidIndex, n -> propertyName[0] = n, c -> propertyNameCRC32[0] = c);
+            long streamID = getStreamID(propertyKind, (int) nameOffset, guid, guidIndex, n -> propertyName[0] = n,
+                    c -> propertyNameCRC32[0] = c);
 
             if (!matchesProperty(propertyKind, nameOffset, name, propertyName[0], id)) {
                 continue;
@@ -278,16 +283,17 @@ public final class TikaNameIdChunks implements ChunkGroup {
     }
 
     // property set GUID matches
-    private static boolean matchesProperty(int propertyKind, long nameOffset, String name, String propertyName, long id) {
+    private static boolean matchesProperty(int propertyKind, long nameOffset, String name, String propertyName,
+            long id) {
         return
-                // match property by id
-                (propertyKind == 0 && id >= 0 && id == nameOffset) ||
-                        // match property by name
-                        (propertyKind == 1 && name != null && name.equals(propertyName));
+        // match property by id
+        (propertyKind == 0 && id >= 0 && id == nameOffset) ||
+        // match property by name
+                (propertyKind == 1 && name != null && name.equals(propertyName));
     }
 
-
-    private long getStreamID(int propertyKind, int nameOffset, ClassID guid, int guidIndex, Consumer<String> propertyNameSetter, Consumer<Long> propertyNameCRC32Setter) {
+    private long getStreamID(int propertyKind, int nameOffset, ClassID guid, int guidIndex,
+            Consumer<String> propertyNameSetter, Consumer<Long> propertyNameCRC32Setter) {
         if (propertyKind == 0) {
             // numerical named property
             return 0x1000L + (nameOffset ^ (guidIndex << 1)) % 0x1F;
@@ -302,9 +308,7 @@ public final class TikaNameIdChunks implements ChunkGroup {
                 int nameStart = nameOffset + 4;
                 String propertyName = new String(stringBytes, nameStart, (int) nameLength, StringUtil.UTF16LE);
                 if (PropertySetType.PS_INTERNET_HEADERS.classID.equals(guid)) {
-                    byte[] n = propertyName
-                            .toLowerCase(Locale.ROOT)
-                            .getBytes(StringUtil.UTF16LE);
+                    byte[] n = propertyName.toLowerCase(Locale.ROOT).getBytes(StringUtil.UTF16LE);
                     propertyNameCRC32 = calculateCRC32(n, 0, n.length);
                 } else {
                     propertyNameCRC32 = calculateCRC32(stringBytes, nameStart, (int) nameLength);

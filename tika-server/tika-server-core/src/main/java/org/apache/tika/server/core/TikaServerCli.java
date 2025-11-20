@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.core;
 
 import static org.apache.tika.server.core.TikaServerConfig.DEFAULT_HOST;
@@ -51,12 +50,15 @@ public class TikaServerCli {
         Options options = new Options();
         options.addOption("h", "host", true, "host name (default = " + DEFAULT_HOST + ", use * for all)");
         options.addOption("p", "port", true,
-                "listen port(s) (default = 9998)\n" + "Can specify multiple ports with inclusive ranges (e.g. 9990-9999)\n" + "or with comma delimited list (e.g. 9996,9998,9995)");
+                "listen port(s) (default = 9998)\n"
+                        + "Can specify multiple ports with inclusive ranges (e.g. 9990-9999)\n"
+                        + "or with comma delimited list (e.g. 9996,9998,9995)");
         options.addOption("?", "help", false, "this help message");
         options.addOption("c", "config", true, "tika-config file");
 
         options.addOption("i", "id", true, "id to use for server in" + " the server status endpoint and logging");
-        options.addOption("noFork", "noFork", false, "runs in legacy 1.x mode -- " + "server runs in process and is not safely isolated in a forked process");
+        options.addOption("noFork", "noFork", false, "runs in legacy 1.x mode -- "
+                + "server runs in process and is not safely isolated in a forked process");
 
         return options;
     }
@@ -100,7 +102,8 @@ public class TikaServerCli {
         List<PortIdPair> portIdPairs = getPortIdPairs(tikaServerConfig);
 
         ExecutorService executorService = Executors.newFixedThreadPool(portIdPairs.size());
-        ExecutorCompletionService<WatchDogResult> executorCompletionService = new ExecutorCompletionService<>(executorService);
+        ExecutorCompletionService<WatchDogResult> executorCompletionService = new ExecutorCompletionService<>(
+                executorService);
 
         for (PortIdPair p : portIdPairs) {
             TikaServerWatchDog watcher = new TikaServerWatchDog(p.port, p.id, tikaServerConfig);
@@ -160,8 +163,8 @@ public class TikaServerCli {
 
     private static Options getStopOptions() {
         Options options = new Options();
-        options.addOption("preventSystemExit", false,
-                "Prevent the stop method from calling system.exit, " + "which would terminate the JVM. This is useful for integration tests.");
+        options.addOption("preventSystemExit", false, "Prevent the stop method from calling system.exit, "
+                + "which would terminate the JVM. This is useful for integration tests.");
         return options;
     }
 
@@ -176,7 +179,8 @@ public class TikaServerCli {
     }
 
     public static void noFork(TikaServerConfig tikaServerConfig) throws Exception {
-        List<String> args = tikaServerConfig.getForkedProcessArgs(tikaServerConfig.getPort(), tikaServerConfig.getIdBase());
+        List<String> args = tikaServerConfig.getForkedProcessArgs(tikaServerConfig.getPort(),
+                tikaServerConfig.getIdBase());
         args.add("--noFork");
         TikaServerProcess.main(args.toArray(new String[0]));
     }
@@ -203,7 +207,6 @@ public class TikaServerCli {
 
         return pairs;
     }
-
 
     private static class PortIdPair {
         int port;

@@ -36,13 +36,12 @@ import java.util.List;
 import java.util.Locale;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.emitter.Emitter;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class JDBCEmitterTest {
 
@@ -53,8 +52,7 @@ public class JDBCEmitterTest {
         Path config = tmpDir.resolve("tika-config.xml");
         String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
 
-        writeConfig("/configs/tika-config-jdbc-emitter.xml",
-                connectionString, config);
+        writeConfig("/configs/tika-config-jdbc-emitter.xml", connectionString, config);
 
         EmitterManager emitterManager = EmitterManager.load(config);
         Emitter emitter = emitterManager.getEmitter();
@@ -63,11 +61,11 @@ public class JDBCEmitterTest {
         data.add(new String[]{"k1", "false", "k2", "some string2", "k3", "5", "k4", "101"});
         data.add(new String[]{"k1", "true", "k2", "some string3", "k3", "6", "k4", "102"});
         //test dates with and without timezones
-        data.add(new String[]{"k1", "false", "k2", "some string4", "k3", "7", "k4", "103", "k5",
-                "100002", "k6", "2022-11-04T17:10:15Z"});
+        data.add(new String[]{"k1", "false", "k2", "some string4", "k3", "7", "k4", "103", "k5", "100002", "k6",
+                "2022-11-04T17:10:15Z"});
 
-        data.add(new String[]{"k1", "true", "k2", "some string5", "k3", "8", "k4", "104", "k5",
-                "100002", "k6", "2022-11-04T17:10:15"});
+        data.add(new String[]{"k1", "true", "k2", "some string5", "k3", "8", "k4", "104", "k5", "100002", "k6",
+                "2022-11-04T17:10:15"});
         int id = 0;
         for (String[] d : data) {
             emitter.emit("id" + id++, Collections.singletonList(m(d)), new ParseContext());
@@ -99,15 +97,14 @@ public class JDBCEmitterTest {
 
     @Test
     public void testTableExists(@TempDir Path tmpDir) throws Exception {
-        String createTable = "create table test (path varchar(512) primary key," +
-                "k1 boolean,k2 varchar(512),k3 integer,k4 long);";
+        String createTable = "create table test (path varchar(512) primary key,"
+                + "k1 boolean,k2 varchar(512),k3 integer,k4 long);";
 
         Files.createDirectories(tmpDir.resolve("db"));
         Path dbDir = tmpDir.resolve("db/h2");
         Path config = tmpDir.resolve("tika-config.xml");
         String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
-        writeConfig("/configs/tika-config-jdbc-emitter-existing-table.xml",
-                connectionString, config);
+        writeConfig("/configs/tika-config-jdbc-emitter-existing-table.xml", connectionString, config);
 
         try (Connection connection = DriverManager.getConnection(connectionString)) {
             connection.createStatement().execute(createTable);
@@ -147,8 +144,7 @@ public class JDBCEmitterTest {
         Path config = tmpDir.resolve("tika-config.xml");
         String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
 
-        writeConfig("/configs/tika-config-jdbc-emitter-attachments.xml",
-                connectionString, config);
+        writeConfig("/configs/tika-config-jdbc-emitter-attachments.xml", connectionString, config);
 
         EmitterManager emitterManager = EmitterManager.load(config);
         Emitter emitter = emitterManager.getEmitter();
@@ -158,14 +154,12 @@ public class JDBCEmitterTest {
         data.add(m("k1", "true", "k2", "some string3", "k3", "6", "k4", "102"));
         emitter.emit("id0", data, new ParseContext());
 
-
         try (Connection connection = DriverManager.getConnection(connectionString)) {
             try (Statement st = connection.createStatement()) {
                 try (ResultSet rs = st.executeQuery("select * from test")) {
                     int rows = 0;
                     assertEquals("path", rs.getMetaData().getColumnName(1).toLowerCase(Locale.US));
-                    assertEquals("attachment_num",
-                            rs.getMetaData().getColumnName(2).toLowerCase(Locale.US));
+                    assertEquals("attachment_num", rs.getMetaData().getColumnName(2).toLowerCase(Locale.US));
                     while (rs.next()) {
                         assertEquals("id0", rs.getString(1));
                         assertEquals(rows, rs.getInt(2));
@@ -187,8 +181,7 @@ public class JDBCEmitterTest {
         Path config = tmpDir.resolve("tika-config.xml");
         String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
 
-        writeConfig("/configs/tika-config-jdbc-emitter-multivalued.xml",
-                connectionString, config);
+        writeConfig("/configs/tika-config-jdbc-emitter-multivalued.xml", connectionString, config);
 
         EmitterManager emitterManager = EmitterManager.load(config);
         Emitter emitter = emitterManager.getEmitter();
@@ -225,8 +218,7 @@ public class JDBCEmitterTest {
         Path config = tmpDir.resolve("tika-config.xml");
         String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
 
-        writeConfig("/configs/tika-config-jdbc-emitter-trunc.xml",
-                connectionString, config);
+        writeConfig("/configs/tika-config-jdbc-emitter-trunc.xml", connectionString, config);
 
         EmitterManager emitterManager = EmitterManager.load(config);
         Emitter emitter = emitterManager.getEmitter();

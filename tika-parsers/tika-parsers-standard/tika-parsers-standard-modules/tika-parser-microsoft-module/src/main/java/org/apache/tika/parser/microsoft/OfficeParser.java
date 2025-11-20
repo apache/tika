@@ -42,9 +42,6 @@ import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.poifs.macros.VBAMacroReader;
 import org.apache.poi.util.LocaleUtil;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.detect.microsoft.POIFSContainerDetector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -61,6 +58,8 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Defines a Microsoft document content extractor.
@@ -72,18 +71,16 @@ public class OfficeParser extends AbstractOfficeParser {
      */
     private static final long serialVersionUID = 7393462244028653479L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(POIFSDocumentType.WORKBOOK.type,
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections
+            .unmodifiableSet(new HashSet<>(Arrays.asList(POIFSDocumentType.WORKBOOK.type,
                     POIFSDocumentType.OLE10_NATIVE.type, POIFSDocumentType.WORDDOCUMENT.type,
                     POIFSDocumentType.UNKNOWN.type, POIFSDocumentType.ENCRYPTED.type,
-                    POIFSDocumentType.DRMENCRYPTED.type,
-                    POIFSDocumentType.POWERPOINT.type, POIFSDocumentType.PUBLISHER.type,
-                    POIFSDocumentType.PROJECT.type, POIFSDocumentType.VISIO.type,
+                    POIFSDocumentType.DRMENCRYPTED.type, POIFSDocumentType.POWERPOINT.type,
+                    POIFSDocumentType.PUBLISHER.type, POIFSDocumentType.PROJECT.type, POIFSDocumentType.VISIO.type,
                     // Works isn't supported
                     POIFSDocumentType.XLR.type, // but Works 7.0 Spreadsheet is
                     POIFSDocumentType.OUTLOOK.type, POIFSDocumentType.SOLIDWORKS_PART.type,
-                    POIFSDocumentType.SOLIDWORKS_ASSEMBLY.type,
-                    POIFSDocumentType.SOLIDWORKS_DRAWING.type)));
+                    POIFSDocumentType.SOLIDWORKS_ASSEMBLY.type, POIFSDocumentType.SOLIDWORKS_DRAWING.type)));
 
     /**
      * Helper to extract macros from an NPOIFS/vbaProject.bin
@@ -98,8 +95,7 @@ public class OfficeParser extends AbstractOfficeParser {
      * @throws SAXException on SAXException for writing to xhtml
      */
     public static void extractMacros(POIFSFileSystem fs, ContentHandler xhtml,
-                                     EmbeddedDocumentExtractor embeddedDocumentExtractor)
-            throws IOException, SAXException {
+            EmbeddedDocumentExtractor embeddedDocumentExtractor) throws IOException, SAXException {
 
         VBAMacroReader reader = null;
         Map<String, String> macros = null;
@@ -110,8 +106,7 @@ public class OfficeParser extends AbstractOfficeParser {
             throw e;
         } catch (Exception e) {
             Metadata m = new Metadata();
-            m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                    TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
+            m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
             m.set(Metadata.CONTENT_TYPE, "text/x-vbasic");
             EmbeddedDocumentUtil.recordException(e, m);
             if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
@@ -123,8 +118,7 @@ public class OfficeParser extends AbstractOfficeParser {
         }
         for (Map.Entry<String, String> e : macros.entrySet()) {
             Metadata m = new Metadata();
-            m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                    TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
+            m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
             m.set(Metadata.CONTENT_TYPE, "text/x-vbasic");
             if (!StringUtils.isBlank(e.getKey())) {
                 m.set(TikaCoreProperties.RESOURCE_NAME_KEY, e.getKey());
@@ -144,8 +138,8 @@ public class OfficeParser extends AbstractOfficeParser {
     /**
      * Extracts properties and text from an MS Document input stream
      */
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         configure(context);
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
@@ -188,7 +182,7 @@ public class OfficeParser extends AbstractOfficeParser {
 
                 //We might consider not bothering to check for macros in root,
                 //if we know we're processing ppt based on content-type identified in metadata
-                if (! isDirectoryNode) {
+                if (!isDirectoryNode) {
                     // if the "root" is a directory node, we assume that the macros have already
                     // been extracted from the parent's fileSystem -- TIKA-4116
                     extractMacros(root.getFileSystem(), xhtml,
@@ -202,8 +196,7 @@ public class OfficeParser extends AbstractOfficeParser {
         xhtml.endDocument();
     }
 
-    protected void parse(DirectoryNode root, ParseContext context, Metadata metadata,
-                         XHTMLContentHandler xhtml)
+    protected void parse(DirectoryNode root, ParseContext context, Metadata metadata, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
 
         // Parse summary entries first, to make metadata available early
@@ -216,40 +209,41 @@ public class OfficeParser extends AbstractOfficeParser {
             setType(metadata, type.getType());
         }
 
-        switch (type) {
-            case SOLIDWORKS_PART:
-            case SOLIDWORKS_ASSEMBLY:
-            case SOLIDWORKS_DRAWING:
+        switch (type)
+        {
+            case SOLIDWORKS_PART :
+            case SOLIDWORKS_ASSEMBLY :
+            case SOLIDWORKS_DRAWING :
                 break;
-            case PUBLISHER:
+            case PUBLISHER :
                 PublisherTextExtractor publisherTextExtractor = new PublisherTextExtractor(root);
                 xhtml.element("p", publisherTextExtractor.getText());
                 break;
-            case WORDDOCUMENT:
+            case WORDDOCUMENT :
                 new WordExtractor(context, metadata).parse(root, xhtml);
                 break;
-            case POWERPOINT:
+            case POWERPOINT :
                 new HSLFExtractor(context, metadata).parse(root, xhtml);
                 break;
-            case WORKBOOK:
-            case XLR:
+            case WORKBOOK :
+            case XLR :
                 Locale locale = context.get(Locale.class, LocaleUtil.getUserLocale());
                 new ExcelExtractor(context, metadata).parse(root, xhtml, locale);
                 break;
-            case PROJECT:
+            case PROJECT :
                 // We currently can't do anything beyond the metadata
                 break;
-            case VISIO:
+            case VISIO :
                 VisioTextExtractor visioTextExtractor = new VisioTextExtractor(root);
                 for (String text : visioTextExtractor.getAllText()) {
                     xhtml.element("p", text);
                 }
                 break;
-            case OUTLOOK:
+            case OUTLOOK :
                 OutlookExtractor extractor = new OutlookExtractor(root, metadata, context);
                 extractor.parse(xhtml);
                 break;
-            case ENCRYPTED:
+            case ENCRYPTED :
 
                 try {
                     EncryptionInfo info = new EncryptionInfo(root);
@@ -276,8 +270,7 @@ public class OfficeParser extends AbstractOfficeParser {
                     //  file to the regular OOXML parser for normal handling
                     OOXMLParser parser = new OOXMLParser();
                     try (TikaInputStream tis = TikaInputStream.get(d.getDataStream(root))) {
-                        parser.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
-                                metadata, context);
+                        parser.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(xhtml)), metadata, context);
                     }
                 } catch (GeneralSecurityException ex) {
                     throw new EncryptedDocumentException(ex);
@@ -287,13 +280,11 @@ public class OfficeParser extends AbstractOfficeParser {
                     throw new EncryptedDocumentException(ex);
                 }
                 break;
-            case DRMENCRYPTED:
-                throw new EncryptedDocumentException("DRM encrypted document is not yet supported" +
-                        " by Apache POI");
-            default:
+            case DRMENCRYPTED :
+                throw new EncryptedDocumentException("DRM encrypted document is not yet supported" + " by Apache POI");
+            default :
                 if (root.hasEntry("EncryptedPackage")) {
-                    throw new EncryptedDocumentException("OLE2 file with an unrecognized " +
-                            "EncryptedPackage entry");
+                    throw new EncryptedDocumentException("OLE2 file with an unrecognized " + "EncryptedPackage entry");
                 }
                 // For unsupported / unhandled types, just the metadata
                 //  is extracted, which happened above
@@ -307,16 +298,14 @@ public class OfficeParser extends AbstractOfficeParser {
 
     public enum POIFSDocumentType {
         WORKBOOK("xls", MediaType.application("vnd.ms-excel")),
-        OLE10_NATIVE("ole", POIFSContainerDetector.OLE10_NATIVE),
-        COMP_OBJ("ole", POIFSContainerDetector.COMP_OBJ),
+        OLE10_NATIVE("ole", POIFSContainerDetector.OLE10_NATIVE), COMP_OBJ("ole", POIFSContainerDetector.COMP_OBJ),
         WORDDOCUMENT("doc", MediaType.application("msword")),
         UNKNOWN("unknown", MediaType.application("x-tika-msoffice")),
         DRMENCRYPTED("ole", MediaType.application("x-tika-ole-drm-encrypted")),
         ENCRYPTED("ole", MediaType.application("x-tika-ooxml-protected")),
         POWERPOINT("ppt", MediaType.application("vnd.ms-powerpoint")),
         PUBLISHER("pub", MediaType.application("x-mspublisher")),
-        PROJECT("mpp", MediaType.application("vnd.ms-project")),
-        VISIO("vsd", MediaType.application("vnd.visio")),
+        PROJECT("mpp", MediaType.application("vnd.ms-project")), VISIO("vsd", MediaType.application("vnd.visio")),
         WORKS("wps", MediaType.application("vnd.ms-works")),
         XLR("xlr", MediaType.application("x-tika-msworks-spreadsheet")),
         OUTLOOK("msg", MediaType.application("vnd.ms-outlook")),

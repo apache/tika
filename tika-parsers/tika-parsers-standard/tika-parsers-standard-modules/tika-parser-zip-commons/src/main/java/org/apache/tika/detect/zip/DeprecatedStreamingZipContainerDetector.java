@@ -22,8 +22,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
-public class DeprecatedStreamingZipContainerDetector extends ZipContainerDetectorBase
-        implements Detector {
+public class DeprecatedStreamingZipContainerDetector extends ZipContainerDetectorBase implements Detector {
 
     private static final int MAX_MIME_TYPE = 1024;
     private static final int MAX_MANIFEST = 20 * 1024 * 1024;
@@ -40,7 +39,7 @@ public class DeprecatedStreamingZipContainerDetector extends ZipContainerDetecto
      */
     @Override
     public MediaType detect(InputStream is, Metadata metadata) {
-/*
+        /*
         Set<String> fileNames = new HashSet<>();
         Set<String> directoryNames = new HashSet<>();
         try (ZipArchiveInputStream zipArchiveInputStream =
@@ -141,7 +140,7 @@ public class DeprecatedStreamingZipContainerDetector extends ZipContainerDetecto
         } */
         return MediaType.APPLICATION_ZIP;
     }
-/*
+    /*
     private static MediaType detectIWorks(Set<String> entryNames) {
         //general iworks
         if (entryNames.contains(IWorkPackageParser.IWORK_COMMON_ENTRY)) {
@@ -149,8 +148,8 @@ public class DeprecatedStreamingZipContainerDetector extends ZipContainerDetecto
         }
         return null;
     }
-
-
-*/
+    
+    
+    */
 
 }

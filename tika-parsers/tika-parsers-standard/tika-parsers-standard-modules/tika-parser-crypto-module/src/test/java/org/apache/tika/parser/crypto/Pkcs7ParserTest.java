@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.crypto;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -22,13 +21,12 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.InputStream;
 
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.xml.sax.ContentHandler;
 
 public class Pkcs7ParserTest extends TikaTest {
     public void testDetachedSignature() throws Exception {

@@ -57,8 +57,8 @@ public class MuPDFRenderer implements Renderer {
     }
 
     @Override
-    public RenderResults render(InputStream is, Metadata metadata, ParseContext parseContext,
-                                RenderRequest... requests) throws IOException, TikaException {
+    public RenderResults render(InputStream is, Metadata metadata, ParseContext parseContext, RenderRequest... requests)
+            throws IOException, TikaException {
         TemporaryResources tmp = new TemporaryResources();
         PageBasedRenderResults results = new PageBasedRenderResults(tmp);
         Path path = TikaInputStream.get(is, tmp, metadata).getPath();
@@ -68,14 +68,13 @@ public class MuPDFRenderer implements Renderer {
         return results;
     }
 
-    private RenderResults renderRequest(Path pdf, Metadata metadata, ParseContext parseContext,
-                                        RenderRequest request, RenderResults results,
-                                        TemporaryResources tmp) throws TikaException, IOException {
-        if (! (request instanceof PageRangeRequest)) {
-            throw new TikaException("I regret that this renderer can only handle " +
-                    "PageRangeRequests, not " + request.getClass());
+    private RenderResults renderRequest(Path pdf, Metadata metadata, ParseContext parseContext, RenderRequest request,
+            RenderResults results, TemporaryResources tmp) throws TikaException, IOException {
+        if (!(request instanceof PageRangeRequest)) {
+            throw new TikaException(
+                    "I regret that this renderer can only handle " + "PageRangeRequests, not " + request.getClass());
         }
-        PageRangeRequest rangeRequest = (PageRangeRequest)request;
+        PageRangeRequest rangeRequest = (PageRangeRequest) request;
         RenderingTracker tracker = parseContext.get(RenderingTracker.class);
         if (tracker == null) {
             tracker = new RenderingTracker();
@@ -129,9 +128,7 @@ public class MuPDFRenderer implements Renderer {
         args.add("convert");
         args.add("-O colorspace=gray");
         args.add("-o");
-        args.add(
-                ProcessUtils.escapeCommandLine(
-                        dir.toAbsolutePath().toString() + "/" + "tika-mutool-render-%d.png"));
+        args.add(ProcessUtils.escapeCommandLine(dir.toAbsolutePath().toString() + "/" + "tika-mutool-render-%d.png"));
         args.add(ProcessUtils.escapeCommandLine(pdf.toAbsolutePath().toString()));
         if (request != PageRangeRequest.RENDER_ALL) {
             StringBuilder sb = new StringBuilder();

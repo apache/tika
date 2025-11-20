@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.detect;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -28,10 +27,9 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.Objects;
 
+import org.apache.tika.mime.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.apache.tika.mime.MediaType;
 
 public class NNExampleModelDetector extends TrainedModelDetector {
     private static final String EXAMPLE_NNMODEL_FILE = "tika-example.nnmodel";
@@ -86,13 +84,11 @@ public class NNExampleModelDetector extends TrainedModelDetector {
 
         // This allows us to replicate class.getResource() when using
         // the classloader directly
-        String classPrefix =
-                TrainedModelDetector.class.getPackage().getName().replace('.', '/') + "/";
+        String classPrefix = TrainedModelDetector.class.getPackage().getName().replace('.', '/') + "/";
 
         // Get the core URL, and all the extensions URLs
         URL modelURL = classLoader.getResource(classPrefix + EXAMPLE_NNMODEL_FILE);
-        Objects.requireNonNull(modelURL,
-                "required resource " + classPrefix + EXAMPLE_NNMODEL_FILE + " not found");
+        Objects.requireNonNull(modelURL, "required resource " + classPrefix + EXAMPLE_NNMODEL_FILE + " not found");
         try (InputStream stream = modelURL.openStream()) {
             loadDefaultModels(stream);
         } catch (IOException e) {

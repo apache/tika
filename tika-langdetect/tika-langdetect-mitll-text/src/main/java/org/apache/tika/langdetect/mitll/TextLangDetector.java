@@ -24,17 +24,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.client.WebClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.language.detect.LanguageConfidence;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.ws.rs.core.Response;
 
 /**
  * Created by trevorlewis on 3/7/16.
@@ -49,7 +49,6 @@ import org.apache.tika.language.detect.LanguageResult;
 public class TextLangDetector extends LanguageDetector {
 
     private static final Logger LOG = LoggerFactory.getLogger(TextLangDetector.class);
-
 
     private static final String TEXT_REST_HOST = "http://localhost:8000";
     private static final String TEXT_LID_PATH = "/lid";

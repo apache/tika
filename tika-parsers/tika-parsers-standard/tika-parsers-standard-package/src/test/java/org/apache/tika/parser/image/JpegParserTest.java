@@ -21,8 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.InputStream;
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
@@ -32,21 +30,21 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.junit.jupiter.api.Test;
 
 public class JpegParserTest extends TikaTest {
 
     @Test
     public void testGeoPointMetadataFilter() throws Exception {
 
-        TikaConfig config = new TikaConfig(getClass().getResource(
-                "/configs/tika-config-geo-point-metadata-filter.xml"));
+        TikaConfig config = new TikaConfig(
+                getClass().getResource("/configs/tika-config-geo-point-metadata-filter.xml"));
         Parser p = new AutoDetectParser(config);
-
 
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1),
-                1000, config.getMetadataFilter());
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1), 1000,
+                config.getMetadataFilter());
         try (InputStream is = getResourceAsStream("/test-documents/testJPEG_GEO_2.jpg")) {
             wrapper.parse(is, handler, new Metadata(), new ParseContext());
         }

@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.ner.opennlp;
 
 import java.io.IOException;
@@ -26,14 +25,14 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import opennlp.tools.namefind.NameFinderME;
-import opennlp.tools.namefind.TokenNameFinderModel;
-import opennlp.tools.util.Span;
 import org.apache.commons.io.IOUtils;
+import org.apache.tika.parser.ner.NERecogniser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.parser.ner.NERecogniser;
+import opennlp.tools.namefind.NameFinderME;
+import opennlp.tools.namefind.TokenNameFinderModel;
+import opennlp.tools.util.Span;
 
 /**
  * An implementation of {@link NERecogniser} that finds names in text using Open NLP Model.

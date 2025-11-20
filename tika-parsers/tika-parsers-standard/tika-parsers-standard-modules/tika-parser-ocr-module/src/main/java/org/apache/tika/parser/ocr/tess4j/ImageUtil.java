@@ -14,10 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-/**
- * Copied and pasted from Tess4j (https://sourceforge.net/projects/tess4j/)
- */
 package org.apache.tika.parser.ocr.tess4j;
 
 import java.awt.Color;
@@ -77,10 +73,10 @@ public class ImageUtil {
         double var12 = Math.toRadians(var1);
 
         for (int var14 = 0; var14 < var11.length; var14 += 2) {
-            int var15 = (int) (Math.cos(var12) * (double) (var11[var14] - var3) -
-                    Math.sin(var12) * (double) (var11[var14 + 1] - var4) + (double) var3);
-            int var16 = (int) (Math.sin(var12) * (double) (var11[var14] - var3) +
-                    Math.cos(var12) * (double) (var11[var14 + 1] - var4) + (double) var4);
+            int var15 = (int) (Math.cos(var12) * (double) (var11[var14] - var3)
+                    - Math.sin(var12) * (double) (var11[var14 + 1] - var4) + (double) var3);
+            int var16 = (int) (Math.sin(var12) * (double) (var11[var14] - var3)
+                    + Math.cos(var12) * (double) (var11[var14 + 1] - var4) + (double) var4);
             if (var15 > var9) {
                 var9 = var15;
             }
@@ -102,8 +98,7 @@ public class ImageUtil {
         var4 -= var8;
         BufferedImage var17 = new BufferedImage(var9 - var7, var10 - var8, var0.getType());
         Graphics2D var18 = var17.createGraphics();
-        var18.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        var18.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
         var18.setBackground(Color.white);
         var18.fillRect(0, 0, var17.getWidth(), var17.getHeight());
         AffineTransform var19 = new AffineTransform();

@@ -21,13 +21,13 @@ import static org.apache.tika.server.core.resource.TikaResource.processHeaderCon
 import java.util.List;
 import java.util.Map;
 
-import jakarta.ws.rs.core.MultivaluedMap;
 import org.apache.commons.lang3.Strings;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.server.core.ParseContextConfig;
+
+import jakarta.ws.rs.core.MultivaluedMap;
 
 /**
  * PDF parser configuration, for the request
@@ -56,10 +56,8 @@ public class PDFServerConfig implements ParseContextConfig {
         for (Map.Entry<String, List<String>> kvp : httpHeaders.entrySet()) {
             if (Strings.CI.startsWith(kvp.getKey(), X_TIKA_PDF_HEADER_PREFIX)) {
                 pdfParserConfig = (pdfParserConfig == null) ? new PDFParserConfig() : pdfParserConfig;
-                processHeaderConfig(pdfParserConfig, kvp.getKey(), kvp
-                        .getValue()
-                        .get(0)
-                        .trim(), X_TIKA_PDF_HEADER_PREFIX);
+                processHeaderConfig(pdfParserConfig, kvp.getKey(), kvp.getValue().get(0).trim(),
+                        X_TIKA_PDF_HEADER_PREFIX);
             }
         }
         if (pdfParserConfig != null) {

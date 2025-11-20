@@ -32,9 +32,9 @@ public class TaskStatus {
         this.timeoutMillis = timeoutMillis;
     }
 
-
     @Override
     public String toString() {
-        return "TaskStatus{" + "task=" + task + ", started=" + started + ", fileName=" + fileName + ", timeoutMillis=" + timeoutMillis + '}';
+        return "TaskStatus{" + "task=" + task + ", started=" + started + ", fileName=" + fileName + ", timeoutMillis="
+                + timeoutMillis + '}';
     }
 }

@@ -25,15 +25,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 /**
  * Test case for parsing zip files.
@@ -95,13 +94,10 @@ public class ZipParserTest extends AbstractPkgTest {
     public void testZipEncrypted() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testZipEncrypted.zip");
         assertEquals(2, metadataList.size());
-        String[] values = metadataList.get(0)
-                .getValues(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM);
+        String[] values = metadataList.get(0).getValues(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM);
         assertNotNull(values);
         assertEquals(1, values.length);
-        assertContains("EncryptedDocumentException: stream (encrypted.txt) is encrypted",
-                values[0]);
-
+        assertContains("EncryptedDocumentException: stream (encrypted.txt) is encrypted", values[0]);
 
         assertContains("hello world", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
     }
@@ -114,14 +110,11 @@ public class ZipParserTest extends AbstractPkgTest {
         assertEquals(5, results.size());
 
         //mime is 0 bytes
-        assertContains("InputStream must have > 0 bytes",
-                results.get(1).get("X-TIKA:EXCEPTION:embedded_exception"));
+        assertContains("InputStream must have > 0 bytes", results.get(1).get("X-TIKA:EXCEPTION:embedded_exception"));
         //source.xml is binary, not xml
-        assertContains("TikaException: XML parse error",
-                results.get(2).get("X-TIKA:EXCEPTION:embedded_exception"));
+        assertContains("TikaException: XML parse error", results.get(2).get("X-TIKA:EXCEPTION:embedded_exception"));
         //manifest.xml has malformed xml
-        assertContains("TikaException: XML parse error",
-                results.get(4).get("X-TIKA:EXCEPTION:embedded_exception"));
+        assertContains("TikaException: XML parse error", results.get(4).get("X-TIKA:EXCEPTION:embedded_exception"));
     }
 
     private static class GatherRelIDsDocumentExtractor implements EmbeddedDocumentExtractor {
@@ -135,8 +128,8 @@ public class ZipParserTest extends AbstractPkgTest {
             return false;
         }
 
-        public void parseEmbedded(TikaInputStream inputStream, ContentHandler contentHandler,
-                                  Metadata metadata, boolean outputHtml) {
+        public void parseEmbedded(TikaInputStream inputStream, ContentHandler contentHandler, Metadata metadata,
+                boolean outputHtml) {
             throw new UnsupportedOperationException("should never be called");
         }
     }

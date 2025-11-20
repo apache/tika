@@ -24,9 +24,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
@@ -36,6 +33,8 @@ import org.apache.tika.metadata.Photoshop;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Parser for the Better Portable Graphics (BPG) File Format.
@@ -53,9 +52,8 @@ public class BPGParser extends AbstractImageParser {
     private static final int DEFAULT_MAX_RECORD_LENGTH = 50 * 1024 * 1024;
 
     private static final long serialVersionUID = -161736541253892772L;
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<>(
-                    Arrays.asList(MediaType.image("x-bpg"), MediaType.image("bpg"))));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections
+            .unmodifiableSet(new HashSet<>(Arrays.asList(MediaType.image("x-bpg"), MediaType.image("bpg"))));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -65,14 +63,13 @@ public class BPGParser extends AbstractImageParser {
 
     @Override
     void extractMetadata(InputStream stream, ContentHandler contentHandler, Metadata metadata,
-                         ParseContext parseContext)
-            throws IOException, SAXException, TikaException {
+            ParseContext parseContext) throws IOException, SAXException, TikaException {
 
         // Check for the magic header signature
         byte[] signature = new byte[4];
         IOUtils.readFully(stream, signature);
-        if (signature[0] == (byte) 'B' && signature[1] == (byte) 'P' &&
-                signature[2] == (byte) 'G' && signature[3] == (byte) 0xfb) {
+        if (signature[0] == (byte) 'B' && signature[1] == (byte) 'P' && signature[2] == (byte) 'G'
+                && signature[3] == (byte) 0xfb) {
             // Good, signature found
         } else {
             throw new TikaException("BPG magic signature invalid");
@@ -98,20 +95,21 @@ public class BPGParser extends AbstractImageParser {
 
         // Colour Space: YCbCr / RGB / YCgCo / YCbCrK / CMYK
         int colourSpace = cer & 0x15;
-        switch (colourSpace) {
-            case 0:
+        switch (colourSpace)
+        {
+            case 0 :
                 metadata.set(Photoshop.COLOR_MODE, "YCbCr Colour");
                 break;
-            case 1:
+            case 1 :
                 metadata.set(Photoshop.COLOR_MODE, "RGB Colour");
                 break;
-            case 2:
+            case 2 :
                 metadata.set(Photoshop.COLOR_MODE, "YCgCo Colour");
                 break;
-            case 3:
+            case 3 :
                 metadata.set(Photoshop.COLOR_MODE, "YCbCrK Colour");
                 break;
-            case 4:
+            case 4 :
                 metadata.set(Photoshop.COLOR_MODE, "CMYK Colour");
                 break;
         }
@@ -154,19 +152,20 @@ public class BPGParser extends AbstractImageParser {
                 int extensionType = (int) EndianUtils.readUE7(stream);
                 int extensionLength = (int) EndianUtils.readUE7(stream);
                 if (extensionLength > maxRecordLength) {
-                    throw new TikaMemoryLimitException("extension length (" +
-                            extensionLength + " bytes) is greater than 'maxRecordLength' (" +
-                            maxRecordLength + " bytes).  If this file is not corrupt, " +
-                            "consider bumping the maxRecordLength via tika-config.xml");
+                    throw new TikaMemoryLimitException(
+                            "extension length (" + extensionLength + " bytes) is greater than 'maxRecordLength' ("
+                                    + maxRecordLength + " bytes).  If this file is not corrupt, "
+                                    + "consider bumping the maxRecordLength via tika-config.xml");
                 }
-                switch (extensionType) {
-                    case EXTENSION_TAG_EXIF:
+                switch (extensionType)
+                {
+                    case EXTENSION_TAG_EXIF :
                         metadataExtractor.parseRawExif(stream, extensionLength, true);
                         break;
-                    case EXTENSION_TAG_XMP:
+                    case EXTENSION_TAG_XMP :
                         handleXMP(stream, extensionLength, metadataExtractor);
                         break;
-                    default:
+                    default :
                         IOUtils.skipFully(stream, extensionLength);
                 }
                 extensionsDataSeen += extensionLength;
@@ -192,10 +191,9 @@ public class BPGParser extends AbstractImageParser {
             throw new TikaException("xmp length must be >= 0");
         }
         if (xmpLength > maxRecordLength) {
-            throw new TikaMemoryLimitException("xmplength (" + xmpLength + " bytes) is larger than maxXMPLength (" +
-                    maxRecordLength + "). Consider setting maxXMPLength to a greater value for " +
-                    "this parser via" +
-                    " tika-config.xml if this file is not corrupt.");
+            throw new TikaMemoryLimitException("xmplength (" + xmpLength + " bytes) is larger than maxXMPLength ("
+                    + maxRecordLength + "). Consider setting maxXMPLength to a greater value for " + "this parser via"
+                    + " tika-config.xml if this file is not corrupt.");
         }
         byte[] xmp = new byte[xmpLength];
         IOUtils.readFully(stream, xmp);

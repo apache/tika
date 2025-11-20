@@ -29,6 +29,10 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
+import org.apache.tika.Tika;
+import org.apache.tika.server.core.HTMLHelper;
+
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HEAD;
@@ -37,10 +41,6 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
-import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
-
-import org.apache.tika.Tika;
-import org.apache.tika.server.core.HTMLHelper;
 
 /**
  * <p>Provides a basic welcome to the Apache Tika Server.</p>
@@ -78,13 +78,7 @@ public class TikaWelcome {
             Path p = endpoint.getAnnotation(Path.class);
             String basePath = null;
             if (p != null) {
-                basePath = p
-                        .value()
-                        .endsWith("/") ? p
-                        .value()
-                        .substring(0, p
-                                .value()
-                                .length() - 2) : p.value();
+                basePath = p.value().endsWith("/") ? p.value().substring(0, p.value().length() - 2) : p.value();
             }
 
             for (Method m : endpoint.getMethods()) {
@@ -125,9 +119,7 @@ public class TikaWelcome {
                 }
             }
         }
-        found.sort(Comparator
-                .comparing((Endpoint e) -> e.path)
-                .thenComparing(e -> e.methodName));
+        found.sort(Comparator.comparing((Endpoint e) -> e.path).thenComparing(e -> e.methodName));
         return found;
     }
 
@@ -155,12 +147,7 @@ public class TikaWelcome {
         if (m.find()) {
             String versionNumber = m.group();
             String miredot = "https://tika.apache.org/" + versionNumber + "/miredot/index.html";
-            h
-                    .append(" and <a href=\"")
-                    .append(miredot)
-                    .append("\">")
-                    .append(miredot)
-                    .append("</a>");
+            h.append(" and <a href=\"").append(miredot).append("\">").append(miredot).append("</a>");
         }
         h.append("</p>\n");
 

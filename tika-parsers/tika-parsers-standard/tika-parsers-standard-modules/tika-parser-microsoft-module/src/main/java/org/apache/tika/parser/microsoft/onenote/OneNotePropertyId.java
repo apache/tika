@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote;
 
 import org.apache.tika.exception.TikaException;
@@ -80,7 +79,7 @@ class OneNotePropertyId {
 
     @Override
     public String toString() {
-        return "{" + propertyEnum + ", pid=0x" + Long.toHexString(pid) + ", type=0x" +
-                Long.toHexString(type) + ", inlineBool=" + inlineBool + '}';
+        return "{" + propertyEnum + ", pid=0x" + Long.toHexString(pid) + ", type=0x" + Long.toHexString(type)
+                + ", inlineBool=" + inlineBool + '}';
     }
 }

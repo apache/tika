@@ -33,13 +33,12 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * These tests try to ensure that the MimeTypesReader
@@ -63,18 +62,15 @@ public class MimeTypesReaderTest {
 
     private String customMimeTypes;
 
-    private static String getTypeAsString(MimeTypes mimeTypes, String text, Metadata metadata)
-            throws IOException {
-        return mimeTypes
-                .detect(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)), metadata)
-                .toString();
+    private static String getTypeAsString(MimeTypes mimeTypes, String text, Metadata metadata) throws IOException {
+        return mimeTypes.detect(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)), metadata).toString();
 
     }
 
     @SuppressWarnings("unchecked")
     @BeforeEach
-    public void setUp() throws NoSuchFieldException, SecurityException, IllegalArgumentException,
-            IllegalAccessException {
+    public void setUp()
+            throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
         this.mimeTypes = TikaConfig.getDefaultConfig().getMimeRepository();
 
         Field magicsField = mimeTypes.getClass().getDeclaredField("magics");
@@ -101,8 +97,7 @@ public class MimeTypesReaderTest {
         MimeType html = mimeTypes.forName("text/html");
         assertTrue(html.hasMagic());
         assertTrue(html.getMagics().size() >= minMatches,
-                "There should be at least " + minMatches + " HTML matches, found " +
-                html.getMagics().size());
+                "There should be at least " + minMatches + " HTML matches, found " + html.getMagics().size());
 
         // Check on the overall magics
         List<Magic> htmlMagics = new ArrayList<>();
@@ -124,8 +119,7 @@ public class MimeTypesReaderTest {
         MimeType excel = mimeTypes.forName("application/vnd.ms-excel");
         assertTrue(excel.hasMagic());
         assertTrue(excel.getMagics().size() >= minMatches,
-                "There should be at least " + minMatches + " Excel matches, found " +
-                excel.getMagics().size());
+                "There should be at least " + minMatches + " Excel matches, found " + excel.getMagics().size());
 
         // Check on the overall magics
         List<Magic> excelMagics = new ArrayList<>();
@@ -136,8 +130,7 @@ public class MimeTypesReaderTest {
         }
 
         assertTrue(excel.getMagics().size() >= minMatches,
-                "There should be at least " + minMatches + " Excel matches, found " +
-                excelMagics.size());
+                "There should be at least " + minMatches + " Excel matches, found " + excelMagics.size());
     }
 
     /**
@@ -160,8 +153,7 @@ public class MimeTypesReaderTest {
         MimeType mime = this.mimeTypes.forName("image/bmp");
         assertEquals("BMP", mime.getAcronym());
         assertEquals("com.microsoft.bmp", mime.getUniformTypeIdentifier());
-        assertEquals("http://en.wikipedia.org/wiki/BMP_file_format",
-                mime.getLinks().get(0).toString());
+        assertEquals("http://en.wikipedia.org/wiki/BMP_file_format", mime.getLinks().get(0).toString());
 
         mime = this.mimeTypes.forName("application/xml");
         assertEquals("XML", mime.getAcronym());
@@ -171,8 +163,7 @@ public class MimeTypesReaderTest {
 
     @Test
     public void testReadParameterHierarchy() throws Exception {
-        MimeType mimeBTree4 =
-                this.mimeTypes.forName("application/x-berkeley-db;format=btree;version=4");
+        MimeType mimeBTree4 = this.mimeTypes.forName("application/x-berkeley-db;format=btree;version=4");
         MediaType mtBTree4 = mimeBTree4.getType();
 
         // Canonicalised with spaces
@@ -184,8 +175,7 @@ public class MimeTypesReaderTest {
         assertEquals("application/x-berkeley-db; format=btree", mtBTree.toString());
 
         // Parent has several children, for versions 2 through 4
-        Set<MediaType> mtBTreeChildren =
-                this.mimeTypes.getMediaTypeRegistry().getChildTypes(mtBTree);
+        Set<MediaType> mtBTreeChildren = this.mimeTypes.getMediaTypeRegistry().getChildTypes(mtBTree);
         assertTrue(mtBTreeChildren.size() >= 3, mtBTreeChildren.toString());
         assertTrue(mtBTreeChildren.contains(mtBTree4), mtBTreeChildren.toString());
 
@@ -287,31 +277,25 @@ public class MimeTypesReaderTest {
         assertEquals(List.of(".js", ".mjs"), mt.getExtensions());
     }
 
-    
     @Test
     public void testMSAccessByName() {
         MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes();
         MediaType result = mimeTypes.getMimeType("testfile1.accdb").getType();
         assertEquals("application/x-msaccess", result.toString());
-    }  
-    
-    
+    }
+
     @Test
     public void testZipXFiles() {
         MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes();
         MediaType result = mimeTypes.getMimeType("testfile1.zipx").getType();
         assertEquals("application/zip", result.toString());
     }
-    
-    
+
     @Test
     public void testGetAliasForJavaScript() throws Exception {
         MimeType mt = this.mimeTypes.forName("text/javascript");
-        Set<String> aliases = mimeTypes.getMediaTypeRegistry()
-                .getAliases(mt.getType())
-                .stream()
-                .map(MediaType::toString)
-                .collect(Collectors.toSet());
+        Set<String> aliases = mimeTypes.getMediaTypeRegistry().getAliases(mt.getType()).stream()
+                .map(MediaType::toString).collect(Collectors.toSet());
         assertEquals(Set.of("application/javascript", "application/x-javascript"), aliases);
     }
 
@@ -363,16 +347,13 @@ public class MimeTypesReaderTest {
         MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
 
         //matches one
-        assertEquals("hello/world-min-file",
-                getTypeAsString(mimeTypes, "Hello World!", new Metadata()));
+        assertEquals("hello/world-min-file", getTypeAsString(mimeTypes, "Hello World!", new Metadata()));
 
         //matches two
-        assertEquals("hello/world-min-file",
-                getTypeAsString(mimeTypes, "Hello Welt!", new Metadata()));
+        assertEquals("hello/world-min-file", getTypeAsString(mimeTypes, "Hello Welt!", new Metadata()));
 
         //matches two
-        assertEquals("hello/world-min-file",
-                getTypeAsString(mimeTypes, "Hallo Welt!", new Metadata()));
+        assertEquals("hello/world-min-file", getTypeAsString(mimeTypes, "Hallo Welt!", new Metadata()));
 
         //missing !
         assertEquals("text/plain", getTypeAsString(mimeTypes, "Hello World", new Metadata()));
@@ -381,8 +362,7 @@ public class MimeTypesReaderTest {
         assertEquals("text/plain", getTypeAsString(mimeTypes, "Hello Monde", new Metadata()));
 
         //this matcher is treated as "or" with minshouldmatch clause
-        assertEquals("hello/world-min-file",
-                getTypeAsString(mimeTypes, "Bonjour le Monde!", new Metadata()));
+        assertEquals("hello/world-min-file", getTypeAsString(mimeTypes, "Bonjour le Monde!", new Metadata()));
 
     }
 

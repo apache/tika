@@ -23,16 +23,16 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.tika.parser.ner.NERecogniser;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.parser.ner.NERecogniser;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 public class GrobidNERecogniser implements NERecogniser {
 
@@ -53,7 +53,6 @@ public class GrobidNERecogniser implements NERecogniser {
     private static final String ISALIVE_URL = "/service/isalive";
     private boolean available = false;
     private String restHostUrlStr;
-
 
     public GrobidNERecogniser() {
         try {
@@ -81,9 +80,7 @@ public class GrobidNERecogniser implements NERecogniser {
     private static boolean isServerAlive(String restHostUrlStr) {
         boolean available = false;
         try {
-            Response response =
-                    WebClient.create(restHostUrlStr + ISALIVE_URL)
-                            .get();
+            Response response = WebClient.create(restHostUrlStr + ISALIVE_URL).get();
             int responseCode = response.getStatus();
             if (responseCode == 200) {
                 available = true;
@@ -103,8 +100,7 @@ public class GrobidNERecogniser implements NERecogniser {
      */
     private static String readRestUrl() throws IOException {
         Properties grobidProperties = new Properties();
-        grobidProperties
-                .load(GrobidNERecogniser.class.getResourceAsStream("GrobidServer.properties"));
+        grobidProperties.load(GrobidNERecogniser.class.getResourceAsStream("GrobidServer.properties"));
         return grobidProperties.getProperty("grobid.server.url");
     }
 
@@ -114,8 +110,7 @@ public class GrobidNERecogniser implements NERecogniser {
      */
     private static String readRestEndpoint() throws IOException {
         Properties grobidProperties = new Properties();
-        grobidProperties
-                .load(GrobidNERecogniser.class.getResourceAsStream("GrobidServer.properties"));
+        grobidProperties.load(GrobidNERecogniser.class.getResourceAsStream("GrobidServer.properties"));
         return grobidProperties.getProperty("grobid.endpoint.text");
     }
 
@@ -184,9 +179,7 @@ public class GrobidNERecogniser implements NERecogniser {
 
         try {
             String url = restHostUrlStr + readRestEndpoint();
-            try (Response response =
-                    WebClient.create(url).accept(MediaType.APPLICATION_JSON)
-                            .post("text=" + text)) {
+            try (Response response = WebClient.create(url).accept(MediaType.APPLICATION_JSON).post("text=" + text)) {
                 int responseCode = response.getStatus();
 
                 if (responseCode == 200) {
@@ -198,46 +191,40 @@ public class GrobidNERecogniser implements NERecogniser {
                         StringBuilder measurementString = new StringBuilder();
                         StringBuilder normalizedMeasurementString = new StringBuilder();
 
-                        JSONObject quantity = (JSONObject) convertToJSONObject(measurement.toString())
-                                .get("quantity");
+                        JSONObject quantity = (JSONObject) convertToJSONObject(measurement.toString()).get("quantity");
                         if (quantity != null) {
                             if (quantity.containsKey("rawValue")) {
-                                String measurementNumber =
-                                        (String) convertToJSONObject(quantity.toString())
-                                                .get("rawValue");
+                                String measurementNumber = (String) convertToJSONObject(quantity.toString())
+                                        .get("rawValue");
                                 measurementString.append(measurementNumber);
                                 measurementString.append(" ");
                                 measurementNumberSet.add(measurementNumber);
                             }
 
                             if (quantity.containsKey("normalizedQuantity")) {
-                                String normalizedMeasurementNumber =
-                                        convertToJSONObject(quantity.toString())
-                                                .get("normalizedQuantity").toString();
+                                String normalizedMeasurementNumber = convertToJSONObject(quantity.toString())
+                                        .get("normalizedQuantity").toString();
                                 normalizedMeasurementString.append(normalizedMeasurementNumber);
                                 normalizedMeasurementString.append(" ");
                             }
 
                             if (quantity.containsKey("type")) {
-                                String measurementType =
-                                        (String) convertToJSONObject(quantity.toString()).get("type");
+                                String measurementType = (String) convertToJSONObject(quantity.toString()).get("type");
                                 measurementTypeSet.add(measurementType);
                             }
 
                             JSONObject jsonObj = (JSONObject) convertToJSONObject(quantity.toString());
                             if (jsonObj.containsKey("rawUnit")) {
                                 JSONObject rawUnit = (JSONObject) jsonObj.get("rawUnit");
-                                String unitName =
-                                        (String) convertToJSONObject(rawUnit.toString()).get("name");
+                                String unitName = (String) convertToJSONObject(rawUnit.toString()).get("name");
                                 unitSet.add(unitName);
                                 measurementString.append(unitName);
                             }
 
                             if (jsonObj.containsKey("normalizedUnit")) {
                                 JSONObject normalizedUnit = (JSONObject) jsonObj.get("normalizedUnit");
-                                String normalizedUnitName =
-                                        (String) convertToJSONObject(normalizedUnit.toString())
-                                                .get("name");
+                                String normalizedUnitName = (String) convertToJSONObject(normalizedUnit.toString())
+                                        .get("name");
                                 normalizedMeasurementString.append(normalizedUnitName);
                             }
 

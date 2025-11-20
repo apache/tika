@@ -5,9 +5,9 @@
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,7 +16,6 @@
  */
 package org.apache.tika.server.core;
 
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -24,14 +23,10 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.server.core.resource.DetectorResource;
 import org.apache.tika.server.core.resource.MetadataResource;
 import org.apache.tika.server.core.resource.RecursiveMetadataResource;
@@ -41,6 +36,10 @@ import org.apache.tika.server.core.writer.CSVMessageBodyWriter;
 import org.apache.tika.server.core.writer.JSONMessageBodyWriter;
 import org.apache.tika.server.core.writer.MetadataListMessageBodyWriter;
 import org.apache.tika.server.core.writer.TextMessageBodyWriter;
+import org.junit.jupiter.api.Test;
+
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 public class StackTraceTest extends CXFTestBase {
 
@@ -84,9 +83,7 @@ public class StackTraceTest extends CXFTestBase {
             if ("/tika".equals(path)) {
                 accept = "text/plain";
             }
-            Response response = WebClient
-                    .create(endPoint + path)
-                    .accept(accept)
+            Response response = WebClient.create(endPoint + path).accept(accept)
                     .header("Content-Disposition", "attachment; filename=" + TEST_PASSWORD_PROTECTED)
                     .put(ClassLoader.getSystemResourceAsStream(TEST_PASSWORD_PROTECTED));
             assertNotNull(response, "null response: " + path);
@@ -106,9 +103,7 @@ public class StackTraceTest extends CXFTestBase {
             if ("/tika".equals(path)) {
                 accept = "text/plain";
             }
-            Response response = WebClient
-                    .create(endPoint + path)
-                    .accept(accept)
+            Response response = WebClient.create(endPoint + path).accept(accept)
                     .put(ClassLoader.getSystemResourceAsStream(TEST_NULL));
             assertNotNull(response);
             assertEquals(UNPROCESSEABLE, response.getStatus(), "unprocessable: " + path);
@@ -124,9 +119,7 @@ public class StackTraceTest extends CXFTestBase {
         //no stack traces for 415
         for (String path : PATHS) {
 
-            Response response = WebClient
-                    .create(endPoint + path)
-                    .accept("*:*")
+            Response response = WebClient.create(endPoint + path).accept("*:*")
                     .put(ClassLoader.getSystemResourceAsStream("test-documents/testDigilite.fdf"));
             if (path.equals("/unpack")) {
                 //"NO CONTENT"
@@ -138,7 +131,6 @@ public class StackTraceTest extends CXFTestBase {
         }
     }
 
-
     //For now, make sure that non-complete document
     //still returns BAD_REQUEST.  We may want to
     //make MetadataResource return the same types of parse
@@ -147,11 +139,8 @@ public class StackTraceTest extends CXFTestBase {
     public void testMeta() throws Exception {
         InputStream stream = ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD);
 
-        Response response = WebClient
-                .create(endPoint + "/meta" + "/Author")
-                .type("application/mock+xml")
-                .accept(MediaType.TEXT_PLAIN)
-                .put(copy(stream, 100));
+        Response response = WebClient.create(endPoint + "/meta" + "/Author").type("application/mock+xml")
+                .accept(MediaType.TEXT_PLAIN).put(copy(stream, 100));
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         String msg = getStringFromInputStream((InputStream) response.getEntity());
         assertEquals("Failed to get metadata field Author", msg);

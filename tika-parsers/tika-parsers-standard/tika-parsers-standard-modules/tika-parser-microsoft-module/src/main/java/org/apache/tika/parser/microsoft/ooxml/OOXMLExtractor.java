@@ -19,13 +19,12 @@ package org.apache.tika.parser.microsoft.ooxml;
 import java.io.IOException;
 
 import org.apache.poi.ooxml.POIXMLDocument;
-import org.apache.xmlbeans.XmlException;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.xmlbeans.XmlException;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Interface implemented by all Tika OOXML extractors.

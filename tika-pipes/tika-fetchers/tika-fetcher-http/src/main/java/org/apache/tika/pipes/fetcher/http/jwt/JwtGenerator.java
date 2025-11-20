@@ -43,12 +43,11 @@ public class JwtGenerator {
         }
     }
 
-    String jwtHS256(JwtSecretCreds jwtSecretCreds)
-            throws JOSEException {
+    String jwtHS256(JwtSecretCreds jwtSecretCreds) throws JOSEException {
         JWSSigner signer = new MACSigner(jwtSecretCreds.getSecret());
 
-        JWTClaimsSet claimsSet = getJwtClaimsSet(jwtSecretCreds.getIssuer(),
-                jwtSecretCreds.getSubject(), jwtSecretCreds.getExpiresInSeconds());
+        JWTClaimsSet claimsSet = getJwtClaimsSet(jwtSecretCreds.getIssuer(), jwtSecretCreds.getSubject(),
+                jwtSecretCreds.getExpiresInSeconds());
 
         SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claimsSet);
         signedJWT.sign(signer);
@@ -56,12 +55,11 @@ public class JwtGenerator {
         return signedJWT.serialize();
     }
 
-    String jwtRS256(JwtPrivateKeyCreds jwtPrivateKeyCreds)
-            throws JOSEException {
+    String jwtRS256(JwtPrivateKeyCreds jwtPrivateKeyCreds) throws JOSEException {
         JWSSigner signer = new RSASSASigner(jwtPrivateKeyCreds.getPrivateKey());
 
-        JWTClaimsSet claimsSet = getJwtClaimsSet(jwtPrivateKeyCreds.getIssuer(),
-                jwtPrivateKeyCreds.getSubject(), jwtPrivateKeyCreds.getExpiresInSeconds());
+        JWTClaimsSet claimsSet = getJwtClaimsSet(jwtPrivateKeyCreds.getIssuer(), jwtPrivateKeyCreds.getSubject(),
+                jwtPrivateKeyCreds.getExpiresInSeconds());
 
         SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.RS256), claimsSet);
 
@@ -71,10 +69,7 @@ public class JwtGenerator {
     }
 
     private JWTClaimsSet getJwtClaimsSet(String issuer, String subject, int expiresInSeconds) {
-        return new JWTClaimsSet.Builder()
-                .subject(subject)
-                .issuer(issuer)
-                .expirationTime(Date.from(Instant.now().plus(expiresInSeconds, ChronoUnit.SECONDS)))
-                .build();
+        return new JWTClaimsSet.Builder().subject(subject).issuer(issuer)
+                .expirationTime(Date.from(Instant.now().plus(expiresInSeconds, ChronoUnit.SECONDS))).build();
     }
 }

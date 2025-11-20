@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -73,7 +72,7 @@ public abstract class StreamObjectHeaderStart extends BasicObject {
      * @return Return true if success, otherwise returns false.
      */
     public static int tryParse(byte[] byteArray, int startIndex,
-                               AtomicReference<StreamObjectHeaderStart> streamObjectHeader) {
+            AtomicReference<StreamObjectHeaderStart> streamObjectHeader) {
         int headerType = byteArray[startIndex] & 0x03;
         if (headerType == StreamObjectHeaderStart.STREAM_OBJECT_HEADER_START_16_BIT) {
             streamObjectHeader.set(new StreamObjectHeaderStart16bit());

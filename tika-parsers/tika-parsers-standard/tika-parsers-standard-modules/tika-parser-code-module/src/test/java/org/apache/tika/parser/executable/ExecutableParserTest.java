@@ -18,12 +18,11 @@ package org.apache.tika.parser.executable;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.MachineMetadata.Endian;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.Test;
 
 public class ExecutableParserTest extends TikaTest {
 
@@ -53,8 +52,8 @@ public class ExecutableParserTest extends TikaTest {
         assertEquals("Little", metadata.get(ExecutableParser.ENDIAN));
         assertEquals("32", metadata.get(ExecutableParser.ARCHITECTURE_BITS));
 
-//         assertEquals("Linux",
-//               metadata.get(ExecutableParser.PLATFORM));
+        //         assertEquals("Linux",
+        //               metadata.get(ExecutableParser.PLATFORM));
 
         assertContains("<body />", r.xml);
 

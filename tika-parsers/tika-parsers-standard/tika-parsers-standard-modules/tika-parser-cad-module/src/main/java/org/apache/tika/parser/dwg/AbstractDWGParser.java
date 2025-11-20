@@ -16,14 +16,11 @@
  */
 package org.apache.tika.parser.dwg;
 
-
 import org.apache.tika.config.Field;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 
-
 public abstract class AbstractDWGParser implements Parser {
-
 
     /**
      * 
@@ -32,24 +29,23 @@ public abstract class AbstractDWGParser implements Parser {
     private final DWGParserConfig defaultDwgParserConfig = new DWGParserConfig();
 
     public void configure(ParseContext parseContext) {
-        DWGParserConfig dwgParserConfig =  parseContext.get(DWGParserConfig.class, defaultDwgParserConfig);
+        DWGParserConfig dwgParserConfig = parseContext.get(DWGParserConfig.class, defaultDwgParserConfig);
         parseContext.set(DWGParserConfig.class, dwgParserConfig);
     }
-
 
     public String getDwgReadExecutable() {
         return defaultDwgParserConfig.getDwgReadExecutable();
     }
-    
+
     @Field
     public void setDwgReadExecutable(String dwgReadExecutable) {
         defaultDwgParserConfig.setDwgReadExecutable(dwgReadExecutable);
     }
-    
+
     public boolean isCleanDwgReadOutput() {
         return defaultDwgParserConfig.isCleanDwgReadOutput();
     }
-    
+
     @Field
     public void setCleanDwgReadOutput(boolean cleanDwgReadOutput) {
         defaultDwgParserConfig.setCleanDwgReadOutput(cleanDwgReadOutput);
@@ -58,7 +54,7 @@ public abstract class AbstractDWGParser implements Parser {
     public int getCleanDwgReadOutputBatchSize() {
         return defaultDwgParserConfig.getCleanDwgReadOutputBatchSize();
     }
-    
+
     @Field
     public void setCleanDwgReadOutputBatchSize(int cleanDwgReadOutputBatchSize) {
         defaultDwgParserConfig.setCleanDwgReadOutputBatchSize(cleanDwgReadOutputBatchSize);
@@ -66,7 +62,7 @@ public abstract class AbstractDWGParser implements Parser {
     public String getCleanDwgReadRegexToReplace() {
         return defaultDwgParserConfig.getCleanDwgReadRegexToReplace();
     }
-    
+
     @Field
     public void setCleanDwgReadRegexToReplace(String cleanDwgReadRegexToReplace) {
         defaultDwgParserConfig.setCleanDwgReadRegexToReplace(cleanDwgReadRegexToReplace);
@@ -74,7 +70,7 @@ public abstract class AbstractDWGParser implements Parser {
     public String getCleanDwgReadReplaceWith() {
         return defaultDwgParserConfig.getCleanDwgReadReplaceWith();
     }
-    
+
     @Field
     public void setCleanDwgReadReplaceWith(String cleanDwgReadReplaceWith) {
         defaultDwgParserConfig.setCleanDwgReadReplaceWith(cleanDwgReadReplaceWith);
@@ -87,5 +83,5 @@ public abstract class AbstractDWGParser implements Parser {
     public void setDwgReadTimeout(long dwgReadTimeout) {
         defaultDwgParserConfig.setDwgReadtimeout(dwgReadTimeout);
     }
-    
+
 }

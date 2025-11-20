@@ -25,9 +25,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -36,6 +33,8 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.microsoft.SummaryExtractor;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * This is a VERY LIMITED parser. It parses metadata out of dgn8 files.
@@ -50,8 +49,8 @@ public class DGN8Parser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         SummaryExtractor summaryExtractor = new SummaryExtractor(metadata);
@@ -77,7 +76,8 @@ public class DGN8Parser implements Parser {
                     }
                     // tstream will close the fs, no need to close this below
                     tstream.setOpenContainer(fs);
-                    root = fs.getRoot();                }
+                    root = fs.getRoot();
+                }
             }
             summaryExtractor.parseSummaries(root);
         } finally {

@@ -21,14 +21,13 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import java.io.InputStream;
 import java.time.Duration;
 
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.core.fetcher.config.AbstractConfig;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 class ExpiringFetcherStoreTest {
 
@@ -46,20 +45,12 @@ class ExpiringFetcherStoreTest {
             };
             expiringFetcherStore.createFetcher(fetcher, config);
 
-            Assertions.assertNotNull(expiringFetcherStore
-                    .getFetchers()
-                    .get(fetcher.getName()));
+            Assertions.assertNotNull(expiringFetcherStore.getFetchers().get(fetcher.getName()));
 
-            Awaitility
-                    .await()
-                    .atMost(Duration.ofSeconds(60))
-                    .until(() -> expiringFetcherStore
-                            .getFetchers()
-                            .get(fetcher.getName()) == null);
+            Awaitility.await().atMost(Duration.ofSeconds(60))
+                    .until(() -> expiringFetcherStore.getFetchers().get(fetcher.getName()) == null);
 
-            assertNull(expiringFetcherStore
-                    .getFetcherConfigs()
-                    .get(fetcher.getName()));
+            assertNull(expiringFetcherStore.getFetcherConfigs().get(fetcher.getName()));
         }
     }
 }

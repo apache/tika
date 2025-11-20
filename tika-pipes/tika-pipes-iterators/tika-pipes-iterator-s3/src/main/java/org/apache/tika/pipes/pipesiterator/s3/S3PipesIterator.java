@@ -27,8 +27,23 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.tika.config.Field;
+import org.apache.tika.config.Initializable;
+import org.apache.tika.config.InitializableProblemHandler;
+import org.apache.tika.config.Param;
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.io.FilenameUtils;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.core.HandlerConfig;
+import org.apache.tika.pipes.core.emitter.EmitKey;
+import org.apache.tika.pipes.core.fetcher.FetchKey;
+import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider;
@@ -45,21 +60,6 @@ import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.io.FilenameUtils;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.FetchEmitTuple;
-import org.apache.tika.pipes.core.HandlerConfig;
-import org.apache.tika.pipes.core.emitter.EmitKey;
-import org.apache.tika.pipes.core.fetcher.FetchKey;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
-import org.apache.tika.utils.StringUtils;
-
 public class S3PipesIterator extends PipesIterator implements Initializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(S3PipesIterator.class);
@@ -72,7 +72,8 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
     private String profile;
     private String bucket;
     private Pattern fileNamePattern = null;
-    private int maxConnections = SdkHttpConfigurationOption.GLOBAL_HTTP_DEFAULTS.get(SdkHttpConfigurationOption.MAX_CONNECTIONS);
+    private int maxConnections = SdkHttpConfigurationOption.GLOBAL_HTTP_DEFAULTS
+            .get(SdkHttpConfigurationOption.MAX_CONNECTIONS);
     private boolean pathStyleAccessEnabled = false;
 
     private S3Client s3Client;
@@ -119,8 +120,10 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
 
     @Field
     public void setCredentialsProvider(String credentialsProvider) {
-        if (!credentialsProvider.equals("profile") && !credentialsProvider.equals("instance") && !credentialsProvider.equals("key_secret")) {
-            throw new IllegalArgumentException("credentialsProvider must be either 'profile', 'instance' or 'key_secret'");
+        if (!credentialsProvider.equals("profile") && !credentialsProvider.equals("instance")
+                && !credentialsProvider.equals("key_secret")) {
+            throw new IllegalArgumentException(
+                    "credentialsProvider must be either 'profile', 'instance' or 'key_secret'");
         }
         this.credentialsProvider = credentialsProvider;
     }
@@ -151,32 +154,34 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         //params have already been set...ignore them
         AwsCredentialsProvider provider;
-        switch (credentialsProvider) {
-            case "instance":
+        switch (credentialsProvider)
+        {
+            case "instance" :
                 provider = InstanceProfileCredentialsProvider.builder().build();
                 break;
-            case "profile":
+            case "profile" :
                 provider = ProfileCredentialsProvider.builder().profileName(profile).build();
                 break;
-            case "key_secret":
+            case "key_secret" :
                 AwsBasicCredentials awsCreds = AwsBasicCredentials.create(accessKey, secretKey);
                 provider = StaticCredentialsProvider.create(awsCreds);
                 break;
-            default:
-                throw new TikaConfigException("credentialsProvider must be set and " + "must be either 'instance', 'profile' or 'key_secret'");
+            default :
+                throw new TikaConfigException("credentialsProvider must be set and "
+                        + "must be either 'instance', 'profile' or 'key_secret'");
         }
 
         SdkHttpClient httpClient = ApacheHttpClient.builder().maxConnections(maxConnections).build();
         S3Configuration clientConfig = S3Configuration.builder().pathStyleAccessEnabled(pathStyleAccessEnabled).build();
         try {
-            S3ClientBuilder s3ClientBuilder = S3Client.builder().httpClient(httpClient).
-                    serviceConfiguration(clientConfig).credentialsProvider(provider);
+            S3ClientBuilder s3ClientBuilder = S3Client.builder().httpClient(httpClient)
+                    .serviceConfiguration(clientConfig).credentialsProvider(provider);
             if (!StringUtils.isBlank(endpointConfigurationService)) {
                 try {
                     s3ClientBuilder.endpointOverride(new URI(endpointConfigurationService)).region(Region.of(region));
-                }
-                catch (URISyntaxException ex) {
-                    throw new TikaConfigException("bad endpointConfigurationService: " + endpointConfigurationService, ex);
+                } catch (URISyntaxException ex) {
+                    throw new TikaConfigException("bad endpointConfigurationService: " + endpointConfigurationService,
+                            ex);
                 }
             } else {
                 s3ClientBuilder.region(Region.of(region));
@@ -207,10 +212,11 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
         } else {
             fileNameMatcher = null;
         }
-        
-        ListObjectsV2Request listObjectsV2Request = ListObjectsV2Request.builder().bucket(bucket).prefix(prefix).build();
-        List<S3Object> s3ObjectList = s3Client.listObjectsV2Paginator(listObjectsV2Request).stream().
-                flatMap(resp -> resp.contents().stream()).toList();
+
+        ListObjectsV2Request listObjectsV2Request = ListObjectsV2Request.builder().bucket(bucket).prefix(prefix)
+                .build();
+        List<S3Object> s3ObjectList = s3Client.listObjectsV2Paginator(listObjectsV2Request).stream()
+                .flatMap(resp -> resp.contents().stream()).toList();
         for (S3Object s3Object : s3ObjectList) {
             String key = s3Object.key();
             if (fileNameMatcher != null && !accept(fileNameMatcher, key)) {
@@ -221,8 +227,8 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
             //TODO -- allow user specified metadata as the "id"?
             ParseContext parseContext = new ParseContext();
             parseContext.set(HandlerConfig.class, handlerConfig);
-            tryToAdd(new FetchEmitTuple(key, new FetchKey(fetcherName, key), new EmitKey(emitterName, key), new Metadata(), parseContext,
-                    getOnParseException()));
+            tryToAdd(new FetchEmitTuple(key, new FetchKey(fetcherName, key), new EmitKey(emitterName, key),
+                    new Metadata(), parseContext, getOnParseException()));
             count++;
         }
         long elapsed = System.currentTimeMillis() - start;
@@ -231,8 +237,6 @@ public class S3PipesIterator extends PipesIterator implements Initializable {
 
     private boolean accept(Matcher fileNameMatcher, String key) {
         String fName = FilenameUtils.getName(key);
-        return fileNameMatcher
-                .reset(fName)
-                .find();
+        return fileNameMatcher.reset(fName).find();
     }
 }

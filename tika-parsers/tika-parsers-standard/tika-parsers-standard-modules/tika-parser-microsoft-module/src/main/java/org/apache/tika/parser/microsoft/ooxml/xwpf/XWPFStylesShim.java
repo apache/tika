@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.ooxml.xwpf;
 
 import java.io.IOException;
@@ -23,14 +22,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.poi.openxml4j.opc.PackagePart;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLWordAndPowerPointTextHandler;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * For Tika, all we need (so far) is a mapping between styleId and a style's name.
@@ -51,8 +49,7 @@ public class XWPFStylesShim {
 
     }
 
-    public XWPFStylesShim(PackagePart part, ParseContext parseContext)
-            throws IOException, TikaException, SAXException {
+    public XWPFStylesShim(PackagePart part, ParseContext parseContext) throws IOException, TikaException, SAXException {
 
         try (InputStream is = part.getInputStream()) {
             onDocumentLoad(parseContext, is);
@@ -61,8 +58,7 @@ public class XWPFStylesShim {
 
     private void onDocumentLoad(ParseContext parseContext, InputStream stream)
             throws TikaException, IOException, SAXException {
-        XMLReaderUtils
-                .parseSAX(stream, new StylesStripper(), parseContext);
+        XMLReaderUtils.parseSAX(stream, new StylesStripper(), parseContext);
     }
 
     /**
@@ -89,12 +85,10 @@ public class XWPFStylesShim {
         String currentStyleId = null;
 
         @Override
-        public void startElement(String uri, String localName, String qName, Attributes atts)
-                throws SAXException {
+        public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
             if (uri == null || OOXMLWordAndPowerPointTextHandler.W_NS.equals(uri)) {
                 if ("style".equals(localName)) {
-                    currentStyleId =
-                            atts.getValue(OOXMLWordAndPowerPointTextHandler.W_NS, "styleId");
+                    currentStyleId = atts.getValue(OOXMLWordAndPowerPointTextHandler.W_NS, "styleId");
                 } else if ("name".equals(localName)) {
                     String name = atts.getValue(OOXMLWordAndPowerPointTextHandler.W_NS, "val");
                     if (currentStyleId != null && name != null) {

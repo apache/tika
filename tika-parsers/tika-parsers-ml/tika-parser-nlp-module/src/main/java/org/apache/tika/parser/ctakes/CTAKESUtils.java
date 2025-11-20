@@ -78,21 +78,17 @@ public class CTAKESUtils {
      *                                         strictly according to RFC2396 and cannot be
      *                                         converted to a URI.
      */
-    public static AnalysisEngine getAnalysisEngine(String aeDescriptor, String umlsUser,
-                                                   String umlsPass)
-            throws IOException, InvalidXMLException, ResourceInitializationException,
-            URISyntaxException {
+    public static AnalysisEngine getAnalysisEngine(String aeDescriptor, String umlsUser, String umlsPass)
+            throws IOException, InvalidXMLException, ResourceInitializationException, URISyntaxException {
         // UMLS user ID and password.
         String aeDescriptorPath = CTAKESUtils.class.getResource(aeDescriptor).toURI().getPath();
 
         // get Resource Specifier from XML
         XMLInputSource aeIputSource = new XMLInputSource(aeDescriptorPath);
-        ResourceSpecifier aeSpecifier =
-                UIMAFramework.getXMLParser().parseResourceSpecifier(aeIputSource);
+        ResourceSpecifier aeSpecifier = UIMAFramework.getXMLParser().parseResourceSpecifier(aeIputSource);
 
         // UMLS user ID and password
-        if ((umlsUser != null) && (!umlsUser.isEmpty()) && (umlsPass != null) &&
-                (!umlsPass.isEmpty())) {
+        if ((umlsUser != null) && (!umlsUser.isEmpty()) && (umlsPass != null) && (!umlsPass.isEmpty())) {
             /*
              * It is highly recommended that you change UMLS credentials in the
              * XML configuration file instead of giving user and password using
@@ -143,8 +139,8 @@ public class CTAKESUtils {
      * @throws SAXException if there was a SAX exception.
      * @throws IOException  if any I/O error occurs.
      */
-    public static void serialize(JCas jcas, CTAKESSerializer type, boolean prettyPrint,
-                                 OutputStream stream) throws SAXException, IOException {
+    public static void serialize(JCas jcas, CTAKESSerializer type, boolean prettyPrint, OutputStream stream)
+            throws SAXException, IOException {
         if (type == CTAKESSerializer.XCAS) {
             XCASSerializer.serialize(jcas.getCas(), stream, prettyPrint);
         } else if (type == CTAKESSerializer.XMI) {
@@ -163,8 +159,7 @@ public class CTAKESUtils {
      *                   annotation type.
      * @return the annotation value.
      */
-    public static String getAnnotationProperty(IdentifiedAnnotation annotation,
-                                               CTAKESAnnotationProperty property) {
+    public static String getAnnotationProperty(IdentifiedAnnotation annotation, CTAKESAnnotationProperty property) {
         String value = null;
         if (property == CTAKESAnnotationProperty.BEGIN) {
             value = Integer.toString(annotation.getBegin());
@@ -189,9 +184,8 @@ public class CTAKESUtils {
                 for (int i = 0; i < mentions.size(); i++) {
                     if (mentions.get(i) instanceof UmlsConcept) {
                         UmlsConcept concept = (UmlsConcept) mentions.get(i);
-                        sb.append("cui=").append(concept.getCui()).append(",").
-                                append(concept.getCodingScheme()).append("=").
-                                append(concept.getCode());
+                        sb.append("cui=").append(concept.getCui()).append(",").append(concept.getCodingScheme())
+                                .append("=").append(concept.getCode());
                         if (i < mentions.size() - 1) {
                             sb.append(",");
                         }
@@ -201,8 +195,8 @@ public class CTAKESUtils {
             value = sb.toString();
         } else if (property == CTAKESAnnotationProperty.POLARITY) {
             String polarity_pref = "POLARITY";
-            value = new StringBuilder(polarity_pref).append("=").
-                    append(Integer.toString(annotation.getPolarity())).toString();
+            value = new StringBuilder(polarity_pref).append("=").append(Integer.toString(annotation.getPolarity()))
+                    .toString();
         }
         return value;
     }

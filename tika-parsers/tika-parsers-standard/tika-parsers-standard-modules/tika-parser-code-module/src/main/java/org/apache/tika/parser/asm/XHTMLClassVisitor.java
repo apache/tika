@@ -19,6 +19,12 @@ package org.apache.tika.parser.asm;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.tika.exception.RuntimeSAXException;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassReader;
@@ -29,13 +35,6 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
-import org.apache.tika.exception.RuntimeSAXException;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.exception.WriteLimitReachedException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Class visitor that generates XHTML SAX events to describe the
@@ -71,8 +70,7 @@ class XHTMLClassVisitor extends ClassVisitor {
         }
     }
 
-    public void visit(int version, int access, String name, String signature, String superName,
-                      String[] interfaces) {
+    public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
         type = Type.getObjectType(name);
 
         String className = type.getClassName();
@@ -185,8 +183,7 @@ class XHTMLClassVisitor extends ClassVisitor {
     /**
      * Visits a field.
      */
-    public FieldVisitor visitField(int access, String name, String desc, String signature,
-                                   Object value) {
+    public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
         if (!isSet(access, Opcodes.ACC_SYNTHETIC)) {
             try {
                 xhtml.characters("    ");
@@ -213,8 +210,7 @@ class XHTMLClassVisitor extends ClassVisitor {
     /**
      * Visits a method.
      */
-    public MethodVisitor visitMethod(int access, String name, String desc, String signature,
-                                     String[] exceptions) {
+    public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
         if (!isSet(access, Opcodes.ACC_SYNTHETIC)) {
             try {
                 xhtml.characters("    ");

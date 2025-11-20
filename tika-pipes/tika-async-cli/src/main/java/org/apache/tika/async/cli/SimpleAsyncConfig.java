@@ -31,8 +31,9 @@ class SimpleAsyncConfig {
     private final BasicContentHandlerFactory.HANDLER_TYPE handlerType;
 
     //TODO -- switch to a builder
-    public SimpleAsyncConfig(String inputDir, String outputDir, Integer numClients, Long timeoutMs, String xmx, String fileList,
-                             String tikaConfig, BasicContentHandlerFactory.HANDLER_TYPE handlerType, boolean extractBytes) {
+    public SimpleAsyncConfig(String inputDir, String outputDir, Integer numClients, Long timeoutMs, String xmx,
+            String fileList, String tikaConfig, BasicContentHandlerFactory.HANDLER_TYPE handlerType,
+            boolean extractBytes) {
         this.inputDir = inputDir;
         this.outputDir = outputDir;
         this.numClients = numClients;

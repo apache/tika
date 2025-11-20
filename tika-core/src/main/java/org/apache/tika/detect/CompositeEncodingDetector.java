@@ -38,8 +38,7 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
     private final List<EncodingDetector> detectors;
 
     public CompositeEncodingDetector(List<EncodingDetector> detectors,
-                                     Collection<Class<? extends EncodingDetector>>
-                                             excludeEncodingDetectors) {
+            Collection<Class<? extends EncodingDetector>> excludeEncodingDetectors) {
         this.detectors = new LinkedList<>();
         for (EncodingDetector encodingDetector : detectors) {
             if (!isExcluded(excludeEncodingDetectors, encodingDetector.getClass())) {
@@ -67,9 +66,8 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
             if (detected != null) {
                 metadata.set(TikaCoreProperties.DETECTED_ENCODING, detected.name());
                 //if this has been set by a leaf detector, do not overwrite
-                if (! detector.getClass().getSimpleName().equals("CompositeEncodingDetector")) {
-                    metadata.set(TikaCoreProperties.ENCODING_DETECTOR,
-                            detector.getClass().getSimpleName());
+                if (!detector.getClass().getSimpleName().equals("CompositeEncodingDetector")) {
+                    metadata.set(TikaCoreProperties.ENCODING_DETECTOR, detector.getClass().getSimpleName());
                 }
                 return detected;
             }
@@ -81,15 +79,13 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
         return Collections.unmodifiableList(detectors);
     }
 
-    private boolean isExcluded(
-            Collection<Class<? extends EncodingDetector>> excludeEncodingDetectors,
+    private boolean isExcluded(Collection<Class<? extends EncodingDetector>> excludeEncodingDetectors,
             Class<? extends EncodingDetector> encodingDetector) {
-        return excludeEncodingDetectors.contains(encodingDetector) ||
-                assignableFrom(excludeEncodingDetectors, encodingDetector);
+        return excludeEncodingDetectors.contains(encodingDetector)
+                || assignableFrom(excludeEncodingDetectors, encodingDetector);
     }
 
-    private boolean assignableFrom(
-            Collection<Class<? extends EncodingDetector>> excludeEncodingDetectors,
+    private boolean assignableFrom(Collection<Class<? extends EncodingDetector>> excludeEncodingDetectors,
             Class<? extends EncodingDetector> encodingDetector) {
         for (Class<? extends EncodingDetector> e : excludeEncodingDetectors) {
             if (e.isAssignableFrom(encodingDetector)) {

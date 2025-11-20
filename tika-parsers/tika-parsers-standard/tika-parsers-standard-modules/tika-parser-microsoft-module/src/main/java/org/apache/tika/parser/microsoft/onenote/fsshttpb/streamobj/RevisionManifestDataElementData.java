@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
@@ -57,24 +56,21 @@ public class RevisionManifestDataElementData extends DataElementData {
         this.revisionManifestObjectGroupReferences = new ArrayList<>();
         AtomicReference<StreamObjectHeaderStart> header = new AtomicReference<>();
         int headerLength = 0;
-        while ((headerLength = StreamObjectHeaderStart.tryParse(byteArray, index.get(), header)) !=
-                0) {
+        while ((headerLength = StreamObjectHeaderStart.tryParse(byteArray, index.get(), header)) != 0) {
             if (header.get().type == StreamObjectTypeHeaderStart.RevisionManifestRootDeclare) {
                 index.addAndGet(headerLength);
                 this.revisionManifestRootDeclareList.add(
-                        (RevisionManifestRootDeclare) StreamObject.parseStreamObject(header.get(),
-                                byteArray, index));
-            } else if (header.get().type ==
-                    StreamObjectTypeHeaderStart.RevisionManifestObjectGroupReferences) {
+                        (RevisionManifestRootDeclare) StreamObject.parseStreamObject(header.get(), byteArray, index));
+            } else if (header.get().type == StreamObjectTypeHeaderStart.RevisionManifestObjectGroupReferences) {
                 index.addAndGet(headerLength);
-                this.revisionManifestObjectGroupReferences.add(
-                        (RevisionManifestObjectGroupReferences) StreamObject.parseStreamObject(
-                                header.get(), byteArray, index));
+                this.revisionManifestObjectGroupReferences.add((RevisionManifestObjectGroupReferences) StreamObject
+                        .parseStreamObject(header.get(), byteArray, index));
             } else {
                 throw new DataElementParseErrorException(index.get(),
-                        "Failed to parse RevisionManifestDataElement, expect the inner object type " +
-                                "RevisionManifestRootDeclare or RevisionManifestObjectGroupReferences, " +
-                                "but actual type value is " + header.get().type, null);
+                        "Failed to parse RevisionManifestDataElement, expect the inner object type "
+                                + "RevisionManifestRootDeclare or RevisionManifestObjectGroupReferences, "
+                                + "but actual type value is " + header.get().type,
+                        null);
             }
         }
 
@@ -97,8 +93,7 @@ public class RevisionManifestDataElementData extends DataElementData {
         }
 
         if (this.revisionManifestObjectGroupReferences != null) {
-            for (RevisionManifestObjectGroupReferences revisionManifestObjectGroupReferences :
-                    this.revisionManifestObjectGroupReferences) {
+            for (RevisionManifestObjectGroupReferences revisionManifestObjectGroupReferences : this.revisionManifestObjectGroupReferences) {
                 byteList.addAll(revisionManifestObjectGroupReferences.serializeToByteList());
             }
         }

@@ -14,18 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.metadata.filter;
 
 import java.io.IOException;
 import java.io.Serializable;
 
-import org.w3c.dom.Element;
-
 import org.apache.tika.config.ConfigBase;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.w3c.dom.Element;
 
 /**
  * Filters the metadata in place after the parse
@@ -41,11 +39,10 @@ public abstract class MetadataFilter extends ConfigBase implements Serializable 
      * @throws TikaConfigException
      * @throws IOException
      */
-    public static MetadataFilter load(Element root, boolean allowMissing) throws TikaConfigException,
-            IOException {
+    public static MetadataFilter load(Element root, boolean allowMissing) throws TikaConfigException, IOException {
         try {
-            return buildComposite("metadataFilters", CompositeMetadataFilter.class,
-                    "metadataFilter", MetadataFilter.class, root);
+            return buildComposite("metadataFilters", CompositeMetadataFilter.class, "metadataFilter",
+                    MetadataFilter.class, root);
         } catch (TikaConfigException e) {
             if (allowMissing && e.getMessage().contains("could not find metadataFilters")) {
                 return new NoOpFilter();

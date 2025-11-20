@@ -28,9 +28,7 @@ import org.apache.tika.metadata.Metadata;
 public class RenderResult implements Closeable {
 
     public enum STATUS {
-        SUCCESS,
-        EXCEPTION,
-        TIMEOUT
+        SUCCESS, EXCEPTION, TIMEOUT
     }
     private final STATUS status;
 
@@ -53,7 +51,7 @@ public class RenderResult implements Closeable {
             tmp.addResource(new Closeable() {
                 @Override
                 public void close() throws IOException {
-                    Files.delete((Path)result);
+                    Files.delete((Path) result);
                 }
             });
         } else if (result instanceof Closeable) {
@@ -63,7 +61,7 @@ public class RenderResult implements Closeable {
 
     public TikaInputStream getInputStream() throws IOException {
         if (result instanceof Path) {
-            return TikaInputStream.get((Path)result, metadata);
+            return TikaInputStream.get((Path) result, metadata);
         } else {
             TikaInputStream tis = TikaInputStream.get(new byte[0]);
             tis.setOpenContainer(result);

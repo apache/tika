@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.io.IOException;
@@ -22,7 +21,6 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
-
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitReader;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitWriter;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.GuidUtil;
@@ -164,39 +162,39 @@ public class ExGuid extends BasicObject {
             }
         }
 
-        switch (numberOfContinousZeroBit) {
-            case 2:
+        switch (numberOfContinousZeroBit)
+        {
+            case 2 :
                 this.value = bitReader.readUInt32(5);
                 this.guid = bitReader.readGuid();
                 this.type = ExtendedGUID5BitUintType;
                 return 17;
 
-            case 5:
+            case 5 :
                 this.value = bitReader.readUInt32(10);
                 this.guid = bitReader.readGuid();
                 this.type = ExtendedGUID10BitUintType;
                 return 18;
 
-            case 6:
+            case 6 :
                 this.value = bitReader.readUInt32(17);
                 this.guid = bitReader.readGuid();
                 this.type = ExtendedGUID17BitUintType;
                 return 19;
 
-            case 7:
+            case 7 :
                 this.value = bitReader.readUInt32(32);
                 this.guid = bitReader.readGuid();
                 this.type = ExtendedGUID32BitUintType;
                 return 21;
 
-            case 8:
+            case 8 :
                 this.guid = GuidUtil.emptyGuid();
                 this.type = ExtendedGUIDNullType;
                 return 1;
 
-            default:
-                throw new InvalidOperationException(
-                        "Failed to parse the ExGuid, the type value is unexpected");
+            default :
+                throw new InvalidOperationException("Failed to parse the ExGuid, the type value is unexpected");
         }
     }
 }

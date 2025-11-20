@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.example;
 
 import java.io.File;
@@ -26,7 +25,6 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
-
 import org.apache.tika.Tika;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
@@ -68,10 +66,7 @@ public class MetadataAwareLuceneIndexer {
         met.add(TikaCoreProperties.CREATOR, "Tika in Action");
         met.set(TikaCoreProperties.CREATED, new Date());
         met.set(TikaCoreProperties.FORMAT, tika.detect(file));
-        met.set(DublinCore.SOURCE, file
-                .toURI()
-                .toURL()
-                .toString());
+        met.set(DublinCore.SOURCE, file.toURI().toURL().toString());
         met.add(TikaCoreProperties.SUBJECT, "File");
         met.add(TikaCoreProperties.SUBJECT, "Indexing");
         met.add(TikaCoreProperties.SUBJECT, "Metadata");

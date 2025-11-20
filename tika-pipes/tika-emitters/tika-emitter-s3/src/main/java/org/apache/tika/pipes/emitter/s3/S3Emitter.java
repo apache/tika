@@ -34,8 +34,24 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
+import org.apache.tika.config.Field;
+import org.apache.tika.config.Initializable;
+import org.apache.tika.config.InitializableProblemHandler;
+import org.apache.tika.config.Param;
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.core.emitter.AbstractEmitter;
+import org.apache.tika.pipes.core.emitter.StreamEmitter;
+import org.apache.tika.pipes.core.emitter.TikaEmitterException;
+import org.apache.tika.serialization.JsonMetadataList;
+import org.apache.tika.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider;
@@ -53,22 +69,6 @@ import software.amazon.awssdk.services.s3.S3ClientBuilder;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
-
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.io.TemporaryResources;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.emitter.AbstractEmitter;
-import org.apache.tika.pipes.core.emitter.StreamEmitter;
-import org.apache.tika.pipes.core.emitter.TikaEmitterException;
-import org.apache.tika.serialization.JsonMetadataList;
-import org.apache.tika.utils.StringUtils;
 
 /**
  * Emits to existing s3 bucket
@@ -116,7 +116,8 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
     private String fileExtension = "json";
     private boolean spoolToTemp = true;
     private String prefix = null;
-    private int maxConnections = SdkHttpConfigurationOption.GLOBAL_HTTP_DEFAULTS.get(SdkHttpConfigurationOption.MAX_CONNECTIONS);
+    private int maxConnections = SdkHttpConfigurationOption.GLOBAL_HTTP_DEFAULTS
+            .get(SdkHttpConfigurationOption.MAX_CONNECTIONS);
     private boolean pathStyleAccessEnabled = false;
     private S3Client s3Client;
 
@@ -130,15 +131,14 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
      * @throws TikaEmitterException
      */
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException, TikaEmitterException {
+    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext)
+            throws IOException, TikaEmitterException {
         if (metadataList == null || metadataList.isEmpty()) {
             throw new TikaEmitterException("metadata list must not be null or of size 0");
         }
 
         if (!spoolToTemp) {
-            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream
-                    .builder()
-                    .get();
+            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
             try (Writer writer = new BufferedWriter(new OutputStreamWriter(bos, StandardCharsets.UTF_8))) {
                 JsonMetadataList.toJson(metadataList, writer);
             } catch (IOException e) {
@@ -151,7 +151,8 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
         } else {
             try (TemporaryResources tmp = new TemporaryResources()) {
                 Path tmpPath = tmp.createTempFile();
-                try (Writer writer = Files.newBufferedWriter(tmpPath, StandardCharsets.UTF_8, StandardOpenOption.CREATE)) {
+                try (Writer writer = Files.newBufferedWriter(tmpPath, StandardCharsets.UTF_8,
+                        StandardOpenOption.CREATE)) {
                     JsonMetadataList.toJson(metadataList, writer);
                 } catch (IOException e) {
                     throw new TikaEmitterException("can't jsonify", e);
@@ -172,7 +173,8 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
      * @throws TikaEmitterException if there is a Runtime s3 client exception
      */
     @Override
-    public void emit(String path, InputStream is, Metadata userMetadata, ParseContext parseContext) throws IOException, TikaEmitterException {
+    public void emit(String path, InputStream is, Metadata userMetadata, ParseContext parseContext)
+            throws IOException, TikaEmitterException {
 
         if (!StringUtils.isBlank(prefix)) {
             path = prefix + "/" + path;
@@ -184,7 +186,7 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
 
         LOGGER.debug("about to emit to target bucket: ({}) path:({})", bucket, path);
 
-        Map<String,String> metadataMap = new HashMap<>();
+        Map<String, String> metadataMap = new HashMap<>();
         for (String n : userMetadata.names()) {
             String[] vals = userMetadata.getValues(n);
             if (vals.length > 1) {
@@ -198,7 +200,8 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
         if (is instanceof TikaInputStream) {
             if (((TikaInputStream) is).hasFile()) {
                 try {
-                    PutObjectRequest request = PutObjectRequest.builder().bucket(bucket).key(path).metadata(metadataMap).build();
+                    PutObjectRequest request = PutObjectRequest.builder().bucket(bucket).key(path).metadata(metadataMap)
+                            .build();
                     RequestBody requestBody = RequestBody.fromFile(((TikaInputStream) is).getFile());
                     s3Client.putObject(request, requestBody);
                 } catch (IOException e) {
@@ -208,7 +211,8 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
             }
         }
         try {
-            PutObjectRequest request = PutObjectRequest.builder().bucket(bucket).key(path).metadata(metadataMap).build();
+            PutObjectRequest request = PutObjectRequest.builder().bucket(bucket).key(path).metadata(metadataMap)
+                    .build();
             RequestBody requestBody = RequestBody.fromBytes(is.readAllBytes());
             s3Client.putObject(request, requestBody);
         } catch (S3Exception e) {
@@ -255,8 +259,10 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
 
     @Field
     public void setCredentialsProvider(String credentialsProvider) {
-        if (!credentialsProvider.equals("profile") && !credentialsProvider.equals("instance") && !credentialsProvider.equals("key_secret")) {
-            throw new IllegalArgumentException("credentialsProvider must be either 'profile', 'instance' or 'key_secret'");
+        if (!credentialsProvider.equals("profile") && !credentialsProvider.equals("instance")
+                && !credentialsProvider.equals("key_secret")) {
+            throw new IllegalArgumentException(
+                    "credentialsProvider must be either 'profile', 'instance' or 'key_secret'");
         }
         this.credentialsProvider = credentialsProvider;
     }
@@ -309,32 +315,34 @@ public class S3Emitter extends AbstractEmitter implements Initializable, StreamE
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         //params have already been set...ignore them
         AwsCredentialsProvider provider;
-        switch (credentialsProvider) {
-            case "instance":
+        switch (credentialsProvider)
+        {
+            case "instance" :
                 provider = InstanceProfileCredentialsProvider.builder().build();
                 break;
-            case "profile":
+            case "profile" :
                 provider = ProfileCredentialsProvider.builder().profileName(profile).build();
                 break;
-            case "key_secret":
+            case "key_secret" :
                 AwsBasicCredentials awsCreds = AwsBasicCredentials.create(accessKey, secretKey);
                 provider = StaticCredentialsProvider.create(awsCreds);
                 break;
-            default:
-                throw new TikaConfigException("credentialsProvider must be set and " + "must be either 'instance', 'profile' or 'key_secret'");
+            default :
+                throw new TikaConfigException("credentialsProvider must be set and "
+                        + "must be either 'instance', 'profile' or 'key_secret'");
         }
         SdkHttpClient httpClient = ApacheHttpClient.builder().maxConnections(maxConnections).build();
         S3Configuration clientConfig = S3Configuration.builder().pathStyleAccessEnabled(pathStyleAccessEnabled).build();
         try {
-            S3ClientBuilder s3ClientBuilder = S3Client.builder().httpClient(httpClient).
-                    requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED). // https://stackoverflow.com/a/79488850/535646
+            S3ClientBuilder s3ClientBuilder = S3Client.builder().httpClient(httpClient)
+                    .requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED). // https://stackoverflow.com/a/79488850/535646
                     serviceConfiguration(clientConfig).credentialsProvider(provider);
             if (!StringUtils.isBlank(endpointConfigurationService)) {
                 try {
                     s3ClientBuilder.endpointOverride(new URI(endpointConfigurationService)).region(Region.of(region));
-                }
-                catch (URISyntaxException ex) {
-                    throw new TikaConfigException("bad endpointConfigurationService: " + endpointConfigurationService, ex);
+                } catch (URISyntaxException ex) {
+                    throw new TikaConfigException("bad endpointConfigurationService: " + endpointConfigurationService,
+                            ex);
                 }
             } else {
                 s3ClientBuilder.region(Region.of(region));

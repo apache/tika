@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.microsoft;
 
-
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;

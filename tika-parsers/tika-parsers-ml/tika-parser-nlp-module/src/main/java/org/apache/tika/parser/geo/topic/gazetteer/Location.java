@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.geo.topic.gazetteer;
 
 import java.io.Serializable;
@@ -29,7 +28,6 @@ public class Location implements Serializable {
     private String admin2Code;
     private String latitude;
     private String longitude;
-
 
     public String getName() {
         return name;

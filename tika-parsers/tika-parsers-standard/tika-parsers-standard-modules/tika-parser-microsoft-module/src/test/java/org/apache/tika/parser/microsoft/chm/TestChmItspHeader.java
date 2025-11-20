@@ -37,8 +37,7 @@ public class TestChmItspHeader {
         ChmItsfHeader chmItsfHeader = new ChmItsfHeader();
         // chmItsfHeader.parse(Arrays.copyOfRange(data, 0,
         // ChmConstants.CHM_ITSF_V3_LEN - 1), chmItsfHeader);
-        chmItsfHeader.parse(ChmCommons.copyOfRange(data, 0, ChmConstants.CHM_ITSF_V3_LEN - 1),
-                chmItsfHeader);
+        chmItsfHeader.parse(ChmCommons.copyOfRange(data, 0, ChmConstants.CHM_ITSF_V3_LEN - 1), chmItsfHeader);
 
         chmItspHeader = new ChmItspHeader();
         // chmItspHeader.parse(Arrays.copyOfRange( data, (int)
@@ -116,8 +115,7 @@ public class TestChmItspHeader {
 
     @Test
     public void testGetSignature() {
-        assertEquals(TestParameters.VP_ISTP_SIGNATURE,
-                new String(chmItspHeader.getSignature(), UTF_8));
+        assertEquals(TestParameters.VP_ISTP_SIGNATURE, new String(chmItspHeader.getSignature(), UTF_8));
     }
 
     @Test

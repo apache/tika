@@ -27,7 +27,6 @@ public interface PDF {
     String PDFA_PREFIX = "pdfa" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     String PDFAID_PREFIX = "pdfaid" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
-
     /**
      * Number of %%EOF as extracted by the StartXRefScanner. See
      * that class for limitations.
@@ -42,11 +41,9 @@ public interface PDF {
      * Prefix to be used for properties that record what was stored
      * in the docinfo section (as opposed to XMP)
      */
-    String PDF_DOC_INFO_PREFIX =
-            PDF_PREFIX + "docinfo" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    String PDF_DOC_INFO_PREFIX = PDF_PREFIX + "docinfo" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
-    String PDF_DOC_INFO_CUSTOM_PREFIX =
-            PDF_DOC_INFO_PREFIX + "custom" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    String PDF_DOC_INFO_CUSTOM_PREFIX = PDF_DOC_INFO_PREFIX + "custom" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     Property DOC_INFO_CREATED = Property.internalDate(PDF_DOC_INFO_PREFIX + "created");
 
@@ -109,26 +106,23 @@ public interface PDF {
 
     Property CHARACTERS_PER_PAGE = Property.internalIntegerSequence(PDF_PREFIX + "charsPerPage");
 
-    Property UNMAPPED_UNICODE_CHARS_PER_PAGE =
-            Property.internalIntegerSequence(PDF_PREFIX + "unmappedUnicodeCharsPerPage");
+    Property UNMAPPED_UNICODE_CHARS_PER_PAGE = Property
+            .internalIntegerSequence(PDF_PREFIX + "unmappedUnicodeCharsPerPage");
 
-    Property TOTAL_UNMAPPED_UNICODE_CHARS =
-            Property.internalInteger(PDF_PREFIX + "totalUnmappedUnicodeChars");
+    Property TOTAL_UNMAPPED_UNICODE_CHARS = Property.internalInteger(PDF_PREFIX + "totalUnmappedUnicodeChars");
 
-    Property OVERALL_PERCENTAGE_UNMAPPED_UNICODE_CHARS =
-            Property.internalReal(PDF_PREFIX + "overallPercentageUnmappedUnicodeChars");
+    Property OVERALL_PERCENTAGE_UNMAPPED_UNICODE_CHARS = Property
+            .internalReal(PDF_PREFIX + "overallPercentageUnmappedUnicodeChars");
 
     /**
      * Contains at least one damaged font for at least one character
      */
-    Property CONTAINS_DAMAGED_FONT =
-            Property.internalBoolean(PDF_PREFIX + "containsDamagedFont");
+    Property CONTAINS_DAMAGED_FONT = Property.internalBoolean(PDF_PREFIX + "containsDamagedFont");
 
     /**
      * Contains at least one font that is not embedded
      */
-    Property CONTAINS_NON_EMBEDDED_FONT =
-            Property.internalBoolean(PDF_PREFIX + "containsNonEmbeddedFont");
+    Property CONTAINS_NON_EMBEDDED_FONT = Property.internalBoolean(PDF_PREFIX + "containsNonEmbeddedFont");
 
     /**
      * Has XFA
@@ -158,21 +152,18 @@ public interface PDF {
      */
     Property HAS_COLLECTION = Property.internalBoolean(PDF_PREFIX + "hasCollection");
 
-    Property EMBEDDED_FILE_DESCRIPTION = Property.externalText(PDF_PREFIX +
-            "embeddedFileDescription");
+    Property EMBEDDED_FILE_DESCRIPTION = Property.externalText(PDF_PREFIX + "embeddedFileDescription");
 
     /**
      * If the file came from an annotation and there was a type
      */
-    Property EMBEDDED_FILE_ANNOTATION_TYPE = Property.internalText(PDF_PREFIX +
-            "embeddedFileAnnotationType");
+    Property EMBEDDED_FILE_ANNOTATION_TYPE = Property.internalText(PDF_PREFIX + "embeddedFileAnnotationType");
 
     /**
      *     literal string from the PDEmbeddedFile#getSubtype(), should be what the PDF
      *     alleges is the embedded file's mime type
      */
-    Property EMBEDDED_FILE_SUBTYPE = Property.internalText(PDF_PREFIX +
-            "embeddedFileSubtype");
+    Property EMBEDDED_FILE_SUBTYPE = Property.internalText(PDF_PREFIX + "embeddedFileSubtype");
     /**
      * If the PDF has an annotation of type 3D
      */
@@ -187,8 +178,7 @@ public interface PDF {
      */
     Property NUM_3D_ANNOTATIONS = Property.internalInteger(PDF_PREFIX + "num3DAnnotations");
 
-    Property ASSOCIATED_FILE_RELATIONSHIP = Property.internalText(PDF_PREFIX +
-            "associatedFileRelationship");
+    Property ASSOCIATED_FILE_RELATIONSHIP = Property.internalText(PDF_PREFIX + "associatedFileRelationship");
     /**
      * This is a zero-based number for incremental updates within a PDF -- 0 is the first
      * update, 1 is the second, etc.  The final version of the PDF (e.g. the last update)
@@ -197,17 +187,17 @@ public interface PDF {
      * This value is populated with the parse incremental updates feature is selected
      * in the PDFParser.
      */
-    Property INCREMENTAL_UPDATE_NUMBER =
-            Property.composite(Property.internalInteger(PDF_PREFIX + "incrementalUpdateNumber"),
-                new Property[]{ TikaCoreProperties.VERSION_NUMBER });
+    Property INCREMENTAL_UPDATE_NUMBER = Property.composite(
+            Property.internalInteger(PDF_PREFIX + "incrementalUpdateNumber"),
+            new Property[]{TikaCoreProperties.VERSION_NUMBER});
 
     /**
      * Incremental updates as extracted by the StartXRefScanner.  See
      * that class for limitations.
      */
-    Property PDF_INCREMENTAL_UPDATE_COUNT =
-            Property.composite( Property.externalInteger(PDF_PREFIX + "incrementalUpdateCount"),
-                    new Property[]{ TikaCoreProperties.VERSION_COUNT });
+    Property PDF_INCREMENTAL_UPDATE_COUNT = Property.composite(
+            Property.externalInteger(PDF_PREFIX + "incrementalUpdateCount"),
+            new Property[]{TikaCoreProperties.VERSION_COUNT});
 
     /**
      * This counts the number of pages that would have been OCR'd or were OCR'd depending

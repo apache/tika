@@ -16,10 +16,10 @@
  */
 package org.apache.tika.xmp.convert;
 
+import org.apache.tika.metadata.Metadata;
+
 import com.adobe.internal.xmp.XMPException;
 import com.adobe.internal.xmp.XMPMeta;
-
-import org.apache.tika.metadata.Metadata;
 
 /**
  * Interface for the specific <code>Metadata</code> to XMP converters

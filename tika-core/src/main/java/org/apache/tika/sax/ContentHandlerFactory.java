@@ -16,7 +16,6 @@
  */
 package org.apache.tika.sax;
 
-
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.nio.charset.Charset;

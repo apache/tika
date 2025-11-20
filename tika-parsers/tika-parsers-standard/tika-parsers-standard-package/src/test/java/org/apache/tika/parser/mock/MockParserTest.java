@@ -27,13 +27,12 @@ import java.io.InputStream;
 import java.io.PrintStream;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class MockParserTest extends TikaTest {
     private final static String M = "/test-documents/mock/";
@@ -87,8 +86,7 @@ public class MockParserTest extends TikaTest {
     @Test
     public void testNullPointer() throws Exception {
         Metadata m = new Metadata();
-        assertThrowable("null_pointer.xml", m, NullPointerException.class,
-                "another null pointer exception");
+        assertThrowable("null_pointer.xml", m, NullPointerException.class, "another null pointer exception");
         assertMockParser(m);
     }
 
@@ -98,7 +96,6 @@ public class MockParserTest extends TikaTest {
         assertThrowable("null_pointer_no_msg.xml", m, NullPointerException.class, null);
         assertMockParser(m);
     }
-
 
     @Test
     public void testSleep() throws Exception {
@@ -196,8 +193,7 @@ public class MockParserTest extends TikaTest {
         assertTrue(longEnough, "elapsed (" + elapsed + " millis) was not long enough");
     }
 
-    private void assertThrowable(String path, Metadata m, Class<? extends Throwable> expected,
-                                 String message) {
+    private void assertThrowable(String path, Metadata m, Class<? extends Throwable> expected, String message) {
 
         try {
             getXML(path, m);

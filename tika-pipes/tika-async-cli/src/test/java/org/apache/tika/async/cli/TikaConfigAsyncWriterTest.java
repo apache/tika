@@ -25,6 +25,9 @@ import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.w3c.dom.Document;
@@ -32,19 +35,13 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.sax.BasicContentHandlerFactory;
-import org.apache.tika.utils.XMLReaderUtils;
-
 public class TikaConfigAsyncWriterTest {
-
 
     @Test
     public void testBasic(@TempDir Path dir) throws Exception {
         Path p = Paths.get(TikaConfigAsyncWriter.class.getResource("/configs/TIKA-4508-parsers.xml").toURI());
-        SimpleAsyncConfig simpleAsyncConfig = new SimpleAsyncConfig("input", "output", 4,
-                10000L, "-Xmx1g", null, p.toAbsolutePath().toString(),
-                BasicContentHandlerFactory.HANDLER_TYPE.TEXT, false);
+        SimpleAsyncConfig simpleAsyncConfig = new SimpleAsyncConfig("input", "output", 4, 10000L, "-Xmx1g", null,
+                p.toAbsolutePath().toString(), BasicContentHandlerFactory.HANDLER_TYPE.TEXT, false);
         Path target = dir.resolve("combined.xml");
         TikaConfigAsyncWriter writer = new TikaConfigAsyncWriter(simpleAsyncConfig);
         writer.write(target);
@@ -57,9 +54,8 @@ public class TikaConfigAsyncWriterTest {
     @Test
     public void testDontOverwriteEmitters(@TempDir Path dir) throws Exception {
         Path p = Paths.get(TikaConfigAsyncWriter.class.getResource("/configs/TIKA-4508-emitters.xml").toURI());
-        SimpleAsyncConfig simpleAsyncConfig = new SimpleAsyncConfig("input", "output", 4,
-                10000L, "-Xmx1g", null, p.toAbsolutePath().toString(),
-                BasicContentHandlerFactory.HANDLER_TYPE.TEXT, false);
+        SimpleAsyncConfig simpleAsyncConfig = new SimpleAsyncConfig("input", "output", 4, 10000L, "-Xmx1g", null,
+                p.toAbsolutePath().toString(), BasicContentHandlerFactory.HANDLER_TYPE.TEXT, false);
         Path target = dir.resolve("combined.xml");
         TikaConfigAsyncWriter writer = new TikaConfigAsyncWriter(simpleAsyncConfig);
         writer.write(target);
@@ -87,7 +83,6 @@ public class TikaConfigAsyncWriterTest {
         assertEquals(2, found);
 
     }
-
 
     private Set<String> loadProperties(Path path) throws TikaException, IOException, SAXException {
         Document document = XMLReaderUtils.buildDOM(path);

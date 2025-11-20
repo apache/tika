@@ -36,8 +36,7 @@ public class CTAKESConfig implements Serializable {
     private static final long serialVersionUID = -1599741171775528923L;
 
     // Path to XML descriptor for AnalysisEngine
-    private String aeDescriptorPath =
-            "/ctakes-core/desc/analysis_engine/SentencesAndTokensAggregate.xml";
+    private String aeDescriptorPath = "/ctakes-core/desc/analysis_engine/SentencesAndTokensAggregate.xml";
 
     // UMLS username
     private String UMLSUser = "";
@@ -108,10 +107,8 @@ public class CTAKESConfig implements Serializable {
         setUMLSPass(props.getProperty("UMLSPass", getUMLSPass()));
         setText(Boolean.parseBoolean(props.getProperty("text", Boolean.toString(isText()))));
         setMetadata(props.getProperty("metadata", getMetadataAsString()).split(","));
-        setAnnotationProps(
-                props.getProperty("annotationProps", getAnnotationPropsAsString()).split(","));
-        setSeparatorChar(props.getProperty("separatorChar", Character.toString(getSeparatorChar()))
-                .charAt(0));
+        setAnnotationProps(props.getProperty("annotationProps", getAnnotationPropsAsString()).split(","));
+        setSeparatorChar(props.getProperty("separatorChar", Character.toString(getSeparatorChar())).charAt(0));
     }
 
     /**
@@ -325,8 +322,7 @@ public class CTAKESConfig implements Serializable {
      *                       included into cTAKES metadata.
      */
     public void setAnnotationProps(String[] annotationProps) {
-        CTAKESAnnotationProperty[] properties =
-                new CTAKESAnnotationProperty[annotationProps.length];
+        CTAKESAnnotationProperty[] properties = new CTAKESAnnotationProperty[annotationProps.length];
         for (int i = 0; i < annotationProps.length; i++) {
             properties[i] = CTAKESAnnotationProperty.valueOf(annotationProps[i]);
         }

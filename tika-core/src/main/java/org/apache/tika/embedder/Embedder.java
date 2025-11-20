@@ -87,7 +87,7 @@ public interface Embedder extends Serializable {
      * @throws IOException   if the document stream could not be read
      * @throws TikaException if the document could not be parsed
      */
-    void embed(Metadata metadata, InputStream originalStream, OutputStream outputStream,
-               ParseContext context) throws IOException, TikaException;
+    void embed(Metadata metadata, InputStream originalStream, OutputStream outputStream, ParseContext context)
+            throws IOException, TikaException;
 
 }

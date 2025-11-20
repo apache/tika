@@ -22,10 +22,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
+import org.junit.jupiter.api.Test;
 
 public class RFC822DetectionTest {
 
@@ -33,11 +32,8 @@ public class RFC822DetectionTest {
 
     @Test
     public void testBasic() throws Exception {
-        for (String txt : new String[]{
-                "Date: blah\nSent: someone\r\nthis is a test",
-                "date: blah\nSent: someone\r\nthis is a test",
-                "date: blah\nDelivered-To: someone\r\nthis is a test"
-        }) {
+        for (String txt : new String[]{"Date: blah\nSent: someone\r\nthis is a test",
+                "date: blah\nSent: someone\r\nthis is a test", "date: blah\nDelivered-To: someone\r\nthis is a test"}) {
             assertMime("message/rfc822", txt);
         }
         for (String txt : new String[]{
@@ -51,29 +47,25 @@ public class RFC822DetectionTest {
                 "date: blah\ndelivered-To: someone\r\nthis is a test",
                 //test that a file that starts only with "Subject:" and no other header is
                 //detected as text/plain
-                "Subject: this is a subject\nand there's some other text",
-                "To: someone\nand there's some other text",
-                "To: someone or other"
-        }) {
+                "Subject: this is a subject\nand there's some other text", "To: someone\nand there's some other text",
+                "To: someone or other"}) {
             assertMime("text/plain", txt);
         }
 
         //TIKA-4153, specifically
-        String txt = "Some text here 1.\n" + "Some text here 2.\n" + "Some text here 3.\n" +
-                "Original Message-----\n" + "From: some_mail@abc.com\n" +
-                "Sent: Thursday, October 31, 2019 9:52 AM\n" +
-                "To: Some person, (The XYZ group)\n" +
-                "Subject: RE: Mr. Random person phone call: MESSAGE\n" + "Hi,\n" +
-                "I am available now to receive the call.\n" + "Some text here 4.\n" +
-                "Some text here 5.\n" + "Some text here 6.";
+        String txt = "Some text here 1.\n" + "Some text here 2.\n" + "Some text here 3.\n" + "Original Message-----\n"
+                + "From: some_mail@abc.com\n" + "Sent: Thursday, October 31, 2019 9:52 AM\n"
+                + "To: Some person, (The XYZ group)\n" + "Subject: RE: Mr. Random person phone call: MESSAGE\n"
+                + "Hi,\n" + "I am available now to receive the call.\n" + "Some text here 4.\n" + "Some text here 5.\n"
+                + "Some text here 6.";
         assertMime("text/plain", txt);
     }
 
     private void assertMime(String expected, String txt) throws IOException {
 
-        MediaType mediaType =
-                MIME_TYPES.detect(UnsynchronizedByteArrayInputStream.builder()
-                        .setByteArray(txt.getBytes(StandardCharsets.UTF_8)).get(), new Metadata());
+        MediaType mediaType = MIME_TYPES.detect(
+                UnsynchronizedByteArrayInputStream.builder().setByteArray(txt.getBytes(StandardCharsets.UTF_8)).get(),
+                new Metadata());
         assertEquals(expected, mediaType.toString(), txt);
     }
 }

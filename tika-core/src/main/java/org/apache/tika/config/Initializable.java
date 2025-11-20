@@ -38,7 +38,6 @@ public interface Initializable {
      */
     void initialize(Map<String, Param> params) throws TikaConfigException;
 
-
     /**
      * @param problemHandler if there is a problem and no
      *                       custom initializableProblemHandler has been configured
@@ -47,6 +46,5 @@ public interface Initializable {
      * @throws TikaConfigException
      */
     void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException;
-
 
 }

@@ -54,9 +54,8 @@ class DBFColumnHeader {
     public void setType(int type) throws TikaException {
         colType = COL_TYPE_MAP.get(type);
         if (colType == null) {
-            throw new TikaException(
-                    "Unrecognized column type for column: " + getName(StandardCharsets.US_ASCII) +
-                            ". I regret I don't recognize: " + (char) type);
+            throw new TikaException("Unrecognized column type for column: " + getName(StandardCharsets.US_ASCII)
+                    + ". I regret I don't recognize: " + (char) type);
         }
     }
 
@@ -70,24 +69,24 @@ class DBFColumnHeader {
 
     @Override
     public String toString() {
-        return "DBFColumnHeader{" + "name='" + Arrays.toString(name) + '\'' + ", colType=" + colType +
-                ", fieldLength=" + fieldLength + ", decimalCount=" + decimalCount + '}';
+        return "DBFColumnHeader{" + "name='" + Arrays.toString(name) + '\'' + ", colType=" + colType + ", fieldLength="
+                + fieldLength + ", decimalCount=" + decimalCount + '}';
     }
 
     //from: http://www.dbf2002.com/dbf-file-format.html
     enum ColType {
-        C,//character
-        Y,//currency
-        D,//date
-        T,//datetime
-        B,//double
-        I,//integer,
-        G,//general
-        P,//picture
-        F,//floating point binary numeric
-        L,//logical
-        M,//memo
-        N,//binary coded decimal numeric
+        C, //character
+        Y, //currency
+        D, //date
+        T, //datetime
+        B, //double
+        I, //integer,
+        G, //general
+        P, //picture
+        F, //floating point binary numeric
+        L, //logical
+        M, //memo
+        N, //binary coded decimal numeric
         PLUS, //autoincrement
         AT, //timestamp dbase level 7
         O, //double

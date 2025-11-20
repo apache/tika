@@ -79,9 +79,8 @@ public class FetchKey implements Serializable {
             return false;
         }
         FetchKey fetchKey1 = (FetchKey) o;
-        return rangeStart == fetchKey1.rangeStart && rangeEnd == fetchKey1.rangeEnd &&
-                Objects.equals(fetcherName, fetchKey1.fetcherName) &&
-                Objects.equals(fetchKey, fetchKey1.fetchKey);
+        return rangeStart == fetchKey1.rangeStart && rangeEnd == fetchKey1.rangeEnd
+                && Objects.equals(fetcherName, fetchKey1.fetcherName) && Objects.equals(fetchKey, fetchKey1.fetchKey);
     }
 
     @Override
@@ -91,7 +90,7 @@ public class FetchKey implements Serializable {
 
     @Override
     public String toString() {
-        return "FetchKey{" + "fetcherName='" + fetcherName + '\'' + ", fetchKey='" + fetchKey +
-                '\'' + ", rangeStart=" + rangeStart + ", rangeEnd=" + rangeEnd + '}';
+        return "FetchKey{" + "fetcherName='" + fetcherName + '\'' + ", fetchKey='" + fetchKey + '\'' + ", rangeStart="
+                + rangeStart + ", rangeEnd=" + rangeEnd + '}';
     }
 }

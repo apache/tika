@@ -41,7 +41,6 @@ public class RereadableInputStream extends InputStream {
      */
     private static final int DEFAULT_MAX_BYTES_IN_MEMORY = 512 * 1024 * 1024;
 
-
     /**
      * Input stream originally passed to the constructor.
      */
@@ -67,7 +66,6 @@ public class RereadableInputStream extends InputStream {
      * eventually exceed maxBytesInMemory, then we'll switch to reading from a file.
      */
     private boolean readingFromBuffer;
-
 
     /**
      * The buffer used to store the stream's content; this storage is moved
@@ -103,13 +101,11 @@ public class RereadableInputStream extends InputStream {
      */
     private OutputStream storeOutputStream;
 
-
     /**
      * Specifies whether or not to close the original input stream
      * when close() is called.  Defaults to true.
      */
     private final boolean closeOriginalStreamOnClose;
-
 
     /**
      * Creates a rereadable input stream  with defaults of 512*1024*1024 bytes (500M) for
@@ -160,8 +156,7 @@ public class RereadableInputStream extends InputStream {
      *                         content size exceeds the array's size, when close() is called, or
      *                         when there are no more references to the instance.
      */
-    public RereadableInputStream(InputStream inputStream, int maxBytesInMemory,
-                                 boolean closeOriginalStreamOnClose) {
+    public RereadableInputStream(InputStream inputStream, int maxBytesInMemory, boolean closeOriginalStreamOnClose) {
         this.inputStream = inputStream;
         this.originalInputStream = inputStream;
         this.maxBytesInMemory = maxBytesInMemory;
@@ -188,9 +183,9 @@ public class RereadableInputStream extends InputStream {
             // the next byte from there instead
             if (readingFromBuffer) {
                 readingFromBuffer = false;
-                inputStream.close();  // Close the input byte stream
+                inputStream.close(); // Close the input byte stream
             } else {
-                inputStream.close();  // Close the input file stream
+                inputStream.close(); // Close the input file stream
                 // start appending to the file
                 storeOutputStream = new BufferedOutputStream(new FileOutputStream(storeFile, true));
             }
@@ -257,8 +252,8 @@ public class RereadableInputStream extends InputStream {
             // If we have a buffer, then we'll read from it
             if (byteBuffer != null) {
                 readingFromBuffer = true;
-                inputStream = UnsynchronizedByteArrayInputStream.builder().
-                        setByteArray(byteBuffer).setOffset(0).setLength(bufferHighWaterMark).get();
+                inputStream = UnsynchronizedByteArrayInputStream.builder().setByteArray(byteBuffer).setOffset(0)
+                        .setLength(bufferHighWaterMark).get();
             } else {
                 // No buffer, which means we've switched to a file
                 inputStream = new BufferedInputStream(new FileInputStream(storeFile));

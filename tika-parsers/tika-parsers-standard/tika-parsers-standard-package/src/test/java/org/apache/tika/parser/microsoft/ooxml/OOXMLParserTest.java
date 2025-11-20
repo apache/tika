@@ -21,9 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -31,6 +28,8 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.EMFParser;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class OOXMLParserTest extends TikaTest {
 
@@ -57,8 +56,7 @@ public class OOXMLParserTest extends TikaTest {
         officeParserConfig.setUseSAXPptxExtractor(true);
         parseContext.set(OfficeParserConfig.class, officeParserConfig);
 
-        List<Metadata> metadataList =
-                getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", parseContext);
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", parseContext);
         Metadata pdfMetadata1 = metadataList.get(4);
         assertContains("Apache Tika", pdfMetadata1.get(TikaCoreProperties.TIKA_CONTENT));
         Metadata pdfMetadata2 = metadataList.get(5);
@@ -85,15 +83,11 @@ public class OOXMLParserTest extends TikaTest {
         assertEquals("TestPdf.pdf", metadataList.get(4).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("testWORD123.docx", metadataList.get(6).get(TikaCoreProperties.RESOURCE_NAME_KEY));
 
-        assertEquals("/TestText.txt",
-                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
-        assertEquals("/TestPdf.pdf",
-                metadataList.get(4).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
-        assertEquals("/testWORD123.docx",
-                metadataList.get(6).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/TestText.txt", metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/TestPdf.pdf", metadataList.get(4).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/testWORD123.docx", metadataList.get(6).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
 
-        assertContains("This is Text File",
-                metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("This is Text File", metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
 
         assertContains("This is test PDF document for parser.",
                 metadataList.get(4).get(TikaCoreProperties.TIKA_CONTENT));
@@ -117,7 +111,7 @@ public class OOXMLParserTest extends TikaTest {
     }
 
     @Disabled("TODO figure out why this doesn't work")
-    @Test//(expected = org.apache.tika.exception.TikaException.class)
+    @Test //(expected = org.apache.tika.exception.TikaException.class)
     public void testCorruptedZip() throws Exception {
         //TIKA_2446
         getRecursiveMetadata("testZIP_corrupted_oom.zip");
@@ -129,8 +123,7 @@ public class OOXMLParserTest extends TikaTest {
         // https://github.com/jgm/pandoc/files/1290782/Sample_DOCX_using_MHT_container.docx
         List<Metadata> metadataList = getRecursiveMetadata("testAltChunkMHT.docx");
         assertEquals(3, metadataList.size());
-        assertContains("Example of a table",
-                metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("Example of a table", metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Test
@@ -139,7 +132,6 @@ public class OOXMLParserTest extends TikaTest {
         // https://github.com/jgm/pandoc/files/1290782/Sample_DOCX_using_HTML_container.docx
         List<Metadata> metadataList = getRecursiveMetadata("testAltChunkHTML.docx");
         assertEquals(2, metadataList.size());
-        assertContains("Example of a table",
-                metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("Example of a table", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
     }
 }

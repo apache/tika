@@ -14,10 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.detect;
 
 import java.util.Collection;
+
 import javax.imageio.spi.ServiceRegistry;
 
 import org.apache.tika.config.ServiceLoader;
@@ -46,8 +46,7 @@ public class DefaultEncodingDetector extends CompositeEncodingDetector {
     }
 
     public DefaultEncodingDetector(ServiceLoader loader,
-                                   Collection<Class<? extends EncodingDetector>>
-                                           excludeEncodingDetectors) {
+            Collection<Class<? extends EncodingDetector>> excludeEncodingDetectors) {
         super(loader.loadServiceProviders(EncodingDetector.class), excludeEncodingDetectors);
     }
 

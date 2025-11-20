@@ -14,9 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.eval.app;
-
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -37,10 +35,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.eval.app.db.ColInfo;
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.TableInfo;
@@ -74,6 +68,9 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
 
 public abstract class ProfilerBase {
 
@@ -92,16 +89,21 @@ public abstract class ProfilerBase {
     //make this configurable
     private static final String DIGEST_KEY = "X-TIKA:digest:MD5";
     private static final Map<String, Cols> UC_TAGS_OF_INTEREST = initTags();
-    private final static Pattern ACCESS_PERMISSION_EXCEPTION = Pattern.compile("org\\.apache\\.tika\\.exception\\.AccessPermissionException");
-    private final static Pattern ENCRYPTION_EXCEPTION = Pattern.compile("org\\.apache\\.tika.exception\\.EncryptedDocumentException");
-    public static TableInfo REF_EXTRACT_EXCEPTION_TYPES = new TableInfo("ref_extract_exception_types", new ColInfo(Cols.EXTRACT_EXCEPTION_ID, Types.INTEGER),
+    private final static Pattern ACCESS_PERMISSION_EXCEPTION = Pattern
+            .compile("org\\.apache\\.tika\\.exception\\.AccessPermissionException");
+    private final static Pattern ENCRYPTION_EXCEPTION = Pattern
+            .compile("org\\.apache\\.tika.exception\\.EncryptedDocumentException");
+    public static TableInfo REF_EXTRACT_EXCEPTION_TYPES = new TableInfo("ref_extract_exception_types",
+            new ColInfo(Cols.EXTRACT_EXCEPTION_ID, Types.INTEGER),
             new ColInfo(Cols.EXTRACT_EXCEPTION_DESCRIPTION, Types.VARCHAR, 128));
-    public static TableInfo REF_PARSE_ERROR_TYPES =
-            new TableInfo("ref_parse_error_types", new ColInfo(Cols.PARSE_ERROR_ID, Types.INTEGER), new ColInfo(Cols.PARSE_ERROR_DESCRIPTION, Types.VARCHAR, 128));
-    public static TableInfo REF_PARSE_EXCEPTION_TYPES =
-            new TableInfo("ref_parse_exception_types", new ColInfo(Cols.PARSE_EXCEPTION_ID, Types.INTEGER), new ColInfo(Cols.PARSE_EXCEPTION_DESCRIPTION, Types.VARCHAR, 128));
-    public static TableInfo MIME_TABLE = new TableInfo("mimes", new ColInfo(Cols.MIME_ID, Types.INTEGER, "PRIMARY KEY"), new ColInfo(Cols.MIME_STRING, Types.VARCHAR, 256),
-            new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 12));
+    public static TableInfo REF_PARSE_ERROR_TYPES = new TableInfo("ref_parse_error_types",
+            new ColInfo(Cols.PARSE_ERROR_ID, Types.INTEGER),
+            new ColInfo(Cols.PARSE_ERROR_DESCRIPTION, Types.VARCHAR, 128));
+    public static TableInfo REF_PARSE_EXCEPTION_TYPES = new TableInfo("ref_parse_exception_types",
+            new ColInfo(Cols.PARSE_EXCEPTION_ID, Types.INTEGER),
+            new ColInfo(Cols.PARSE_EXCEPTION_DESCRIPTION, Types.VARCHAR, 128));
+    public static TableInfo MIME_TABLE = new TableInfo("mimes", new ColInfo(Cols.MIME_ID, Types.INTEGER, "PRIMARY KEY"),
+            new ColInfo(Cols.MIME_STRING, Types.VARCHAR, 256), new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 12));
     private static CommonTokenCountManager COMMON_TOKEN_COUNT_MANAGER;
     private static Pattern FILE_NAME_CLEANER = Pattern.compile("\\.(json|txt)(\\.(bz2|gz|zip))?$");
     private static LanguageIDWrapper LANG_ID = new LanguageIDWrapper();
@@ -216,9 +218,7 @@ public abstract class ProfilerBase {
 
         Map<String, Integer> counts = new HashMap<>();
         for (int i = 1; i < list.size(); i++) {
-            String path = list
-                    .get(i)
-                    .get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
+            String path = list.get(i).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
             if (path == null) {
                 //shouldn't ever happen
                 continue;
@@ -240,16 +240,13 @@ public abstract class ProfilerBase {
         }
 
         for (int i = 1; i < list.size(); i++) {
-            Integer count = counts.get(list
-                    .get(i)
-                    .get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+            Integer count = counts.get(list.get(i).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
             if (count == null) {
                 count = 0;
             }
             ret.add(i, count);
         }
         return ret;
-
 
     }
 
@@ -267,44 +264,29 @@ public abstract class ProfilerBase {
         }
 
         String handlerClass = metadata.get(TikaCoreProperties.TIKA_CONTENT_HANDLER);
-        if (evalFilePaths
-                .getExtractFile()
-                .getFileName()
-                .toString()
-                .toLowerCase(Locale.ENGLISH)
-                .endsWith(".html")) {
+        if (evalFilePaths.getExtractFile().getFileName().toString().toLowerCase(Locale.ENGLISH).endsWith(".html")) {
             try {
                 return ContentTagParser.parseHTML(s, UC_TAGS_OF_INTEREST.keySet());
             } catch (IOException | SAXException e) {
-                LOG.warn("Problem parsing html in {}; backing off to treat string as text", evalFilePaths
-                        .getExtractFile()
-                        .toAbsolutePath()
-                        .toString(), e);
+                LOG.warn("Problem parsing html in {}; backing off to treat string as text",
+                        evalFilePaths.getExtractFile().toAbsolutePath().toString(), e);
 
                 return new ContentTags(s, true);
             }
-        } else if (evalFilePaths
-                .getExtractFile()
-                .getFileName()
-                .toString()
-                .toLowerCase(Locale.ENGLISH)
-                .endsWith(".xhtml") || (handlerClass != null && handlerClass.equals(ToXMLContentHandler.class.getSimpleName()))) {
+        } else if (evalFilePaths.getExtractFile().getFileName().toString().toLowerCase(Locale.ENGLISH).endsWith(
+                ".xhtml") || (handlerClass != null && handlerClass.equals(ToXMLContentHandler.class.getSimpleName()))) {
             try {
                 return ContentTagParser.parseXML(s, UC_TAGS_OF_INTEREST.keySet());
             } catch (TikaException | IOException | SAXException e) {
-                LOG.warn("Problem parsing xhtml in {}; backing off to html parser", evalFilePaths
-                        .getExtractFile()
-                        .toAbsolutePath()
-                        .toString(), e);
+                LOG.warn("Problem parsing xhtml in {}; backing off to html parser",
+                        evalFilePaths.getExtractFile().toAbsolutePath().toString(), e);
                 try {
                     ContentTags contentTags = ContentTagParser.parseHTML(s, UC_TAGS_OF_INTEREST.keySet());
                     contentTags.setParseException(true);
                     return contentTags;
                 } catch (IOException | SAXException e2) {
-                    LOG.warn("Problem parsing html in {}; backing off to treat string as text", evalFilePaths
-                            .getExtractFile()
-                            .toAbsolutePath()
-                            .toString(), e2);
+                    LOG.warn("Problem parsing html in {}; backing off to treat string as text",
+                            evalFilePaths.getExtractFile().toAbsolutePath().toString(), e2);
                 }
                 return new ContentTags(s, true);
             }
@@ -355,7 +337,8 @@ public abstract class ProfilerBase {
         initAnalyzersAndTokenCounter(maxTokens, new LanguageIDWrapper());
     }
 
-    protected void writeExtractException(TableInfo extractExceptionTable, String containerId, String filePath, ExtractReaderException.TYPE type) throws IOException {
+    protected void writeExtractException(TableInfo extractExceptionTable, String containerId, String filePath,
+            ExtractReaderException.TYPE type) throws IOException {
         Map<Cols, String> data = new HashMap<>();
         data.put(Cols.CONTAINER_ID, containerId);
         data.put(Cols.FILE_PATH, filePath);
@@ -364,8 +347,8 @@ public abstract class ProfilerBase {
 
     }
 
-    protected void writeProfileData(EvalFilePaths fps, int i, ContentTags contentTags, Metadata m, String fileId, String containerId, List<Integer> numAttachments,
-                                    TableInfo profileTable) {
+    protected void writeProfileData(EvalFilePaths fps, int i, ContentTags contentTags, Metadata m, String fileId,
+            String containerId, List<Integer> numAttachments, TableInfo profileTable) {
 
         Map<Cols, String> data = new HashMap<>();
         data.put(Cols.ID, fileId);
@@ -390,10 +373,7 @@ public abstract class ProfilerBase {
         //if the outer wrapper document
         if (i == 0) {
             data.put(Cols.IS_EMBEDDED, FALSE);
-            data.put(Cols.FILE_NAME, fps
-                    .getRelativeSourceFilePath()
-                    .getFileName()
-                    .toString());
+            data.put(Cols.FILE_NAME, fps.getRelativeSourceFilePath().getFileName().toString());
             data.put(Cols.EMBEDDED_DEPTH, "0");
         } else {
             data.put(Cols.IS_EMBEDDED, TRUE);
@@ -440,9 +420,7 @@ public abstract class ProfilerBase {
     protected void writeExceptionData(String fileId, Metadata m, TableInfo exceptionTable) {
         Map<Cols, String> data = new HashMap<>();
         getExceptionStrings(m, data);
-        if (data
-                .keySet()
-                .size() > 0) {
+        if (data.keySet().size() > 0) {
             try {
                 data.put(Cols.ID, fileId);
                 writer.writeRow(exceptionTable, data);
@@ -453,7 +431,7 @@ public abstract class ProfilerBase {
     }
 
     protected Map<Class, Object> calcTextStats(ContentTags contentTags) {
-/*        if (contentTags == ContentTags.EMPTY_CONTENT_TAGS) {
+        /*        if (contentTags == ContentTags.EMPTY_CONTENT_TAGS) {
             return Collections.EMPTY_MAP;
         }*/
         Map<Cols, String> data = new HashMap<>();
@@ -473,7 +451,8 @@ public abstract class ProfilerBase {
      * @param textStats
      * @param contentsTable
      */
-    protected void writeContentData(String fileId, Map<Class, Object> textStats, TableInfo contentsTable) throws IOException {
+    protected void writeContentData(String fileId, Map<Class, Object> textStats, TableInfo contentsTable)
+            throws IOException {
         Map<Cols, String> data = new HashMap<>();
         data.put(Cols.ID, fileId);
         if (textStats.containsKey(ContentLengthCalculator.class)) {
@@ -491,7 +470,8 @@ public abstract class ProfilerBase {
             data.put(Cols.COMMON_TOKENS_LANG, commonTokenResult.getLangCode());
             data.put(Cols.NUM_UNIQUE_COMMON_TOKENS, Integer.toString(commonTokenResult.getUniqueCommonTokens()));
             data.put(Cols.NUM_COMMON_TOKENS, Integer.toString(commonTokenResult.getCommonTokens()));
-            data.put(Cols.NUM_UNIQUE_ALPHABETIC_TOKENS, Integer.toString(commonTokenResult.getUniqueAlphabeticTokens()));
+            data.put(Cols.NUM_UNIQUE_ALPHABETIC_TOKENS,
+                    Integer.toString(commonTokenResult.getUniqueAlphabeticTokens()));
             data.put(Cols.NUM_ALPHABETIC_TOKENS, Integer.toString(commonTokenResult.getAlphabeticTokens()));
             double oov = commonTokenResult.getAlphabeticTokens() > 0 ? commonTokenResult.getOOV() : -1.0;
             data.put(Cols.OOV, Double.toString(oov));
@@ -505,7 +485,6 @@ public abstract class ProfilerBase {
         if (textStats.get(TokenEntropy.class) != null) {
             data.put(Cols.TOKEN_ENTROPY_RATE, Double.toString((Double) textStats.get(TokenEntropy.class)));
         }
-
 
         SummaryStatistics summStats = (SummaryStatistics) textStats.get(TokenLengths.class);
         if (summStats != null) {
@@ -618,27 +597,16 @@ public abstract class ProfilerBase {
         Map<String, MutableInt> blocks = (Map<String, MutableInt>) tokenStats.get(UnicodeBlockCounter.class);
         List<Pair<String, Integer>> pairs = new ArrayList<>();
         for (Map.Entry<String, MutableInt> e : blocks.entrySet()) {
-            pairs.add(Pair.of(e.getKey(), e
-                    .getValue()
-                    .intValue()));
+            pairs.add(Pair.of(e.getKey(), e.getValue().intValue()));
         }
-        pairs.sort((o1, o2) -> o2
-                .getValue()
-                .compareTo(o1.getValue()));
+        pairs.sort((o1, o2) -> o2.getValue().compareTo(o1.getValue()));
         StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < 20 && i < pairs.size(); i++) {
             if (i > 0) {
                 sb.append(" | ");
             }
-            sb
-                    .append(pairs
-                            .get(i)
-                            .getKey())
-                    .append(": ")
-                    .append(pairs
-                            .get(i)
-                            .getValue());
+            sb.append(pairs.get(i).getKey()).append(": ").append(pairs.get(i).getValue());
         }
         data.put(Cols.UNICODE_CHAR_BLOCKS, sb.toString());
     }
@@ -647,20 +615,12 @@ public abstract class ProfilerBase {
         List<LanguageResult> probabilities = (List<LanguageResult>) stats.get(LanguageIDWrapper.class);
 
         if (probabilities.size() > 0) {
-            data.put(Cols.LANG_ID_1, probabilities
-                    .get(0)
-                    .getLanguage());
-            data.put(Cols.LANG_ID_PROB_1, Double.toString(probabilities
-                    .get(0)
-                    .getRawScore()));
+            data.put(Cols.LANG_ID_1, probabilities.get(0).getLanguage());
+            data.put(Cols.LANG_ID_PROB_1, Double.toString(probabilities.get(0).getRawScore()));
         }
         if (probabilities.size() > 1) {
-            data.put(Cols.LANG_ID_2, probabilities
-                    .get(1)
-                    .getLanguage());
-            data.put(Cols.LANG_ID_PROB_2, Double.toString(probabilities
-                    .get(1)
-                    .getRawScore()));
+            data.put(Cols.LANG_ID_2, probabilities.get(1).getLanguage());
+            data.put(Cols.LANG_ID_PROB_2, Double.toString(probabilities.get(1).getRawScore()));
         }
     }
 
@@ -684,10 +644,7 @@ public abstract class ProfilerBase {
             if (i++ > 0) {
                 sb.append(" | ");
             }
-            sb
-                    .append(t.getToken())
-                    .append(": ")
-                    .append(t.getValue());
+            sb.append(t.getToken()).append(": ").append(t.getValue());
         }
 
         data.put(Cols.TOP_N_TOKENS, sb.toString());
@@ -810,6 +767,4 @@ public abstract class ProfilerBase {
         OOM, TIMEOUT
     }
 
-
 }
-

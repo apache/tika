@@ -19,9 +19,8 @@ package org.apache.tika.parser.apple;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
+import org.junit.jupiter.api.Test;
 
 public class IWorkTest extends TikaTest {
 

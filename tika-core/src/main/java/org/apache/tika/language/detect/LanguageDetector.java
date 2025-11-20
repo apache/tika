@@ -75,8 +75,7 @@ public abstract class LanguageDetector {
     }
 
     public static List<LanguageDetector> getLanguageDetectors(ServiceLoader loader) {
-        List<LanguageDetector> detectors =
-                loader.loadStaticServiceProviders(LanguageDetector.class);
+        List<LanguageDetector> detectors = loader.loadStaticServiceProviders(LanguageDetector.class);
         detectors.sort(CompareUtils::compareClassName);
         return detectors;
     }
@@ -142,8 +141,7 @@ public abstract class LanguageDetector {
      * @param languageProbabilities Map from language to probability
      * @return this
      */
-    public abstract LanguageDetector setPriors(Map<String, Float> languageProbabilities)
-            throws IOException;
+    public abstract LanguageDetector setPriors(Map<String, Float> languageProbabilities) throws IOException;
 
     // ============================================================
     // The routines below are called when processing a document
@@ -180,7 +178,7 @@ public abstract class LanguageDetector {
             return;
         }
         int start = 0;
-        while (! hasEnoughText() && start < len) {
+        while (!hasEnoughText() && start < len) {
             int end = Math.min(start + BUFFER_LENGTH, len);
             char[] chars = text.subSequence(start, end).toString().toCharArray();
             addText(chars, 0, chars.length);
@@ -188,7 +186,6 @@ public abstract class LanguageDetector {
         }
 
     }
-
 
     /**
      * Tell the caller whether more text is required for the current document

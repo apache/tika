@@ -25,14 +25,13 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.SAXException;
 
 public class ParameterizedParserTest {
 
@@ -55,13 +54,11 @@ public class ParameterizedParserTest {
         }
     };
 
-
     @Test
     public void testConfigurableParserTypes() throws Exception {
         Metadata md = getMetadata("TIKA-1986-parameterized.xml");
         for (Map.Entry<String, String> entry : expcted.entrySet()) {
-            assertEquals(entry.getValue(),
-                    md.get(entry.getKey()), "mismatch for " + entry.getKey());
+            assertEquals(entry.getValue(), md.get(entry.getKey()), "mismatch for " + entry.getKey());
         }
     }
 
@@ -69,11 +66,9 @@ public class ParameterizedParserTest {
     public void testConfigurableParserTypesDecorated() throws Exception {
         Metadata md = getMetadata("TIKA-1986-parameterized-decorated.xml");
         for (Map.Entry<String, String> entry : expcted.entrySet()) {
-            assertEquals(entry.getValue(),
-                    md.get(entry.getKey()), "mismatch for " + entry.getKey());
+            assertEquals(entry.getValue(), md.get(entry.getKey()), "mismatch for " + entry.getKey());
         }
     }
-
 
     @Test
     public void testSomeParams() throws Exception {

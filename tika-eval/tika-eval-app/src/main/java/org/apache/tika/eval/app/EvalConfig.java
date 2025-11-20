@@ -34,7 +34,6 @@ public class EvalConfig {
     private int numWorkers = 4;
     private Path errorLogFile = null;
 
-
     public static EvalConfig load(Path path) throws Exception {
         return new ObjectMapper().readValue(path.toFile(), EvalConfig.class);
     }
@@ -81,9 +80,10 @@ public class EvalConfig {
 
     @Override
     public String toString() {
-        return "EvalConfig{" + "minExtractLength=" + minExtractLength + ", maxExtractLength=" + maxExtractLength + ", jdbcString='" + jdbcString + '\'' + ", jdbcDriverClass='" +
-                jdbcDriverClass + '\'' + ", forceDrop=" + forceDrop + ", maxFilesToAdd=" + maxFilesToAdd + ", maxTokens=" + maxTokens + ", maxContentLength=" + maxContentLength +
-                ", numThreads=" + numWorkers + ", errorLogFile=" + errorLogFile + '}';
+        return "EvalConfig{" + "minExtractLength=" + minExtractLength + ", maxExtractLength=" + maxExtractLength
+                + ", jdbcString='" + jdbcString + '\'' + ", jdbcDriverClass='" + jdbcDriverClass + '\'' + ", forceDrop="
+                + forceDrop + ", maxFilesToAdd=" + maxFilesToAdd + ", maxTokens=" + maxTokens + ", maxContentLength="
+                + maxContentLength + ", numThreads=" + numWorkers + ", errorLogFile=" + errorLogFile + '}';
     }
 
     public void setNumWorkers(int n) {

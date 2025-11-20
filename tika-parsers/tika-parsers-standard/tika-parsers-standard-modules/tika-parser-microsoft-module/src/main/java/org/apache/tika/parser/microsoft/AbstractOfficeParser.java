@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft;
 
 import org.apache.poi.util.IOUtils;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -36,8 +35,7 @@ public abstract class AbstractOfficeParser implements Parser {
      * @param parseContext
      */
     public void configure(ParseContext parseContext) {
-        OfficeParserConfig officeParserConfig =
-                parseContext.get(OfficeParserConfig.class, defaultOfficeParserConfig);
+        OfficeParserConfig officeParserConfig = parseContext.get(OfficeParserConfig.class, defaultOfficeParserConfig);
         parseContext.set(OfficeParserConfig.class, officeParserConfig);
     }
 

@@ -23,14 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 
-import com.pff.PSTException;
-import com.pff.PSTFile;
-import com.pff.PSTFolder;
-import com.pff.PSTMessage;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -42,14 +34,21 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+
+import com.pff.PSTException;
+import com.pff.PSTFile;
+import com.pff.PSTFolder;
+import com.pff.PSTMessage;
 
 /**
  * Parser for MS Outlook PST email storage files
  */
 public class OutlookPSTParser implements Parser {
 
-    public static final MediaType MS_OUTLOOK_PST_MIMETYPE =
-            MediaType.application("vnd.ms-outlook-pst");
+    public static final MediaType MS_OUTLOOK_PST_MIMETYPE = MediaType.application("vnd.ms-outlook-pst");
     private static final long serialVersionUID = 620998217748364063L;
     private static final Set<MediaType> SUPPORTED_TYPES = singleton(MS_OUTLOOK_PST_MIMETYPE);
 
@@ -59,17 +58,15 @@ public class OutlookPSTParser implements Parser {
         return attributes;
     }
 
-
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         // Use the delegate parser to parse the contained document
-        EmbeddedDocumentExtractor embeddedExtractor =
-                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        EmbeddedDocumentExtractor embeddedExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
         metadata.set(Metadata.CONTENT_TYPE, MS_OUTLOOK_PST_MIMETYPE.toString());
 
@@ -108,7 +105,7 @@ public class OutlookPSTParser implements Parser {
     }
 
     private void parseFolder(XHTMLContentHandler handler, PSTFolder pstFolder, String folderPath,
-                             EmbeddedDocumentExtractor embeddedExtractor) throws Exception {
+            EmbeddedDocumentExtractor embeddedExtractor) throws Exception {
         if (pstFolder.getContentCount() > 0) {
             PSTMessage pstMail = (PSTMessage) pstFolder.getNextChild();
             while (pstMail != null) {
@@ -128,8 +125,9 @@ public class OutlookPSTParser implements Parser {
             for (PSTFolder pstSubFolder : pstFolder.getSubFolders()) {
                 handler.startElement("div", createAttribute("class", "email-folder"));
                 handler.element("h1", pstSubFolder.getDisplayName());
-                String subFolderPath = folderPath.endsWith("/") ? folderPath + pstSubFolder.getDisplayName() :
-                        folderPath + "/" + pstFolder.getDisplayName();
+                String subFolderPath = folderPath.endsWith("/")
+                        ? folderPath + pstSubFolder.getDisplayName()
+                        : folderPath + "/" + pstFolder.getDisplayName();
                 parseFolder(handler, pstSubFolder, subFolderPath, embeddedExtractor);
                 handler.endElement("div");
             }

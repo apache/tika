@@ -24,14 +24,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.SAXException;
 
 /**
  * Test case for {@link SentimentAnalysisParser}
@@ -46,10 +45,9 @@ public class SentimentAnalysisParserTest {
             return;
         }
 
-        String text = "What a wonderful thought it is that" +
-                " some of the best days of our lives haven't happened yet.";
-        ByteArrayInputStream stream =
-                new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
+        String text = "What a wonderful thought it is that"
+                + " some of the best days of our lives haven't happened yet.";
+        ByteArrayInputStream stream = new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
         Metadata md = new Metadata();
         tika.parse(stream, md);
         String sentiment = md.get("Sentiment");
@@ -65,8 +63,7 @@ public class SentimentAnalysisParserTest {
             return;
         }
         String text = "Whatever, I need some cooling off time!";
-        ByteArrayInputStream stream =
-                new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream stream = new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
         Metadata md = new Metadata();
         tika.parse(stream, md);
         String sentiment = md.get("Sentiment");

@@ -30,8 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.sqlite.SQLiteConfig;
-
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -40,6 +38,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.jdbc.AbstractDBParser;
 import org.apache.tika.parser.jdbc.JDBCTableReader;
+import org.sqlite.SQLiteConfig;
 
 /**
  * This is the implementation of the db parser for SQLite.
@@ -51,10 +50,9 @@ public class SQLite3DBParser extends AbstractDBParser {
 
     protected static final String SQLITE_CLASS_NAME = "org.sqlite.JDBC";
 
-    protected static final Map<Property, String> METADATA_KEYS = Map.of(
-            SQLite3Parser.SQLITE_APPLICATION_ID, "select application_id from pragma_application_id",
-            SQLite3Parser.SQLITE_USER_VERSION, "select user_version from pragma_user_version"
-    );
+    protected static final Map<Property, String> METADATA_KEYS = Map.of(SQLite3Parser.SQLITE_APPLICATION_ID,
+            "select application_id from pragma_application_id", SQLite3Parser.SQLITE_USER_VERSION,
+            "select user_version from pragma_user_version");
 
     //If the InputStream wasn't a TikaInputStream, copy to this tmp file
     Path tmpFile = null;
@@ -69,8 +67,7 @@ public class SQLite3DBParser extends AbstractDBParser {
     }
 
     @Override
-    protected Connection getConnection(InputStream stream, Metadata metadata, ParseContext context)
-            throws IOException {
+    protected Connection getConnection(InputStream stream, Metadata metadata, ParseContext context) throws IOException {
         String connectionString = getConnectionString(stream, metadata, context);
 
         Connection connection = null;
@@ -93,8 +90,7 @@ public class SQLite3DBParser extends AbstractDBParser {
     }
 
     @Override
-    protected String getConnectionString(InputStream is, Metadata metadata, ParseContext context)
-            throws IOException {
+    protected String getConnectionString(InputStream is, Metadata metadata, ParseContext context) throws IOException {
         TikaInputStream tis = TikaInputStream.cast(is);
         //if this is a TikaInputStream, use that to spool is to disk or
         //use original underlying file.
@@ -126,8 +122,8 @@ public class SQLite3DBParser extends AbstractDBParser {
     }
 
     @Override
-    protected List<String> getTableNames(Connection connection, Metadata metadata,
-                                         ParseContext context) throws SQLException {
+    protected List<String> getTableNames(Connection connection, Metadata metadata, ParseContext context)
+            throws SQLException {
         List<String> tableNames = new LinkedList<>();
 
         try (Statement st = connection.createStatement()) {
@@ -142,14 +138,13 @@ public class SQLite3DBParser extends AbstractDBParser {
     }
 
     @Override
-    public JDBCTableReader getTableReader(Connection connection, String tableName,
-                                          ParseContext context) {
+    public JDBCTableReader getTableReader(Connection connection, String tableName, ParseContext context) {
         return new SQLite3TableReader(connection, tableName, new EmbeddedDocumentUtil(context));
     }
 
     @Override
     protected JDBCTableReader getTableReader(Connection connection, String tableName,
-                                             EmbeddedDocumentUtil embeddedDocumentUtil) {
+            EmbeddedDocumentUtil embeddedDocumentUtil) {
         return new SQLite3TableReader(connection, tableName, embeddedDocumentUtil);
     }
 
@@ -166,7 +161,7 @@ public class SQLite3DBParser extends AbstractDBParser {
                 try (ResultSet rs = st.executeQuery(e.getValue())) {
                     if (rs.next()) {
                         int val = rs.getInt(1);
-                        if (! rs.wasNull()) {
+                        if (!rs.wasNull()) {
                             metadata.set(e.getKey(), Integer.toString(val, 16));
                         }
                     }

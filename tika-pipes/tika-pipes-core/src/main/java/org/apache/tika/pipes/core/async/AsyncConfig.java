@@ -76,7 +76,6 @@ public class AsyncConfig extends PipesConfigBase {
         this.emitMaxEstimatedBytes = emitMaxEstimatedBytes;
     }
 
-
     public void setNumEmitters(int numEmitters) {
         this.numEmitters = numEmitters;
     }

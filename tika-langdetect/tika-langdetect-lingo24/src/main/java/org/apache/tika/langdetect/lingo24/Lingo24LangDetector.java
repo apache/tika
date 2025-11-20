@@ -25,19 +25,20 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.core.Form;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.client.WebClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.language.detect.LanguageConfidence;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.ws.rs.core.Form;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 /**
  * An implementation of a Language Detector using the
@@ -49,7 +50,6 @@ import org.apache.tika.language.detect.LanguageResult;
 public class Lingo24LangDetector extends LanguageDetector {
 
     private static final Logger LOG = LoggerFactory.getLogger(Lingo24LangDetector.class);
-
 
     private static final String LINGO24_TRANSLATE_URL_BASE = "https://api.lingo24.com/mt/v1/";
     private static final String LINGO24_LANGID_ACTION = "langid";
@@ -75,8 +75,7 @@ public class Lingo24LangDetector extends LanguageDetector {
         this.isAvailable = true;
         Properties config = new Properties();
         try {
-            config.load(
-                    Lingo24LangDetector.class.getResourceAsStream("langdetect.lingo24.properties"));
+            config.load(Lingo24LangDetector.class.getResourceAsStream("langdetect.lingo24.properties"));
 
             this.userKey = config.getProperty("api.user-key");
 
@@ -182,8 +181,7 @@ public class Lingo24LangDetector extends LanguageDetector {
         WebClient _client = null;
         try {
             _client = WebClient.create(LINGO24_TRANSLATE_URL_BASE + LINGO24_SOURCELANG_ACTION);
-            Response response =
-                    _client.accept(MediaType.APPLICATION_JSON).query("user_key", userKey).get();
+            Response response = _client.accept(MediaType.APPLICATION_JSON).query("user_key", userKey).get();
 
             String json = response.readEntity(String.class);
             JsonNode jsonArray = new ObjectMapper().readTree(json).get("source_langs");

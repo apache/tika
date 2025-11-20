@@ -16,12 +16,12 @@
  */
 package org.apache.tika.server.core.config;
 
-import jakarta.ws.rs.core.MultivaluedMap;
-
 import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.server.core.ParseContextConfig;
+
+import jakarta.ws.rs.core.MultivaluedMap;
 
 public class TimeoutConfig implements ParseContextConfig {
 

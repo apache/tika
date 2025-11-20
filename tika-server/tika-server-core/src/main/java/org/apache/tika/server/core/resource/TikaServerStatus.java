@@ -19,11 +19,11 @@ package org.apache.tika.server.core.resource;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.apache.tika.server.core.ServerStatus;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
-
-import org.apache.tika.server.core.ServerStatus;
 
 @Path("/status")
 public class TikaServerStatus {

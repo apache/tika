@@ -24,9 +24,8 @@ import java.util.Locale;
  */
 class AutoPageNumberUtils {
 
-    private static final String[] ALPHABET =
-            {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q",
-                    "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};
+    private static final String[] ALPHABET = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O",
+            "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};
 
     private static final int MAX = 26;
 
@@ -73,15 +72,14 @@ class AutoPageNumberUtils {
         }
         return sbuff.toString();
 
-
     }
 
     public static String asRomanNumeralsLower(int i) {
         return asRomanNumerals(i).toLowerCase(Locale.ROOT);
     }
 
-    private static int i2r(StringBuffer sbuff, int i, String tens, int iTens, String nines,
-                           int iNines, String fives, int iFives, String fours, int iFours) {
+    private static int i2r(StringBuffer sbuff, int i, String tens, int iTens, String nines, int iNines, String fives,
+            int iFives, String fours, int iFours) {
         while (i >= iTens) {
             sbuff.append(tens);
             i -= iTens;

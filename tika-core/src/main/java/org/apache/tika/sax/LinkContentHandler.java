@@ -133,8 +133,8 @@ public class LinkContentHandler extends DefaultHandler {
     @Override
     public void endElement(String uri, String local, String name) {
         if (!builderStack.isEmpty() && XHTML.equals(uri)) {
-            if ("a".equals(local) || "img".equals(local) || "link".equals(local) ||
-                    "script".equals(local) || "iframe".equals(local)) {
+            if ("a".equals(local) || "img".equals(local) || "link".equals(local) || "script".equals(local)
+                    || "iframe".equals(local)) {
                 // ensure this is the correct builder. not all </script> tags correspond
                 // to a LinkBuilder, e.g. for embedded scripts
                 if (builderStack.getFirst().getType().equals(local)) {

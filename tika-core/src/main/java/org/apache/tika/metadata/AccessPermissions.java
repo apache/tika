@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.metadata;
 
 /**
@@ -24,8 +23,7 @@ package org.apache.tika.metadata;
  */
 public interface AccessPermissions {
 
-    String PREFIX =
-            "access_permission" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    String PREFIX = "access_permission" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     /**
      * Can any modifications be made to the document
@@ -41,14 +39,12 @@ public interface AccessPermissions {
      * Should content be extracted for the purposes
      * of accessibility.
      */
-    Property EXTRACT_FOR_ACCESSIBILITY =
-            Property.externalText(PREFIX + "extract_for_accessibility");
+    Property EXTRACT_FOR_ACCESSIBILITY = Property.externalText(PREFIX + "extract_for_accessibility");
 
     /**
      * Can the user insert/rotate/delete pages.
      */
     Property ASSEMBLE_DOCUMENT = Property.externalText(PREFIX + "assemble_document");
-
 
     /**
      * Can the user fill in a form

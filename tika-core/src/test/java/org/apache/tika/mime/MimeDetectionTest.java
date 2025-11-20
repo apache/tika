@@ -30,12 +30,11 @@ import java.net.URL;
 
 import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class MimeDetectionTest {
 
@@ -105,33 +104,30 @@ public class MimeDetectionTest {
 
     @Test
     public void testByteOrderMark() throws Exception {
-        assertEquals(MediaType.TEXT_PLAIN, MIME_TYPES
-                .detect(new ByteArrayInputStream("\ufefftest".getBytes(UTF_16LE)), new Metadata()));
-        assertEquals(MediaType.TEXT_PLAIN, MIME_TYPES
-                .detect(new ByteArrayInputStream("\ufefftest".getBytes(UTF_16BE)), new Metadata()));
-        assertEquals(MediaType.TEXT_PLAIN, MIME_TYPES
-                .detect(new ByteArrayInputStream("\ufefftest".getBytes(UTF_8)), new Metadata()));
+        assertEquals(MediaType.TEXT_PLAIN,
+                MIME_TYPES.detect(new ByteArrayInputStream("\ufefftest".getBytes(UTF_16LE)), new Metadata()));
+        assertEquals(MediaType.TEXT_PLAIN,
+                MIME_TYPES.detect(new ByteArrayInputStream("\ufefftest".getBytes(UTF_16BE)), new Metadata()));
+        assertEquals(MediaType.TEXT_PLAIN,
+                MIME_TYPES.detect(new ByteArrayInputStream("\ufefftest".getBytes(UTF_8)), new Metadata()));
     }
 
     @Test
     public void testRFC822WithBOM() throws Exception {
-        String header = "From: blah <blah@blah.com>\r\n" + "Received: Friday, January 24, 2020 3:24 PM\r\n" +
-                "To: someone@somewhere.com\r\n" + "Cc: someone-else@other.com\r\n" +
-                "Subject: Received\r\n";
+        String header = "From: blah <blah@blah.com>\r\n" + "Received: Friday, January 24, 2020 3:24 PM\r\n"
+                + "To: someone@somewhere.com\r\n" + "Cc: someone-else@other.com\r\n" + "Subject: Received\r\n";
         MediaType rfc822 = MediaType.parse("message/rfc822");
-        assertEquals(rfc822, MIME_TYPES.detect(UnsynchronizedByteArrayInputStream
-                .builder()
-                .setByteArray(header.getBytes(UTF_8))
-                .get(), new Metadata()));
+        assertEquals(rfc822,
+                MIME_TYPES.detect(
+                        UnsynchronizedByteArrayInputStream.builder().setByteArray(header.getBytes(UTF_8)).get(),
+                        new Metadata()));
 
         int utfLength = ByteOrderMark.UTF_8.length();
         byte[] bytes = new byte[header.getBytes(UTF_8).length + utfLength];
         System.arraycopy(ByteOrderMark.UTF_8.getBytes(), 0, bytes, 0, utfLength);
         System.arraycopy(header.getBytes(UTF_8), 0, bytes, 3, header.getBytes(UTF_8).length);
-        assertEquals(rfc822, MIME_TYPES.detect(UnsynchronizedByteArrayInputStream
-                .builder()
-                .setByteArray(bytes)
-                .get(), new Metadata()));
+        assertEquals(rfc822, MIME_TYPES.detect(UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get(),
+                new Metadata()));
     }
 
     @Test
@@ -139,28 +135,25 @@ public class MimeDetectionTest {
         assertTrue(REGISTRY.isSpecializationOf(MediaType.parse("text/something; charset=UTF-8"),
                 MediaType.parse("text/something")));
 
-        assertTrue(REGISTRY.isSpecializationOf(MediaType.parse("text/something; charset=UTF-8"),
-                MediaType.TEXT_PLAIN));
+        assertTrue(REGISTRY.isSpecializationOf(MediaType.parse("text/something; charset=UTF-8"), MediaType.TEXT_PLAIN));
 
-        assertTrue(REGISTRY.isSpecializationOf(MediaType.parse("text/something; charset=UTF-8"),
-                MediaType.OCTET_STREAM));
+        assertTrue(
+                REGISTRY.isSpecializationOf(MediaType.parse("text/something; charset=UTF-8"), MediaType.OCTET_STREAM));
 
-        assertTrue(REGISTRY.isSpecializationOf(MediaType.parse("text/something"),
-                MediaType.TEXT_PLAIN));
+        assertTrue(REGISTRY.isSpecializationOf(MediaType.parse("text/something"), MediaType.TEXT_PLAIN));
 
-        assertTrue(REGISTRY.isSpecializationOf(MediaType.parse("application/something+xml"),
-                MediaType.APPLICATION_XML));
+        assertTrue(
+                REGISTRY.isSpecializationOf(MediaType.parse("application/something+xml"), MediaType.APPLICATION_XML));
 
-        assertTrue(REGISTRY.isSpecializationOf(MediaType.parse("application/something+zip"),
-                MediaType.APPLICATION_ZIP));
+        assertTrue(
+                REGISTRY.isSpecializationOf(MediaType.parse("application/something+zip"), MediaType.APPLICATION_ZIP));
 
         assertTrue(REGISTRY.isSpecializationOf(MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN));
 
-        assertTrue(REGISTRY.isSpecializationOf(MediaType.parse("application/vnd.apple.iwork"),
-                MediaType.APPLICATION_ZIP));
+        assertTrue(
+                REGISTRY.isSpecializationOf(MediaType.parse("application/vnd.apple.iwork"), MediaType.APPLICATION_ZIP));
 
-        assertTrue(REGISTRY.isSpecializationOf(MediaType.parse("application/json"),
-                MediaType.TEXT_PLAIN));
+        assertTrue(REGISTRY.isSpecializationOf(MediaType.parse("application/json"), MediaType.TEXT_PLAIN));
     }
 
     @SuppressWarnings("unused")
@@ -173,8 +166,7 @@ public class MimeDetectionTest {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, url);
         String mime = this.MIME_TYPES.detect(null, metadata).toString();
-        assertEquals(expected, mime,
-                url + " is not properly detected using only resource name");
+        assertEquals(expected, mime, url + " is not properly detected using only resource name");
     }
 
     private void testUrl(String expected, String url, String file) throws IOException {
@@ -189,8 +181,7 @@ public class MimeDetectionTest {
         }
     }
 
-    private void testStream(String expected, String urlOrFileName, InputStream in)
-            throws IOException {
+    private void testStream(String expected, String urlOrFileName, InputStream in) throws IOException {
         assertNotNull(in, "Test stream: [" + urlOrFileName + "] is null!");
         if (!in.markSupported()) {
             in = new java.io.BufferedInputStream(in);
@@ -198,14 +189,12 @@ public class MimeDetectionTest {
         try {
             Metadata metadata = new Metadata();
             String mime = this.MIME_TYPES.detect(in, metadata).toString();
-            assertEquals(expected, mime,
-                    urlOrFileName + " is not properly detected: detected.");
+            assertEquals(expected, mime, urlOrFileName + " is not properly detected: detected.");
 
             //Add resource name and test again
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, urlOrFileName);
             mime = this.MIME_TYPES.detect(in, metadata).toString();
-            assertEquals(expected, mime,
-                    urlOrFileName + " is not properly detected after adding resource name.");
+            assertEquals(expected, mime, urlOrFileName + " is not properly detected after adding resource name.");
         } finally {
             in.close();
         }
@@ -218,18 +207,15 @@ public class MimeDetectionTest {
      */
     @Test
     public void testEmptyDocument() throws IOException {
-        assertEquals(MediaType.OCTET_STREAM,
-                MIME_TYPES.detect(new ByteArrayInputStream(new byte[0]), new Metadata()));
+        assertEquals(MediaType.OCTET_STREAM, MIME_TYPES.detect(new ByteArrayInputStream(new byte[0]), new Metadata()));
 
         Metadata namehint = new Metadata();
         namehint.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.txt");
-        assertEquals(MediaType.TEXT_PLAIN,
-                MIME_TYPES.detect(new ByteArrayInputStream(new byte[0]), namehint));
+        assertEquals(MediaType.TEXT_PLAIN, MIME_TYPES.detect(new ByteArrayInputStream(new byte[0]), namehint));
 
         Metadata typehint = new Metadata();
         typehint.set(Metadata.CONTENT_TYPE, "text/plain");
-        assertEquals(MediaType.TEXT_PLAIN,
-                MIME_TYPES.detect(new ByteArrayInputStream(new byte[0]), typehint));
+        assertEquals(MediaType.TEXT_PLAIN, MIME_TYPES.detect(new ByteArrayInputStream(new byte[0]), typehint));
 
     }
 
@@ -241,8 +227,8 @@ public class MimeDetectionTest {
      */
     @Test
     public void testNotXML() throws IOException {
-        assertEquals(MediaType.TEXT_PLAIN, MIME_TYPES
-                .detect(new ByteArrayInputStream("<!-- test -->".getBytes(UTF_8)), new Metadata()));
+        assertEquals(MediaType.TEXT_PLAIN,
+                MIME_TYPES.detect(new ByteArrayInputStream("<!-- test -->".getBytes(UTF_8)), new Metadata()));
     }
 
     /**

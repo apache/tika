@@ -14,29 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
-
 
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.poi.openxml4j.opc.ContentTypes;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
 
 class CorePropertiesHandler extends AbstractPartHandler {
 
     final static String DC_NS = "http://purl.org/dc/elements/1.1";
     final static String DC_TERMS_NS = "http://purl.org/dc/terms";
-    final static String CP_NS =
-            "http://schemas.openxmlformats.org/package/2006/metadata/core-properties";
+    final static String CP_NS = "http://schemas.openxmlformats.org/package/2006/metadata/core-properties";
     final StringBuilder buffer = new StringBuilder();
     final Map<String, Map<String, Property>> properties = new HashMap<>();
     private final Metadata metadata;
@@ -97,8 +93,7 @@ class CorePropertiesHandler extends AbstractPartHandler {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes atts)
-            throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
 
     }
 

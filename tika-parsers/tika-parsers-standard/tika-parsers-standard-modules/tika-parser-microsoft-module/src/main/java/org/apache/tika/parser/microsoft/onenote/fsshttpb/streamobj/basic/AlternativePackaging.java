@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic;
 
 import java.io.IOException;
@@ -50,8 +49,7 @@ public class AlternativePackaging {
      * @param startIndex Specify the start index from the byte array.
      * @return Return the length in byte of the Alternative Packaging object.
      */
-    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex)
-            throws IOException, TikaException {
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException, TikaException {
         AtomicInteger index = new AtomicInteger(startIndex);
         this.guidFileType = AdapterHelper.readGuid(byteArray, index.get());
         index.addAndGet(16);

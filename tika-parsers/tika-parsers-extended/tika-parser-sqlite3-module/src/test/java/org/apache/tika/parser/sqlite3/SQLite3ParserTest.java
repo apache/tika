@@ -16,19 +16,17 @@
  */
 package org.apache.tika.parser.sqlite3;
 
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.InputStream;
-
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class SQLite3ParserTest extends TikaTest {
     private final static String TEST_FILE_NAME = "testSqlite3b.db";
@@ -56,12 +54,11 @@ public class SQLite3ParserTest extends TikaTest {
     public void testNulls() throws Exception {
         String xml = getXML(TEST_FILE_NAME).xml.replaceAll("\\s+", "");
         //everything except for the first key column should be empty
-        TikaTest.assertContains("<tr><td>2</td><td/><td/><td/><td/><td/><td/><td/><td/><td/></tr>",
-                xml);
+        TikaTest.assertContains("<tr><td>2</td><td/><td/><td/><td/><td/><td/><td/><td/><td/></tr>", xml);
     }
 
     //code used for creating the test file
-/*
+    /*
     private Connection getConnection(String dbFileName) throws Exception {
         File testDirectory = new File(this.getClass().getResource("/test-documents").toURI());
         System.out.println("Writing to: " + testDirectory.getAbsolutePath());
@@ -76,7 +73,7 @@ public class SQLite3ParserTest extends TikaTest {
         }
         return c;
     }
-
+    
     @Test
     public void testCreateDB() throws Exception {
         Connection c = getConnection("testSqlite3d.db");
@@ -115,12 +112,12 @@ public class SQLite3ParserTest extends TikaTest {
         ps.setBoolean(7, true);
         ps.setString(8, "2015-01-02");
         ps.setString(9, "2015-01-03 15:17:03");
-//        ps.setClob(10, new StringReader(sql));
+    //        ps.setClob(10, new StringReader(sql));
         ps.setBytes(10, getByteArray(this.getClass()
         .getResourceAsStream("/test-documents/testWORD_1img.doc")));//contains "quick brown fox"
         ps.executeUpdate();
         ps.clearParameters();
-
+    
         ps.setInt(1, 1);
         ps.setInt(2, 20);
         ps.setFloat(3, 4.6f);
@@ -133,7 +130,7 @@ public class SQLite3ParserTest extends TikaTest {
         //ps.setClob(9, new StringReader("consectetur adipiscing elit"));
         ps.setBytes(10, getByteArray(this.getClass()
         .getResourceAsStream("/test-documents/testWORD_1img.docx")));//contains "The end!"
-
+    
         ps.executeUpdate();
         //now add a fully null row
         ps.clearParameters();
@@ -148,11 +145,11 @@ public class SQLite3ParserTest extends TikaTest {
         ps.setNull(9, Types.TIMESTAMP);
         ps.setNull(10, Types.BLOB);
         ps.executeUpdate();
-
+    
         //build table2
         sql = "DROP TABLE if exists my_table2";
         st.execute(sql);
-
+    
         sql = "CREATE TABLE my_table2 (" +
                 "INT_COL2 INT PRIMARY KEY, "+
                 "VARCHAR_COL2 VARCHAR(64))";
@@ -161,10 +158,10 @@ public class SQLite3ParserTest extends TikaTest {
         st.execute(sql);
         sql = "INSERT INTO my_table2 values(1,'incididunt \nut labore')";
         st.execute(sql);
-
+    
         c.close();
     }
-
+    
     private byte[] getByteArray(InputStream is) throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         byte[] buff = new byte[1024];
@@ -173,7 +170,7 @@ public class SQLite3ParserTest extends TikaTest {
         }
         return bos.toByteArray();
     }
-
-*/
+    
+    */
 
 }

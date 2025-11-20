@@ -23,8 +23,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 
-import org.xml.sax.InputSource;
-
 import org.apache.tika.config.LoadErrorHandler;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.exception.TikaException;
@@ -32,6 +30,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.utils.CharsetUtils;
+import org.xml.sax.InputSource;
 
 /**
  * An input stream reader that automatically detects the character encoding
@@ -41,14 +40,12 @@ import org.apache.tika.utils.CharsetUtils;
  */
 public class AutoDetectReader extends BufferedReader {
 
-    private static final ServiceLoader DEFAULT_LOADER =
-            new ServiceLoader(AutoDetectReader.class.getClassLoader());
+    private static final ServiceLoader DEFAULT_LOADER = new ServiceLoader(AutoDetectReader.class.getClassLoader());
 
     private static final EncodingDetector DEFAULT_DETECTOR;
 
     static {
-        DEFAULT_DETECTOR = new CompositeEncodingDetector(
-                DEFAULT_LOADER.loadServiceProviders(EncodingDetector.class));
+        DEFAULT_DETECTOR = new CompositeEncodingDetector(DEFAULT_LOADER.loadServiceProviders(EncodingDetector.class));
     }
 
     private final Charset charset;
@@ -72,16 +69,14 @@ public class AutoDetectReader extends BufferedReader {
      * @throws IOException
      * @throws TikaException
      */
-    private AutoDetectReader(InputStream stream, Metadata metadata,
-                             EncodingDetector detector, LoadErrorHandler handler)
+    private AutoDetectReader(InputStream stream, Metadata metadata, EncodingDetector detector, LoadErrorHandler handler)
             throws IOException, TikaException {
         this(stream, detect(stream, metadata, detector, handler));
     }
 
-    public AutoDetectReader(InputStream stream, Metadata metadata,
-                            EncodingDetector encodingDetector) throws IOException, TikaException {
-        this(getBuffered(stream), metadata, encodingDetector,
-                DEFAULT_LOADER.getLoadErrorHandler());
+    public AutoDetectReader(InputStream stream, Metadata metadata, EncodingDetector encodingDetector)
+            throws IOException, TikaException {
+        this(getBuffered(stream), metadata, encodingDetector, DEFAULT_LOADER.getLoadErrorHandler());
     }
 
     public AutoDetectReader(InputStream stream, Metadata metadata, ServiceLoader loader)
@@ -91,8 +86,7 @@ public class AutoDetectReader extends BufferedReader {
                 loader.getLoadErrorHandler());
     }
 
-    public AutoDetectReader(InputStream stream, Metadata metadata)
-            throws IOException, TikaException {
+    public AutoDetectReader(InputStream stream, Metadata metadata) throws IOException, TikaException {
         this(stream, metadata, DEFAULT_DETECTOR);
     }
 
@@ -100,9 +94,8 @@ public class AutoDetectReader extends BufferedReader {
         this(stream, new Metadata());
     }
 
-    private static Charset detect(InputStream input, Metadata metadata,
-                                  EncodingDetector detector, LoadErrorHandler handler)
-            throws IOException, TikaException {
+    private static Charset detect(InputStream input, Metadata metadata, EncodingDetector detector,
+            LoadErrorHandler handler) throws IOException, TikaException {
         // Ask all given detectors for the character encoding
         try {
             Charset charset = detector.detect(input, metadata);
@@ -122,8 +115,7 @@ public class AutoDetectReader extends BufferedReader {
                 try {
                     Charset cs = CharsetUtils.forName(charset);
                     metadata.set(TikaCoreProperties.DETECTED_ENCODING, cs.name());
-                    metadata.set(TikaCoreProperties.ENCODING_DETECTOR,
-                            "AutoDetectReader-charset-metadata-fallback");
+                    metadata.set(TikaCoreProperties.ENCODING_DETECTOR, "AutoDetectReader-charset-metadata-fallback");
                     return cs;
                 } catch (IllegalArgumentException e) {
                     // ignore
@@ -140,7 +132,6 @@ public class AutoDetectReader extends BufferedReader {
         }
         return new BufferedInputStream(stream);
     }
-
 
     public Charset getCharset() {
         return charset;

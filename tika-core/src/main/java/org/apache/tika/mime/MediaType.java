@@ -41,21 +41,19 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
 
     private static final Pattern SPECIAL = Pattern.compile("[\\(\\)<>@,;:\\\\\"/\\[\\]\\?=]");
 
-    private static final Pattern SPECIAL_OR_WHITESPACE =
-            Pattern.compile("[\\(\\)<>@,;:\\\\\"/\\[\\]\\?=\\s]");
+    private static final Pattern SPECIAL_OR_WHITESPACE = Pattern.compile("[\\(\\)<>@,;:\\\\\"/\\[\\]\\?=\\s]");
 
     /**
      * See http://www.ietf.org/rfc/rfc2045.txt for valid mime-type characters.
      */
     private static final String VALID_CHARS = "([^\\c\\(\\)<>@,;:\\\\\"/\\[\\]\\?=\\s]+)";
 
-    private static final Pattern TYPE_PATTERN =
-            Pattern.compile("(?s)\\s*" + VALID_CHARS + "\\s*/\\s*" + VALID_CHARS + "\\s*($|;.*)");
+    private static final Pattern TYPE_PATTERN = Pattern
+            .compile("(?s)\\s*" + VALID_CHARS + "\\s*/\\s*" + VALID_CHARS + "\\s*($|;.*)");
 
     // TIKA-350: handle charset as first element in content-type
     private static final Pattern CHARSET_FIRST_PATTERN = Pattern.compile(
-            "(?is)\\s*(charset\\s*=\\s*[^\\c;\\s]+)\\s*;\\s*" + VALID_CHARS + "\\s*/\\s*" +
-                    VALID_CHARS + "\\s*");
+            "(?is)\\s*(charset\\s*=\\s*[^\\c;\\s]+)\\s*;\\s*" + VALID_CHARS + "\\s*/\\s*" + VALID_CHARS + "\\s*");
 
     /**
      * Set of basic types with normalized "type/subtype" names.
@@ -255,9 +253,8 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
                 int slash = string.indexOf('/');
                 if (slash == -1) {
                     return null;
-                } else if (SIMPLE_TYPES.size() < 10000 &&
-                        isSimpleName(string.substring(0, slash)) &&
-                        isSimpleName(string.substring(slash + 1))) {
+                } else if (SIMPLE_TYPES.size() < 10000 && isSimpleName(string.substring(0, slash))
+                        && isSimpleName(string.substring(slash + 1))) {
                     type = new MediaType(string, slash);
                     SIMPLE_TYPES.put(string, type);
                 }
@@ -270,13 +267,11 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
         Matcher matcher;
         matcher = TYPE_PATTERN.matcher(string);
         if (matcher.matches()) {
-            return new MediaType(matcher.group(1), matcher.group(2),
-                    parseParameters(matcher.group(3)));
+            return new MediaType(matcher.group(1), matcher.group(2), parseParameters(matcher.group(3)));
         }
         matcher = CHARSET_FIRST_PATTERN.matcher(string);
         if (matcher.matches()) {
-            return new MediaType(matcher.group(2), matcher.group(3),
-                    parseParameters(matcher.group(1)));
+            return new MediaType(matcher.group(2), matcher.group(3), parseParameters(matcher.group(1)));
         }
 
         return null;
@@ -285,8 +280,7 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
     private static boolean isSimpleName(String name) {
         for (int i = 0; i < name.length(); i++) {
             char c = name.charAt(i);
-            if (c != '-' && c != '+' && c != '.' && c != '_' && !('0' <= c && c <= '9') &&
-                    !('a' <= c && c <= 'z')) {
+            if (c != '-' && c != '+' && c != '.' && c != '_' && !('0' <= c && c <= '9') && !('a' <= c && c <= 'z')) {
                 return false;
             }
         }

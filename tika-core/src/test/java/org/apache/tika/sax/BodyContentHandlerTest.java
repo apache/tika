@@ -24,14 +24,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.mock.MockParser;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test cases for the {@link BodyContentHandler} class.
@@ -48,10 +47,8 @@ public class BodyContentHandlerTest extends TikaTest {
     public void testOutputStream() throws Exception {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
-        XHTMLContentHandler xhtml =
-                new XHTMLContentHandler(new BodyContentHandler(
-                        new OutputStreamWriter(buffer, UTF_8)),
-                        new Metadata());
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(
+                new BodyContentHandler(new OutputStreamWriter(buffer, UTF_8)), new Metadata());
         xhtml.startDocument();
         xhtml.element("p", "Test text");
         xhtml.endDocument();

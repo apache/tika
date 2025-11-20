@@ -18,7 +18,6 @@ package org.apache.tika.pipes.core.fetcher;
 
 import org.apache.tika.config.Field;
 
-
 public abstract class AbstractFetcher implements Fetcher {
 
     private String name;

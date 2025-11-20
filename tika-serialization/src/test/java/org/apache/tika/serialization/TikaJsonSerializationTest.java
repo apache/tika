@@ -23,12 +23,12 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Optional;
 
+import org.apache.tika.serialization.mocks.ClassC;
+import org.junit.jupiter.api.Test;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.Test;
-
-import org.apache.tika.serialization.mocks.ClassC;
 
 public class TikaJsonSerializationTest {
 

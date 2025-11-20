@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.mock;
 
-
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
@@ -37,21 +36,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import javax.xml.parsers.DocumentBuilder;
 
-import com.martensigwart.fakeload.FakeLoad;
-import com.martensigwart.fakeload.FakeLoadBuilder;
-import com.martensigwart.fakeload.FakeLoadExecutor;
-import com.martensigwart.fakeload.FakeLoadExecutors;
-import com.martensigwart.fakeload.MemoryUnit;
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -65,6 +53,18 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
+import com.martensigwart.fakeload.FakeLoad;
+import com.martensigwart.fakeload.FakeLoadBuilder;
+import com.martensigwart.fakeload.FakeLoadExecutor;
+import com.martensigwart.fakeload.FakeLoadExecutors;
+import com.martensigwart.fakeload.MemoryUnit;
 
 /**
  * This class enables mocking of parser behavior for use in testing
@@ -79,7 +79,6 @@ import org.apache.tika.utils.XMLReaderUtils;
  */
 
 public class MockParser implements Parser {
-
 
     private static final long serialVersionUID = 1L;
     private static final PrintStream ORIG_STDERR;
@@ -114,8 +113,8 @@ public class MockParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         if (Thread.currentThread().isInterrupted()) {
             throw new TikaException("interrupted", new InterruptedException());
         }
@@ -137,8 +136,7 @@ public class MockParser implements Parser {
         xhtml.endDocument();
     }
 
-    private void executeAction(Node action, Metadata metadata, ParseContext context,
-                               XHTMLContentHandler xhtml)
+    private void executeAction(Node action, Metadata metadata, ParseContext context, XHTMLContentHandler xhtml)
             throws SAXException, IOException, TikaException {
 
         if (action.getNodeType() != 1) {
@@ -190,14 +188,12 @@ public class MockParser implements Parser {
         int numThreads = 1;
         NamedNodeMap attrs = action.getAttributes();
         if (attrs == null) {
-            throw new IllegalArgumentException("Must specify details...no attributes for " +
-                    "fakeload?!");
+            throw new IllegalArgumentException("Must specify details...no attributes for " + "fakeload?!");
         }
-        if (attrs.getNamedItem("millis") == null || attrs.getNamedItem("cpu") == null ||
-                attrs.getNamedItem("mb") == null) {
-            throw new IllegalArgumentException("must specify 'millis' (time to process), " +
-                    "'cpu' (% cpu as an integer, e.g. 50% would be '50'), " +
-                    "and 'mb' (megabytes as an integer)");
+        if (attrs.getNamedItem("millis") == null || attrs.getNamedItem("cpu") == null
+                || attrs.getNamedItem("mb") == null) {
+            throw new IllegalArgumentException("must specify 'millis' (time to process), "
+                    + "'cpu' (% cpu as an integer, e.g. 50% would be '50'), " + "and 'mb' (megabytes as an integer)");
         }
         Node n = attrs.getNamedItem("numThreads");
         if (n != null) {
@@ -208,14 +204,12 @@ public class MockParser implements Parser {
         final int mb = Integer.parseInt(attrs.getNamedItem("mb").getNodeValue());
 
         ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
-        ExecutorCompletionService<Integer> executorCompletionService =
-                new ExecutorCompletionService<>(executorService);
+        ExecutorCompletionService<Integer> executorCompletionService = new ExecutorCompletionService<>(executorService);
 
         for (int i = 0; i < numThreads; i++) {
             executorCompletionService.submit(() -> {
-                FakeLoad fakeload =
-                        new FakeLoadBuilder().lasting(millis, TimeUnit.MILLISECONDS)
-                                .withCpu(cpu).withMemory(mb, MemoryUnit.MB).build();
+                FakeLoad fakeload = new FakeLoadBuilder().lasting(millis, TimeUnit.MILLISECONDS).withCpu(cpu)
+                        .withMemory(mb, MemoryUnit.MB).build();
                 FakeLoadExecutor executor = FakeLoadExecutors.newDefaultExecutor();
                 executor.execute(fakeload);
             }, 1);
@@ -338,8 +332,7 @@ public class MockParser implements Parser {
         if (heavy) {
             Node pNode = attrs.getNamedItem("pulse_millis");
             if (pNode == null) {
-                throw new RuntimeException(
-                        "Must specify attribute \"pulse_millis\" if the hang is \"heavy\"");
+                throw new RuntimeException("Must specify attribute \"pulse_millis\" if the hang is \"heavy\"");
             }
             String pulseMillisString = mNode.getNodeValue();
             try {
@@ -399,9 +392,7 @@ public class MockParser implements Parser {
         }
     }
 
-
-    private void throwIt(String className, String msg)
-            throws IOException, SAXException, TikaException {
+    private void throwIt(String className, String msg) throws IOException, SAXException, TikaException {
         Throwable t = null;
         if (msg == null || msg.equals("")) {
             try {

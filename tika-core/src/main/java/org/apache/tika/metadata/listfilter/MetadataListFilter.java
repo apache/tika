@@ -20,12 +20,11 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 
-import org.w3c.dom.Element;
-
 import org.apache.tika.config.ConfigBase;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.w3c.dom.Element;
 
 public abstract class MetadataListFilter extends ConfigBase implements Serializable {
     /**
@@ -35,11 +34,10 @@ public abstract class MetadataListFilter extends ConfigBase implements Serializa
      * @throws TikaConfigException
      * @throws IOException
      */
-    public static MetadataListFilter load(Element root, boolean allowMissing) throws TikaConfigException,
-            IOException {
+    public static MetadataListFilter load(Element root, boolean allowMissing) throws TikaConfigException, IOException {
         try {
-            return buildComposite("metadataListFilters", CompositeMetadataListFilter.class,
-                    "metadataListFilter", MetadataListFilter.class, root);
+            return buildComposite("metadataListFilters", CompositeMetadataListFilter.class, "metadataListFilter",
+                    MetadataListFilter.class, root);
         } catch (TikaConfigException e) {
             if (allowMissing && e.getMessage().contains("could not find metadataListFilters")) {
                 return new NoOpListFilter();

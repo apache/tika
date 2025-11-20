@@ -13,10 +13,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Copyright (c) Data Geekery GmbH (http://www.datageekery.com)
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.unsigned;
 
 import java.math.BigInteger;
@@ -107,8 +104,7 @@ public final class ULong extends UNumber implements Comparable<ULong> {
 
         if (value.charAt(0) == '-') {
             throw new NumberFormatException(
-                    String.format(Locale.US, "Illegal leading minus sign on unsigned string %s",
-                            value));
+                    String.format(Locale.US, "Illegal leading minus sign on unsigned string %s", value));
         }
 
         if (length <= 18) {
@@ -125,8 +121,7 @@ public final class ULong extends UNumber implements Comparable<ULong> {
         long result = first * 10 + second;
         if (compare(result, first) < 0) {
             throw new NumberFormatException(
-                    String.format(Locale.US, "String value %s exceeds range of unsigned long",
-                            value));
+                    String.format(Locale.US, "String value %s exceeds range of unsigned long", value));
         }
 
         this.value = result;

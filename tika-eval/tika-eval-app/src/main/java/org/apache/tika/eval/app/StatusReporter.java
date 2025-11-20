@@ -22,11 +22,10 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;
 import org.apache.tika.utils.DurationFormatUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class StatusReporter implements Callable<Long> {
 
@@ -39,8 +38,8 @@ public class StatusReporter implements Callable<Long> {
     private final long start;
     private final NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.ROOT);
 
-
-    public StatusReporter(CallablePipesIterator pipesIterator, AtomicInteger filesProcessed, AtomicInteger activeWorkers, AtomicBoolean crawlerIsActive) {
+    public StatusReporter(CallablePipesIterator pipesIterator, AtomicInteger filesProcessed,
+            AtomicInteger activeWorkers, AtomicBoolean crawlerIsActive) {
         this.pipesIterator = pipesIterator;
         this.filesProcessed = filesProcessed;
         this.activeWorkers = activeWorkers;
@@ -75,7 +74,8 @@ public class StatusReporter implements Callable<Long> {
 
         String elapsedString = DurationFormatUtils.formatMillis(System.currentTimeMillis() - start);
         String docsPerSec = avg > -1 ? String.format(Locale.ROOT, " (%s docs per sec)", numberFormat.format(avg)) : "";
-        String msg = String.format(Locale.ROOT, "Processed %s documents in %s%s.", numberFormat.format(cnt), elapsedString, docsPerSec);
+        String msg = String.format(Locale.ROOT, "Processed %s documents in %s%s.", numberFormat.format(cnt),
+                elapsedString, docsPerSec);
         LOGGER.info(msg);
 
         int stillAlive = activeWorkers.get();
@@ -95,7 +95,7 @@ public class StatusReporter implements Callable<Long> {
         }
         LOGGER.info(msg);
 
-        if (! crawlerIsActive.get()) {
+        if (!crawlerIsActive.get()) {
             msg = "The directory crawler has completed its crawl.\n";
             LOGGER.info(msg);
         }

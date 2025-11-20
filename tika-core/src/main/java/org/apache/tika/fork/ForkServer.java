@@ -27,10 +27,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParserFactory;
+import org.xml.sax.SAXException;
 
 class ForkServer implements Runnable {
 
@@ -80,9 +79,8 @@ class ForkServer implements Runnable {
      * @param output output stream for writing to the parent process
      * @throws IOException if the server instance could not be created
      */
-    public ForkServer(InputStream input, OutputStream output, long serverPulseMillis,
-                      long serverParserTimeoutMillis, long serverWaitTimeoutMillis)
-            throws IOException {
+    public ForkServer(InputStream input, OutputStream output, long serverPulseMillis, long serverParserTimeoutMillis,
+            long serverWaitTimeoutMillis) throws IOException {
         this.input = new DataInputStream(input);
         this.output = new DataOutputStream(output);
         this.serverPulseMillis = serverPulseMillis;
@@ -108,9 +106,8 @@ class ForkServer implements Runnable {
 
         URL.setURLStreamHandlerFactory(new MemoryURLStreamHandlerFactory());
 
-        ForkServer server =
-                new ForkServer(System.in, System.out, serverPulseMillis, serverParseTimeoutMillis,
-                        serverWaitTimeoutMillis);
+        ForkServer server = new ForkServer(System.in, System.out, serverPulseMillis, serverParseTimeoutMillis,
+                serverWaitTimeoutMillis);
         System.setIn(new ByteArrayInputStream(new byte[0]));
         System.setOut(System.err);
 
@@ -128,8 +125,7 @@ class ForkServer implements Runnable {
                     long elapsed = System.currentTimeMillis() - since;
                     if (parsing && elapsed > serverParserTimeoutMillis) {
                         break;
-                    } else if (!parsing && serverWaitTimeoutMillis > 0 &&
-                            elapsed > serverWaitTimeoutMillis) {
+                    } else if (!parsing && serverWaitTimeoutMillis > 0 && elapsed > serverWaitTimeoutMillis) {
                         break;
                     }
                 }
@@ -178,8 +174,7 @@ class ForkServer implements Runnable {
         System.err.flush();
     }
 
-    private void initializeParserAndLoader()
-            throws IOException, ClassNotFoundException, TikaException, SAXException {
+    private void initializeParserAndLoader() throws IOException, ClassNotFoundException, TikaException, SAXException {
         output.writeByte(READY);
         output.flush();
 
@@ -189,30 +184,29 @@ class ForkServer implements Runnable {
         }
 
         Object firstObject = readObject(ForkServer.class.getClassLoader());
-        switch (configIndex) {
-            case INIT_PARSER_FACTORY_FACTORY:
+        switch (configIndex)
+        {
+            case INIT_PARSER_FACTORY_FACTORY :
                 if (firstObject instanceof ParserFactoryFactory) {
                     //the user has submitted a parser factory, but no class loader
                     classLoader = ForkServer.class.getClassLoader();
                     ParserFactory parserFactory = ((ParserFactoryFactory) firstObject).build();
                     parser = parserFactory.build();
                 } else {
-                    throw new IllegalArgumentException(
-                            "Expecting only one object of class ParserFactoryFactory");
+                    throw new IllegalArgumentException("Expecting only one object of class ParserFactoryFactory");
                 }
                 break;
-            case INIT_LOADER_PARSER:
+            case INIT_LOADER_PARSER :
                 if (firstObject instanceof ClassLoader) {
                     classLoader = (ClassLoader) firstObject;
                     Thread.currentThread().setContextClassLoader(classLoader);
                     //parser from parent process
                     parser = readObject(classLoader);
                 } else {
-                    throw new IllegalArgumentException(
-                            "Expecting ClassLoader followed by a Parser");
+                    throw new IllegalArgumentException("Expecting ClassLoader followed by a Parser");
                 }
                 break;
-            case INIT_PARSER_FACTORY_FACTORY_LOADER:
+            case INIT_PARSER_FACTORY_FACTORY_LOADER :
                 if (firstObject instanceof ParserFactoryFactory) {
                     //the user has submitted a parser factory and a class loader
                     ParserFactory parserFactory = ((ParserFactoryFactory) firstObject).build();
@@ -220,8 +214,7 @@ class ForkServer implements Runnable {
                     classLoader = (ClassLoader) readObject(ForkServer.class.getClassLoader());
                     Thread.currentThread().setContextClassLoader(classLoader);
                 } else {
-                    throw new IllegalStateException(
-                            "Expecing ParserFactoryFactory followed by a class loader");
+                    throw new IllegalStateException("Expecing ParserFactoryFactory followed by a class loader");
                 }
                 break;
         }

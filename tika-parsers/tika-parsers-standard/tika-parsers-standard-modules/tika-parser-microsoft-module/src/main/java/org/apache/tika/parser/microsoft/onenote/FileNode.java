@@ -14,16 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote;
 
 import java.io.IOException;
 import java.util.Objects;
 
+import org.apache.tika.exception.TikaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.apache.tika.exception.TikaException;
 
 /**
  * A FileNode structure is the basic unit for holding and referencing data in the file.
@@ -108,25 +106,24 @@ class FileNode {
             return false;
         }
         FileNode fileNode = (FileNode) o;
-        return id == fileNode.id && size == fileNode.size && baseType == fileNode.baseType &&
-                isFileData == fileNode.isFileData && Objects.equals(gosid, fileNode.gosid) &&
-                Objects.equals(gctxid, fileNode.gctxid) &&
-                Objects.equals(fileDataStoreReference, fileNode.fileDataStoreReference) &&
-                Objects.equals(ref, fileNode.ref) &&
-                Objects.equals(propertySet, fileNode.propertySet) &&
-                Objects.equals(childFileNodeList, fileNode.childFileNodeList) &&
-                Objects.equals(subType, fileNode.subType);
+        return id == fileNode.id && size == fileNode.size && baseType == fileNode.baseType
+                && isFileData == fileNode.isFileData && Objects.equals(gosid, fileNode.gosid)
+                && Objects.equals(gctxid, fileNode.gctxid)
+                && Objects.equals(fileDataStoreReference, fileNode.fileDataStoreReference)
+                && Objects.equals(ref, fileNode.ref) && Objects.equals(propertySet, fileNode.propertySet)
+                && Objects.equals(childFileNodeList, fileNode.childFileNodeList)
+                && Objects.equals(subType, fileNode.subType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, size, baseType, gosid, gctxid, fileDataStoreReference, ref,
-                propertySet, isFileData, childFileNodeList, subType);
+        return Objects.hash(id, size, baseType, gosid, gctxid, fileDataStoreReference, ref, propertySet, isFileData,
+                childFileNodeList, subType);
     }
 
     public boolean hasGctxid() {
-        return id == FndStructureConstants.RevisionRoleAndContextDeclarationFND ||
-                id == FndStructureConstants.RevisionManifestStart7FND;
+        return id == FndStructureConstants.RevisionRoleAndContextDeclarationFND
+                || id == FndStructureConstants.RevisionManifestStart7FND;
     }
 
     public long getId() {
@@ -228,12 +225,10 @@ class FileNode {
         return this;
     }
 
-    public void print(OneNoteDocument document, OneNotePtr pointer, int indentLevel)
-            throws IOException, TikaException {
+    public void print(OneNoteDocument document, OneNotePtr pointer, int indentLevel) throws IOException, TikaException {
         boolean shouldPrintHeader = FndStructureConstants.nameOf(id).contains("ObjectDec");
         if (gosid.equals(ExtendedGUID.nil()) && shouldPrintHeader) {
-            LOG.debug("{}[beg {}]:{}", IndentUtil.getIndent(indentLevel + 1),
-                    FndStructureConstants.nameOf(id), gosid);
+            LOG.debug("{}[beg {}]:{}", IndentUtil.getIndent(indentLevel + 1), FndStructureConstants.nameOf(id), gosid);
         }
         propertySet.print(document, pointer, indentLevel + 1);
         if (!childFileNodeList.children.isEmpty()) {
@@ -244,26 +239,25 @@ class FileNode {
                 child.print(document, pointer, indentLevel + 1);
             }
         }
-        if (id == FndStructureConstants.RevisionRoleDeclarationFND ||
-                id == FndStructureConstants.RevisionRoleAndContextDeclarationFND) {
+        if (id == FndStructureConstants.RevisionRoleDeclarationFND
+                || id == FndStructureConstants.RevisionRoleAndContextDeclarationFND) {
             LOG.debug("{}[Revision Role {}]", IndentUtil.getIndent(indentLevel + 1),
                     subType.revisionRoleDeclaration.revisionRole);
 
         }
-        if (id == FndStructureConstants.RevisionManifestStart4FND ||
-                id == FndStructureConstants.RevisionManifestStart6FND ||
-                id == FndStructureConstants.RevisionManifestStart7FND) {
+        if (id == FndStructureConstants.RevisionManifestStart4FND
+                || id == FndStructureConstants.RevisionManifestStart6FND
+                || id == FndStructureConstants.RevisionManifestStart7FND) {
             LOG.debug("{}[revisionRole {}]", IndentUtil.getIndent(indentLevel + 1),
                     subType.revisionManifest.revisionRole);
 
         }
-        if ((!gctxid.equals(ExtendedGUID.nil()) ||
-                id == FndStructureConstants.RevisionManifestStart7FND) && shouldPrintHeader) {
+        if ((!gctxid.equals(ExtendedGUID.nil()) || id == FndStructureConstants.RevisionManifestStart7FND)
+                && shouldPrintHeader) {
             LOG.debug("{}[gctxid {}]", IndentUtil.getIndent(indentLevel + 1), gctxid);
         }
         if (!gosid.equals(ExtendedGUID.nil()) && shouldPrintHeader) {
-            LOG.debug("{}[end {}]:{}", IndentUtil.getIndent(indentLevel + 1),
-                    FndStructureConstants.nameOf(id), gosid);
+            LOG.debug("{}[end {}]:{}", IndentUtil.getIndent(indentLevel + 1), FndStructureConstants.nameOf(id), gosid);
 
         }
     }
@@ -279,8 +273,7 @@ class FileNode {
 
     @Override
     public String toString() {
-        return new StringBuilder().append("FileNodeID=0x").append(Long.toHexString(id))
-                .append(", gosid=").append(gosid).append(", baseType=0x")
-                .append(Long.toHexString(baseType)).toString();
+        return new StringBuilder().append("FileNodeID=0x").append(Long.toHexString(id)).append(", gosid=").append(gosid)
+                .append(", baseType=0x").append(Long.toHexString(baseType)).toString();
     }
 }

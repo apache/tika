@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.pipes.s3.tests;
 
 import java.io.IOException;
@@ -33,16 +32,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
-import software.amazon.awssdk.services.s3.model.S3Object;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.core.FetchEmitTuple;
@@ -53,6 +42,16 @@ import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.emitter.s3.S3Emitter;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 // To enable these tests, fill OUTDIR and bucket, and adjust profile and region if needed.
 @Disabled("turn these into actual tests with mock s3")
@@ -76,8 +75,8 @@ public class PipeIntegrationTests {
         long sz = 0;
 
         ListObjectsV2Request listObjectsV2Request = ListObjectsV2Request.builder().bucket(bucket).prefix("").build();
-        List<S3Object> s3ObjectList = s3Client.listObjectsV2Paginator(listObjectsV2Request).stream().
-                flatMap(resp -> resp.contents().stream()).toList();
+        List<S3Object> s3ObjectList = s3Client.listObjectsV2Paginator(listObjectsV2Request).stream()
+                .flatMap(resp -> resp.contents().stream()).toList();
         for (S3Object s3Object : s3ObjectList) {
             String key = s3Object.key();
             Path targ = OUTDIR.resolve(key);
@@ -107,8 +106,7 @@ public class PipeIntegrationTests {
         ExecutorCompletionService<Long> completionService = new ExecutorCompletionService<>(es);
         ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(1000);
 
-        completionService.submit(
-                new CallablePipesIterator(pipesIterator, queue, 60000, numConsumers));
+        completionService.submit(new CallablePipesIterator(pipesIterator, queue, 60000, numConsumers));
         for (int i = 0; i < numConsumers; i++) {
             completionService.submit(new FSFetcherEmitter(queue, fetcher, null));
         }
@@ -137,8 +135,7 @@ public class PipeIntegrationTests {
         ExecutorService es = Executors.newFixedThreadPool(numConsumers + 1);
         ExecutorCompletionService<Long> completionService = new ExecutorCompletionService<>(es);
         ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(1000);
-        completionService.submit(new CallablePipesIterator(pipesIterator,
-                queue, 60000, numConsumers));
+        completionService.submit(new CallablePipesIterator(pipesIterator, queue, 60000, numConsumers));
         for (int i = 0; i < numConsumers; i++) {
             completionService.submit(new S3FetcherEmitter(queue, fetcher, (S3Emitter) emitter));
         }
@@ -174,7 +171,6 @@ public class PipeIntegrationTests {
         return Paths.get(PipeIntegrationTests.class.getResource("/" + fileName).toURI());
     }
 
-
     private static class FSFetcherEmitter implements Callable<Long> {
         private static final AtomicInteger counter = new AtomicInteger(0);
 
@@ -182,8 +178,7 @@ public class PipeIntegrationTests {
         private final Emitter emitter;
         private final ArrayBlockingQueue<FetchEmitTuple> queue;
 
-        FSFetcherEmitter(ArrayBlockingQueue<FetchEmitTuple> queue, Fetcher fetcher,
-                         Emitter emitter) {
+        FSFetcherEmitter(ArrayBlockingQueue<FetchEmitTuple> queue, Fetcher fetcher, Emitter emitter) {
             this.queue = queue;
             this.fetcher = fetcher;
             this.emitter = emitter;
@@ -224,8 +219,7 @@ public class PipeIntegrationTests {
         private final S3Emitter emitter;
         private final ArrayBlockingQueue<FetchEmitTuple> queue;
 
-        S3FetcherEmitter(ArrayBlockingQueue<FetchEmitTuple> queue, Fetcher fetcher,
-                         S3Emitter emitter) {
+        S3FetcherEmitter(ArrayBlockingQueue<FetchEmitTuple> queue, Fetcher fetcher, S3Emitter emitter) {
             this.queue = queue;
             this.fetcher = fetcher;
             this.emitter = emitter;

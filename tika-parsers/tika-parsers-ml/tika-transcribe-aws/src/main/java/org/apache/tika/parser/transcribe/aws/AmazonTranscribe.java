@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.transcribe.aws;
 
 import java.io.IOException;
@@ -27,12 +26,25 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.tika.config.Field;
+import org.apache.tika.config.Initializable;
+import org.apache.tika.config.InitializableProblemHandler;
+import org.apache.tika.config.Param;
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
@@ -63,18 +75,6 @@ import software.amazon.awssdk.services.transcribe.model.StartTranscriptionJobReq
 import software.amazon.awssdk.services.transcribe.model.TranscriptionJob;
 import software.amazon.awssdk.services.transcribe.model.TranscriptionJobStatus;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.XHTMLContentHandler;
-
 /**
  * <a href="https://aws.amazon.com/transcribe/">Amazon Transcribe</a>
  * implementation. See Javadoc for configuration options.
@@ -101,11 +101,9 @@ public class AmazonTranscribe implements Parser, Initializable {
 
     //https://docs.aws.amazon.com/transcribe/latest/dg/input.html
     protected static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(MediaType.audio("x-flac"), MediaType.audio("mp3"),
-                    MediaType.audio("mpeg"), MediaType.video("ogg"), MediaType.audio("vnd.wave"),
-                    MediaType.audio("mp4"), MediaType.video("mp4"), MediaType.application("mp4"),
-                    MediaType.video("quicktime"))));
-
+            new HashSet<>(Arrays.asList(MediaType.audio("x-flac"), MediaType.audio("mp3"), MediaType.audio("mpeg"),
+                    MediaType.video("ogg"), MediaType.audio("vnd.wave"), MediaType.audio("mp4"), MediaType.video("mp4"),
+                    MediaType.application("mp4"), MediaType.video("quicktime"))));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -129,8 +127,8 @@ public class AmazonTranscribe implements Parser, Initializable {
      * Language Code</a>
      */
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         if (!isAvailable) {
             return;
@@ -142,12 +140,12 @@ public class AmazonTranscribe implements Parser, Initializable {
         String jobName = getJobKey();
         LanguageCode languageCode = context.get(LanguageCode.class);
         uploadFileToBucket(stream, jobName);
-        StartTranscriptionJobRequest startTranscriptionJobRequest =
-                StartTranscriptionJobRequest.builder()
-                        .build();
-        Media media = Media.builder().mediaFileUri(amazonS3.utilities().getUrl(GetUrlRequest.builder().bucket(bucketName).key(jobName).build()).toString()).build();
-        startTranscriptionJobRequest = startTranscriptionJobRequest.toBuilder().media(media).outputBucketName(bucketName)
-                .transcriptionJobName(jobName).build();
+        StartTranscriptionJobRequest startTranscriptionJobRequest = StartTranscriptionJobRequest.builder().build();
+        Media media = Media.builder().mediaFileUri(
+                amazonS3.utilities().getUrl(GetUrlRequest.builder().bucket(bucketName).key(jobName).build()).toString())
+                .build();
+        startTranscriptionJobRequest = startTranscriptionJobRequest.toBuilder().media(media)
+                .outputBucketName(bucketName).transcriptionJobName(jobName).build();
 
         if (languageCode != null) {
             startTranscriptionJobRequest = startTranscriptionJobRequest.toBuilder().languageCode(languageCode).build();
@@ -165,7 +163,6 @@ public class AmazonTranscribe implements Parser, Initializable {
 
         deleteFilesFromBucket(jobName);
     }
-
 
     /**
      * @return true if this Transcriber is probably able to transcribe right
@@ -246,7 +243,8 @@ public class AmazonTranscribe implements Parser, Initializable {
         PutObjectRequest request = PutObjectRequest.builder().bucket(bucketName).key(jobName).build();
         try {
             @SuppressWarnings("unused")
-            PutObjectResponse response = amazonS3.putObject(request, RequestBody.fromInputStream(inputStream, inputStream.available()));
+            PutObjectResponse response = amazonS3.putObject(request,
+                    RequestBody.fromInputStream(inputStream, inputStream.available()));
         } catch (SdkClientException | IOException e) {
             throw new TikaException("File upload to AWS failed: " + e.getMessage(), e);
         }
@@ -254,10 +252,8 @@ public class AmazonTranscribe implements Parser, Initializable {
 
     private void deleteFilesFromBucket(String jobName) throws TikaException {
         try {
-            amazonS3.deleteObject(DeleteObjectRequest.builder().bucket(bucketName).key(jobName)
-                    .build());
-            amazonS3.deleteObject(DeleteObjectRequest.builder().bucket(bucketName).key(jobName + ".json")
-                    .build());
+            amazonS3.deleteObject(DeleteObjectRequest.builder().bucket(bucketName).key(jobName).build());
+            amazonS3.deleteObject(DeleteObjectRequest.builder().bucket(bucketName).key(jobName + ".json").build());
         } catch (SdkClientException e) {
             LOG.error("Failed to delete {} and/or {} from {}", jobName, jobName + ".json", bucketName, e);
         }
@@ -276,23 +272,17 @@ public class AmazonTranscribe implements Parser, Initializable {
      * @throws AwsServiceException possibly thrown if there is an issue selecting object content
      *                                from AWS S3 objects.
      */
-    private String getTranscriptText(String fileNameS3)
-            throws AwsServiceException, SdkClientException, IOException {
+    private String getTranscriptText(String fileNameS3) throws AwsServiceException, SdkClientException, IOException {
         TranscriptionJob transcriptionJob = retrieveObjectWhenJobCompleted(fileNameS3);
         String text = "";
-        if (transcriptionJob != null && !TranscriptionJobStatus.FAILED
-                .equals(transcriptionJob.transcriptionJobStatus())) {
-            ResponseInputStream<GetObjectResponse> s3Object = amazonS3.getObject(GetObjectRequest.builder().bucket(bucketName).key(fileNameS3 + ".json")
-                    .build());
+        if (transcriptionJob != null
+                && !TranscriptionJobStatus.FAILED.equals(transcriptionJob.transcriptionJobStatus())) {
+            ResponseInputStream<GetObjectResponse> s3Object = amazonS3
+                    .getObject(GetObjectRequest.builder().bucket(bucketName).key(fileNameS3 + ".json").build());
             try (s3Object) {
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode root = mapper.readTree(s3Object);
-                text = root
-                        .path("results")
-                        .path("transcripts")
-                        .get(0)
-                        .path("transcript")
-                        .asText();
+                text = root.path("results").path("transcripts").get(0).path("transcript").asText();
                 // could also be done with json.simple:
                 // ((JSONObject)((JSONArray)((JSONObject) obj.get("results")).get("transcripts")).get(0)).get("transcript")
             }
@@ -307,21 +297,19 @@ public class AmazonTranscribe implements Parser, Initializable {
      * @return TranscriptionJob object
      */
     private TranscriptionJob retrieveObjectWhenJobCompleted(String jobName) {
-        GetTranscriptionJobRequest transcriptionJobRequest = GetTranscriptionJobRequest.builder().transcriptionJobName(jobName).build();
+        GetTranscriptionJobRequest transcriptionJobRequest = GetTranscriptionJobRequest.builder()
+                .transcriptionJobName(jobName).build();
         while (true) {
-            CompletableFuture<GetTranscriptionJobResponse> transcriptionJob = amazonTranscribeAsync.getTranscriptionJob(transcriptionJobRequest);
+            CompletableFuture<GetTranscriptionJobResponse> transcriptionJob = amazonTranscribeAsync
+                    .getTranscriptionJob(transcriptionJobRequest);
             GetTranscriptionJobResponse transcriptionJobResponse = transcriptionJob.join();
             TranscriptionJobStatus status = transcriptionJobResponse.transcriptionJob().transcriptionJobStatus();
-            if (TranscriptionJobStatus.COMPLETED.equals(status) ||
-                    TranscriptionJobStatus.FAILED.equals(status)) {
+            if (TranscriptionJobStatus.COMPLETED.equals(status) || TranscriptionJobStatus.FAILED.equals(status)) {
                 return transcriptionJobResponse.transcriptionJob();
             }
-            try
-            {
+            try {
                 Thread.sleep(1000);
-            }
-            catch (InterruptedException ex)
-            {
+            } catch (InterruptedException ex) {
                 LOG.warn("interrupted");
             }
         }
@@ -337,33 +325,29 @@ public class AmazonTranscribe implements Parser, Initializable {
             AwsBasicCredentials creds = AwsBasicCredentials.create(this.clientId, this.clientSecret);
             this.credsProvider = StaticCredentialsProvider.create(creds);
             if (region != null) {
-                this.amazonS3 = S3Client.builder().credentialsProvider(credsProvider)
-                        .region(Region.of(this.region)).build();
+                this.amazonS3 = S3Client.builder().credentialsProvider(credsProvider).region(Region.of(this.region))
+                        .build();
             } else {
-                this.amazonS3 =
-                        S3Client.builder().credentialsProvider(credsProvider).build();
+                this.amazonS3 = S3Client.builder().credentialsProvider(credsProvider).build();
                 this.region = amazonS3.serviceClientConfiguration().region().id(); // not sure if this works at all
             }
 
             // for debugging
-            StsClient stsClient = StsClient.builder()
-                    .credentialsProvider(credsProvider).region(Region.of(region))
+            StsClient stsClient = StsClient.builder().credentialsProvider(credsProvider).region(Region.of(region))
                     .build();
-            GetCallerIdentityResponse identity = stsClient.getCallerIdentity(GetCallerIdentityRequest.builder()
-                    .build());
+            GetCallerIdentityResponse identity = stsClient
+                    .getCallerIdentity(GetCallerIdentityRequest.builder().build());
             LOG.debug("Authenticated as: {}", identity.arn());
 
             if (!doesBucketExistV2(amazonS3, bucketName)) { // returns true if no access
                 try {
-                    amazonS3.createBucket(CreateBucketRequest.builder().bucket(this.bucketName)
-                            .build());
+                    amazonS3.createBucket(CreateBucketRequest.builder().bucket(this.bucketName).build());
                 } catch (S3Exception e) {
                     throw new TikaConfigException("couldn't create bucket", e);
                 }
             }
-            this.amazonTranscribeAsync =
-                    TranscribeAsyncClient.builder().credentialsProvider(credsProvider)
-                            .region(Region.of(this.region)).build();
+            this.amazonTranscribeAsync = TranscribeAsyncClient.builder().credentialsProvider(credsProvider)
+                    .region(Region.of(this.region)).build();
         } catch (Exception e) {
             LOG.warn("Exception reading config file", e);
             isAvailable = false;
@@ -372,12 +356,11 @@ public class AmazonTranscribe implements Parser, Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         //TODO alert user if they've gotten 1 or 2 out of three?
         this.isAvailable = checkAvailable();
     }
-    
+
     // Thanks, ChatGPT
     private boolean doesBucketExistV2(S3Client s3, String bucketName) {
         try {

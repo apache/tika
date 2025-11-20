@@ -39,16 +39,13 @@ class GeoPkgDBParser extends SQLite3DBParser {
     }
 
     @Override
-    public JDBCTableReader getTableReader(Connection connection, String tableName,
-                                          ParseContext context) {
-        return new GeoPkgTableReader(connection, tableName, new EmbeddedDocumentUtil(context),
-                ignoreBlobColumns);
+    public JDBCTableReader getTableReader(Connection connection, String tableName, ParseContext context) {
+        return new GeoPkgTableReader(connection, tableName, new EmbeddedDocumentUtil(context), ignoreBlobColumns);
     }
 
     @Override
     protected JDBCTableReader getTableReader(Connection connection, String tableName,
-                                             EmbeddedDocumentUtil embeddedDocumentUtil) {
-        return new GeoPkgTableReader(connection, tableName, embeddedDocumentUtil,
-                ignoreBlobColumns);
+            EmbeddedDocumentUtil embeddedDocumentUtil) {
+        return new GeoPkgTableReader(connection, tableName, embeddedDocumentUtil, ignoreBlobColumns);
     }
 }

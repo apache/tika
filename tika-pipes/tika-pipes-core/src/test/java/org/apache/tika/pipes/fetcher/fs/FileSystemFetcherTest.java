@@ -24,11 +24,8 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.pipes.fetcher.fs.FileSystemFetcher;
-
+import org.junit.jupiter.api.Test;
 
 public class FileSystemFetcherTest {
 

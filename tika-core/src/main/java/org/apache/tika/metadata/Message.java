@@ -24,8 +24,7 @@ package org.apache.tika.metadata;
 public interface Message {
     String MESSAGE_PREFIX = "Message" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
-    String MESSAGE_RAW_HEADER_PREFIX =
-            MESSAGE_PREFIX + "Raw-Header" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    String MESSAGE_RAW_HEADER_PREFIX = MESSAGE_PREFIX + "Raw-Header" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     String MESSAGE_RECIPIENT_ADDRESS = "Message-Recipient-Address";
 
@@ -96,8 +95,7 @@ public interface Message {
      */
     Property MESSAGE_BCC_NAME = Property.internalTextBag(MESSAGE_PREFIX + "BCC-Name");
 
-    Property MESSAGE_BCC_DISPLAY_NAME =
-            Property.internalTextBag(MESSAGE_PREFIX + "BCC-Display-Name");
+    Property MESSAGE_BCC_DISPLAY_NAME = Property.internalTextBag(MESSAGE_PREFIX + "BCC-Display-Name");
 
     /**
      * Where possible, this records the email value in the bcc field.

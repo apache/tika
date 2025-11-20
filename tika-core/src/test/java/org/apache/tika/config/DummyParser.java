@@ -28,7 +28,7 @@ public class DummyParser extends CompositeParser implements Parser {
     private final ServiceLoader loader;
 
     public DummyParser(MediaTypeRegistry registry, ServiceLoader loader,
-                       Collection<Class<? extends Parser>> excludeParsers) {
+            Collection<Class<? extends Parser>> excludeParsers) {
         this.loader = loader;
     }
 

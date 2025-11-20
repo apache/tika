@@ -51,7 +51,6 @@ public interface HtmlMapper {
      */
     boolean isDiscardElement(String name);
 
-
     /**
      * Maps "safe" HTML attribute names to semantic XHTML equivalents. If the
      * given attribute is unknown or deemed unsafe for inclusion in the parse

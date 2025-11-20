@@ -66,19 +66,18 @@ public class FileListPipesIterator extends PipesIterator implements Initializabl
             }
             String line = reader.readLine();
             while (line != null) {
-                if (! line.startsWith("#") && !StringUtils.isBlank(line)) {
+                if (!line.startsWith("#") && !StringUtils.isBlank(line)) {
                     FetchKey fetchKey = new FetchKey(getFetcherName(), line);
                     EmitKey emitKey = new EmitKey(getEmitterName(), line);
                     ParseContext parseContext = new ParseContext();
                     parseContext.set(HandlerConfig.class, getHandlerConfig());
-                    tryToAdd(new FetchEmitTuple(line, fetchKey, emitKey,
-                            new Metadata(), parseContext, getOnParseException()));
+                    tryToAdd(new FetchEmitTuple(line, fetchKey, emitKey, new Metadata(), parseContext,
+                            getOnParseException()));
                 }
                 line = reader.readLine();
             }
         }
     }
-
 
     @Field
     public void setFileList(String path) {
@@ -91,8 +90,7 @@ public class FileListPipesIterator extends PipesIterator implements Initializabl
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         //these should all be fatal
         TikaConfig.mustNotBeEmpty("fileList", fileList);
         TikaConfig.mustNotBeEmpty("fetcherName", getFetcherName());
@@ -100,8 +98,8 @@ public class FileListPipesIterator extends PipesIterator implements Initializabl
 
         fileListPath = Paths.get(fileList);
         if (!Files.isRegularFile(fileListPath)) {
-            throw new TikaConfigException("file list " + fileList + " does not exist. " +
-                    "Must specify an existing file");
+            throw new TikaConfigException(
+                    "file list " + fileList + " does not exist. " + "Must specify an existing file");
         }
     }
 }

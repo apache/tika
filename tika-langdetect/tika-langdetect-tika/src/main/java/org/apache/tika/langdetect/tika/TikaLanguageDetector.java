@@ -84,8 +84,8 @@ public class TikaLanguageDetector extends LanguageDetector {
         LanguageIdentifier langIder = new LanguageIdentifier(sb.toString());
         String lang = langIder.getLanguage();
         if (langIder.isReasonablyCertain()) {
-            return Collections.singletonList(
-                    new LanguageResult(lang, LanguageConfidence.MEDIUM, langIder.getRawScore()));
+            return Collections
+                    .singletonList(new LanguageResult(lang, LanguageConfidence.MEDIUM, langIder.getRawScore()));
         }
         return Collections.EMPTY_LIST;
     }

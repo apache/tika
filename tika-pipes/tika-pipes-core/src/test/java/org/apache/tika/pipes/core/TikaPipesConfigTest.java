@@ -5,9 +5,9 @@
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,8 +25,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.AbstractTikaConfigTest;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.core.async.AsyncConfig;
@@ -37,6 +35,7 @@ import org.apache.tika.pipes.core.fetcher.Fetcher;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcher;
+import org.junit.jupiter.api.Test;
 
 public class TikaPipesConfigTest extends AbstractTikaConfigTest {
     //this handles tests for the newer pipes type configs.
@@ -72,14 +71,12 @@ public class TikaPipesConfigTest extends AbstractTikaConfigTest {
         //no basepath is allowed as of > 2.3.0
         //test that this does not throw an exception.
 
-        FetcherManager fetcherManager = FetcherManager.load(
-                getConfigFilePath("fetchers-nobasepath-config.xml"));
+        FetcherManager fetcherManager = FetcherManager.load(getConfigFilePath("fetchers-nobasepath-config.xml"));
     }
 
     @Test
     public void testEmitters() throws Exception {
-        EmitterManager emitterManager =
-                EmitterManager.load(getConfigFilePath("emitters-config.xml"));
+        EmitterManager emitterManager = EmitterManager.load(getConfigFilePath("emitters-config.xml"));
         Emitter em1 = emitterManager.getEmitter("em1");
         assertNotNull(em1);
         Emitter em2 = emitterManager.getEmitter("em2");
@@ -95,16 +92,14 @@ public class TikaPipesConfigTest extends AbstractTikaConfigTest {
 
     @Test
     public void testPipesIterator() throws Exception {
-        PipesIterator it =
-                PipesIterator.build(getConfigFilePath("pipes-iterator-config.xml"));
+        PipesIterator it = PipesIterator.build(getConfigFilePath("pipes-iterator-config.xml"));
         assertEquals("fs1", it.getFetcherName());
     }
 
     @Test
     public void testMultiplePipesIterators() throws Exception {
         assertThrows(TikaConfigException.class, () -> {
-            PipesIterator it =
-                    PipesIterator.build(getConfigFilePath("pipes-iterator-multiple-config.xml"));
+            PipesIterator it = PipesIterator.build(getConfigFilePath("pipes-iterator-multiple-config.xml"));
             assertEquals("fs1", it.getFetcherName());
         });
     }
@@ -116,8 +111,8 @@ public class TikaPipesConfigTest extends AbstractTikaConfigTest {
         AsyncConfig asyncConfig = AsyncConfig.load(configPath);
         PipesReporter reporter = asyncConfig.getPipesReporter();
         assertTrue(reporter instanceof CompositePipesReporter);
-        List<PipesReporter> reporters = ((CompositePipesReporter)reporter).getPipesReporters();
-        assertEquals("somethingOrOther1", ((MockReporter)reporters.get(0)).getEndpoint());
-        assertEquals("somethingOrOther2", ((MockReporter)reporters.get(1)).getEndpoint());
+        List<PipesReporter> reporters = ((CompositePipesReporter) reporter).getPipesReporters();
+        assertEquals("somethingOrOther1", ((MockReporter) reporters.get(0)).getEndpoint());
+        assertEquals("somethingOrOther2", ((MockReporter) reporters.get(1)).getEndpoint());
     }
 }

@@ -18,18 +18,16 @@ package org.apache.tika.sax;
 
 import java.util.Locale;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class DoublingContentHandlerDecoratorFactory implements ContentHandlerDecoratorFactory {
     private static final char[] NEWLINE = new char[]{'\n'};
 
     @Override
-    public ContentHandler decorate(ContentHandler contentHandler, Metadata metadata,
-                                   ParseContext parseContext) {
+    public ContentHandler decorate(ContentHandler contentHandler, Metadata metadata, ParseContext parseContext) {
         return new ContentHandlerDecorator(contentHandler) {
             @Override
             public void characters(char[] ch, int start, int length) throws SAXException {

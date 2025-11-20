@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.example;
 
 import java.io.IOException;
@@ -23,22 +22,23 @@ import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.util.Collections;
 import java.util.Set;
+
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class EncryptedPrescriptionParser implements Parser {
     private static final long serialVersionUID = -7816987249611278541L;
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         try {
             Key key = Pharmacy.getKey();
             Cipher cipher = Cipher.getInstance("RSA");

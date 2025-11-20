@@ -35,19 +35,17 @@ import java.util.Random;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.digestutils.BouncyCastleDigester;
-
+import org.junit.jupiter.api.Test;
 
 public class BouncyCastleDigestingParserTest extends TikaTest {
 
-    private final static String P = TikaCoreProperties.TIKA_META_PREFIX + "digest" +
-            TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    private final static String P = TikaCoreProperties.TIKA_META_PREFIX + "digest"
+            + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     private final static int UNLIMITED = 1000000;//well, not really, but longer than input file
 
@@ -62,21 +60,17 @@ public class BouncyCastleDigestingParserTest extends TikaTest {
         expected.put("MD2", "d768c8e27b0b52c6eaabfaa7122d1d4f");
         expected.put("MD5", "59f626e09a8c16ab6dbc2800c685f772");
         expected.put("SHA1", "7a1f001d163ac90d8ea54c050faf5a38079788a6");
-        expected.put("SHA256",
-                "c4b7fab030a8b6a9d6691f6699ac8e6f" + "82bc53764a0f1430d134ae3b70c32654");
-        expected.put("SHA384",
-                "ebe368b9326fef44408290724d187553" + "8b8a6923fdf251ddab72c6e4b5d54160" +
-                        "9db917ba4260d1767995a844d8d654df");
-        expected.put("SHA512",
-                "ee46d973ee1852c018580c242955974d" + "da4c21f36b54d7acd06fcf68e974663b" +
-                        "fed1d256875be58d22beacf178154cc3" + "a1178cb73443deaa53aa0840324708bb");
+        expected.put("SHA256", "c4b7fab030a8b6a9d6691f6699ac8e6f" + "82bc53764a0f1430d134ae3b70c32654");
+        expected.put("SHA384", "ebe368b9326fef44408290724d187553" + "8b8a6923fdf251ddab72c6e4b5d54160"
+                + "9db917ba4260d1767995a844d8d654df");
+        expected.put("SHA512", "ee46d973ee1852c018580c242955974d" + "da4c21f36b54d7acd06fcf68e974663b"
+                + "fed1d256875be58d22beacf178154cc3" + "a1178cb73443deaa53aa0840324708bb");
 
         //test each one
         for (String algo : expected.keySet()) {
             Metadata m = new Metadata();
             XMLResult xml = getXML("test_recursive_embedded.docx",
-                    new DigestingParser(AUTO_DETECT_PARSER,
-                            new BouncyCastleDigester(UNLIMITED, algo), false), m);
+                    new DigestingParser(AUTO_DETECT_PARSER, new BouncyCastleDigester(UNLIMITED, algo), false), m);
             assertEquals(expected.get(algo), m.get(P + algo));
         }
 
@@ -89,23 +83,18 @@ public class BouncyCastleDigestingParserTest extends TikaTest {
         expected.put("MD2", "d768c8e27b0b52c6eaabfaa7122d1d4f");
         expected.put("MD5", "59f626e09a8c16ab6dbc2800c685f772");
         expected.put("SHA1", "7a1f001d163ac90d8ea54c050faf5a38079788a6");
-        expected.put("SHA256",
-                "c4b7fab030a8b6a9d6691f6699ac8e6f" + "82bc53764a0f1430d134ae3b70c32654");
-        expected.put("SHA384",
-                "ebe368b9326fef44408290724d187553" + "8b8a6923fdf251ddab72c6e4b5d54160" +
-                        "9db917ba4260d1767995a844d8d654df");
-        expected.put("SHA512",
-                "ee46d973ee1852c018580c242955974d" + "da4c21f36b54d7acd06fcf68e974663b" +
-                        "fed1d256875be58d22beacf178154cc3" + "a1178cb73443deaa53aa0840324708bb");
-        expected.put("SHA3-512",
-                "04337f667a250348a1acb992863b3ddc" + "eab38365c206c18d356d2b31675ad669" +
-                        "5fb5497f4e79b11640aefbb8042a5dbb" + "7ec6c2c6c1b6e19210453591c52cb6eb");
+        expected.put("SHA256", "c4b7fab030a8b6a9d6691f6699ac8e6f" + "82bc53764a0f1430d134ae3b70c32654");
+        expected.put("SHA384", "ebe368b9326fef44408290724d187553" + "8b8a6923fdf251ddab72c6e4b5d54160"
+                + "9db917ba4260d1767995a844d8d654df");
+        expected.put("SHA512", "ee46d973ee1852c018580c242955974d" + "da4c21f36b54d7acd06fcf68e974663b"
+                + "fed1d256875be58d22beacf178154cc3" + "a1178cb73443deaa53aa0840324708bb");
+        expected.put("SHA3-512", "04337f667a250348a1acb992863b3ddc" + "eab38365c206c18d356d2b31675ad669"
+                + "5fb5497f4e79b11640aefbb8042a5dbb" + "7ec6c2c6c1b6e19210453591c52cb6eb");
         expected.put("SHA1", "PIPQAHIWHLEQ3DVFJQCQ7L22HADZPCFG");
         //test comma separated
         Metadata m = new Metadata();
-        XMLResult xml = getXML("test_recursive_embedded.docx",
-                new DigestingParser(AUTO_DETECT_PARSER, new BouncyCastleDigester(UNLIMITED,
-                        "MD5,SHA256,SHA384,SHA512,SHA3-512,SHA1:32"), false), m);
+        XMLResult xml = getXML("test_recursive_embedded.docx", new DigestingParser(AUTO_DETECT_PARSER,
+                new BouncyCastleDigester(UNLIMITED, "MD5,SHA256,SHA384,SHA512,SHA3-512,SHA1:32"), false), m);
         for (String algo : new String[]{"MD5", "SHA256", "SHA384", "SHA512", "SHA3-512", "SHA1"}) {
             assertEquals(expected.get(algo), m.get(P + algo));
         }
@@ -134,8 +123,8 @@ public class BouncyCastleDigestingParserTest extends TikaTest {
     @Test
     public void testUnrecognizedEncodingOptions() throws Exception {
         assertThrows(IllegalArgumentException.class, () -> {
-            getXML("test_recursive_embedded.docx", new DigestingParser(AUTO_DETECT_PARSER,
-                    new BouncyCastleDigester(100000, "MD5:33"), false));
+            getXML("test_recursive_embedded.docx",
+                    new DigestingParser(AUTO_DETECT_PARSER, new BouncyCastleDigester(100000, "MD5:33"), false));
         });
     }
 
@@ -146,8 +135,7 @@ public class BouncyCastleDigestingParserTest extends TikaTest {
         try {
             //try some random lengths
             for (int i = 0; i < 10; i++) {
-                testMulti(tmp, random.nextInt(100000), random.nextInt(100000),
-                        random.nextBoolean());
+                testMulti(tmp, random.nextInt(100000), random.nextInt(100000), random.nextBoolean());
             }
             //try specific lengths
             testMulti(tmp, 1000, 100000, true);
@@ -158,7 +146,6 @@ public class BouncyCastleDigestingParserTest extends TikaTest {
             testMulti(tmp, 10000, 10000, false);
             testMulti(tmp, 10000, 9999, true);
             testMulti(tmp, 10000, 9999, false);
-
 
             testMulti(tmp, 1000, 100, true);
             testMulti(tmp, 1000, 100, false);
@@ -175,11 +162,9 @@ public class BouncyCastleDigestingParserTest extends TikaTest {
         }
     }
 
-    private void testMulti(Path tmp, int fileLength, int markLimit, boolean useTikaInputStream)
-            throws IOException {
+    private void testMulti(Path tmp, int fileLength, int markLimit, boolean useTikaInputStream) throws IOException {
 
-        OutputStream os =
-                new BufferedOutputStream(Files.newOutputStream(tmp, StandardOpenOption.CREATE));
+        OutputStream os = new BufferedOutputStream(Files.newOutputStream(tmp, StandardOpenOption.CREATE));
 
         for (int i = 0; i < fileLength; i++) {
             os.write(random.nextInt());
@@ -192,7 +177,6 @@ public class BouncyCastleDigestingParserTest extends TikaTest {
         addTruth(tmp, "SHA1", truth);
         addTruth(tmp, "SHA512", truth);
 
-
         checkMulti(truth, tmp, fileLength, markLimit, useTikaInputStream, "SHA512", "SHA1", "MD5");
         checkMulti(truth, tmp, fileLength, markLimit, useTikaInputStream, "MD5", "SHA1");
 
@@ -203,13 +187,13 @@ public class BouncyCastleDigestingParserTest extends TikaTest {
 
     }
 
-    private void checkMulti(Metadata truth, Path tmp, int fileLength, int markLimit,
-                            boolean useTikaInputStream, String... algos) throws IOException {
+    private void checkMulti(Metadata truth, Path tmp, int fileLength, int markLimit, boolean useTikaInputStream,
+            String... algos) throws IOException {
         Metadata result = new Metadata();
-        BouncyCastleDigester digester =
-                new BouncyCastleDigester(markLimit, StringUtils.join(algos, ","));
-        try (InputStream is = useTikaInputStream ? TikaInputStream.get(tmp) :
-                new BufferedInputStream(Files.newInputStream(tmp))) {
+        BouncyCastleDigester digester = new BouncyCastleDigester(markLimit, StringUtils.join(algos, ","));
+        try (InputStream is = useTikaInputStream
+                ? TikaInputStream.get(tmp)
+                : new BufferedInputStream(Files.newInputStream(tmp))) {
             digester.digest(is, result, new ParseContext());
         }
 
@@ -217,12 +201,10 @@ public class BouncyCastleDigestingParserTest extends TikaTest {
             String truthValue = truth.get(P + algo);
             String resultValue = result.get(P + algo);
             assertNotNull("truth", truthValue);
-            assertNotNull("result (fileLength=" + fileLength + ", markLimit=" + markLimit + ")",
-                    resultValue);
+            assertNotNull("result (fileLength=" + fileLength + ", markLimit=" + markLimit + ")", resultValue);
             assertEquals(truthValue, resultValue,
-                    "fileLength(" + fileLength + ") markLimit(" + markLimit +
-                            ") useTikaInputStream(" + useTikaInputStream + ") " + "algorithm(" + algo +
-                            ") seed(" + SEED + ")");
+                    "fileLength(" + fileLength + ") markLimit(" + markLimit + ") useTikaInputStream("
+                            + useTikaInputStream + ") " + "algorithm(" + algo + ") seed(" + SEED + ")");
         }
 
     }
@@ -250,6 +232,5 @@ public class BouncyCastleDigestingParserTest extends TikaTest {
         truth.set(P + algo, digest);
 
     }
-
 
 }

@@ -22,14 +22,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.server.core.HTMLHelper;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
 
 /**
  * <p>Provides details of all the {@link Detector}s registered with
@@ -49,9 +50,7 @@ public class TikaDetectors {
     public String getDectorsHTML() {
         StringBuffer h = new StringBuffer();
         html.generateHeader(h, "Detectors available to Apache Tika");
-        detectorAsHTML(TikaResource
-                .getConfig()
-                .getDetector(), h, 2);
+        detectorAsHTML(TikaResource.getConfig().getDetector(), h, 2);
         html.generateFooter(h);
         return h.toString();
     }
@@ -60,9 +59,7 @@ public class TikaDetectors {
         html.append("<h");
         html.append(level);
         html.append(">");
-        String name = d
-                .getClass()
-                .getName();
+        String name = d.getClass().getName();
         html.append(name.substring(name.lastIndexOf('.') + 1));
         html.append("</h");
         html.append(level);
@@ -82,16 +79,12 @@ public class TikaDetectors {
     @Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
     public String getDetectorsJSON() throws IOException {
         Map<String, Object> details = new HashMap<>();
-        detectorAsMap(TikaResource
-                .getConfig()
-                .getDetector(), details);
+        detectorAsMap(TikaResource.getConfig().getDetector(), details);
         return new ObjectMapper().writeValueAsString(details);
     }
 
     private void detectorAsMap(Detector d, Map<String, Object> details) {
-        details.put("name", d
-                .getClass()
-                .getName());
+        details.put("name", d.getClass().getName());
 
         boolean isComposite = (d instanceof CompositeDetector);
         details.put("composite", isComposite);
@@ -110,17 +103,13 @@ public class TikaDetectors {
     @Produces("text/plain")
     public String getDetectorsPlain() {
         StringBuffer text = new StringBuffer();
-        renderDetector(TikaResource
-                .getConfig()
-                .getDetector(), text, 0);
+        renderDetector(TikaResource.getConfig().getDetector(), text, 0);
         return text.toString();
     }
 
     private void renderDetector(Detector d, StringBuffer text, int indent) {
         boolean isComposite = (d instanceof CompositeDetector);
-        String name = d
-                .getClass()
-                .getName();
+        String name = d.getClass().getName();
 
         for (int i = 0; i < indent; i++) {
             text.append("  ");

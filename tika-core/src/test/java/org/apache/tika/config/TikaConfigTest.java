@@ -32,8 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.ResourceLoggingClassLoader;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -51,6 +49,7 @@ import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.mock.MockParser;
 import org.apache.tika.parser.multiple.FallbackParser;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for the Tika Config, which don't require real parsers /
@@ -82,12 +81,9 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
      */
     @Test
     public void testUnknownParser() throws Exception {
-        ServiceLoader ignoreLoader =
-                new ServiceLoader(getClass().getClassLoader(), LoadErrorHandler.IGNORE);
-        ServiceLoader warnLoader =
-                new ServiceLoader(getClass().getClassLoader(), LoadErrorHandler.WARN);
-        ServiceLoader throwLoader =
-                new ServiceLoader(getClass().getClassLoader(), LoadErrorHandler.THROW);
+        ServiceLoader ignoreLoader = new ServiceLoader(getClass().getClassLoader(), LoadErrorHandler.IGNORE);
+        ServiceLoader warnLoader = new ServiceLoader(getClass().getClassLoader(), LoadErrorHandler.WARN);
+        ServiceLoader throwLoader = new ServiceLoader(getClass().getClassLoader(), LoadErrorHandler.THROW);
         Path configPath = Paths.get(new URI(getConfigPath("TIKA-1700-unknown-parser.xml")));
 
         TikaConfig ignore = new TikaConfig(configPath, ignoreLoader);
@@ -145,8 +141,7 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
      */
     @Test
     public void ensureClassLoaderUsedEverywhere() throws Exception {
-        ResourceLoggingClassLoader customLoader =
-                new ResourceLoggingClassLoader(getClass().getClassLoader());
+        ResourceLoggingClassLoader customLoader = new ResourceLoggingClassLoader(getClass().getClassLoader());
         TikaConfig config;
 
         // Without a classloader set, normal one will be used
@@ -162,8 +157,7 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
 
         Map<String, List<URL>> resources = customLoader.getLoadedResources();
         int resourcesCount = resources.size();
-        assertTrue(resourcesCount > 3,
-                "Not enough things used the classloader, found only " + resourcesCount);
+        assertTrue(resourcesCount > 3, "Not enough things used the classloader, found only " + resourcesCount);
 
         // Ensure everything that should do, did use it
         // - Parsers
@@ -194,7 +188,7 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
         // file that doesn't exist
         System.setProperty("tika.config", "doesntexist.xml");
         TikaException ex = assertThrows(TikaException.class, () -> new TikaConfig());
-        assertTrue(ex.getMessage().contains("Specified Tika configuration not found: doesntexist.xml"));        
+        assertTrue(ex.getMessage().contains("Specified Tika configuration not found: doesntexist.xml"));
     }
 
     /**
@@ -289,8 +283,7 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
 
         assertTrue((executorService instanceof DummyExecutor), "Should use Dummy Executor");
         assertEquals(3, executorService.getCorePoolSize(), "Should have configured Core Threads");
-        assertEquals(10, executorService.getMaximumPoolSize(),
-                "Should have configured Max Threads");
+        assertEquals(10, executorService.getMaximumPoolSize(), "Should have configured Max Threads");
     }
 
     @Test
@@ -299,7 +292,6 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
             TikaConfig config = getConfig("TIKA-2389-illegal.xml");
         });
     }
-
 
     @Test
     public void testInitializerPerParserThrow() throws Exception {
@@ -350,8 +342,7 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
     public void testXMLReaderUtils() throws Exception {
         //pool size may have been reset already by an
         //earlier test.  Can't test for default here.
-        assertEquals(XMLReaderUtils.DEFAULT_MAX_ENTITY_EXPANSIONS,
-                XMLReaderUtils.getMaxEntityExpansions());
+        assertEquals(XMLReaderUtils.DEFAULT_MAX_ENTITY_EXPANSIONS, XMLReaderUtils.getMaxEntityExpansions());
         //make sure that detection on this file actually works with
         //default expansions
         assertEquals("application/rdf+xml",
@@ -403,8 +394,7 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
     public void testXMLReaderUtilsNoPool() throws Exception {
         //pool size may have been reset already by an
         //earlier test.  Can't test for default here.
-        assertEquals(XMLReaderUtils.DEFAULT_MAX_ENTITY_EXPANSIONS,
-                XMLReaderUtils.getMaxEntityExpansions());
+        assertEquals(XMLReaderUtils.DEFAULT_MAX_ENTITY_EXPANSIONS, XMLReaderUtils.getMaxEntityExpansions());
         //make sure that detection on this file actually works with
         //default expansions
         assertEquals("application/rdf+xml",
@@ -452,15 +442,13 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
     public void testTimesInitiated() throws Exception {
         //this prevents multi-threading tests, but we aren't doing that now...
         MockParser.resetTimesInitiated();
-        TikaConfig tikaConfig =
-                new TikaConfig(TikaConfigTest.class.getResourceAsStream("mock-exclude.xml"));
+        TikaConfig tikaConfig = new TikaConfig(TikaConfigTest.class.getResourceAsStream("mock-exclude.xml"));
         assertEquals(1, MockParser.getTimesInitiated());
     }
 
     @Test
     public void testAutoDetectParserConfig() throws Exception {
-        TikaConfig tikaConfig =
-                new TikaConfig(TikaConfigTest.class.getResourceAsStream("TIKA-3594.xml"));
+        TikaConfig tikaConfig = new TikaConfig(TikaConfigTest.class.getResourceAsStream("TIKA-3594.xml"));
         AutoDetectParserConfig config = tikaConfig.getAutoDetectParserConfig();
         assertEquals(12345, config.getSpoolToDisk());
         assertEquals(6789, config.getOutputThreshold());

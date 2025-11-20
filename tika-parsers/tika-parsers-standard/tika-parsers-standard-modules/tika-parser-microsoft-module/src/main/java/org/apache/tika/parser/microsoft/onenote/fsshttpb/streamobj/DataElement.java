@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
@@ -75,7 +74,6 @@ public class DataElement extends StreamObject {
      *             element .
      */
 
-
     public DataElement(DataElementType type, DataElementData data) {
         super(StreamObjectTypeHeaderStart.DataElement);
         if (!DATA_ELEMENT_DATA_TYPE_MAPPING.containsKey(type)) {
@@ -84,10 +82,8 @@ public class DataElement extends StreamObject {
 
         this.dataElementType = type;
         this.data = data;
-        this.dataElementExGuid =
-                new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());
-        this.serialNumber = new SerialNumber(UUID.randomUUID(),
-                SequenceNumberGenerator.GetCurrentSerialNumber());
+        this.dataElementExGuid = new ExGuid(SequenceNumberGenerator.GetCurrentSerialNumber(), UUID.randomUUID());
+        this.serialNumber = new SerialNumber(UUID.randomUUID(), SequenceNumberGenerator.GetCurrentSerialNumber());
     }
 
     /**
@@ -107,9 +103,9 @@ public class DataElement extends StreamObject {
         if (this.data.getClass().equals(clazz)) {
             return (T) this.data;
         } else {
-            throw new TikaException(String.format(Locale.US,
-                    "Unable to cast DataElementData to the type %s, its actual type is %s",
-                    clazz.getName(), this.data.getClass().getName()));
+            throw new TikaException(
+                    String.format(Locale.US, "Unable to cast DataElementData to the type %s, its actual type is %s",
+                            clazz.getName(), this.data.getClass().getName()));
         }
     }
 
@@ -125,45 +121,43 @@ public class DataElement extends StreamObject {
      *                      the items
      */
     @Override
-    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems) throws TikaException {
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems)
+            throws TikaException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
 
         try {
             this.dataElementExGuid = BasicObject.parse(byteArray, index, ExGuid.class);
             this.serialNumber = BasicObject.parse(byteArray, index, SerialNumber.class);
-            this.dataElementType = DataElementType.fromIntVal(
-                    (int) BasicObject.parse(byteArray, index, Compact64bitInt.class)
-                            .getDecodedValue());
+            this.dataElementType = DataElementType
+                    .fromIntVal((int) BasicObject.parse(byteArray, index, Compact64bitInt.class).getDecodedValue());
         } catch (Exception e) {
             throw new DataElementParseErrorException(index.get(), e);
         }
 
         if (index.get() - currentIndex.get() != lengthOfItems) {
             throw new DataElementParseErrorException(currentIndex.get(),
-                    "Failed to check the data element header length, whose value does not cover the " +
-                            "dataElementExGUID, SerialNumber and DataElementType", null);
+                    "Failed to check the data element header length, whose value does not cover the "
+                            + "dataElementExGUID, SerialNumber and DataElementType",
+                    null);
         }
 
         if (DATA_ELEMENT_DATA_TYPE_MAPPING.containsKey(this.dataElementType)) {
             try {
                 this.data = (DataElementData) DATA_ELEMENT_DATA_TYPE_MAPPING.get(this.dataElementType)
                         .getDeclaredConstructor().newInstance();
-            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
-                     InvocationTargetException e) {
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException
+                    | InvocationTargetException e) {
                 throw new TikaException("Could not instantiate a " + dataElementType, e);
             }
 
             try {
-                index.addAndGet(
-                        this.data.deserializeDataElementDataFromByteArray(byteArray, index.get()));
+                index.addAndGet(this.data.deserializeDataElementDataFromByteArray(byteArray, index.get()));
             } catch (Exception e) {
                 throw new DataElementParseErrorException(index.get(), e);
             }
         } else {
             throw new DataElementParseErrorException(index.get(),
-                    "Failed to create specific data element instance with the type " +
-                            this.dataElementType, null);
+                    "Failed to create specific data element instance with the type " + this.dataElementType, null);
         }
 
         currentIndex.set(index.get());
@@ -180,8 +174,7 @@ public class DataElement extends StreamObject {
         int startIndex = byteList.size();
         byteList.addAll(this.dataElementExGuid.serializeToByteList());
         byteList.addAll(this.serialNumber.serializeToByteList());
-        byteList.addAll(
-                new Compact64bitInt(this.dataElementType.getIntVal()).serializeToByteList());
+        byteList.addAll(new Compact64bitInt(this.dataElementType.getIntVal()).serializeToByteList());
 
         int headerLength = byteList.size() - startIndex;
         byteList.addAll(this.data.serializeToByteList());

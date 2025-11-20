@@ -138,8 +138,7 @@ class ContentHandlerProxy implements ContentHandler, ForkProxy {
         doneSending();
     }
 
-    public void startElement(String uri, String localName, String qName, Attributes atts)
-            throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
         sendRequest(START_ELEMENT);
         sendString(uri);
         sendString(localName);

@@ -28,9 +28,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -41,6 +38,8 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.txt.Icu4jEncodingDetector;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * This is a Tika wrapper around the DBFReader.
@@ -56,8 +55,7 @@ public class DBFParser implements Parser {
     private static final int MAX_CHARS_FOR_CHARSET_DETECTION = 20000;
     private static final Charset DEFAULT_CHARSET = StandardCharsets.ISO_8859_1;
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.application("x-dbf"));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.application("x-dbf"));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -65,8 +63,8 @@ public class DBFParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         DBFReader reader = DBFReader.open(stream);
         DBFFileHeader header = reader.getHeader();
         metadata.set(Metadata.CONTENT_TYPE, header.getVersion().getFullMimeString());
@@ -118,8 +116,7 @@ public class DBFParser implements Parser {
         xhtml.endDocument();
     }
 
-    private Charset getCharset(List<DBFRow> firstRows, DBFFileHeader header)
-            throws IOException, TikaException {
+    private Charset getCharset(List<DBFRow> firstRows, DBFFileHeader header) throws IOException, TikaException {
         //TODO: potentially use codepage info in the header
         Charset charset = DEFAULT_CHARSET;
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -143,8 +140,7 @@ public class DBFParser implements Parser {
         return charset;
     }
 
-    private void writeRow(DBFRow row, Charset charset, XHTMLContentHandler xhtml)
-            throws SAXException {
+    private void writeRow(DBFRow row, Charset charset, XHTMLContentHandler xhtml) throws SAXException {
         xhtml.startElement("tr");
         for (DBFCell cell : row.cells) {
             xhtml.startElement("td");

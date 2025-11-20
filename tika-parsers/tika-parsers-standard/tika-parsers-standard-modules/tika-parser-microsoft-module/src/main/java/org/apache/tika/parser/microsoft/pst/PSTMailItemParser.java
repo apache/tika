@@ -23,14 +23,6 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
-import com.pff.PSTAttachment;
-import com.pff.PSTException;
-import com.pff.PSTMessage;
-import com.pff.PSTRecipient;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -49,6 +41,14 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+
+import com.pff.PSTAttachment;
+import com.pff.PSTException;
+import com.pff.PSTMessage;
+import com.pff.PSTRecipient;
 
 public class PSTMailItemParser implements Parser {
 
@@ -63,7 +63,8 @@ public class PSTMailItemParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         TikaInputStream tis = TikaInputStream.cast(stream);
         if (tis == null) {
             throw new TikaException("Stream must be a TikaInputStream");
@@ -72,7 +73,7 @@ public class PSTMailItemParser implements Parser {
         if (openContainerObj == null) {
             throw new TikaException("Open container must not be null.");
         }
-        if (! (openContainerObj instanceof PSTMessage)) {
+        if (!(openContainerObj instanceof PSTMessage)) {
             throw new TikaException("Open container must be a PSTMessage");
         }
         PSTMessage pstMsg = (PSTMessage) openContainerObj;
@@ -83,8 +84,8 @@ public class PSTMailItemParser implements Parser {
         xhtml.endDocument();
     }
 
-    private void parseMailAndAttachments(PSTMessage pstMsg, XHTMLContentHandler handler, Metadata metadata, ParseContext context,
-                                         EmbeddedDocumentExtractor embeddedExtractor)
+    private void parseMailAndAttachments(PSTMessage pstMsg, XHTMLContentHandler handler, Metadata metadata,
+            ParseContext context, EmbeddedDocumentExtractor embeddedExtractor)
             throws SAXException, IOException, TikaException {
         extractMetadata(pstMsg, metadata);
         AttributesImpl attributes = new AttributesImpl();
@@ -97,25 +98,24 @@ public class PSTMailItemParser implements Parser {
         handler.endElement("div");
     }
 
-    private void parseMailItem(PSTMessage pstMail, XHTMLContentHandler xhtml,
-                                Metadata metadata, ParseContext context) throws SAXException, IOException, TikaException {
+    private void parseMailItem(PSTMessage pstMail, XHTMLContentHandler xhtml, Metadata metadata, ParseContext context)
+            throws SAXException, IOException, TikaException {
 
         //try the html first. It preserves logical paragraph markers
         String htmlChunk = pstMail.getBodyHTML();
-        if (! StringUtils.isBlank(htmlChunk)) {
-            Parser htmlParser = EmbeddedDocumentUtil
-                    .tryToFindExistingLeafParser(JSoupParser.class, context);
+        if (!StringUtils.isBlank(htmlChunk)) {
+            Parser htmlParser = EmbeddedDocumentUtil.tryToFindExistingLeafParser(JSoupParser.class, context);
             if (htmlParser == null) {
                 htmlParser = new JSoupParser();
             }
             if (htmlParser instanceof JSoupParser) {
-                ((JSoupParser)htmlParser).parseString(htmlChunk,
-                        new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
-                        metadata, context);
+                ((JSoupParser) htmlParser).parseString(htmlChunk,
+                        new EmbeddedContentHandler(new BodyContentHandler(xhtml)), metadata, context);
             } else {
                 byte[] data = htmlChunk.getBytes(StandardCharsets.UTF_8);
                 try (TikaInputStream tis = TikaInputStream.get(data)) {
-                    htmlParser.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(xhtml)), new Metadata(), context);
+                    htmlParser.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(xhtml)), new Metadata(),
+                            context);
                 }
             }
             return;
@@ -132,7 +132,8 @@ public class PSTMailItemParser implements Parser {
     private void extractMetadata(PSTMessage pstMail, Metadata metadata) {
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, pstMail.getSubject() + ".msg");
         metadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, pstMail.getInternetMessageId());
-        metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name());
+        metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name());
         metadata.set(TikaCoreProperties.IDENTIFIER, pstMail.getInternetMessageId());
         metadata.set(TikaCoreProperties.TITLE, pstMail.getSubject());
         metadata.set(TikaCoreProperties.SUBJECT, pstMail.getSubject());
@@ -144,8 +145,8 @@ public class PSTMailItemParser implements Parser {
         metadata.set(TikaCoreProperties.COMMENTS, pstMail.getComment());
         metadata.set(PST.DESCRIPTOR_NODE_ID, valueOf(pstMail.getDescriptorNodeId()));
         metadata.set(Message.MESSAGE_FROM_EMAIL, pstMail.getSenderEmailAddress());
-        if (! StringUtils.isBlank(pstMail.getRecipientsString()) &&
-                ! pstMail.getRecipientsString().equals("No recipients table!")) {
+        if (!StringUtils.isBlank(pstMail.getRecipientsString())
+                && !pstMail.getRecipientsString().equals("No recipients table!")) {
             metadata.set(MAPI.RECIPIENTS_STRING, pstMail.getRecipientsString());
         }
         metadata.set(Message.MESSAGE_TO_DISPLAY_NAME, pstMail.getDisplayTo());
@@ -154,15 +155,12 @@ public class PSTMailItemParser implements Parser {
         metadata.set(MAPI.IMPORTANCE, pstMail.getImportance());
         metadata.set(MAPI.PRIORTY, pstMail.getPriority());
         metadata.set(MAPI.IS_FLAGGED, pstMail.isFlagged());
-        metadata.set(MAPI.MESSAGE_CLASS,
-                OutlookExtractor.getNormalizedMessageClass(pstMail.getMessageClass()));
+        metadata.set(MAPI.MESSAGE_CLASS, OutlookExtractor.getNormalizedMessageClass(pstMail.getMessageClass()));
         metadata.set(MAPI.MESSAGE_CLASS_RAW, pstMail.getMessageClass());
-
 
         metadata.set(Message.MESSAGE_FROM_EMAIL, pstMail.getSenderEmailAddress());
 
-        metadata.set(MAPI.FROM_REPRESENTING_EMAIL,
-                pstMail.getSentRepresentingEmailAddress());
+        metadata.set(MAPI.FROM_REPRESENTING_EMAIL, pstMail.getSentRepresentingEmailAddress());
 
         metadata.set(Message.MESSAGE_FROM_NAME, pstMail.getSenderName());
         metadata.set(MAPI.FROM_REPRESENTING_NAME, pstMail.getSentRepresentingName());
@@ -171,27 +169,25 @@ public class PSTMailItemParser implements Parser {
         try {
             for (int i = 0; i < pstMail.getNumberOfRecipients(); i++) {
                 PSTRecipient recipient = pstMail.getRecipient(i);
-                switch (OutlookExtractor.RECIPIENT_TYPE
-                        .getTypeFromVal(recipient.getRecipientType())) {
-                    case TO:
-                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_TO_DISPLAY_NAME,
-                                recipient.getDisplayName(), metadata);
-                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_TO_EMAIL,
-                                recipient.getEmailAddress(), metadata);
+                switch (OutlookExtractor.RECIPIENT_TYPE.getTypeFromVal(recipient.getRecipientType()))
+                {
+                    case TO :
+                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_TO_DISPLAY_NAME, recipient.getDisplayName(),
+                                metadata);
+                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_TO_EMAIL, recipient.getEmailAddress(), metadata);
                         break;
-                    case CC:
-                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_CC_DISPLAY_NAME,
-                                recipient.getDisplayName(), metadata);
-                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_CC_EMAIL,
-                                recipient.getEmailAddress(), metadata);
+                    case CC :
+                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_CC_DISPLAY_NAME, recipient.getDisplayName(),
+                                metadata);
+                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_CC_EMAIL, recipient.getEmailAddress(), metadata);
                         break;
-                    case BCC:
-                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_BCC_DISPLAY_NAME,
-                                recipient.getDisplayName(), metadata);
-                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_BCC_EMAIL,
-                                recipient.getEmailAddress(), metadata);
+                    case BCC :
+                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_BCC_DISPLAY_NAME, recipient.getDisplayName(),
+                                metadata);
+                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_BCC_EMAIL, recipient.getEmailAddress(),
+                                metadata);
                         break;
-                    default:
+                    default :
                         //do we want to handle unspecified or unknown?
                         break;
                 }
@@ -202,10 +198,8 @@ public class PSTMailItemParser implements Parser {
 
     }
 
-    private void parseMailAttachments(PSTMessage email, XHTMLContentHandler xhtml,
-                                      Metadata metadata, ParseContext context,
-                                      EmbeddedDocumentExtractor embeddedExtractor)
-            throws TikaException {
+    private void parseMailAttachments(PSTMessage email, XHTMLContentHandler xhtml, Metadata metadata,
+            ParseContext context, EmbeddedDocumentExtractor embeddedExtractor) throws TikaException {
         int numberOfAttachments = email.getNumberOfAttachments();
         for (int i = 0; i < numberOfAttachments; i++) {
             try {
@@ -218,8 +212,7 @@ public class PSTMailItemParser implements Parser {
     }
 
     private void parseMailAttachment(XHTMLContentHandler xhtml, PSTAttachment attachment, Metadata metadata,
-                                     EmbeddedDocumentExtractor embeddedExtractor) throws PSTException, IOException,
-            TikaException, SAXException {
+            EmbeddedDocumentExtractor embeddedExtractor) throws PSTException, IOException, TikaException, SAXException {
 
         PSTMessage attachedEmail = attachment.getEmbeddedPSTMessage();
         //check for whether this is a binary attachment or an embedded pst msg
@@ -227,9 +220,11 @@ public class PSTMailItemParser implements Parser {
             long sz = OutlookPSTParser.estimateSize(attachedEmail);
             try (TikaInputStream tis = TikaInputStream.getFromContainer(attachedEmail, sz, metadata)) {
                 Metadata attachMetadata = new Metadata();
-                attachMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
+                attachMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
+                        PSTMailItemParser.PST_MAIL_ITEM_STRING);
                 attachMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, attachedEmail.getSubject() + ".msg");
-                attachMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name());
+                attachMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                        TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name());
                 embeddedExtractor.parseEmbedded(tis, xhtml, attachMetadata, true);
             }
             return;
@@ -246,7 +241,8 @@ public class PSTMailItemParser implements Parser {
         Metadata attachMeta = new Metadata();
         attachMeta.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
         attachMeta.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, filename);
-        attachMeta.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
+        attachMeta.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
         attachMeta.set(Metadata.CONTENT_LENGTH, Integer.toString(attachment.getSize()));
         AttributesImpl attributes = new AttributesImpl();
         attributes.addAttribute("", "class", "class", "CDATA", "embedded");

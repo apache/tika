@@ -26,8 +26,7 @@ import org.apache.uima.util.XmlCasSerializer;
  * A CAS serializer writes a CAS in the given format.
  */
 public enum CTAKESSerializer {
-    XCAS(XCASSerializer.class.getName()), XMI(XmiCasSerializer.class.getName()),
-    XML(XmlCasSerializer.class.getName());
+    XCAS(XCASSerializer.class.getName()), XMI(XmiCasSerializer.class.getName()), XML(XmlCasSerializer.class.getName());
 
     private final String className;
 

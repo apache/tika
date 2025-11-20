@@ -14,24 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.ooxml;
-
 
 import java.math.BigInteger;
 import java.util.Date;
 
 import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.WordExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFStylesShim;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
-public class OOXMLTikaBodyPartHandler
-        implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
+public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
 
     private static final String P = "p";
 
@@ -72,8 +68,8 @@ public class OOXMLTikaBodyPartHandler
         this.includeMoveFromText = false;
     }
 
-    public OOXMLTikaBodyPartHandler(XHTMLContentHandler xhtml, XWPFStylesShim styles,
-                                    XWPFListManager listManager, OfficeParserConfig parserConfig) {
+    public OOXMLTikaBodyPartHandler(XHTMLContentHandler xhtml, XWPFStylesShim styles, XWPFListManager listManager,
+            OfficeParserConfig parserConfig) {
         this.xhtml = xhtml;
         this.styles = styles;
         this.listManager = listManager;
@@ -183,13 +179,11 @@ public class OOXMLTikaBodyPartHandler
             if (paragraphProperties.getStyleID() != null && styles != null) {
                 String styleName = styles.getStyleName(paragraphProperties.getStyleID());
                 if (styleName != null) {
-                    WordExtractor.TagAndStyle tas =
-                            WordExtractor.buildParagraphTagAndStyle(styleName, false);
+                    WordExtractor.TagAndStyle tas = WordExtractor.buildParagraphTagAndStyle(styleName, false);
                     paragraphTag = tas.getTag();
                     styleClass = tas.getStyleClass();
                 }
             }
-
 
             if (styleClass == null) {
                 xhtml.startElement(paragraphTag);
@@ -198,11 +192,9 @@ public class OOXMLTikaBodyPartHandler
             }
         }
 
-        writeParagraphNumber(paragraphProperties.getNumId(), paragraphProperties.getIlvl(),
-                listManager, xhtml);
+        writeParagraphNumber(paragraphProperties.getNumId(), paragraphProperties.getIlvl(), listManager, xhtml);
         pDepth++;
     }
-
 
     @Override
     public void endParagraph() throws SAXException {
@@ -272,8 +264,7 @@ public class OOXMLTikaBodyPartHandler
     }
 
     @Override
-    public void startEditedSection(String editor, Date date,
-                                   OOXMLWordAndPowerPointTextHandler.EditType editType) {
+    public void startEditedSection(String editor, Date date, OOXMLWordAndPowerPointTextHandler.EditType editType) {
         //no-op
     }
 
@@ -336,7 +327,6 @@ public class OOXMLTikaBodyPartHandler
         xhtml.startElement("img", attr);
         xhtml.endElement("img");
 
-
     }
 
     @Override
@@ -376,8 +366,8 @@ public class OOXMLTikaBodyPartHandler
         }
     }
 
-    private void writeParagraphNumber(int numId, int ilvl, XWPFListManager listManager,
-                                      XHTMLContentHandler xhtml) throws SAXException {
+    private void writeParagraphNumber(int numId, int ilvl, XWPFListManager listManager, XHTMLContentHandler xhtml)
+            throws SAXException {
 
         if (ilvl < 0 || numId < 0 || listManager == null) {
             return;

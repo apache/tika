@@ -22,10 +22,9 @@ import java.io.File;
 import java.io.FileFilter;
 import java.util.Random;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.junit.jupiter.api.Test;
 
 public class TestFileCommandDetector extends MultiThreadedTikaTest {
 

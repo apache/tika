@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
@@ -54,8 +53,7 @@ public class ObjectGroupMetadata extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems)
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems)
             throws TikaException, IOException {
         AtomicInteger index = new AtomicInteger(currentIndex.get());
         this.ObjectChangeFrequency = BasicObject.parse(byteArray, index, Compact64bitInt.class);

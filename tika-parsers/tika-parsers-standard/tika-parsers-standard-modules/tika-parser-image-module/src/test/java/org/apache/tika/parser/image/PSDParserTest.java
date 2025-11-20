@@ -21,9 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.InputStream;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
@@ -31,6 +28,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class PSDParserTest extends TikaTest {
 
@@ -71,10 +70,8 @@ public class PSDParserTest extends TikaTest {
     @Test
     public void testXMP() throws Exception {
         Metadata metadata = getXML("testPSD_xmp.psd").metadata;
-        assertEquals("Adobe Photoshop CC 2014 (Macintosh)",
-                metadata.get(XMPMM.HISTORY_SOFTWARE_AGENT));
-        assertEquals("xmp.iid:63681182-81a0-4035-b4b2-19bea6201c05",
-                metadata.get(XMPMM.HISTORY_EVENT_INSTANCEID));
+        assertEquals("Adobe Photoshop CC 2014 (Macintosh)", metadata.get(XMPMM.HISTORY_SOFTWARE_AGENT));
+        assertEquals("xmp.iid:63681182-81a0-4035-b4b2-19bea6201c05", metadata.get(XMPMM.HISTORY_EVENT_INSTANCEID));
     }
 
     @Test

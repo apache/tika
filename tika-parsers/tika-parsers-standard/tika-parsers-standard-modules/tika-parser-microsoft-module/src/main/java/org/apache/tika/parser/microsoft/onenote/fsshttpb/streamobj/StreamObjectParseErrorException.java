@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 public class StreamObjectParseErrorException extends RuntimeException {
@@ -30,8 +29,7 @@ public class StreamObjectParseErrorException extends RuntimeException {
      * @param streamObjectTypeName Specify the stream type name
      * @param innerException       Specify the inner exception
      */
-    public StreamObjectParseErrorException(int index, String streamObjectTypeName,
-                                           Exception innerException) {
+    public StreamObjectParseErrorException(int index, String streamObjectTypeName, Exception innerException) {
         super(innerException);
         this.index = index;
         this.streamObjectTypeName = streamObjectTypeName;
@@ -46,7 +44,7 @@ public class StreamObjectParseErrorException extends RuntimeException {
      * @param innerException       Specify the inner exception
      */
     public StreamObjectParseErrorException(int index, String streamObjectTypeName, String message,
-                                           Exception innerException) {
+            Exception innerException) {
         super(message, innerException);
         this.index = index;
         this.streamObjectTypeName = streamObjectTypeName;

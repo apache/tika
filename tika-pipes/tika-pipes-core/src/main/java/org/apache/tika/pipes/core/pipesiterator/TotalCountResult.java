@@ -19,10 +19,7 @@ package org.apache.tika.pipes.core.pipesiterator;
 public class TotalCountResult {
 
     public enum STATUS {
-        UNSUPPORTED,
-        EXCEPTION,
-        NOT_COMPLETED,
-        COMPLETED
+        UNSUPPORTED, EXCEPTION, NOT_COMPLETED, COMPLETED
     }
 
     public static TotalCountResult UNSUPPORTED = new TotalCountResult(-1, STATUS.UNSUPPORTED);

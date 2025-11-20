@@ -30,14 +30,13 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.core.FetchEmitTuple;
 import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
 
 public class TikaClientCLI {
 
@@ -63,21 +62,17 @@ public class TikaClientCLI {
 
         completionService.submit(new CallablePipesIterator(pipesIterator, queue));
 
-        if (clientConfig
-                .getTikaEndpoints()
-                .size() == clientConfig.getNumThreads()) {
-            logDiffSizes(clientConfig
-                    .getTikaEndpoints()
-                    .size(), clientConfig.getNumThreads());
+        if (clientConfig.getTikaEndpoints().size() == clientConfig.getNumThreads()) {
+            logDiffSizes(clientConfig.getTikaEndpoints().size(), clientConfig.getNumThreads());
             for (int i = 0; i < clientConfig.getNumThreads(); i++) {
-                TikaClient client = TikaClient.get(clientConfig.getHttpClientFactory(), Collections.singletonList(clientConfig
-                        .getTikaEndpoints()
-                        .get(i)));
+                TikaClient client = TikaClient.get(clientConfig.getHttpClientFactory(),
+                        Collections.singletonList(clientConfig.getTikaEndpoints().get(i)));
                 completionService.submit(new FetchWorker(queue, client, clientConfig.getMaxWaitMillis()));
             }
         } else {
             for (int i = 0; i < clientConfig.getNumThreads(); i++) {
-                TikaClient client = TikaClient.get(clientConfig.getHttpClientFactory(), clientConfig.getTikaEndpoints());
+                TikaClient client = TikaClient.get(clientConfig.getHttpClientFactory(),
+                        clientConfig.getTikaEndpoints());
                 completionService.submit(new FetchWorker(queue, client, clientConfig.getMaxWaitMillis()));
             }
         }
@@ -106,7 +101,8 @@ public class TikaClientCLI {
     }
 
     private void logDiffSizes(int servers, int numThreads) {
-        LOGGER.info("tika server count ({}) != numThreads ({}). " + "Each client will randomly select a server from this list", servers, numThreads);
+        LOGGER.info("tika server count ({}) != numThreads ({}). "
+                + "Each client will randomly select a server from this list", servers, numThreads);
     }
 
     private static class FetchWorker implements Callable<Long> {
@@ -138,9 +134,7 @@ public class TikaClientCLI {
                     LOGGER.debug("about to parse: {}", t.getFetchKey());
                     client.parse(t);
                 } catch (IOException | TikaException e) {
-                    LOGGER.warn(t
-                            .getFetchKey()
-                            .toString(), e);
+                    LOGGER.warn(t.getFetchKey().toString(), e);
                 }
             }
         }

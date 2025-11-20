@@ -24,15 +24,10 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+
 import javax.xml.namespace.QName;
 
 import org.apache.commons.codec.binary.Base64;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -42,6 +37,11 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Parses wordml 2003 format word files.  These are single xml files
@@ -53,10 +53,9 @@ public class WordMLParser extends AbstractXML2003Parser {
     //map between wordml and xhtml entities
     private static final Map<String, String> WORDML_TO_XHTML;
     //ignore all characters within these elements
-    private static final Set<QName> IGNORE_CHARACTERS = Collections.unmodifiableSet(new HashSet<>(
-            Arrays.asList(new QName(WORD_ML_URL, HLINK), new QName(WORD_ML_URL, PICT),
-                    new QName(WORD_ML_URL, BIN_DATA),
-                    new QName(MS_OFFICE_PROPERTIES_URN, DOCUMENT_PROPERTIES))));
+    private static final Set<QName> IGNORE_CHARACTERS = Collections
+            .unmodifiableSet(new HashSet<>(Arrays.asList(new QName(WORD_ML_URL, HLINK), new QName(WORD_ML_URL, PICT),
+                    new QName(WORD_ML_URL, BIN_DATA), new QName(MS_OFFICE_PROPERTIES_URN, DOCUMENT_PROPERTIES))));
     private static final MediaType MEDIA_TYPE = MediaType.application("vnd.ms-wordml");
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE);
 
@@ -76,13 +75,11 @@ public class WordMLParser extends AbstractXML2003Parser {
     }
 
     @Override
-    protected ContentHandler getContentHandler(ContentHandler ch, Metadata metadata,
-                                               ParseContext context) {
+    protected ContentHandler getContentHandler(ContentHandler ch, Metadata metadata, ParseContext context) {
 
-        return new TeeContentHandler(super.getContentHandler(ch, metadata, context),
-                new WordMLHandler(ch), new HyperlinkHandler(ch, WORD_ML_URL),
-                new PictHandler(ch, metadata,
-                        EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context)));
+        return new TeeContentHandler(super.getContentHandler(ch, metadata, context), new WordMLHandler(ch),
+                new HyperlinkHandler(ch, WORD_ML_URL),
+                new PictHandler(ch, metadata, EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context)));
     }
 
     @Override
@@ -105,8 +102,7 @@ public class WordMLParser extends AbstractXML2003Parser {
         }
 
         @Override
-        public void startElement(String uri, String localName, String qName, Attributes attrs)
-                throws SAXException {
+        public void startElement(String uri, String localName, String qName, Attributes attrs) throws SAXException {
             localName = localName.toLowerCase(Locale.US);
             if (WORD_ML_URL.equals(uri)) {
                 if (BODY.equals(localName)) {
@@ -186,15 +182,14 @@ public class WordMLParser extends AbstractXML2003Parser {
         String pictSource = null;
 
         public PictHandler(ContentHandler handler, Metadata metadata,
-                           EmbeddedDocumentExtractor embeddedDocumentExtractor) {
+                EmbeddedDocumentExtractor embeddedDocumentExtractor) {
             this.handler = handler;
             this.parentMetadata = metadata;
             this.embeddedDocumentExtractor = embeddedDocumentExtractor;
         }
 
         @Override
-        public void startElement(String uri, String localName, String qName, Attributes attrs)
-                throws SAXException {
+        public void startElement(String uri, String localName, String qName, Attributes attrs) throws SAXException {
             if (WORD_ML_URL.equals(uri)) {
                 if (PICT.equals(localName)) {
                     inPict = true;

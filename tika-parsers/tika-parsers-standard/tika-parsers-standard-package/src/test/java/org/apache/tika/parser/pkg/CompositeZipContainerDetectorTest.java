@@ -14,9 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.pkg;
-
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -30,9 +28,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
@@ -42,33 +37,32 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class CompositeZipContainerDetectorTest extends TikaTest {
     private static MediaType ODT_TEXT = MediaType.application("vnd.oasis.opendocument.text");
     private static MediaType TIFF = MediaType.image("tiff");
     DefaultZipContainerDetector compositeZipContainerDetector = new DefaultZipContainerDetector();
-    DeprecatedStreamingZipContainerDetector streamingZipDetector =
-            new DeprecatedStreamingZipContainerDetector();
+    DeprecatedStreamingZipContainerDetector streamingZipDetector = new DeprecatedStreamingZipContainerDetector();
 
     @Test
     public void testTiffWorkaround() throws Exception {
         //TIKA-2591
         Metadata metadata = new Metadata();
-        try (InputStream is = TikaInputStream
-                .get(getResourceAsStream("/test-documents/testTIFF.tif"))) {
+        try (InputStream is = TikaInputStream.get(getResourceAsStream("/test-documents/testTIFF.tif"))) {
             MediaType mt = compositeZipContainerDetector.detect(is, metadata);
             assertEquals(TIFF, mt);
         }
         metadata = new Metadata();
-        try (InputStream is = TikaInputStream
-                .get(getResourceAsStream("/test-documents/testTIFF_multipage.tif"))) {
+        try (InputStream is = TikaInputStream.get(getResourceAsStream("/test-documents/testTIFF_multipage.tif"))) {
             MediaType mt = compositeZipContainerDetector.detect(is, metadata);
             assertEquals(TIFF, mt);
         }
     }
 
     /* TODO these tests!
-
+    
         @Test
         public void testODT() throws Exception {
             try (InputStream input = ODFParserTest.class.getResourceAsStream(
@@ -78,7 +72,7 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
                 assertEquals(ODT_TEXT, mt);
             }
         }
-
+    
         @Test
         public void testIWorks() throws Exception {
             //have to have marklimit in ZipContainerDetector > 100000 for this to work
@@ -88,7 +82,7 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
                 MediaType mt = zipContainerDetector.detect(input, metadata);
                 assertEquals("application/vnd.apple.pages", mt.toString());
             }
-
+    
             InputStream is =
             getClass().getResourceAsStream("/org/apache/tika/parser/pkg/tika-config.xml");
             assertNotNull(is);
@@ -100,7 +94,7 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
                 assertEquals("application/zip", mt.toString());
             }
         }
-
+    
         @Test
         public void testXPS() throws Exception {
             for (String file : new String[]{"testXPS_various.xps", "testPPT.xps"}) {
@@ -142,8 +136,7 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
                 nonTikaStream += System.currentTimeMillis() - start;
 
                 start = System.currentTimeMillis();
-                try (InputStream is = TikaInputStream
-                        .get(new BufferedInputStream(new FileInputStream(z)))) {
+                try (InputStream is = TikaInputStream.get(new BufferedInputStream(new FileInputStream(z)))) {
                     MediaType mt = detector.detect(is, new Metadata());
                     mediaTypeSet.add(mt);
                 }
@@ -157,9 +150,8 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
                 tikaStreamWFile += System.currentTimeMillis() - start;
             }
         }
-        System.out.println(
-                "tika stream: " + tikaStream + "\ntika stream w file: " + tikaStreamWFile +
-                        "\nnon tika stream:" + nonTikaStream);
+        System.out.println("tika stream: " + tikaStream + "\ntika stream w file: " + tikaStreamWFile
+                + "\nnon tika stream:" + nonTikaStream);
     }
 
     @Test
@@ -183,8 +175,7 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
                 }
                 nonTikaStream += System.currentTimeMillis() - start;
                 start = System.currentTimeMillis();
-                try (InputStream is = TikaInputStream
-                        .get(new BufferedInputStream(new FileInputStream(z)))) {
+                try (InputStream is = TikaInputStream.get(new BufferedInputStream(new FileInputStream(z)))) {
                     getRecursiveMetadata(is, true);
                 }
                 tikaStream += System.currentTimeMillis() - start;
@@ -196,15 +187,13 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
 
             }
         }
-        System.out.println(
-                "tika stream: " + tikaStream + "\ntika stream w file: " + tikaStreamWFile +
-                        "\nnon tika stream:" + nonTikaStream);
+        System.out.println("tika stream: " + tikaStream + "\ntika stream w file: " + tikaStreamWFile
+                + "\nnon tika stream:" + nonTikaStream);
     }
 
     //TODO -- we need to find a dwg+xps file for testing
 
-    private List<File> getTestZipBasedFiles(Detector detector, MediaTypeRegistry registry)
-            throws Exception {
+    private List<File> getTestZipBasedFiles(Detector detector, MediaTypeRegistry registry) throws Exception {
         List<File> zips = new ArrayList<>();
         for (File f : Paths.get(getResourceAsUri("/test-documents")).toFile().listFiles()) {
             try (InputStream is = TikaInputStream.get(f.toPath())) {

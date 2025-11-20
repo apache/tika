@@ -25,7 +25,6 @@ import java.util.Locale;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
-
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 
@@ -37,7 +36,6 @@ import org.apache.tika.mime.MediaType;
  * We could make this more robust by requiring xml root detection on the *.kml file.
  */
 public class KMZDetector implements ZipContainerDetector {
-
 
     @Override
     public MediaType detect(ZipFile zip, TikaInputStream tis) throws IOException {
@@ -62,8 +60,7 @@ public class KMZDetector implements ZipContainerDetector {
     }
 
     @Override
-    public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis,
-                                           StreamingDetectContext detectContext) {
+    public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis, StreamingDetectContext detectContext) {
         String name = zae.getName();
 
         if (name.indexOf('/') != -1 || name.indexOf('\\') != -1) {

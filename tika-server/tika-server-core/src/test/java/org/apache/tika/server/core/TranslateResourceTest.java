@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,15 +23,15 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.server.core.resource.TranslateResource;
 import org.apache.tika.server.core.writer.TarWriter;
 import org.apache.tika.server.core.writer.ZipWriter;
+import org.junit.jupiter.api.Test;
+
+import jakarta.ws.rs.core.Response;
 
 public class TranslateResourceTest extends CXFTestBase {
 
@@ -46,7 +45,8 @@ public class TranslateResourceTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TranslateResource.class);
-        sf.setResourceProvider(TranslateResource.class, new SingletonResourceProvider(new TranslateResource(new ServerStatus("", 0), 60000)));
+        sf.setResourceProvider(TranslateResource.class,
+                new SingletonResourceProvider(new TranslateResource(new ServerStatus("", 0), 60000)));
 
     }
 
@@ -63,11 +63,7 @@ public class TranslateResourceTest extends CXFTestBase {
     @Test
     public void testTranslateFull() throws Exception {
         String url = endPoint + TRANSLATE_ALL_PATH + LINGO_PATH + SRCDEST;
-        Response response = WebClient
-                .create(url)
-                .type("text/plain")
-                .accept("*/*")
-                .put(TRANSLATE_TXT);
+        Response response = WebClient.create(url).type("text/plain").accept("*/*").put(TRANSLATE_TXT);
         assertNotNull(response);
         String translated = getStringFromInputStream((InputStream) response.getEntity());
         assertEquals(TRANSLATE_TXT, translated);
@@ -76,11 +72,7 @@ public class TranslateResourceTest extends CXFTestBase {
     @Test
     public void testTranslateAutoLang() throws Exception {
         String url = endPoint + TRANSLATE_ALL_PATH + LINGO_PATH + DEST;
-        Response response = WebClient
-                .create(url)
-                .type("text/plain")
-                .accept("*/*")
-                .put(TRANSLATE_TXT);
+        Response response = WebClient.create(url).type("text/plain").accept("*/*").put(TRANSLATE_TXT);
         assertNotNull(response);
         String translated = getStringFromInputStream((InputStream) response.getEntity());
         assertEquals(TRANSLATE_TXT, translated);

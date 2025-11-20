@@ -16,10 +16,9 @@
  */
 package org.apache.tika.parser.xml;
 
+import org.apache.tika.metadata.Metadata;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
-
-import org.apache.tika.metadata.Metadata;
 
 /**
  * This adds a Metadata entry for a given node.
@@ -36,8 +35,7 @@ public class AttributeDependantMetadataHandler extends DefaultHandler {
     private final StringBuilder buffer = new StringBuilder();
     private String name;
 
-    public AttributeDependantMetadataHandler(Metadata metadata, String nameHoldingAttribute,
-                                             String namePrefix) {
+    public AttributeDependantMetadataHandler(Metadata metadata, String nameHoldingAttribute, String namePrefix) {
         this.metadata = metadata;
         this.nameHoldingAttribute = nameHoldingAttribute;
         this.namePrefix = namePrefix;
@@ -73,7 +71,6 @@ public class AttributeDependantMetadataHandler extends DefaultHandler {
         }
         // All other attributes are ignored
     }
-
 
     public void characters(char[] ch, int start, int length) {
         buffer.append(ch, start, length);

@@ -37,8 +37,7 @@ public class TestChmLzxcControlData {
         ChmItsfHeader chmItsHeader = new ChmItsfHeader();
         // chmItsHeader.parse(Arrays.copyOfRange(data, 0,
         // ChmConstants.CHM_ITSF_V3_LEN - 1), chmItsHeader);
-        chmItsHeader.parse(ChmCommons.copyOfRange(data, 0, ChmConstants.CHM_ITSF_V3_LEN - 1),
-                chmItsHeader);
+        chmItsHeader.parse(ChmCommons.copyOfRange(data, 0, ChmConstants.CHM_ITSF_V3_LEN - 1), chmItsHeader);
         /* Creates and parses itsp block */
         ChmItspHeader chmItspHeader = new ChmItspHeader();
         // chmItspHeader.parse(Arrays.copyOfRange( data, (int)
@@ -48,21 +47,18 @@ public class TestChmLzxcControlData {
         chmItspHeader.parse(ChmCommons.copyOfRange(data, (int) chmItsHeader.getDirOffset(),
                 (int) chmItsHeader.getDirOffset() + ChmConstants.CHM_ITSP_V1_LEN), chmItspHeader);
         /* Creating instance of ChmDirListingContainer */
-        ChmDirectoryListingSet chmDirListCont =
-                new ChmDirectoryListingSet(data, chmItsHeader, chmItspHeader);
+        ChmDirectoryListingSet chmDirListCont = new ChmDirectoryListingSet(data, chmItsHeader, chmItspHeader);
         int indexOfControlData = chmDirListCont.getControlDataIndex();
 
-        int indexOfResetTable =
-                ChmCommons.indexOfResetTableBlock(data, ChmConstants.LZXC.getBytes(UTF_8));
+        int indexOfResetTable = ChmCommons.indexOfResetTableBlock(data, ChmConstants.LZXC.getBytes(UTF_8));
         byte[] dir_chunk = null;
         if (indexOfResetTable > 0) {
             // dir_chunk = Arrays.copyOfRange( data, indexOfResetTable,
             // indexOfResetTable
             // +
             // chmDirListCont.getDirectoryListingEntryList().get(indexOfControlData).getLength());
-            dir_chunk = ChmCommons.copyOfRange(data, indexOfResetTable, indexOfResetTable +
-                    chmDirListCont.getDirectoryListingEntryList().get(indexOfControlData)
-                            .getLength());
+            dir_chunk = ChmCommons.copyOfRange(data, indexOfResetTable, indexOfResetTable
+                    + chmDirListCont.getDirectoryListingEntryList().get(indexOfControlData).getLength());
         }
 
         /* Creates and parses control block */
@@ -108,8 +104,7 @@ public class TestChmLzxcControlData {
 
     @Test
     public void testGetToString() {
-        assertTrue(
-                chmLzxcControlData.toString().contains(TestParameters.VP_CONTROL_DATA_SIGNATURE));
+        assertTrue(chmLzxcControlData.toString().contains(TestParameters.VP_CONTROL_DATA_SIGNATURE));
     }
 
     @Test

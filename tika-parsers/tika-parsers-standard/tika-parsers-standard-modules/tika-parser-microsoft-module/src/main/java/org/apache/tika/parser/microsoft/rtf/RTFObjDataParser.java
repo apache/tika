@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,8 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
 package org.apache.tika.parser.microsoft.rtf;
 
 import java.io.FileNotFoundException;
@@ -37,7 +35,6 @@ import org.apache.poi.poifs.filesystem.FileMagic;
 import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -119,7 +116,8 @@ class RTFObjDataParser {
             //simple bitmap bytes
             return embObjBytes;
         } else {
-            UnsynchronizedByteArrayInputStream embIs = UnsynchronizedByteArrayInputStream.builder().setByteArray(embObjBytes).get();
+            UnsynchronizedByteArrayInputStream embIs = UnsynchronizedByteArrayInputStream.builder()
+                    .setByteArray(embObjBytes).get();
             boolean hasPoifs;
             try {
                 hasPoifs = hasPOIFSHeader(embIs);
@@ -140,8 +138,7 @@ class RTFObjDataParser {
 
     //will throw IOException if not actually POIFS
     //can return null byte[]
-    private byte[] handleEmbeddedPOIFS(InputStream is, Metadata metadata,
-                                       AtomicInteger unknownFilenameCount)
+    private byte[] handleEmbeddedPOIFS(InputStream is, Metadata metadata, AtomicInteger unknownFilenameCount)
             throws TikaException, IOException {
 
         byte[] ret = null;
@@ -160,8 +157,7 @@ class RTFObjDataParser {
                         new DocumentInputStream((DocumentEntry) ooxml))) {
                     IOUtils.copy(bis, out);
                     if (bis.hasHitBound()) {
-                        throw new TikaMemoryLimitException((memoryLimitInKb * 1024 + 1),
-                                (memoryLimitInKb * 1024));
+                        throw new TikaMemoryLimitException((memoryLimitInKb * 1024 + 1), (memoryLimitInKb * 1024));
                     }
                 }
                 ret = out.toByteArray();
@@ -196,13 +192,11 @@ class RTFObjDataParser {
                     BoundedInputStream bis = new BoundedInputStream(memoryLimitInKb * 1024, is);
                     IOUtils.copy(is, out);
                     if (bis.hasHitBound()) {
-                        throw new TikaMemoryLimitException(memoryLimitInKb * 1024 + 1,
-                                memoryLimitInKb * 1024);
+                        throw new TikaMemoryLimitException(memoryLimitInKb * 1024 + 1, memoryLimitInKb * 1024);
                     }
                     ret = out.toByteArray();
                     metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
-                            "file_" + unknownFilenameCount.getAndIncrement() + "." +
-                                    type.getExtension());
+                            "file_" + unknownFilenameCount.getAndIncrement() + "." + type.getExtension());
                     metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
                 }
             }
@@ -214,10 +208,10 @@ class RTFObjDataParser {
      * can return null if there is a linked object
      * instead of an embedded file
      */
-    private byte[] handlePackage(byte[] pkgBytes, Metadata metadata)
-            throws IOException, TikaException {
+    private byte[] handlePackage(byte[] pkgBytes, Metadata metadata) throws IOException, TikaException {
         //now parse the package header
-        UnsynchronizedByteArrayInputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(pkgBytes).get();
+        UnsynchronizedByteArrayInputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(pkgBytes)
+                .get();
         readUShort(is);
 
         String displayName = readAnsiString(is);
@@ -344,4 +338,3 @@ class RTFObjDataParser {
 
     }
 }
-

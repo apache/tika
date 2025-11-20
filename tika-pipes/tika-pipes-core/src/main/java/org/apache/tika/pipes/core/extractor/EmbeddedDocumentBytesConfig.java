@@ -26,11 +26,10 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
      */
     private static final long serialVersionUID = -3861669115439125268L;
 
-
     public static EmbeddedDocumentBytesConfig SKIP = new EmbeddedDocumentBytesConfig(false);
 
     public enum SUFFIX_STRATEGY {
-            NONE, EXISTING, DETECTED;
+        NONE, EXISTING, DETECTED;
 
         public static SUFFIX_STRATEGY parse(String s) {
             if (s.equalsIgnoreCase("none")) {
@@ -45,9 +44,7 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
     }
 
     public enum KEY_BASE_STRATEGY {
-        CONTAINER_NAME_NUMBERED,
-        CONTAINER_NAME_AS_IS,
-        CUSTOM_BASE;
+        CONTAINER_NAME_NUMBERED, CONTAINER_NAME_AS_IS, CUSTOM_BASE;
 
         public static KEY_BASE_STRATEGY parse(String s) {
             if (s.equalsIgnoreCase(CONTAINER_NAME_NUMBERED.name())) {
@@ -170,9 +167,10 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
 
     @Override
     public String toString() {
-        return "EmbeddedDocumentBytesConfig{" + "extractEmbeddedDocumentBytes=" + extractEmbeddedDocumentBytes + ", zeroPadName=" + zeroPadName + ", suffixStrategy=" +
-                suffixStrategy + ", embeddedIdPrefix='" + embeddedIdPrefix + '\'' + ", emitter='" + emitter + '\'' + ", includeOriginal=" + includeOriginal + ", keyBaseStrategy=" +
-                keyBaseStrategy + ", emitKeyBase='" + emitKeyBase + '\'' + '}';
+        return "EmbeddedDocumentBytesConfig{" + "extractEmbeddedDocumentBytes=" + extractEmbeddedDocumentBytes
+                + ", zeroPadName=" + zeroPadName + ", suffixStrategy=" + suffixStrategy + ", embeddedIdPrefix='"
+                + embeddedIdPrefix + '\'' + ", emitter='" + emitter + '\'' + ", includeOriginal=" + includeOriginal
+                + ", keyBaseStrategy=" + keyBaseStrategy + ", emitKeyBase='" + emitKeyBase + '\'' + '}';
     }
 
     @Override
@@ -181,9 +179,10 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
             return false;
         }
 
-        return extractEmbeddedDocumentBytes == config.extractEmbeddedDocumentBytes && zeroPadName == config.zeroPadName && includeOriginal == config.includeOriginal &&
-                suffixStrategy == config.suffixStrategy && Objects.equals(embeddedIdPrefix, config.embeddedIdPrefix) && Objects.equals(emitter, config.emitter) &&
-                keyBaseStrategy == config.keyBaseStrategy && Objects.equals(emitKeyBase, config.emitKeyBase);
+        return extractEmbeddedDocumentBytes == config.extractEmbeddedDocumentBytes && zeroPadName == config.zeroPadName
+                && includeOriginal == config.includeOriginal && suffixStrategy == config.suffixStrategy
+                && Objects.equals(embeddedIdPrefix, config.embeddedIdPrefix) && Objects.equals(emitter, config.emitter)
+                && keyBaseStrategy == config.keyBaseStrategy && Objects.equals(emitKeyBase, config.emitKeyBase);
     }
 
     @Override

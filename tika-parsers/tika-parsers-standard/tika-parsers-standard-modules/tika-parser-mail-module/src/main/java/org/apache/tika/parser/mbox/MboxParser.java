@@ -34,9 +34,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -50,6 +47,8 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.mailcommons.MailUtil;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Mbox (mailbox) parser. This version extracts each mail from Mbox and uses the
@@ -64,8 +63,7 @@ public class MboxParser implements Parser {
      * Serial version UID
      */
     private static final long serialVersionUID = -1762689436731160661L;
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.application("mbox"));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.application("mbox"));
     private static final Pattern EMAIL_HEADER_PATTERN = Pattern.compile("([^ ]+):[ \t]*(.*)");
     private static final Pattern EMAIL_ADDRESS_PATTERN = Pattern.compile("<(.*@.*)>");
 
@@ -74,18 +72,16 @@ public class MboxParser implements Parser {
     private final Map<Integer, Metadata> trackingMetadata = new HashMap<>();
     private boolean tracking = false;
 
-
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, TikaException, SAXException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, TikaException, SAXException {
 
-        EmbeddedDocumentExtractor extractor =
-                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        EmbeddedDocumentExtractor extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
         String charsetName = "windows-1252";
 
@@ -104,17 +100,16 @@ public class MboxParser implements Parser {
                 if (curLine.startsWith(MBOX_RECORD_DIVIDER)) {
                     Metadata mailMetadata = new Metadata();
                     Queue<String> multiline = new LinkedList<>();
-                    mailMetadata.add(EMAIL_FROMLINE_METADATA,
-                            curLine.substring(MBOX_RECORD_DIVIDER.length()));
+                    mailMetadata.add(EMAIL_FROMLINE_METADATA, curLine.substring(MBOX_RECORD_DIVIDER.length()));
                     mailMetadata.set(Metadata.CONTENT_TYPE, "message/rfc822");
-                    mailMetadata
-                            .set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, "message/rfc822");
+                    mailMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, "message/rfc822");
                     curLine = reader.readLine();
                     if (curLine == null) {
                         break;
                     }
 
-                    UnsynchronizedByteArrayOutputStream message = UnsynchronizedByteArrayOutputStream.builder().setBufferSize(100000).get();
+                    UnsynchronizedByteArrayOutputStream message = UnsynchronizedByteArrayOutputStream.builder()
+                            .setBufferSize(100000).get();
                     do {
                         if (inHeader && StringUtils.isBlank(curLine)) {
                             inHeader = false;
@@ -131,8 +126,8 @@ public class MboxParser implements Parser {
                         message.write(curLine.getBytes(charsetName));
                         message.write(0x0A);
                         curLine = reader.readLine();
-                    } while (curLine != null && !curLine.startsWith(MBOX_RECORD_DIVIDER) &&
-                            message.size() < MAIL_MAX_SIZE);
+                    } while (curLine != null && !curLine.startsWith(MBOX_RECORD_DIVIDER)
+                            && message.size() < MAIL_MAX_SIZE);
 
                     for (String item : multiline) {
                         saveHeaderInMetadata(mailMetadata, item);
@@ -181,10 +176,9 @@ public class MboxParser implements Parser {
 
         if (headerTag.equalsIgnoreCase("From")) {
             metadata.set(TikaCoreProperties.CREATOR, headerContent);
-            MailUtil.setPersonAndEmail(headerContent, Message.MESSAGE_FROM_NAME,
-                    Message.MESSAGE_FROM_EMAIL, metadata);
-        } else if (headerTag.equalsIgnoreCase("To") || headerTag.equalsIgnoreCase("Cc") ||
-                headerTag.equalsIgnoreCase("Bcc")) {
+            MailUtil.setPersonAndEmail(headerContent, Message.MESSAGE_FROM_NAME, Message.MESSAGE_FROM_EMAIL, metadata);
+        } else if (headerTag.equalsIgnoreCase("To") || headerTag.equalsIgnoreCase("Cc")
+                || headerTag.equalsIgnoreCase("Bcc")) {
             Matcher address = EMAIL_ADDRESS_PATTERN.matcher(headerContent);
             if (address.find()) {
                 metadata.add(Metadata.MESSAGE_RECIPIENT_ADDRESS, address.group(1));

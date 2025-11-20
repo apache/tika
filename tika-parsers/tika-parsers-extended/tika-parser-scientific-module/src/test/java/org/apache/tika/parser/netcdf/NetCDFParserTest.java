@@ -21,14 +21,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.InputStream;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 /**
  * Test cases to exercise the {@link NetCDFParser}.
@@ -51,8 +50,7 @@ public class NetCDFParserTest {
         assertEquals(metadata.get(Metadata.PROJECT_ID), "IPCC Fourth Assessment");
         assertEquals(metadata.get(Metadata.CONVENTIONS), "CF-1.0");
         assertEquals(metadata.get(Metadata.REALIZATION), "1");
-        assertEquals(metadata.get(Metadata.EXPERIMENT_ID),
-                "720 ppm stabilization experiment (SRESA1B)");
+        assertEquals(metadata.get(Metadata.EXPERIMENT_ID), "720 ppm stabilization experiment (SRESA1B)");
         assertEquals(metadata.get("File-Type-Description"), "NetCDF-3/CDM");
 
         String content = handler.toString();
@@ -61,7 +59,6 @@ public class NetCDFParserTest {
         assertContains("float lat(lat=128)", content);
         assertContains("double lat_bnds(lat=128, bnds=2)", content);
         assertContains("double lon_bnds(lon=256, bnds=2)", content);
-
 
     }
 

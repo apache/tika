@@ -33,7 +33,6 @@ import org.apache.tika.exception.TikaConfigException;
 
 public class TikaServerClientConfig extends ConfigBase implements Initializable {
 
-
     private HttpClientFactory httpClientFactory;
     private int numThreads = 1;
     private MODE mode = MODE.PIPES;

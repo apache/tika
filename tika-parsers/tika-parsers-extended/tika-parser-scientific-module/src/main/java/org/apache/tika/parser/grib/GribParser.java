@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.grib;
 
 import java.io.IOException;
@@ -26,14 +25,6 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import ucar.nc2.Attribute;
-import ucar.nc2.Dimension;
-import ucar.nc2.NetcdfFile;
-import ucar.nc2.Variable;
-import ucar.nc2.dataset.NetcdfDataset;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -42,20 +33,27 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
+import ucar.nc2.Attribute;
+import ucar.nc2.Dimension;
+import ucar.nc2.NetcdfFile;
+import ucar.nc2.Variable;
+import ucar.nc2.dataset.NetcdfDataset;
 
 public class GribParser implements Parser {
 
     public static final String GRIB_MIME_TYPE = "application/x-grib2";
     private static final long serialVersionUID = 7855458954474247655L;
-    private final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.application("x-grib2"));
+    private final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.application("x-grib2"));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         //Set MIME type as grib2
         metadata.set(Metadata.CONTENT_TYPE, GRIB_MIME_TYPE);
@@ -92,8 +90,7 @@ public class GribParser implements Parser {
                 xhtml.newline();
 
                 for (Dimension dim : ncFile.getDimensions()) {
-                    xhtml.element("li",
-                            dim.getFullName() + "=" + String.valueOf(dim.getLength()) + ";");
+                    xhtml.element("li", dim.getFullName() + "=" + String.valueOf(dim.getLength()) + ";");
                     xhtml.newline();
                 }
 
@@ -102,8 +99,7 @@ public class GribParser implements Parser {
                 xhtml.newline();
 
                 for (Variable var : ncFile.getVariables()) {
-                    xhtml.element("p",
-                            String.valueOf(var.getDataType()) + var.getNameAndDimensions() + ";");
+                    xhtml.element("p", String.valueOf(var.getDataType()) + var.getNameAndDimensions() + ";");
                     for (Attribute element : var.getAttributes()) {
                         xhtml.element("li", " :" + element + ";");
                         xhtml.newline();

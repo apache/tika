@@ -16,7 +16,6 @@
  */
 package org.apache.tika.extractor;
 
-
 /**
  * This factory creates EmbeddedDocumentExtractors that require an
  * {@link EmbeddedDocumentBytesHandler} in the

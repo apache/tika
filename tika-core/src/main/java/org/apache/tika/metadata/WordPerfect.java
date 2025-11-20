@@ -13,7 +13,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *  Copyright 2016 Norconex Inc.
  */
 package org.apache.tika.metadata;
 
@@ -29,42 +28,35 @@ public interface WordPerfect {
      * File size as defined in document header.
      */
     Property FILE_SIZE = Property.internalText(
-            WORDPERFECT_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "FileSize");
+            WORDPERFECT_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "FileSize");
     /**
      * File identifier.
      */
-    Property FILE_ID = Property.internalText(
-            WORDPERFECT_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "FileId");
+    Property FILE_ID = Property
+            .internalText(WORDPERFECT_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "FileId");
     /**
      * Product type.
      */
     Property PRODUCT_TYPE = Property.internalInteger(
-            WORDPERFECT_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "ProductType");
+            WORDPERFECT_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ProductType");
     /**
      * File type.
      */
     Property FILE_TYPE = Property.internalInteger(
-            WORDPERFECT_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "FileType");
+            WORDPERFECT_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "FileType");
     /**
      * Major version.
      */
     Property MAJOR_VERSION = Property.internalInteger(
-            WORDPERFECT_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "MajorVersion");
+            WORDPERFECT_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "MajorVersion");
     /**
      * Minor version.
      */
     Property MINOR_VERSION = Property.internalInteger(
-            WORDPERFECT_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "MinorVersion");
+            WORDPERFECT_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "MinorVersion");
     /**
      * Is encrypted?.
      */
     Property ENCRYPTED = Property.internalBoolean(
-            WORDPERFECT_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "Encrypted");
+            WORDPERFECT_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Encrypted");
 }

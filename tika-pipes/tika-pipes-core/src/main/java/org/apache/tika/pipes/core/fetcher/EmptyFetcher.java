@@ -31,7 +31,8 @@ public class EmptyFetcher implements Fetcher {
     }
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
+    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext)
+            throws TikaException, IOException {
         return null;
     }
 }

@@ -24,12 +24,11 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.core.FetchEmitTuple;
 import org.apache.tika.pipes.core.emitter.EmitKey;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
+import org.junit.jupiter.api.Test;
 
 public class JsonFetchEmitTupleListTest {
 
@@ -55,6 +54,7 @@ public class JsonFetchEmitTupleListTest {
         m.add("m2", "v3-" + i);
         m.add("m3", "v4-" + i);
 
-        return new FetchEmitTuple("id-" + i, new FetchKey("fetcher-" + i, "fetchkey-" + i), new EmitKey("emitter-" + i, "emitKey-" + i), m);
+        return new FetchEmitTuple("id-" + i, new FetchKey("fetcher-" + i, "fetchkey-" + i),
+                new EmitKey("emitter-" + i, "emitKey-" + i), m);
     }
 }

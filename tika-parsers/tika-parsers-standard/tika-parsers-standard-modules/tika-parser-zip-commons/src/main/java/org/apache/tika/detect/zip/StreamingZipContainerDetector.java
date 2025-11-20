@@ -16,13 +16,11 @@
  */
 package org.apache.tika.detect.zip;
 
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
-
 import org.apache.tika.config.LoadErrorHandler;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.io.BoundedInputStream;
@@ -36,16 +34,13 @@ import org.apache.tika.mime.MediaType;
  */
 public class StreamingZipContainerDetector extends DefaultZipContainerDetector {
 
-
     /**
      * Serial version UID
      */
     private static final long serialVersionUID = 2891763938430295453L;
 
-
     public StreamingZipContainerDetector() {
-        this(new ServiceLoader(StreamingZipContainerDetector.class.getClassLoader(),
-                LoadErrorHandler.WARN, false));
+        this(new ServiceLoader(StreamingZipContainerDetector.class.getClassLoader(), LoadErrorHandler.WARN, false));
     }
 
     public StreamingZipContainerDetector(ServiceLoader loader) {
@@ -57,7 +52,6 @@ public class StreamingZipContainerDetector extends DefaultZipContainerDetector {
         //this should have been fixed.
         super(zipDetectors);
     }
-
 
     @Override
     public MediaType detect(InputStream input, Metadata metadata) throws IOException {

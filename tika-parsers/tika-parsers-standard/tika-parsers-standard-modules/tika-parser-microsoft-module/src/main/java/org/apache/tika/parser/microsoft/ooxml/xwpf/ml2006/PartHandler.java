@@ -16,10 +16,9 @@
  */
 package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
 
+import org.apache.tika.exception.TikaException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
-import org.apache.tika.exception.TikaException;
 
 interface PartHandler extends ContentHandler {
     String getName();

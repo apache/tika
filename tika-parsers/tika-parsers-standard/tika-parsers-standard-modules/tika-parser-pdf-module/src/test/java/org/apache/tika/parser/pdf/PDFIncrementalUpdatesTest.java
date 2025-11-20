@@ -26,8 +26,6 @@ import java.util.List;
 
 import org.apache.pdfbox.io.RandomAccessRead;
 import org.apache.pdfbox.io.RandomAccessReadBuffer;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
@@ -35,6 +33,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.pdf.updates.StartXRefOffset;
 import org.apache.tika.parser.pdf.updates.StartXRefScanner;
+import org.junit.jupiter.api.Test;
 
 public class PDFIncrementalUpdatesTest extends TikaTest {
     /*
@@ -62,9 +61,7 @@ public class PDFIncrementalUpdatesTest extends TikaTest {
 
         ParseContext parseContext = new ParseContext();
         parseContext.set(PDFParserConfig.class, pdfParserConfig);
-        List<Metadata> metadataList = getRecursiveMetadata(
-                "testPDF_incrementalUpdates.pdf",
-                parseContext);
+        List<Metadata> metadataList = getRecursiveMetadata("testPDF_incrementalUpdates.pdf", parseContext);
         assertEquals(2, metadataList.get(0).getInt(TikaCoreProperties.VERSION_COUNT));
         assertEquals(2, metadataList.get(0).getInt(PDF.PDF_INCREMENTAL_UPDATE_COUNT));
         long[] expected = new long[]{16242, 41226, 64872};
@@ -129,8 +126,7 @@ public class PDFIncrementalUpdatesTest extends TikaTest {
     }
 
     private List<StartXRefOffset> getOffsets(String s) throws IOException {
-        try (RandomAccessRead randomAccessRead =
-                new RandomAccessReadBuffer(s.getBytes(StandardCharsets.US_ASCII))) {
+        try (RandomAccessRead randomAccessRead = new RandomAccessReadBuffer(s.getBytes(StandardCharsets.US_ASCII))) {
             StartXRefScanner scanner = new StartXRefScanner(randomAccessRead);
             return scanner.scan();
         }
@@ -143,9 +139,7 @@ public class PDFIncrementalUpdatesTest extends TikaTest {
 
         ParseContext parseContext = new ParseContext();
         parseContext.set(PDFParserConfig.class, pdfParserConfig);
-        List<Metadata> metadataList = getRecursiveMetadata(
-                "testPDF_incrementalUpdates.pdf",
-                parseContext);
+        List<Metadata> metadataList = getRecursiveMetadata("testPDF_incrementalUpdates.pdf", parseContext);
         assertEquals(3, metadataList.size());
         assertEquals(2, metadataList.get(0).getInt(PDF.PDF_INCREMENTAL_UPDATE_COUNT));
         assertEquals(2, metadataList.get(0).getInt(TikaCoreProperties.VERSION_COUNT));
@@ -155,18 +149,15 @@ public class PDFIncrementalUpdatesTest extends TikaTest {
         assertArrayEquals(expected, eofs);
 
         assertContains("Testing Incremental", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
-        assertNotContained("Testing Incremental",
-                metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+        assertNotContained("Testing Incremental", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
         assertContains("Testing Incremental", metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
 
         assertNull(metadataList.get(0).get(PDF.INCREMENTAL_UPDATE_NUMBER));
         assertNull(metadataList.get(0).get(PDF.INCREMENTAL_UPDATE_NUMBER));
         assertEquals(0, metadataList.get(1).getInt(PDF.INCREMENTAL_UPDATE_NUMBER));
         assertEquals(1, metadataList.get(2).getInt(PDF.INCREMENTAL_UPDATE_NUMBER));
-        assertEquals("/version-number-0",
-                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
-        assertEquals("/version-number-1",
-                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/version-number-0", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/version-number-1", metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
 
         assertNull(metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertNull(metadataList.get(2).get(TikaCoreProperties.RESOURCE_NAME_KEY));

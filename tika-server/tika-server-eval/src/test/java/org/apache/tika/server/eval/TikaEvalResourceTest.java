@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.eval;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -30,10 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.core.Response;
 import org.apache.cxf.binding.BindingFactoryManager;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
@@ -42,20 +37,24 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.cxf.transport.common.gzip.GZIPInInterceptor;
 import org.apache.cxf.transport.common.gzip.GZIPOutInterceptor;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.eval.core.metadata.TikaEvalMetadataFilter;
 import org.apache.tika.server.core.ProduceTypeResourceComparator;
 import org.apache.tika.server.core.ServerStatus;
 import org.apache.tika.server.core.TikaServerConfig;
 import org.apache.tika.server.core.writer.JSONObjWriter;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.ws.rs.core.Response;
 
 public class TikaEvalResourceTest {
 
-    protected static final String END_POINT =
-            "http://localhost:" + TikaServerConfig.DEFAULT_PORT;
+    protected static final String END_POINT = "http://localhost:" + TikaServerConfig.DEFAULT_PORT;
 
     protected static final String COMPARE_END_POINT = END_POINT + "/eval/compare";
     protected static final String PROFILE_END_POINT = END_POINT + "/eval/profile";
@@ -95,8 +94,7 @@ public class TikaEvalResourceTest {
         sf.setResourceClasses(TikaEvalResource.class);
         TikaEvalResource tikaEvalResource = new TikaEvalResource();
         tikaEvalResource.setServerStatus(serverStatus);
-        sf.setResourceProvider(TikaEvalResource.class,
-                new SingletonResourceProvider(tikaEvalResource));
+        sf.setResourceProvider(TikaEvalResource.class, new SingletonResourceProvider(tikaEvalResource));
     }
 
     protected static void setUpProviders(JAXRSServerFactoryBean sf) {
@@ -112,10 +110,9 @@ public class TikaEvalResourceTest {
         request.put(TikaEvalResource.TEXT, "the quick brown fox jumped qwertyuiop");
         Response response = profile(request);
         Map<String, Object> results = deserialize(response);
-        assertEquals(6, (int)results.get(TikaEvalMetadataFilter.NUM_TOKENS.getName()));
-        assertEquals(0.166, (double)results.get(TikaEvalMetadataFilter.OUT_OF_VOCABULARY.getName()),
-                0.01);
-        assertEquals("eng", (String)results.get(TikaEvalMetadataFilter.LANGUAGE.getName()));
+        assertEquals(6, (int) results.get(TikaEvalMetadataFilter.NUM_TOKENS.getName()));
+        assertEquals(0.166, (double) results.get(TikaEvalMetadataFilter.OUT_OF_VOCABULARY.getName()), 0.01);
+        assertEquals("eng", (String) results.get(TikaEvalMetadataFilter.LANGUAGE.getName()));
     }
 
     @Test
@@ -126,24 +123,19 @@ public class TikaEvalResourceTest {
         request.put(TikaEvalResource.TEXT_B, "the the the fast brown dog jumped qwertyuiop");
         Response response = compare(request);
         Map<String, Object> results = deserialize(response);
-        assertEquals(6,
-                (int)results.get(TikaEvalMetadataFilter.NUM_TOKENS.getName() + "A"));
-        assertEquals(0.166,
-                (double)results.get(TikaEvalMetadataFilter.OUT_OF_VOCABULARY.getName() + "A"),
-                0.01);
+        assertEquals(6, (int) results.get(TikaEvalMetadataFilter.NUM_TOKENS.getName() + "A"));
+        assertEquals(0.166, (double) results.get(TikaEvalMetadataFilter.OUT_OF_VOCABULARY.getName() + "A"), 0.01);
         assertEquals("eng", results.get(TikaEvalMetadataFilter.LANGUAGE.getName() + "A"));
 
-        assertEquals(0.666, (double)results.get(TikaEvalResource.DICE.getName()), 0.01);
-        assertEquals(0.571, (double)results.get(TikaEvalResource.OVERLAP.getName()), 0.01);
+        assertEquals(0.666, (double) results.get(TikaEvalResource.DICE.getName()), 0.01);
+        assertEquals(0.571, (double) results.get(TikaEvalResource.OVERLAP.getName()), 0.01);
     }
 
     private Map<String, Object> deserialize(Response response) throws IOException {
-        TypeReference<HashMap<String, Object>> typeRef
-                = new TypeReference<HashMap<String, Object>>() {};
-        try (BufferedReader reader =
-                     new BufferedReader(
-                             new InputStreamReader((InputStream)response.getEntity(),
-                             StandardCharsets.UTF_8))) {
+        TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {
+        };
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader((InputStream) response.getEntity(), StandardCharsets.UTF_8))) {
             return objectMapper.readValue(reader, typeRef);
         }
     }
@@ -152,9 +144,7 @@ public class TikaEvalResourceTest {
 
         String jsonRequest = objectMapper//.writerWithDefaultPrettyPrinter()
                 .writeValueAsString(request);
-        return  WebClient.create(PROFILE_END_POINT)
-                .type("application/json")
-                .accept("application/json")
+        return WebClient.create(PROFILE_END_POINT).type("application/json").accept("application/json")
                 .put(jsonRequest.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -162,9 +152,7 @@ public class TikaEvalResourceTest {
 
         String jsonRequest = objectMapper//.writerWithDefaultPrettyPrinter()
                 .writeValueAsString(request);
-        return  WebClient.create(COMPARE_END_POINT)
-                .type("application/json")
-                .accept("application/json")
+        return WebClient.create(COMPARE_END_POINT).type("application/json").accept("application/json")
                 .put(jsonRequest.getBytes(StandardCharsets.UTF_8));
     }
 }

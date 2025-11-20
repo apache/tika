@@ -28,9 +28,6 @@ import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -47,12 +44,12 @@ import org.apache.tika.pipes.core.fetcher.FetchKey;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.core.pipesiterator.TotalCountResult;
 import org.apache.tika.pipes.core.pipesiterator.TotalCounter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class FileSystemPipesIterator extends PipesIterator
-        implements TotalCounter, Initializable, Closeable {
+public class FileSystemPipesIterator extends PipesIterator implements TotalCounter, Initializable, Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(AsyncProcessor.class);
-
 
     private Path basePath;
     private boolean countTotal = false;
@@ -74,8 +71,7 @@ public class FileSystemPipesIterator extends PipesIterator
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
         if (!Files.isDirectory(basePath)) {
-            throw new IllegalArgumentException(
-                    "\"basePath\" directory does not exist: " + basePath.toAbsolutePath());
+            throw new IllegalArgumentException("\"basePath\" directory does not exist: " + basePath.toAbsolutePath());
         }
 
         try {
@@ -89,10 +85,8 @@ public class FileSystemPipesIterator extends PipesIterator
         }
     }
 
-
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         //these should all be fatal
         TikaConfig.mustNotBeEmpty("basePath", basePath);
         TikaConfig.mustNotBeEmpty("fetcherName", getFetcherName());
@@ -112,7 +106,7 @@ public class FileSystemPipesIterator extends PipesIterator
     }
     @Override
     public void startTotalCount() {
-        if (! countTotal) {
+        if (!countTotal) {
             return;
         }
         fileCountWorker.startTotalCount();
@@ -120,7 +114,7 @@ public class FileSystemPipesIterator extends PipesIterator
 
     @Override
     public TotalCountResult getTotalCount() {
-        if (! countTotal) {
+        if (!countTotal) {
             return TotalCountResult.UNSUPPORTED;
         }
         return fileCountWorker.getTotalCount();
@@ -144,8 +138,7 @@ public class FileSystemPipesIterator extends PipesIterator
         }
 
         @Override
-        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
-                throws IOException {
+        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
             return FileVisitResult.CONTINUE;
         }
 
@@ -157,8 +150,7 @@ public class FileSystemPipesIterator extends PipesIterator
                 ParseContext parseContext = new ParseContext();
                 parseContext.set(HandlerConfig.class, getHandlerConfig());
                 tryToAdd(new FetchEmitTuple(relPath, new FetchKey(fetcherName, relPath),
-                        new EmitKey(emitterName, relPath), new Metadata(), parseContext,
-                        getOnParseException()));
+                        new EmitKey(emitterName, relPath), new Metadata(), parseContext, getOnParseException()));
             } catch (TimeoutException e) {
                 throw new IOException(e);
             } catch (InterruptedException e) {
@@ -177,7 +169,6 @@ public class FileSystemPipesIterator extends PipesIterator
             return FileVisitResult.CONTINUE;
         }
     }
-
 
     private static class FileCountWorker implements TotalCounter, Closeable {
 
@@ -231,8 +222,7 @@ public class FileSystemPipesIterator extends PipesIterator
             }
 
             @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
-                    throws IOException {
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
                 return FileVisitResult.CONTINUE;
             }
 

@@ -59,6 +59,6 @@ public interface ContainerExtractor extends Serializable {
      * @throws TikaException if the container could not be parsed
      * @since Apache Tika 0.8
      */
-    void extract(TikaInputStream stream, ContainerExtractor recurseExtractor,
-                 EmbeddedResourceHandler handler) throws IOException, TikaException;
+    void extract(TikaInputStream stream, ContainerExtractor recurseExtractor, EmbeddedResourceHandler handler)
+            throws IOException, TikaException;
 }

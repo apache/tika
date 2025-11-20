@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.example;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -24,8 +23,6 @@ import java.io.InputStream;
 import java.nio.file.Paths;
 
 import org.apache.commons.io.FileUtils;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
@@ -40,6 +37,7 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.xml.sax.ContentHandler;
 
 /**
  * Demonstrates how to call the different components within Tika: its
@@ -70,7 +68,8 @@ public class MyFirstTika {
         System.out.println(text);
     }
 
-    public static String parseUsingAutoDetect(String filename, TikaConfig tikaConfig, Metadata metadata) throws Exception {
+    public static String parseUsingAutoDetect(String filename, TikaConfig tikaConfig, Metadata metadata)
+            throws Exception {
         System.out.println("Handling using AutoDetectParser: [" + filename + "]");
 
         AutoDetectParser parser = new AutoDetectParser(tikaConfig);
@@ -80,7 +79,8 @@ public class MyFirstTika {
         return handler.toString();
     }
 
-    public static String parseUsingComponents(String filename, TikaConfig tikaConfig, Metadata metadata) throws Exception {
+    public static String parseUsingComponents(String filename, TikaConfig tikaConfig, Metadata metadata)
+            throws Exception {
         MimeTypes mimeRegistry = tikaConfig.getMimeRepository();
 
         System.out.println("Examining: [" + filename + "]");
@@ -93,7 +93,8 @@ public class MyFirstTika {
 
         stream = TikaInputStream.get(Paths.get(filename));
         Detector detector = tikaConfig.getDetector();
-        System.out.println("The MIME type (based on the Detector interface) is: [" + detector.detect(stream, metadata) + "]");
+        System.out.println(
+                "The MIME type (based on the Detector interface) is: [" + detector.detect(stream, metadata) + "]");
 
         LanguageDetector langDetector = new OptimaizeLangDetector().loadModels();
         LanguageResult lang = langDetector.detect(FileUtils.readFileToString(new File(filename), UTF_8));

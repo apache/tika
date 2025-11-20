@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.core;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -48,13 +47,12 @@ import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.transport.common.gzip.GZIPInInterceptor;
 import org.apache.cxf.transport.common.gzip.GZIPOutInterceptor;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.digestutils.CommonsDigester;
 import org.apache.tika.server.core.resource.TikaResource;
 import org.apache.tika.server.core.resource.UnpackerResource;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 public abstract class CXFTestBase {
     protected static final String endPoint = "http://localhost:" + TikaServerConfig.DEFAULT_PORT;
@@ -114,7 +112,8 @@ public abstract class CXFTestBase {
                 pixels++;
             }
         }
-        return new AverageColor((double) totalRed / (double) pixels, (double) totalGreen / (double) pixels, (double) totalBlue / (double) pixels);
+        return new AverageColor((double) totalRed / (double) pixels, (double) totalGreen / (double) pixels,
+                (double) totalBlue / (double) pixels);
     }
 
     @BeforeEach
@@ -122,8 +121,8 @@ public abstract class CXFTestBase {
 
         this.tika = new TikaConfig(getTikaConfigInputStream());
         TikaServerConfig tikaServerConfig = getTikaServerConfig();
-        TikaResource.init(tika, tikaServerConfig, new CommonsDigester(DIGESTER_READ_LIMIT, "md5," + "sha1:32"), getInputStreamFactory(getTikaConfigInputStream()),
-                new ServerStatus("", 0, true));
+        TikaResource.init(tika, tikaServerConfig, new CommonsDigester(DIGESTER_READ_LIMIT, "md5," + "sha1:32"),
+                getInputStreamFactory(getTikaConfigInputStream()), new ServerStatus("", 0, true));
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
         //set compression interceptors
         sf.setOutInterceptors(Collections.singletonList(new GZIPOutInterceptor()));
@@ -134,9 +133,7 @@ public abstract class CXFTestBase {
         sf.setAddress(endPoint + "/");
         sf.setResourceComparator(new ProduceTypeResourceComparator());
 
-        BindingFactoryManager manager = sf
-                .getBus()
-                .getExtension(BindingFactoryManager.class);
+        BindingFactoryManager manager = sf.getBus().getExtension(BindingFactoryManager.class);
 
         JAXRSBindingFactory factory = new JAXRSBindingFactory();
         factory.setBus(sf.getBus());
@@ -156,9 +153,9 @@ public abstract class CXFTestBase {
     }
 
     protected InputStream getTikaConfigInputStream() throws IOException {
-        return new ByteArrayInputStream(new String(
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + "<properties>\n" + "    <parsers>\n" + "        <parser class=\"org.apache.tika.parser.DefaultParser\"/>\n" +
-                        "    </parsers>\n" + "</properties>").getBytes(UTF_8));
+        return new ByteArrayInputStream(new String("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + "<properties>\n"
+                + "    <parsers>\n" + "        <parser class=\"org.apache.tika.parser.DefaultParser\"/>\n"
+                + "    </parsers>\n" + "</properties>").getBytes(UTF_8));
     }
 
     /**
@@ -184,8 +181,7 @@ public abstract class CXFTestBase {
         Path tempFile = null;
         try {
             tempFile = writeTemporaryArchiveFile(inputStream, "zip");
-            try (ZipFile zip = ZipFile.builder().setPath(tempFile).get())
-            {
+            try (ZipFile zip = ZipFile.builder().setPath(tempFile).get()) {
                 Enumeration<ZipArchiveEntry> entries = zip.getEntries();
                 while (entries.hasMoreElements()) {
                     ZipArchiveEntry entry = entries.nextElement();
@@ -207,8 +203,7 @@ public abstract class CXFTestBase {
         Path tempFile = null;
         try {
             tempFile = writeTemporaryArchiveFile(inputStream, "zip");
-            try (ZipFile zip = ZipFile.builder().setPath(tempFile).get())
-            {
+            try (ZipFile zip = ZipFile.builder().setPath(tempFile).get()) {
                 Enumeration<ZipArchiveEntry> entries = zip.getEntries();
                 while (entries.hasMoreElements()) {
                     ZipArchiveEntry entry = entries.nextElement();
@@ -228,8 +223,7 @@ public abstract class CXFTestBase {
     protected String readArchiveText(InputStream inputStream) throws IOException {
         Path tempFile = writeTemporaryArchiveFile(inputStream, "zip");
         ByteArrayOutputStream bos;
-        try (ZipFile zip = ZipFile.builder().setPath(tempFile).get())
-        {
+        try (ZipFile zip = ZipFile.builder().setPath(tempFile).get()) {
             zip.getEntry(UnpackerResource.TEXT_FILENAME);
             bos = new ByteArrayOutputStream();
             IOUtils.copy(zip.getInputStream(zip.getEntry(UnpackerResource.TEXT_FILENAME)), bos);
@@ -242,8 +236,7 @@ public abstract class CXFTestBase {
         Path tempFile = writeTemporaryArchiveFile(inputStream, "zip");
         String metadata;
         String txt;
-        try (ZipFile zip = ZipFile.builder().setPath(tempFile).get())
-        {
+        try (ZipFile zip = ZipFile.builder().setPath(tempFile).get()) {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             zip.getEntry(UnpackerResource.META_FILENAME);
             IOUtils.copy(zip.getInputStream(zip.getEntry(UnpackerResource.META_FILENAME)), bos);

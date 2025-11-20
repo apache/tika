@@ -116,8 +116,7 @@ public class ListManager extends AbstractListManager {
         restart = listLevel.getRestart();
         isLegal = listLevel.isLegalNumbering();
         numFmt = convertToNewNumFormat(listLevel.getNumberFormat());
-        lvlText = convertToNewNumberText(listLevel.getNumberText(),
-                listLevel.getLevelNumberingPlaceholderOffsets());
+        lvlText = convertToNewNumberText(listLevel.getNumberText(), listLevel.getLevelNumberingPlaceholderOffsets());
         return new LevelTuple(start, restart, lvlText, numFmt, isLegal);
     }
 
@@ -172,28 +171,29 @@ public class ListManager extends AbstractListManager {
     }
 
     private String convertToNewNumFormat(int numberFormat) {
-        switch (numberFormat) {
-            case -1:
+        switch (numberFormat)
+        {
+            case -1 :
                 return "none";
-            case 0:
+            case 0 :
                 return "decimal";
-            case 1:
+            case 1 :
                 return "upperRoman";
-            case 2:
+            case 2 :
                 return "lowerRoman";
-            case 3:
+            case 3 :
                 return "upperLetter";
-            case 4:
+            case 4 :
                 return "lowerLetter";
-            case 5:
+            case 5 :
                 return "ordinal";
-            case 22:
+            case 22 :
                 return "decimalZero";
-            case 23:
+            case 23 :
                 return "bullet";
-            case 47:
+            case 47 :
                 return "none";
-            default:
+            default :
                 //do we really want to silently swallow these uncovered cases?
                 //throw new RuntimeException("NOT COVERED: " + numberFormat);
                 return "decimal";

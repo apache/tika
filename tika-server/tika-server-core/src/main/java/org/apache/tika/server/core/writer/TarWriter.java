@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.core.writer;
 
 import java.io.IOException;
@@ -23,14 +22,15 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Map;
 
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.ext.MessageBodyWriter;
 import jakarta.ws.rs.ext.Provider;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 
 @Provider
 @Produces("application/x-tar")
@@ -51,12 +51,14 @@ public class TarWriter implements MessageBodyWriter<Map<String, byte[]>> {
         return Map.class.isAssignableFrom(type);
     }
 
-    public long getSize(Map<String, byte[]> stringMap, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+    public long getSize(Map<String, byte[]> stringMap, Class<?> type, Type genericType, Annotation[] annotations,
+            MediaType mediaType) {
         return -1;
     }
 
-    public void writeTo(Map<String, byte[]> parts, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders,
-                        OutputStream entityStream) throws IOException, WebApplicationException {
+    public void writeTo(Map<String, byte[]> parts, Class<?> type, Type genericType, Annotation[] annotations,
+            MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
+            throws IOException, WebApplicationException {
         TarArchiveOutputStream zip = new TarArchiveOutputStream(entityStream);
 
         for (Map.Entry<String, byte[]> entry : parts.entrySet()) {

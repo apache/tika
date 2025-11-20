@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.util;
 
 import java.io.IOException;
@@ -169,9 +168,8 @@ public class LittleEndianBitConverter {
         }
 
         if (startIndex > value.length - bytesRequired) {
-            throw new IOException(
-                    "startIndex " + startIndex + " is less than value.length (" + value.length +
-                            ") minus bytesRequired (" + bytesRequired + ")");
+            throw new IOException("startIndex " + startIndex + " is less than value.length (" + value.length
+                    + ") minus bytesRequired (" + bytesRequired + ")");
         }
     }
 }

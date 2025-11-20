@@ -37,12 +37,11 @@ import org.apache.poi.hsmf.datatypes.Chunk;
 import org.apache.poi.hsmf.datatypes.MAPIProperty;
 import org.apache.poi.hsmf.datatypes.PropertyValue;
 import org.apache.poi.hsmf.datatypes.Types;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.metadata.MAPI;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class extracts mapi properties as defined in the props_table.txt, which was generated from MS-OXPROPS.
@@ -69,15 +68,13 @@ public class ExtendedMetadataExtractor {
         TikaNameIdChunks tikaNameIdChunks = new TikaNameIdChunks();
         //short-circuit for files that have an empty nameIdChunk
         long len = 0;
-        for (Chunk chunk : msg
-                .getNameIdChunks()
-                .getAll()) {
+        for (Chunk chunk : msg.getNameIdChunks().getAll()) {
             if (chunk == null) {
                 continue;
             }
             tikaNameIdChunks.record(chunk);
             if (chunk instanceof ByteChunk) {
-                byte[] value = ((ByteChunk)chunk).getValue();
+                byte[] value = ((ByteChunk) chunk).getValue();
                 if (value != null) {
                     len += value.length;
                 }
@@ -91,10 +88,7 @@ public class ExtendedMetadataExtractor {
         } catch (IllegalStateException e) {
             LOGGER.warn("bad namechunks stream", e);
         }
-        for (Map.Entry<MAPIProperty, PropertyValue> e : msg
-                .getMainChunks()
-                .getRawProperties()
-                .entrySet()) {
+        for (Map.Entry<MAPIProperty, PropertyValue> e : msg.getMainChunks().getRawProperties().entrySet()) {
             //the mapiproperties from POI are the literal storage id for that particular file.
             //Those storage ids must be mapped via the name chunk ids into a known id
             PropertyValue v = e.getValue();
@@ -117,8 +111,8 @@ public class ExtendedMetadataExtractor {
         }
     }
 
-
-    private static MAPITagPair findMatch(MAPITag mapiTag, List<TikaMapiProperty> tikaMapiProperties, PropertyValue propertyValue) {
+    private static MAPITagPair findMatch(MAPITag mapiTag, List<TikaMapiProperty> tikaMapiProperties,
+            PropertyValue propertyValue) {
         if (mapiTag == null || tikaMapiProperties == null || propertyValue == null) {
             return null;
         }
@@ -130,16 +124,13 @@ public class ExtendedMetadataExtractor {
                 continue;
             }
             for (Types.MAPIType type : tikaMapiProperty.types) {
-                if (propertyValue
-                        .getActualType()
-                        .equals(type)) {
+                if (propertyValue.getActualType().equals(type)) {
                     return new MAPITagPair(mapiTag, tikaMapiProperty);
                 }
             }
         }
         return null;
     }
-
 
     private static void updateMetadata(MAPITagPair pair, PropertyValue propertyValue, Metadata metadata) {
         if (pair == null || propertyValue == null) {
@@ -152,18 +143,15 @@ public class ExtendedMetadataExtractor {
         Types.MAPIType type = propertyValue.getActualType();
         if (type == Types.TIME || type == Types.MV_TIME || type == Types.APP_TIME || type == Types.MV_APP_TIME) {
             Calendar calendar = (Calendar) propertyValue.getValue();
-            String calendarString = calendar
-                    .toInstant()
-                    .truncatedTo(ChronoUnit.SECONDS)
-                    .toString();
+            String calendarString = calendar.toInstant().truncatedTo(ChronoUnit.SECONDS).toString();
             metadata.add(key, calendarString);
         } else if (type == Types.BOOLEAN) {
-            Boolean val = (Boolean)propertyValue.getValue();
+            Boolean val = (Boolean) propertyValue.getValue();
             if (val == null) {
                 return;
             }
             metadata.add(key, Boolean.toString(val));
-        } else if (! StringUtils.isBlank(propertyValue.toString())) {
+        } else if (!StringUtils.isBlank(propertyValue.toString())) {
             metadata.add(key, propertyValue.toString());
         }
 
@@ -171,7 +159,8 @@ public class ExtendedMetadataExtractor {
 
     private static boolean includeType(PropertyValue propertyValue) {
         Types.MAPIType mapiType = propertyValue.getActualType();
-        if (mapiType == Types.BINARY || mapiType == Types.UNKNOWN || mapiType == Types.UNSPECIFIED || mapiType == Types.DIRECTORY || mapiType.isPointer()) {
+        if (mapiType == Types.BINARY || mapiType == Types.UNKNOWN || mapiType == Types.UNSPECIFIED
+                || mapiType == Types.DIRECTORY || mapiType.isPointer()) {
             return false;
         }
         return true;
@@ -194,17 +183,13 @@ public class ExtendedMetadataExtractor {
     private static void loadProperties() {
         Map<String, ClassID> knownClassIds = new HashMap<>();
         for (TikaNameIdChunks.PredefinedPropertySet set : TikaNameIdChunks.PredefinedPropertySet.values()) {
-            knownClassIds.put(set
-                    .getClassID()
-                    .toUUIDString(), set.getClassID());
+            knownClassIds.put(set.getClassID().toUUIDString(), set.getClassID());
         }
         for (TikaNameIdChunks.PropertySetType setType : TikaNameIdChunks.PropertySetType.values()) {
-            knownClassIds.put(setType
-                    .getClassID()
-                    .toUUIDString(), setType.getClassID());
+            knownClassIds.put(setType.getClassID().toUUIDString(), setType.getClassID());
         }
-        try (BufferedReader r = new BufferedReader(
-                new InputStreamReader(ExtendedMetadataExtractor.class.getResourceAsStream("/org/apache/tika/parser/microsoft/msg/props_table.txt"), UTF_8))) {
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(ExtendedMetadataExtractor.class
+                .getResourceAsStream("/org/apache/tika/parser/microsoft/msg/props_table.txt"), UTF_8))) {
             String line = r.readLine();
             while (line != null) {
                 if (line.isBlank() || line.startsWith("#")) {
@@ -233,7 +218,8 @@ public class ExtendedMetadataExtractor {
                         throw new IllegalArgumentException("id must actually be within int range");
                     }
                     int intId = (int) id;
-                    List<TikaMapiProperty> props = TIKA_MAPI_LONG_PROPERTIES.computeIfAbsent(intId, k -> new ArrayList<>());
+                    List<TikaMapiProperty> props = TIKA_MAPI_LONG_PROPERTIES.computeIfAbsent(intId,
+                            k -> new ArrayList<>());
                     props.add(new TikaMapiProperty(name, classID, types, ref));
                 } else {
                     // some properties don't have an id
@@ -254,10 +240,7 @@ public class ExtendedMetadataExtractor {
         if (space < 0) {
             return null;
         }
-        s = s
-                .substring(space)
-                .replaceAll("[\\{\\}]", "")
-                .trim();
+        s = s.substring(space).replaceAll("[\\{\\}]", "").trim();
         if (knownClassIDs.containsKey(s)) {
             return knownClassIDs.get(s);
         }
@@ -276,7 +259,6 @@ public class ExtendedMetadataExtractor {
             this.tikaMapiProperty = tikaMapiProperty;
         }
     }
-
 
     private static List<Types.MAPIType> parseDataTypes(String[] arr) {
         if (arr.length == 1) {

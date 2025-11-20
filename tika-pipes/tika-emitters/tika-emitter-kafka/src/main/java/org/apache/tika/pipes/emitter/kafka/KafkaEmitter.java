@@ -24,15 +24,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -42,6 +38,10 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.emitter.AbstractEmitter;
 import org.apache.tika.pipes.core.emitter.TikaEmitterException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Emits the now-parsed documents into a specified Apache Kafka topic.
@@ -206,9 +206,7 @@ public class KafkaEmitter extends AbstractEmitter implements Initializable {
             for (String n : metadata.names()) {
                 String[] vals = metadata.getValues(n);
                 if (vals.length > 1) {
-                    LOGGER.warn("Can only write the first value for key {}. I see {} values.",
-                            n,
-                            vals.length);
+                    LOGGER.warn("Can only write the first value for key {}. I see {} values.", n, vals.length);
                 }
                 fields.put(n, vals[0]);
             }
@@ -279,8 +277,7 @@ public class KafkaEmitter extends AbstractEmitter implements Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         mustNotBeEmpty("topic", this.topic);
         mustNotBeEmpty("server", this.bootstrapServers);
     }

@@ -34,9 +34,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -46,6 +43,8 @@ import org.apache.tika.pipes.core.FetchEmitTuple;
 import org.apache.tika.pipes.core.PipesReporterBase;
 import org.apache.tika.pipes.core.PipesResult;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is an initial draft of a JDBCPipesReporter.  This will drop
@@ -78,8 +77,7 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
     private List<String> reportVariables;
 
     private Optional<String> postConnectionString = Optional.empty();
-    private final ArrayBlockingQueue<IdStatusPair> queue =
-            new ArrayBlockingQueue(ARRAY_BLOCKING_QUEUE_SIZE);
+    private final ArrayBlockingQueue<IdStatusPair> queue = new ArrayBlockingQueue(ARRAY_BLOCKING_QUEUE_SIZE);
     CompletableFuture<Void> reportWorkerFuture;
 
     @Override
@@ -97,16 +95,14 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
         if (reportSql == null) {
             reportSql = "insert into " + getTableName() + " (id, status, timestamp) values (?,?,?)";
         }
-        ReportWorker reportWorker = new ReportWorker(connectionString, postConnectionString,
-                queue, cacheSize, reportWithinMs);
+        ReportWorker reportWorker = new ReportWorker(connectionString, postConnectionString, queue, cacheSize,
+                reportWithinMs);
         reportWorker.init();
         reportWorkerFuture = CompletableFuture.runAsync(reportWorker);
     }
 
-
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
 
     }
 
@@ -231,12 +227,11 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
 
     @Override
     public void report(FetchEmitTuple t, PipesResult result, long elapsed) {
-        if (! accept(result.getStatus())) {
+        if (!accept(result.getStatus())) {
             return;
         }
         try {
-            queue.offer(new IdStatusPair(t.getId(), result.getStatus()),
-                    MAX_WAIT_MILLIS, TimeUnit.MILLISECONDS);
+            queue.offer(new IdStatusPair(t.getId(), result.getStatus()), MAX_WAIT_MILLIS, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             //swallow
         }
@@ -305,11 +300,8 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
         private Connection connection;
         private PreparedStatement insert;
 
-
-        public ReportWorker(String connectionString,
-                            Optional<String> postConnectionString,
-                            ArrayBlockingQueue<IdStatusPair> queue, int cacheSize,
-                            long reportWithinMs) {
+        public ReportWorker(String connectionString, Optional<String> postConnectionString,
+                ArrayBlockingQueue<IdStatusPair> queue, int cacheSize, long reportWithinMs) {
             this.connectionString = connectionString;
             this.postConnectionString = postConnectionString;
             this.queue = queue;
@@ -405,9 +397,8 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
             }
         }
 
-        private void updateInsert(PreparedStatement insert, String id,
-                                  String status,
-                                  Timestamp timestamp) throws SQLException {
+        private void updateInsert(PreparedStatement insert, String id, String status, Timestamp timestamp)
+                throws SQLException {
             //there has to be a more efficient way than this
             for (int i = 0; i < reportVariables.size(); i++) {
                 String name = reportVariables.get(i);
@@ -418,8 +409,8 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
                 } else if (name.equals("status")) {
                     insert.setString(i + 1, status);
                 } else {
-                    throw new IllegalArgumentException("I expected one of (id, status, timestamp)" +
-                            ", but I got: " + name);
+                    throw new IllegalArgumentException(
+                            "I expected one of (id, status, timestamp)" + ", but I got: " + name);
                 }
             }
 
@@ -429,8 +420,8 @@ public class JDBCPipesReporter extends PipesReporterBase implements Initializabl
             try (Statement st = connection.createStatement()) {
                 String sql = "drop table if exists " + getTableName();
                 st.execute(sql);
-                sql = "create table " + getTableName() + " (id varchar(1024), status varchar(32), " +
-                        "timestamp timestamp with time zone)";
+                sql = "create table " + getTableName() + " (id varchar(1024), status varchar(32), "
+                        + "timestamp timestamp with time zone)";
                 st.execute(sql);
             }
         }

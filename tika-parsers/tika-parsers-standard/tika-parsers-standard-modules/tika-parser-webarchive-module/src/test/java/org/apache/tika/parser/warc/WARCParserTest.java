@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,12 +22,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.junit.jupiter.api.Test;
 
 public class WARCParserTest extends TikaTest {
 
@@ -44,8 +43,7 @@ public class WARCParserTest extends TikaTest {
         assertContains("Common Crawl on Twitter", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("<urn:uuid:c3f02271-44d2-4159-9cdb-3e3efeb16ba0>",
                 metadataList.get(1).get("warc:WARC-Warcinfo-ID"));
-        assertEquals("http://commoncrawl.org/",
-                metadataList.get(1).get("warc:WARC-Target-URI"));
+        assertEquals("http://commoncrawl.org/", metadataList.get(1).get("warc:WARC-Target-URI"));
     }
 
     @Test
@@ -70,15 +68,11 @@ public class WARCParserTest extends TikaTest {
         //test file comes from:
         // https://github.com/iipc/jwarc/blob/master/test/org/netpreserve/jwarc/apitests/ArcTest.java
 
-        List<Metadata> metadataList = getRecursiveMetadata("testARC.arc",
-                BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
+        List<Metadata> metadataList = getRecursiveMetadata("testARC.arc", BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
         assertEquals(2, metadataList.size());
-        assertContains("The document has moved here",
-                metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
-        assertEquals("http://www.uq.edu.au/robots.txt",
-                metadataList.get(1).get("warc:WARC-Target-URI"));
-        assertEquals("http://www.uq.edu.au/",
-                metadataList.get(1).get("warc:http:Location"));
+        assertContains("The document has moved here", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals("http://www.uq.edu.au/robots.txt", metadataList.get(1).get("warc:WARC-Target-URI"));
+        assertEquals("http://www.uq.edu.au/", metadataList.get(1).get("warc:http:Location"));
     }
 
     @Test
@@ -88,8 +82,7 @@ public class WARCParserTest extends TikaTest {
                 BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
         assertEquals(2, metadataList.size());
         assertEquals("application/arc+gz", metadataList.get(0).get(Metadata.CONTENT_TYPE));
-        assertContains("This domain is established",
-                metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("This domain is established", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
 
         //TODO -- we should try to find an example gz with multiple arcs
     }

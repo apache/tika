@@ -46,7 +46,6 @@ public class HttpFetcherConfig extends AbstractConfig {
     private String jwtSecret;
     private String jwtPrivateKeyBase64;
 
-
     public String getUserName() {
         return userName;
     }

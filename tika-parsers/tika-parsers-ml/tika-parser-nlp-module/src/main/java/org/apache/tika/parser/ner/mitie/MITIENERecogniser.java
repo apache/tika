@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.ner.mitie;
 
-
 import java.io.File;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -25,10 +24,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.tika.parser.ner.NERecogniser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.apache.tika.parser.ner.NERecogniser;
 
 /**
  * This class offers an implementation of {@link NERecogniser} based on
@@ -51,8 +49,7 @@ public class MITIENERecogniser implements NERecogniser {
         }
     };
     private static final Logger LOG = LoggerFactory.getLogger(MITIENERecogniser.class);
-    private static final String NamedEntityExtractor_Class =
-            "edu.mit.ll.mitie.NamedEntityExtractor";
+    private static final String NamedEntityExtractor_Class = "edu.mit.ll.mitie.NamedEntityExtractor";
     private boolean available = false;
     private Object extractorInstance;
 
@@ -71,9 +68,8 @@ public class MITIENERecogniser implements NERecogniser {
                 LOG.warn("{} does not exist", modelPath);
             } else {
                 Class<?> namedEntityExtractorClass = Class.forName(NamedEntityExtractor_Class);
-                extractorInstance =
-                        namedEntityExtractorClass.getDeclaredConstructor(new Class[]{String.class})
-                                .newInstance(modelPath);
+                extractorInstance = namedEntityExtractorClass.getDeclaredConstructor(new Class[]{String.class})
+                        .newInstance(modelPath);
                 this.available = true;
             }
         } catch (Exception e) {
@@ -111,8 +107,7 @@ public class MITIENERecogniser implements NERecogniser {
         try {
 
             Class<?> stringVectorClass = Class.forName("edu.mit.ll.mitie.StringVector");
-            Class<?> entityMentionVectorClass =
-                    Class.forName("edu.mit.ll.mitie.EntityMentionVector");
+            Class<?> entityMentionVectorClass = Class.forName("edu.mit.ll.mitie.EntityMentionVector");
             Class<?> entityMentionClass = Class.forName("edu.mit.ll.mitie.EntityMention");
             Object entityMentionObject = null;
             Class<?> globalClass = Class.forName("edu.mit.ll.mitie.global");
@@ -121,8 +116,8 @@ public class MITIENERecogniser implements NERecogniser {
             long size = (Long) stringVectorClass.getMethod("size").invoke(stringVectorObject);
             ArrayList<String> possibleTags = new ArrayList<>();
             for (long i = 0; i < size; i++) {
-                String t = (String) stringVectorClass.getMethod("get", Integer.TYPE)
-                        .invoke(stringVectorObject, (int) i);
+                String t = (String) stringVectorClass.getMethod("get", Integer.TYPE).invoke(stringVectorObject,
+                        (int) i);
                 possibleTags.add(t);
             }
             Method tokenize = globalClass.getMethod("tokenize", String.class);
@@ -131,19 +126,16 @@ public class MITIENERecogniser implements NERecogniser {
             ArrayList<String> stringVector = new ArrayList<>();
             size = (Long) stringVectorClass.getMethod("size").invoke(stringVectorObject);
             for (long i = 0; i < size; i++) {
-                String t = (String) stringVectorClass.getMethod("get", Integer.TYPE)
-                        .invoke(stringVectorObject, (int) i);
+                String t = (String) stringVectorClass.getMethod("get", Integer.TYPE).invoke(stringVectorObject,
+                        (int) i);
                 stringVector.add(t);
             }
-            Method extractEntities =
-                    extractorInstance.getClass().getMethod("extractEntities", stringVectorClass);
+            Method extractEntities = extractorInstance.getClass().getMethod("extractEntities", stringVectorClass);
             Object entities = extractEntities.invoke(extractorInstance, stringVectorObject);
             size = (Long) entityMentionVectorClass.getMethod("size").invoke(entities);
             for (long i = 0; i < size; i++) {
-                entityMentionObject = entityMentionVectorClass.getMethod("get", Integer.TYPE)
-                        .invoke(entities, (int) i);
-                int tag_index = (Integer) entityMentionClass.getMethod("getTag")
-                        .invoke(entityMentionObject);
+                entityMentionObject = entityMentionVectorClass.getMethod("get", Integer.TYPE).invoke(entities, (int) i);
+                int tag_index = (Integer) entityMentionClass.getMethod("getTag").invoke(entityMentionObject);
                 String tag = possibleTags.get(tag_index);
                 Set<String> x = new HashSet<>();
                 if (names.containsKey(tag)) {
@@ -151,10 +143,8 @@ public class MITIENERecogniser implements NERecogniser {
                 } else {
                     names.put(tag, x);
                 }
-                int start = (Integer) entityMentionClass.getMethod("getStart")
-                        .invoke(entityMentionObject);
-                int end = (Integer) entityMentionClass.getMethod("getEnd")
-                        .invoke(entityMentionObject);
+                int start = (Integer) entityMentionClass.getMethod("getStart").invoke(entityMentionObject);
+                int end = (Integer) entityMentionClass.getMethod("getEnd").invoke(entityMentionObject);
                 StringBuilder match = new StringBuilder();
                 while (start < end) {
                     match.append(stringVector.get(start)).append(" ");

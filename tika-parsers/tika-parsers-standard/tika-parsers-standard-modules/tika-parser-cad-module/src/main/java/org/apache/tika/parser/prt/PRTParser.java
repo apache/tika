@@ -25,9 +25,6 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
@@ -36,6 +33,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * A basic text extracting parser for the CADKey PRT (CAD Drawing)
@@ -49,8 +48,7 @@ public class PRTParser implements Parser {
      * Serial version UID
      */
     private static final long serialVersionUID = 4659638314375035178L;
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.application("x-prt"));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.application("x-prt"));
     /**
      * How long do we allow a text run to claim to be, before we
      * decide we're confused and it's not really text after all?
@@ -71,8 +69,8 @@ public class PRTParser implements Parser {
      *  Note - all text is null terminated
      */
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         Last5 l5 = new Last5();
@@ -86,9 +84,9 @@ public class PRTParser implements Parser {
 
         String dateStr = new String(date, US_ASCII);
         if (dateStr.startsWith("19") || dateStr.startsWith("20")) {
-            String formattedDate = dateStr.substring(0, 4) + "-" + dateStr.substring(4, 6) + "-" +
-                    dateStr.substring(6, 8) + "T" + dateStr.substring(8, 10) + ":" +
-                    dateStr.substring(10, 12) + ":00";
+            String formattedDate = dateStr.substring(0, 4) + "-" + dateStr.substring(4, 6) + "-"
+                    + dateStr.substring(6, 8) + "T" + dateStr.substring(8, 10) + ":" + dateStr.substring(10, 12)
+                    + ":00";
             metadata.set(TikaCoreProperties.CREATED, formattedDate);
             // TODO Metadata.DATE is used as modified, should it be here?
             metadata.set(TikaCoreProperties.CREATED, formattedDate);
@@ -151,8 +149,8 @@ public class PRTParser implements Parser {
         }
     }
 
-    private void handleViewName(int typeA, int typeB, InputStream stream, XHTMLContentHandler xhtml,
-                                Last5 l5) throws IOException, SAXException, TikaException {
+    private void handleViewName(int typeA, int typeB, InputStream stream, XHTMLContentHandler xhtml, Last5 l5)
+            throws IOException, SAXException, TikaException {
         // Is it 8 byte zero padded?
         int maybeLength = EndianUtils.readUShortLE(stream);
         if (maybeLength == 0) {

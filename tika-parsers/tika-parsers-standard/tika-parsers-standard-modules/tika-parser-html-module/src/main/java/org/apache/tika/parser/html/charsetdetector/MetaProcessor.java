@@ -22,7 +22,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-
 /**
  * A class to process the attributes of an HTML meta tag in order to extract a character set.
  * The user should repeatedly call {@link #processAttribute} on each attributes of the tag,
@@ -53,24 +52,25 @@ class MetaProcessor {
         attributeNames.add(attribute.getKey());
 
         // Handle charset-related attributes
-        switch (attribute.getKey()) {
-            case "http-equiv":
+        switch (attribute.getKey())
+        {
+            case "http-equiv" :
                 if (attribute.getValue().equals("content-type")) {
                     gotPragma = true;
                 }
                 break;
-            case "content":
+            case "content" :
                 String charsetName = getEncodingFromMeta(attribute.getValue());
                 if (!detectionResult.isFound() && charsetName != null) {
                     detectionResult.find(charsetName);
                     needPragma = true;
                 }
                 break;
-            case "charset":
+            case "charset" :
                 detectionResult.find(attribute.getValue());
                 needPragma = false;
                 break;
-            default: // Ignore non-charset related attributes
+            default : // Ignore non-charset related attributes
         }
     }
 }

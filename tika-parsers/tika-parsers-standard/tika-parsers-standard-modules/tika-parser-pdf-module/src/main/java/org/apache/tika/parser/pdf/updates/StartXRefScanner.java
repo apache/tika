@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -47,7 +47,6 @@ public class StartXRefScanner {
     private static final char[] STARTXREF = new char[]{'s', 't', 'a', 'r', 't', 'x', 'r', 'e', 'f'};
 
     private static final char[] EOF_MARKER = new char[]{'%', '%', 'E', 'O', 'F'};
-
 
     /**
      * ASCII code for line feed.
@@ -98,8 +97,7 @@ public class StartXRefScanner {
                         long startxref = readLong();
                         boolean hasEof = readEOF();
                         long endOfEOFOffset = source.getPosition();
-                        offsets.add(new StartXRefOffset(startxref, startXREFOffset, endOfEOFOffset,
-                                hasEof));
+                        offsets.add(new StartXRefOffset(startxref, startXREFOffset, endOfEOFOffset, hasEof));
                         return;
                     } catch (IOException e) {
                         //swallow
@@ -174,8 +172,8 @@ public class StartXRefScanner {
             retval = Long.parseLong(longBuffer.toString());
         } catch (NumberFormatException e) {
             source.rewind(longBuffer.toString().getBytes(StandardCharsets.ISO_8859_1).length);
-            throw new IOException("Error: Expected a long type at offset " + source.getPosition() +
-                    ", instead got '" + longBuffer + "'", e);
+            throw new IOException("Error: Expected a long type at offset " + source.getPosition() + ", instead got '"
+                    + longBuffer + "'", e);
         }
         return retval;
     }
@@ -218,8 +216,7 @@ public class StartXRefScanner {
             buffer.append((char) lastByte);
             if (buffer.length() > MAX_LENGTH_LONG) {
                 throw new IOException(
-                        "Number '" + buffer + "' is getting too long, stop reading at offset " +
-                                source.getPosition());
+                        "Number '" + buffer + "' is getting too long, stop reading at offset " + source.getPosition());
             }
         }
         if (lastByte == -1) {
@@ -249,4 +246,3 @@ public class StartXRefScanner {
         return ASCII_CR == c;
     }
 }
-

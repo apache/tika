@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.standard;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -30,18 +29,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import jakarta.ws.rs.core.Response;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.resource.RecursiveMetadataResource;
 import org.apache.tika.server.core.writer.MetadataListMessageBodyWriter;
+import org.junit.jupiter.api.Test;
+
+import jakarta.ws.rs.core.Response;
 
 public class RecursiveMetadataFilterTest extends CXFTestBase {
 
@@ -57,7 +56,8 @@ public class RecursiveMetadataFilterTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(RecursiveMetadataResource.class);
-        sf.setResourceProvider(RecursiveMetadataResource.class, new SingletonResourceProvider(new RecursiveMetadataResource()));
+        sf.setResourceProvider(RecursiveMetadataResource.class,
+                new SingletonResourceProvider(new RecursiveMetadataResource()));
     }
 
     @Override
@@ -69,10 +69,7 @@ public class RecursiveMetadataFilterTest extends CXFTestBase {
 
     @Test
     public void testBasicFilter() throws Exception {
-        Response response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .acceptEncoding("gzip")
+        Response response = WebClient.create(endPoint + META_PATH).accept("application/json").acceptEncoding("gzip")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
 
         Reader reader = new InputStreamReader(new GzipCompressorInputStream((InputStream) response.getEntity()), UTF_8);
@@ -84,14 +81,10 @@ public class RecursiveMetadataFilterTest extends CXFTestBase {
         expectedKeys.add("extended-properties:Application");
         expectedKeys.add("Content-Type");
         for (Metadata m : metadataList) {
-            if (m
-                    .get(Metadata.CONTENT_TYPE)
-                    .equals("image/emf")) {
+            if (m.get(Metadata.CONTENT_TYPE).equals("image/emf")) {
                 fail("emf should have been filtered out");
             }
-            if (m
-                    .get(Metadata.CONTENT_TYPE)
-                    .startsWith("text/plain")) {
+            if (m.get(Metadata.CONTENT_TYPE).startsWith("text/plain")) {
                 fail("text/plain should have been filtered out");
             }
             assertTrue(m.names().length >= 2);

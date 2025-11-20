@@ -43,9 +43,6 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.help.HelpFormatter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.JDBCUtil;
 import org.apache.tika.eval.app.db.MimeBuffer;
@@ -59,6 +56,8 @@ import org.apache.tika.pipes.core.FetchEmitTuple;
 import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ExtractProfileRunner {
 
@@ -71,23 +70,32 @@ public class ExtractProfileRunner {
     static {
 
         OPTIONS = new Options()
-                .addOption(Option.builder("e").longOpt("extracts").hasArg().desc("required: directory of extracts").get())
-                .addOption(Option.builder("i").longOpt("inputDir").hasArg().desc("optional: directory for original binary input documents."
-                        + " If not specified, -extracts is crawled as is.").get())
+                .addOption(
+                        Option.builder("e").longOpt("extracts").hasArg().desc("required: directory of extracts").get())
+                .addOption(Option.builder("i").longOpt("inputDir").hasArg()
+                        .desc("optional: directory for original binary input documents."
+                                + " If not specified, -extracts is crawled as is.")
+                        .get())
                 .addOption(Option.builder("d").longOpt("db").hasArg().desc("optional: db path").get())
                 .addOption(Option.builder("c").longOpt("config").hasArg().desc("tika-eval json config file").get())
                 .addOption(Option.builder("n").longOpt("numWorkers").hasArg().desc("number of worker threads").get())
-                .addOption(Option.builder("m").longOpt("maxExtractLength").hasArg().desc("maximum extract length").get())
-        ;
+                .addOption(
+                        Option.builder("m").longOpt("maxExtractLength").hasArg().desc("maximum extract length").get());
     }
 
     public static void main(String[] args) throws Exception {
         DefaultParser defaultCLIParser = new DefaultParser();
         CommandLine commandLine = defaultCLIParser.parse(OPTIONS, args);
-        EvalConfig evalConfig = commandLine.hasOption('c') ? EvalConfig.load(Paths.get(commandLine.getOptionValue('c'))) : new EvalConfig();
-        Path extractsDir = commandLine.hasOption('e') ? Paths.get(commandLine.getOptionValue('e')) : Paths.get(USAGE_FAIL("Must specify extracts dir: -i"));
+        EvalConfig evalConfig = commandLine.hasOption('c')
+                ? EvalConfig.load(Paths.get(commandLine.getOptionValue('c')))
+                : new EvalConfig();
+        Path extractsDir = commandLine.hasOption('e')
+                ? Paths.get(commandLine.getOptionValue('e'))
+                : Paths.get(USAGE_FAIL("Must specify extracts dir: -i"));
         Path inputDir = commandLine.hasOption('i') ? Paths.get(commandLine.getOptionValue('i')) : extractsDir;
-        String dbPath = commandLine.hasOption('d') ? commandLine.getOptionValue('d') : USAGE_FAIL("Must specify the db name: -d");
+        String dbPath = commandLine.hasOption('d')
+                ? commandLine.getOptionValue('d')
+                : USAGE_FAIL("Must specify the db name: -d");
         String jdbcString = getJdbcConnectionString(dbPath);
         if (commandLine.hasOption('n')) {
             evalConfig.setNumWorkers(Integer.parseInt(commandLine.getOptionValue('n')));
@@ -109,7 +117,8 @@ public class ExtractProfileRunner {
 
     }
 
-    private static void execute(Path inputDir, Path extractsDir, String dbPath, EvalConfig evalConfig) throws SQLException, IOException {
+    private static void execute(Path inputDir, Path extractsDir, String dbPath, EvalConfig evalConfig)
+            throws SQLException, IOException {
 
         //parameterize this? if necesssary
         try {
@@ -127,7 +136,6 @@ public class ExtractProfileRunner {
         AtomicInteger activeWorkers = new AtomicInteger(evalConfig.getNumWorkers());
         AtomicBoolean crawlerActive = new AtomicBoolean(true);
 
-
         ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(1000);
         CallablePipesIterator pipesIterator = new CallablePipesIterator(createIterator(inputDir), queue);
         ExecutorService executorService = Executors.newFixedThreadPool(evalConfig.getNumWorkers() + 2);
@@ -138,8 +146,10 @@ public class ExtractProfileRunner {
 
         executorCompletionService.submit(pipesIterator);
         for (int i = 0; i < evalConfig.getNumWorkers(); i++) {
-            ExtractReader extractReader = new ExtractReader(ExtractReader.ALTER_METADATA_LIST.AS_IS, evalConfig.getMinExtractLength(), evalConfig.getMaxExtractLength());
-            ExtractProfiler extractProfiler = new ExtractProfiler(inputDir, extractsDir, extractReader, builder.getDBWriter(builder.tableInfos, jdbcUtil, mimeBuffer));
+            ExtractReader extractReader = new ExtractReader(ExtractReader.ALTER_METADATA_LIST.AS_IS,
+                    evalConfig.getMinExtractLength(), evalConfig.getMaxExtractLength());
+            ExtractProfiler extractProfiler = new ExtractProfiler(inputDir, extractsDir, extractReader,
+                    builder.getDBWriter(builder.tableInfos, jdbcUtil, mimeBuffer));
             executorCompletionService.submit(new ProfileWorker(queue, extractProfiler, processed));
         }
 
@@ -178,7 +188,8 @@ public class ExtractProfileRunner {
         return fs;
     }
 
-    private static MimeBuffer initTables(JDBCUtil jdbcUtil, ExtractProfilerBuilder builder, String connectionString, EvalConfig evalConfig) throws SQLException, IOException {
+    private static MimeBuffer initTables(JDBCUtil jdbcUtil, ExtractProfilerBuilder builder, String connectionString,
+            EvalConfig evalConfig) throws SQLException, IOException {
 
         //step 1. create the tables
         jdbcUtil.createTables(builder.getNonRefTableInfos(), JDBCUtil.CREATE_TABLE.THROW_EX_IF_EXISTS);
@@ -190,7 +201,8 @@ public class ExtractProfileRunner {
 
     private static void USAGE() throws IOException {
         HelpFormatter helpFormatter = HelpFormatter.builder().get();
-        helpFormatter.printHelp("java -jar tika-eval-app-x.y.z.jar FileProfiler -e docs -d mydb [-i inputDir, -c config.json]",
+        helpFormatter.printHelp(
+                "java -jar tika-eval-app-x.y.z.jar FileProfiler -e docs -d mydb [-i inputDir, -c config.json]",
                 "Tool: Profile", OPTIONS, null, true);
     }
 
@@ -205,7 +217,8 @@ public class ExtractProfileRunner {
         private final ExtractProfiler extractProfiler;
         private final AtomicInteger processed;
 
-        ProfileWorker(ArrayBlockingQueue<FetchEmitTuple> queue, ExtractProfiler extractProfiler, AtomicInteger processed) {
+        ProfileWorker(ArrayBlockingQueue<FetchEmitTuple> queue, ExtractProfiler extractProfiler,
+                AtomicInteger processed) {
             this.queue = queue;
             this.extractProfiler = extractProfiler;
             this.processed = processed;
@@ -255,7 +268,6 @@ public class ExtractProfileRunner {
             this.refTableInfos = Collections.unmodifiableList(refTableInfos);
         }
 
-
         protected List<TableInfo> getRefTableInfos() {
             return refTableInfos;
         }
@@ -274,8 +286,7 @@ public class ExtractProfileRunner {
                 Connection connection = dbUtil.getConnection();
                 for (TableInfo tableInfo : getRefTableInfos()) {
                     int rows = 0;
-                    try (ResultSet rs = connection
-                            .createStatement()
+                    try (ResultSet rs = connection.createStatement()
                             .executeQuery("select * from " + tableInfo.getName())) {
                         while (rs.next()) {
                             rows++;
@@ -320,7 +331,8 @@ public class ExtractProfileRunner {
             writer.close();
         }
 
-        protected IDBWriter getDBWriter(List<TableInfo> tableInfos, JDBCUtil dbUtil, MimeBuffer mimeBuffer) throws IOException, SQLException {
+        protected IDBWriter getDBWriter(List<TableInfo> tableInfos, JDBCUtil dbUtil, MimeBuffer mimeBuffer)
+                throws IOException, SQLException {
             Connection conn = dbUtil.getConnection();
             return new DBWriter(conn, tableInfos, dbUtil, mimeBuffer);
         }

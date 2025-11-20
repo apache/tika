@@ -22,16 +22,15 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * This is designed to extract features that are useful for forensics, e-discovery and digital preservation.
@@ -42,8 +41,7 @@ import org.apache.tika.utils.XMLReaderUtils;
 public class XWPFFeatureExtractor {
 
     public void process(XWPFDocument xwpfDocument, Metadata metadata, ParseContext parseContext) {
-        try (InputStream is = xwpfDocument.getPackagePart()
-                                          .getInputStream()) {
+        try (InputStream is = xwpfDocument.getPackagePart().getInputStream()) {
             FeatureHandler featureHandler = new FeatureHandler();
             XMLReaderUtils.parseSAX(is, featureHandler, parseContext);
             if (featureHandler.hasComments) {
@@ -55,7 +53,7 @@ public class XWPFFeatureExtractor {
             if (featureHandler.hasTrackChanges) {
                 metadata.set(Office.HAS_TRACK_CHANGES, true);
             }
-            if (! featureHandler.authors.isEmpty()) {
+            if (!featureHandler.authors.isEmpty()) {
                 for (String author : featureHandler.authors) {
                     metadata.add(Office.COMMENT_PERSONS, author);
                 }
@@ -74,8 +72,7 @@ public class XWPFFeatureExtractor {
         private boolean hasComments = false;
 
         @Override
-        public void startElement(String uri, String localName, String qName, Attributes atts)
-                throws SAXException {
+        public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
             //we could check to ensure that the vanish element actually surrounds text
             //the current check could lead to false positives where <w:vanish/> is around a space or no text.
             if ("vanish".equals(localName)) {

@@ -34,9 +34,6 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.z.ZCompressorInputStream;
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -44,7 +41,8 @@ import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.sax.ToTextContentHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.apache.tika.serialization.JsonMetadataList;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ExtractReader {
     public static final long IGNORE_LENGTH = -1L;
@@ -70,7 +68,8 @@ public class ExtractReader {
         this.minExtractLength = minExtractLength;
         this.maxExtractLength = maxExtractLength;
         if (maxExtractLength > IGNORE_LENGTH && minExtractLength >= maxExtractLength) {
-            throw new IllegalArgumentException("minExtractLength(" + minExtractLength + ") must be < maxExtractLength(" + maxExtractLength + ")");
+            throw new IllegalArgumentException(
+                    "minExtractLength(" + minExtractLength + ") must be < maxExtractLength(" + maxExtractLength + ")");
         }
     }
 
@@ -79,9 +78,7 @@ public class ExtractReader {
         if (fName == null) {
             return fileSuffixes;
         }
-        Matcher m = Pattern
-                .compile("(?i)^(.*?)\\.(json|txt|x?html)(?:\\.(bz2|gz(?:ip)?|zip))?$")
-                .matcher(fName);
+        Matcher m = Pattern.compile("(?i)^(.*?)\\.(json|txt|x?html)(?:\\.(bz2|gz(?:ip)?|zip))?$").matcher(fName);
         if (m.find()) {
             fileSuffixes.originalFileName = m.group(1);
             fileSuffixes.setFormat(m.group(2));
@@ -97,9 +94,7 @@ public class ExtractReader {
             throw new ExtractReaderException(ExtractReaderException.TYPE.NO_EXTRACT_FILE);
         }
 
-        FileSuffixes fileSuffixes = parseSuffixes(extractFile
-                .getFileName()
-                .toString());
+        FileSuffixes fileSuffixes = parseSuffixes(extractFile.getFileName().toString());
         if (fileSuffixes.format == null) {
             throw new ExtractReaderException(ExtractReaderException.TYPE.INCORRECT_EXTRACT_FILE_SUFFIX);
         }
@@ -119,12 +114,12 @@ public class ExtractReader {
         }
 
         if (minExtractLength > IGNORE_LENGTH && length < minExtractLength) {
-            LOG.info("minExtractLength {} > IGNORE_LENGTH {} and length {} < minExtractLength {} for file '{}'", 
+            LOG.info("minExtractLength {} > IGNORE_LENGTH {} and length {} < minExtractLength {} for file '{}'",
                     minExtractLength, IGNORE_LENGTH, length, minExtractLength, extractFile);
             throw new ExtractReaderException(ExtractReaderException.TYPE.EXTRACT_FILE_TOO_SHORT);
         }
         if (maxExtractLength > IGNORE_LENGTH && length > maxExtractLength) {
-            LOG.info("maxExtractLength {} > IGNORE_LENGTH {} and length {} > maxExtractLength {} for file '{}'", 
+            LOG.info("maxExtractLength {} > IGNORE_LENGTH {} and length {} > maxExtractLength {} for file '{}'",
                     maxExtractLength, IGNORE_LENGTH, length, maxExtractLength, extractFile);
             throw new ExtractReaderException(ExtractReaderException.TYPE.EXTRACT_FILE_TOO_LONG);
         }
@@ -134,18 +129,19 @@ public class ExtractReader {
         try {
             is = Files.newInputStream(extractFile);
             if (fileSuffixes.compression != null) {
-                switch (fileSuffixes.compression) {
-                    case "bz2":
+                switch (fileSuffixes.compression)
+                {
+                    case "bz2" :
                         is = new BZip2CompressorInputStream(is);
                         break;
-                    case "gz":
-                    case "gzip":
+                    case "gz" :
+                    case "gzip" :
                         is = new GzipCompressorInputStream(is);
                         break;
-                    case "zip":
+                    case "zip" :
                         is = new ZCompressorInputStream(is);
                         break;
-                    default:
+                    default :
                         LOG.warn("Can't yet process compression of type: {}", fileSuffixes.compression);
                         return metadataList;
                 }
@@ -162,7 +158,8 @@ public class ExtractReader {
                     while (metadataList.size() > 1) {
                         metadataList.remove(metadataList.size() - 1);
                     }
-                } else if (alterMetadataList.equals(ALTER_METADATA_LIST.AS_IS.CONCATENATE_CONTENT_INTO_FIRST) && metadataList.size() > 1) {
+                } else if (alterMetadataList.equals(ALTER_METADATA_LIST.AS_IS.CONCATENATE_CONTENT_INTO_FIRST)
+                        && metadataList.size() > 1) {
                     StringBuilder sb = new StringBuilder();
                     Metadata containerMetadata = metadataList.get(0);
                     for (Metadata m : metadataList) {
@@ -214,7 +211,7 @@ public class ExtractReader {
     }
 
     public enum ALTER_METADATA_LIST {
-        AS_IS,  //leave the metadata list as is
+        AS_IS, //leave the metadata list as is
         FIRST_ONLY, //take only the metadata list for the "container" document
         CONCATENATE_CONTENT_INTO_FIRST // concatenate all of the content into the first
     }

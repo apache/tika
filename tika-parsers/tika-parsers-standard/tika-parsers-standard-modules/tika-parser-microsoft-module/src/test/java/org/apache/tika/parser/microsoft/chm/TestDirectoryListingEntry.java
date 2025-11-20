@@ -32,8 +32,8 @@ public class TestDirectoryListingEntry {
 
     @BeforeEach
     public void setUp() throws Exception {
-        dle = new DirectoryListingEntry(TestParameters.nameLength, TestParameters.entryName,
-                TestParameters.entryType, TestParameters.offset, TestParameters.length);
+        dle = new DirectoryListingEntry(TestParameters.nameLength, TestParameters.entryName, TestParameters.entryType,
+                TestParameters.offset, TestParameters.length);
     }
 
     @Test

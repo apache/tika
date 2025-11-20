@@ -23,12 +23,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeDetectionTest;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class MimeDetectionWithNNTest {
 
@@ -99,8 +98,7 @@ public class MimeDetectionWithNNTest {
         testStream(expected, filename, in);
     }
 
-    private void testStream(String expected, String urlOrFileName, InputStream in)
-            throws IOException {
+    private void testStream(String expected, String urlOrFileName, InputStream in) throws IOException {
         assertNotNull(in, "Test stream: [" + urlOrFileName + "] is null!");
         if (!in.markSupported()) {
             in = new java.io.BufferedInputStream(in);
@@ -108,14 +106,12 @@ public class MimeDetectionWithNNTest {
         try {
             Metadata metadata = new Metadata();
             String mime = this.detector.detect(in, metadata).toString();
-            assertEquals(expected, mime,
-                    urlOrFileName + " is not properly detected: detected.");
+            assertEquals(expected, mime, urlOrFileName + " is not properly detected: detected.");
 
             // Add resource name and test again
             // metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, urlOrFileName);
             mime = this.detector.detect(in, metadata).toString();
-            assertEquals(expected, mime,
-                    urlOrFileName + " is not properly detected after adding resource name.");
+            assertEquals(expected, mime, urlOrFileName + " is not properly detected after adding resource name.");
         } finally {
             in.close();
         }
@@ -126,8 +122,7 @@ public class MimeDetectionWithNNTest {
      */
     @Test
     public void testEmptyDocument() throws IOException {
-        assertEquals(MediaType.OCTET_STREAM,
-                detector.detect(new ByteArrayInputStream(new byte[0]), new Metadata()));
+        assertEquals(MediaType.OCTET_STREAM, detector.detect(new ByteArrayInputStream(new byte[0]), new Metadata()));
 
     }
 

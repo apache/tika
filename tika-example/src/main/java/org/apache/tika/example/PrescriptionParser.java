@@ -14,13 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.example;
 
 import java.util.Collections;
 import java.util.Set;
-
-import org.xml.sax.ContentHandler;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -28,6 +25,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.xml.ElementMetadataHandler;
 import org.apache.tika.parser.xml.XMLParser;
 import org.apache.tika.sax.TeeContentHandler;
+import org.xml.sax.ContentHandler;
 
 public class PrescriptionParser extends XMLParser {
     private static final long serialVersionUID = 7690682277511967388L;

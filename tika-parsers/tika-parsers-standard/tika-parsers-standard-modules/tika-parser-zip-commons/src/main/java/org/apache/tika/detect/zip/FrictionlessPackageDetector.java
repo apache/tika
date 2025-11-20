@@ -24,7 +24,6 @@ import java.util.Set;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
-
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 
@@ -34,10 +33,7 @@ public class FrictionlessPackageDetector implements ZipContainerDetector {
     private static final MediaType DATA_PACKAGE = MediaType.application("x-vnd.datapackage+zip");
 
     private enum PARTS {
-        PACKAGE,
-        WACZ_ARCHIVE,
-        WACZ_INDEXES,
-        WACZ_PAGES
+        PACKAGE, WACZ_ARCHIVE, WACZ_INDEXES, WACZ_PAGES
     }
 
     @Override
@@ -58,8 +54,7 @@ public class FrictionlessPackageDetector implements ZipContainerDetector {
     }
 
     @Override
-    public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis,
-                                           StreamingDetectContext detectContext) {
+    public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis, StreamingDetectContext detectContext) {
         Counter counter = detectContext.get(Counter.class);
         if (counter == null) {
             counter = new Counter();
@@ -98,8 +93,7 @@ public class FrictionlessPackageDetector implements ZipContainerDetector {
             //required, but I'm not sure what we'll see in practice.
             if (counter.parts.contains(PARTS.WACZ_ARCHIVE)) {
                 return WACZ;
-            } else if (counter.parts.contains(PARTS.WACZ_INDEXES) &&
-                    counter.parts.contains(PARTS.WACZ_PAGES)) {
+            } else if (counter.parts.contains(PARTS.WACZ_INDEXES) && counter.parts.contains(PARTS.WACZ_PAGES)) {
                 return WACZ;
             }
         }

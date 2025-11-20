@@ -14,17 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.core;
 
 import java.io.IOException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.PreMatching;
 import jakarta.ws.rs.ext.Provider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Provider
 @PreMatching
@@ -39,10 +39,7 @@ public class TikaLoggingFilter implements ContainerRequestFilter {
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
-        String requestUri = requestContext
-                .getUriInfo()
-                .getRequestUri()
-                .toString();
+        String requestUri = requestContext.getUriInfo().getRequestUri().toString();
         if (infoLevel) {
             LOG.info("Request URI: {}", requestUri);
         } else {

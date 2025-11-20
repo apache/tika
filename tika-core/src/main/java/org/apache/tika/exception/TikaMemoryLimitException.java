@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.exception;
 
 /*
@@ -33,8 +32,8 @@ public class TikaMemoryLimitException extends TikaException {
     }
 
     private static String msg(long triedToAllocate, long maxAllowable) {
-        return "Tried to allocate " + triedToAllocate + " bytes, but " + maxAllowable +
-                " is the maximum allowed. Please open an issue https://issues.apache.org/jira/projects/TIKA" +
-                " if you believe this file is not corrupt.";
+        return "Tried to allocate " + triedToAllocate + " bytes, but " + maxAllowable
+                + " is the maximum allowed. Please open an issue https://issues.apache.org/jira/projects/TIKA"
+                + " if you believe this file is not corrupt.";
     }
 }

@@ -16,9 +16,7 @@
  */
 package org.apache.tika.config;
 
-
 import org.slf4j.LoggerFactory;
-
 
 /**
  * Interface for error handling strategies in service class loading.

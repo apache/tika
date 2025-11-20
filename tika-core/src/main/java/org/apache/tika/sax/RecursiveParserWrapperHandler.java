@@ -22,10 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -33,6 +29,9 @@ import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.filter.NoOpFilter;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.utils.ParserUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * This is the default implementation of {@link AbstractRecursiveParserWrapperHandler}.
@@ -66,13 +65,12 @@ public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrappe
      *
      * @param maxEmbeddedResources number of embedded resources that will be parsed
      */
-    public RecursiveParserWrapperHandler(ContentHandlerFactory contentHandlerFactory,
-                                         int maxEmbeddedResources) {
+    public RecursiveParserWrapperHandler(ContentHandlerFactory contentHandlerFactory, int maxEmbeddedResources) {
         this(contentHandlerFactory, maxEmbeddedResources, NoOpFilter.NOOP_FILTER);
     }
 
-    public RecursiveParserWrapperHandler(ContentHandlerFactory contentHandlerFactory,
-                                         int maxEmbeddedResources, MetadataFilter metadataFilter) {
+    public RecursiveParserWrapperHandler(ContentHandlerFactory contentHandlerFactory, int maxEmbeddedResources,
+            MetadataFilter metadataFilter) {
         super(contentHandlerFactory, maxEmbeddedResources);
         this.metadataFilter = metadataFilter;
     }
@@ -85,8 +83,7 @@ public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrappe
      * @throws SAXException
      */
     @Override
-    public void startEmbeddedDocument(ContentHandler contentHandler, Metadata metadata)
-            throws SAXException {
+    public void startEmbeddedDocument(ContentHandler contentHandler, Metadata metadata) throws SAXException {
         super.startEmbeddedDocument(contentHandler, metadata);
     }
 
@@ -98,8 +95,7 @@ public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrappe
      * @throws SAXException
      */
     @Override
-    public void endEmbeddedDocument(ContentHandler contentHandler, Metadata metadata)
-            throws SAXException {
+    public void endEmbeddedDocument(ContentHandler contentHandler, Metadata metadata) throws SAXException {
         super.endEmbeddedDocument(contentHandler, metadata);
         addContent(contentHandler, metadata);
         try {
@@ -182,8 +178,7 @@ public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrappe
             String content = handler.toString();
             if (content != null && !content.isBlank()) {
                 metadata.add(TikaCoreProperties.TIKA_CONTENT, content);
-                metadata.add(TikaCoreProperties.TIKA_CONTENT_HANDLER,
-                        handler.getClass().getSimpleName());
+                metadata.add(TikaCoreProperties.TIKA_CONTENT_HANDLER, handler.getClass().getSimpleName());
             }
         }
     }

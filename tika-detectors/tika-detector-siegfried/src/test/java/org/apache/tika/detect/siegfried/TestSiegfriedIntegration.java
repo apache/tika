@@ -20,13 +20,12 @@ import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 @Disabled("need to have siegfried on the path")
 public class TestSiegfriedIntegration extends TikaTest {
@@ -39,8 +38,7 @@ public class TestSiegfriedIntegration extends TikaTest {
     }
 
     private Path getConfig(String configName) throws URISyntaxException {
-        return Paths.get(
-                getClass().getResource("/configs/" + configName).toURI());
+        return Paths.get(getClass().getResource("/configs/" + configName).toURI());
     }
 
 }

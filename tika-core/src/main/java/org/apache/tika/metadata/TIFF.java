@@ -100,9 +100,7 @@ public interface TIFF {
      * 7 = 0th row at right, 0th column at bottom
      * 8 = 0th row at left, 0th column at bottom
      */
-    Property ORIENTATION =
-            Property.internalClosedChoise("tiff:Orientation", "1", "2", "3", "4", "5", "6", "7",
-                    "8");
+    Property ORIENTATION = Property.internalClosedChoise("tiff:Orientation", "1", "2", "3", "4", "5", "6", "7", "8");
 
     /**
      * "Horizontal resolution in pixels per unit."

@@ -23,14 +23,14 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.List;
 
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.metadata.Metadata;
+
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.metadata.Metadata;
 
 public class JsonMetadataList {
 
@@ -41,12 +41,9 @@ public class JsonMetadataList {
 
     static {
         JsonFactory factory = new JsonFactory();
-        factory.setStreamReadConstraints(StreamReadConstraints
-                .builder()
-                .maxNestingDepth(10)
-                .maxStringLength(TikaConfig.getMaxJsonStringFieldLength())
-                .maxNumberLength(500)
-//                                                              .maxDocumentLength(1000000)
+        factory.setStreamReadConstraints(StreamReadConstraints.builder().maxNestingDepth(10)
+                .maxStringLength(TikaConfig.getMaxJsonStringFieldLength()).maxNumberLength(500)
+                //                                                              .maxDocumentLength(1000000)
                 .build());
         OBJECT_MAPPER = new ObjectMapper(factory);
         SimpleModule baseModule = new SimpleModule();
@@ -99,12 +96,13 @@ public class JsonMetadataList {
         if (reader == null) {
             return null;
         }
-        if (OBJECT_MAPPER.getFactory().streamReadConstraints().getMaxStringLength()
-                != TikaConfig.getMaxJsonStringFieldLength()) {
+        if (OBJECT_MAPPER.getFactory().streamReadConstraints().getMaxStringLength() != TikaConfig
+                .getMaxJsonStringFieldLength()) {
             OBJECT_MAPPER = buildObjectMapper(TikaConfig.getMaxJsonStringFieldLength());
         }
 
-        return OBJECT_MAPPER.readValue(reader, new TypeReference<List<Metadata>>(){});
+        return OBJECT_MAPPER.readValue(reader, new TypeReference<List<Metadata>>() {
+        });
     }
 
     public static void setPrettyPrinting(boolean prettyPrint) {

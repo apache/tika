@@ -32,10 +32,9 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.TikaConfigTest;
 import org.apache.tika.utils.ProcessUtils;
+import org.junit.jupiter.api.Test;
 
 public class TikaServerConfigTest {
 
@@ -44,9 +43,7 @@ public class TikaServerConfigTest {
         Set<String> settings = new HashSet<>();
         CommandLineParser parser = new DefaultParser();
         CommandLine emptyCommandLine = parser.parse(new Options(), new String[]{});
-        Path path = Paths.get(TikaConfigTest.class
-                .getResource("/configs/tika-config-server.xml")
-                .toURI());
+        Path path = Paths.get(TikaConfigTest.class.getResource("/configs/tika-config-server.xml").toURI());
         TikaServerConfig config = TikaServerConfig.load(path, emptyCommandLine, settings);
         assertEquals(-1, config.getMaxRestarts());
         assertEquals(54321, config.getTaskTimeoutMillis());
@@ -61,46 +58,27 @@ public class TikaServerConfigTest {
         Set<String> settings = new HashSet<>();
         CommandLineParser parser = new DefaultParser();
         CommandLine emptyCommandLine = parser.parse(new Options(), new String[]{});
-        Path path = Paths.get(TikaConfigTest.class
-                .getResource("/configs/tika-config-server-fetchers-emitters.xml")
-                .toURI());
+        Path path = Paths
+                .get(TikaConfigTest.class.getResource("/configs/tika-config-server-fetchers-emitters.xml").toURI());
         TikaServerConfig config = TikaServerConfig.load(path, emptyCommandLine, settings);
         assertEquals(-1, config.getMaxRestarts());
         assertEquals(54321, config.getTaskTimeoutMillis());
         assertEquals(true, config.isEnableUnsecureFeatures());
-        assertEquals(1, config
-                .getSupportedFetchers()
-                .size());
-        assertEquals(1, config
-                .getSupportedEmitters()
-                .size());
-        assertTrue(config
-                .getSupportedFetchers()
-                .contains("fsf"));
-        assertTrue(config
-                .getSupportedEmitters()
-                .contains("fse"));
+        assertEquals(1, config.getSupportedFetchers().size());
+        assertEquals(1, config.getSupportedEmitters().size());
+        assertTrue(config.getSupportedFetchers().contains("fsf"));
+        assertTrue(config.getSupportedEmitters().contains("fse"));
     }
 
     @Test
     public void testPorts() throws Exception {
         CommandLineParser parser = new DefaultParser();
-        Path path = Paths.get(TikaConfigTest.class
-                .getResource("/configs/tika-config-server.xml")
-                .toURI());
-        CommandLine commandLine = parser.parse(new Options()
-                .addOption(Option
-                        .builder("p")
-                        .longOpt("port")
-                        .hasArg()
-                        .get())
-                .addOption(Option
-                        .builder("c")
-                        .longOpt("config")
-                        .hasArg()
-                        .get()), new String[]{"-p", "9994-9999", "-c", ProcessUtils.escapeCommandLine(path
-                .toAbsolutePath()
-                .toString())});
+        Path path = Paths.get(TikaConfigTest.class.getResource("/configs/tika-config-server.xml").toURI());
+        CommandLine commandLine = parser.parse(
+                new Options().addOption(Option.builder("p").longOpt("port").hasArg().get())
+                        .addOption(Option.builder("c").longOpt("config").hasArg().get()),
+                new String[]{"-p", "9994-9999", "-c",
+                        ProcessUtils.escapeCommandLine(path.toAbsolutePath().toString())});
         TikaServerConfig config = TikaServerConfig.load(commandLine);
         int[] ports = config.getPorts();
         assertEquals(6, ports.length);
@@ -113,9 +91,7 @@ public class TikaServerConfigTest {
         Set<String> settings = new HashSet<>();
         CommandLineParser parser = new DefaultParser();
         CommandLine emptyCommandLine = parser.parse(new Options(), new String[]{});
-        Path path = Paths.get(TikaConfigTest.class
-                .getResource("/configs/tika-config-server-tls.xml")
-                .toURI());
+        Path path = Paths.get(TikaConfigTest.class.getResource("/configs/tika-config-server-tls.xml").toURI());
         TikaServerConfig config = TikaServerConfig.load(path, emptyCommandLine, settings);
         TlsConfig tlsConfig = config.getTlsConfig();
         assertTrue(tlsConfig.isActive());

@@ -26,6 +26,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
+
 import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.TransferHandler;
@@ -78,7 +79,8 @@ class ParsingTransferHandler extends TransferHandler {
 
     public boolean canImport(JComponent component, DataFlavor[] flavors) {
         for (DataFlavor flavor : flavors) {
-            if (flavor.equals(DataFlavor.javaFileListFlavor) || flavor.equals(uriListFlavor) || flavor.equals(urlListFlavor)) {
+            if (flavor.equals(DataFlavor.javaFileListFlavor) || flavor.equals(uriListFlavor)
+                    || flavor.equals(urlListFlavor)) {
                 return true;
             }
         }

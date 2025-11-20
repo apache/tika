@@ -23,9 +23,6 @@ import java.text.DateFormatSymbols;
 import java.util.Arrays;
 import java.util.Locale;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Database;
 import org.apache.tika.metadata.HttpHeaders;
@@ -37,10 +34,11 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class SAS7BDATParserTest extends TikaTest {
-    private static final String[] SHORT_MONTHS =
-            new DateFormatSymbols(Locale.getDefault()).getShortMonths();
+    private static final String[] SHORT_MONTHS = new DateFormatSymbols(Locale.getDefault()).getShortMonths();
     private Parser parser = new SAS7BDATParser();
 
     @Test
@@ -67,8 +65,7 @@ public class SAS7BDATParserTest extends TikaTest {
         assertEquals("9.0301M2", metadata.get(OfficeOpenXMLExtended.APP_VERSION));
         assertEquals("32", metadata.get(MachineMetadata.ARCHITECTURE_BITS));
         assertEquals("Little", metadata.get(MachineMetadata.ENDIAN));
-        assertEquals(Arrays.asList("recnum", "label"),
-                Arrays.asList(metadata.getValues(Database.COLUMN_NAME)));
+        assertEquals(Arrays.asList("recnum", "label"), Arrays.asList(metadata.getValues(Database.COLUMN_NAME)));
 
         String content = handler.toString();
         assertContains("TESTING", content);
@@ -101,9 +98,10 @@ public class SAS7BDATParserTest extends TikaTest {
         assertEquals("9.0401M5", metadata.get(OfficeOpenXMLExtended.APP_VERSION));
         assertEquals("32", metadata.get(MachineMetadata.ARCHITECTURE_BITS));
         assertEquals("Little", metadata.get(MachineMetadata.ENDIAN));
-        assertEquals(Arrays.asList("Record Number", "Square of the Record Number",
-                "Description of the Row", "Percent Done", "Percent Increment", "date", "datetime",
-                "time"), Arrays.asList(metadata.getValues(Database.COLUMN_NAME)));
+        assertEquals(
+                Arrays.asList("Record Number", "Square of the Record Number", "Description of the Row", "Percent Done",
+                        "Percent Increment", "date", "datetime", "time"),
+                Arrays.asList(metadata.getValues(Database.COLUMN_NAME)));
 
         String content = handler.toString();
         assertContains("TESTING", content);

@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb;
 
 import java.io.IOException;
@@ -79,42 +78,34 @@ public class MSOneStoreParser {
                 .filter(d -> d.dataElementType == DataElementType.ObjectDataBLOBDataElementData)
                 .collect(Collectors.toList());
 
-        msOneStorePackage.storageIndex =
-                (StorageIndexDataElementData) storageIndexDataElements.get(0).data;
-        msOneStorePackage.storageManifest =
-                (StorageManifestDataElementData) storageManifestDataElements.get(0).data;
+        msOneStorePackage.storageIndex = (StorageIndexDataElementData) storageIndexDataElements.get(0).data;
+        msOneStorePackage.storageManifest = (StorageManifestDataElementData) storageManifestDataElements.get(0).data;
 
         // Parse Header Cell
-        CellID headerCellID =
-                msOneStorePackage.storageManifest.storageManifestRootDeclareList.get(0).cellID;
-        StorageIndexCellMapping headerCellStorageIndexCellMapping =
-                msOneStorePackage.findStorageIndexCellMapping(headerCellID);
+        CellID headerCellID = msOneStorePackage.storageManifest.storageManifestRootDeclareList.get(0).cellID;
+        StorageIndexCellMapping headerCellStorageIndexCellMapping = msOneStorePackage
+                .findStorageIndexCellMapping(headerCellID);
         storageIndexHashTab.add(headerCellID);
 
         if (headerCellStorageIndexCellMapping != null) {
-            msOneStorePackage.headerCellCellManifest =
-                    this.findCellManifest(headerCellStorageIndexCellMapping.cellMappingExGuid);
-            StorageIndexRevisionMapping headerCellRevisionManifestMapping =
-                    msOneStorePackage.findStorageIndexRevisionMapping(
-                            msOneStorePackage.headerCellCellManifest.cellManifestCurrentRevision
-                                    .cellManifestCurrentRevisionExGuid);
-            msOneStorePackage.headerCellRevisionManifest = this.findRevisionManifestDataElement(
-                    headerCellRevisionManifestMapping.revisionMappingExGuid);
-            msOneStorePackage.headerCell =
-                    this.parseHeaderCell(msOneStorePackage.headerCellRevisionManifest);
+            msOneStorePackage.headerCellCellManifest = this
+                    .findCellManifest(headerCellStorageIndexCellMapping.cellMappingExGuid);
+            StorageIndexRevisionMapping headerCellRevisionManifestMapping = msOneStorePackage
+                    .findStorageIndexRevisionMapping(
+                            msOneStorePackage.headerCellCellManifest.cellManifestCurrentRevision.cellManifestCurrentRevisionExGuid);
+            msOneStorePackage.headerCellRevisionManifest = this
+                    .findRevisionManifestDataElement(headerCellRevisionManifestMapping.revisionMappingExGuid);
+            msOneStorePackage.headerCell = this.parseHeaderCell(msOneStorePackage.headerCellRevisionManifest);
 
             // Parse Data root
-            CellID dataRootCellID =
-                    msOneStorePackage.storageManifest.storageManifestRootDeclareList.get(1).cellID;
+            CellID dataRootCellID = msOneStorePackage.storageManifest.storageManifestRootDeclareList.get(1).cellID;
             storageIndexHashTab.add(dataRootCellID);
             msOneStorePackage.dataRoot = this.parseObjectGroup(dataRootCellID, msOneStorePackage);
             // Parse other data
-            for (StorageIndexCellMapping storageIndexCellMapping : msOneStorePackage.storageIndex
-                    .storageIndexCellMappingList) {
+            for (StorageIndexCellMapping storageIndexCellMapping : msOneStorePackage.storageIndex.storageIndexCellMappingList) {
                 if (!storageIndexHashTab.contains(storageIndexCellMapping.cellID)) {
-                    msOneStorePackage.OtherFileNodeList.addAll(
-                            this.parseObjectGroup(storageIndexCellMapping.cellID,
-                                    msOneStorePackage));
+                    msOneStorePackage.OtherFileNodeList
+                            .addAll(this.parseObjectGroup(storageIndexCellMapping.cellID, msOneStorePackage));
                     storageIndexHashTab.add(storageIndexCellMapping.cellID);
                 }
             }
@@ -140,57 +131,45 @@ public class MSOneStoreParser {
      * @param revisionMappingExtendedGUID The Revision Mapping Extended GUID.
      * @return Returns the instance of RevisionManifestDataElementData
      */
-    private RevisionManifestDataElementData findRevisionManifestDataElement(
-            ExGuid revisionMappingExtendedGUID) {
+    private RevisionManifestDataElementData findRevisionManifestDataElement(ExGuid revisionMappingExtendedGUID) {
         return (RevisionManifestDataElementData) this.revisionManifestDataElements.stream()
                 .filter(d -> d.dataElementExGuid.equals(revisionMappingExtendedGUID)).findFirst()
                 .orElse(new DataElement()).data;
     }
 
-    private HeaderCell parseHeaderCell(RevisionManifestDataElementData headerCellRevisionManifest)
-            throws IOException {
-        ExGuid rootObjectId =
-                headerCellRevisionManifest.revisionManifestObjectGroupReferences.get(
-                        0).objectGroupExtendedGUID;
+    private HeaderCell parseHeaderCell(RevisionManifestDataElementData headerCellRevisionManifest) throws IOException {
+        ExGuid rootObjectId = headerCellRevisionManifest.revisionManifestObjectGroupReferences
+                .get(0).objectGroupExtendedGUID;
 
         DataElement element = this.objectGroupDataElements.stream()
-                .filter(d -> d.dataElementExGuid.equals(rootObjectId)).findFirst()
-                .orElse(new DataElement());
+                .filter(d -> d.dataElementExGuid.equals(rootObjectId)).findFirst().orElse(new DataElement());
 
         return HeaderCell.createInstance((ObjectGroupDataElementData) element.data);
     }
 
     private List<RevisionStoreObjectGroup> parseObjectGroup(CellID objectGroupCellID,
-                                                            MSOneStorePackage msOneStorePackage)
-            throws IOException {
-        StorageIndexCellMapping storageIndexCellMapping =
-                msOneStorePackage.findStorageIndexCellMapping(objectGroupCellID);
-        CellManifestDataElementData cellManifest =
-                this.findCellManifest(storageIndexCellMapping.cellMappingExGuid);
+            MSOneStorePackage msOneStorePackage) throws IOException {
+        StorageIndexCellMapping storageIndexCellMapping = msOneStorePackage
+                .findStorageIndexCellMapping(objectGroupCellID);
+        CellManifestDataElementData cellManifest = this.findCellManifest(storageIndexCellMapping.cellMappingExGuid);
         List<RevisionStoreObjectGroup> objectGroups = new ArrayList<>();
         msOneStorePackage.cellManifests.add(cellManifest);
-        StorageIndexRevisionMapping revisionMapping =
-                msOneStorePackage.findStorageIndexRevisionMapping(
-                        cellManifest.cellManifestCurrentRevision.cellManifestCurrentRevisionExGuid);
-        RevisionManifestDataElementData revisionManifest =
-                findRevisionManifestDataElement(revisionMapping.revisionMappingExGuid);
+        StorageIndexRevisionMapping revisionMapping = msOneStorePackage.findStorageIndexRevisionMapping(
+                cellManifest.cellManifestCurrentRevision.cellManifestCurrentRevisionExGuid);
+        RevisionManifestDataElementData revisionManifest = findRevisionManifestDataElement(
+                revisionMapping.revisionMappingExGuid);
         msOneStorePackage.revisionManifests.add(revisionManifest);
-        RevisionManifestRootDeclare encryptionKeyRoot =
-                revisionManifest.revisionManifestRootDeclareList.stream()
-                        .filter(r -> r.rootExGuid.equals(new ExGuid(3,
-                                UUID.fromString("4A3717F8-1C14-49E7-9526-81D942DE1741"))))
-                        .findFirst().orElse(null);
+        RevisionManifestRootDeclare encryptionKeyRoot = revisionManifest.revisionManifestRootDeclareList.stream()
+                .filter(r -> r.rootExGuid
+                        .equals(new ExGuid(3, UUID.fromString("4A3717F8-1C14-49E7-9526-81D942DE1741"))))
+                .findFirst().orElse(null);
         boolean isEncryption = encryptionKeyRoot != null;
-        for (RevisionManifestObjectGroupReferences objRef :
-                revisionManifest.revisionManifestObjectGroupReferences) {
-            ObjectGroupDataElementData dataObject =
-                    (ObjectGroupDataElementData) objectGroupDataElements.stream()
-                            .filter(d -> d.dataElementExGuid.equals(objRef.objectGroupExtendedGUID))
-                            .findFirst().get().data;
+        for (RevisionManifestObjectGroupReferences objRef : revisionManifest.revisionManifestObjectGroupReferences) {
+            ObjectGroupDataElementData dataObject = (ObjectGroupDataElementData) objectGroupDataElements.stream()
+                    .filter(d -> d.dataElementExGuid.equals(objRef.objectGroupExtendedGUID)).findFirst().get().data;
 
-            RevisionStoreObjectGroup objectGroup =
-                    RevisionStoreObjectGroup.createInstance(objRef.objectGroupExtendedGUID,
-                            dataObject, isEncryption);
+            RevisionStoreObjectGroup objectGroup = RevisionStoreObjectGroup
+                    .createInstance(objRef.objectGroupExtendedGUID, dataObject, isEncryption);
             objectGroups.add(objectGroup);
         }
 

@@ -34,17 +34,12 @@ import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.CompositeEncodingDetector;
@@ -63,6 +58,11 @@ import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.multiple.AbstractMultipleParser;
 import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 public class TikaConfigSerializer {
 
@@ -92,8 +92,7 @@ public class TikaConfigSerializer {
      * @param charset charset
      * @throws Exception
      */
-    public static void serialize(TikaConfig config, Mode mode, Writer writer, Charset charset)
-            throws Exception {
+    public static void serialize(TikaConfig config, Mode mode, Writer writer, Charset charset) throws Exception {
         DocumentBuilder docBuilder = XMLReaderUtils.getDocumentBuilder();
 
         // root elements
@@ -121,8 +120,7 @@ public class TikaConfigSerializer {
         transformer.transform(source, result);
     }
 
-    private static void addExecutorService(Mode mode, Element rootElement, Document doc,
-                                           TikaConfig config) {
+    private static void addExecutorService(Mode mode, Element rootElement, Document doc, TikaConfig config) {
         ExecutorService executor = config.getExecutorService();
 
         // TODO Implement the reverse of ExecutorServiceXmlLoader
@@ -130,8 +128,7 @@ public class TikaConfigSerializer {
         // TODO Make it possible to get the current values from ConfigurableThreadPoolExecutor
     }
 
-    private static void addServiceLoader(Mode mode, Element rootElement, Document doc,
-                                         TikaConfig config) {
+    private static void addServiceLoader(Mode mode, Element rootElement, Document doc, TikaConfig config) {
         ServiceLoader loader = config.getServiceLoader();
 
         if (mode == Mode.MINIMAL) {
@@ -148,18 +145,16 @@ public class TikaConfigSerializer {
         rootElement.appendChild(dslEl);
     }
 
-    private static void addTranslator(Mode mode, Element rootElement, Document doc,
-                                      TikaConfig config) {
+    private static void addTranslator(Mode mode, Element rootElement, Document doc, TikaConfig config) {
         // Unlike the other entries, TikaConfig only wants one of
         //  these, and no outer <translators> list
         Translator translator = config.getTranslator();
         if (mode == Mode.MINIMAL && translator instanceof DefaultTranslator) {
-            Node mimeComment = doc.createComment("for example: <translator " +
-                    "class=\"org.apache.tika.language.translate.GoogleTranslator\"/>");
+            Node mimeComment = doc.createComment(
+                    "for example: <translator " + "class=\"org.apache.tika.language.translate.GoogleTranslator\"/>");
             rootElement.appendChild(mimeComment);
         } else {
-            if (translator instanceof DefaultTranslator &&
-                    (mode == Mode.STATIC || mode == Mode.STATIC_FULL)) {
+            if (translator instanceof DefaultTranslator && (mode == Mode.STATIC || mode == Mode.STATIC_FULL)) {
                 translator = ((DefaultTranslator) translator).getTranslator();
             }
             if (translator != null) {
@@ -173,34 +168,31 @@ public class TikaConfigSerializer {
     }
 
     private static void addMimeComment(Mode mode, Element rootElement, Document doc) {
-        Node mimeComment = doc.createComment("for example: <mimeTypeRepository " +
-                "resource=\"/org/apache/tika/mime/tika-mimetypes.xml\"/>");
+        Node mimeComment = doc.createComment(
+                "for example: <mimeTypeRepository " + "resource=\"/org/apache/tika/mime/tika-mimetypes.xml\"/>");
         rootElement.appendChild(mimeComment);
     }
 
-    private static void addEncodingDetectors(Mode mode, Element rootElement, Document doc,
-                                             TikaConfig config) throws Exception {
+    private static void addEncodingDetectors(Mode mode, Element rootElement, Document doc, TikaConfig config)
+            throws Exception {
         EncodingDetector encDetector = config.getEncodingDetector();
 
         if (mode == Mode.MINIMAL && encDetector instanceof DefaultEncodingDetector) {
             // Don't output anything, all using defaults
-            Node detComment = doc.createComment(
-                    "for example: <encodingDetectors><encodingDetector class=\"" +
-                            "org.apache.tika.detect.DefaultEncodingDetector\">" +
-                            "</encodingDetectors>");
+            Node detComment = doc.createComment("for example: <encodingDetectors><encodingDetector class=\""
+                    + "org.apache.tika.detect.DefaultEncodingDetector\">" + "</encodingDetectors>");
             rootElement.appendChild(detComment);
             return;
         }
 
         Element encDetectorsElement = doc.createElement("encodingDetectors");
-        if (mode == Mode.CURRENT && encDetector instanceof DefaultEncodingDetector ||
-                !(encDetector instanceof CompositeEncodingDetector)) {
+        if (mode == Mode.CURRENT && encDetector instanceof DefaultEncodingDetector
+                || !(encDetector instanceof CompositeEncodingDetector)) {
             Element encDetectorElement = doc.createElement("encodingDetector");
             encDetectorElement.setAttribute("class", encDetector.getClass().getCanonicalName());
             encDetectorsElement.appendChild(encDetectorElement);
         } else {
-            List<EncodingDetector> children =
-                    ((CompositeEncodingDetector) encDetector).getDetectors();
+            List<EncodingDetector> children = ((CompositeEncodingDetector) encDetector).getDetectors();
             for (EncodingDetector d : children) {
                 Element encDetectorElement = doc.createElement("encodingDetector");
                 encDetectorElement.setAttribute("class", d.getClass().getCanonicalName());
@@ -212,21 +204,19 @@ public class TikaConfigSerializer {
         rootElement.appendChild(encDetectorsElement);
     }
 
-    private static void addDetectors(Mode mode, Element rootElement, Document doc,
-                                     TikaConfig config) throws Exception {
+    private static void addDetectors(Mode mode, Element rootElement, Document doc, TikaConfig config) throws Exception {
         Detector detector = config.getDetector();
 
         if (mode == Mode.MINIMAL && detector instanceof DefaultDetector) {
             // Don't output anything, all using defaults
-            Node detComment = doc.createComment("for example: <detectors><detector " +
-                    "class=\"org.apache.tika.detector.MimeTypes\"></detectors>");
+            Node detComment = doc.createComment(
+                    "for example: <detectors><detector " + "class=\"org.apache.tika.detector.MimeTypes\"></detectors>");
             rootElement.appendChild(detComment);
             return;
         }
 
         Element detectorsElement = doc.createElement("detectors");
-        if (mode == Mode.CURRENT && detector instanceof DefaultDetector ||
-                !(detector instanceof CompositeDetector)) {
+        if (mode == Mode.CURRENT && detector instanceof DefaultDetector || !(detector instanceof CompositeDetector)) {
             Element detectorElement = doc.createElement("detector");
             detectorElement.setAttribute("class", detector.getClass().getCanonicalName());
             detectorsElement.appendChild(detectorElement);
@@ -242,8 +232,7 @@ public class TikaConfigSerializer {
         rootElement.appendChild(detectorsElement);
     }
 
-    private static void addParsers(Mode mode, Element rootElement, Document doc, TikaConfig config)
-            throws Exception {
+    private static void addParsers(Mode mode, Element rootElement, Document doc, TikaConfig config) throws Exception {
         Parser parser = config.getParser();
         if (mode == Mode.MINIMAL && parser instanceof DefaultParser) {
             // Don't output anything, all using defaults
@@ -258,8 +247,7 @@ public class TikaConfigSerializer {
         addParser(mode, parsersElement, doc, parser);
     }
 
-    private static void addParser(Mode mode, Element rootElement, Document doc, Parser parser)
-            throws Exception {
+    private static void addParser(Mode mode, Element rootElement, Document doc, Parser parser) throws Exception {
         // If the parser is decorated, is it a kind where we output the parser inside?
         ParserDecorator decoration = null;
         if (parser instanceof ParserDecorator) {
@@ -280,8 +268,7 @@ public class TikaConfigSerializer {
                 outputParser = false;
             }
             // Special case for making Default to static
-            if (parser instanceof DefaultParser &&
-                    (mode == Mode.STATIC || mode == Mode.STATIC_FULL)) {
+            if (parser instanceof DefaultParser && (mode == Mode.STATIC || mode == Mode.STATIC_FULL)) {
                 outputParser = false;
             }
         } else if (parser instanceof AbstractMultipleParser) {
@@ -299,7 +286,7 @@ public class TikaConfigSerializer {
     }
 
     private static Element addParser(Mode mode, Element rootElement, Document doc, Parser parser,
-                                     ParserDecorator decorator) throws Exception {
+            ParserDecorator decorator) throws Exception {
         ParseContext context = new ParseContext();
 
         Set<MediaType> addedTypes = new TreeSet<>();
@@ -359,7 +346,7 @@ public class TikaConfigSerializer {
                 }
                 //require @Field on setters
                 if (method.getAnnotation(Field.class) == null) {
-                   // LOG.warn("unannotated setter {} in {}", method.getName(), object.getClass());
+                    // LOG.warn("unannotated setter {} in {}", method.getName(), object.getClass());
                     continue;
                 }
                 if (parameterTypes.length != 1) {
@@ -402,25 +389,21 @@ public class TikaConfigSerializer {
 
     }
 
-    private static void serializeNonPrimitives(Document doc, Element element,
-                                               Object object,
-                                               MethodTuples setterTuples,
-                                               MethodTuples getterTuples) {
+    private static void serializeNonPrimitives(Document doc, Element element, Object object, MethodTuples setterTuples,
+            MethodTuples getterTuples) {
 
         for (Map.Entry<String, Set<MethodTuple>> e : setterTuples.tuples.entrySet()) {
             Set<MethodTuple> getters = getterTuples.tuples.get(e.getKey());
             processNonPrimitive(e.getKey(), e.getValue(), getters, doc, element, object);
             if (!getterTuples.tuples.containsKey(e.getKey())) {
-                LOG.warn("no getter for setter non-primitive: {} in {}", e.getKey(),
-                        object.getClass());
+                LOG.warn("no getter for setter non-primitive: {} in {}", e.getKey(), object.getClass());
                 continue;
             }
         }
     }
 
-    private static void processNonPrimitive(String name, Set<MethodTuple> setters,
-                                            Set<MethodTuple> getters, Document doc, Element element,
-                                            Object object) {
+    private static void processNonPrimitive(String name, Set<MethodTuple> setters, Set<MethodTuple> getters,
+            Document doc, Element element, Object object) {
         for (MethodTuple setter : setters) {
             for (MethodTuple getter : getters) {
                 if (setter.singleParam.equals(getter.singleParam)) {
@@ -431,9 +414,8 @@ public class TikaConfigSerializer {
         }
     }
 
-    private static void serializeObject(String name, Document doc, Element element,
-                                        MethodTuple setter,
-                                         MethodTuple getter, Object object) {
+    private static void serializeObject(String name, Document doc, Element element, MethodTuple setter,
+            MethodTuple getter, Object object) {
 
         Object item = null;
         try {
@@ -451,17 +433,15 @@ public class TikaConfigSerializer {
         serializeParams(doc, element, item);
     }
 
-    private static void serializePrimitives(Document doc, Element root,
-                                            Object object,
-                                            MethodTuples setterTuples, MethodTuples getterTuples) {
+    private static void serializePrimitives(Document doc, Element root, Object object, MethodTuples setterTuples,
+            MethodTuples getterTuples) {
 
         Element paramsElement = null;
         if (object instanceof AbstractMultipleParser) {
             paramsElement = doc.createElement("params");
             Element paramElement = doc.createElement("param");
             paramElement.setAttribute("name", "metadataPolicy");
-            paramElement.setAttribute("value",
-                    ((AbstractMultipleParser) object).getMetadataPolicy().toString());
+            paramElement.setAttribute("value", ((AbstractMultipleParser) object).getMetadataPolicy().toString());
             paramsElement.appendChild(paramElement);
             root.appendChild(paramsElement);
         }
@@ -520,8 +500,7 @@ public class TikaConfigSerializer {
         }
     }
 
-    private static void addMap(Element param, Document doc, MethodTuple getterTuple,
-                               Map<String, String> object) {
+    private static void addMap(Element param, Document doc, MethodTuple getterTuple, Map<String, String> object) {
         for (Map.Entry<String, String> e : new TreeMap<String, String>(object).entrySet()) {
             Element element = doc.createElement("string");
             element.setAttribute("key", e.getKey());
@@ -531,8 +510,7 @@ public class TikaConfigSerializer {
 
     }
 
-    private static void addList(Element param, Document doc, MethodTuple getterTuple,
-                                List<String> list) {
+    private static void addList(Element param, Document doc, MethodTuple getterTuple, List<String> list) {
         for (String s : list) {
             Element element = doc.createElement("string");
             element.setTextContent(s);
@@ -607,8 +585,7 @@ public class TikaConfigSerializer {
                 return false;
             }
             MethodTuple that = (MethodTuple) o;
-            return name.equals(that.name) && method.equals(that.method) &&
-                    singleParam.equals(that.singleParam);
+            return name.equals(that.name) && method.equals(that.method) && singleParam.equals(that.singleParam);
         }
 
         @Override

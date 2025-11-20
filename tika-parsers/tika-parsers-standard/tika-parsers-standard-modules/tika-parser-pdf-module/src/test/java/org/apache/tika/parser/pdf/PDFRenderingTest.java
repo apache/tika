@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.pdf;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -26,10 +25,6 @@ import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
@@ -43,6 +38,9 @@ import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class PDFRenderingTest extends TikaTest {
 
@@ -58,9 +56,8 @@ public class PDFRenderingTest extends TikaTest {
         TikaConfig config = getConfig("tika-rendering-config.xml");
         Parser p = new AutoDetectParser(config);
         List<Metadata> metadataList = getRecursiveMetadata("testPDF.pdf", p, parseContext);
-        Map<Integer, byte[]> embedded =
-                ((RenderCaptureExtractor)parseContext.get(EmbeddedDocumentExtractor.class))
-                        .getEmbedded();
+        Map<Integer, byte[]> embedded = ((RenderCaptureExtractor) parseContext.get(EmbeddedDocumentExtractor.class))
+                .getEmbedded();
         assertEquals(1, embedded.size());
         assertTrue(embedded.containsKey(0));
         //what else can we do to test this?  File type == tiff? Run OCR?
@@ -78,9 +75,8 @@ public class PDFRenderingTest extends TikaTest {
         TikaConfig config = getConfig("tika-rendering-config.xml");
         Parser p = new AutoDetectParser(config);
         List<Metadata> metadataList = getRecursiveMetadata("testPDF_rotated.pdf", p, parseContext);
-        Map<Integer, byte[]> embedded =
-                ((RenderCaptureExtractor)parseContext.get(EmbeddedDocumentExtractor.class))
-                        .getEmbedded();
+        Map<Integer, byte[]> embedded = ((RenderCaptureExtractor) parseContext.get(EmbeddedDocumentExtractor.class))
+                .getEmbedded();
 
         assertEquals(1, embedded.size());
         assertTrue(embedded.containsKey(0));
@@ -106,7 +102,6 @@ public class PDFRenderingTest extends TikaTest {
         return parseContext;
     }
 
-
     private class RenderCaptureExtractor extends ParsingEmbeddedDocumentExtractor {
         private int count = 0;
         Map<Integer, byte[]> embedded = new HashMap<>();
@@ -116,8 +111,8 @@ public class PDFRenderingTest extends TikaTest {
         }
 
         @Override
-        public void parseEmbedded(TikaInputStream tis, ContentHandler handler, Metadata metadata,
-                                  boolean outputHtml) throws SAXException, IOException {
+        public void parseEmbedded(TikaInputStream tis, ContentHandler handler, Metadata metadata, boolean outputHtml)
+                throws SAXException, IOException {
 
             byte[] bytes = Files.readAllBytes(tis.getPath());
             embedded.put(count++, bytes);

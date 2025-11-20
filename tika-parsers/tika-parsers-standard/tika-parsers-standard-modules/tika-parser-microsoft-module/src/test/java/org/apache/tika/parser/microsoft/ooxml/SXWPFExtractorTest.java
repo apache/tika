@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.ooxml;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -31,9 +30,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -47,7 +43,8 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
-
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SXWPFExtractorTest extends TikaTest {
 
@@ -84,7 +81,6 @@ public class SXWPFExtractorTest extends TikaTest {
         assertEquals("12", m.get(Office.LINE_COUNT));
         assertEquals("16.0000", m.get(OfficeOpenXMLExtended.APP_VERSION));
 
-
         String content = m.get(TikaCoreProperties.TIKA_CONTENT);
 
         assertContainsCount("engaging title page", content, 1);
@@ -95,26 +91,21 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContains("My Document Title", content);
         assertContains("My Document Subtitle", content);
 
-        assertContains("<p class=\"toc_1\">\t<a href=\"#_Toc467647605\">Heading1\t3</a></p>",
-                content);
-
+        assertContains("<p class=\"toc_1\">\t<a href=\"#_Toc467647605\">Heading1\t3</a></p>", content);
 
         assertContains("2. Really basic 2.", content);
 
         assertContainsCount("This is a text box", content, 1);
 
-        assertContains("<p>This is a hyperlink: <a href=\"http://tika.apache.org\">tika</a></p>",
-                content);
+        assertContains("<p>This is a hyperlink: <a href=\"http://tika.apache.org\">tika</a></p>", content);
 
-        assertContains(
-                "<p>This is a link to a local file: <a href=\"file:///C:/data/test.png\">test.png</a></p>",
+        assertContains("<p>This is a link to a local file: <a href=\"file:///C:/data/test.png\">test.png</a></p>",
                 content);
 
         assertContains("<p>This is          10 spaces</p>", content);
 
         //caption
-        assertContains(
-                "<p class=\"table_of_figures\">\t<a href=\"#_Toc467647797\">Table 1: Table1 Caption\t2</a></p>",
+        assertContains("<p class=\"table_of_figures\">\t<a href=\"#_Toc467647797\">Table 1: Table1 Caption\t2</a></p>",
                 content);
 
         //embedded table
@@ -150,8 +141,7 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContains("Click or tap to enter a date", content);
 
         //basic b/i tags...make sure not to overlap!
-        assertContains("<p>The <i>quick</i> brown <b>fox </b>j<i>um</i><b><i>ped</i></b> over",
-                content);
+        assertContains("<p>The <i>quick</i> brown <b>fox </b>j<i>um</i><b><i>ped</i></b> over", content);
 
         assertContains("This is a comment", content);
 
@@ -177,10 +167,10 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContains("Mattmann", content);
 
         //TODO: extract chart text
-//        assertContains("This is the chart title", content);
+        //        assertContains("This is the chart title", content);
 
         //TODO: add chart parsing
-//        assertContains("This is the chart", content);
+        //        assertContains("This is the chart", content);
 
     }
 
@@ -238,7 +228,7 @@ public class SXWPFExtractorTest extends TikaTest {
         // Headings with anchor tags in them
         //TODO: still not getting bookmarks
         assertTrue(xml.contains("<h3>Heading Level 3<a name=\"OnLevel3\" /></h3>"));
-//        assertTrue(xml.contains("<h3>Heading Level 3</h3>"));
+        //        assertTrue(xml.contains("<h3>Heading Level 3</h3>"));
         // Bold and italic
         assertTrue(xml.contains("<b>BOLD</b>"));
         assertTrue(xml.contains("<i>ITALIC</i>"));
@@ -307,8 +297,7 @@ public class SXWPFExtractorTest extends TikaTest {
     public void testPicturesInVariousPlaces() throws Exception {
         //test that images are actually extracted from
         //headers, footers, comments, endnotes, footnotes
-        List<Metadata> metadataList =
-                getRecursiveMetadata("testWORD_embedded_pics.docx", parseContext);
+        List<Metadata> metadataList = getRecursiveMetadata("testWORD_embedded_pics.docx", parseContext);
 
         //only process embedded resources once
         assertEquals(3, metadataList.size());
@@ -324,7 +313,7 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContains("footnotes_pic", content);
         assertContains("comments_pic", content);
         assertContains("endnotes_pic", content);
-//        assertContains("sdt2_pic.jpg", content);//name of file is not stored in image-sdt
+        //        assertContains("sdt2_pic.jpg", content);//name of file is not stored in image-sdt
 
         assertContainsCount("<img src=", content, 14);
     }
@@ -359,8 +348,7 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContains("(Kramer)", content);
         assertContains("Row 1 Col 1 Row 1 Col 2 Row 1 Col 3 Row 2 Col 1 Row 2 Col 2 Row 2 Col 3",
                 content.replaceAll("\\s+", " "));
-        assertContains("Row 1 column 1 Row 2 column 1 Row 1 column 2 Row 2 column 2",
-                content.replaceAll("\\s+", " "));
+        assertContains("Row 1 column 1 Row 2 column 1 Row 1 column 2 Row 2 column 2", content.replaceAll("\\s+", " "));
         assertContains("This is a hyperlink", content);
         assertContains("Here is a list:", content);
         for (int row = 1; row <= 3; row++) {
@@ -392,12 +380,10 @@ public class SXWPFExtractorTest extends TikaTest {
         // Special version of (GHQ)
         assertContains("\uff08\uff27\uff28\uff31\uff09", content);
         // 6 other characters
-        assertContains("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f",
-                content);
+        assertContains("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f", content);
 
         assertContains("And then some Gothic text:", content);
-        assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A",
-                content);
+        assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A", content);
     }
 
     @Test
@@ -540,8 +526,7 @@ public class SXWPFExtractorTest extends TikaTest {
             System.setErr(origErr);
 
             String err = errContent.toString(UTF_8.name());
-            assertTrue(err.isEmpty(), "expected no error msg, but got >" +
-                    err + "<");
+            assertTrue(err.isEmpty(), "expected no error msg, but got >" + err + "<");
         }
     }
 
@@ -623,7 +608,6 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContains("1st.2.2someOtherText.1 1st.2.2someOtherText.1", xml);
         assertContains("5th 5th", xml);
 
-
         //Test 2
         assertContains("1.a.I 1.a.I", xml);
         //test no reset because level 2 is not sufficient to reset
@@ -672,13 +656,11 @@ public class SXWPFExtractorTest extends TikaTest {
 
     @Test
     public void testOrigSourcePath() throws Exception {
-        Metadata embed1_zip_metadata =
-                getRecursiveMetadata("test_recursive_embedded.docx", parseContext).get(2);
-        assertContains("C:\\Users\\tallison\\AppData\\Local\\Temp\\embed1.zip", Arrays.asList(
-                embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
+        Metadata embed1_zip_metadata = getRecursiveMetadata("test_recursive_embedded.docx", parseContext).get(2);
+        assertContains("C:\\Users\\tallison\\AppData\\Local\\Temp\\embed1.zip",
+                Arrays.asList(embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
         assertContains("C:\\Users\\tallison\\Desktop\\tmp\\New folder (2)\\embed1.zip",
-                Arrays.asList(
-                        embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
+                Arrays.asList(embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
     }
 
     @Test
@@ -723,7 +705,6 @@ public class SXWPFExtractorTest extends TikaTest {
         //check that content came out of the .docm file
         assertContains("quick", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
         assertContainsAtLeast(parsedBy, metadataList);
-
 
         Metadata minExpected = new Metadata();
         minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Embolden()");
@@ -808,7 +789,6 @@ public class SXWPFExtractorTest extends TikaTest {
         parseContext.set(OfficeParserConfig.class, config);
         assertContains("\u6771\u4EAC (\u3068\u3046\u304D\u3087\u3046)",
                 getXML("testWORD_phonetic.docx", parseContext).xml);
-
 
         config.setConcatenatePhoneticRuns(false);
         String xml = getXML("testWORD_phonetic.docx", parseContext).xml;

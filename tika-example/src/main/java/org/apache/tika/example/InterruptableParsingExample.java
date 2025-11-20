@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.example;
 
 import java.io.BufferedInputStream;
@@ -24,14 +23,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
 
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * This example demonstrates how to interrupt document parsing if
@@ -53,9 +51,7 @@ public class InterruptableParsingExample {
         context.set(Parser.class, tika.getParser());
 
         try (InputStream is = new BufferedInputStream(Files.newInputStream(path))) {
-            tika
-                    .getParser()
-                    .parse(is, handler, metadata, context);
+            tika.getParser().parse(is, handler, metadata, context);
         } catch (QueryMatchedException e) {
             return true;
         } catch (SAXException | TikaException | IOException e) {
@@ -85,9 +81,7 @@ public class InterruptableParsingExample {
         public void characters(char[] ch, int start, int length) throws SAXException {
             sb.append(new String(ch, start, length).toLowerCase(Locale.getDefault()));
 
-            if (sb
-                    .toString()
-                    .contains(query)) {
+            if (sb.toString().contains(query)) {
                 throw new QueryMatchedException();
             }
 

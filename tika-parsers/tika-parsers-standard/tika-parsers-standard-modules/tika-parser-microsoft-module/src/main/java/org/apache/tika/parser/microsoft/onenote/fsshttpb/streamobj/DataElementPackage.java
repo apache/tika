@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
@@ -45,8 +44,7 @@ public class DataElementPackage extends StreamObject {
      * @param lengthOfItems The length of the items
      */
     @Override
-    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
-                                                 int lengthOfItems)
+    protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex, int lengthOfItems)
             throws TikaException, IOException {
         if (lengthOfItems != 1) {
             throw new StreamObjectParseErrorException(currentIndex.get(), "DataElementPackage",
@@ -57,8 +55,7 @@ public class DataElementPackage extends StreamObject {
 
         this.dataElements = new ArrayList<>();
         AtomicReference<DataElement> dataElement = new AtomicReference<>();
-        while (StreamObject.tryGetCurrent(byteArray, currentIndex, dataElement,
-                DataElement.class)) {
+        while (StreamObject.tryGetCurrent(byteArray, currentIndex, dataElement, DataElement.class)) {
             this.dataElements.add(dataElement.get());
         }
     }

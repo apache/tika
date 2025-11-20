@@ -16,22 +16,19 @@
  */
 package org.apache.tika.parser.geopkg;
 
-
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Set;
 
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.sqlite3.SQLite3TableReader;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
-
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.sqlite3.SQLite3TableReader;
-
 
 /**
  * Concrete class for GeoPkg parsing.  This overrides blob handling to skip "geom" and "data"
@@ -44,25 +41,20 @@ class GeoPkgTableReader extends SQLite3TableReader {
 
     private final Set<String> ignoreBlobColumns;
 
-    public GeoPkgTableReader(Connection connection, String tableName,
-                             EmbeddedDocumentUtil embeddedDocumentUtil, Set<String> ignoreBlobColumns) {
+    public GeoPkgTableReader(Connection connection, String tableName, EmbeddedDocumentUtil embeddedDocumentUtil,
+            Set<String> ignoreBlobColumns) {
         super(connection, tableName, embeddedDocumentUtil);
         this.ignoreBlobColumns = ignoreBlobColumns;
     }
 
-
-
     @Override
-    protected void handleBlob(String tableName, String columnName, int rowNum, ResultSet resultSet,
-                              int columnIndex, ContentHandler handler, ParseContext context)
-            throws SQLException, IOException, SAXException {
+    protected void handleBlob(String tableName, String columnName, int rowNum, ResultSet resultSet, int columnIndex,
+            ContentHandler handler, ParseContext context) throws SQLException, IOException, SAXException {
         if (ignoreBlobColumns.contains(columnName)) {
             Attributes attrs = new AttributesImpl();
             ((AttributesImpl) attrs).addAttribute("", "type", "type", "CDATA", "blob");
-            ((AttributesImpl) attrs)
-                    .addAttribute("", "column_name", "column_name", "CDATA", columnName);
-            ((AttributesImpl) attrs).addAttribute("", "row_number", "row_number", "CDATA",
-                    Integer.toString(rowNum));
+            ((AttributesImpl) attrs).addAttribute("", "column_name", "column_name", "CDATA", columnName);
+            ((AttributesImpl) attrs).addAttribute("", "row_number", "row_number", "CDATA", Integer.toString(rowNum));
             handler.startElement("", "span", "span", attrs);
             handler.endElement("", "span", "span");
             return;

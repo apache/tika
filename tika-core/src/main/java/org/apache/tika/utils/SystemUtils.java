@@ -26,8 +26,7 @@ public class SystemUtils {
     public static final boolean IS_OS_AIX = getOSMatchesName("AIX");
     public static final boolean IS_OS_HP_UX = getOSMatchesName("HP-UX");
     public static final boolean IS_OS_IRIX = getOSMatchesName("Irix");
-    public static final boolean IS_OS_LINUX =
-            getOSMatchesName("Linux") || getOSMatchesName("LINUX");
+    public static final boolean IS_OS_LINUX = getOSMatchesName("Linux") || getOSMatchesName("LINUX");
     public static final boolean IS_OS_MAC = getOSMatchesName("Mac");
     public static final boolean IS_OS_MAC_OSX = getOSMatchesName("Mac OS X");
     public static final boolean IS_OS_OS2 = getOSMatchesName("OS/2");
@@ -40,8 +39,8 @@ public class SystemUtils {
     private static final String OS_VERSION_WSL = "WSL";
 
     static {
-        IS_OS_UNIX = IS_OS_AIX || IS_OS_HP_UX || IS_OS_IRIX || IS_OS_LINUX || IS_OS_MAC_OSX ||
-                IS_OS_SOLARIS || IS_OS_SUN_OS;
+        IS_OS_UNIX = IS_OS_AIX || IS_OS_HP_UX || IS_OS_IRIX || IS_OS_LINUX || IS_OS_MAC_OSX || IS_OS_SOLARIS
+                || IS_OS_SUN_OS;
         IS_OS_WINDOWS = getOSMatchesName(OS_NAME_WINDOWS_PREFIX);
         IS_OS_VERSION_WSL = getOSContainsVersion(OS_VERSION_WSL);
     }

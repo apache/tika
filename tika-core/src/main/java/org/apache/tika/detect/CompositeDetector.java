@@ -45,7 +45,7 @@ public class CompositeDetector implements Detector {
     private final List<Detector> detectors;
 
     public CompositeDetector(MediaTypeRegistry registry, List<Detector> detectors,
-                             Collection<Class<? extends Detector>> excludeDetectors) {
+            Collection<Class<? extends Detector>> excludeDetectors) {
         if (excludeDetectors == null || excludeDetectors.isEmpty()) {
             this.detectors = detectors;
         } else {
@@ -118,13 +118,12 @@ public class CompositeDetector implements Detector {
         return Collections.unmodifiableList(detectors);
     }
 
-    private boolean isExcluded(Collection<Class<? extends Detector>> excludeDetectors,
-                               Class<? extends Detector> d) {
+    private boolean isExcluded(Collection<Class<? extends Detector>> excludeDetectors, Class<? extends Detector> d) {
         return excludeDetectors.contains(d) || assignableFrom(excludeDetectors, d);
     }
 
     private boolean assignableFrom(Collection<Class<? extends Detector>> excludeDetectors,
-                                   Class<? extends Detector> d) {
+            Class<? extends Detector> d) {
         for (Class<? extends Detector> e : excludeDetectors) {
             if (e.isAssignableFrom(d)) {
                 return true;

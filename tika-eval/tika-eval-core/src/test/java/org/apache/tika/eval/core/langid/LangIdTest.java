@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.eval.core.langid;
 
 import static org.junit.jupiter.api.Assertions.fail;
@@ -27,17 +26,15 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
+import org.apache.tika.eval.core.tokens.CommonTokenCountManager;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.eval.core.tokens.CommonTokenCountManager;
-
 public class LangIdTest {
 
-
     @Test
-    @Disabled("make sure to run this when updating common tokens or the language model" +
-            "but there's no reason to test this for every build.")
+    @Disabled("make sure to run this when updating common tokens or the language model"
+            + "but there's no reason to test this for every build.")
     public void testCommonTokensCoverage() throws Exception {
         //make sure that there is a common tokens file for every
         //language
@@ -51,8 +48,7 @@ public class LangIdTest {
             if (tokens.size() == 0) {
                 System.out.printf(Locale.US, "missing common tokens for: %s%n", lang);
             } else if (tokens.size() < 250) { //ssw has 255
-                fail(String.format(Locale.US, "common tokens too small (%s) for: %s", tokens.size(),
-                        lang));
+                fail(String.format(Locale.US, "common tokens too small (%s) for: %s", tokens.size(), lang));
 
             }
         }

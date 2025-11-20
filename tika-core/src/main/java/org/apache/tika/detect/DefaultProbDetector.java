@@ -55,8 +55,7 @@ public class DefaultProbDetector extends CompositeDetector {
         this(MimeTypes.getDefaultMimeTypes());
     }
 
-    private static List<Detector> getDefaultDetectors(ProbabilisticMimeDetectionSelector sel,
-                                                      ServiceLoader loader) {
+    private static List<Detector> getDefaultDetectors(ProbabilisticMimeDetectionSelector sel, ServiceLoader loader) {
         List<Detector> detectors = loader.loadStaticServiceProviders(Detector.class);
         ServiceLoaderUtils.sortLoadedClasses(detectors);
         detectors.add(sel);

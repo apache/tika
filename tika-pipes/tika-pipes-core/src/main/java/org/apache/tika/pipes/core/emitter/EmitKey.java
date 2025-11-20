@@ -50,8 +50,7 @@ public class EmitKey implements Serializable {
 
     @Override
     public String toString() {
-        return "EmitterKey{" + "emitterName='" + emitterName + '\'' + ", emitterKey='" + emitKey +
-                '\'' + '}';
+        return "EmitterKey{" + "emitterName='" + emitterName + '\'' + ", emitterKey='" + emitKey + '\'' + '}';
     }
 
     @Override

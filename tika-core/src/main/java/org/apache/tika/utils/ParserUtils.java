@@ -35,9 +35,8 @@ import org.apache.tika.parser.ParserDecorator;
  */
 public class ParserUtils {
 
-    public final static Property EMBEDDED_PARSER = Property.internalText(
-            TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_parser");
-
+    public final static Property EMBEDDED_PARSER = Property
+            .internalText(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_parser");
 
     /**
      * Does a deep clone of a Metadata object.
@@ -113,8 +112,7 @@ public class ParserUtils {
      * Streams that are automatically OK include {@link TikaInputStream}s
      * created from Files or InputStreamFactories, and {@link RereadableInputStream}.
      */
-    public static InputStream ensureStreamReReadable(InputStream stream, TemporaryResources tmp,
-                                                     Metadata metadata)
+    public static InputStream ensureStreamReReadable(InputStream stream, TemporaryResources tmp, Metadata metadata)
             throws IOException {
         // If it's re-readable, we're done
         if (stream instanceof RereadableInputStream) {
@@ -144,8 +142,7 @@ public class ParserUtils {
      * {@link #ensureStreamReReadable(InputStream, TemporaryResources, Metadata)})
      * so that it can be re-read again.
      */
-    public static InputStream streamResetForReRead(InputStream stream, TemporaryResources tmp)
-            throws IOException {
+    public static InputStream streamResetForReRead(InputStream stream, TemporaryResources tmp) throws IOException {
         // If re-readable, rewind to start
         if (stream instanceof RereadableInputStream) {
             ((RereadableInputStream) stream).rewind();

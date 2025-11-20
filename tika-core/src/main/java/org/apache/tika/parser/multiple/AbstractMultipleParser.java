@@ -31,9 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
@@ -46,6 +43,8 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.utils.ParserUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Abstract base class for parser wrappers which may / will
@@ -85,17 +84,16 @@ public abstract class AbstractMultipleParser implements Parser {
 
     @SuppressWarnings("rawtypes")
     public AbstractMultipleParser(MediaTypeRegistry registry, Collection<? extends Parser> parsers,
-                                  Map<String, Param> params) {
+            Map<String, Param> params) {
         this(registry, getMetadataPolicy(params), parsers);
     }
 
-    public AbstractMultipleParser(MediaTypeRegistry registry, MetadataPolicy policy,
-                                  Parser... parsers) {
+    public AbstractMultipleParser(MediaTypeRegistry registry, MetadataPolicy policy, Parser... parsers) {
         this(registry, policy, Arrays.asList(parsers));
     }
 
     public AbstractMultipleParser(MediaTypeRegistry registry, MetadataPolicy policy,
-                                  Collection<? extends Parser> parsers) {
+            Collection<? extends Parser> parsers) {
         this.policy = policy;
         this.parsers = parsers;
         this.registry = registry;
@@ -113,12 +111,10 @@ public abstract class AbstractMultipleParser implements Parser {
         if (params.containsKey(METADATA_POLICY_CONFIG_KEY)) {
             return (MetadataPolicy) params.get(METADATA_POLICY_CONFIG_KEY).getValue();
         }
-        throw new IllegalArgumentException(
-                "Required parameter '" + METADATA_POLICY_CONFIG_KEY + "' not supplied");
+        throw new IllegalArgumentException("Required parameter '" + METADATA_POLICY_CONFIG_KEY + "' not supplied");
     }
 
-    protected static Metadata mergeMetadata(Metadata newMetadata, Metadata lastMetadata,
-                                            MetadataPolicy policy) {
+    protected static Metadata mergeMetadata(Metadata newMetadata, Metadata lastMetadata, MetadataPolicy policy) {
         if (policy == MetadataPolicy.DISCARD_ALL) {
             return newMetadata;
         }
@@ -148,18 +144,19 @@ public abstract class AbstractMultipleParser implements Parser {
                 // Metadata is the same, nothing to do
                 continue;
             } else {
-                switch (policy) {
-                    case FIRST_WINS:
+                switch (policy)
+                {
+                    case FIRST_WINS :
                         // Use the earlier value(s) in place of this/these one/s
                         newMetadata.remove(n);
                         for (String val : oldVals) {
                             newMetadata.add(n, val);
                         }
                         continue;
-                    case LAST_WINS:
+                    case LAST_WINS :
                         // Most recent (last) parser has already won
                         continue;
-                    case KEEP_ALL:
+                    case KEEP_ALL :
                         // Start with old list, then add any new unique values
                         List<String> vals = new ArrayList<>(Arrays.asList(oldVals));
                         newMetadata.remove(n);
@@ -223,9 +220,8 @@ public abstract class AbstractMultipleParser implements Parser {
      * or Failed, and to allow them to decide to continue or
      * abort further parsing
      */
-    protected abstract boolean parserCompleted(Parser parser, Metadata metadata,
-                                               ContentHandler handler, ParseContext context,
-                                               Exception exception);
+    protected abstract boolean parserCompleted(Parser parser, Metadata metadata, ContentHandler handler,
+            ParseContext context, Exception exception);
 
     /**
      * Processes the given Stream through one or more parsers,
@@ -237,8 +233,8 @@ public abstract class AbstractMultipleParser implements Parser {
      * call the method with a {@link ContentHandlerFactory} instead.
      */
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         parse(stream, handler, null, metadata, context);
     }
 
@@ -253,14 +249,13 @@ public abstract class AbstractMultipleParser implements Parser {
      * and the method signature is subject to change before Tika 2.0
      */
     @Deprecated
-    public void parse(InputStream stream, ContentHandlerFactory handlers, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandlerFactory handlers, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         parse(stream, null, handlers, metadata, context);
     }
 
-    private void parse(InputStream stream, ContentHandler handler,
-                       ContentHandlerFactory handlerFactory, Metadata originalMetadata,
-                       ParseContext context) throws IOException, SAXException, TikaException {
+    private void parse(InputStream stream, ContentHandler handler, ContentHandlerFactory handlerFactory,
+            Metadata originalMetadata, ParseContext context) throws IOException, SAXException, TikaException {
         // Track the metadata between parsers, so we can apply our policy
         Metadata lastMetadata = cloneMetadata(originalMetadata);
         Metadata metadata = lastMetadata;

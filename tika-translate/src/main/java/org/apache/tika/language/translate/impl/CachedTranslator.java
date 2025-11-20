@@ -14,17 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.language.translate.impl;
 
 import java.io.IOException;
 import java.util.HashMap;
 
-import com.fasterxml.jackson.databind.util.LRUMap;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.language.translate.Translator;
+
+import com.fasterxml.jackson.databind.util.LRUMap;
 
 /**
  * CachedTranslator. Saves a map of previous translations in order to prevent repetitive translation requests.
@@ -77,8 +76,7 @@ public class CachedTranslator extends AbstractTranslator {
         if (translator == null) {
             return text;
         }
-        LRUMap<String, String> translationCache =
-                getTranslationCache(sourceLanguage, targetLanguage);
+        LRUMap<String, String> translationCache = getTranslationCache(sourceLanguage, targetLanguage);
         String translatedText = translationCache.get(text);
         if (translatedText == null) {
             translatedText = translator.translate(text, sourceLanguage, targetLanguage);
@@ -120,8 +118,7 @@ public class CachedTranslator extends AbstractTranslator {
      * @since Tika 1.6
      */
     public int getNumTranslationsFor(String sourceLanguage, String targetLanguage) {
-        LRUMap<String, String> translationCache =
-                cache.get(buildCacheKeyString(sourceLanguage, targetLanguage));
+        LRUMap<String, String> translationCache = cache.get(buildCacheKeyString(sourceLanguage, targetLanguage));
         if (translationCache == null) {
             return 0;
         } else {
@@ -139,8 +136,7 @@ public class CachedTranslator extends AbstractTranslator {
      * @return true if the cache contains a translation of the text, false otherwise.
      */
     public boolean contains(String text, String sourceLanguage, String targetLanguage) {
-        LRUMap<String, String> translationCache =
-                getTranslationCache(sourceLanguage, targetLanguage);
+        LRUMap<String, String> translationCache = getTranslationCache(sourceLanguage, targetLanguage);
         return translationCache.get(text) != null;
     }
 
@@ -181,10 +177,8 @@ public class CachedTranslator extends AbstractTranslator {
      * @param targetLanguage The target language of translation.
      * @return The LRUMap representing the translation cache.
      */
-    private LRUMap<String, String> getTranslationCache(String sourceLanguage,
-                                                       String targetLanguage) {
-        LRUMap<String, String> translationCache =
-                cache.get(buildCacheKeyString(sourceLanguage, targetLanguage));
+    private LRUMap<String, String> getTranslationCache(String sourceLanguage, String targetLanguage) {
+        LRUMap<String, String> translationCache = cache.get(buildCacheKeyString(sourceLanguage, targetLanguage));
         if (translationCache == null) {
             translationCache = new LRUMap<>(INITIAL_ENTRIES, MAX_ENTRIES);
             cache.put(buildCacheKeyString(sourceLanguage, targetLanguage), translationCache);

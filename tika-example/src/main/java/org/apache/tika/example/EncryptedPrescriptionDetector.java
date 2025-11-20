@@ -14,13 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.example;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.Key;
+
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
 import javax.xml.namespace.QName;
@@ -45,7 +45,8 @@ public class EncryptedPrescriptionDetector implements Detector {
             InputStream decrypted = new CipherInputStream(lookahead, cipher);
 
             QName name = new XmlRootExtractor().extractRootElement(decrypted);
-            if (name != null && "http://example.com/xpd".equals(name.getNamespaceURI()) && "prescription".equals(name.getLocalPart())) {
+            if (name != null && "http://example.com/xpd".equals(name.getNamespaceURI())
+                    && "prescription".equals(name.getLocalPart())) {
                 type = MediaType.application("x-prescription");
             }
         } catch (GeneralSecurityException e) {

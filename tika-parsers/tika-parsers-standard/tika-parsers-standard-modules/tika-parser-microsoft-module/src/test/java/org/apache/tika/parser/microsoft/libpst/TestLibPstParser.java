@@ -21,9 +21,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.List;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.MAPI;
@@ -33,6 +30,8 @@ import org.apache.tika.metadata.PST;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class TestLibPstParser extends TikaTest {
 
@@ -56,12 +55,11 @@ public class TestLibPstParser extends TikaTest {
         assumeTrue(metadataList.size() == 8);
 
         Metadata m0 = metadataList.get(0);
-        assertEquals("org.apache.tika.parser.microsoft.libpst.LibPstParser", m0.getValues(TikaCoreProperties.TIKA_PARSED_BY)[1]);
+        assertEquals("org.apache.tika.parser.microsoft.libpst.LibPstParser",
+                m0.getValues(TikaCoreProperties.TIKA_PARSED_BY)[1]);
         int validPaths = 0;
         for (int i = 1; i < metadataList.size(); i++) {
-            String path = metadataList
-                    .get(i)
-                    .get(PST.PST_FOLDER_PATH);
+            String path = metadataList.get(i).get(PST.PST_FOLDER_PATH);
             if (path != null) {
                 assertEquals("hong-thai.nguyen", path);
                 validPaths++;
@@ -70,16 +68,10 @@ public class TestLibPstParser extends TikaTest {
         //NOTE: this processing via lib pst misses an email (with an ooxml attachment) embedded inside an email
         assertEquals(7, validPaths);
 
-        assertEquals("Hong-Thai Nguyen", metadataList
-                .get(1)
-                .get(Message.MESSAGE_TO_DISPLAY_NAME));
-        assertContains("See you there!", metadataList
-                .get(1)
-                .get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals("Hong-Thai Nguyen", metadataList.get(1).get(Message.MESSAGE_TO_DISPLAY_NAME));
+        assertContains("See you there!", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
 
-        assertEquals("NOTE", metadataList
-                .get(7)
-                .get(MAPI.MESSAGE_CLASS));
+        assertEquals("NOTE", metadataList.get(7).get(MAPI.MESSAGE_CLASS));
     }
 
     @Test
@@ -87,32 +79,29 @@ public class TestLibPstParser extends TikaTest {
         if (!LIBPST_EXISTS) {
             return;
         }
-        TikaConfig tikaConfig = new TikaConfig(TestLibPstParser.class.getResourceAsStream("tika-libpst-eml-config.xml"));
+        TikaConfig tikaConfig = new TikaConfig(
+                TestLibPstParser.class.getResourceAsStream("tika-libpst-eml-config.xml"));
         Parser p = new AutoDetectParser(tikaConfig);
 
         List<Metadata> metadataList = getRecursiveMetadata("testPST.pst", p);
         //libpst is non-deterministic -- sometimes we get 10, sometimes 8
         assumeTrue(metadataList.size() == 10);
         Metadata m0 = metadataList.get(0);
-        assertEquals("org.apache.tika.parser.microsoft.libpst.LibPstParser", m0.getValues(TikaCoreProperties.TIKA_PARSED_BY)[1]);
+        assertEquals("org.apache.tika.parser.microsoft.libpst.LibPstParser",
+                m0.getValues(TikaCoreProperties.TIKA_PARSED_BY)[1]);
         int validPaths = 0;
         for (int i = 1; i < metadataList.size(); i++) {
-            String path = metadataList
-                    .get(i)
-                    .get(PST.PST_FOLDER_PATH);
+            String path = metadataList.get(i).get(PST.PST_FOLDER_PATH);
             if (path != null) {
                 assertEquals("hong-thai.nguyen", path);
                 validPaths++;
             }
         }
         assertEquals(7, validPaths);
-        assertContains("See you there!", metadataList
-                .get(3)
-                .get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("See you there!", metadataList.get(3).get(TikaCoreProperties.TIKA_CONTENT));
 
-        assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document", metadataList
-                .get(4)
-                .get(Metadata.CONTENT_TYPE));
+        assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                metadataList.get(4).get(Metadata.CONTENT_TYPE));
     }
 
 }

@@ -16,11 +16,11 @@
  */
 package org.apache.tika.server.core.resource;
 
+import org.apache.tika.Tika;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
-
-import org.apache.tika.Tika;
 
 @Path("/version")
 public class TikaVersion {

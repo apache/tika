@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
-
 import org.apache.tika.eval.core.langid.LanguageIDWrapper;
 import org.apache.tika.eval.core.textstats.BasicTokenCountStatsCalculator;
 import org.apache.tika.eval.core.textstats.CommonTokens;
@@ -42,25 +41,19 @@ public class TikaEvalMetadataFilter extends MetadataFilter {
 
     public static Property NUM_TOKENS = Property.externalInteger(TIKA_EVAL_NS + "numTokens");
 
-    public static Property NUM_UNIQUE_TOKENS =
-            Property.externalInteger(TIKA_EVAL_NS + "numUniqueTokens");
+    public static Property NUM_UNIQUE_TOKENS = Property.externalInteger(TIKA_EVAL_NS + "numUniqueTokens");
 
-    public static Property NUM_ALPHA_TOKENS =
-            Property.externalInteger(TIKA_EVAL_NS + "numAlphaTokens");
+    public static Property NUM_ALPHA_TOKENS = Property.externalInteger(TIKA_EVAL_NS + "numAlphaTokens");
 
-    public static Property NUM_COMMON_TOKENS =
-            Property.externalInteger(TIKA_EVAL_NS + "numCommonTokens");
+    public static Property NUM_COMMON_TOKENS = Property.externalInteger(TIKA_EVAL_NS + "numCommonTokens");
 
-    public static Property NUM_UNIQUE_ALPHA_TOKENS =
-            Property.externalInteger(TIKA_EVAL_NS + "numUniqueAlphaTokens");
+    public static Property NUM_UNIQUE_ALPHA_TOKENS = Property.externalInteger(TIKA_EVAL_NS + "numUniqueAlphaTokens");
 
     public static Property LANGUAGE = Property.externalText(TIKA_EVAL_NS + "lang");
 
-    public static Property LANGUAGE_CONFIDENCE =
-            Property.externalReal(TIKA_EVAL_NS + "langConfidence");
+    public static Property LANGUAGE_CONFIDENCE = Property.externalReal(TIKA_EVAL_NS + "langConfidence");
 
     public static Property OUT_OF_VOCABULARY = Property.externalReal(TIKA_EVAL_NS + "oov");
-
 
     static CompositeTextStatsCalculator TEXT_STATS_CALCULATOR;
 
@@ -70,7 +63,6 @@ public class TikaEvalMetadataFilter extends MetadataFilter {
         calcs.add(new CommonTokens());
         TEXT_STATS_CALCULATOR = new CompositeTextStatsCalculator(calcs);
     }
-
 
     @Override
     public void filter(Metadata metadata) throws TikaException {
@@ -88,7 +80,6 @@ public class TikaEvalMetadataFilter extends MetadataFilter {
         metadata.set(NUM_TOKENS, tokenCounts.getTotalTokens());
         metadata.set(NUM_UNIQUE_TOKENS, tokenCounts.getTotalUniqueTokens());
 
-
         //common token results
         CommonTokenResult commonTokenResult = (CommonTokenResult) results.get(CommonTokens.class);
         metadata.set(NUM_ALPHA_TOKENS, commonTokenResult.getAlphabeticTokens());
@@ -101,8 +92,7 @@ public class TikaEvalMetadataFilter extends MetadataFilter {
         }
 
         //languages
-        List<LanguageResult> probabilities =
-                (List<LanguageResult>) results.get(LanguageIDWrapper.class);
+        List<LanguageResult> probabilities = (List<LanguageResult>) results.get(LanguageIDWrapper.class);
         if (probabilities.size() > 0) {
             metadata.set(LANGUAGE, probabilities.get(0).getLanguage());
             metadata.set(LANGUAGE_CONFIDENCE, probabilities.get(0).getRawScore());

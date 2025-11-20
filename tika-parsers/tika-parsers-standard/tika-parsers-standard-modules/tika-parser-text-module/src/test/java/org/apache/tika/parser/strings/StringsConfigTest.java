@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,18 +21,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.InputStream;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.CompositeParser;
+import org.junit.jupiter.api.Test;
 
 public class StringsConfigTest {
 
     @Test
     public void testNoConfig() {
         StringsConfig config = new StringsConfig();
-        assertEquals(StringsEncoding.SINGLE_7_BIT, config.getEncoding(),
-                "Invalid default encoding value");
+        assertEquals(StringsEncoding.SINGLE_7_BIT, config.getEncoding(), "Invalid default encoding value");
         assertEquals(4, config.getMinLength(), "Invalid default min-len value");
         assertEquals(120, config.getTimeoutSeconds(), "Invalid default timeout value");
     }
@@ -45,12 +43,9 @@ public class StringsConfigTest {
             tikaConfig = new TikaConfig(stream);
 
         }
-        StringsParser p =
-                (StringsParser) ((CompositeParser) tikaConfig.getParser()).getAllComponentParsers()
-                        .get(0);
+        StringsParser p = (StringsParser) ((CompositeParser) tikaConfig.getParser()).getAllComponentParsers().get(0);
 
-        assertEquals(StringsEncoding.BIGENDIAN_16_BIT, p.getStringsEncoding(),
-                "Invalid overridden encoding value");
+        assertEquals(StringsEncoding.BIGENDIAN_16_BIT, p.getStringsEncoding(), "Invalid overridden encoding value");
         assertEquals(4, p.getMinLength(), "Invalid default min-len value");
         assertEquals(60, p.getTimeoutSeconds(), "Invalid overridden timeout value");
     }
@@ -63,11 +58,8 @@ public class StringsConfigTest {
             tikaConfig = new TikaConfig(stream);
 
         }
-        StringsParser p =
-                (StringsParser) ((CompositeParser) tikaConfig.getParser()).getAllComponentParsers()
-                        .get(0);
-        assertEquals(StringsEncoding.BIGENDIAN_16_BIT, p.getStringsEncoding(),
-                "Invalid overridden encoding value");
+        StringsParser p = (StringsParser) ((CompositeParser) tikaConfig.getParser()).getAllComponentParsers().get(0);
+        assertEquals(StringsEncoding.BIGENDIAN_16_BIT, p.getStringsEncoding(), "Invalid overridden encoding value");
         assertEquals(3, p.getMinLength(), "Invalid overridden min-len value");
         assertEquals(60, p.getTimeoutSeconds(), "Invalid overridden timeout value");
 

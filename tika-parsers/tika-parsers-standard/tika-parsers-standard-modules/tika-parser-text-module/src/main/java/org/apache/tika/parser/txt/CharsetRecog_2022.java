@@ -1,10 +1,18 @@
-// © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
 /*
- *******************************************************************************
- * Copyright (C) 2005 - 2012, International Business Machines Corporation and  *
- * others. All Rights Reserved.                                                *
- *******************************************************************************
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.apache.tika.parser.txt;
 
@@ -17,7 +25,6 @@ package org.apache.tika.parser.txt;
  * The separate classes are nested within this class.
  */
 abstract class CharsetRecog_2022 extends CharsetRecognizer {
-
 
     /**
      * Matching function shared among the 2022 detectors JP, CN and KR
@@ -37,11 +44,9 @@ abstract class CharsetRecog_2022 extends CharsetRecognizer {
         int misses = 0;
         int shifts = 0;
         int quality;
-        scanInput:
-        for (i = 0; i < textLen; i++) {
+        scanInput : for (i = 0; i < textLen; i++) {
             if (text[i] == 0x1b) {
-                checkEscapes:
-                for (escN = 0; escN < escapeSequences.length; escN++) {
+                checkEscapes : for (escN = 0; escN < escapeSequences.length; escN++) {
                     byte[] seq = escapeSequences[escN];
 
                     if ((textLen - i) < seq.length) {
@@ -93,20 +98,19 @@ abstract class CharsetRecog_2022 extends CharsetRecognizer {
         return quality;
     }
 
-
     static class CharsetRecog_2022JP extends CharsetRecog_2022 {
-        private byte[][] escapeSequences = {{0x1b, 0x24, 0x28, 0x43},   // KS X 1001:1992
-                {0x1b, 0x24, 0x28, 0x44},   // JIS X 212-1990
-                {0x1b, 0x24, 0x40},         // JIS C 6226-1978
-                {0x1b, 0x24, 0x41},         // GB 2312-80
-                {0x1b, 0x24, 0x42},         // JIS X 208-1983
-                {0x1b, 0x26, 0x40},         // JIS X 208 1990, 1997
-                {0x1b, 0x28, 0x42},         // ASCII
-                {0x1b, 0x28, 0x48},         // JIS-Roman
-                {0x1b, 0x28, 0x49},         // Half-width katakana
-                {0x1b, 0x28, 0x4a},         // JIS-Roman
-                {0x1b, 0x2e, 0x41},         // ISO 8859-1
-                {0x1b, 0x2e, 0x46}          // ISO 8859-7
+        private byte[][] escapeSequences = {{0x1b, 0x24, 0x28, 0x43}, // KS X 1001:1992
+                {0x1b, 0x24, 0x28, 0x44}, // JIS X 212-1990
+                {0x1b, 0x24, 0x40}, // JIS C 6226-1978
+                {0x1b, 0x24, 0x41}, // GB 2312-80
+                {0x1b, 0x24, 0x42}, // JIS X 208-1983
+                {0x1b, 0x26, 0x40}, // JIS X 208 1990, 1997
+                {0x1b, 0x28, 0x42}, // ASCII
+                {0x1b, 0x28, 0x48}, // JIS-Roman
+                {0x1b, 0x28, 0x49}, // Half-width katakana
+                {0x1b, 0x28, 0x4a}, // JIS-Roman
+                {0x1b, 0x2e, 0x41}, // ISO 8859-1
+                {0x1b, 0x2e, 0x46} // ISO 8859-7
         };
 
         String getName() {
@@ -133,17 +137,17 @@ abstract class CharsetRecog_2022 extends CharsetRecognizer {
     }
 
     static class CharsetRecog_2022CN extends CharsetRecog_2022 {
-        private byte[][] escapeSequences = {{0x1b, 0x24, 0x29, 0x41},   // GB 2312-80
-                {0x1b, 0x24, 0x29, 0x47},   // CNS 11643-1992 Plane 1
-                {0x1b, 0x24, 0x2A, 0x48},   // CNS 11643-1992 Plane 2
-                {0x1b, 0x24, 0x29, 0x45},   // ISO-IR-165
-                {0x1b, 0x24, 0x2B, 0x49},   // CNS 11643-1992 Plane 3
-                {0x1b, 0x24, 0x2B, 0x4A},   // CNS 11643-1992 Plane 4
-                {0x1b, 0x24, 0x2B, 0x4B},   // CNS 11643-1992 Plane 5
-                {0x1b, 0x24, 0x2B, 0x4C},   // CNS 11643-1992 Plane 6
-                {0x1b, 0x24, 0x2B, 0x4D},   // CNS 11643-1992 Plane 7
-                {0x1b, 0x4e},               // SS2
-                {0x1b, 0x4f},               // SS3
+        private byte[][] escapeSequences = {{0x1b, 0x24, 0x29, 0x41}, // GB 2312-80
+                {0x1b, 0x24, 0x29, 0x47}, // CNS 11643-1992 Plane 1
+                {0x1b, 0x24, 0x2A, 0x48}, // CNS 11643-1992 Plane 2
+                {0x1b, 0x24, 0x29, 0x45}, // ISO-IR-165
+                {0x1b, 0x24, 0x2B, 0x49}, // CNS 11643-1992 Plane 3
+                {0x1b, 0x24, 0x2B, 0x4A}, // CNS 11643-1992 Plane 4
+                {0x1b, 0x24, 0x2B, 0x4B}, // CNS 11643-1992 Plane 5
+                {0x1b, 0x24, 0x2B, 0x4C}, // CNS 11643-1992 Plane 6
+                {0x1b, 0x24, 0x2B, 0x4D}, // CNS 11643-1992 Plane 7
+                {0x1b, 0x4e}, // SS2
+                {0x1b, 0x4f}, // SS3
         };
 
         String getName() {

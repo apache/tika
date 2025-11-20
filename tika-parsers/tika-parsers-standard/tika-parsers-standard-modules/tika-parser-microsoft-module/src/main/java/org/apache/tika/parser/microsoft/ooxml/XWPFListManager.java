@@ -22,14 +22,12 @@ import org.apache.poi.xwpf.usermodel.XWPFAbstractNum;
 import org.apache.poi.xwpf.usermodel.XWPFNum;
 import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.tika.parser.microsoft.AbstractListManager;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTAbstractNum;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTDecimalNumber;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTLvl;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTNum;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTNumLvl;
-
-import org.apache.tika.parser.microsoft.AbstractListManager;
-
 
 public class XWPFListManager extends AbstractListManager {
 
@@ -40,7 +38,7 @@ public class XWPFListManager extends AbstractListManager {
     public final static XWPFListManager EMPTY_LIST = new EmptyListManager();
     private final static boolean OVERRIDE_AVAILABLE;
     private final static String SKIP_FORMAT = Character.toString((char) 61623);
-//if this shows up as the lvlText, don't show a number
+    //if this shows up as the lvlText, don't show a number
 
     static {
         boolean b = false;
@@ -127,7 +125,6 @@ public class XWPFListManager extends AbstractListManager {
         return levelTuples;
     }
 
-
     private ParagraphLevelCounter loadLevelTuples(CTDecimalNumber abNum) {
         //Unfortunately, we need to go this far into the underlying structure
         //to get the abstract num information for the edge case where
@@ -149,7 +146,6 @@ public class XWPFListManager extends AbstractListManager {
         String lvlText = "%" + level + ".";
         String numFmt = "decimal";
 
-
         if (ctLvl != null && ctLvl.getIsLgl() != null) {
             isLegal = true;
         }
@@ -157,8 +153,7 @@ public class XWPFListManager extends AbstractListManager {
         if (ctLvl != null && ctLvl.getNumFmt() != null && ctLvl.getNumFmt().getVal() != null) {
             numFmt = ctLvl.getNumFmt().getVal().toString();
         }
-        if (ctLvl != null && ctLvl.getLvlRestart() != null &&
-                ctLvl.getLvlRestart().getVal() != null) {
+        if (ctLvl != null && ctLvl.getLvlRestart() != null && ctLvl.getLvlRestart().getVal() != null) {
             restart = ctLvl.getLvlRestart().getVal().intValue();
         }
         if (ctLvl != null && ctLvl.getStart() != null && ctLvl.getStart().getVal() != null) {
@@ -169,8 +164,7 @@ public class XWPFListManager extends AbstractListManager {
             //start for a given numFmt.  We should probably try to grab the
             //restartNumberingAfterBreak value in
             //e.g. <w:abstractNum w:abstractNumId="12" w15:restartNumberingAfterBreak="0">???
-            if ("decimal".equals(numFmt) || "ordinal".equals(numFmt) ||
-                    "decimalZero".equals(numFmt)) {
+            if ("decimal".equals(numFmt) || "ordinal".equals(numFmt) || "decimalZero".equals(numFmt)) {
                 start = 0;
             } else {
                 start = 1;
@@ -181,7 +175,6 @@ public class XWPFListManager extends AbstractListManager {
         }
         return new LevelTuple(start, restart, lvlText, numFmt, isLegal);
     }
-
 
     private static class EmptyListManager extends XWPFListManager {
         EmptyListManager() {

@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote;
 
 import org.apache.tika.exception.TikaException;
@@ -68,8 +67,7 @@ class JCID {
      * @return true if is ObjectSpaceObjectPropSet. false otherwise.
      */
     public boolean isObjectSpaceObjectPropSet() {
-        return isPropertySet ||
-                !isBinary && !isGraphNode && !isFileData && !isReadOnly && index > 0;
+        return isPropertySet || !isBinary && !isGraphNode && !isFileData && !isReadOnly && index > 0;
     }
 
     public void loadFrom32BitIndex(long fullIndex) throws TikaException {
@@ -87,10 +85,9 @@ class JCID {
 
     @Override
     public String toString() {
-        return "JCID{" + "jcid=" + JCIDPropertySetTypeEnum.of(jcid) + " (0x" +
-                Long.toHexString(jcid) + ")" + ", index=" + index + ", isBinary=" + isBinary +
-                ", isPropertySet=" + isPropertySet + ", isGraphNode=" + isGraphNode +
-                ", isFileData=" + isFileData + ", isReadOnly=" + isReadOnly + '}';
+        return "JCID{" + "jcid=" + JCIDPropertySetTypeEnum.of(jcid) + " (0x" + Long.toHexString(jcid) + ")" + ", index="
+                + index + ", isBinary=" + isBinary + ", isPropertySet=" + isPropertySet + ", isGraphNode=" + isGraphNode
+                + ", isFileData=" + isFileData + ", isReadOnly=" + isReadOnly + '}';
     }
 
     public long getJcid() {

@@ -21,10 +21,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.tika.exception.TikaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.apache.tika.exception.TikaException;
 
 public class ChmCommons {
 
@@ -63,27 +62,24 @@ public class ChmCommons {
         return win;
     }
 
-    public static byte[] getChmBlockSegment(byte[] data, ChmLzxcResetTable resetTable,
-                                            int blockNumber, int lzxcBlockOffset,
-                                            int lzxcBlockLength) throws TikaException {
-        ChmAssert.assertChmBlockSegment(data, resetTable, blockNumber, lzxcBlockOffset,
-                lzxcBlockLength);
+    public static byte[] getChmBlockSegment(byte[] data, ChmLzxcResetTable resetTable, int blockNumber,
+            int lzxcBlockOffset, int lzxcBlockLength) throws TikaException {
+        ChmAssert.assertChmBlockSegment(data, resetTable, blockNumber, lzxcBlockOffset, lzxcBlockLength);
         int blockLength = -1;
         // TODO add int_max_value checking
         if (blockNumber < (resetTable.getBlockAddress().length - 1)) {
-            blockLength = (int) (resetTable.getBlockAddress()[blockNumber + 1] -
-                    resetTable.getBlockAddress()[blockNumber]);
+            blockLength = (int) (resetTable.getBlockAddress()[blockNumber + 1]
+                    - resetTable.getBlockAddress()[blockNumber]);
         } else {
             /* new code */
             if (blockNumber >= resetTable.getBlockAddress().length) {
                 blockLength = 0;
             } else
-                /* end new code */ {
+            /* end new code */ {
                 blockLength = (int) (lzxcBlockLength - resetTable.getBlockAddress()[blockNumber]);
             }
         }
-        byte[] t = ChmCommons.copyOfRange(data,
-                (int) (lzxcBlockOffset + resetTable.getBlockAddress()[blockNumber]),
+        byte[] t = ChmCommons.copyOfRange(data, (int) (lzxcBlockOffset + resetTable.getBlockAddress()[blockNumber]),
                 (int) (lzxcBlockOffset + resetTable.getBlockAddress()[blockNumber] + blockLength));
         return (t != null) ? t : new byte[1];
     }
@@ -96,64 +92,65 @@ public class ChmCommons {
      */
     public static String getLanguage(long langID) {
         /* Potential problem with casting */
-        switch ((int) langID) {
-            case 1025:
+        switch ((int) langID)
+        {
+            case 1025 :
                 return "Arabic";
-            case 1069:
+            case 1069 :
                 return "Basque";
-            case 1027:
+            case 1027 :
                 return "Catalan";
-            case 2052:
+            case 2052 :
                 return "Chinese (Simplified)";
-            case 1028:
+            case 1028 :
                 return "Chinese (Traditional)";
-            case 1029:
+            case 1029 :
                 return "Czech";
-            case 1030:
+            case 1030 :
                 return "Danish";
-            case 1043:
+            case 1043 :
                 return "Dutch";
-            case 1033:
+            case 1033 :
                 return "English (United States)";
-            case 1035:
+            case 1035 :
                 return "Finnish";
-            case 1036:
+            case 1036 :
                 return "French";
-            case 1031:
+            case 1031 :
                 return "German";
-            case 1032:
+            case 1032 :
                 return "Greek";
-            case 1037:
+            case 1037 :
                 return "Hebrew";
-            case 1038:
+            case 1038 :
                 return "Hungarian";
-            case 1040:
+            case 1040 :
                 return "Italian";
-            case 1041:
+            case 1041 :
                 return "Japanese";
-            case 1042:
+            case 1042 :
                 return "Korean";
-            case 1044:
+            case 1044 :
                 return "Norwegian";
-            case 1045:
+            case 1045 :
                 return "Polish";
-            case 2070:
+            case 2070 :
                 return "Portuguese";
-            case 1046:
+            case 1046 :
                 return "Portuguese (Brazil)";
-            case 1049:
+            case 1049 :
                 return "Russian";
-            case 1051:
+            case 1051 :
                 return "Slovakian";
-            case 1060:
+            case 1060 :
                 return "Slovenian";
-            case 3082:
+            case 3082 :
                 return "Spanish";
-            case 1053:
+            case 1053 :
                 return "Swedish";
-            case 1055:
+            case 1055 :
                 return "Turkish";
-            default:
+            default :
                 return "unknown - http://msdn.microsoft.com/en-us/library/bb165625%28VS.80%29.aspx";
         }
     }
@@ -220,8 +217,7 @@ public class ChmCommons {
      * @return index of the reset table
      * @throws ChmParsingException
      */
-    public static final int indexOfResetTableBlock(byte[] text, byte[] pattern)
-            throws ChmParsingException {
+    public static final int indexOfResetTableBlock(byte[] text, byte[] pattern) throws ChmParsingException {
         return (indexOfDataSpaceStorageElement(text, pattern)) - 4;
     }
 
@@ -291,8 +287,8 @@ public class ChmCommons {
     public static int indexOfDataSpaceStorageElement(List<DirectoryListingEntry> list, String pattern) {
         int place = 0;
         for (DirectoryListingEntry directoryListingEntry : list) {
-            if (directoryListingEntry.getName().startsWith("::DataSpace/Storage") &&
-                    directoryListingEntry.getName().contains(pattern)) {
+            if (directoryListingEntry.getName().startsWith("::DataSpace/Storage")
+                    && directoryListingEntry.getName().contains(pattern)) {
                 return place;
             }
             ++place;

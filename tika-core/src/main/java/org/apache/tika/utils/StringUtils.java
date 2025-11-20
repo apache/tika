@@ -98,7 +98,6 @@ public class StringUtils {
         }
     }
 
-
     public static String leftPad(final String str, final int size, final char padChar) {
         if (str == null) {
             return null;
@@ -185,10 +184,11 @@ public class StringUtils {
         }
 
         final int outputLength = inputLength * repeat;
-        switch (inputLength) {
-            case 1:
+        switch (inputLength)
+        {
+            case 1 :
                 return repeat(str.charAt(0), repeat);
-            case 2:
+            case 2 :
                 final char ch0 = str.charAt(0);
                 final char ch1 = str.charAt(1);
                 final char[] output2 = new char[outputLength];
@@ -197,7 +197,7 @@ public class StringUtils {
                     output2[i + 1] = ch1;
                 }
                 return new String(output2);
-            default:
+            default :
                 final StringBuilder buf = new StringBuilder(outputLength);
                 for (int i = 0; i < repeat; i++) {
                     buf.append(str);
@@ -205,7 +205,6 @@ public class StringUtils {
                 return buf.toString();
         }
     }
-
 
     public static String joinWith(String delimiter, List<String> lines) {
         if (lines.size() == 0) {

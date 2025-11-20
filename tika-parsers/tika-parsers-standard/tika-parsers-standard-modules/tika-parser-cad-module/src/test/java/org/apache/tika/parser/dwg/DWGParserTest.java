@@ -16,8 +16,6 @@
  */
 package org.apache.tika.parser.dwg;
 
-
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -30,10 +28,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
@@ -44,9 +38,12 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.utils.StringUtils;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class DWGParserTest extends TikaTest {
-    public boolean canRun(DWGParser parser)  {
+    public boolean canRun(DWGParser parser) {
         String dwgRead = parser.getDwgReadExecutable();
 
         if (!StringUtils.isBlank(dwgRead) && !Files.isRegularFile(Paths.get(dwgRead))) {
@@ -54,50 +51,44 @@ public class DWGParserTest extends TikaTest {
         }
 
         // Try running DWGRead from there, and see if it exists + works
-        String[] checkCmd = { dwgRead };
+        String[] checkCmd = {dwgRead};
         return ExternalParser.check(checkCmd);
 
     }
     @Test
     public void testDWG2000Parser() throws Exception {
-        InputStream input =
-                DWGParserTest.class.getResourceAsStream("/test-documents/testDWG2000.dwg");
+        InputStream input = DWGParserTest.class.getResourceAsStream("/test-documents/testDWG2000.dwg");
         testParserAlt(input);
     }
 
     @Test
     public void testDWG2004Parser() throws Exception {
-        InputStream input =
-                DWGParserTest.class.getResourceAsStream("/test-documents/testDWG2004.dwg");
+        InputStream input = DWGParserTest.class.getResourceAsStream("/test-documents/testDWG2004.dwg");
         testParser(input);
     }
 
     @Test
     public void testDWG2004ParserNoHeaderAddress() throws Exception {
-        InputStream input = DWGParserTest.class
-                .getResourceAsStream("/test-documents/testDWG2004_no_header.dwg");
+        InputStream input = DWGParserTest.class.getResourceAsStream("/test-documents/testDWG2004_no_header.dwg");
         testParserNoHeader(input);
     }
 
     @Test
     public void testDWG2007Parser() throws Exception {
-        InputStream input =
-                DWGParserTest.class.getResourceAsStream("/test-documents/testDWG2007.dwg");
+        InputStream input = DWGParserTest.class.getResourceAsStream("/test-documents/testDWG2007.dwg");
         testParser(input);
     }
 
     @Test
     public void testDWG2010Parser() throws Exception {
-        InputStream input =
-                DWGParserTest.class.getResourceAsStream("/test-documents/testDWG2010.dwg");
+        InputStream input = DWGParserTest.class.getResourceAsStream("/test-documents/testDWG2010.dwg");
         testParser(input);
     }
 
     @Test
     public void testDWG2010CustomPropertiesParser() throws Exception {
         // Check that standard parsing works
-        InputStream testInput = DWGParserTest.class
-                .getResourceAsStream("/test-documents/testDWG2010_custom_props.dwg");
+        InputStream testInput = DWGParserTest.class.getResourceAsStream("/test-documents/testDWG2010_custom_props.dwg");
         testParser(testInput);
 
         // Check that custom properties with alternate padding work
@@ -105,43 +96,34 @@ public class DWGParserTest extends TikaTest {
                 .getResourceAsStream("/test-documents/testDWG2010_custom_props.dwg")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new DWGParser().parse(input, handler, metadata,new ParseContext());
+            new DWGParser().parse(input, handler, metadata, new ParseContext());
 
-            assertEquals("valueforcustomprop1",
-                    metadata.get(DWGParser.DWG_CUSTOM_META_PREFIX + "customprop1"));
-            assertEquals("valueforcustomprop2",
-                    metadata.get(DWGParser.DWG_CUSTOM_META_PREFIX + "customprop2"));
+            assertEquals("valueforcustomprop1", metadata.get(DWGParser.DWG_CUSTOM_META_PREFIX + "customprop1"));
+            assertEquals("valueforcustomprop2", metadata.get(DWGParser.DWG_CUSTOM_META_PREFIX + "customprop2"));
         }
     }
 
     @Test
     public void testDWGMechParser() throws Exception {
-        String[] types =
-                new String[]{"6", "2004", "2004DX", "2005", "2006", "2007", "2008", "2009", "2010",
-                        "2011"};
+        String[] types = new String[]{"6", "2004", "2004DX", "2005", "2006", "2007", "2008", "2009", "2010", "2011"};
         for (String type : types) {
-            InputStream input = DWGParserTest.class
-                    .getResourceAsStream("/test-documents/testDWGmech" + type + ".dwg");
+            InputStream input = DWGParserTest.class.getResourceAsStream("/test-documents/testDWGmech" + type + ".dwg");
             testParserAlt(input);
         }
     }
-
 
     private void testParser(InputStream input) throws Exception {
         try {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new DWGParser().parse(input, handler, metadata,new ParseContext());
+            new DWGParser().parse(input, handler, metadata, new ParseContext());
 
             assertEquals("image/vnd.dwg", metadata.get(Metadata.CONTENT_TYPE));
 
-            assertEquals("The quick brown fox jumps over the lazy dog",
-                    metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("Gym class featuring a brown fox and lazy dog",
-                    metadata.get(TikaCoreProperties.DESCRIPTION));
+            assertEquals("The quick brown fox jumps over the lazy dog", metadata.get(TikaCoreProperties.TITLE));
+            assertEquals("Gym class featuring a brown fox and lazy dog", metadata.get(TikaCoreProperties.DESCRIPTION));
             assertEquals("Nevin Nollop", metadata.get(TikaCoreProperties.CREATOR));
-            assertContains("Pangram, fox, dog",
-                    Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
+            assertContains("Pangram, fox, dog", Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
             assertEquals("Lorem ipsum", metadata.get(TikaCoreProperties.COMMENTS).substring(0, 11));
             assertEquals("http://www.alfresco.com", metadata.get(TikaCoreProperties.RELATION));
 
@@ -154,12 +136,11 @@ public class DWGParserTest extends TikaTest {
         }
     }
 
-
     private void testParserNoHeader(InputStream input) throws Exception {
         try {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new DWGParser().parse(input, handler, metadata,new ParseContext());
+            new DWGParser().parse(input, handler, metadata, new ParseContext());
 
             assertEquals("image/vnd.dwg", metadata.get(Metadata.CONTENT_TYPE));
 
@@ -192,8 +173,7 @@ public class DWGParserTest extends TikaTest {
             assertEquals("This is a comment", metadata.get(TikaCoreProperties.COMMENTS));
             assertEquals("bejanpol", metadata.get(TikaCoreProperties.MODIFIER));
             assertEquals("http://mycompany/drawings", metadata.get(TikaCoreProperties.RELATION));
-            assertEquals("MyCustomPropertyValue",
-                    metadata.get(DWGParser.DWG_CUSTOM_META_PREFIX + "MyCustomProperty"));
+            assertEquals("MyCustomPropertyValue", metadata.get(DWGParser.DWG_CUSTOM_META_PREFIX + "MyCustomProperty"));
 
             String content = handler.toString();
             assertContains("This is a comment", content);
@@ -219,26 +199,23 @@ public class DWGParserTest extends TikaTest {
     public void testDWGReadexe() throws Exception {
 
         InputStream stream = getResourceAsStream("/test-configs/tika-config-dwgRead.xml");
-        DWGParser parser =
-                (DWGParser) ((CompositeParser) new TikaConfig(stream).getParser())
-                        .getAllComponentParsers().get(0);
+        DWGParser parser = (DWGParser) ((CompositeParser) new TikaConfig(stream).getParser()).getAllComponentParsers()
+                .get(0);
         assumeTrue(canRun(parser), "Can't run DWGRead.exe");
         String output = getText("architectural_-_annotation_scaling_and_multileaders.dwg", parser);
-        assertContains("ELEV. 11'-9\" TOP OF SECOND FLR.",output);
+        assertContains("ELEV. 11'-9\" TOP OF SECOND FLR.", output);
     }
 
     @Test
     public void testDWGReadtimeout() throws TikaException, IOException, SAXException {
 
         InputStream stream = getResourceAsStream("/test-configs/tika-config-dwgRead-Timeout.xml");
-        DWGParser parser = (DWGParser) ((CompositeParser) new TikaConfig(stream).getParser())
-                    .getAllComponentParsers().get(0);
+        DWGParser parser = (DWGParser) ((CompositeParser) new TikaConfig(stream).getParser()).getAllComponentParsers()
+                .get(0);
         assumeTrue(canRun(parser), "Can't run DWGRead.exe");
-        TikaException thrown = assertThrows(
-                TikaException.class,
+        TikaException thrown = assertThrows(TikaException.class,
                 () -> getText("architectural_-_annotation_scaling_and_multileaders.dwg", parser),
-                "Expected getText() to throw TikaException but it failed"
-        );
+                "Expected getText() to throw TikaException but it failed");
         assertTrue(thrown.getMessage().contains("Timeout setting exceeded current setting of"));
     }
 

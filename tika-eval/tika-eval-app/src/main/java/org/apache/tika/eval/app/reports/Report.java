@@ -142,30 +142,32 @@ public class Report {
     }
 
     private XSLXCellFormatter getDefaultFormatter(int columnType) {
-        switch (columnType) {
-            case Types.INTEGER:
+        switch (columnType)
+        {
+            case Types.INTEGER :
                 return defaultIntegerFormatter;
-            case Types.DOUBLE:
-            case Types.FLOAT:
-            case Types.DECIMAL:
+            case Types.DOUBLE :
+            case Types.FLOAT :
+            case Types.DECIMAL :
                 return defaultDoubleFormatter;
-            default:
+            default :
                 return null;
         }
     }
 
     private void writeCell(ResultSetMetaData meta, int colIndex, ResultSet rs, Cell cell) throws SQLException {
 
-        switch (meta.getColumnType(colIndex)) {
+        switch (meta.getColumnType(colIndex))
+        {
             //fall through on numerics
-            case Types.BIGINT:
-            case Types.SMALLINT:
-            case Types.INTEGER:
-            case Types.DOUBLE:
-            case Types.FLOAT:
-            case Types.DECIMAL:
-            case Types.REAL:
-            case Types.NUMERIC:
+            case Types.BIGINT :
+            case Types.SMALLINT :
+            case Types.INTEGER :
+            case Types.DOUBLE :
+            case Types.FLOAT :
+            case Types.DECIMAL :
+            case Types.REAL :
+            case Types.NUMERIC :
                 double dbl = rs.getDouble(colIndex);
                 if (rs.wasNull()) {
                     cell.setCellValue(NULL_VALUE);
@@ -174,10 +176,10 @@ public class Report {
                 }
                 break;
             //fall through strings
-            case Types.BOOLEAN:
-            case Types.CHAR:
-            case Types.VARCHAR:
-            case Types.LONGNVARCHAR:
+            case Types.BOOLEAN :
+            case Types.CHAR :
+            case Types.VARCHAR :
+            case Types.LONGNVARCHAR :
                 String val = rs.getString(colIndex);
                 if (rs.wasNull()) {
                     cell.setCellValue(NULL_VALUE);
@@ -185,7 +187,7 @@ public class Report {
                     cell.setCellValue(val);
                 }
                 break;
-            default:
+            default :
                 if (rs.wasNull()) {
                     cell.setCellValue(NULL_VALUE);
                 } else {

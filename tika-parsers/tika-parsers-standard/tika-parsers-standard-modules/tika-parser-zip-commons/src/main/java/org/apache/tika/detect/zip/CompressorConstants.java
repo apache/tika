@@ -17,7 +17,6 @@
 package org.apache.tika.detect.zip;
 
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
-
 import org.apache.tika.mime.MediaType;
 
 public class CompressorConstants {
@@ -25,7 +24,6 @@ public class CompressorConstants {
     public static final MediaType BROTLI = MediaType.application("x-brotli");
     public static final MediaType LZ4_BLOCK = MediaType.application("x-lz4-block");
     public static final MediaType SNAPPY_RAW = MediaType.application("x-snappy-raw");
-
 
     public static final MediaType BZIP = MediaType.application("x-bzip");
     public static final MediaType BZIP2 = MediaType.application("x-bzip2");

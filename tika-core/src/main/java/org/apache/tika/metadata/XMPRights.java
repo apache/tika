@@ -13,10 +13,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * IPTC Metadata Descriptions taken from the IPTC Photo Metadata (July 2010)
- * standard. These parts Copyright 2010 International Press Telecommunications
- * Council.
  */
 package org.apache.tika.metadata;
 

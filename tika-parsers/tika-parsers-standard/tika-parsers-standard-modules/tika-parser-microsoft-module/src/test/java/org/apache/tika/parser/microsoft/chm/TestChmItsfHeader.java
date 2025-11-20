@@ -36,8 +36,7 @@ public class TestChmItsfHeader {
         byte[] data = TestParameters.chmData;
         // chmItsfHeader.parse(Arrays.copyOfRange(data, 0,
         // ChmConstants.CHM_ITSF_V3_LEN - 1), chmItsfHeader);
-        chmItsfHeader.parse(ChmCommons.copyOfRange(data, 0, ChmConstants.CHM_ITSF_V3_LEN - 1),
-                chmItsfHeader);
+        chmItsfHeader.parse(ChmCommons.copyOfRange(data, 0, ChmConstants.CHM_ITSF_V3_LEN - 1), chmItsfHeader);
     }
 
     @Test

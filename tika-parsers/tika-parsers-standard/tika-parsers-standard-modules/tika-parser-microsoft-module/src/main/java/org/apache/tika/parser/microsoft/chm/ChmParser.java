@@ -23,9 +23,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -37,6 +34,8 @@ import org.apache.tika.parser.html.JSoupParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class ChmParser implements Parser {
 
@@ -45,8 +44,8 @@ public class ChmParser implements Parser {
      */
     private static final long serialVersionUID = 5938777307516469802L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(MediaType.application("vnd.ms-htmlhelp"),
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections
+            .unmodifiableSet(new HashSet<>(Arrays.asList(MediaType.application("vnd.ms-htmlhelp"),
                     MediaType.application("chm"), MediaType.application("x-chm"))));
 
     @Override
@@ -55,8 +54,8 @@ public class ChmParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         ChmExtractor chmExtractor = new ChmExtractor(stream);
 
         // metadata
@@ -66,34 +65,31 @@ public class ChmParser implements Parser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
-        Parser htmlParser =
-                EmbeddedDocumentUtil.tryToFindExistingLeafParser(JSoupParser.class, context);
+        Parser htmlParser = EmbeddedDocumentUtil.tryToFindExistingLeafParser(JSoupParser.class, context);
         if (htmlParser == null) {
             htmlParser = new JSoupParser();
         }
 
-        for (DirectoryListingEntry entry : chmExtractor.getChmDirList()
-                .getDirectoryListingEntryList()) {
+        for (DirectoryListingEntry entry : chmExtractor.getChmDirList().getDirectoryListingEntryList()) {
             final String entryName = entry.getName();
             if (entryName.endsWith(".html") || entryName.endsWith(".htm")) {
-//                AttributesImpl attrs = new AttributesImpl();
-//                attrs.addAttribute("", "name", "name", "String", entryName);
-//                xhtml.startElement("", "document", "document", attrs);
+                //                AttributesImpl attrs = new AttributesImpl();
+                //                attrs.addAttribute("", "name", "name", "String", entryName);
+                //                xhtml.startElement("", "document", "document", attrs);
 
                 byte[] data = chmExtractor.extractChmEntry(entry);
 
                 parsePage(data, htmlParser, xhtml, context);
 
-//                xhtml.endElement("", "", "document");
+                //                xhtml.endElement("", "", "document");
             }
         }
 
         xhtml.endDocument();
     }
 
-
-    private void parsePage(byte[] byteObject, Parser htmlParser, ContentHandler xhtml,
-                           ParseContext context) throws TikaException, IOException, SAXException { // throws IOException
+    private void parsePage(byte[] byteObject, Parser htmlParser, ContentHandler xhtml, ParseContext context)
+            throws TikaException, IOException, SAXException { // throws IOException
         Metadata metadata = new Metadata();
         ContentHandler handler = new EmbeddedContentHandler(new BodyContentHandler(xhtml));// -1
         try (TikaInputStream tis = TikaInputStream.get(byteObject)) {

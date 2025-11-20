@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.html;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -28,12 +27,11 @@ import java.io.SequenceInputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.html.charsetdetector.StandardHtmlEncodingDetector;
 import org.apache.tika.parser.html.charsetdetector.charsets.ReplacementCharset;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class StandardHtmlEncodingDetectorTest {
     private Metadata metadata = new Metadata();
@@ -75,11 +73,10 @@ public class StandardHtmlEncodingDetectorTest {
 
     @Test
     public void httpEquiv() throws IOException {
-        assertWindows1252("<meta " + "http-equiv='content-type' " +
-                "content='text/html; charset=\"WINDOWS-1252\"'>"); // quotes around the
+        assertWindows1252("<meta " + "http-equiv='content-type' " + "content='text/html; charset=\"WINDOWS-1252\"'>"); // quotes around the
         // charset are allowed
         assertWindows1252("<meta " + "content=' charset  =  WINDOWS-1252' " +
-                // The charset may be anywhere in the content attribute
+        // The charset may be anywhere in the content attribute
                 "http-equiv='content-type' >");
     }
 
@@ -90,10 +87,9 @@ public class StandardHtmlEncodingDetectorTest {
 
     @Test
     public void httpEquivDuplicateCharset() throws IOException {
-        assertWindows1252(
-                "<meta " + "http-equiv='content-type' " + "content='charset=WINDOWS-1252;" +
-                        // The detection should stop after the semicolon
-                        "charset=UTF-8'>");
+        assertWindows1252("<meta " + "http-equiv='content-type' " + "content='charset=WINDOWS-1252;" +
+        // The detection should stop after the semicolon
+                "charset=UTF-8'>");
     }
 
     @Test
@@ -104,8 +100,8 @@ public class StandardHtmlEncodingDetectorTest {
     @Test
     public void veryBadHtml() throws IOException {
         // check that the parser is not confused by garbage before the declaration
-        assertWindows1252("<< l \" == / '=x\n >" + "<!--> " + "< <x'/ <=> " + "<meta/>" + "<meta>" +
-                "<a x/>" + "<meta charset='WINDOWS-1252'>");
+        assertWindows1252("<< l \" == / '=x\n >" + "<!--> " + "< <x'/ <=> " + "<meta/>" + "<meta>" + "<a x/>"
+                + "<meta charset='WINDOWS-1252'>");
     }
 
     @Test
@@ -121,7 +117,8 @@ public class StandardHtmlEncodingDetectorTest {
         String repeated = "<meta x='y' />\n";
         String charsetMeta = "<meta charset='windows-1252'>";
 
-        while (sb.length() + repeated.length() + charsetMeta.length() < 1024) sb.append(repeated);
+        while (sb.length() + repeated.length() + charsetMeta.length() < 1024)
+            sb.append(repeated);
 
         sb.append(charsetMeta);
 
@@ -131,8 +128,7 @@ public class StandardHtmlEncodingDetectorTest {
     @Test
     public void tooLong() throws IOException {
         // Create a string with 1Mb of '\0' followed by a meta
-        String padded = new String(new byte[1000000], StandardCharsets.ISO_8859_1) +
-                "<meta charset='windows-1252'>";
+        String padded = new String(new byte[1000000], StandardCharsets.ISO_8859_1) + "<meta charset='windows-1252'>";
         // Only the first bytes should be prescanned, so the algorithm should stop before
         // the meta tag
         assertCharset(padded, null);
@@ -202,9 +198,9 @@ public class StandardHtmlEncodingDetectorTest {
 
     @Test
     public void insideDescription() throws IOException {
-        assertWindows1252("<meta name='description'" +
-                "content='If I write charset=UTF-8 here, it doesnt mean the page is in UTF-8'/>" +
-                "<meta charset='WINDOWS-1252'>");
+        assertWindows1252("<meta name='description'"
+                + "content='If I write charset=UTF-8 here, it doesnt mean the page is in UTF-8'/>"
+                + "<meta charset='WINDOWS-1252'>");
     }
 
     @Test
@@ -249,29 +245,25 @@ public class StandardHtmlEncodingDetectorTest {
     @Test
     public void unmatchedQuote() throws IOException {
         assertWindows1252("<meta http-equiv='content-type' content='charset=\"UTF-8'>" +
-                // invalid charset declaration
+        // invalid charset declaration
                 "<meta charset='WINDOWS-1252'>" // real charset declaration
         );
     }
 
     @Test
     public void realWorld() throws IOException {
-        assertWindows1252("<!DOCTYPE html>\n" + "<html lang=\"fr\">\n" + "<head>\n" +
-                "<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\n" +
-                "\t\t\tnew Date().getTime(),event:'gtm.js'});var " +
-                "f=d.getElementsByTagName(s)[0],\n" +
-                "\t\t\tj=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\n" +
-                "\t\t\t'https://www.googletagmanager.com/gtm.js?id='+i+dl;" +
-                "f.parentNode.insertBefore(j,f);\n" +
-                "\t\t\t})(window,document,'script','dataLayer','GTM-PNX8H8X');</script>\n" +
-                "<title>Horaires Transilien 2018 - Lignes A B C D E H J K L N P R U</title>\n" +
-                "<meta name=\"description\" content=\"Consultez les horaires du Transilien en " +
-                "temps réel. Lignes A et B du RER. Lignes C " +
-                "D E H J K L N P R U du Transilien.\">\n" +
-                "<meta name=\"keywords\" content=\"horaires transilien\">\n" +
-                "<meta charset=\"windows-1252\">\n" +
-                "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
-                "<meta name=\"robots\" content=\"follow, index\">\n" + "<base hr");
+        assertWindows1252("<!DOCTYPE html>\n" + "<html lang=\"fr\">\n" + "<head>\n"
+                + "<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\n"
+                + "\t\t\tnew Date().getTime(),event:'gtm.js'});var " + "f=d.getElementsByTagName(s)[0],\n"
+                + "\t\t\tj=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\n"
+                + "\t\t\t'https://www.googletagmanager.com/gtm.js?id='+i+dl;" + "f.parentNode.insertBefore(j,f);\n"
+                + "\t\t\t})(window,document,'script','dataLayer','GTM-PNX8H8X');</script>\n"
+                + "<title>Horaires Transilien 2018 - Lignes A B C D E H J K L N P R U</title>\n"
+                + "<meta name=\"description\" content=\"Consultez les horaires du Transilien en "
+                + "temps réel. Lignes A et B du RER. Lignes C " + "D E H J K L N P R U du Transilien.\">\n"
+                + "<meta name=\"keywords\" content=\"horaires transilien\">\n" + "<meta charset=\"windows-1252\">\n"
+                + "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
+                + "<meta name=\"robots\" content=\"follow, index\">\n" + "<base hr");
     }
 
     @Test
@@ -346,8 +338,7 @@ public class StandardHtmlEncodingDetectorTest {
         final Charset contentsCharset = (charset == null) ? StandardCharsets.UTF_8 : charset;
         InputStream inStream = new ByteArrayInputStream(html.getBytes(contentsCharset));
         final Charset detected = detectCharset(inStream);
-        assertEquals(charset, detected,
-                html + " should be detected as " + charset);
+        assertEquals(charset, detected, html + " should be detected as " + charset);
     }
 
     private void assertCharset(InputStream inStream, Charset charset) throws IOException {

@@ -19,6 +19,7 @@ package org.apache.tika.detect;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+
 import javax.imageio.spi.ServiceRegistry;
 
 import org.apache.tika.config.ServiceLoader;
@@ -46,7 +47,7 @@ public class DefaultDetector extends CompositeDetector {
     private transient final ServiceLoader loader;
 
     public DefaultDetector(MimeTypes types, ServiceLoader loader,
-                           Collection<Class<? extends Detector>> excludeDetectors) {
+            Collection<Class<? extends Detector>> excludeDetectors) {
         super(types.getMediaTypeRegistry(), getDefaultDetectors(types, loader, excludeDetectors));
         this.loader = loader;
     }
@@ -84,10 +85,8 @@ public class DefaultDetector extends CompositeDetector {
      * @return ordered list of statically loadable detectors
      */
     private static List<Detector> getDefaultDetectors(MimeTypes types, ServiceLoader loader,
-                                                      Collection<Class<? extends Detector>>
-                                                              excludeDetectors) {
-        List<Detector> detectors =
-                loader.loadStaticServiceProviders(Detector.class, excludeDetectors);
+            Collection<Class<? extends Detector>> excludeDetectors) {
+        List<Detector> detectors = loader.loadStaticServiceProviders(Detector.class, excludeDetectors);
 
         ServiceLoaderUtils.sortLoadedClasses(detectors);
         //look for the override index and put that first

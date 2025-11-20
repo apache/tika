@@ -14,15 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.mailcommons;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
+import org.junit.jupiter.api.Test;
 
 public class MailUtilTest {
 
@@ -44,13 +42,9 @@ public class MailUtilTest {
 
     private void assertExtracted(String person, String email, String string) {
         Metadata m = new Metadata();
-        MailUtil.setPersonAndEmail(string, Message.MESSAGE_FROM_NAME, Message.MESSAGE_FROM_EMAIL,
-                m);
-        assertEquals(person, m.get(Message.MESSAGE_FROM_NAME),
-                person + " : " + m.get(Message.MESSAGE_FROM_NAME));
-        assertEquals(email, m.get(Message.MESSAGE_FROM_EMAIL),
-                email + " : " + m.get(Message.MESSAGE_FROM_EMAIL));
+        MailUtil.setPersonAndEmail(string, Message.MESSAGE_FROM_NAME, Message.MESSAGE_FROM_EMAIL, m);
+        assertEquals(person, m.get(Message.MESSAGE_FROM_NAME), person + " : " + m.get(Message.MESSAGE_FROM_NAME));
+        assertEquals(email, m.get(Message.MESSAGE_FROM_EMAIL), email + " : " + m.get(Message.MESSAGE_FROM_EMAIL));
     }
-
 
 }

@@ -14,16 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.sax;
 
 import java.io.InputStream;
 
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test class for the {@link org.apache.tika.sax.PhoneExtractingContentHandler}
@@ -42,10 +40,8 @@ public class PhoneExtractingContentHandlerTest extends TikaTest {
         // The PhoneExtractingContentHandler will examine any characters for phone numbers
         // before passing them
         // to the underlying Handler.
-        PhoneExtractingContentHandler handler =
-                new PhoneExtractingContentHandler(new BodyContentHandler(), metadata);
-        try (InputStream stream = getResourceAsStream(
-                "/test-documents/testPhoneNumberExtractor.odt")) {
+        PhoneExtractingContentHandler handler = new PhoneExtractingContentHandler(new BodyContentHandler(), metadata);
+        try (InputStream stream = getResourceAsStream("/test-documents/testPhoneNumberExtractor.odt")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
         String[] phoneNumbers = metadata.getValues("phonenumbers");

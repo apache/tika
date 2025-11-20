@@ -30,6 +30,7 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
+
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
 import javax.crypto.NoSuchPaddingException;
@@ -47,10 +48,6 @@ import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.util.LittleEndian;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
@@ -60,11 +57,13 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
 
 public class HwpTextExtractorV5 implements Serializable {
     private static final long serialVersionUID = 1L;
-    private static final byte[] HWP_V5_SIGNATURE =
-            "HWP Document File".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] HWP_V5_SIGNATURE = "HWP Document File".getBytes(StandardCharsets.US_ASCII);
     private static final int HWPTAG_BEGIN = 0x010;
     private static final int MAX_TAG_LENGTH = 50 * 1024 * 1024;
     private static final int I = 1; // INLINE
@@ -101,8 +100,7 @@ public class HwpTextExtractorV5 implements Serializable {
             extract0(root, metadata, xhtml);
 
         } catch (IOException e) {
-            throw new TikaException(
-                    "error occurred when parsing HWP Format, It may not HWP Format.", e);
+            throw new TikaException("error occurred when parsing HWP Format, It may not HWP Format.", e);
         } finally {
             IOUtils.closeQuietly(fs);
         }
@@ -136,8 +134,7 @@ public class HwpTextExtractorV5 implements Serializable {
 
     }
 
-    private void parseSummaryInformation(DirectoryNode root, Metadata metadata)
-            throws TikaException {
+    private void parseSummaryInformation(DirectoryNode root, Metadata metadata) throws TikaException {
 
         try {
             Entry summaryEntry = root.getEntry("\u0005HwpSummaryInformation");
@@ -163,35 +160,36 @@ public class HwpTextExtractorV5 implements Serializable {
             int propID = (int) prop.getID();
             Object value = prop.getValue();
 
-            switch (propID) {
-                case 2:
+            switch (propID)
+            {
+                case 2 :
                     metadata.set(TikaCoreProperties.TITLE, (String) value);
                     break;
-                case 3:
+                case 3 :
                     metadata.set(OfficeOpenXMLCore.SUBJECT, (String) value);
                     break;
-                case 4:
+                case 4 :
                     metadata.set(TikaCoreProperties.CREATOR, (String) value);
                     break;
-                case 5:
+                case 5 :
                     metadata.set(Office.KEYWORDS, (String) value);
                     break;
-                case 6:
+                case 6 :
                     metadata.set(TikaCoreProperties.COMMENTS, (String) value);
                     break;
-                case 8:
+                case 8 :
                     metadata.set(TikaCoreProperties.MODIFIER, (String) value);
                     break;
-                case 12:
+                case 12 :
                     metadata.set(TikaCoreProperties.CREATED, (Date) value);
                     break;
-                case 13:
+                case 13 :
                     metadata.set(TikaCoreProperties.MODIFIED, (Date) value);
                     break;
-                case 14:
+                case 14 :
                     metadata.set(Office.PAGE_COUNT, (int) value);
                     break;
-                default:
+                default :
             }
         }
     }
@@ -207,11 +205,10 @@ public class HwpTextExtractorV5 implements Serializable {
         // confirm signature
         byte[] header = new byte[256]; // the length of File header is 256
 
-        try (DocumentInputStream headerStream = new DocumentInputStream(
-                (DocumentEntry) headerEntry)) {
+        try (DocumentInputStream headerStream = new DocumentInputStream((DocumentEntry) headerEntry)) {
             int read = headerStream.read(header);
-            if (read != 256 || !Arrays.equals(HWP_V5_SIGNATURE,
-                    Arrays.copyOfRange(header, 0, HWP_V5_SIGNATURE.length))) {
+            if (read != 256
+                    || !Arrays.equals(HWP_V5_SIGNATURE, Arrays.copyOfRange(header, 0, HWP_V5_SIGNATURE.length))) {
                 return null;
             }
         }
@@ -390,7 +387,6 @@ public class HwpTextExtractorV5 implements Serializable {
         }
     }
 
-
     /**
      * transfer character stream of HWPTAG_PARA_TEXT to STRING
      *
@@ -399,8 +395,7 @@ public class HwpTextExtractorV5 implements Serializable {
      * @param buf
      * @throws IOException
      */
-    private void writeParaText(HwpStreamReader reader, long datasize, StringBuilder buf)
-            throws IOException {
+    private void writeParaText(HwpStreamReader reader, long datasize, StringBuilder buf) throws IOException {
         //datasize is bounds checked before calling writeParaText
         int[] chars = reader.uint16((int) (datasize / 2));
 

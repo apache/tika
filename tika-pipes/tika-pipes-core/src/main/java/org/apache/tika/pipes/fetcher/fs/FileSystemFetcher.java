@@ -27,9 +27,6 @@ import java.nio.file.attribute.FileTime;
 import java.util.Date;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -44,6 +41,8 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.fetcher.AbstractFetcher;
 import org.apache.tika.pipes.fetcher.fs.config.FileSystemFetcherConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FileSystemFetcher extends AbstractFetcher implements Initializable {
     public FileSystemFetcher() {
@@ -62,23 +61,22 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
     private boolean extractFileSystemMetadata = false;
 
     static boolean isDescendant(Path root, Path descendant) {
-        return descendant.toAbsolutePath().normalize()
-                .startsWith(root.toAbsolutePath().normalize());
+        return descendant.toAbsolutePath().normalize().startsWith(root.toAbsolutePath().normalize());
     }
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws IOException, TikaException {
+    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext)
+            throws IOException, TikaException {
         if (fetchKey.contains("\u0000")) {
-            throw new IllegalArgumentException("Path must not contain 'u0000'. " +
-                    "Please review the life decisions that led you to requesting " +
-                    "a file name with this character in it.");
+            throw new IllegalArgumentException(
+                    "Path must not contain 'u0000'. " + "Please review the life decisions that led you to requesting "
+                            + "a file name with this character in it.");
         }
         Path p = null;
         if (basePath != null) {
             p = basePath.resolve(fetchKey);
             if (!p.toRealPath().startsWith(basePath.toRealPath())) {
-                throw new IllegalArgumentException(
-                        "fetchKey must resolve to be a descendant of the 'basePath'");
+                throw new IllegalArgumentException("fetchKey must resolve to be a descendant of the 'basePath'");
             }
         } else {
             p = Paths.get(fetchKey);
@@ -99,7 +97,7 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
     }
 
     private void updateFileSystemMetadata(Path p, Metadata metadata) throws IOException {
-        if (! extractFileSystemMetadata) {
+        if (!extractFileSystemMetadata) {
             return;
         }
         BasicFileAttributes attrs = Files.readAttributes(p, BasicFileAttributes.class);
@@ -153,30 +151,28 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         if (basePath == null || basePath.toString().isBlank()) {
-            LOG.warn("'basePath' has not been set. " +
-                    "This means that client code or clients can read from any file that this " +
-                    "process has permissions to read. If you are running tika-server, make " +
-                    "absolutely certain that you've locked down " +
-                    "access to tika-server and file-permissions for the tika-server process.");
+            LOG.warn("'basePath' has not been set. "
+                    + "This means that client code or clients can read from any file that this "
+                    + "process has permissions to read. If you are running tika-server, make "
+                    + "absolutely certain that you've locked down "
+                    + "access to tika-server and file-permissions for the tika-server process.");
             return;
         }
         if (basePath.toString().startsWith("http://")) {
-            throw new TikaConfigException("FileSystemFetcher only works with local file systems. " +
-                    " Please use the tika-fetcher-http module for http calls");
+            throw new TikaConfigException("FileSystemFetcher only works with local file systems. "
+                    + " Please use the tika-fetcher-http module for http calls");
         } else if (basePath.toString().startsWith("ftp://")) {
-            throw new TikaConfigException("FileSystemFetcher only works with local file systems. " +
-                    " Please consider contributing an ftp fetcher module");
+            throw new TikaConfigException("FileSystemFetcher only works with local file systems. "
+                    + " Please consider contributing an ftp fetcher module");
         } else if (basePath.toString().startsWith("s3://")) {
-            throw new TikaConfigException("FileSystemFetcher only works with local file systems. " +
-                    " Please use the tika-fetcher-s3 module");
+            throw new TikaConfigException("FileSystemFetcher only works with local file systems. "
+                    + " Please use the tika-fetcher-s3 module");
         }
 
         if (basePath.toAbsolutePath().toString().contains("\u0000")) {
-            throw new TikaConfigException(
-                    "base path must not contain \u0000. " + "Seriously, what were you thinking?");
+            throw new TikaConfigException("base path must not contain \u0000. " + "Seriously, what were you thinking?");
         }
     }
 }

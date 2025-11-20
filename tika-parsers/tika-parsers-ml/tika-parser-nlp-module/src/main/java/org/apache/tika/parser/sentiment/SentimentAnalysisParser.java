@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.sentiment;
 
 import java.io.File;
@@ -25,14 +24,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-import opennlp.tools.sentiment.SentimentME;
-import opennlp.tools.sentiment.SentimentModel;
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -43,6 +35,13 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
+import opennlp.tools.sentiment.SentimentME;
+import opennlp.tools.sentiment.SentimentModel;
 
 /**
  * This parser classifies documents based on the sentiment of document.
@@ -50,10 +49,8 @@ import org.apache.tika.parser.Parser;
  */
 public class SentimentAnalysisParser implements Parser, Initializable {
 
-    public static final String DEF_MODEL =
-            "https://raw.githubusercontent.com/USCDataScience/SentimentAnalysisParser/master/sentiment-models/src/main/resources/edu/usc/irds/sentiment/en-netflix-sentiment.bin";
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.application("sentiment"));
+    public static final String DEF_MODEL = "https://raw.githubusercontent.com/USCDataScience/SentimentAnalysisParser/master/sentiment-models/src/main/resources/edu/usc/irds/sentiment/en-netflix-sentiment.bin";
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.application("sentiment"));
     private static final Logger LOG = LoggerFactory.getLogger(SentimentAnalysisParser.class);
     private SentimentME classifier;
 
@@ -109,8 +106,7 @@ public class SentimentAnalysisParser implements Parser, Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler handler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler handler) throws TikaConfigException {
         //TODO -- what do we want to check?
     }
 
@@ -134,8 +130,8 @@ public class SentimentAnalysisParser implements Parser, Initializable {
      * @param context  the context for the parser
      */
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         if (classifier == null) {
             LOG.warn(getClass().getSimpleName() + " is not configured properly.");
             return;

@@ -26,9 +26,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.TimeZone;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.helpers.DefaultHandler;
-
 import org.apache.tika.metadata.Geographic;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TIFF;
@@ -36,6 +33,8 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class JpegParserTest {
 
@@ -46,8 +45,7 @@ public class JpegParserTest {
     public void testJPEG() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        try (InputStream stream = getClass()
-                .getResourceAsStream("/test-documents/testJPEG_EXIF.jpg")) {
+        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testJPEG_EXIF.jpg")) {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
 
@@ -93,8 +91,7 @@ public class JpegParserTest {
     public void testJPEGGeo() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        try (InputStream stream = getClass()
-                .getResourceAsStream("/test-documents/testJPEG_GEO.jpg")) {
+        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testJPEG_GEO.jpg")) {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
 
@@ -125,8 +122,7 @@ public class JpegParserTest {
         assertEquals("2009-08-11T09:09:45", metadata.get(TikaCoreProperties.CREATED),
                 "Date/Time Original for when the photo was taken, unspecified time zone");
         assertEquals("2009-10-02T23:02:49", metadata.get(TikaCoreProperties.MODIFIED),
-                "This image has different Date/Time than Date/Time Original, " +
-                        "so it is probably modification date");
+                "This image has different Date/Time than Date/Time Original, " + "so it is probably modification date");
         assertEquals("2009-08-11T09:09:45", metadata.get(TIFF.ORIGINAL_DATE),
                 "Date/Time Original should be stored in EXIF field too");
         assertEquals("canon-55-250", metadata.getValues(TikaCoreProperties.SUBJECT)[0]);
@@ -141,8 +137,7 @@ public class JpegParserTest {
     public void testJPEGGeo2() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        try (InputStream stream = getClass()
-                .getResourceAsStream("/test-documents/testJPEG_GEO_2.jpg")) {
+        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testJPEG_GEO_2.jpg")) {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
 
@@ -157,8 +152,7 @@ public class JpegParserTest {
     public void testJPEGTitleAndDescription() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        try (InputStream stream = getClass()
-                .getResourceAsStream("/test-documents/testJPEG_commented.jpg")) {
+        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testJPEG_commented.jpg")) {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
 
@@ -204,8 +198,7 @@ public class JpegParserTest {
     public void testJPEGTitleAndDescriptionPhotoshop() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        try (InputStream stream = getClass()
-                .getResourceAsStream("/test-documents/testJPEG_commented_pspcs2mac.jpg")) {
+        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testJPEG_commented_pspcs2mac.jpg")) {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
 
@@ -244,8 +237,7 @@ public class JpegParserTest {
     public void testJPEGoddTagComponent() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        try (InputStream stream = getClass()
-                .getResourceAsStream("/test-documents/testJPEG_oddTagComponent.jpg")) {
+        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testJPEG_oddTagComponent.jpg")) {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
 
@@ -259,8 +251,7 @@ public class JpegParserTest {
     public void testJPEGEmptyEXIFDateTime() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        try (InputStream stream = getClass()
-                .getResourceAsStream("/test-documents/testJPEG_EXIF_emptyDateTime.jpg")) {
+        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testJPEG_EXIF_emptyDateTime.jpg")) {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
         assertEquals("300.0", metadata.get(TIFF.RESOLUTION_HORIZONTAL));
@@ -271,8 +262,7 @@ public class JpegParserTest {
     public void testJPEGXMPMM() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        try (InputStream stream = getClass()
-                .getResourceAsStream("/test-documents/testJPEG_EXIF_emptyDateTime.jpg")) {
+        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testJPEG_EXIF_emptyDateTime.jpg")) {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
 

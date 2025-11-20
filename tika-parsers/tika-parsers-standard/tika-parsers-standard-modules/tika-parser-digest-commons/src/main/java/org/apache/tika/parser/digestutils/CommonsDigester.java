@@ -23,7 +23,6 @@ import java.util.Locale;
 import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
-
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.digest.CompositeDigester;
@@ -64,14 +63,12 @@ public class CommonsDigester extends CompositeDigester {
         super(buildDigesters(markLimit, algorithms));
     }
 
-    private static DigestingParser.Digester[] buildDigesters(int markLimit,
-                                                             DigestAlgorithm[] algorithms) {
+    private static DigestingParser.Digester[] buildDigesters(int markLimit, DigestAlgorithm[] algorithms) {
         DigestingParser.Digester[] digesters = new DigestingParser.Digester[algorithms.length];
         int i = 0;
         for (DigestAlgorithm algorithm : algorithms) {
-            digesters[i++] =
-                    new InputStreamDigester(markLimit, algorithm.getJavaName(), algorithm.name(),
-                            new HexEncoder(false));
+            digesters[i++] = new InputStreamDigester(markLimit, algorithm.getJavaName(), algorithm.name(),
+                    new HexEncoder(false));
         }
         return digesters;
     }
@@ -119,8 +116,7 @@ public class CommonsDigester extends CompositeDigester {
                 }
                 sb.append(algo.toString());
             }
-            throw new IllegalArgumentException(
-                    "Couldn't match " + algoString + " with any of: " + sb.toString());
+            throw new IllegalArgumentException("Couldn't match " + algoString + " with any of: " + sb.toString());
         }
     }
 
@@ -132,8 +128,8 @@ public class CommonsDigester extends CompositeDigester {
             String[] parts = digest.split(":");
             DigestingParser.Encoder encoder = getEncoder(parts);
             DigestAlgorithm digestAlgorithm = getDigestAlgorithm(parts[0]);
-            digesters[i++] = new InputStreamDigester(markLimit, digestAlgorithm.getJavaName(),
-                    digestAlgorithm.name(), encoder);
+            digesters[i++] = new InputStreamDigester(markLimit, digestAlgorithm.getJavaName(), digestAlgorithm.name(),
+                    encoder);
         }
         return digesters;
     }
@@ -159,8 +155,7 @@ public class CommonsDigester extends CompositeDigester {
 
     public enum DigestAlgorithm {
         //those currently available in commons.digest
-        MD2("MD2"), MD5("MD5"), SHA1("SHA-1"), SHA256("SHA-256"), SHA384("SHA-384"),
-        SHA512("SHA-512");
+        MD2("MD2"), MD5("MD5"), SHA1("SHA-1"), SHA256("SHA-256"), SHA384("SHA-384"), SHA512("SHA-512");
 
         private final String javaName;
 
@@ -173,8 +168,8 @@ public class CommonsDigester extends CompositeDigester {
         }
 
         String getMetadataKey() {
-            return TikaCoreProperties.TIKA_META_PREFIX + "digest" +
-                    TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + this.toString();
+            return TikaCoreProperties.TIKA_META_PREFIX + "digest" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER
+                    + this.toString();
         }
     }
 

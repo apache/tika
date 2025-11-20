@@ -54,8 +54,8 @@ public class DirectoryListingEntry {
      * @param length       int
      * @throws TikaException
      */
-    public DirectoryListingEntry(int name_length, String name, ChmCommons.EntryType isCompressed,
-                                 int offset, int length) throws TikaException {
+    public DirectoryListingEntry(int name_length, String name, ChmCommons.EntryType isCompressed, int offset,
+            int length) throws TikaException {
         ChmAssert.assertDirectoryListingEntry(name_length, name, isCompressed, offset, length);
         setNameLength(name_length);
         setName(name);

@@ -28,9 +28,9 @@ import org.apache.tika.pipes.core.fetcher.Fetcher;
 
 public class MockFetcher implements Fetcher {
 
-    private static final byte[] BYTES = ("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
-            "<metadata action=\"add\" name=\"dc:creator\">Nikolai Lobachevsky</metadata>" +
-            "<write element=\"p\">main_content</write>" + "</mock>").getBytes(StandardCharsets.UTF_8);
+    private static final byte[] BYTES = ("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>"
+            + "<metadata action=\"add\" name=\"dc:creator\">Nikolai Lobachevsky</metadata>"
+            + "<write element=\"p\">main_content</write>" + "</mock>").getBytes(StandardCharsets.UTF_8);
 
     @Override
     public String getName() {
@@ -38,7 +38,8 @@ public class MockFetcher implements Fetcher {
     }
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
+    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext)
+            throws TikaException, IOException {
         return new ByteArrayInputStream(BYTES);
     }
 }

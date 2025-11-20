@@ -43,9 +43,6 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.help.HelpFormatter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.JDBCUtil;
 import org.apache.tika.eval.app.db.MimeBuffer;
@@ -59,6 +56,8 @@ import org.apache.tika.pipes.core.FetchEmitTuple;
 import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;
 import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ExtractComparerRunner {
 
@@ -71,25 +70,37 @@ public class ExtractComparerRunner {
     static {
 
         OPTIONS = new Options()
-                .addOption(Option.builder("a").longOpt("extractsA").hasArg().desc("required: directory of 'A' extracts").get())
-                .addOption(Option.builder("b").longOpt("extractsB").hasArg().desc("required: directory of 'B' extracts").get())
-                .addOption(Option.builder("i").longOpt("inputDir").hasArg().desc("optional: directory for original binary input documents."
-                        + " If not specified, -extracts is crawled as is.").get())
+                .addOption(Option.builder("a").longOpt("extractsA").hasArg().desc("required: directory of 'A' extracts")
+                        .get())
+                .addOption(Option.builder("b").longOpt("extractsB").hasArg().desc("required: directory of 'B' extracts")
+                        .get())
+                .addOption(Option.builder("i").longOpt("inputDir").hasArg()
+                        .desc("optional: directory for original binary input documents."
+                                + " If not specified, -extracts is crawled as is.")
+                        .get())
                 .addOption(Option.builder("d").longOpt("db").hasArg().desc("optional: db path").get())
                 .addOption(Option.builder("c").longOpt("config").hasArg().desc("tika-eval json config file").get())
                 .addOption(Option.builder("n").longOpt("numWorkers").hasArg().desc("number of worker threads").get())
-                .addOption(Option.builder("m").longOpt("maxExtractLength").hasArg().desc("maximum extract length").get())
-                ;
+                .addOption(
+                        Option.builder("m").longOpt("maxExtractLength").hasArg().desc("maximum extract length").get());
     }
 
     public static void main(String[] args) throws Exception {
         DefaultParser defaultCLIParser = new DefaultParser();
         CommandLine commandLine = defaultCLIParser.parse(OPTIONS, args);
-        EvalConfig evalConfig = commandLine.hasOption('c') ? EvalConfig.load(Paths.get(commandLine.getOptionValue('c'))) : new EvalConfig();
-        Path extractsADir = commandLine.hasOption('a') ? Paths.get(commandLine.getOptionValue('a')) : Paths.get(USAGE_FAIL("Must specify extractsA dir: -a"));
-        Path extractsBDir = commandLine.hasOption('b') ? Paths.get(commandLine.getOptionValue('b')) : Paths.get(USAGE_FAIL("Must specify extractsB dir: -b"));
+        EvalConfig evalConfig = commandLine.hasOption('c')
+                ? EvalConfig.load(Paths.get(commandLine.getOptionValue('c')))
+                : new EvalConfig();
+        Path extractsADir = commandLine.hasOption('a')
+                ? Paths.get(commandLine.getOptionValue('a'))
+                : Paths.get(USAGE_FAIL("Must specify extractsA dir: -a"));
+        Path extractsBDir = commandLine.hasOption('b')
+                ? Paths.get(commandLine.getOptionValue('b'))
+                : Paths.get(USAGE_FAIL("Must specify extractsB dir: -b"));
         Path inputDir = commandLine.hasOption('i') ? Paths.get(commandLine.getOptionValue('i')) : extractsADir;
-        String dbPath = commandLine.hasOption('d') ? commandLine.getOptionValue('d') : USAGE_FAIL("Must specify the db name: -d");
+        String dbPath = commandLine.hasOption('d')
+                ? commandLine.getOptionValue('d')
+                : USAGE_FAIL("Must specify the db name: -d");
 
         if (commandLine.hasOption('n')) {
             evalConfig.setNumWorkers(Integer.parseInt(commandLine.getOptionValue('n')));
@@ -113,7 +124,8 @@ public class ExtractComparerRunner {
 
     }
 
-    private static void execute(Path inputDir, Path extractsA, Path extractsB, String dbPath, EvalConfig evalConfig) throws SQLException, IOException {
+    private static void execute(Path inputDir, Path extractsA, Path extractsB, String dbPath, EvalConfig evalConfig)
+            throws SQLException, IOException {
 
         //parameterize this? if necesssary
         try {
@@ -143,7 +155,8 @@ public class ExtractComparerRunner {
 
         executorCompletionService.submit(pipesIterator);
         for (int i = 0; i < evalConfig.getNumWorkers(); i++) {
-            ExtractReader extractReader = new ExtractReader(ExtractReader.ALTER_METADATA_LIST.AS_IS, evalConfig.getMinExtractLength(), evalConfig.getMaxExtractLength());
+            ExtractReader extractReader = new ExtractReader(ExtractReader.ALTER_METADATA_LIST.AS_IS,
+                    evalConfig.getMinExtractLength(), evalConfig.getMaxExtractLength());
             ExtractComparer extractComparer = new ExtractComparer(inputDir, extractsA, extractsB, extractReader,
                     builder.getDBWriter(builder.getNonRefTableInfos(), jdbcUtil, mimeBuffer));
             executorCompletionService.submit(new ComparerWorker(queue, extractComparer, processed));
@@ -184,7 +197,8 @@ public class ExtractComparerRunner {
         return fs;
     }
 
-    private static MimeBuffer initTables(JDBCUtil jdbcUtil, ExtractComparerBuilder builder, String connectionString, EvalConfig evalConfig) throws SQLException, IOException {
+    private static MimeBuffer initTables(JDBCUtil jdbcUtil, ExtractComparerBuilder builder, String connectionString,
+            EvalConfig evalConfig) throws SQLException, IOException {
 
         //step 1. create the tables
         jdbcUtil.createTables(builder.getNonRefTableInfos(), JDBCUtil.CREATE_TABLE.THROW_EX_IF_EXISTS);
@@ -196,7 +210,8 @@ public class ExtractComparerRunner {
 
     private static void USAGE() throws IOException {
         HelpFormatter helpFormatter = HelpFormatter.builder().get();
-        helpFormatter.printHelp("java -jar tika-eval-app-x.y.z.jar FileProfiler -e docs -d mydb [-i inputDir, -c config.json]",
+        helpFormatter.printHelp(
+                "java -jar tika-eval-app-x.y.z.jar FileProfiler -e docs -d mydb [-i inputDir, -c config.json]",
                 "Tool: Profile", OPTIONS, null, true);
     }
 
@@ -211,7 +226,8 @@ public class ExtractComparerRunner {
         private final ExtractComparer extractComparer;
         private final AtomicInteger processed;
 
-        ComparerWorker(ArrayBlockingQueue<FetchEmitTuple> queue, ExtractComparer extractComparer, AtomicInteger processed) {
+        ComparerWorker(ArrayBlockingQueue<FetchEmitTuple> queue, ExtractComparer extractComparer,
+                AtomicInteger processed) {
             this.queue = queue;
             this.extractComparer = extractComparer;
             this.processed = processed;
@@ -278,7 +294,6 @@ public class ExtractComparerRunner {
             this.refTableInfos = Collections.unmodifiableList(refTableInfos);
         }
 
-
         protected List<TableInfo> getRefTableInfos() {
             return refTableInfos;
         }
@@ -301,8 +316,7 @@ public class ExtractComparerRunner {
                 Connection connection = dbUtil.getConnection();
                 for (TableInfo tableInfo : getRefTableInfos()) {
                     int rows = 0;
-                    try (ResultSet rs = connection
-                            .createStatement()
+                    try (ResultSet rs = connection.createStatement()
                             .executeQuery("select * from " + tableInfo.getName())) {
                         while (rs.next()) {
                             rows++;
@@ -347,7 +361,8 @@ public class ExtractComparerRunner {
             writer.close();
         }
 
-        protected IDBWriter getDBWriter(List<TableInfo> tableInfos, JDBCUtil dbUtil, MimeBuffer mimeBuffer) throws IOException, SQLException {
+        protected IDBWriter getDBWriter(List<TableInfo> tableInfos, JDBCUtil dbUtil, MimeBuffer mimeBuffer)
+                throws IOException, SQLException {
             Connection conn = dbUtil.getConnection();
             return new DBWriter(conn, tableInfos, dbUtil, mimeBuffer);
         }

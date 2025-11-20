@@ -25,11 +25,10 @@ import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.chm.ChmCommons.EntryType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Extracts text from chm file. Enumerates chm entries.
@@ -37,7 +36,6 @@ import org.apache.tika.parser.microsoft.chm.ChmCommons.EntryType;
 public class ChmExtractor {
 
     private static final Logger LOG = LoggerFactory.getLogger(ChmExtractor.class);
-
 
     private List<ChmLzxBlock> lzxBlocksCache = null;
     private ChmDirectoryListingSet chmDirList = null;
@@ -60,10 +58,8 @@ public class ChmExtractor {
             setChmItsfHeader(new ChmItsfHeader());
             // getChmItsfHeader().parse(Arrays.copyOfRange(getData(), 0,
             // ChmConstants.CHM_ITSF_V3_LEN - 1), getChmItsfHeader());
-            getChmItsfHeader()
-                    .parse(ChmCommons.copyOfRange(getData(), 0,
-                            ChmConstants.CHM_ITSF_V3_LEN - 1),
-                            getChmItsfHeader());
+            getChmItsfHeader().parse(ChmCommons.copyOfRange(getData(), 0, ChmConstants.CHM_ITSF_V3_LEN - 1),
+                    getChmItsfHeader());
 
             /* Creates and parses chm itsp header */
             setChmItspHeader(new ChmItspHeader());
@@ -71,24 +67,20 @@ public class ChmExtractor {
             // getChmItsfHeader().getDirOffset(),
             // (int) getChmItsfHeader().getDirOffset() +
             // ChmConstants.CHM_ITSP_V1_LEN), getChmItspHeader());
-            getChmItspHeader().parse(ChmCommons
-                            .copyOfRange(getData(), (int) getChmItsfHeader().getDirOffset(),
-                                    (int) getChmItsfHeader().getDirOffset() +
-                                            ChmConstants.CHM_ITSP_V1_LEN),
+            getChmItspHeader().parse(
+                    ChmCommons.copyOfRange(getData(), (int) getChmItsfHeader().getDirOffset(),
+                            (int) getChmItsfHeader().getDirOffset() + ChmConstants.CHM_ITSP_V1_LEN),
                     getChmItspHeader());
 
             /* Creates instance of ChmDirListingContainer */
-            setChmDirList(
-                    new ChmDirectoryListingSet(getData(), getChmItsfHeader(), getChmItspHeader()));
+            setChmDirList(new ChmDirectoryListingSet(getData(), getChmItsfHeader(), getChmItspHeader()));
 
             int indexOfControlData = getChmDirList().getControlDataIndex();
-            int indexOfResetData =
-                    ChmCommons.indexOfResetTableBlock(getData(), ChmConstants.LZXC.getBytes(UTF_8));
+            int indexOfResetData = ChmCommons.indexOfResetTableBlock(getData(), ChmConstants.LZXC.getBytes(UTF_8));
             byte[] dir_chunk = null;
             if (indexOfResetData > 0) {
-                dir_chunk = ChmCommons.copyOfRange(getData(), indexOfResetData, indexOfResetData +
-                        getChmDirList().getDirectoryListingEntryList().get(indexOfControlData)
-                                .getLength());
+                dir_chunk = ChmCommons.copyOfRange(getData(), indexOfResetData, indexOfResetData
+                        + getChmDirList().getDirectoryListingEntryList().get(indexOfControlData).getLength());
             }
             // dir_chunk = Arrays.copyOfRange(getData(), indexOfResetData,
             // indexOfResetData
@@ -102,9 +94,8 @@ public class ChmExtractor {
             int indexOfResetTable = getChmDirList().getResetTableIndex();
             setChmLzxcResetTable(new ChmLzxcResetTable());
 
-            int startIndex = (int) getChmDirList().getDataOffset() +
-                    getChmDirList().getDirectoryListingEntryList().get(indexOfResetTable)
-                            .getOffset();
+            int startIndex = (int) getChmDirList().getDataOffset()
+                    + getChmDirList().getDirectoryListingEntryList().get(indexOfResetTable).getOffset();
 
             // assert startIndex < data.length
             ChmAssert.assertCopyingDataIndex(startIndex, getData().length);
@@ -112,21 +103,16 @@ public class ChmExtractor {
             // dir_chunk = Arrays.copyOfRange(getData(), startIndex, startIndex
             // +
             // getChmDirList().getDirectoryListingEntryList().get(indexOfResetTable).getLength());
-            dir_chunk = ChmCommons.copyOfRange(getData(), startIndex, startIndex +
-                    getChmDirList().getDirectoryListingEntryList().get(indexOfResetTable)
-                            .getLength());
+            dir_chunk = ChmCommons.copyOfRange(getData(), startIndex,
+                    startIndex + getChmDirList().getDirectoryListingEntryList().get(indexOfResetTable).getLength());
 
             getChmLzxcResetTable().parse(dir_chunk, getChmLzxcResetTable());
 
-            setIndexOfContent(ChmCommons
-                    .indexOfDataSpaceStorageElement(getChmDirList().getDirectoryListingEntryList(),
-                            ChmConstants.CONTENT));
-            setLzxBlockOffset(
-                    (getChmDirList().getDirectoryListingEntryList().get(getIndexOfContent())
-                            .getOffset() + getChmItsfHeader().getDataOffset()));
-            setLzxBlockLength(
-                    getChmDirList().getDirectoryListingEntryList().get(getIndexOfContent())
-                            .getLength());
+            setIndexOfContent(ChmCommons.indexOfDataSpaceStorageElement(getChmDirList().getDirectoryListingEntryList(),
+                    ChmConstants.CONTENT));
+            setLzxBlockOffset((getChmDirList().getDirectoryListingEntryList().get(getIndexOfContent()).getOffset()
+                    + getChmItsfHeader().getDataOffset()));
+            setLzxBlockLength(getChmDirList().getDirectoryListingEntryList().get(getIndexOfContent()).getLength());
 
             setLzxBlocksCache(new ArrayList<>());
 
@@ -236,8 +222,7 @@ public class ChmExtractor {
      */
     public List<String> enumerateChm() {
         List<String> listOfEntries = new ArrayList<>();
-        for (DirectoryListingEntry directoryListingEntry : getChmDirList()
-                .getDirectoryListingEntryList()) {
+        for (DirectoryListingEntry directoryListingEntry : getChmDirList().getDirectoryListingEntryList()) {
             listOfEntries.add(directoryListingEntry.getName());
         }
         return listOfEntries;
@@ -250,32 +235,27 @@ public class ChmExtractor {
      * @return decompressed data
      * @throws TikaException
      */
-    public byte[] extractChmEntry(DirectoryListingEntry directoryListingEntry)
-            throws TikaException {
+    public byte[] extractChmEntry(DirectoryListingEntry directoryListingEntry) throws TikaException {
         UnsynchronizedByteArrayOutputStream buffer = UnsynchronizedByteArrayOutputStream.builder().get();
         ChmLzxBlock lzxBlock = null;
         try {
             /* UNCOMPRESSED type is easiest one */
-            if (directoryListingEntry.getEntryType() == EntryType.UNCOMPRESSED &&
-                    directoryListingEntry.getLength() > 0 &&
-                    !ChmCommons.hasSkip(directoryListingEntry)) {
-                int dataOffset = (int) (getChmItsfHeader().getDataOffset() +
-                        directoryListingEntry.getOffset());
+            if (directoryListingEntry.getEntryType() == EntryType.UNCOMPRESSED && directoryListingEntry.getLength() > 0
+                    && !ChmCommons.hasSkip(directoryListingEntry)) {
+                int dataOffset = (int) (getChmItsfHeader().getDataOffset() + directoryListingEntry.getOffset());
                 // dataSegment = Arrays.copyOfRange(getData(), dataOffset,
                 // dataOffset + directoryListingEntry.getLength());
-                buffer.write(ChmCommons.copyOfRange(getData(), dataOffset,
-                        dataOffset + directoryListingEntry.getLength()));
-            } else if (directoryListingEntry.getEntryType() == EntryType.COMPRESSED &&
-                    !ChmCommons.hasSkip(directoryListingEntry)) {
+                buffer.write(
+                        ChmCommons.copyOfRange(getData(), dataOffset, dataOffset + directoryListingEntry.getLength()));
+            } else if (directoryListingEntry.getEntryType() == EntryType.COMPRESSED
+                    && !ChmCommons.hasSkip(directoryListingEntry)) {
                 /* Gets a chm hit_cache info */
                 chmBlockInfo = ChmBlockInfo.getChmBlockInfoInstance(directoryListingEntry,
-                        (int) getChmLzxcResetTable().getBlockLen(), getChmLzxcControlData(),
-                        chmBlockInfo);
+                        (int) getChmLzxcResetTable().getBlockLen(), getChmLzxcControlData(), chmBlockInfo);
 
                 int i = 0, start = 0, hit_cache = 0;
 
-                if ((getLzxBlockLength() < Integer.MAX_VALUE) &&
-                        (getLzxBlockOffset() < Integer.MAX_VALUE)) {
+                if ((getLzxBlockLength() < Integer.MAX_VALUE) && (getLzxBlockOffset() < Integer.MAX_VALUE)) {
                     // TODO: Improve the caching
                     // caching ... = O(n^2) - depends on startBlock and endBlock
                     start = -1;
@@ -283,8 +263,7 @@ public class ChmExtractor {
                         for (i = 0; i < getLzxBlocksCache().size(); i++) {
                             //lzxBlock = getLzxBlocksCache().get(i);
                             int bn = getLzxBlocksCache().get(i).getBlockNumber();
-                            for (int j = chmBlockInfo.getIniBlock();
-                                    j <= chmBlockInfo.getStartBlock(); j++) {
+                            for (int j = chmBlockInfo.getIniBlock(); j <= chmBlockInfo.getStartBlock(); j++) {
                                 if (bn == j) {
                                     if (j > start) {
                                         start = j;
@@ -298,26 +277,24 @@ public class ChmExtractor {
                         }
                     }
 
-//                    if (i == getLzxBlocksCache().size() && i == 0) {
+                    //                    if (i == getLzxBlocksCache().size() && i == 0) {
                     if (start < 0) {
                         start = chmBlockInfo.getIniBlock();
 
-                        byte[] dataSegment = ChmCommons
-                                .getChmBlockSegment(getData(), getChmLzxcResetTable(), start,
-                                        (int) getLzxBlockOffset(), (int) getLzxBlockLength());
+                        byte[] dataSegment = ChmCommons.getChmBlockSegment(getData(), getChmLzxcResetTable(), start,
+                                (int) getLzxBlockOffset(), (int) getLzxBlockLength());
 
-                        lzxBlock = new ChmLzxBlock(start, dataSegment,
-                                getChmLzxcResetTable().getBlockLen(), null);
+                        lzxBlock = new ChmLzxBlock(start, dataSegment, getChmLzxcResetTable().getBlockLen(), null);
 
                         getLzxBlocksCache().add(lzxBlock);
                     } else {
                         lzxBlock = getLzxBlocksCache().get(hit_cache);
                     }
 
-                    for (i = start; i <= chmBlockInfo.getEndBlock(); ) {
+                    for (i = start; i <= chmBlockInfo.getEndBlock();) {
                         if (i == chmBlockInfo.getStartBlock() && i == chmBlockInfo.getEndBlock()) {
-                            buffer.write(lzxBlock.getContent(chmBlockInfo.getStartOffset(),
-                                    chmBlockInfo.getEndOffset()));
+                            buffer.write(
+                                    lzxBlock.getContent(chmBlockInfo.getStartOffset(), chmBlockInfo.getEndOffset()));
                             break;
                         }
 
@@ -337,13 +314,13 @@ public class ChmExtractor {
                         i++;
 
                         if (i % getChmLzxcControlData().getResetInterval() == 0) {
-                            lzxBlock = new ChmLzxBlock(i, ChmCommons
-                                    .getChmBlockSegment(getData(), getChmLzxcResetTable(), i,
+                            lzxBlock = new ChmLzxBlock(i,
+                                    ChmCommons.getChmBlockSegment(getData(), getChmLzxcResetTable(), i,
                                             (int) getLzxBlockOffset(), (int) getLzxBlockLength()),
                                     getChmLzxcResetTable().getBlockLen(), null);
                         } else {
-                            lzxBlock = new ChmLzxBlock(i, ChmCommons
-                                    .getChmBlockSegment(getData(), getChmLzxcResetTable(), i,
+                            lzxBlock = new ChmLzxBlock(i,
+                                    ChmCommons.getChmBlockSegment(getData(), getChmLzxcResetTable(), i,
                                             (int) getLzxBlockOffset(), (int) getLzxBlockLength()),
                                     getChmLzxcResetTable().getBlockLen(), lzxBlock);
                         }

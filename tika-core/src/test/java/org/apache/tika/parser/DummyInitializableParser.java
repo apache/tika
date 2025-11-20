@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser;
 
 import java.io.IOException;
@@ -22,9 +21,6 @@ import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
@@ -34,6 +30,8 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * This tests that initialize() is called after adding the parameters
@@ -60,8 +58,8 @@ public class DummyInitializableParser implements Parser, Initializable {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         metadata.set(SUM_FIELD, Integer.toString(sum));
     }
 
@@ -73,12 +71,10 @@ public class DummyInitializableParser implements Parser, Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler handler)
-            throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler handler) throws TikaConfigException {
         //completely arbitrary
         if (sum > 1000) {
-            handler.handleInitializableProblem("DummyInitializableParser",
-                    "sum cannot be > 1000: " + sum);
+            handler.handleInitializableProblem("DummyInitializableParser", "sum cannot be > 1000: " + sum);
         }
     }
 }

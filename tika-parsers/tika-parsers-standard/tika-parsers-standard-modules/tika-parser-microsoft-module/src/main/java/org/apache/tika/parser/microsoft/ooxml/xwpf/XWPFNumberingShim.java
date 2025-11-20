@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.ooxml.xwpf;
 
 import java.io.IOException;
@@ -32,6 +31,5 @@ public class XWPFNumberingShim extends XWPFNumbering {
         super(part);
         onDocumentRead();
     }
-
 
 }

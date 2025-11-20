@@ -34,11 +34,11 @@ public class TailStreamTest {
     /**
      * Constant for generating test text.
      */
-    private static final String TEXT = "Lorem ipsum dolor sit amet, consetetur " +
-            "sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut " +
-            "labore et dolore magna aliquyam erat, sed diam voluptua. At vero" +
-            " eos et accusam et justo duo dolores et ea rebum. Stet clita " +
-            "kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor " + "sit amet.";
+    private static final String TEXT = "Lorem ipsum dolor sit amet, consetetur "
+            + "sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut "
+            + "labore et dolore magna aliquyam erat, sed diam voluptua. At vero"
+            + " eos et accusam et justo duo dolores et ea rebum. Stet clita "
+            + "kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor " + "sit amet.";
 
     /**
      * Generates a test text using the specified parameters.
@@ -113,8 +113,7 @@ public class TailStreamTest {
         final int count = 128;
         TailStream stream = new TailStream(generateStream(0, 2 * count), count);
         readStream(stream);
-        assertEquals(generateText(count, count), new String(stream.getTail(), UTF_8),
-                "Wrong buffer");
+        assertEquals(generateText(count, count), new String(stream.getTail(), UTF_8), "Wrong buffer");
     }
 
     /**
@@ -132,8 +131,7 @@ public class TailStreamTest {
         while (read != -1) {
             read = stream.read(buf);
         }
-        assertEquals(generateText(count - tailSize, tailSize),
-                new String(stream.getTail(), UTF_8), "Wrong buffer");
+        assertEquals(generateText(count - tailSize, tailSize), new String(stream.getTail(), UTF_8), "Wrong buffer");
         stream.close();
     }
 
@@ -150,8 +148,7 @@ public class TailStreamTest {
         stream.read(buf);
         stream.reset();
         readStream(stream);
-        assertEquals(generateText(tailSize, tailSize),
-                new String(stream.getTail(), UTF_8), "Wrong buffer");
+        assertEquals(generateText(tailSize, tailSize), new String(stream.getTail(), UTF_8), "Wrong buffer");
     }
 
     /**
@@ -165,8 +162,7 @@ public class TailStreamTest {
         stream.reset();
         byte[] buf = new byte[count];
         stream.read(buf);
-        assertEquals(generateText(count - tailSize, tailSize),
-                new String(stream.getTail(), UTF_8), "Wrong buffer");
+        assertEquals(generateText(count - tailSize, tailSize), new String(stream.getTail(), UTF_8), "Wrong buffer");
         stream.close();
     }
 
@@ -180,8 +176,7 @@ public class TailStreamTest {
         final int skipCount = 512;
         TailStream stream = new TailStream(generateStream(0, count), tailSize);
         assertEquals(skipCount, stream.skip(skipCount), "Wrong skip result");
-        assertEquals(generateText(skipCount - tailSize, tailSize),
-                new String(stream.getTail(), UTF_8), "Wrong buffer");
+        assertEquals(generateText(skipCount - tailSize, tailSize), new String(stream.getTail(), UTF_8), "Wrong buffer");
         stream.close();
     }
 
@@ -193,8 +188,7 @@ public class TailStreamTest {
         final int count = 128;
         TailStream stream = new TailStream(generateStream(0, count), 2 * count);
         assertEquals(count, stream.skip(2 * count), "Wrong skip result");
-        assertEquals(generateText(0, count), new String(stream.getTail(), UTF_8),
-                "Wrong buffer");
+        assertEquals(generateText(0, count), new String(stream.getTail(), UTF_8), "Wrong buffer");
         stream.close();
     }
 

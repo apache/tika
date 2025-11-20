@@ -54,7 +54,7 @@ public class FetchEmitTuple implements Serializable {
     }
 
     public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata, ParseContext parseContext,
-                          ON_PARSE_EXCEPTION onParseException) {
+            ON_PARSE_EXCEPTION onParseException) {
         this.id = id;
         this.fetchKey = fetchKey;
         this.emitKey = emitKey;
@@ -99,10 +99,10 @@ public class FetchEmitTuple implements Serializable {
         }
 
         FetchEmitTuple that = (FetchEmitTuple) o;
-        return Objects.equals(id, that.id) && Objects.equals(fetchKey, that.fetchKey) && Objects.equals(emitKey, that.emitKey)
-                && Objects.equals(metadata, that.metadata) &&
-                Objects.equals(parseContext, that.parseContext) && onParseException == that.onParseException &&
-                Objects.equals(embeddedDocumentBytesConfig, that.embeddedDocumentBytesConfig);
+        return Objects.equals(id, that.id) && Objects.equals(fetchKey, that.fetchKey)
+                && Objects.equals(emitKey, that.emitKey) && Objects.equals(metadata, that.metadata)
+                && Objects.equals(parseContext, that.parseContext) && onParseException == that.onParseException
+                && Objects.equals(embeddedDocumentBytesConfig, that.embeddedDocumentBytesConfig);
     }
 
     @Override
@@ -119,8 +119,8 @@ public class FetchEmitTuple implements Serializable {
 
     @Override
     public String toString() {
-        return "FetchEmitTuple{" + "id='" + id + '\'' + ", fetchKey=" + fetchKey + ", emitKey=" + emitKey +
-                ", metadata=" + metadata + ", parseContext=" + parseContext +
-                ", onParseException=" + onParseException + ", embeddedDocumentBytesConfig=" + embeddedDocumentBytesConfig + '}';
+        return "FetchEmitTuple{" + "id='" + id + '\'' + ", fetchKey=" + fetchKey + ", emitKey=" + emitKey
+                + ", metadata=" + metadata + ", parseContext=" + parseContext + ", onParseException=" + onParseException
+                + ", embeddedDocumentBytesConfig=" + embeddedDocumentBytesConfig + '}';
     }
 }

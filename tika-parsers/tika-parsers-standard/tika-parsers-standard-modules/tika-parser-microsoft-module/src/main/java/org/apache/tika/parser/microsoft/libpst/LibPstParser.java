@@ -28,11 +28,6 @@ import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -49,6 +44,10 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.FileProcessResult;
 import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * This is an optional PST parser that relies on the user installing
@@ -77,7 +76,8 @@ public class LibPstParser implements Parser, Initializable {
     }
 
     @Override
-    public void parse(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, ParseContext parseContext) throws IOException, SAXException, TikaException {
+    public void parse(InputStream inputStream, ContentHandler contentHandler, Metadata metadata,
+            ParseContext parseContext) throws IOException, SAXException, TikaException {
         TikaInputStream tis = TikaInputStream.cast(inputStream);
         TemporaryResources tmp = null;
         if (tis == null) {
@@ -91,21 +91,24 @@ public class LibPstParser implements Parser, Initializable {
         }
     }
 
-    private void _parse(Path pst, ContentHandler contentHandler, Metadata metadata, ParseContext parseContext) throws TikaException, IOException, SAXException {
+    private void _parse(Path pst, ContentHandler contentHandler, Metadata metadata, ParseContext parseContext)
+            throws TikaException, IOException, SAXException {
         LibPstParserConfig activeConfig = parseContext.get(LibPstParserConfig.class, defaultConfig);
         Path outDir = Files.createTempDirectory("libpst-");
         Path debugFile = activeConfig.isDebug() ? Files.createTempFile("tika-libpst-debug", ".txt") : null;
         try {
             ProcessBuilder pb = getProcessBuilder(pst, activeConfig, outDir, debugFile);
             XHTMLContentHandler xhtml = new XHTMLContentHandler(contentHandler, metadata);
-            FileProcessResult fileProcessResult = ProcessUtils.execute(pb, activeConfig.getTimeoutSeconds() * 1000l, MAX_STDOUT, MAX_STDERR);
+            FileProcessResult fileProcessResult = ProcessUtils.execute(pb, activeConfig.getTimeoutSeconds() * 1000l,
+                    MAX_STDOUT, MAX_STDERR);
             xhtml.startDocument();
             processContents(outDir, activeConfig, xhtml, metadata, parseContext);
             if (fileProcessResult.isTimeout()) {
                 throw new TikaException("Timeout exception: " + fileProcessResult.getProcessTimeMillis());
             }
             if (fileProcessResult.getExitValue() != 0) {
-                LOGGER.warn("libpst bad exit value {}: {}", fileProcessResult.getExitValue(), fileProcessResult.getStderr());
+                LOGGER.warn("libpst bad exit value {}: {}", fileProcessResult.getExitValue(),
+                        fileProcessResult.getStderr());
                 throw new TikaException("Bad exit value: " + fileProcessResult.getExitValue());
             }
             xhtml.endDocument();
@@ -125,8 +128,10 @@ public class LibPstParser implements Parser, Initializable {
         }
     }
 
-    private void processContents(Path outDir, LibPstParserConfig config, XHTMLContentHandler xhtml, Metadata metadata, ParseContext parseContext) throws IOException {
-        Files.walkFileTree(outDir, new EmailVisitor(outDir, config.isProcessEmailAsMsg(), xhtml, metadata, parseContext));
+    private void processContents(Path outDir, LibPstParserConfig config, XHTMLContentHandler xhtml, Metadata metadata,
+            ParseContext parseContext) throws IOException {
+        Files.walkFileTree(outDir,
+                new EmailVisitor(outDir, config.isProcessEmailAsMsg(), xhtml, metadata, parseContext));
     }
 
     private ProcessBuilder getProcessBuilder(Path pst, LibPstParserConfig config, Path outDir, Path debugFile)
@@ -135,9 +140,7 @@ public class LibPstParser implements Parser, Initializable {
         commands.add(getFullReadPstCommand());
         if (config.isDebug()) {
             commands.add("-d");
-            commands.add(ProcessUtils.escapeCommandLine(debugFile
-                    .toAbsolutePath()
-                    .toString()));
+            commands.add(ProcessUtils.escapeCommandLine(debugFile.toAbsolutePath().toString()));
         }
         if (config.isIncludeDeleted()) {
             commands.add("-D");
@@ -149,13 +152,9 @@ public class LibPstParser implements Parser, Initializable {
             commands.add("-e");
         }
         commands.add("-o");
-        commands.add(ProcessUtils.escapeCommandLine(outDir
-                .toAbsolutePath()
-                .toString()));
+        commands.add(ProcessUtils.escapeCommandLine(outDir.toAbsolutePath().toString()));
 
-        commands.add(ProcessUtils.escapeCommandLine(pst
-                .toAbsolutePath()
-                .toString()));
+        commands.add(ProcessUtils.escapeCommandLine(pst.toAbsolutePath().toString()));
         LOGGER.debug("command arguments: " + commands);
         return new ProcessBuilder(commands);
     }
@@ -166,7 +165,7 @@ public class LibPstParser implements Parser, Initializable {
             throw new TikaConfigException("path can't include null values");
         }
         String fullReadPstCommand = getFullReadPstCommand();
-        if (! StringUtils.isBlank(readPstPath) && ! Files.isRegularFile(Paths.get(fullReadPstCommand))) {
+        if (!StringUtils.isBlank(readPstPath) && !Files.isRegularFile(Paths.get(fullReadPstCommand))) {
             throw new TikaConfigException("I regret I can't find the readpst executable: " + fullReadPstCommand);
         }
         try {
@@ -178,7 +177,8 @@ public class LibPstParser implements Parser, Initializable {
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler initializableProblemHandler) throws TikaConfigException {
+    public void checkInitialization(InitializableProblemHandler initializableProblemHandler)
+            throws TikaConfigException {
 
     }
 
@@ -189,8 +189,8 @@ public class LibPstParser implements Parser, Initializable {
         ProcessBuilder pb = new ProcessBuilder(ProcessUtils.escapeCommandLine(fullReadPstCommand), "-V");
         FileProcessResult result = ProcessUtils.execute(pb, 30000, 10000, 10000);
         if (result.getExitValue() != 0) {
-            throw new TikaConfigException(
-                    "bad exit value for LibPstParser. It must be installed and on the path" + " if this parser is configured. Exit value: " + result.getExitValue());
+            throw new TikaConfigException("bad exit value for LibPstParser. It must be installed and on the path"
+                    + " if this parser is configured. Exit value: " + result.getExitValue());
         }
         if (result.isTimeout()) {
             throw new TikaConfigException("timeout trying to get version from readpst?!");
@@ -210,7 +210,7 @@ public class LibPstParser implements Parser, Initializable {
         if (StringUtils.isBlank(readPstPath)) {
             return READ_PST_COMMAND;
         }
-        if (! readPstPath.endsWith("/") && readPstPath.endsWith("\\")) {
+        if (!readPstPath.endsWith("/") && readPstPath.endsWith("\\")) {
             return readPstPath + "/" + READ_PST_COMMAND;
         }
         return readPstPath + READ_PST_COMMAND;

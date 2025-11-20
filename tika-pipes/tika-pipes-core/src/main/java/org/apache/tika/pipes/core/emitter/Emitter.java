@@ -26,7 +26,8 @@ public interface Emitter {
 
     String getName();
 
-    void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException, TikaEmitterException;
+    void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext)
+            throws IOException, TikaEmitterException;
 
     void emit(List<? extends EmitData> emitData) throws IOException, TikaEmitterException;
     //TODO -- add this later for xhtml?

@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.core.resource;
 
 import java.io.IOException;
@@ -27,18 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -51,6 +39,17 @@ import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.fetcher.FetchKey;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTupleList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
+
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.UriInfo;
 
 @Path("/async")
 public class AsyncResource {
@@ -62,7 +61,8 @@ public class AsyncResource {
     long maxQueuePauseMs = 60000;
     private ArrayBlockingQueue<FetchEmitTuple> queue;
 
-    public AsyncResource(java.nio.file.Path tikaConfigPath, Set<String> supportedFetchers) throws TikaException, IOException, SAXException {
+    public AsyncResource(java.nio.file.Path tikaConfigPath, Set<String> supportedFetchers)
+            throws TikaException, IOException, SAXException {
         this.asyncProcessor = new AsyncProcessor(tikaConfigPath);
         this.supportedFetchers = supportedFetchers;
         this.emitterManager = EmitterManager.load(tikaConfigPath);
@@ -95,7 +95,8 @@ public class AsyncResource {
      */
     @POST
     @Produces("application/json")
-    public Map<String, Object> post(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+    public Map<String, Object> post(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info)
+            throws Exception {
 
         AsyncRequest request = deserializeASyncRequest(is);
 
@@ -103,28 +104,19 @@ public class AsyncResource {
         //the requested fetchers and emitters
         //throw early
         for (FetchEmitTuple t : request.getTuples()) {
-            if (!supportedFetchers.contains(t
-                    .getFetchKey()
-                    .getFetcherName())) {
+            if (!supportedFetchers.contains(t.getFetchKey().getFetcherName())) {
                 return badFetcher(t.getFetchKey());
             }
-            if (!emitterManager
-                    .getSupported()
-                    .contains(t
-                            .getEmitKey()
-                            .getEmitterName())) {
-                return badEmitter(t
-                        .getEmitKey()
-                        .getEmitterName());
+            if (!emitterManager.getSupported().contains(t.getEmitKey().getEmitterName())) {
+                return badEmitter(t.getEmitKey().getEmitterName());
             }
             ParseContext parseContext = t.getParseContext();
-            EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);
-            if (embeddedDocumentBytesConfig != null && embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes() &&
-                    !StringUtils.isAllBlank(embeddedDocumentBytesConfig.getEmitter())) {
+            EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext
+                    .get(EmbeddedDocumentBytesConfig.class);
+            if (embeddedDocumentBytesConfig != null && embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes()
+                    && !StringUtils.isAllBlank(embeddedDocumentBytesConfig.getEmitter())) {
                 String bytesEmitter = embeddedDocumentBytesConfig.getEmitter();
-                if (!emitterManager
-                        .getSupported()
-                        .contains(bytesEmitter)) {
+                if (!emitterManager.getSupported().contains(bytesEmitter)) {
                     return badEmitter(bytesEmitter);
                 }
             }
@@ -133,27 +125,15 @@ public class AsyncResource {
         try {
             boolean offered = asyncProcessor.offer(request.getTuples(), maxQueuePauseMs);
             if (offered) {
-                LOG.info("accepted {} tuples, capacity={}", request
-                        .getTuples()
-                        .size(), asyncProcessor.getCapacity());
-                return ok(request
-                        .getTuples()
-                        .size());
+                LOG.info("accepted {} tuples, capacity={}", request.getTuples().size(), asyncProcessor.getCapacity());
+                return ok(request.getTuples().size());
             } else {
-                LOG.info("throttling {} tuples, capacity={}", request
-                        .getTuples()
-                        .size(), asyncProcessor.getCapacity());
-                return throttle(request
-                        .getTuples()
-                        .size());
+                LOG.info("throttling {} tuples, capacity={}", request.getTuples().size(), asyncProcessor.getCapacity());
+                return throttle(request.getTuples().size());
             }
         } catch (OfferLargerThanQueueSize e) {
-            LOG.info("throttling {} tuples, capacity={}", request
-                    .getTuples()
-                    .size(), asyncProcessor.getCapacity());
-            return throttle(request
-                    .getTuples()
-                    .size());
+            LOG.info("throttling {} tuples, capacity={}", request.getTuples().size(), asyncProcessor.getCapacity());
+            return throttle(request.getTuples().size());
         }
     }
 

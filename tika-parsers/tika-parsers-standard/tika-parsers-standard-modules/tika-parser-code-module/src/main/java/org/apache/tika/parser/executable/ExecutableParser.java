@@ -25,9 +25,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.MachineMetadata;
@@ -37,6 +34,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Parser for executable files. Currently supports ELF and PE
@@ -64,23 +63,19 @@ public class ExecutableParser implements Parser, MachineMetadata {
     private static final MediaType MACH_O_BUNDLE = MediaType.application("x-mach-o-bundle");
     private static final MediaType MACH_O_DYLIB_STUB = MediaType.application("x-mach-o-dylib-stub");
     private static final MediaType MACH_O_DSYM = MediaType.application("x-mach-o-dsym");
-    private static final MediaType MACH_O_KEXT_BUNDLE = MediaType.application(
-            "x-mach-o-kext-bundle");
+    private static final MediaType MACH_O_KEXT_BUNDLE = MediaType.application("x-mach-o-kext-bundle");
 
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<>(
-                    Arrays.asList(PE_EXE, ELF_GENERAL, ELF_OBJECT, ELF_EXECUTABLE, ELF_SHAREDLIB,
-                            ELF_COREDUMP, MACH_O, MACH_O_OBJECT, MACH_O_EXECUTABLE,
-                            MACH_O_FVMLIB, MACH_O_CORE, MACH_O_PRELOAD, MACH_O_DYLIB,
-                            MACH_O_DYLINKER, MACH_O_BUNDLE, MACH_O_DYLIB_STUB, MACH_O_DSYM,
-                            MACH_O_KEXT_BUNDLE)));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections
+            .unmodifiableSet(new HashSet<>(Arrays.asList(PE_EXE, ELF_GENERAL, ELF_OBJECT, ELF_EXECUTABLE, ELF_SHAREDLIB,
+                    ELF_COREDUMP, MACH_O, MACH_O_OBJECT, MACH_O_EXECUTABLE, MACH_O_FVMLIB, MACH_O_CORE, MACH_O_PRELOAD,
+                    MACH_O_DYLIB, MACH_O_DYLINKER, MACH_O_BUNDLE, MACH_O_DYLIB_STUB, MACH_O_DSYM, MACH_O_KEXT_BUNDLE)));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         // We only do metadata, for now
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
@@ -90,18 +85,16 @@ public class ExecutableParser implements Parser, MachineMetadata {
 
         if (first4[0] == (byte) 'M' && first4[1] == (byte) 'Z') {
             parsePE(xhtml, metadata, stream, first4);
-        } else if (first4[0] == (byte) 0x7f && first4[1] == (byte) 'E' && first4[2] == (byte) 'L' &&
-                first4[3] == (byte) 'F') {
+        } else if (first4[0] == (byte) 0x7f && first4[1] == (byte) 'E' && first4[2] == (byte) 'L'
+                && first4[3] == (byte) 'F') {
             parseELF(xhtml, metadata, stream, first4);
-        } else if ((first4[0] == (byte) 0xCF || first4[0] == (byte) 0xCE) &&
-                first4[1] == (byte) 0xFA && first4[2] == (byte) 0xED && first4[3] == (byte) 0xFE) {
+        } else if ((first4[0] == (byte) 0xCF || first4[0] == (byte) 0xCE) && first4[1] == (byte) 0xFA
+                && first4[2] == (byte) 0xED && first4[3] == (byte) 0xFE) {
             parseMachO(xhtml, metadata, stream, first4);
-        } else if (first4[0] == (byte) 0xFE && first4[1] == (byte) 0xED &&
-                first4[2] == (byte) 0xFA &&
-                (first4[3] == (byte) 0xCF || first4[3] == (byte) 0xCE)) {
+        } else if (first4[0] == (byte) 0xFE && first4[1] == (byte) 0xED && first4[2] == (byte) 0xFA
+                && (first4[3] == (byte) 0xCF || first4[3] == (byte) 0xCE)) {
             parseMachO(xhtml, metadata, stream, first4);
         }
-
 
         // Finish everything
         xhtml.endDocument();
@@ -110,8 +103,8 @@ public class ExecutableParser implements Parser, MachineMetadata {
     /**
      * Parses a DOS or Windows PE file
      */
-    public void parsePE(XHTMLContentHandler xhtml, Metadata metadata, InputStream stream,
-                        byte[] first4) throws TikaException, IOException {
+    public void parsePE(XHTMLContentHandler xhtml, Metadata metadata, InputStream stream, byte[] first4)
+            throws TikaException, IOException {
         metadata.set(Metadata.CONTENT_TYPE, PE_EXE.toString());
         metadata.set(PLATFORM, PLATFORM_WINDOWS);
 
@@ -156,98 +149,99 @@ public class ExecutableParser implements Parser, MachineMetadata {
         Date createdAtD = new Date(createdAt * 1000l);
         metadata.set(TikaCoreProperties.CREATED, createdAtD);
 
-        switch (machine) {
-            case 0x14c:
+        switch (machine)
+        {
+            case 0x14c :
                 metadata.set(MACHINE_TYPE, MACHINE_x86_32);
                 metadata.set(ENDIAN, Endian.LITTLE.getName());
                 metadata.set(ARCHITECTURE_BITS, "32");
                 break;
-            case 0x8664:
+            case 0x8664 :
                 metadata.set(MACHINE_TYPE, MACHINE_x86_64);
                 metadata.set(ENDIAN, Endian.LITTLE.getName());
                 metadata.set(ARCHITECTURE_BITS, "64");
                 break;
-            case 0x200:
+            case 0x200 :
                 metadata.set(MACHINE_TYPE, MACHINE_IA_64);
                 metadata.set(ENDIAN, Endian.LITTLE.getName());
                 metadata.set(ARCHITECTURE_BITS, "64");
                 break;
 
-            case 0x184:
+            case 0x184 :
                 metadata.set(MACHINE_TYPE, MACHINE_ALPHA);
                 metadata.set(ENDIAN, Endian.LITTLE.getName());
                 metadata.set(ARCHITECTURE_BITS, "32");
                 break;
-            case 0x284:
+            case 0x284 :
                 metadata.set(MACHINE_TYPE, MACHINE_ALPHA);
                 metadata.set(ENDIAN, Endian.LITTLE.getName());
                 metadata.set(ARCHITECTURE_BITS, "64");
                 break;
 
-            case 0x1c0:
-            case 0x1c4:
+            case 0x1c0 :
+            case 0x1c4 :
                 metadata.set(MACHINE_TYPE, MACHINE_ARM);
                 metadata.set(ENDIAN, Endian.LITTLE.getName());
                 metadata.set(ARCHITECTURE_BITS, "32");
                 break;
 
-            case 0x268:
+            case 0x268 :
                 metadata.set(MACHINE_TYPE, MACHINE_M68K);
                 metadata.set(ENDIAN, Endian.BIG.getName());
                 metadata.set(ARCHITECTURE_BITS, "32");
                 break;
 
-            case 0x266:
-            case 0x366:
-            case 0x466:
+            case 0x266 :
+            case 0x366 :
+            case 0x466 :
                 metadata.set(MACHINE_TYPE, MACHINE_MIPS);
                 metadata.set(ENDIAN, Endian.BIG.getName());
                 metadata.set(ARCHITECTURE_BITS, "16");
                 break;
-            case 0x162:
-            case 0x166:
-            case 0x168:
-            case 0x169:
+            case 0x162 :
+            case 0x166 :
+            case 0x168 :
+            case 0x169 :
                 metadata.set(MACHINE_TYPE, MACHINE_MIPS);
                 metadata.set(ENDIAN, Endian.LITTLE.getName());
                 metadata.set(ARCHITECTURE_BITS, "16");
                 break;
 
-            case 0x1f0:
-            case 0x1f1:
+            case 0x1f0 :
+            case 0x1f1 :
                 metadata.set(MACHINE_TYPE, MACHINE_PPC);
                 metadata.set(ENDIAN, Endian.LITTLE.getName());
                 metadata.set(ARCHITECTURE_BITS, "32");
                 break;
 
-            case 0x1a2:
-            case 0x1a3:
+            case 0x1a2 :
+            case 0x1a3 :
                 metadata.set(MACHINE_TYPE, MACHINE_SH3);
                 metadata.set(ENDIAN, Endian.BIG.getName());
                 metadata.set(ARCHITECTURE_BITS, "32");
                 break;
-            case 0x1a6:
+            case 0x1a6 :
                 metadata.set(MACHINE_TYPE, MACHINE_SH4);
                 metadata.set(ENDIAN, Endian.BIG.getName());
                 metadata.set(ARCHITECTURE_BITS, "32");
                 break;
-            case 0x1a8:
+            case 0x1a8 :
                 metadata.set(MACHINE_TYPE, MACHINE_SH3);
                 metadata.set(ENDIAN, Endian.BIG.getName());
                 metadata.set(ARCHITECTURE_BITS, "32");
                 break;
 
-            case 0x9041:
+            case 0x9041 :
                 metadata.set(MACHINE_TYPE, MACHINE_M32R);
                 metadata.set(ENDIAN, Endian.BIG.getName());
                 metadata.set(ARCHITECTURE_BITS, "32");
                 break;
 
-            case 0xebc:
+            case 0xebc :
                 metadata.set(MACHINE_TYPE, MACHINE_EFI);
                 break;
 
-            default:
+            default :
                 metadata.set(MACHINE_TYPE, MACHINE_UNKNOWN);
                 break;
         }
@@ -256,8 +250,8 @@ public class ExecutableParser implements Parser, MachineMetadata {
     /**
      * Parses a Unix ELF file
      */
-    public void parseELF(XHTMLContentHandler xhtml, Metadata metadata, InputStream stream,
-                         byte[] first4) throws TikaException, IOException {
+    public void parseELF(XHTMLContentHandler xhtml, Metadata metadata, InputStream stream, byte[] first4)
+            throws TikaException, IOException {
         // Byte 5 is the architecture
         int architecture = stream.read();
         if (architecture == 1) {
@@ -282,53 +276,54 @@ public class ExecutableParser implements Parser, MachineMetadata {
         int os = stream.read();
         int osVer = stream.read();
         if (os > 0 || osVer > 0) {
-            switch (os) {
-                case 0:
+            switch (os)
+            {
+                case 0 :
                     metadata.set(PLATFORM, PLATFORM_SYSV);
                     break;
 
-                case 1:
+                case 1 :
                     metadata.set(PLATFORM, PLATFORM_HPUX);
                     break;
 
-                case 2:
+                case 2 :
                     metadata.set(PLATFORM, PLATFORM_NETBSD);
                     break;
 
-                case 3:
+                case 3 :
                     metadata.set(PLATFORM, PLATFORM_LINUX);
                     break;
 
-                case 6:
+                case 6 :
                     metadata.set(PLATFORM, PLATFORM_SOLARIS);
                     break;
 
-                case 7:
+                case 7 :
                     metadata.set(PLATFORM, PLATFORM_AIX);
                     break;
 
-                case 8:
+                case 8 :
                     metadata.set(PLATFORM, PLATFORM_IRIX);
                     break;
 
-                case 9:
+                case 9 :
                     metadata.set(PLATFORM, PLATFORM_FREEBSD);
                     break;
 
-                case 10:
+                case 10 :
                     metadata.set(PLATFORM, PLATFORM_TRU64);
                     break;
 
-                case 12:
+                case 12 :
                     metadata.set(PLATFORM, PLATFORM_FREEBSD);
                     break;
 
-                case 64:
-                case 97:
+                case 64 :
+                case 97 :
                     metadata.set(PLATFORM, PLATFORM_ARM);
                     break;
 
-                case 255:
+                case 255 :
                     metadata.set(PLATFORM, PLATFORM_EMBEDDED);
                     break;
             }
@@ -345,24 +340,25 @@ public class ExecutableParser implements Parser, MachineMetadata {
         } else {
             type = EndianUtils.readUShortBE(stream);
         }
-        switch (type) {
-            case 1:
+        switch (type)
+        {
+            case 1 :
                 metadata.set(Metadata.CONTENT_TYPE, ELF_OBJECT.toString());
                 break;
 
-            case 2:
+            case 2 :
                 metadata.set(Metadata.CONTENT_TYPE, ELF_EXECUTABLE.toString());
                 break;
 
-            case 3:
+            case 3 :
                 metadata.set(Metadata.CONTENT_TYPE, ELF_SHAREDLIB.toString());
                 break;
 
-            case 4:
+            case 4 :
                 metadata.set(Metadata.CONTENT_TYPE, ELF_COREDUMP.toString());
                 break;
 
-            default:
+            default :
                 metadata.set(Metadata.CONTENT_TYPE, ELF_GENERAL.toString());
                 break;
         }
@@ -374,56 +370,56 @@ public class ExecutableParser implements Parser, MachineMetadata {
         } else {
             machine = EndianUtils.readUShortBE(stream);
         }
-        switch (machine) {
-            case 2:
-            case 18:
-            case 43:
+        switch (machine)
+        {
+            case 2 :
+            case 18 :
+            case 43 :
                 metadata.set(MACHINE_TYPE, MACHINE_SPARC);
                 break;
-            case 3:
+            case 3 :
                 metadata.set(MACHINE_TYPE, MACHINE_x86_32);
                 break;
-            case 4:
+            case 4 :
                 metadata.set(MACHINE_TYPE, MACHINE_M68K);
                 break;
-            case 5:
+            case 5 :
                 metadata.set(MACHINE_TYPE, MACHINE_M88K);
                 break;
-            case 8:
-            case 10:
+            case 8 :
+            case 10 :
                 metadata.set(MACHINE_TYPE, MACHINE_MIPS);
                 break;
-            case 7:
+            case 7 :
                 metadata.set(MACHINE_TYPE, MACHINE_S370);
                 break;
-            case 20:
-            case 21:
+            case 20 :
+            case 21 :
                 metadata.set(MACHINE_TYPE, MACHINE_PPC);
                 break;
-            case 22:
+            case 22 :
                 metadata.set(MACHINE_TYPE, MACHINE_S390);
                 break;
-            case 40:
+            case 40 :
                 metadata.set(MACHINE_TYPE, MACHINE_ARM);
                 break;
-            case 41:
-            case 0x9026:
+            case 41 :
+            case 0x9026 :
                 metadata.set(MACHINE_TYPE, MACHINE_ALPHA);
                 break;
-            case 50:
+            case 50 :
                 metadata.set(MACHINE_TYPE, MACHINE_IA_64);
                 break;
-            case 62:
+            case 62 :
                 metadata.set(MACHINE_TYPE, MACHINE_x86_64);
                 break;
-            case 75:
+            case 75 :
                 metadata.set(MACHINE_TYPE, MACHINE_VAX);
                 break;
-            case 88:
+            case 88 :
                 metadata.set(MACHINE_TYPE, MACHINE_M32R);
                 break;
         }
-
 
         // Bytes 20-23 are the version
         // TODO
@@ -432,8 +428,8 @@ public class ExecutableParser implements Parser, MachineMetadata {
     /**
      * Parses a Mach-O file
      */
-    public void parseMachO(XHTMLContentHandler xhtml, Metadata metadata, InputStream stream,
-                           byte[] first4) throws TikaException, IOException {
+    public void parseMachO(XHTMLContentHandler xhtml, Metadata metadata, InputStream stream, byte[] first4)
+            throws TikaException, IOException {
         var isLE = first4[3] == (byte) 0xFE;
         if (isLE) {
             metadata.set(ENDIAN, Endian.LITTLE.getName());
@@ -442,87 +438,83 @@ public class ExecutableParser implements Parser, MachineMetadata {
         }
 
         // Bytes 5-8 are the CPU type and architecture bits
-        var cpuType = isLE
-                ? EndianUtils.readIntLE(stream)
-                : EndianUtils.readIntBE(stream);
+        var cpuType = isLE ? EndianUtils.readIntLE(stream) : EndianUtils.readIntBE(stream);
         if ((cpuType >> 24) == 1) {
             metadata.set(ARCHITECTURE_BITS, "64");
         }
-        switch (cpuType) {
-            case 1:
+        switch (cpuType)
+        {
+            case 1 :
                 metadata.set(MACHINE_TYPE, MACHINE_VAX);
                 break;
-            case 6:
+            case 6 :
                 metadata.set(MACHINE_TYPE, MACHINE_M68K);
                 break;
-            case 7:
+            case 7 :
                 metadata.set(MACHINE_TYPE, MACHINE_x86_32);
                 break;
-            case (7 | 0x01000000):
+            case (7 | 0x01000000) :
                 metadata.set(MACHINE_TYPE, MACHINE_x86_64);
                 break;
-            case 8:
+            case 8 :
                 metadata.set(MACHINE_TYPE, MACHINE_MIPS);
                 break;
-            case 12:
-            case (12 | 0x01000000):
+            case 12 :
+            case (12 | 0x01000000) :
                 metadata.set(MACHINE_TYPE, MACHINE_ARM);
                 break;
-            case 13:
+            case 13 :
                 metadata.set(MACHINE_TYPE, MACHINE_M88K);
                 break;
-            case 14:
+            case 14 :
                 metadata.set(MACHINE_TYPE, MACHINE_SPARC);
                 break;
-            case 18:
+            case 18 :
                 metadata.set(MACHINE_TYPE, MACHINE_PPC);
                 break;
         }
 
         // Bytes 9-12 are the CPU subtype
-        var cpuSubtype = isLE
-                ? EndianUtils.readIntLE(stream)
-                : EndianUtils.readIntBE(stream);
+        var cpuSubtype = isLE ? EndianUtils.readIntLE(stream) : EndianUtils.readIntBE(stream);
 
         // Bytes 13-16 are the file type
-        var fileType = isLE
-                ? EndianUtils.readIntLE(stream)
-                : EndianUtils.readIntBE(stream);
-        switch (fileType) {
-            case 0x1:
+        var fileType = isLE ? EndianUtils.readIntLE(stream) : EndianUtils.readIntBE(stream);
+        switch (fileType)
+        {
+            case 0x1 :
                 metadata.set(Metadata.CONTENT_TYPE, MACH_O_OBJECT.toString());
                 break;
-            case 0x2:
+            case 0x2 :
                 metadata.set(Metadata.CONTENT_TYPE, MACH_O_EXECUTABLE.toString());
                 break;
-            case 0x3:
+            case 0x3 :
                 metadata.set(Metadata.CONTENT_TYPE, MACH_O_FVMLIB.toString());
                 break;
-            case 0x4:
+            case 0x4 :
                 metadata.set(Metadata.CONTENT_TYPE, MACH_O_CORE.toString());
                 break;
-            case 0x5:
+            case 0x5 :
                 metadata.set(Metadata.CONTENT_TYPE, MACH_O_PRELOAD.toString());
                 break;
-            case 0x6:
+            case 0x6 :
                 metadata.set(Metadata.CONTENT_TYPE, MACH_O_DYLIB.toString());
                 break;
-            case 0x7:
+            case 0x7 :
                 metadata.set(Metadata.CONTENT_TYPE, MACH_O_DYLINKER.toString());
                 break;
-            case 0x8:
+            case 0x8 :
                 metadata.set(Metadata.CONTENT_TYPE, MACH_O_BUNDLE.toString());
                 break;
-            case 0x9:
+            case 0x9 :
                 metadata.set(Metadata.CONTENT_TYPE, MACH_O_DYLIB_STUB.toString());
                 break;
-            case 0xa:
+            case 0xa :
                 metadata.set(Metadata.CONTENT_TYPE, MACH_O_DSYM.toString());
                 break;
-            case 0xb:
+            case 0xb :
                 metadata.set(Metadata.CONTENT_TYPE, MACH_O_KEXT_BUNDLE.toString());
                 break;
-            default:
+            default :
                 metadata.set(Metadata.CONTENT_TYPE, MACH_O.toString());
                 break;
         }

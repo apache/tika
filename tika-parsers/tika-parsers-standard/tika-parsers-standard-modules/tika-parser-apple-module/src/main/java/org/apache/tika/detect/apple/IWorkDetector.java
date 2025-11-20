@@ -23,7 +23,6 @@ import java.util.Set;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
-
 import org.apache.tika.detect.zip.StreamingDetectContext;
 import org.apache.tika.detect.zip.ZipContainerDetector;
 import org.apache.tika.io.TikaInputStream;
@@ -33,7 +32,6 @@ import org.apache.tika.parser.iwork.iwana.IWork13PackageParser;
 import org.apache.tika.parser.iwork.iwana.IWork18PackageParser;
 
 public class IWorkDetector implements ZipContainerDetector {
-
 
     private static MediaType detectIWork13(ZipFile zip) {
         if (zip.getEntry(IWork13PackageParser.IWORK13_COMMON_ENTRY) != null) {
@@ -80,8 +78,7 @@ public class IWorkDetector implements ZipContainerDetector {
     }
 
     @Override
-    public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis,
-                                           StreamingDetectContext detectContext) {
+    public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis, StreamingDetectContext detectContext) {
         String name = zae.getName();
         EntryNames entryNames = detectContext.get(EntryNames.class);
         if (entryNames == null) {
@@ -90,8 +87,7 @@ public class IWorkDetector implements ZipContainerDetector {
         }
         entryNames.names.add(name);
         if (IWorkPackageParser.IWORK_CONTENT_ENTRIES.contains(name)) {
-            IWorkPackageParser.IWORKDocumentType type =
-                    IWorkPackageParser.IWORKDocumentType.detectType(zis);
+            IWorkPackageParser.IWORKDocumentType type = IWorkPackageParser.IWORKDocumentType.detectType(zis);
             if (type != null) {
                 return type.getType();
             }

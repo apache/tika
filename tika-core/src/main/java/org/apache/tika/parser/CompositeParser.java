@@ -27,9 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.io.TemporaryResources;
@@ -41,6 +38,8 @@ import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.sax.TaggedContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.ParserUtils;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Composite parser that delegates parsing tasks to a component parser
@@ -71,7 +70,7 @@ public class CompositeParser implements Parser {
     private Parser fallback = new EmptyParser();
 
     public CompositeParser(MediaTypeRegistry registry, List<Parser> parsers,
-                           Collection<Class<? extends Parser>> excludeParsers) {
+            Collection<Class<? extends Parser>> excludeParsers) {
         if (excludeParsers == null || excludeParsers.isEmpty()) {
             this.parsers = parsers;
         } else {
@@ -107,13 +106,11 @@ public class CompositeParser implements Parser {
         return map;
     }
 
-    private boolean isExcluded(Collection<Class<? extends Parser>> excludeParsers,
-                               Class<? extends Parser> p) {
+    private boolean isExcluded(Collection<Class<? extends Parser>> excludeParsers, Class<? extends Parser> p) {
         return excludeParsers.contains(p) || assignableFrom(excludeParsers, p);
     }
 
-    private boolean assignableFrom(Collection<Class<? extends Parser>> excludeParsers,
-                                   Class<? extends Parser> p) {
+    private boolean assignableFrom(Collection<Class<? extends Parser>> excludeParsers, Class<? extends Parser> p) {
         for (Class<? extends Parser> e : excludeParsers) {
             if (e.isAssignableFrom(p)) {
                 return true;
@@ -200,8 +197,7 @@ public class CompositeParser implements Parser {
     public void setParsers(Map<MediaType, Parser> parsers) {
         this.parsers = new ArrayList<>(parsers.size());
         for (Map.Entry<MediaType, Parser> entry : parsers.entrySet()) {
-            this.parsers.add(ParserDecorator
-                    .withTypes(entry.getValue(), Collections.singleton(entry.getKey())));
+            this.parsers.add(ParserDecorator.withTypes(entry.getValue(), Collections.singleton(entry.getKey())));
         }
     }
 
@@ -277,8 +273,8 @@ public class CompositeParser implements Parser {
      * handler are automatically wrapped into {@link TikaException}s to better
      * honor the {@link Parser} contract.
      */
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         Parser parser = getParser(metadata, context);
         TemporaryResources tmp = new TemporaryResources();
         ParseRecord parserRecord = context.get(ParseRecord.class);
@@ -288,8 +284,7 @@ public class CompositeParser implements Parser {
         }
         try {
             TikaInputStream taggedStream = TikaInputStream.get(stream, tmp, metadata);
-            TaggedContentHandler taggedHandler =
-                    handler != null ? new TaggedContentHandler(handler) : null;
+            TaggedContentHandler taggedHandler = handler != null ? new TaggedContentHandler(handler) : null;
             String parserClassname = ParserUtils.getParserClassname(parser);
             parserRecord.addParserClass(parserClassname);
             ParserUtils.recordParserDetails(parserClassname, metadata);

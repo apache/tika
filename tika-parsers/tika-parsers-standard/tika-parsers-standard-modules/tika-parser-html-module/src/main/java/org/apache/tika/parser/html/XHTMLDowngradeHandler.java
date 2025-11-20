@@ -17,14 +17,14 @@
 package org.apache.tika.parser.html;
 
 import java.util.Locale;
+
 import javax.xml.XMLConstants;
 
+import org.apache.tika.sax.ContentHandlerDecorator;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
-
-import org.apache.tika.sax.ContentHandlerDecorator;
 
 /**
  * Content handler decorator that downgrades XHTML elements to
@@ -40,8 +40,7 @@ class XHTMLDowngradeHandler extends ContentHandlerDecorator {
     }
 
     @Override
-    public void startElement(String uri, String localName, String name, Attributes atts)
-            throws SAXException {
+    public void startElement(String uri, String localName, String name, Attributes atts) throws SAXException {
         String upper = localName.toUpperCase(Locale.ENGLISH);
 
         AttributesImpl attributes = new AttributesImpl();
@@ -49,9 +48,8 @@ class XHTMLDowngradeHandler extends ContentHandlerDecorator {
             String auri = atts.getURI(i);
             String local = atts.getLocalName(i);
             String qname = atts.getQName(i);
-            if (XMLConstants.NULL_NS_URI.equals(auri) &&
-                    !local.equals(XMLConstants.XMLNS_ATTRIBUTE) &&
-                    !qname.startsWith(XMLConstants.XMLNS_ATTRIBUTE + ":")) {
+            if (XMLConstants.NULL_NS_URI.equals(auri) && !local.equals(XMLConstants.XMLNS_ATTRIBUTE)
+                    && !qname.startsWith(XMLConstants.XMLNS_ATTRIBUTE + ":")) {
                 attributes.addAttribute(auri, local, qname, atts.getType(i), atts.getValue(i));
             }
         }

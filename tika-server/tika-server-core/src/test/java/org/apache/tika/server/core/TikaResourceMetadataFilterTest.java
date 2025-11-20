@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -26,17 +25,17 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.serialization.JsonMetadata;
 import org.apache.tika.server.core.resource.TikaResource;
 import org.apache.tika.server.core.writer.JSONMessageBodyWriter;
+import org.junit.jupiter.api.Test;
+
+import jakarta.ws.rs.core.Response;
 
 public class TikaResourceMetadataFilterTest extends CXFTestBase {
 
@@ -63,14 +62,12 @@ public class TikaResourceMetadataFilterTest extends CXFTestBase {
         sf.setProviders(providers);
     }
 
-
     @Test
     public void testBasic() throws Exception {
-        Response response = WebClient
-                .create(endPoint + TIKA_PATH)
-                .accept("application/json")
+        Response response = WebClient.create(endPoint + TIKA_PATH).accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
-        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(((InputStream) response.getEntity()), StandardCharsets.UTF_8));
+        Metadata metadata = JsonMetadata
+                .fromJson(new InputStreamReader(((InputStream) response.getEntity()), StandardCharsets.UTF_8));
         assertEquals(2, metadata.names().length);
         assertNull(metadata.get("author"));
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));

@@ -45,8 +45,7 @@ public class Lingo24TranslatorTest {
             try {
                 result = translator.translate(source, "es", "en");
                 assertNotNull(result);
-                assertEquals(expected, result,
-                        "Result: [" + result + "]: not equal to expected: [" + expected + "]");
+                assertEquals(expected, result, "Result: [" + result + "]: not equal to expected: [" + expected + "]");
             } catch (Exception e) {
                 e.printStackTrace();
                 fail(e.getMessage());
@@ -64,8 +63,7 @@ public class Lingo24TranslatorTest {
             try {
                 result = translator.translate(source, "en");
                 assertNotNull(result);
-                assertEquals(expected, result,
-                        "Result: [" + result + "]: not equal to expected: [" + expected + "]");
+                assertEquals(expected, result, "Result: [" + result + "]: not equal to expected: [" + expected + "]");
             } catch (Exception e) {
                 e.printStackTrace();
                 fail(e.getMessage());
@@ -75,4 +73,3 @@ public class Lingo24TranslatorTest {
     }
 
 }
-

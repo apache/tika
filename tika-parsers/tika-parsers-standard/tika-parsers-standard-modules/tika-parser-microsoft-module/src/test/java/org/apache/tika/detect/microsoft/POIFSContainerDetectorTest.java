@@ -22,25 +22,20 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.junit.jupiter.api.Test;
 
 public class POIFSContainerDetectorTest {
 
     @Test
     public void testBasic() throws Exception {
-        String[] files =
-                new String[]{"testEXCEL.xls", "testWORD.doc", "testPPT.ppt", "testVISIO.vsd",
-                        "test-outlook.msg"};
-        String[] expected =
-                new String[]{
-                    "application/vnd.ms-excel", "application/msword", "application/vnd.ms-powerpoint",
-                        "application/vnd.visio", "application/vnd.ms-outlook"
-                };
+        String[] files = new String[]{"testEXCEL.xls", "testWORD.doc", "testPPT.ppt", "testVISIO.vsd",
+                "test-outlook.msg"};
+        String[] expected = new String[]{"application/vnd.ms-excel", "application/msword",
+                "application/vnd.ms-powerpoint", "application/vnd.visio", "application/vnd.ms-outlook"};
         for (String fileName : files) {
             testStream(fileName, "application/x-tika-msoffice", -1);
             testStream(fileName, "application/x-tika-msoffice", 0);
@@ -74,7 +69,8 @@ public class POIFSContainerDetectorTest {
         return POIFSContainerDetectorTest.class.getResourceAsStream("/test-documents/" + fileName);
     }
 
-    private void assertExpected(Detector detector, InputStream is, String expectedMime, String expectedDigest) throws IOException {
+    private void assertExpected(Detector detector, InputStream is, String expectedMime, String expectedDigest)
+            throws IOException {
         MediaType mt = detector.detect(is, new Metadata());
         assertEquals(expectedMime, mt.toString());
         assertEquals(expectedDigest, digest(is));

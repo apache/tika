@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
@@ -39,8 +38,7 @@ public class StreamObjectHeaderEnd8bit extends StreamObjectHeaderEnd {
         this.type = StreamObjectTypeHeaderEnd.fromIntVal(type);
         if (this.type == null) {
             throw new TikaException(String.format(Locale.US,
-                    "The type value %s is not defined for the stream object end 8 bit header",
-                    type));
+                    "The type value %s is not defined for the stream object end 8 bit header", type));
         }
 
     }
@@ -97,23 +95,21 @@ public class StreamObjectHeaderEnd8bit extends StreamObjectHeaderEnd {
      * @return Return the length in byte of the StreamObjectHeaderEnd8bit basic object.
      */
     @Override
-    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex)
-            throws IOException, TikaException {
+    protected int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException, TikaException {
         BitReader reader = new BitReader(byteArray, startIndex);
         int headerType = reader.readInt32(2);
 
         if (headerType != 0x1) {
-            throw new TikaException(String.format(Locale.US,
-                    "Failed to get the StreamObjectHeaderEnd8bit header type value, " +
-                            "expect value %s, but actual value is %s", 0x1, headerType));
+            throw new TikaException(
+                    String.format(Locale.US, "Failed to get the StreamObjectHeaderEnd8bit header type value, "
+                            + "expect value %s, but actual value is %s", 0x1, headerType));
         }
 
         int typeValue = reader.readUInt32(6);
         this.type = StreamObjectTypeHeaderEnd.fromIntVal(typeValue);
         if (this.type == null) {
             throw new TikaException(String.format(Locale.US,
-                    "Failed to get the StreamObjectHeaderEnd8bit type value, the value %s is not defined",
-                    typeValue));
+                    "Failed to get the StreamObjectHeaderEnd8bit type value, the value %s is not defined", typeValue));
         }
 
         return 1;

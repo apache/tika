@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.pkg;
 
-
 import static org.apache.tika.detect.zip.PackageConstants.AR;
 import static org.apache.tika.detect.zip.PackageConstants.ARJ;
 import static org.apache.tika.detect.zip.PackageConstants.CPIO;
@@ -55,10 +54,6 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -74,6 +69,9 @@ import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Parser for various packaging formats. Package entries will be written to
@@ -103,45 +101,35 @@ public class PackageParser extends AbstractEncodingDetectorParser {
      * Serial version UID
      */
     private static final long serialVersionUID = -5331043266963888708L;
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            MediaType.set(ZIP, JAR, AR, ARJ, CPIO, DUMP, TAR, SEVENZ);
+    private static final Set<MediaType> SUPPORTED_TYPES = MediaType.set(ZIP, JAR, AR, ARJ, CPIO, DUMP, TAR, SEVENZ);
     // the mark limit used for stream
     private static final int MARK_LIMIT = 100 * 1024 * 1024; // 100M
     // The number of bytes of entry name to detect charset properly
     private static final int MIN_BYTES_FOR_DETECTING_CHARSET = 100;
 
-
     static final Set<MediaType> loadPackageSpecializations() {
         Set<MediaType> zipSpecializations = new HashSet<>();
         for (String mediaTypeString : new String[]{
                 //specializations of ZIP
-                "application/bizagi-modeler", "application/epub+zip",
-                "application/hwp+zip",
-                "application/java-archive",
+                "application/bizagi-modeler", "application/epub+zip", "application/hwp+zip", "application/java-archive",
                 "application/vnd.adobe.air-application-installer-package+zip",
                 "application/vnd.android.package-archive", "application/vnd.apple.iwork",
-                "application/vnd.apple.keynote", "application/vnd.apple.numbers",
-                "application/vnd.apple.pages", "application/vnd.apple.unknown.13",
-                "application/vnd.etsi.asic-e+zip", "application/vnd.etsi.asic-s+zip",
-                "application/vnd.google-earth.kmz", "application/vnd.mindjet.mindmanager",
-                "application/vnd.ms-excel.addin.macroenabled.12",
+                "application/vnd.apple.keynote", "application/vnd.apple.numbers", "application/vnd.apple.pages",
+                "application/vnd.apple.unknown.13", "application/vnd.etsi.asic-e+zip",
+                "application/vnd.etsi.asic-s+zip", "application/vnd.google-earth.kmz",
+                "application/vnd.mindjet.mindmanager", "application/vnd.ms-excel.addin.macroenabled.12",
                 "application/vnd.ms-excel.sheet.binary.macroenabled.12",
-                "application/vnd.ms-excel.sheet.macroenabled.12",
-                "application/vnd.ms-excel.template.macroenabled.12",
+                "application/vnd.ms-excel.sheet.macroenabled.12", "application/vnd.ms-excel.template.macroenabled.12",
                 "application/vnd.ms-powerpoint.addin.macroenabled.12",
                 "application/vnd.ms-powerpoint.presentation.macroenabled.12",
                 "application/vnd.ms-powerpoint.slide.macroenabled.12",
                 "application/vnd.ms-powerpoint.slideshow.macroenabled.12",
-                "application/vnd.ms-powerpoint.template.macroenabled.12",
-                "application/vnd.ms-visio.drawing",
-                "application/vnd.ms-visio.drawing.macroenabled.12",
-                "application/vnd.ms-visio.stencil",
-                "application/vnd.ms-visio.stencil.macroenabled.12",
-                "application/vnd.ms-visio.template",
-                "application/vnd.ms-visio.template.macroenabled.12",
-                "application/vnd.ms-word.document.macroenabled.12",
-                "application/vnd.ms-word.template.macroenabled.12",
-                "application/vnd.ms-xpsdocument", "application/vnd.oasis.opendocument.formula",
+                "application/vnd.ms-powerpoint.template.macroenabled.12", "application/vnd.ms-visio.drawing",
+                "application/vnd.ms-visio.drawing.macroenabled.12", "application/vnd.ms-visio.stencil",
+                "application/vnd.ms-visio.stencil.macroenabled.12", "application/vnd.ms-visio.template",
+                "application/vnd.ms-visio.template.macroenabled.12", "application/vnd.ms-word.document.macroenabled.12",
+                "application/vnd.ms-word.template.macroenabled.12", "application/vnd.ms-xpsdocument",
+                "application/vnd.oasis.opendocument.formula",
                 "application/vnd.openxmlformats-officedocument.presentationml.presentation",
                 "application/vnd.openxmlformats-officedocument.presentationml.slide",
                 "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
@@ -149,35 +137,25 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.template",
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
-                "application/x-ibooks+zip", "application/x-itunes-ipa",
-                "application/x-tika-iworks-protected", "application/x-tika-java-enterprise-archive",
-                "application/x-tika-java-web-archive", "application/x-tika-ooxml",
-                "application/x-tika-visio-ooxml", "application/x-xliff+zip", "application/x-xmind",
-                "model/vnd.dwfx+xps", "application/vnd.sun.xml.calc",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.template", "application/x-ibooks+zip",
+                "application/x-itunes-ipa", "application/x-tika-iworks-protected",
+                "application/x-tika-java-enterprise-archive", "application/x-tika-java-web-archive",
+                "application/x-tika-ooxml", "application/x-tika-visio-ooxml", "application/x-xliff+zip",
+                "application/x-xmind", "model/vnd.dwfx+xps", "application/vnd.sun.xml.calc",
                 "application/vnd.sun.xml.writer", "application/vnd.sun.xml.writer.template",
                 "application/vnd.sun.xml.draw", "application/vnd.sun.xml.impress",
-                "application/vnd.openofficeorg.autotext",
-                "application/vnd.oasis.opendocument.graphics-template",
+                "application/vnd.openofficeorg.autotext", "application/vnd.oasis.opendocument.graphics-template",
                 "application/vnd.oasis.opendocument.text-web",
                 "application/vnd.oasis.opendocument.spreadsheet-template",
-                "application/vnd.oasis.opendocument.graphics",
-                "application/vnd.oasis.opendocument.image-template",
-                "application/vnd.oasis.opendocument.text",
-                "application/vnd.oasis.opendocument.text-template",
-                "application/vnd.oasis.opendocument.presentation",
-                "application/vnd.oasis.opendocument.chart",
-                "application/vnd.openofficeorg.extension",
-                "application/vnd.oasis.opendocument.spreadsheet",
-                "application/vnd.oasis.opendocument.image",
-                "application/vnd.oasis.opendocument.formula-template",
+                "application/vnd.oasis.opendocument.graphics", "application/vnd.oasis.opendocument.image-template",
+                "application/vnd.oasis.opendocument.text", "application/vnd.oasis.opendocument.text-template",
+                "application/vnd.oasis.opendocument.presentation", "application/vnd.oasis.opendocument.chart",
+                "application/vnd.openofficeorg.extension", "application/vnd.oasis.opendocument.spreadsheet",
+                "application/vnd.oasis.opendocument.image", "application/vnd.oasis.opendocument.formula-template",
                 "application/vnd.oasis.opendocument.presentation-template",
-                "application/vnd.oasis.opendocument.chart-template",
-                "application/vnd.oasis.opendocument.text-master",
-                "application/vnd.adobe.indesign-idml-package",
-                "application/x-gtar", //specialization of tar
-                "application/x-wacz", "application/x-vnd.datapackage+zip"
-        }) {
+                "application/vnd.oasis.opendocument.chart-template", "application/vnd.oasis.opendocument.text-master",
+                "application/vnd.adobe.indesign-idml-package", "application/x-gtar", //specialization of tar
+                "application/x-wacz", "application/x-vnd.datapackage+zip"}) {
             zipSpecializations.add(MediaType.parse(mediaTypeString));
         }
         return Collections.unmodifiableSet(zipSpecializations);
@@ -205,9 +183,8 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         }
     }
 
-    protected static Metadata handleEntryMetadata(String name, Date createAt, Date modifiedAt,
-                                                  Long size, XHTMLContentHandler xhtml)
-            throws SAXException, IOException, TikaException {
+    protected static Metadata handleEntryMetadata(String name, Date createAt, Date modifiedAt, Long size,
+            XHTMLContentHandler xhtml) throws SAXException, IOException, TikaException {
         Metadata entrydata = new Metadata();
         if (createAt != null) {
             entrydata.set(TikaCoreProperties.CREATED, createAt);
@@ -246,8 +223,8 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         // Ensure that the stream supports the mark feature
         if (!stream.markSupported()) {
@@ -262,14 +239,12 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         }
     }
 
-    private void _parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                ParseContext context, TemporaryResources tmp)
-            throws TikaException, IOException, SAXException {
+    private void _parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context,
+            TemporaryResources tmp) throws TikaException, IOException, SAXException {
         ArchiveInputStream ais = null;
         String encoding = null;
         try {
-            ArchiveStreamFactory factory =
-                    context.get(ArchiveStreamFactory.class, new ArchiveStreamFactory());
+            ArchiveStreamFactory factory = context.get(ArchiveStreamFactory.class, new ArchiveStreamFactory());
             encoding = factory.getEntryEncoding();
             // At the end we want to close the archive stream to release
             // any associated resources, but the underlying document stream
@@ -277,9 +252,9 @@ public class PackageParser extends AbstractEncodingDetectorParser {
             //TODO -- we've probably already detected the stream by here. We should
             //rely on that detection and not re-detect.
             encoding = factory.getEntryEncoding();
-                // At the end we want to close the archive stream to release
-                // any associated resources, but the underlying document stream
-                // should not be closed
+            // At the end we want to close the archive stream to release
+            // any associated resources, but the underlying document stream
+            // should not be closed
             ais = factory.createArchiveInputStream(CloseShieldInputStream.wrap(stream));
 
         } catch (StreamingNotSupportedException sne) {
@@ -315,14 +290,13 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 throw new TikaException("Unknown non-streaming format " + sne.getFormat(), sne);
             }
         } catch (ArchiveException e) {
-            tmp .close();
+            tmp.close();
             throw new TikaException("Unable to unpack document stream", e);
         }
 
         updateMediaType(ais, metadata);
         // Use the delegate parser to parse the contained document
-        EmbeddedDocumentExtractor extractor =
-                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        EmbeddedDocumentExtractor extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
@@ -341,8 +315,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 ais.close();
                 // An exception would be thrown if MARK_LIMIT is not big enough
                 stream.reset();
-                ais = new ZipArchiveInputStream(CloseShieldInputStream.wrap(stream), encoding, true,
-                        true);
+                ais = new ZipArchiveInputStream(CloseShieldInputStream.wrap(stream), encoding, true, true);
                 parseEntries(ais, metadata, extractor, xhtml, true, entryCnt);
             }
         } finally {
@@ -365,9 +338,8 @@ public class PackageParser extends AbstractEncodingDetectorParser {
      * @throws IOException   if a UnsupportedZipFeatureException is met
      * @throws SAXException  if the SAX events could not be processed
      */
-    private void parseEntries(ArchiveInputStream ais, Metadata metadata,
-                              EmbeddedDocumentExtractor extractor, XHTMLContentHandler xhtml,
-                              boolean shouldUseDataDescriptor, AtomicInteger entryCnt)
+    private void parseEntries(ArchiveInputStream ais, Metadata metadata, EmbeddedDocumentExtractor extractor,
+            XHTMLContentHandler xhtml, boolean shouldUseDataDescriptor, AtomicInteger entryCnt)
             throws TikaException, IOException, SAXException {
         try {
             ArchiveEntry entry = ais.getNextEntry();
@@ -425,7 +397,6 @@ public class PackageParser extends AbstractEncodingDetectorParser {
             return;
         }
 
-
         MediaType incomingMediaType = MediaType.parse(incomingContentTypeString);
         if (incomingMediaType == null) {
             metadata.set(Metadata.CONTENT_TYPE, type.toString());
@@ -437,12 +408,10 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         }
     }
 
-    private void parseEntry(ArchiveInputStream archive, ArchiveEntry entry,
-                            EmbeddedDocumentExtractor extractor, Metadata parentMetadata,
-                            XHTMLContentHandler xhtml)
-            throws SAXException, IOException, TikaException {
+    private void parseEntry(ArchiveInputStream archive, ArchiveEntry entry, EmbeddedDocumentExtractor extractor,
+            Metadata parentMetadata, XHTMLContentHandler xhtml) throws SAXException, IOException, TikaException {
         String name = entry.getName();
-        
+
         //Try to detect charset of archive entry in case of non-unicode filename is used
         if (detectCharsetsInEntryNames && entry instanceof ZipArchiveEntry) {
             // Extend short entry name to improve accuracy of charset detection
@@ -456,20 +425,16 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 }
             }
 
-            Charset candidate =
-                    getEncodingDetector().detect(
-                            UnsynchronizedByteArrayInputStream.builder().setByteArray(extendedEntryName).get(),
-                            parentMetadata);
+            Charset candidate = getEncodingDetector().detect(
+                    UnsynchronizedByteArrayInputStream.builder().setByteArray(extendedEntryName).get(), parentMetadata);
             if (candidate != null) {
                 name = new String(((ZipArchiveEntry) entry).getRawName(), candidate);
             }
         }
-        
+
         if (archive.canReadEntryData(entry)) {
             // Fetch the metadata on the entry contained in the archive
-            Metadata entrydata =
-                    handleEntryMetadata(name, null, entry.getLastModifiedDate(), entry.getSize(),
-                            xhtml);
+            Metadata entrydata = handleEntryMetadata(name, null, entry.getLastModifiedDate(), entry.getSize(), xhtml);
 
             // Recurse into the entry if desired
             if (extractor.shouldParseEmbedded(entrydata)) {
@@ -490,24 +455,20 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 boolean usesEncryption = zipArchiveEntry.getGeneralPurposeBit().usesEncryption();
                 if (usesEncryption) {
                     EmbeddedDocumentUtil.recordEmbeddedStreamException(
-                            new EncryptedDocumentException("stream (" + name + ") is encrypted"),
-                            parentMetadata);
+                            new EncryptedDocumentException("stream (" + name + ") is encrypted"), parentMetadata);
                 }
 
                 // do not write to the handler if
                 // UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR
                 // is met, we will catch this exception and read the zip archive once again
-                boolean usesDataDescriptor =
-                        zipArchiveEntry.getGeneralPurposeBit().usesDataDescriptor();
+                boolean usesDataDescriptor = zipArchiveEntry.getGeneralPurposeBit().usesDataDescriptor();
                 if (usesDataDescriptor && zipArchiveEntry.getMethod() == ZipEntry.STORED) {
-                    throw new UnsupportedZipFeatureException(
-                            UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR,
+                    throw new UnsupportedZipFeatureException(UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR,
                             zipArchiveEntry);
                 }
             } else {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(
-                        new TikaException("Can't read archive stream (" + name + ")"),
-                        parentMetadata);
+                        new TikaException("Can't read archive stream (" + name + ")"), parentMetadata);
             }
             if (name.length() > 0) {
                 xhtml.element("p", name);

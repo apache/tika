@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.exception;
 
 import java.io.IOException;
@@ -34,8 +33,7 @@ public class FileTooLongException extends IOException {
     }
 
     private static String msg(long length, long maxLength) {
-        return "File is " + length + " bytes, but " + maxLength +
-                " is the maximum length allowed.  You can modify maxLength via " +
-                "the setter on the fetcher.";
+        return "File is " + length + " bytes, but " + maxLength
+                + " is the maximum length allowed.  You can modify maxLength via " + "the setter on the fetcher.";
     }
 }

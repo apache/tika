@@ -19,10 +19,9 @@ package org.apache.tika.parser.mp3;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.tika.exception.TikaException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
-import org.apache.tika.exception.TikaException;
 
 /**
  * An Audio Frame in an MP3 file. These come after the ID3v2 tags in the file.
@@ -72,8 +71,7 @@ public class AudioFrame implements MP3Frame {
      * @deprecated Use the constructor which is passed all values directly.
      */
     @Deprecated
-    public AudioFrame(InputStream stream, ContentHandler handler)
-            throws IOException, SAXException, TikaException {
+    public AudioFrame(InputStream stream, ContentHandler handler) throws IOException, SAXException, TikaException {
         this(-2, -2, -2, -2, stream);
     }
 
@@ -96,14 +94,15 @@ public class AudioFrame implements MP3Frame {
 
             int rateCode = (h3 >> 2) & 0x03;
             int rate;
-            switch (rateCode) {
-                case 0:
+            switch (rateCode)
+            {
+                case 0 :
                     rate = 11025;
                     break;
-                case 1:
+                case 1 :
                     rate = 12000;
                     break;
-                default:
+                default :
                     rate = 8000;
             }
             if (versionCode == MPEG_V2) {
@@ -139,8 +138,8 @@ public class AudioFrame implements MP3Frame {
      * @param length      the frame length (in bytes)
      * @param duration    the duration of this frame (in milliseconds)
      */
-    public AudioFrame(int mpegVersion, int layer, int bitRate, int sampleRate, int channels,
-                      int length, float duration) {
+    public AudioFrame(int mpegVersion, int layer, int bitRate, int sampleRate, int channels, int length,
+            float duration) {
         versionCode = mpegVersion;
         this.layer = layer;
         this.bitRate = bitRate;

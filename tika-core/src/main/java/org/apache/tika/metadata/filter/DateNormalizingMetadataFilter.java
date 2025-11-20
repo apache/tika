@@ -23,13 +23,12 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Some dates in some file formats do not have a timezone.
@@ -75,8 +74,7 @@ public class DateNormalizingMetadataFilter extends MetadataFilter {
                         d = dateFormatter.parse(dateString);
                         metadata.set(property, utcFormatter.format(d));
                     } catch (ParseException e) {
-                        LOGGER.warn("Couldn't convert date to default time zone: >"
-                                + dateString + "<");
+                        LOGGER.warn("Couldn't convert date to default time zone: >" + dateString + "<");
                     }
                 }
             }

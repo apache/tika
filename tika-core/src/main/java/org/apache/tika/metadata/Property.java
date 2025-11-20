@@ -48,16 +48,14 @@ public final class Property implements Comparable<Property> {
      */
     private final Set<String> choices;
 
-    private Property(String name, boolean internal, PropertyType propertyType, ValueType valueType,
-                     String[] choices, Property primaryProperty,
-                     Property[] secondaryExtractProperties) {
+    private Property(String name, boolean internal, PropertyType propertyType, ValueType valueType, String[] choices,
+            Property primaryProperty, Property[] secondaryExtractProperties) {
         this.name = name;
         this.internal = internal;
         this.propertyType = propertyType;
         this.valueType = valueType;
         if (choices != null) {
-            this.choices = Collections
-                    .unmodifiableSet(new HashSet<>(Arrays.asList(choices.clone())));
+            this.choices = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(choices.clone())));
         } else {
             this.choices = null;
         }
@@ -76,8 +74,7 @@ public final class Property implements Comparable<Property> {
         }
     }
 
-    private Property(String name, boolean internal, PropertyType propertyType, ValueType valueType,
-                     String[] choices) {
+    private Property(String name, boolean internal, PropertyType propertyType, ValueType valueType, String[] choices) {
         this(name, internal, propertyType, valueType, choices, null, null);
     }
 
@@ -89,8 +86,7 @@ public final class Property implements Comparable<Property> {
         this(name, internal, PropertyType.SIMPLE, valueType, null);
     }
 
-    private Property(String name, boolean internal, PropertyType propertyType,
-                     ValueType valueType) {
+    private Property(String name, boolean internal, PropertyType propertyType, ValueType valueType) {
         this(name, internal, propertyType, valueType, null);
     }
 
@@ -230,8 +226,7 @@ public final class Property implements Comparable<Property> {
      * @param secondaryExtractProperties
      * @return the composite property
      */
-    public static Property composite(Property primaryProperty,
-                                     Property[] secondaryExtractProperties) {
+    public static Property composite(Property primaryProperty, Property[] secondaryExtractProperties) {
         if (primaryProperty == null) {
             throw new NullPointerException("primaryProperty must not be null");
         }
@@ -249,9 +244,8 @@ public final class Property implements Comparable<Property> {
         if (primaryProperty.getChoices() != null) {
             choices = primaryProperty.getChoices().toArray(new String[0]);
         }
-        return new Property(primaryProperty.getName(), primaryProperty.isInternal(),
-                PropertyType.COMPOSITE, ValueType.PROPERTY, choices, primaryProperty,
-                secondaryExtractProperties);
+        return new Property(primaryProperty.getName(), primaryProperty.isInternal(), PropertyType.COMPOSITE,
+                ValueType.PROPERTY, choices, primaryProperty, secondaryExtractProperties);
     }
 
     public String getName() {
@@ -270,8 +264,7 @@ public final class Property implements Comparable<Property> {
      * Is the PropertyType one which accepts multiple values?
      */
     public boolean isMultiValuePermitted() {
-        if (propertyType == PropertyType.BAG || propertyType == PropertyType.SEQ ||
-                propertyType == PropertyType.ALT) {
+        if (propertyType == PropertyType.BAG || propertyType == PropertyType.SEQ || propertyType == PropertyType.ALT) {
             return true;
         } else if (propertyType == PropertyType.COMPOSITE) {
             // Base it on the primary property's behaviour
@@ -357,8 +350,8 @@ public final class Property implements Comparable<Property> {
     }
 
     public enum ValueType {
-        BOOLEAN, OPEN_CHOICE, CLOSED_CHOICE, DATE, INTEGER, LOCALE, MIME_TYPE, PROPER_NAME,
-        RATIONAL, REAL, TEXT, URI, URL, XPATH, PROPERTY
+        BOOLEAN, OPEN_CHOICE, CLOSED_CHOICE, DATE, INTEGER, LOCALE, MIME_TYPE, PROPER_NAME, RATIONAL, REAL, TEXT, URI,
+        URL, XPATH, PROPERTY
     }
 
 }

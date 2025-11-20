@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.microsoft;
 
-
 import java.io.Serializable;
 
 public class OfficeParserConfig implements Serializable {
@@ -292,5 +291,3 @@ public class OfficeParserConfig implements Serializable {
         this.writeSelectHeadersInBody = writeSelectHeadersInBody;
     }
 }
-
-

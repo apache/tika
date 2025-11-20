@@ -19,13 +19,12 @@ package org.apache.tika.detect.apple;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.iwork.iwana.IWork13PackageParser.IWork13DocumentType;
 import org.apache.tika.parser.iwork.iwana.IWork18PackageParser.IWork18DocumentType;
+import org.junit.jupiter.api.Test;
 
 public class IWorkDetectorTest extends TikaTest {
 
@@ -34,7 +33,7 @@ public class IWorkDetectorTest extends TikaTest {
         String testFile = "/test-documents/testKeynote2013.detect";
         IWorkDetector detector = new IWorkDetector();
         try (TikaInputStream tis = TikaInputStream.get(getResourceAsStream(testFile));
-                 ZipFile zipFile = ZipFile.builder().setFile(tis.getFile()).get()) {
+                ZipFile zipFile = ZipFile.builder().setFile(tis.getFile()).get()) {
             MediaType result = detector.detect(zipFile, tis);
             assertEquals(IWork13DocumentType.KEYNOTE13.getType(), result);
         }
@@ -45,7 +44,7 @@ public class IWorkDetectorTest extends TikaTest {
         String testFile = "/test-documents/testKeynote2018.key";
         IWorkDetector detector = new IWorkDetector();
         try (TikaInputStream tis = TikaInputStream.get(getResourceAsStream(testFile));
-                 ZipFile zipFile = ZipFile.builder().setFile(tis.getFile()).get()) {
+                ZipFile zipFile = ZipFile.builder().setFile(tis.getFile()).get()) {
             MediaType result = detector.detect(zipFile, tis);
             assertEquals(IWork18DocumentType.KEYNOTE18.getType(), result);
         }

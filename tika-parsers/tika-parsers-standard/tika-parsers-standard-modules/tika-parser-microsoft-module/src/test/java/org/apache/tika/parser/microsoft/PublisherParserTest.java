@@ -21,20 +21,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.InputStream;
 
-import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 public class PublisherParserTest {
 
     @Test
     public void testPublisherParser() throws Exception {
-        try (InputStream input = PublisherParserTest.class
-                .getResourceAsStream("/test-documents/testPUBLISHER.pub")) {
+        try (InputStream input = PublisherParserTest.class.getResourceAsStream("/test-documents/testPUBLISHER.pub")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new OfficeParser().parse(input, handler, metadata, new ParseContext());

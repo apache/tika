@@ -29,16 +29,15 @@ import java.io.Writer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.TikaConfigSerializer;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class DumpTikaConfigExampleTest {
     private File configFile;
@@ -46,9 +45,7 @@ public class DumpTikaConfigExampleTest {
     @BeforeEach
     public void setUp() {
         try {
-            configFile = Files
-                    .createTempFile("tmp", ".xml")
-                    .toFile();
+            configFile = Files.createTempFile("tmp", ".xml").toFile();
         } catch (IOException e) {
             throw new RuntimeException("Failed to create tmp file");
         }
@@ -75,22 +72,14 @@ public class DumpTikaConfigExampleTest {
                 writer.close();
 
                 TikaConfig c = new TikaConfig(configFile);
-                assertTrue(c.getParser() instanceof CompositeParser, c
-                        .getParser()
-                        .toString());
-                assertTrue(c.getDetector() instanceof CompositeDetector, c
-                        .getDetector()
-                        .toString());
+                assertTrue(c.getParser() instanceof CompositeParser, c.getParser().toString());
+                assertTrue(c.getDetector() instanceof CompositeDetector, c.getDetector().toString());
 
                 CompositeParser p = (CompositeParser) c.getParser();
-                assertTrue(p
-                        .getParsers()
-                        .size() > 130, "enough parsers?");
+                assertTrue(p.getParsers().size() > 130, "enough parsers?");
 
                 CompositeDetector d = (CompositeDetector) c.getDetector();
-                assertTrue(d
-                        .getDetectors()
-                        .size() > 3, "enough detectors?");
+                assertTrue(d.getDetectors().size() > 3, "enough detectors?");
 
                 //just try to load it into autodetect to make sure no errors are thrown
                 Parser auto = new AutoDetectParser(c);

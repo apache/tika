@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.eval.core.tokens;
 
 import java.io.BufferedReader;
@@ -77,8 +76,7 @@ public class CommonTokenCountManager {
     }
 
     public Set<String> getTokens(String lang) {
-        return Collections.unmodifiableSet(
-                new HashSet(commonTokenMap.get(getActualLangCode(lang)).getTokens()));
+        return Collections.unmodifiableSet(new HashSet(commonTokenMap.get(getActualLangCode(lang)).getTokens()));
     }
 
     public Set<String> getLangs() {
@@ -139,19 +137,17 @@ public class CommonTokenCountManager {
                 is = Files.newInputStream(p);
             }
 
-
             if (is == null) {
-                String path = (p == null) ? "resource on class path: /common_tokens/" + langCode :
-                        p.toAbsolutePath().toString();
-                LOG.warn("Couldn't find common tokens file for: '" + langCode + "' tried here: " +
-                        path);
+                String path = (p == null)
+                        ? "resource on class path: /common_tokens/" + langCode
+                        : p.toAbsolutePath().toString();
+                LOG.warn("Couldn't find common tokens file for: '" + langCode + "' tried here: " + path);
                 alreadyTriedToLoad.add(langCode);
                 return;
             }
 
             LangModel model = null;
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(is, COMMON_TOKENS_CHARSET))) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, COMMON_TOKENS_CHARSET))) {
                 alreadyTriedToLoad.add(langCode);
                 String line = reader.readLine();
                 while (line != null) {
@@ -172,8 +168,7 @@ public class CommonTokenCountManager {
                     if (t.length() > 0 && cols.length > 2) {
                         if (model == null) {
                             throw new IllegalArgumentException(
-                                    "Common tokens file must have included comment line " +
-                                            " with " + TERM_FREQS);
+                                    "Common tokens file must have included comment line " + " with " + TERM_FREQS);
                         }
                         //document frequency
                         String df = cols[1];

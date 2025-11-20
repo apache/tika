@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-
 /**
  * Abstract buffer for map of values and unique ids.
  * <p>

@@ -38,8 +38,7 @@ class ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs {
         return extendedStreamsPresent;
     }
 
-    public ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs setExtendedStreamsPresent(
-            long extendedStreamsPresent) {
+    public ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs setExtendedStreamsPresent(long extendedStreamsPresent) {
         this.extendedStreamsPresent = extendedStreamsPresent;
         return this;
     }
@@ -48,8 +47,7 @@ class ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs {
         return osidsStreamNotPresent;
     }
 
-    public ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs setOsidsStreamNotPresent(
-            long osidsStreamNotPresent) {
+    public ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs setOsidsStreamNotPresent(long osidsStreamNotPresent) {
         this.osidsStreamNotPresent = osidsStreamNotPresent;
         return this;
     }
