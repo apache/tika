@@ -192,6 +192,8 @@
   <setting id="org.eclipse.jdt.core.formatter.alignment_for_throws_clause_in_method_declaration.count_dependent" value="16|4|48"/>
   <setting id="org.eclipse.jdt.core.formatter.alignment_for_union_type_in_multicatch" value="16"/>
   <setting id="org.eclipse.jdt.core.formatter.lineSplit" value="100"/>
+  <setting id="org.eclipse.jdt.core.formatter.line_width" value="180"/>
+
   <setting id="org.eclipse.jdt.core.formatter.wrap_before_binary_operator" value="true"/>
   <setting id="org.eclipse.jdt.core.formatter.wrap_before_or_operator_multicatch" value="true"/>
   <setting id="org.eclipse.jdt.core.formatter.wrap_outer_expressions_when_nested" value="true"/>
