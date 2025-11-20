@@ -311,7 +311,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.60.0</google.cloud.version>
-    <aws2.version>2.39.0</aws2.version>
+    <aws2.version>2.38.9</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -443,7 +443,7 @@
     <testcontainers.version>2.0.2</testcontainers.version>
     <testcontainersv1.version>1.21.3</testcontainersv1.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
-    <tukaani.version>1.11</tukaani.version>
+    <tukaani.version>1.10</tukaani.version>
     <twelvemonkeys.version>3.12.0</twelvemonkeys.version>
     <uimafit.version>3.6.1</uimafit.version>
     <uimaj.core.version>3.6.1</uimaj.core.version>
@@ -1445,7 +1445,43 @@
         </executions>
       </plugin>
       <plugin>
-        <!-- mvn validate -->
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>3.0.0</version>
+        <configuration>
+          <java>
+            <licenseHeader>
+              <file>${maven.multiModuleProjectDirectory}/tika-parent/license-header.txt</file>
+              <delimiter>package </delimiter>
+            </licenseHeader>
+            <!-- Use Eclipse formatter with Google style -->
+            <eclipse>
+              <!-- Use Google style configuration -->
+              <file>${maven.multiModuleProjectDirectory}/tika-parent/google-style-eclipse.xml</file>
+            </eclipse>
+
+            <indent>
+              <spaces>true</spaces>
+              <spacesPerTab>4</spacesPerTab>
+            </indent>
+
+            <removeUnusedImports/>
+            <importOrder>
+              <order>java,javax,org,com</order>
+            </importOrder>
+            <formatAnnotations/>
+          </java>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>apply</goal>
+            </goals>
+            <phase>process-sources</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin><!-- mvn validate -->
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
         <version>${checkstyle.plugin.version}</version>
@@ -1459,7 +1495,7 @@
         <executions>
           <execution>
             <id>validate</id>
-            <phase>validate</phase>
+            <phase>process-classes</phase>
             <configuration>
               <configLocation>checkstyle.xml</configLocation>
               <consoleOutput>false</consoleOutput>
