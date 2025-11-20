@@ -310,7 +310,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.60.0</google.cloud.version>
-    <aws2.version>2.38.9</aws2.version>
+    <aws2.version>2.39.0</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -441,7 +441,7 @@
     <testcontainers.version>2.0.2</testcontainers.version>
     <testcontainersv1.version>1.21.3</testcontainersv1.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
-    <tukaani.version>1.10</tukaani.version>
+    <tukaani.version>1.11</tukaani.version>
     <twelvemonkeys.version>3.12.0</twelvemonkeys.version>
     <!-- Apache UIMA v3.5.0 and later requires Java version 17 or later. -->
     <uimafit.version>3.4.0</uimafit.version>
