@@ -19,7 +19,6 @@ package org.apache.tika.pipes.pipesiterator.gcs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
@@ -29,23 +28,23 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
+import org.apache.tika.pipes.pipesiterator.PipesIteratorBase;
+import org.apache.tika.plugins.ExtensionConfig;
 
 @Disabled("turn into an actual unit test")
 public class TestGCSPipesIterator {
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     @Test
     public void testSimple() throws Exception {
-        GCSPipesIterator it = new GCSPipesIterator();
-        it.setFetcherName("gcs");
-        it.setBucket("tika-tallison-test-bucket");
-        it.setProjectId("My First Project");
-        it.setPrefix("pdfs");
-        it.initialize(Collections.EMPTY_MAP);
+        GCSPipesIterator it = createIterator("tika-tallison-test-bucket", "My First Project", "pdfs", "gcs", "gcs-emitter");
         int numConsumers = 6;
         ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(10);
 
@@ -77,6 +76,25 @@ public class TestGCSPipesIterator {
         }
         assertEquals(2, completed);
 
+    }
+
+    private GCSPipesIterator createIterator(String bucket, String projectId, String prefix,
+                                             String fetcherName, String emitterName) throws Exception {
+        ObjectNode jsonConfig = OBJECT_MAPPER.createObjectNode();
+        jsonConfig.put("bucket", bucket);
+        jsonConfig.put("projectId", projectId);
+        if (prefix != null) {
+            jsonConfig.put("prefix", prefix);
+        }
+
+        // Add baseConfig
+        ObjectNode baseConfig = OBJECT_MAPPER.createObjectNode();
+        baseConfig.put("fetcherPluginId", fetcherName);
+        baseConfig.put("emitterPluginId", emitterName);
+        jsonConfig.set("baseConfig", baseConfig);
+
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-gcs-iterator", "gcs-pipes-iterator", jsonConfig);
+        return GCSPipesIterator.build(extensionConfig);
     }
 
     private static class MockFetcher implements Callable<Integer> {

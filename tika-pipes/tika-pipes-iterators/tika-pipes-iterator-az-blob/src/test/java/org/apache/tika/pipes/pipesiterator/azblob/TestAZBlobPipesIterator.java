@@ -19,7 +19,6 @@ package org.apache.tika.pipes.pipesiterator.azblob;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
@@ -29,27 +28,40 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
+import org.apache.tika.pipes.pipesiterator.PipesIteratorBase;
+import org.apache.tika.plugins.ExtensionConfig;
 
 @Disabled("turn into an actual unit test")
 public class TestAZBlobPipesIterator {
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     @Test
     public void testSimple() throws Exception {
-        AZBlobPipesIterator it = new AZBlobPipesIterator();
-        it.setContainer("");
-        it.setEndpoint("");
-        it.setSasToken("");
-        it.initialize(Collections.EMPTY_MAP);
+        ObjectNode configNode = MAPPER.createObjectNode();
+        configNode.put("container", ""); // select one
+        configNode.put("endpoint", ""); // use one
+        configNode.put("sasToken", ""); // find one
+
+        ObjectNode baseConfigNode = MAPPER.createObjectNode();
+        baseConfigNode.put("fetcherId", "az-blob");
+        baseConfigNode.put("emitterId", "test-emitter");
+        configNode.set("baseConfig", baseConfigNode);
+
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-az-blob", "az-blob-pipes-iterator", configNode);
+        AZBlobPipesIterator it = AZBlobPipesIterator.build(extensionConfig);
+
         int numConsumers = 2;
         ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(10);
 
         ExecutorService es = Executors.newFixedThreadPool(numConsumers + 1);
-        ExecutorCompletionService c = new ExecutorCompletionService(es);
+        ExecutorCompletionService<Integer> c = new ExecutorCompletionService<>(es);
         List<MockFetcher> fetchers = new ArrayList<>();
         for (int i = 0; i < numConsumers; i++) {
             MockFetcher fetcher = new MockFetcher(queue);

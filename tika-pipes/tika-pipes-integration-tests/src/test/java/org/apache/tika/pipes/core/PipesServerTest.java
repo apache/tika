@@ -42,6 +42,7 @@ import org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig;
 import org.apache.tika.pipes.core.extractor.BasicEmbeddedDocumentBytesHandler;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.plugins.TikaPluginManager;
 
 public class PipesServerTest extends TikaTest {
@@ -79,7 +80,9 @@ public class PipesServerTest extends TikaTest {
         FetchEmitTuple fetchEmitTuple = new FetchEmitTuple("id",
                 new FetchKey("fsf", testDoc),
                 new EmitKey("", ""));
-        Fetcher fetcher = FetcherManager.load(TikaPluginManager.load(pipesConfig)).getFetcher();
+        TikaConfigs tikaConfigs = TikaConfigs.load(pipesConfig);
+        TikaPluginManager pluginManager = TikaPluginManager.load(tikaConfigs);
+        Fetcher fetcher = FetcherManager.load(pluginManager, tikaConfigs).getFetcher();
         PipesServer.MetadataListAndEmbeddedBytes
                 parseData = pipesServer.parseFromTuple(fetchEmitTuple, fetcher);
         assertEquals("5f3b924303e960ce35d7f705e91d3018dd110a9c3cef0546a91fe013d6dad6fd",
@@ -113,7 +116,9 @@ public class PipesServerTest extends TikaTest {
         FetchEmitTuple fetchEmitTuple = new FetchEmitTuple("id",
                 new FetchKey("fs", testDoc),
                 new EmitKey("", ""), new Metadata(), parseContext);
-        Fetcher fetcher = FetcherManager.load(TikaPluginManager.load(pipesConfig)).getFetcher();
+        TikaConfigs tikaConfigs = TikaConfigs.load(pipesConfig);
+        TikaPluginManager pluginManager = TikaPluginManager.load(tikaConfigs);
+        Fetcher fetcher = FetcherManager.load(pluginManager, tikaConfigs).getFetcher();
         PipesServer.MetadataListAndEmbeddedBytes
                 parseData = pipesServer.parseFromTuple(fetchEmitTuple, fetcher);
         assertEquals(2, parseData.metadataList.size());
@@ -162,7 +167,9 @@ public class PipesServerTest extends TikaTest {
                 new FetchKey("fs", testDoc),
                 new EmitKey("", ""), new Metadata(), parseContext);
 
-        Fetcher fetcher = FetcherManager.load(TikaPluginManager.load(pipesConfig)).getFetcher();
+        TikaConfigs tikaConfigs = TikaConfigs.load(pipesConfig);
+        TikaPluginManager pluginManager = TikaPluginManager.load(tikaConfigs);
+        Fetcher fetcher = FetcherManager.load(pluginManager, tikaConfigs).getFetcher();
         PipesServer.MetadataListAndEmbeddedBytes
                 parseData = pipesServer.parseFromTuple(fetchEmitTuple, fetcher);
         assertEquals(2, parseData.metadataList.size());

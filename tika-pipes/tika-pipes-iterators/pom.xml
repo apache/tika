@@ -36,14 +36,14 @@
   <modules>
     <module>tika-pipes-iterator-commons</module>
     <module>tika-pipes-iterator-file-system</module>
-<!--    <module>tika-pipes-iterator-csv</module>
+    <module>tika-pipes-iterator-csv</module>
     <module>tika-pipes-iterator-json</module>
     <module>tika-pipes-iterator-jdbc</module>
     <module>tika-pipes-iterator-s3</module>
     <module>tika-pipes-iterator-kafka</module>
     <module>tika-pipes-iterator-solr</module>
     <module>tika-pipes-iterator-gcs</module>
-    <module>tika-pipes-iterator-az-blob</module> -->
+    <module>tika-pipes-iterator-az-blob</module>
   </modules>
 
   <properties>

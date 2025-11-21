@@ -32,14 +32,14 @@ public class TikaPluginManager extends DefaultPluginManager {
 
     public static TikaPluginManager load(TikaConfigs tikaConfigs) throws TikaConfigException, IOException {
         JsonNode root = tikaConfigs.getRoot();
-        JsonNode pluginRoots = root.get("pluginRoots");
+        JsonNode pluginRoots = root.get("plugin-roots");
         if (pluginRoots == null) {
-            throw new TikaConfigException("pluginRoots must be specified");
+            throw new TikaConfigException("plugin-roots must be specified");
         }
         List<Path> roots = TikaConfigs.OBJECT_MAPPER.convertValue(pluginRoots, new TypeReference<List<Path>>() {
         });
         if (roots.isEmpty()) {
-            throw new TikaConfigException("pluginRoots must not be empty");
+            throw new TikaConfigException("plugin-roots must not be empty");
         }
         return new TikaPluginManager(roots);
     }

@@ -164,7 +164,7 @@ class S3PipeIntegrationTest {
         return tikaConfigTemplateXml.replace("{TIKA_CONFIG}", tikaConfigFile.getAbsolutePath())
                 .replace("{LOG4J_PROPERTIES_FILE}", log4jPropFile.getAbsolutePath())
                 .replace("{PATH_TO_DOCS}", testFileFolder.getAbsolutePath())
-                .replace("{PARSE_MODE}", HandlerConfig.PARSE_MODE.RMETA.name())
+                .replace("{PARSE_MODE}", org.apache.tika.pipes.api.HandlerConfig.PARSE_MODE.RMETA.name())
                 .replace("{PIPE_ITERATOR_BUCKET}", FETCH_BUCKET)
                 .replace("{EMIT_BUCKET}", EMIT_BUCKET).replace("{FETCH_BUCKET}", FETCH_BUCKET)
                 .replace("{ACCESS_KEY}", ACCESS_KEY).replace("{SECRET_KEY}", SECRET_KEY)

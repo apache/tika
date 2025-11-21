@@ -19,7 +19,6 @@ package org.apache.tika.pipes.pipesiterator.s3;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
@@ -29,24 +28,36 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
+import org.apache.tika.pipes.pipesiterator.PipesIteratorBase;
+import org.apache.tika.plugins.ExtensionConfig;
 
 @Disabled("turn into an actual unit test")
 public class TestS3PipesIterator {
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Test
     public void testSimple() throws Exception {
-        S3PipesIterator it = new S3PipesIterator();
-        it.setFetcherName("s3");
-        it.setBucket("");//find one
-        it.setProfile("");//use one
-        it.setRegion("");//select one
-        it.initialize(Collections.EMPTY_MAP);
+        ObjectNode jsonConfig = OBJECT_MAPPER.createObjectNode();
+        jsonConfig.put("bucket", ""); // find one
+        jsonConfig.put("region", ""); // select one
+        jsonConfig.put("profile", ""); // use one
+        jsonConfig.put("credentialsProvider", "profile");
+
+        ObjectNode baseConfig = OBJECT_MAPPER.createObjectNode();
+        baseConfig.put("fetcherId", "s3");
+        baseConfig.put("emitterId", "fs");
+        jsonConfig.set("baseConfig", baseConfig);
+
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-s3-iterator", "s3-pipes-iterator", jsonConfig);
+        S3PipesIterator it = S3PipesIterator.build(extensionConfig);
+
         int numConsumers = 6;
         ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(10);
 

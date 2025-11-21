@@ -19,9 +19,24 @@ package org.apache.tika.pipes.fetchers.microsoftgraph.config;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.tika.pipes.core.fetcher.config.AbstractConfig;
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class MicrosoftGraphFetcherConfig extends AbstractConfig {
+import org.apache.tika.exception.TikaConfigException;
+
+public class MicrosoftGraphFetcherConfig {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    public static MicrosoftGraphFetcherConfig load(JsonNode json) throws TikaConfigException {
+        try {
+            return OBJECT_MAPPER.treeToValue(json, MicrosoftGraphFetcherConfig.class);
+        } catch (JacksonException e) {
+            throw new TikaConfigException("problem with json", e);
+        }
+    }
+
     private long[] throttleSeconds;
     private boolean spoolToTemp;
     private ClientSecretCredentialsConfig clientSecretCredentialsConfig;

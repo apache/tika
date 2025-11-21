@@ -73,6 +73,7 @@ import org.apache.tika.pipes.fetcher.http.config.HttpFetcherConfig;
 import org.apache.tika.pipes.fetcher.http.config.HttpHeaders;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtGenerator;
 import org.apache.tika.plugins.ExtensionConfig;
+import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.plugins.TikaPluginManager;
 
 class HttpFetcherTest extends TikaTest {
@@ -100,8 +101,8 @@ class HttpFetcherTest extends TikaTest {
         httpFetcherConfig.setMaxSpoolSize(-1L);
 
         String json = OBJECT_MAPPER.writeValueAsString(httpFetcherConfig);
-        System.out.println(json);
-        httpFetcher = (HttpFetcher) new HttpFetcherFactory().buildExtension(new ExtensionConfig("id", "factoryPluginId", json));
+        httpFetcher = (HttpFetcher) new HttpFetcherFactory().buildExtension(new ExtensionConfig("id", "factoryPluginId",
+                OBJECT_MAPPER.readTree(json)));
         final HttpResponse mockResponse = buildMockResponse(HttpStatus.SC_OK, IOUtils.toInputStream(CONTENT, Charset.defaultCharset()));
 
         mockClientResponse(mockResponse);
@@ -282,9 +283,9 @@ class HttpFetcherTest extends TikaTest {
     }
 
     FetcherManager getFetcherManager(String path) throws Exception {
-        return FetcherManager.load(TikaPluginManager.load(Paths.get(HttpFetcherTest.class
-                .getResource("/configs/" + path)
-                .toURI())));
+        Path configPath = Paths.get(HttpFetcherTest.class.getResource("/configs/" + path).toURI());
+        TikaConfigs tikaConfigs = TikaConfigs.load(configPath);
+        return FetcherManager.load(TikaPluginManager.load(tikaConfigs), tikaConfigs);
     }
 
     private void mockClientResponse(final HttpResponse response) throws Exception {

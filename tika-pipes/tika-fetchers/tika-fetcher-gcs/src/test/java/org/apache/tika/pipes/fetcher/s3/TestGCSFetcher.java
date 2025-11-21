@@ -21,9 +21,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -31,11 +32,13 @@ import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.apache.tika.pipes.fetcher.gcs.GCSFetcher;
+import org.apache.tika.plugins.ExtensionConfig;
 
 @Disabled("write actual unit tests")
 public class TestGCSFetcher {
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String FETCH_STRING = "testExtraSpaces.pdf";
 
     @TempDir
@@ -47,12 +50,15 @@ public class TestGCSFetcher {
         outputFile = Files.createTempFile(TEMP_DIR, "tika-test", ".pdf");
     }
 
-
     @Test
     public void testConfig() throws Exception {
-        FetcherManager fetcherManager = FetcherManager.load(
-                Paths.get(this.getClass().getResource("/tika-config-gcs.xml").toURI()));
-        Fetcher fetcher = fetcherManager.getFetcher("gcs");
+        ObjectNode jsonConfig = OBJECT_MAPPER.createObjectNode();
+        jsonConfig.put("projectId", "my-project");
+        jsonConfig.put("bucket", "my-bucket");
+
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-gcs-fetcher", "gcs-fetcher", jsonConfig);
+        GCSFetcher fetcher = GCSFetcher.build(extensionConfig);
+
         Metadata metadata = new Metadata();
         try (InputStream is = fetcher.fetch(FETCH_STRING, metadata, new ParseContext())) {
             Files.copy(is, outputFile, StandardCopyOption.REPLACE_EXISTING);

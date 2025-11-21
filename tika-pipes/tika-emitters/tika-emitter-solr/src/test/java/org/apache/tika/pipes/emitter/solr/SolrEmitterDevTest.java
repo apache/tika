@@ -21,6 +21,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -28,6 +31,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.FieldNameMappingFilter;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.plugins.ExtensionConfig;
 
 /**
  * This is meant only for one off development tests with a locally
@@ -42,16 +46,21 @@ public class SolrEmitterDevTest {
         String core = "tika-example";
         String url = "http://localhost:8983/solr";
         String emitKey = "one-off-test-doc";
-        SolrEmitter solrEmitter = new SolrEmitter();
-        solrEmitter.setSolrUrls(Collections.singletonList(url));
-        solrEmitter.setSolrCollection(core);
-        solrEmitter.initialize(Collections.EMPTY_MAP);
+
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode configNode = mapper.createObjectNode();
+        configNode.put("solrCollection", core);
+        ArrayNode urlsNode = configNode.putArray("solrUrls");
+        urlsNode.add(url);
+
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-solr", "solr-emitter", configNode);
+        SolrEmitter solrEmitter = SolrEmitter.build(extensionConfig);
 
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.CREATED, new Date());
         metadata.set(TikaCoreProperties.TIKA_CONTENT, "the quick brown fox");
 
-        Map<String, String> mappings = new HashMap();
+        Map<String, String> mappings = new HashMap<>();
         FieldNameMappingFilter filter = new FieldNameMappingFilter();
         mappings.put(TikaCoreProperties.CREATED.getName(), "created");
         mappings.put(TikaCoreProperties.TIKA_CONTENT.getName(), "content");

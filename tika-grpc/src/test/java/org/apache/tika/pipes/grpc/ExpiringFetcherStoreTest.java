@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -34,8 +35,10 @@ import org.apache.tika.plugins.ExtensionConfig;
 
 class ExpiringFetcherStoreTest {
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     @Test
-    void createFetcher() {
+    void createFetcher() throws Exception {
         try (ExpiringFetcherStore expiringFetcherStore = new ExpiringFetcherStore(1, 5)) {
             Fetcher fetcher = new Fetcher() {
                 @Override
@@ -45,7 +48,11 @@ class ExpiringFetcherStoreTest {
 
                 @Override
                 public ExtensionConfig getExtensionConfig() {
-                    return new ExtensionConfig("nick", "factory-plugin-id", "{json}");
+                    try {
+                        return new ExtensionConfig("nick", "factory-plugin-id", MAPPER.readTree("{}"));
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             };
             expiringFetcherStore.createFetcher(fetcher, fetcher.getExtensionConfig());

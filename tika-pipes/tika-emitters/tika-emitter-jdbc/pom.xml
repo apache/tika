@@ -27,6 +27,15 @@
 
   <artifactId>tika-emitter-jdbc</artifactId>
   <name>Apache Tika jdbc emitter</name>
+  <packaging>jar</packaging>
+
+  <properties>
+    <plugin.id>tika-emitter-jdbc</plugin.id>
+    <plugin.class>org.apache.tika.pipes.emitter.jdbc.JDBCEmitterPlugin</plugin.class>
+    <plugin.version>${project.version}</plugin.version>
+    <plugin.provider>Apache Tika</plugin.provider>
+    <plugin.dependencies/>
+  </properties>
 
   <dependencies>
     <dependency>
@@ -41,6 +50,7 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
   <build>
     <plugins>
       <plugin>
@@ -50,8 +60,60 @@
           <archive>
             <manifestEntries>
               <Automatic-Module-Name>org.apache.tika.emitter.jdbc</Automatic-Module-Name>
+              <Plugin-Id>${plugin.id}</Plugin-Id>
+              <Plugin-Class>${plugin.class}</Plugin-Class>
+              <Plugin-Version>${plugin.version}</Plugin-Version>
+              <Plugin-Provider>${plugin.provider}</Plugin-Provider>
+              <Plugin-Dependencies>${plugin.dependencies}</Plugin-Dependencies>
             </manifestEntries>
           </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/lib</outputDirectory>
+              <includeScope>runtime</includeScope>
+              <excludeGroupIds>org.apache.tika</excludeGroupIds>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <configuration>
+          <descriptors>
+            <descriptor>src/main/assembly/assembly.xml</descriptor>
+          </descriptors>
+          <finalName>${project.artifactId}-${project.version}</finalName>
+          <appendAssemblyId>false</appendAssemblyId>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <annotationProcessors>
+            <annotationProcessor>org.pf4j.processor.ExtensionAnnotationProcessor</annotationProcessor>
+          </annotationProcessors>
         </configuration>
       </plugin>
     </plugins>

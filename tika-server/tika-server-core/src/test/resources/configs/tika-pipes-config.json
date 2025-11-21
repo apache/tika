@@ -1,14 +1,19 @@
 {
-  "fsf": {
+  "fetchers": {
     "file-system-fetcher": {
-      "basePath": "BASE_PATH",
-      "extractFileSystemMetadata": false
+      "fsf": {
+        "basePath": "BASE_PATH",
+        "extractFileSystemMetadata": false
+      }
     }
   },
-  "fse-json": {
+  "emitters": {
     "file-system-emitter": {
-      "basePath": "BASE_PATH",
-      "onExists": "EXCEPTION"
+      "fse-json": {
+        "basePath": "BASE_PATH",
+        "onExists": "EXCEPTION"
+      }
     }
-  }
+  },
+  "plugin-roots": "target/plugins"
 }

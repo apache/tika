@@ -16,26 +16,38 @@
  */
 package org.apache.tika.pipes.emitter.gcs;
 
-import java.net.URISyntaxException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.emitter.EmitterManager;
+import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * This is meant only for one off development tests with a locally
+ * configured GCS instance. Please add unit tests to the appropriate
+ * integration test module.
+ */
 @Disabled("turn into an actual test")
 public class TestGCSEmitter {
 
     @Test
     public void testBasic() throws Exception {
-        EmitterManager emitterManager = EmitterManager.load(getConfig("tika-config-gcs.xml"));
-        Emitter emitter = emitterManager.getEmitter("gcs");
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode configNode = mapper.createObjectNode();
+        configNode.put("projectId", "my-project");
+        configNode.put("bucket", "my-bucket");
+        configNode.put("prefix", "output");
+        configNode.put("fileExtension", "json");
+
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-gcs", "gcs-emitter", configNode);
+        GCSEmitter emitter = GCSEmitter.build(extensionConfig);
+
         List<Metadata> metadataList = new ArrayList<>();
         Metadata m = new Metadata();
         m.set("k1", "v1");
@@ -43,12 +55,5 @@ public class TestGCSEmitter {
         m.set("k2", "v3");
         metadataList.add(m);
         emitter.emit("something-or-other/test-out", metadataList, new ParseContext());
-    }
-
-    private Path getConfig(String configFile) throws URISyntaxException {
-        return Paths.get(this
-                .getClass()
-                .getResource("/config/" + configFile)
-                .toURI());
     }
 }

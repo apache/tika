@@ -16,35 +16,39 @@
  */
 package org.apache.tika.pipes.fetcher.azblob;
 
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 import java.util.List;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.serialization.JsonMetadataList;
 
 @Disabled("write actual unit tests")
 public class TestAZBlobFetcher extends TikaTest {
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String FETCH_STRING = "something-or-other/test-out.json";
 
     @Test
     public void testConfig() throws Exception {
-        FetcherManager fetcherManager = FetcherManager.load(Paths.get(this
-                .getClass()
-                .getResource("/tika-config-az-blob.xml")
-                .toURI()));
-        Fetcher fetcher = fetcherManager.getFetcher("az-blob");
+        ObjectNode jsonConfig = OBJECT_MAPPER.createObjectNode();
+        jsonConfig.put("endpoint", "https://myaccount.blob.core.windows.net");
+        jsonConfig.put("container", "my-container");
+        jsonConfig.put("sasToken", "my-sas-token");
+
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-az-blob-fetcher", "az-blob-fetcher", jsonConfig);
+        AZBlobFetcher fetcher = AZBlobFetcher.build(extensionConfig);
+
         List<Metadata> metadataList = null;
         try (Reader reader = new BufferedReader(new InputStreamReader(fetcher.fetch(FETCH_STRING, new Metadata(), new ParseContext()), StandardCharsets.UTF_8))) {
             metadataList = JsonMetadataList.fromJson(reader);

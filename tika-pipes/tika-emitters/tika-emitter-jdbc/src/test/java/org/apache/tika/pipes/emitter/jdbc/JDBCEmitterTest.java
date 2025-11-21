@@ -20,8 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -32,31 +30,80 @@ import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
-import org.apache.commons.io.IOUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.emitter.EmitterManager;
+import org.apache.tika.plugins.ExtensionConfig;
 
 public class JDBCEmitterTest {
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    /**
+     * Helper method to create a config ObjectNode with properly ordered keys.
+     * Uses valueToTree to preserve LinkedHashMap ordering.
+     */
+    private ObjectNode createConfigNode(String connection, String insert, String createTable,
+            String alterTable, String attachmentStrategy, Map<String, String> keys) {
+        ObjectNode configNode = MAPPER.createObjectNode();
+        configNode.put("connection", connection);
+        if (createTable != null) {
+            configNode.put("createTable", createTable);
+        }
+        if (alterTable != null) {
+            configNode.put("alterTable", alterTable);
+        }
+        configNode.put("insert", insert);
+        if (attachmentStrategy != null) {
+            configNode.put("attachmentStrategy", attachmentStrategy);
+        }
+        // Use valueToTree to preserve LinkedHashMap order
+        configNode.set("keys", MAPPER.valueToTree(keys));
+        return configNode;
+    }
 
     @Test
     public void testBasic(@TempDir Path tmpDir) throws Exception {
         Files.createDirectories(tmpDir.resolve("db"));
         Path dbDir = tmpDir.resolve("db/h2");
-        Path config = tmpDir.resolve("tika-config.xml");
         String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
 
-        writeConfig("/configs/tika-config-jdbc-emitter.xml",
-                connectionString, config);
+        // Use LinkedHashMap to preserve key order (must match insert statement order)
+        LinkedHashMap<String, String> keys = new LinkedHashMap<>();
+        keys.put("k1", "boolean");
+        keys.put("k2", "string");
+        keys.put("k3", "int");
+        keys.put("k4", "long");
+        keys.put("k5", "bigint");
+        keys.put("k6", "timestamp");
 
-        EmitterManager emitterManager = EmitterManager.load(config);
-        Emitter emitter = emitterManager.getEmitter();
+        ObjectNode configNode = createConfigNode(
+                connectionString,
+                "insert into test (path, k1, k2, k3, k4, k5, k6) values (?,?,?,?,?,?,?)",
+                "create table test " +
+                        "(path varchar(512) primary key, " +
+                        "k1 boolean, " +
+                        "k2 varchar(512), " +
+                        "k3 integer, " +
+                        "k4 long, " +
+                        "k5 bigint, " +
+                        "k6 timestamp)",
+                null,
+                "first_only",
+                keys);
+
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-jdbc", "jdbc-emitter", configNode);
+        JDBCEmitter emitter = JDBCEmitter.build(extensionConfig);
+
         List<String[]> data = new ArrayList<>();
         data.add(new String[]{"k1", "true", "k2", "some string1", "k3", "4", "k4", "100"});
         data.add(new String[]{"k1", "false", "k2", "some string2", "k3", "5", "k4", "101"});
@@ -103,16 +150,29 @@ public class JDBCEmitterTest {
 
         Files.createDirectories(tmpDir.resolve("db"));
         Path dbDir = tmpDir.resolve("db/h2");
-        Path config = tmpDir.resolve("tika-config.xml");
         String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
-        writeConfig("/configs/tika-config-jdbc-emitter-existing-table.xml",
-                connectionString, config);
 
         try (Connection connection = DriverManager.getConnection(connectionString)) {
             connection.createStatement().execute(createTable);
         }
-        EmitterManager emitterManager = EmitterManager.load(config);
-        Emitter emitter = emitterManager.getEmitter();
+
+        LinkedHashMap<String, String> keys = new LinkedHashMap<>();
+        keys.put("k1", "boolean");
+        keys.put("k2", "string");
+        keys.put("k3", "int");
+        keys.put("k4", "long");
+
+        ObjectNode configNode = createConfigNode(
+                connectionString,
+                "insert into test (path, k1, k2, k3, k4) values (?,?,?,?,?)",
+                null,
+                null,
+                "first_only",
+                keys);
+
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-jdbc", "jdbc-emitter", configNode);
+        JDBCEmitter emitter = JDBCEmitter.build(extensionConfig);
+
         List<String[]> data = new ArrayList<>();
         data.add(new String[]{"k1", "true", "k2", "some string1", "k3", "4", "k4", "100"});
         data.add(new String[]{"k1", "false", "k2", "some string2", "k3", "5", "k4", "101"});
@@ -143,14 +203,31 @@ public class JDBCEmitterTest {
     public void testAttachments(@TempDir Path tmpDir) throws Exception {
         Files.createDirectories(tmpDir.resolve("db"));
         Path dbDir = tmpDir.resolve("db/h2");
-        Path config = tmpDir.resolve("tika-config.xml");
         String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
 
-        writeConfig("/configs/tika-config-jdbc-emitter-attachments.xml",
-                connectionString, config);
+        LinkedHashMap<String, String> keys = new LinkedHashMap<>();
+        keys.put("k1", "boolean");
+        keys.put("k2", "string");
+        keys.put("k3", "int");
+        keys.put("k4", "long");
 
-        EmitterManager emitterManager = EmitterManager.load(config);
-        Emitter emitter = emitterManager.getEmitter();
+        ObjectNode configNode = createConfigNode(
+                connectionString,
+                "insert into test (path, attachment_num, k1, k2, k3, k4) values (?,?,?,?,?,?)",
+                "create table test " +
+                        "(path varchar(512) not null, " +
+                        "attachment_num integer not null, " +
+                        "k1 boolean, " +
+                        "k2 varchar(512), " +
+                        "k3 integer, " +
+                        "k4 long)",
+                "alter table test add primary key (path, attachment_num)",
+                "all",
+                keys);
+
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-jdbc", "jdbc-emitter", configNode);
+        JDBCEmitter emitter = JDBCEmitter.build(extensionConfig);
+
         List<Metadata> data = new ArrayList<>();
         data.add(m("k1", "true", "k2", "some string1", "k3", "4", "k4", "100"));
         data.add(m("k1", "false", "k2", "some string2", "k3", "5", "k4", "101"));
@@ -183,14 +260,26 @@ public class JDBCEmitterTest {
     public void testMultiValuedFields(@TempDir Path tmpDir) throws Exception {
         Files.createDirectories(tmpDir.resolve("db"));
         Path dbDir = tmpDir.resolve("db/h2");
-        Path config = tmpDir.resolve("tika-config.xml");
         String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
 
-        writeConfig("/configs/tika-config-jdbc-emitter-multivalued.xml",
-                connectionString, config);
+        LinkedHashMap<String, String> keys = new LinkedHashMap<>();
+        keys.put("k1", "varchar(512)");
 
-        EmitterManager emitterManager = EmitterManager.load(config);
-        Emitter emitter = emitterManager.getEmitter();
+        ObjectNode configNode = createConfigNode(
+                connectionString,
+                "insert into test (path, k1) values (?,?)",
+                "create table test " +
+                        "(path varchar(512) primary key, " +
+                        "k1 varchar(512))",
+                null,
+                null,
+                keys);
+        configNode.put("multivaluedFieldStrategy", "concatenate");
+        configNode.put("multivaluedFieldDelimiter", ", ");
+
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-jdbc", "jdbc-emitter", configNode);
+        JDBCEmitter emitter = JDBCEmitter.build(extensionConfig);
+
         List<Metadata> data = new ArrayList<>();
         Metadata m = new Metadata();
         m.add("k1", "first");
@@ -221,14 +310,24 @@ public class JDBCEmitterTest {
     public void testVarcharTruncation(@TempDir Path tmpDir) throws Exception {
         Files.createDirectories(tmpDir.resolve("db"));
         Path dbDir = tmpDir.resolve("db/h2");
-        Path config = tmpDir.resolve("tika-config.xml");
         String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
 
-        writeConfig("/configs/tika-config-jdbc-emitter-trunc.xml",
-                connectionString, config);
+        LinkedHashMap<String, String> keys = new LinkedHashMap<>();
+        keys.put("k1", "varchar(12)");
 
-        EmitterManager emitterManager = EmitterManager.load(config);
-        Emitter emitter = emitterManager.getEmitter();
+        ObjectNode configNode = createConfigNode(
+                connectionString,
+                "insert into test (path, k1) values (?,?)",
+                "create table test " +
+                        "(path varchar(512) primary key, " +
+                        "k1 varchar(12))",
+                null,
+                "first_only",
+                keys);
+
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-jdbc", "jdbc-emitter", configNode);
+        JDBCEmitter emitter = JDBCEmitter.build(extensionConfig);
+
         List<String[]> data = new ArrayList<>();
         data.add(new String[]{"k1", "abcd"});
         data.add(new String[]{"k1", "abcdefghijklmnopqrs"});
@@ -252,12 +351,6 @@ public class JDBCEmitterTest {
             }
         }
         assertEquals(3, rows);
-    }
-
-    private void writeConfig(String srcConfig, String dbDir, Path config) throws IOException {
-        String xml = IOUtils.resourceToString(srcConfig, StandardCharsets.UTF_8);
-        xml = xml.replace("CONNECTION_STRING", dbDir);
-        Files.write(config, xml.getBytes(StandardCharsets.UTF_8));
     }
 
     private Metadata m(String... strings) {

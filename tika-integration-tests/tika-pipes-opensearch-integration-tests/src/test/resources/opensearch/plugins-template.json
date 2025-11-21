@@ -74,5 +74,5 @@
     ],
     "timeoutMillis": 60000
   },
-  "pluginRoots": "target/plugins"
+  "plugin-roots": "target/plugins"
 }

@@ -59,10 +59,11 @@ public class PassbackFilterTest {
     public void init() throws Exception {
         Path tikaConfig = Paths.get("src", "test", "resources", "org", "apache", "tika", "pipes", "core", "tika-emit-config.xml");
         tmpDir = Files.createTempDirectory("tika-pipes");
-        Path pipesConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmpDir);
 
         Path tikaConfigPath = Files.createTempFile(tmpDir, "tika-pipes-", ".xml");
         Files.copy(tikaConfig, tikaConfigPath, StandardCopyOption.REPLACE_EXISTING);
+
+        Path pipesConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmpDir, tmpDir.resolve("input"), tmpDir.resolve("output"), tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaConfigPath, pipesConfigPath);
         PluginsTestHelper.copyTestFilesToTmpInput(tmpDir, testPdfFile);
 

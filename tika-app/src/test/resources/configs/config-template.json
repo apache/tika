@@ -57,5 +57,5 @@
     "pipesPluginsConfig": "PLUGINS_CONFIG",
     "javaPath": "java"
   },
-  "pluginRoots": "PLUGIN_ROOTS"
+  "plugin-roots": "PLUGIN_ROOTS"
 }

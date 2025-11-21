@@ -92,13 +92,6 @@ public class AsyncChaosMonkeyTest {
                         "    <digesterFactory\n" +
                         "        class=\"org.apache.tika.pipes.core.async.MockDigesterFactory\"/>\n" +
                 "</autoDetectParserConfig>" +
-                "<async>" +
-                        "<emitIntermediateResults>" + emitIntermediateResults +
-                        "</emitIntermediateResults>" +
-                        "<forkedJvmArgs><arg>-Xmx512m</arg" +
-                        "></forkedJvmArgs><maxForEmitBatchBytes>1000000</maxForEmitBatchBytes>" +
-                        "<timeoutMillis>5000</timeoutMillis>" +
-                        "<numClients>4</numClients></async>" +
                         "</properties>";
         Files.write(tikaConfigPath, xml.getBytes(StandardCharsets.UTF_8));
 
@@ -121,7 +114,7 @@ public class AsyncChaosMonkeyTest {
             }
         }
         MockReporter.RESULTS.clear();
-        pipesPluginsConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(configDir, inputDir, outputDir);
+        pipesPluginsConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(configDir, inputDir, outputDir, tikaConfigPath, emitIntermediateResults);
         return tikaConfigPath;
     }
 

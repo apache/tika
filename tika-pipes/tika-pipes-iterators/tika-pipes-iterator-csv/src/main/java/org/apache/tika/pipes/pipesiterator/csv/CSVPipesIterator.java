@@ -16,15 +16,11 @@
  */
 package org.apache.tika.pipes.pipesiterator.csv;
 
-import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
@@ -34,18 +30,15 @@ import org.apache.commons.csv.CSVRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.core.HandlerConfig;
+import org.apache.tika.pipes.api.HandlerConfig;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
-import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
+import org.apache.tika.pipes.pipesiterator.PipesIteratorBase;
+import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -76,46 +69,31 @@ import org.apache.tika.utils.StringUtils;
  *      <li>The 'emitKeyColumn' value is not added to the metadata.</li>
  *  </ul>
  */
-public class CSVPipesIterator extends PipesIteratorBase implements Initializable {
+public class CSVPipesIterator extends PipesIteratorBase {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CSVPipesIterator.class);
 
     private final Charset charset = StandardCharsets.UTF_8;
-    private Path csvPath;
-    private String fetchKeyColumn;
-    private String emitKeyColumn;
-    private String idColumn;
+    private final CSVPipesIteratorConfig config;
 
-    @Field
-    public void setCsvPath(String csvPath) {
-        setCsvPath(Paths.get(csvPath));
+    private CSVPipesIterator(CSVPipesIteratorConfig config, ExtensionConfig extensionConfig) throws TikaConfigException {
+        super(extensionConfig);
+        this.config = config;
+        if (config.getCsvPath() == null) {
+            throw new TikaConfigException("csvPath must not be empty");
+        }
     }
 
-    @Field
-    public void setFetchKeyColumn(String fetchKeyColumn) {
-        this.fetchKeyColumn = fetchKeyColumn;
-    }
-
-    @Field
-    public void setEmitKeyColumn(String emitKeyColumn) {
-        this.emitKeyColumn = emitKeyColumn;
-    }
-
-    @Field
-    public void setIdColumn(String idColumn) {
-        this.idColumn = idColumn;
-    }
-
-    @Field
-    public void setCsvPath(Path csvPath) {
-        this.csvPath = csvPath;
+    public static CSVPipesIterator build(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
+        CSVPipesIteratorConfig config = CSVPipesIteratorConfig.load(extensionConfig.jsonConfig());
+        return new CSVPipesIterator(config, extensionConfig);
     }
 
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
-        String fetcherPluginId = getFetcherName();
-        String emitterName = getEmitterPluginId();
-        try (Reader reader = Files.newBufferedReader(csvPath, charset)) {
+        String fetcherPluginId = config.getBaseConfig().fetcherId();
+        String emitterName = config.getBaseConfig().emitterId();
+        try (Reader reader = Files.newBufferedReader(config.getCsvPath(), charset)) {
             Iterable<CSVRecord> records = CSVFormat.EXCEL.parse(reader);
             List<String> headers = new ArrayList<>();
             FetchEmitKeyIndices fetchEmitKeyIndices = null;
@@ -129,7 +107,7 @@ public class CSVPipesIterator extends PipesIteratorBase implements Initializable
             } catch (TikaConfigException e) {
                 throw new IOException(e);
             }
-            HandlerConfig handlerConfig = getHandlerConfig();
+            HandlerConfig handlerConfig = config.getBaseConfig().handlerConfig();
             for (CSVRecord record : records) {
                 String id = record.get(fetchEmitKeyIndices.idIndex);
                 String fetchKey = record.get(fetchEmitKeyIndices.fetchKeyIndex);
@@ -144,12 +122,16 @@ public class CSVPipesIterator extends PipesIteratorBase implements Initializable
                 Metadata metadata = loadMetadata(fetchEmitKeyIndices, headers, record);
                 ParseContext parseContext = new ParseContext();
                 parseContext.set(HandlerConfig.class, handlerConfig);
-                tryToAdd(new FetchEmitTuple(id, new FetchKey(fetcherPluginId, fetchKey), new EmitKey(emitterName, emitKey), metadata, parseContext, getOnParseException()));
+                tryToAdd(new FetchEmitTuple(id, new FetchKey(fetcherPluginId, fetchKey), new EmitKey(emitterName, emitKey), metadata, parseContext,
+                        config.getBaseConfig().onParseException()));
             }
         }
     }
 
     private void checkFetchEmitValidity(String fetcherPluginId, String emitterName, FetchEmitKeyIndices fetchEmitKeyIndices, List<String> headers) throws TikaConfigException {
+        String fetchKeyColumn = config.getFetchKeyColumn();
+        String emitKeyColumn = config.getEmitKeyColumn();
+        String idColumn = config.getIdColumn();
 
         if (StringUtils.isBlank(emitterName)) {
             throw new TikaConfigException("must specify at least an emitterName");
@@ -200,13 +182,17 @@ public class CSVPipesIterator extends PipesIteratorBase implements Initializable
 
 
     private FetchEmitKeyIndices loadHeaders(CSVRecord record, List<String> headers) throws IOException {
+        String fetchKeyColumn = config.getFetchKeyColumn();
+        String emitKeyColumn = config.getEmitKeyColumn();
+        String idColumn = config.getIdColumn();
+
         int fetchKeyColumnIndex = -1;
         int emitKeyColumnIndex = -1;
         int idIndex = -1;
         for (int col = 0; col < record.size(); col++) {
             String header = record.get(col);
             if (StringUtils.isBlank(header)) {
-                throw new IOException(new TikaException("Header in column (" + col + ") must not be empty"));
+                throw new IOException("Header in column (" + col + ") must not be empty");
             }
             headers.add(header);
             if (header.equals(fetchKeyColumn)) {
@@ -228,12 +214,6 @@ public class CSVPipesIterator extends PipesIteratorBase implements Initializable
             emitKeyColumnIndex = fetchKeyColumnIndex;
         }
         return new FetchEmitKeyIndices(idIndex, fetchKeyColumnIndex, emitKeyColumnIndex);
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
-        super.checkInitialization(problemHandler);
-        mustNotBeEmpty("csvPath", this.csvPath);
     }
 
     private static class FetchEmitKeyIndices {

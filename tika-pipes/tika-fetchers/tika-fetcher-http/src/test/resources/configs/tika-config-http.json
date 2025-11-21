@@ -1,13 +1,21 @@
 {
-  "http-fetcher-1": {
+  "fetchers": {
     "http-fetcher": {
-      "httpHeaders": [
-        "Connection",
-        "Expires",
-        "Content-Length"
-      ],
-      "httpRequestHeaders":{"map":{"headerNameFromFetcherConfig":["headerValueFromFetcherConfig"]}}
+      "http-fetcher-1": {
+        "httpHeaders": [
+          "Connection",
+          "Expires",
+          "Content-Length"
+        ],
+        "httpRequestHeaders": {
+          "map": {
+            "headerNameFromFetcherConfig": [
+              "headerValueFromFetcherConfig"
+            ]
+          }
+        }
+      }
     }
   },
-  "pluginsPaths": "target/classes"
+  "plugin-roots": "target/classes"
 }

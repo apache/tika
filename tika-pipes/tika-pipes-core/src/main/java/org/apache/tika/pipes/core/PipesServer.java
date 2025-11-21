@@ -397,7 +397,6 @@ public class PipesServer implements Runnable {
                 LOG.trace("timer -- read fetchEmitTuple: {} ms",
                         System.currentTimeMillis() - start);
             }
-            LOG.info("PARSE CONTEXT: {}", t.getParseContext());
             start = System.currentTimeMillis();
             updateTimeout(t);
             actuallyParse(t);

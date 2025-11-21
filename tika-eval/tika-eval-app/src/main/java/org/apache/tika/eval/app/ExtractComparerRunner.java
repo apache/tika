@@ -40,6 +40,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
@@ -189,7 +191,9 @@ public class ExtractComparerRunner {
         json = json.replace("FETCHER_BASE_PATH", inputDir.toAbsolutePath().toString());
 
         try {
-            return FileSystemPipesIterator.build(new ExtensionConfig("", "", json));
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = objectMapper.readTree(json);
+            return FileSystemPipesIterator.build(new ExtensionConfig("", "", jsonNode));
         } catch (TikaConfigException e) {
             throw new IOException(e);
         }

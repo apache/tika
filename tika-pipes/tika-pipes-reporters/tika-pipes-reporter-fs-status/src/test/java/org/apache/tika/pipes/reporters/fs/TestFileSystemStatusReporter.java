@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -48,6 +49,8 @@ import org.apache.tika.plugins.ExtensionConfig;
 
 public class TestFileSystemStatusReporter {
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     private static String JSON_TEMPLATE = """
             {
                 "statusFile": "STATUS_FILE",
@@ -60,8 +63,10 @@ public class TestFileSystemStatusReporter {
 
         Path path = Files.createTempFile(tmpDir, "tika-fssr-", ".xml");
 
+        String jsonStr = JSON_TEMPLATE.replace("STATUS_FILE", path.toAbsolutePath().toString());
+        JsonNode configNode = MAPPER.readTree(jsonStr);
         FileSystemStatusReporter reporter = new FileSystemReporterFactory().buildExtension(
-                new ExtensionConfig("", "", JSON_TEMPLATE.replace("STATUS_FILE", path.toAbsolutePath().toString())));
+                new ExtensionConfig("test-fs-reporter", "fs-status-reporter", configNode));
         final ObjectMapper objectMapper = JsonMapper.builder()
                 .addModule(new JavaTimeModule())
                 .build();

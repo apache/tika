@@ -44,7 +44,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.utility.DockerImageName;
 
 import org.apache.tika.cli.TikaCLI;
-import org.apache.tika.pipes.emitter.solr.SolrEmitter;
+import org.apache.tika.pipes.api.HandlerConfig;
+import org.apache.tika.pipes.emitter.solr.SolrEmitterConfig;
 import org.apache.tika.utils.SystemUtils;
 
 
@@ -219,7 +220,7 @@ public abstract class TikaPipesSolrTestBase {
 
         String tikaConfigXml =
                 createTikaConfigXml(useZk(), tikaConfigFile, log4jPropFile, tikaConfigTemplateXml,
-                        SolrEmitter.UpdateStrategy.ADD, SolrEmitter.AttachmentStrategy.PARENT_CHILD,
+                        SolrEmitterConfig.UpdateStrategy.ADD, SolrEmitterConfig.AttachmentStrategy.PARENT_CHILD,
                         HandlerConfig.PARSE_MODE.RMETA);
         FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);
         TikaCLI.main(new String[]{"-a", "-c", tikaConfigFile.getAbsolutePath()});
@@ -251,8 +252,8 @@ public abstract class TikaPipesSolrTestBase {
         createTestFiles("updated");
         tikaConfigXml =
                 createTikaConfigXml(useZk(), tikaConfigFile, log4jPropFile, tikaConfigTemplateXml,
-                        SolrEmitter.UpdateStrategy.UPDATE_MUST_EXIST,
-                        SolrEmitter.AttachmentStrategy.PARENT_CHILD,
+                        SolrEmitterConfig.UpdateStrategy.UPDATE_MUST_EXIST,
+                        SolrEmitterConfig.AttachmentStrategy.PARENT_CHILD,
                         HandlerConfig.PARSE_MODE.RMETA);
         FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);
 
@@ -272,8 +273,8 @@ public abstract class TikaPipesSolrTestBase {
     @NotNull
     private String createTikaConfigXml(boolean useZk, File tikaConfigFile, File log4jPropFile,
                                        String tikaConfigTemplateXml,
-                                       SolrEmitter.UpdateStrategy updateStrategy,
-                                       SolrEmitter.AttachmentStrategy attachmentStrategy,
+                                       SolrEmitterConfig.UpdateStrategy updateStrategy,
+                                       SolrEmitterConfig.AttachmentStrategy attachmentStrategy,
                                        HandlerConfig.PARSE_MODE parseMode) {
         String res =
                 tikaConfigTemplateXml.replace("{TIKA_CONFIG}", tikaConfigFile.getAbsolutePath())

@@ -64,6 +64,7 @@ import org.apache.tika.parser.digestutils.BouncyCastleDigester;
 import org.apache.tika.parser.digestutils.CommonsDigester;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.server.core.resource.AsyncResource;
 import org.apache.tika.server.core.resource.DetectorResource;
@@ -195,7 +196,9 @@ public class TikaServerProcess {
         InputStreamFactory inputStreamFactory = null;
         if (tikaServerConfig.isEnableUnsecureFeatures() &&
                 tikaServerConfig.getPipesConfigPath().isPresent()) {
-            fetcherManager = FetcherManager.load(TikaPluginManager.load(tikaServerConfig.getPipesConfigPath().get()));
+            TikaConfigs tikaConfigs = TikaConfigs.load(tikaServerConfig.getPipesConfigPath().get());
+            TikaPluginManager pluginManager = TikaPluginManager.load(tikaConfigs);
+            fetcherManager = FetcherManager.load(pluginManager, tikaConfigs);
             inputStreamFactory = new FetcherStreamFactory(fetcherManager);
         } else {
             inputStreamFactory = new DefaultInputStreamFactory();

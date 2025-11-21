@@ -34,9 +34,8 @@
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-pipes-core</artifactId>
+      <artifactId>tika-pipes-iterator-commons</artifactId>
       <version>${project.version}</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.solr</groupId>
@@ -47,6 +46,12 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-httpclient-commons</artifactId>
       <version>${project.version}</version>
+    </dependency>
+    <!-- Override runtime scope from solr-solrj to make available at compile time -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
   <build>

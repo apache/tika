@@ -62,6 +62,7 @@ import org.testcontainers.kafka.ConfluentKafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import org.apache.tika.cli.TikaCLI;
+import org.apache.tika.pipes.api.HandlerConfig;
 import org.apache.tika.utils.SystemUtils;
 
 /**

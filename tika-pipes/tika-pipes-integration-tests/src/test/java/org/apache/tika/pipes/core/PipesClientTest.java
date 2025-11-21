@@ -48,14 +48,11 @@ public class PipesClientTest {
 
 
     private PipesClient init(Path tmp, String testFileName) throws Exception {
-        Path tikaConfigPath =
-                Paths.get("src", "test", "resources", "org", "apache", "tika", "pipes", "core",
-                        "tika-sample-config.xml");
-        Path pipesConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp);
-        PluginsTestHelper.copyTestFilesToTmpInput(tmp, testFileName);
+        Path tikaConfigPath = tmp.resolve("tika-config.xml");
+        Files.copy(PipesServerTest.class.getResourceAsStream("TIKA-3941.xml"), tikaConfigPath);
 
-        Path tikaConfig = tmp.resolve("tika-config.xml");
-        Files.copy(PipesServerTest.class.getResourceAsStream("TIKA-3941.xml"), tikaConfig);
+        Path pipesConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, tmp.resolve("input"), tmp.resolve("output"), tikaConfigPath);
+        PluginsTestHelper.copyTestFilesToTmpInput(tmp, testFileName);
 
         PipesConfig pipesConfig = PipesConfig.load(tikaConfigPath, pipesConfigPath);
         return new PipesClient(pipesConfig);

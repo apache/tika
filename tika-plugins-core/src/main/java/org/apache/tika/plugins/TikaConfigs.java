@@ -30,7 +30,7 @@ public class TikaConfigs {
             "pipes-iterator",
             "pipes-reporters",
             "async",
-            "pluginRoots"
+            "plugin-roots"
     );
 
     static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()

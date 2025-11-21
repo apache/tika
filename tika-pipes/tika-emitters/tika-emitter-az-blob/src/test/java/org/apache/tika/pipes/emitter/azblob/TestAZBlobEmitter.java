@@ -16,26 +16,39 @@
  */
 package org.apache.tika.pipes.emitter.azblob;
 
-import java.net.URISyntaxException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.emitter.EmitterManager;
+import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * This is meant only for one off development tests with a locally
+ * configured Azure Blob Storage instance. Please add unit tests to the
+ * appropriate integration test module.
+ */
 @Disabled("turn into an actual test")
 public class TestAZBlobEmitter {
 
     @Test
     public void testBasic() throws Exception {
-        EmitterManager emitterManager = EmitterManager.load(getConfig("tika-config-az-blob.xml"));
-        Emitter emitter = emitterManager.getEmitter("az-blob");
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode configNode = mapper.createObjectNode();
+        configNode.put("endpoint", "https://myaccount.blob.core.windows.net");
+        configNode.put("sasToken", "sv=2020-08-04&ss=b...");
+        configNode.put("container", "my-container");
+        configNode.put("prefix", "output");
+        configNode.put("fileExtension", "json");
+
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-az-blob", "az-blob-emitter", configNode);
+        AZBlobEmitter emitter = AZBlobEmitter.build(extensionConfig);
+
         List<Metadata> metadataList = new ArrayList<>();
         Metadata m = new Metadata();
         m.set("k1", "v1");
@@ -44,12 +57,5 @@ public class TestAZBlobEmitter {
         m.add("k2", "v4");
         metadataList.add(m);
         emitter.emit("something-or-other/test-out", metadataList, new ParseContext());
-    }
-
-    private Path getConfig(String configFile) throws URISyntaxException {
-        return Paths.get(this
-                .getClass()
-                .getResource("/config/" + configFile)
-                .toURI());
     }
 }

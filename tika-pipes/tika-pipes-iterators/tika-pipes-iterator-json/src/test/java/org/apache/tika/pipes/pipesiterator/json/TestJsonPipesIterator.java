@@ -17,27 +17,32 @@
 
 package org.apache.tika.pipes.pipesiterator.json;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Iterator;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.plugins.ExtensionConfig;
 
 @Disabled("until we can write actual tests")
 public class TestJsonPipesIterator {
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     @Test
     public void testBasic() throws Exception {
-        JsonPipesIterator pipesIterator = new JsonPipesIterator();
-        pipesIterator.setJsonPath(Paths
+        Path jsonPath = Paths
                 .get(this
                         .getClass()
                         .getResource("/test-documents/test.json")
                         .toURI())
-                .toAbsolutePath()
-                .toString());
+                .toAbsolutePath();
+        JsonPipesIterator pipesIterator = createIterator(jsonPath);
         Iterator<FetchEmitTuple> it = pipesIterator.iterator();
         while (it.hasNext()) {
             //System.out.println(it.next());
@@ -46,18 +51,25 @@ public class TestJsonPipesIterator {
 
     @Test
     public void testWithEmbDocBytes() throws Exception {
-        JsonPipesIterator pipesIterator = new JsonPipesIterator();
-        pipesIterator.setJsonPath(Paths
+        Path jsonPath = Paths
                 .get(this
                         .getClass()
                         .getResource("/test-documents/test-with-embedded-bytes.json")
                         .toURI())
-                .toAbsolutePath()
-                .toString());
+                .toAbsolutePath();
+        JsonPipesIterator pipesIterator = createIterator(jsonPath);
         Iterator<FetchEmitTuple> it = pipesIterator.iterator();
         while (it.hasNext()) {
             //System.out.println(it.next());
         }
+    }
+
+    private JsonPipesIterator createIterator(Path jsonPath) throws Exception {
+        ObjectNode jsonConfig = OBJECT_MAPPER.createObjectNode();
+        jsonConfig.put("jsonPath", jsonPath.toAbsolutePath().toString());
+
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-json-iterator", "json-pipes-iterator", jsonConfig);
+        return JsonPipesIterator.build(extensionConfig);
     }
 
 

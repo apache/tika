@@ -16,10 +16,7 @@
  */
 package org.apache.tika.pipes.pipesiterator.gcs;
 
-import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
-
 import java.io.IOException;
-import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 import com.google.api.gax.paging.Page;
@@ -29,80 +26,64 @@ import com.google.cloud.storage.StorageOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.core.HandlerConfig;
+import org.apache.tika.pipes.api.HandlerConfig;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
-import org.apache.tika.pipes.core.pipesiterator.PipesIteratorBase;
+import org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig;
+import org.apache.tika.pipes.pipesiterator.PipesIteratorBase;
+import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.utils.StringUtils;
 
-public class GCSPipesIterator extends PipesIteratorBase implements Initializable {
+public class GCSPipesIterator extends PipesIteratorBase {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GCSPipesIterator.class);
-    private String prefix = "";
-    private String projectId = "";
-    private String bucket;
 
-    private Storage storage;
+    private final GCSPipesIteratorConfig config;
+    private final Storage storage;
 
-    @Field
-    public void setBucket(String bucket) {
-        this.bucket = bucket;
-    }
+    private GCSPipesIterator(GCSPipesIteratorConfig config, ExtensionConfig extensionConfig) throws TikaConfigException {
+        super(extensionConfig);
+        this.config = config;
 
-    @Field
-    public void setPrefix(String prefix) {
-        this.prefix = prefix;
-    }
+        if (StringUtils.isBlank(config.getBucket())) {
+            throw new TikaConfigException("bucket must not be empty");
+        }
+        if (StringUtils.isBlank(config.getProjectId())) {
+            throw new TikaConfigException("projectId must not be empty");
+        }
 
-    @Field
-    public void setProjectId(String projectId) {
-        this.projectId = projectId;
-    }
-
-    /**
-     * This initializes the gcs client.
-     *
-     * @param params params to use for initialization
-     * @throws TikaConfigException
-     */
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
-        //TODO -- add other params to the builder as needed
-        storage = StorageOptions
+        // Initialize the GCS client
+        this.storage = StorageOptions
                 .newBuilder()
-                .setProjectId(projectId)
+                .setProjectId(config.getProjectId())
                 .build()
                 .getService();
     }
 
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
-        super.checkInitialization(problemHandler);
-        mustNotBeEmpty("bucket", this.bucket);
-        mustNotBeEmpty("projectId", this.projectId);
+    public static GCSPipesIterator build(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
+        GCSPipesIteratorConfig config = GCSPipesIteratorConfig.load(extensionConfig.jsonConfig());
+        return new GCSPipesIterator(config, extensionConfig);
     }
 
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
-        String fetcherPluginId = getFetcherName();
-        String emitterName = getEmitterPluginId();
+        PipesIteratorBaseConfig baseConfig = config.getBaseConfig();
+        String fetcherPluginId = baseConfig.fetcherId();
+        String emitterName = baseConfig.emitterId();
         long start = System.currentTimeMillis();
         int count = 0;
-        HandlerConfig handlerConfig = getHandlerConfig();
+        HandlerConfig handlerConfig = baseConfig.handlerConfig();
 
         Page<Blob> blobs = null;
+        String prefix = config.getPrefix();
         if (StringUtils.isBlank(prefix)) {
-            blobs = storage.list(bucket);
+            blobs = storage.list(config.getBucket());
         } else {
-            blobs = storage.list(bucket, Storage.BlobListOption.prefix(prefix));
+            blobs = storage.list(config.getBucket(), Storage.BlobListOption.prefix(prefix));
         }
 
         for (Blob blob : blobs.iterateAll()) {
@@ -117,7 +98,7 @@ public class GCSPipesIterator extends PipesIteratorBase implements Initializable
             ParseContext parseContext = new ParseContext();
             parseContext.set(HandlerConfig.class, handlerConfig);
             tryToAdd(new FetchEmitTuple(blob.getName(), new FetchKey(fetcherPluginId, blob.getName()), new EmitKey(emitterName, blob.getName()), new Metadata(), parseContext,
-                    getOnParseException()));
+                    baseConfig.onParseException()));
             count++;
         }
         long elapsed = System.currentTimeMillis() - start;

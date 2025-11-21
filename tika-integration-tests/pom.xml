@@ -33,10 +33,10 @@
 
   <modules>
     <module>tika-pipes-opensearch-integration-tests</module>
-<!--    <module>tika-pipes-solr-integration-tests</module>
+    <module>tika-pipes-solr-integration-tests</module>
     <module>tika-pipes-s3-integration-tests</module>
+    <module>tika-pipes-kafka-integration-tests</module>
     <module>tika-resource-loading-tests</module>
-    <module>tika-pipes-kafka-integration-tests</module> -->
     <module>tika-woodstox-tests</module>
   </modules>
 

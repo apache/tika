@@ -25,7 +25,6 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
@@ -51,10 +50,6 @@ import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
 import org.apache.tika.exception.FileTooLongException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -63,8 +58,11 @@ import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.fetcher.AbstractFetcher;
+import org.apache.tika.pipes.api.fetcher.Fetcher;
+import org.apache.tika.pipes.api.fetcher.RangeFetcher;
 import org.apache.tika.pipes.fetcher.s3.config.S3FetcherConfig;
+import org.apache.tika.plugins.AbstractTikaExtension;
+import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -72,30 +70,7 @@ import org.apache.tika.utils.StringUtils;
  * The bucket must be specified via the tika-config or before
  * initialization, and the fetch key is "path/to/my_file.pdf".
  */
-public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFetcher {
-    public S3Fetcher() {
-
-    }
-
-    public S3Fetcher(S3FetcherConfig s3FetcherConfig) {
-        setBucket(s3FetcherConfig.getBucket());
-        setRegion(s3FetcherConfig.getRegion());
-        setProfile(s3FetcherConfig.getProfile());
-        setAccessKey(s3FetcherConfig.getAccessKey());
-        setSecretKey(s3FetcherConfig.getSecretKey());
-        setPrefix(s3FetcherConfig.getPrefix());
-
-        setCredentialsProvider(s3FetcherConfig.getCredentialsProvider());
-        setEndpointConfigurationService(s3FetcherConfig.getEndpointConfigurationService());
-
-        setMaxConnections(s3FetcherConfig.getMaxConnections());
-        setSpoolToTemp(s3FetcherConfig.isSpoolToTemp());
-        setThrottleSeconds(s3FetcherConfig.getThrottleSeconds());
-        setMaxLength(s3FetcherConfig.getMaxLength());
-
-        setExtractUserMetadata(s3FetcherConfig.isExtractUserMetadata());
-        setPathStyleAccessEnabled(s3FetcherConfig.isPathStyleAccessEnabled());
-    }
+public class S3Fetcher extends AbstractTikaExtension implements Fetcher, RangeFetcher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(S3Fetcher.class);
     private static final String PREFIX = "s3";
@@ -103,9 +78,6 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
     //Do not retry if there's an AmazonS3Exception with this error code
     private static final Set<String> NO_RETRY_ERROR_CODES = new HashSet<>();
 
-    //Keep this private so that we can change as needed.
-    //Not sure if it is better to have an accept list (only throttle on too many requests)
-    //or this deny list...don't throttle for these s3 exceptions
     static {
         NO_RETRY_ERROR_CODES.add("AccessDenied");
         NO_RETRY_ERROR_CODES.add("NoSuchKey");
@@ -113,48 +85,97 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
         NO_RETRY_ERROR_CODES.add("InvalidAccessKeyId");
         NO_RETRY_ERROR_CODES.add("InvalidRange");
         NO_RETRY_ERROR_CODES.add("InvalidRequest");
-
     }
+
     private final Object[] clientLock = new Object[0];
-    private String region;
-    private String bucket;
-    private String profile;
-    private String accessKey;
-    private String secretKey;
-    private String endpointConfigurationService;
-    private String prefix;
-    private String credentialsProvider;
-    private boolean extractUserMetadata = true;
-    private int maxConnections = SdkHttpConfigurationOption.GLOBAL_HTTP_DEFAULTS.get(SdkHttpConfigurationOption.MAX_CONNECTIONS);
+    private S3FetcherConfig config;
     private S3Client s3Client;
-    private boolean spoolToTemp = true;
-    private int retries = 0; //TODO why isn't this used? Add getter/setter?
-    private long sleepBeforeRetryMillis = 30000; //TODO delete setSleepBeforeRetryMillis() after copying to 3.0?
 
-    private long[] throttleSeconds = null;
+    private S3Fetcher(ExtensionConfig pluginConfig) {
+        super(pluginConfig);
+    }
 
-    private long maxLength = -1;
-    private boolean pathStyleAccessEnabled = false;
+    public static S3Fetcher build(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
+        S3FetcherConfig config = S3FetcherConfig.load(extensionConfig.jsonConfig());
+        S3Fetcher fetcher = new S3Fetcher(extensionConfig);
+        fetcher.config = config;
+        fetcher.initialize();
+        return fetcher;
+    }
+
+    private void initialize() throws TikaConfigException {
+        mustNotBeEmpty("bucket", config.getBucket());
+        mustNotBeEmpty("region", config.getRegion());
+
+        AwsCredentialsProvider provider;
+        String credentialsProvider = config.getCredentialsProvider();
+        if (credentialsProvider == null) {
+            credentialsProvider = "instance";
+        }
+        switch (credentialsProvider) {
+            case "instance":
+                provider = InstanceProfileCredentialsProvider.builder().build();
+                break;
+            case "profile":
+                provider = ProfileCredentialsProvider.builder().profileName(config.getProfile()).build();
+                break;
+            case "key_secret":
+                AwsBasicCredentials awsCreds = AwsBasicCredentials.create(config.getAccessKey(), config.getSecretKey());
+                provider = StaticCredentialsProvider.create(awsCreds);
+                break;
+            default:
+                throw new TikaConfigException("credentialsProvider must be set and must be either 'instance', 'profile' or 'key_secret'");
+        }
+
+        int maxConnections = config.getMaxConnections();
+        if (maxConnections <= 0) {
+            maxConnections = SdkHttpConfigurationOption.GLOBAL_HTTP_DEFAULTS.get(SdkHttpConfigurationOption.MAX_CONNECTIONS);
+        }
+
+        SdkHttpClient httpClient = ApacheHttpClient.builder().maxConnections(maxConnections).build();
+        S3Configuration clientConfig = S3Configuration.builder().pathStyleAccessEnabled(config.isPathStyleAccessEnabled()).build();
+        try {
+            synchronized (clientLock) {
+                S3ClientBuilder s3ClientBuilder = S3Client.builder().httpClient(httpClient)
+                        .serviceConfiguration(clientConfig).credentialsProvider(provider);
+                if (!StringUtils.isBlank(config.getEndpointConfigurationService())) {
+                    try {
+                        s3ClientBuilder.endpointOverride(new URI(config.getEndpointConfigurationService())).region(Region.of(config.getRegion()));
+                    } catch (URISyntaxException ex) {
+                        throw new TikaConfigException("bad endpointConfigurationService: " + config.getEndpointConfigurationService(), ex);
+                    }
+                } else {
+                    s3ClientBuilder.region(Region.of(config.getRegion()));
+                }
+                s3Client = s3ClientBuilder.build();
+            }
+        } catch (SdkClientException e) {
+            throw new TikaConfigException("can't initialize s3 fetcher", e);
+        }
+    }
 
     @Override
     public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
-        return fetch(fetchKey, -1, -1, metadata);
+        return fetch(fetchKey, -1, -1, metadata, parseContext);
     }
 
     @Override
     public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata, ParseContext parseContext)
             throws TikaException, IOException {
+        String prefix = config.getPrefix();
         String theFetchKey = StringUtils.isBlank(prefix) ? fetchKey : prefix + fetchKey;
 
         if (LOGGER.isDebugEnabled()) {
             if (startRange > -1) {
                 LOGGER.debug("about to fetch fetchkey={} (start={} end={}) from bucket ({})",
-                        theFetchKey, startRange, endRange, bucket);
+                        theFetchKey, startRange, endRange, config.getBucket());
             } else {
                 LOGGER.debug("about to fetch fetchkey={} from bucket ({})",
-                        theFetchKey, bucket);
+                        theFetchKey, config.getBucket());
             }
         }
+
+        long[] throttleSeconds = config.getThrottleSeconds();
         int tries = 0;
         IOException ex = null;
         do {
@@ -181,15 +202,15 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
                 LOGGER.warn("client exception fetching on retry=" + tries, e);
                 ex = e;
             }
-            LOGGER.warn("sleeping for {} seconds before retry", throttleSeconds[tries]);
-            try {
-                Thread.sleep(throttleSeconds[tries]);
-            } catch (InterruptedException e) {
-                throw new RuntimeException("interrupted");
+            if (throttleSeconds != null && tries < throttleSeconds.length) {
+                LOGGER.warn("sleeping for {} seconds before retry", throttleSeconds[tries]);
+                try {
+                    Thread.sleep(throttleSeconds[tries] * 1000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException("interrupted");
+                }
             }
-            LOGGER.debug("trying to re-initialize S3 client");
-            initialize(new HashMap<>());
-        } while (++tries < throttleSeconds.length);
+        } while (throttleSeconds != null && ++tries < throttleSeconds.length);
 
         throw ex;
     }
@@ -200,7 +221,7 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
         ResponseInputStream<GetObjectResponse> s3Object = null;
         try {
             long start = System.currentTimeMillis();
-            GetObjectRequest.Builder builder = GetObjectRequest.builder().bucket(bucket).key(fetchKey);
+            GetObjectRequest.Builder builder = GetObjectRequest.builder().bucket(config.getBucket()).key(fetchKey);
             if (startRange != null && endRange != null
                     && startRange > -1 && endRange > -1) {
                 String range = String.format(Locale.US, "bytes=%d-%d", startRange, endRange);
@@ -212,6 +233,7 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
             }
             long length = s3Object.response().contentLength();
             metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
+            long maxLength = config.getMaxLength();
             if (maxLength > -1) {
                 if (length > maxLength) {
                     throw new FileTooLongException(length, maxLength);
@@ -219,12 +241,12 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
             }
             LOGGER.debug("took {} ms to fetch file's metadata", System.currentTimeMillis() - start);
 
-            if (extractUserMetadata) {
+            if (config.isExtractUserMetadata()) {
                 for (Map.Entry<String, String> e : s3Object.response().metadata().entrySet()) {
                     metadata.add(PREFIX + ":" + e.getKey(), e.getValue());
                 }
             }
-            if (!spoolToTemp) {
+            if (!config.isSpoolToTemp()) {
                 return TikaInputStream.get(s3Object);
             } else {
                 start = System.currentTimeMillis();
@@ -245,188 +267,5 @@ public class S3Fetcher extends AbstractFetcher implements Initializable, RangeFe
             }
             throw e;
         }
-    }
-
-    @Field
-    public void setSpoolToTemp(boolean spoolToTemp) {
-        this.spoolToTemp = spoolToTemp;
-    }
-
-    @Field
-    public void setRegion(String region) {
-        this.region = region;
-    }
-
-    @Field
-    public void setProfile(String profile) {
-        this.profile = profile;
-    }
-
-    @Field
-    public void setBucket(String bucket) {
-        this.bucket = bucket;
-    }
-
-    /**
-     * Set seconds to throttle retries as a comma-delimited list, e.g.: 30,60,120,600
-     * @param commaDelimitedLongs
-     * @throws TikaConfigException
-     */
-    @Field
-    public void setThrottleSeconds(String commaDelimitedLongs) throws TikaConfigException {
-        String[] longStrings = commaDelimitedLongs.split(",");
-        long[] seconds = new long[longStrings.length];
-        for (int i = 0; i < longStrings.length; i++) {
-            try {
-                seconds[i] = Long.parseLong(longStrings[i]);
-            } catch (NumberFormatException e) {
-                throw new TikaConfigException(e.getMessage());
-            }
-        }
-        setThrottleSeconds(seconds);
-    }
-    public void setThrottleSeconds(long[] throttleSeconds) {
-        this.throttleSeconds = throttleSeconds;
-    }
-
-    public long[] getThrottleSeconds() {
-        return throttleSeconds;
-    }
-
-    /**
-     * prefix to prepend to the fetch key before fetching.
-     * This will automatically add a '/' at the end.
-     *
-     * @param prefix
-     */
-    @Field
-    public void setPrefix(String prefix) {
-        //guarantee that the prefix ends with /
-        if (!prefix.endsWith("/")) {
-            prefix += "/";
-        }
-        this.prefix = prefix;
-    }
-
-    /**
-     * Whether or not to extract user metadata from the S3Object
-     *
-     * @param extractUserMetadata
-     */
-    @Field
-    public void setExtractUserMetadata(boolean extractUserMetadata) {
-        this.extractUserMetadata = extractUserMetadata;
-    }
-
-    @Field
-    public void setMaxConnections(int maxConnections) {
-        this.maxConnections = maxConnections;
-    }
-
-    @Field
-    public void setCredentialsProvider(String credentialsProvider) {
-        if (!credentialsProvider.equals("profile") && !credentialsProvider.equals("instance")
-                && !credentialsProvider.equals("key_secret")) {
-            throw new IllegalArgumentException(
-                    "credentialsProvider must be either 'profile', 'instance' or 'key_secret'");
-        }
-        this.credentialsProvider = credentialsProvider;
-    }
-
-    @Field
-    public void setMaxLength(long maxLength) {
-        this.maxLength = maxLength;
-    }
-
-    /**
-     * @deprecated use {@link #setThrottleSeconds(String)}
-     * @param sleepBeforeRetryMillis -- amount of time in millis to sleep if there was a failure
-     */
-    @Deprecated
-    @Field
-    public void setSleepBeforeRetryMillis(long sleepBeforeRetryMillis) {
-        LOGGER.info("sleepBeforeRetryMillis is deprecated. Use setThrottleSeconds instead");
-        this.sleepBeforeRetryMillis = sleepBeforeRetryMillis;
-    }
-
-    @Field
-    public void setAccessKey(String accessKey) {
-        this.accessKey = accessKey;
-    }
-
-    @Field
-    public void setSecretKey(String secretKey) {
-        this.secretKey = secretKey;
-    }
-
-    /**
-     * This initializes the s3 client. Note, we wrap S3's RuntimeExceptions,
-     * e.g. SdkClientException in a TikaConfigException.
-     *
-     * @param params params to use for initialization
-     * @throws TikaConfigException
-     */
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
-        //params have already been set...ignore them
-        AwsCredentialsProvider provider;
-        switch (credentialsProvider) {
-            case "instance":
-                provider = InstanceProfileCredentialsProvider.builder().build();
-                break;
-            case "profile":
-                provider = ProfileCredentialsProvider.builder().profileName(profile).build();
-                break;
-            case "key_secret":
-                AwsBasicCredentials awsCreds = AwsBasicCredentials.create(accessKey, secretKey);
-                provider = StaticCredentialsProvider.create(awsCreds);
-                break;
-            default:
-                throw new TikaConfigException("credentialsProvider must be set and " + "must be either 'instance', 'profile' or 'key_secret'");
-        }
-        SdkHttpClient httpClient = ApacheHttpClient.builder().maxConnections(maxConnections).build();
-        S3Configuration clientConfig = S3Configuration.builder().pathStyleAccessEnabled(pathStyleAccessEnabled).build();
-        try {
-            synchronized (clientLock) {
-                S3ClientBuilder s3ClientBuilder = S3Client.builder().httpClient(httpClient).
-                        serviceConfiguration(clientConfig).credentialsProvider(provider);
-                if (!StringUtils.isBlank(endpointConfigurationService)) {
-                    try {
-                        s3ClientBuilder.endpointOverride(new URI(endpointConfigurationService)).region(Region.of(region));
-                    }
-                    catch (URISyntaxException ex) {
-                        throw new TikaConfigException("bad endpointConfigurationService: " + endpointConfigurationService, ex);
-                    }
-                } else {
-                    s3ClientBuilder.region(Region.of(region));
-                }
-                s3Client = s3ClientBuilder.build();
-            }
-        } catch (SdkClientException e) {
-            throw new TikaConfigException("can't initialize s3 fetcher", e);
-        }
-        if (throttleSeconds == null) {
-            throttleSeconds = new long[retries];
-            for (int i = 0; i < retries; i++) {
-                throttleSeconds[i] = sleepBeforeRetryMillis * 1000;
-            }
-        }
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
-        mustNotBeEmpty("bucket", this.bucket);
-        mustNotBeEmpty("region", this.region);
-    }
-
-    @Field
-    public void setEndpointConfigurationService(String endpointConfigurationService) {
-        this.endpointConfigurationService = endpointConfigurationService;
-    }
-
-    @Field
-    public void setPathStyleAccessEnabled(boolean pathStyleAccessEnabled) {
-        this.pathStyleAccessEnabled = pathStyleAccessEnabled;
     }
 }

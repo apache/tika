@@ -49,6 +49,7 @@ import org.apache.tika.pipes.core.async.AsyncProcessor;
 import org.apache.tika.pipes.core.async.OfferLargerThanQueueSize;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
+import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTupleList;
 import org.apache.tika.plugins.TikaPluginManager;
@@ -64,7 +65,9 @@ public class AsyncResource {
 
     public AsyncResource(java.nio.file.Path tikaConfigPath, java.nio.file.Path pluginsConfig) throws TikaException, IOException, SAXException {
         this.asyncProcessor = new AsyncProcessor(tikaConfigPath, pluginsConfig);
-        this.emitterManager = EmitterManager.load(TikaPluginManager.load(pluginsConfig));
+        TikaConfigs tikaConfigs = TikaConfigs.load(pluginsConfig);
+        TikaPluginManager pluginManager = TikaPluginManager.load(tikaConfigs);
+        this.emitterManager = EmitterManager.load(pluginManager, tikaConfigs);
     }
 
     public ArrayBlockingQueue<FetchEmitTuple> getFetchEmitQueue(int queueSize) {

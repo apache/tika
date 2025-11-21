@@ -58,6 +58,7 @@ import org.apache.tika.pipes.api.HandlerConfig;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
 import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -119,9 +120,9 @@ public class TikaPipesTest extends CXFTestBase {
 
         CXFTestBase.createPluginsConfig(TIKA_PIPES_CONFIG_PATH, inputDir, TMP_OUTPUT_DIR, null);
 
-        try (InputStream is = Files.newInputStream(TIKA_PIPES_CONFIG_PATH)) {
-            FETCHER_MANAGER = FetcherManager.load(TikaPluginManager.load(is));
-        }
+        TikaConfigs tikaConfigs = TikaConfigs.load(TIKA_PIPES_CONFIG_PATH);
+        TikaPluginManager pluginManager = TikaPluginManager.load(tikaConfigs);
+        FETCHER_MANAGER = FetcherManager.load(pluginManager, tikaConfigs);
     }
 
     @AfterAll
