@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.cli.CommandLine;
@@ -43,6 +44,7 @@ import org.apache.tika.pipes.core.async.AsyncProcessor;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.pipesiterator.PipesIteratorManager;
 import org.apache.tika.plugins.ExtensionConfig;
+import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.utils.StringUtils;
@@ -81,10 +83,15 @@ public class TikaAsyncCLI {
 
     private static void processCommandLine(String[] args) throws Exception {
         LOG.warn("processing args " + args.length);
-        if (args.length == 2) {
-            if (args[0].endsWith(".xml") && args[1].endsWith(".json")) {
+        if (args.length == 1) {
+            if (args[0].endsWith(".json")) {
                 LOG.warn("processing args");
-                processWithTikaConfig(PipesIteratorManager.load(TikaPluginManager.load(Paths.get(args[1]))), Paths.get(args[0]), Paths.get(args[1]), null);
+                TikaConfigs tikaConfigs = TikaConfigs.load(Paths.get(args[0]));
+                Optional<PipesIterator> pipesIteratorOpt = PipesIteratorManager.load(TikaPluginManager.load(tikaConfigs), tikaConfigs);
+                if (pipesIteratorOpt.isEmpty()) {
+                    throw new IllegalArgumentException("Must specify a pipes iterator if supplying a .json file");
+                }
+                processWithTikaConfig(pipesIteratorOpt.get(), Paths.get(args[0]), Paths.get(args[1]), null);
                 return;
             }
         }
@@ -96,6 +103,7 @@ public class TikaAsyncCLI {
         Path tmpPluginsConfig = null;
         Path tmpTikaConfig = null;
         PipesIterator pipesIterator = null;
+
         try {
             if (tikaConfig == null) {
                 tmpTikaConfig = Files.createTempFile("tika-async-tmp-", ".xml");
@@ -106,7 +114,8 @@ public class TikaAsyncCLI {
             if (pluginsConfig == null) {
                 tmpPluginsConfig = Files.createTempFile("tika-async-tmp-", ".json");
                 pluginsConfig = tmpPluginsConfig;
-                PluginsWriter pluginsWriter = new PluginsWriter(simpleAsyncConfig);
+
+                PluginsWriter pluginsWriter = new PluginsWriter(simpleAsyncConfig, pluginsConfig);
                 pluginsWriter.write(pluginsConfig);
             }
 
@@ -126,22 +135,31 @@ public class TikaAsyncCLI {
 
 
     private static PipesIterator buildPipesIterator(Path pluginsConfig, SimpleAsyncConfig simpleAsyncConfig) throws TikaConfigException, IOException {
+        TikaConfigs tikaConfigs = TikaConfigs.load(pluginsConfig);
         String inputDirString = simpleAsyncConfig.getInputDir();
         if (StringUtils.isBlank(inputDirString)) {
-            return PipesIteratorManager.load(TikaPluginManager.load(pluginsConfig));
+            Optional<PipesIterator> pipesIteratorOpt =  PipesIteratorManager.load(TikaPluginManager.load(tikaConfigs), tikaConfigs);
+            if (pipesIteratorOpt.isEmpty()) {
+                throw new TikaConfigException("something went wrong loading: pipesIterator from the tika configs");
+            }
+            return pipesIteratorOpt.get();
         }
         Path p = Paths.get(simpleAsyncConfig.getInputDir());
         if (Files.isRegularFile(p)) {
             return new SingleFilePipesIterator(p.getFileName().toString());
         }
-        return PipesIteratorManager.load(TikaPluginManager.load(pluginsConfig));
+        Optional<PipesIterator> pipesIteratorOpt = PipesIteratorManager.load(TikaPluginManager.load(tikaConfigs), tikaConfigs);
+        if (pipesIteratorOpt.isEmpty()) {
+            throw new TikaConfigException("something went wrong loading: pipesIterator from the tika configs");
+        }
+        return pipesIteratorOpt.get();
     }
 
     //not private for testing purposes
     static SimpleAsyncConfig parseCommandLine(String[] args) throws TikaConfigException, ParseException, IOException {
         if (args.length == 2 && ! args[0].startsWith("-")) {
-            return new SimpleAsyncConfig(args[0], args[1], null,
-                    null, null, null, null, null,
+            return new SimpleAsyncConfig(args[0], args[1], 1,
+                    30000L, "-Xmx1g", null, null, null,
                     BasicContentHandlerFactory.HANDLER_TYPE.TEXT, false, null);
         }
 

@@ -16,6 +16,8 @@
  */
 package org.apache.tika.plugins;
 
-public record ExtensionConfig(String id, String extensionName, String jsonConfig) {
+import com.fasterxml.jackson.databind.JsonNode;
+
+public record ExtensionConfig(String id, String name, JsonNode jsonConfig) {
 
 }

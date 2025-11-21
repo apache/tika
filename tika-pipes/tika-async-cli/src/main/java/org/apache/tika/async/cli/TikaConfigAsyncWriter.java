@@ -90,7 +90,6 @@ class TikaConfigAsyncWriter {
             }
         }
 
-        writeAsync(document, properties, output);
         Transformer transformer = TransformerFactory
                 .newInstance().newTransformer();
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
@@ -102,59 +101,4 @@ class TikaConfigAsyncWriter {
         }
 
     }
-
-    private void writeAsync(Document document, Element properties, Path thisTikaConfig) {
-        Element async = findChild("async", properties);
-        if (async != null) {
-            LOG.info("async already exists in tika-config. Not overwriting with commandline");
-            return;
-        }
-
-        async = createAndGetElement(document, properties, "async");
-        Element pipesIterator = findChild("pipesIterator", properties);
-        if (pipesIterator != null) {
-            LOG.info("pipesIterator already exists in tika-config. Not overwriting with commandline");
-        }
-
-        properties.appendChild(async);
-        if (simpleAsyncConfig.getNumClients() != null) {
-            appendTextElement(document, async, "numClients", Integer.toString(simpleAsyncConfig.getNumClients()));
-        }
-        if (simpleAsyncConfig.getXmx() != null) {
-            Element forkedJvmArgs = createAndGetElement(document, async, "forkedJvmArgs");
-            appendTextElement(document, forkedJvmArgs, "arg", "-Xmx" + simpleAsyncConfig.getXmx());
-        }
-        if (simpleAsyncConfig.getTimeoutMs() != null) {
-            appendTextElement(document, async, "timeoutMillis", Long.toString(simpleAsyncConfig.getTimeoutMs()));
-        }
-        appendTextElement(document, async, "tikaConfig", thisTikaConfig.toAbsolutePath().toString());
-
-        appendTextElement(document, async, "maxForEmitBatchBytes", "0");
-    }
-
-    private static  void appendTextElement(Document document, Element parent, String itemName, String text, String... attrs) {
-        Element el = createAndGetElement(document, parent, itemName, attrs);
-        el.setTextContent(text);
-    }
-
-    private static Element createAndGetElement(Document document, Element parent, String elementName, String... attrs) {
-        Element el = document.createElement(elementName);
-        parent.appendChild(el);
-        for (int i = 0; i < attrs.length; i += 2) {
-            el.setAttribute(attrs[i], attrs[i + 1]);
-        }
-        return el;
-    }
-
-    static Element findChild(String childElementName, Element root) {
-        NodeList nodeList = root.getChildNodes();
-        for (int i = 0; i < nodeList.getLength(); i++) {
-            Node child = nodeList.item(i);
-            if (childElementName.equals(child.getLocalName())) {
-                return (Element)child;
-            }
-        }
-        return null;
-    }
-
 }

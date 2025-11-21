@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.nio.file.Path;
 
 import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
@@ -29,9 +30,9 @@ public record FileSystemReporterConfig(Path statusFile, long reportUpdateMs) imp
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static FileSystemReporterConfig load(String json) throws IOException, TikaConfigException {
+    public static FileSystemReporterConfig load(JsonNode jsonNode) throws IOException, TikaConfigException {
         try {
-            return OBJECT_MAPPER.readValue(json, FileSystemReporterConfig.class);
+            return OBJECT_MAPPER.treeToValue(jsonNode, FileSystemReporterConfig.class);
         } catch (JacksonException e) {
             throw new TikaConfigException("problem w json", e);
         }

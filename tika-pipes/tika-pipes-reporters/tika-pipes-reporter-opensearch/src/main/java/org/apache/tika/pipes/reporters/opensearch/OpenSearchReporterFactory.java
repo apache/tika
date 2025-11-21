@@ -29,7 +29,7 @@ public class OpenSearchReporterFactory implements PipesReporterFactory {
     public static final String EXTENSION_NAME = "opensearch-pipes-reporter";
 
     @Override
-    public String getExtensionName() {
+    public String getName() {
         return EXTENSION_NAME;
     }
 

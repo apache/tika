@@ -30,7 +30,7 @@ public class FileSystemReporterFactory implements PipesReporterFactory {
     public static final String EXTENSION_NAME = "file-system-reporter";
 
     @Override
-    public String getExtensionName() {
+    public String getName() {
         return EXTENSION_NAME;
     }
 

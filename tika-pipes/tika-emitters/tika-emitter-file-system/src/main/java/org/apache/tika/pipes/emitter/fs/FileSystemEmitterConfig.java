@@ -18,6 +18,7 @@ package org.apache.tika.pipes.emitter.fs;
 
 import java.io.IOException;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 
@@ -30,8 +31,8 @@ public record FileSystemEmitterConfig(String basePath, String fileExtension, ON_
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static FileSystemEmitterConfig load(String json) throws IOException {
-        return OBJECT_MAPPER.readValue(json, FileSystemEmitterConfig.class);
+    public static FileSystemEmitterConfig load(JsonNode jsonNode) throws IOException {
+        return OBJECT_MAPPER.treeToValue(jsonNode, FileSystemEmitterConfig.class);
     }
 
 }

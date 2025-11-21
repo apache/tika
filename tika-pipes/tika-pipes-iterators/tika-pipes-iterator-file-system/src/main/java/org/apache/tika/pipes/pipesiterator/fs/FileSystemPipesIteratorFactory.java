@@ -30,7 +30,7 @@ public class FileSystemPipesIteratorFactory implements PipesIteratorFactory {
     public static final String EXTENSION_NAME = "file-system-pipes-iterator";
 
     @Override
-    public String getExtensionName() {
+    public String getName() {
         return EXTENSION_NAME;
     }
 

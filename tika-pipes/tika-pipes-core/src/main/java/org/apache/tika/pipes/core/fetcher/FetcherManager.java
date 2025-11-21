@@ -17,14 +17,12 @@
 package org.apache.tika.pipes.core.fetcher;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import org.pf4j.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,8 +30,8 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.fetcher.FetcherFactory;
+import org.apache.tika.plugins.PluginComponentLoader;
 import org.apache.tika.plugins.TikaConfigs;
-import org.apache.tika.plugins.TikaPluginManager;
 
 /**
  * Utility class to hold multiple fetchers.
@@ -42,19 +40,15 @@ import org.apache.tika.plugins.TikaPluginManager;
  */
 public class FetcherManager {
 
+    public static final String CONFIG_KEY = "fetchers";
     private static final Logger LOG = LoggerFactory.getLogger(FetcherManager.class);
 
-    public static FetcherManager load(TikaPluginManager tikaPluginManager) throws IOException, TikaConfigException {
-        if (tikaPluginManager.getStartedPlugins().isEmpty()) {
-            tikaPluginManager.loadPlugins();
-            tikaPluginManager.startPlugins();
-        }
-        Map<String, Fetcher> fetcherMap = new HashMap<>();
-        for (Fetcher fetcher : tikaPluginManager.buildConfiguredExtensions(FetcherFactory.class)) {
-            LOG.info("Pf4j loaded plugin: " + fetcher.getClass());
-            fetcherMap.put(fetcher.getExtensionConfig().id(), fetcher);
-        }
-        return new FetcherManager(fetcherMap);
+
+    public static FetcherManager load(PluginManager pluginManager, TikaConfigs tikaConfigs) throws TikaConfigException, IOException {
+        JsonNode fetchersNode = tikaConfigs.getRoot().get(CONFIG_KEY);
+        Map<String, Fetcher> fetchers =
+                PluginComponentLoader.loadInstances(pluginManager, FetcherFactory.class, fetchersNode);
+        return new FetcherManager(fetchers);
     }
 
     private final Map<String, Fetcher> fetcherMap = new ConcurrentHashMap<>();

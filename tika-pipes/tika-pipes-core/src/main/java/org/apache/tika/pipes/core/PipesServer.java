@@ -853,17 +853,15 @@ public class PipesServer implements Runnable {
     protected void initializeResources() throws TikaException, IOException, SAXException {
         TikaConfigs tikaConfigs = TikaConfigs.load(pipesConfigPath);
 
-        TikaPluginManager tikaPluginManager = new TikaPluginManager(tikaConfigs);
-        tikaPluginManager.loadPlugins();
-        tikaPluginManager.startPlugins();
+        TikaPluginManager tikaPluginManager = TikaPluginManager.load(tikaConfigs);
 
         //TODO allowed named configurations in tika config
         this.tikaConfig = new TikaConfig(tikaConfigPath);
-        this.fetcherManager = FetcherManager.load(tikaPluginManager);
+        this.fetcherManager = FetcherManager.load(tikaPluginManager, tikaConfigs);
         //skip initialization of the emitters if emitting
         //from the pipesserver is turned off.
         if (maxForEmitBatchBytes > -1) {
-            this.emitterManager = EmitterManager.load(tikaPluginManager);
+            this.emitterManager = EmitterManager.load(tikaPluginManager, tikaConfigs);
         } else {
             LOG.debug("'maxForEmitBatchBytes' < 0. Not initializing emitters in PipesServer");
             this.emitterManager = null;

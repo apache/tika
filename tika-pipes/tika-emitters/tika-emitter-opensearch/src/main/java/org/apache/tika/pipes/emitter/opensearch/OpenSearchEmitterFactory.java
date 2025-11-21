@@ -31,7 +31,7 @@ public class OpenSearchEmitterFactory implements EmitterFactory {
     public static final String EXTENSION_NAME = "opensearch-emitter";
 
     @Override
-    public String getExtensionName() {
+    public String getName() {
         return EXTENSION_NAME;
     }
 

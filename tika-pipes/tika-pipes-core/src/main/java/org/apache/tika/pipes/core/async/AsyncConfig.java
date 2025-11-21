@@ -23,6 +23,7 @@ import java.nio.file.Path;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.core.PipesConfigBase;
+import org.apache.tika.plugins.TikaConfigs;
 
 public class AsyncConfig extends PipesConfigBase {
 
@@ -34,18 +35,12 @@ public class AsyncConfig extends PipesConfigBase {
 
     private boolean emitIntermediateResults = false;
 
-    public static AsyncConfig load(Path tikaConfig, Path pipesPluginsConfig) throws IOException, TikaConfigException {
-        AsyncConfig asyncConfig = new AsyncConfig();
-        if (tikaConfig != null) {
-            try (InputStream is = Files.newInputStream(tikaConfig)) {
-                asyncConfig.configure("async", is);
-            }
+    public static AsyncConfig load(TikaConfigs tikaConfigs) throws IOException, TikaConfigException {
+        AsyncConfig a = tikaConfigs.deserialize(AsyncConfig.class, "async");
+        if (a == null) {
+            return new AsyncConfig();
         }
-        if (asyncConfig.getTikaConfig() == null) {
-            asyncConfig.setTikaConfig(tikaConfig);
-        }
-        asyncConfig.setPipesPluginsConfig(pipesPluginsConfig);
-        return asyncConfig;
+        return a;
     }
 
     public long getEmitWithinMillis() {

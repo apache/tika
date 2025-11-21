@@ -27,11 +27,11 @@ import org.apache.tika.plugins.ExtensionConfig;
 @Extension
 public class JDBCPipesReporterFactory implements PipesReporterFactory {
 
-    public static final String EXTENSION_NAME = "jdbc-reporter";
+    public static final String NAME = "jdbc-reporter";
 
     @Override
-    public String getExtensionName() {
-        return EXTENSION_NAME;
+    public String getName() {
+        return NAME;
     }
 
 

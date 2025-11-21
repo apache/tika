@@ -19,8 +19,6 @@ package org.apache.tika.pipes.fetcher.fs;
 import java.io.IOException;
 
 import org.pf4j.Extension;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
@@ -30,11 +28,11 @@ import org.apache.tika.plugins.ExtensionConfig;
 @Extension
 public class FileSystemFetcherFactory implements FetcherFactory {
 
-    private static final String EXTENSION_NAME = "file-system-fetcher";
+    private static final String NAME = "file-system-fetcher";
 
     @Override
-    public String getExtensionName() {
-        return EXTENSION_NAME;
+    public String getName() {
+        return NAME;
     }
 
     @Override

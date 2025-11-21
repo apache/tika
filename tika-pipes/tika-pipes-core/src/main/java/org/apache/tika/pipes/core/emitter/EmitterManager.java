@@ -17,22 +17,20 @@
 package org.apache.tika.pipes.core.emitter;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import org.pf4j.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.EmitterFactory;
-import org.apache.tika.plugins.ExtensionConfigs;
+import org.apache.tika.plugins.PluginComponentLoader;
 import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.plugins.TikaPluginManager;
 
@@ -43,22 +41,17 @@ import org.apache.tika.plugins.TikaPluginManager;
  * This does not allow multiple emitters supporting the same prefix.
  */
 public class EmitterManager {
+    public static final String CONFIG_KEY = "emitters";
 
     private static final Logger LOG = LoggerFactory.getLogger(EmitterManager.class);
 
     private final Map<String, Emitter> emitterMap = new ConcurrentHashMap<>();
 
-    public static EmitterManager load(TikaPluginManager tikaPluginManager) throws IOException, TikaConfigException {
-        if (tikaPluginManager.getStartedPlugins().isEmpty()) {
-            tikaPluginManager.loadPlugins();
-            tikaPluginManager.startPlugins();
-        }
-        Map<String, Emitter> fetcherMap = new HashMap<>();
-        for (Emitter emitter : tikaPluginManager.buildConfiguredExtensions(EmitterFactory.class)) {
-            LOG.info("Pf4j loaded plugin: " + emitter.getClass());
-            fetcherMap.put(emitter.getExtensionConfig().id(), emitter);
-        }
-        return new EmitterManager(fetcherMap);
+    public static EmitterManager load(PluginManager pluginManager, TikaConfigs tikaConfigs) throws IOException, TikaConfigException {
+        JsonNode fetchersNode = tikaConfigs.getRoot().get(CONFIG_KEY);
+        Map<String, Emitter> fetchers =
+                PluginComponentLoader.loadInstances(pluginManager, EmitterFactory.class, fetchersNode);
+        return new EmitterManager(fetchers);
     }
 
     private EmitterManager() {

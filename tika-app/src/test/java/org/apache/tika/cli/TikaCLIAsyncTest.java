@@ -24,6 +24,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,66 +41,6 @@ import org.slf4j.LoggerFactory;
 public class TikaCLIAsyncTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaCLI.class);
-
-    final static String JSON_TEMPLATE = """
-            {
-              "fsf": {
-                "file-system-fetcher": {
-                  "basePath": "FETCHER_BASE_PATH",
-                  "extractFileSystemMetadata": false
-                }
-              },
-              "fse": {
-                "file-system-emitter": {
-                  "basePath": "EMITTER_BASE_PATH",
-                  "fileExtension": "jsn",
-                  "onExists":"EXCEPTION",
-                  "prettyPrint": true
-                }
-              },
-              "fspi": {
-                "file-system-pipes-iterator": {
-                  "basePath": "FETCHER_BASE_PATH",
-                  "countTotal": true,
-                  "baseConfig": {
-                    "fetcherId": "fsf",
-                    "emitterId": "fse",
-                    "handlerConfig": {
-                      "type": "TEXT",
-                      "parseMode": "RMETA",
-                      "writeLimit": -1,
-                      "maxEmbeddedResources": -1,
-                      "throwOnWriteLimitReached": true
-                    },
-                    "onParseException": "EMIT",
-                    "maxWaitMs": 600000,
-                    "queueSize": 10000
-                  }
-                }
-              },
-              "pluginsPaths": "PLUGINS_PATHS"
-            }
-            """;
-
-    final static String JSON_TEMPLATE_FETCH_EMIT_ONLY = """
-            {
-              "fsf": {
-                "file-system-fetcher": {
-                  "basePath": "FETCHER_BASE_PATH",
-                  "extractFileSystemMetadata": false
-                }
-              },
-              "fse": {
-                "file-system-emitter": {
-                  "basePath": "EMITTER_BASE_PATH",
-                  "fileExtension": "jsn",
-                  "onExists":"EXCEPTION",
-                  "prettyPrint": true
-                }
-              },
-              "pluginsPaths": "PLUGINS_PATHS"
-            }
-            """;
 
     static final File TEST_DATA_FILE = new File("src/test/resources/test-data");
 
@@ -118,7 +59,7 @@ public class TikaCLIAsyncTest {
     @BeforeAll
     public static void setUpClass() throws Exception {
         ASYNC_CONFIG = Files.createTempFile(ASYNC_OUTPUT_DIR, "async-config-", ".xml");
-        String xml = "<properties>" + "<async>" + "<numClients>3</numClients>" + "<tikaConfig>" + ASYNC_CONFIG.toAbsolutePath() + "</tikaConfig>" + "</async>" + "</properties>";
+        String xml = "<properties/>";
         Files.write(ASYNC_CONFIG, xml.getBytes(UTF_8));
         ASYNC_PLUGINS_CONFIG = Files.createTempFile(ASYNC_OUTPUT_DIR, "plugins-", ".json");
 
@@ -126,9 +67,16 @@ public class TikaCLIAsyncTest {
         if (! Files.isDirectory(pluginsDir)) {
             LOG.warn("CAN'T FIND PLUGINS DIR. pwd={}", Paths.get("").toAbsolutePath().toString());
         }
-        String json = JSON_TEMPLATE.replace("FETCHER_BASE_PATH", TEST_DATA_FILE.getAbsolutePath().toString())
+        String jsonTemplate = Files.readString(Paths.get(TikaCLIAsyncTest.class.getResource("/configs/config-template.json").toURI()),
+                StandardCharsets.UTF_8);
+
+        String json = jsonTemplate.replace("FETCHER_BASE_PATH", TEST_DATA_FILE.getAbsolutePath().toString())
                                    .replace("EMITTER_BASE_PATH", ASYNC_OUTPUT_DIR.toAbsolutePath().toString())
-                                   .replace("PLUGINS_PATHS", pluginsDir.toAbsolutePath().toString());
+                                   .replace("PLUGIN_ROOTS", pluginsDir.toAbsolutePath().toString())
+                .replace("PLUGINS_CONFIG", ASYNC_PLUGINS_CONFIG.toAbsolutePath().toString())
+                        .replace("TIKA_CONFIG", ASYNC_CONFIG.toAbsolutePath().toString());
+
+                ;
         Files.writeString(ASYNC_PLUGINS_CONFIG, json, UTF_8);
     }
 

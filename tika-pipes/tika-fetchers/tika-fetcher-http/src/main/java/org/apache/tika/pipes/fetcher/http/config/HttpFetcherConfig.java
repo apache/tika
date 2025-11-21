@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
@@ -29,9 +30,9 @@ public class HttpFetcherConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static HttpFetcherConfig load(String json) throws IOException, TikaConfigException {
+    public static HttpFetcherConfig load(JsonNode json) throws TikaConfigException {
         try {
-            return OBJECT_MAPPER.readValue(json, HttpFetcherConfig.class);
+            return OBJECT_MAPPER.treeToValue(json, HttpFetcherConfig.class);
         } catch (JacksonException e) {
             throw new TikaConfigException("problem w json", e);
         }

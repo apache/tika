@@ -30,6 +30,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import org.pf4j.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +47,7 @@ import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesResults;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.reporter.ReporterManager;
+import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.plugins.TikaPluginManager;
 
 /**
@@ -77,8 +80,11 @@ public class AsyncProcessor implements Closeable {
     }
 
     public AsyncProcessor(Path tikaConfigPath, Path pluginsConfigPath, PipesIterator pipesIterator) throws TikaException, IOException {
-        this.asyncConfig = AsyncConfig.load(tikaConfigPath, pluginsConfigPath);
-        this.pipesReporter = ReporterManager.load(TikaPluginManager.load(pluginsConfigPath));
+        TikaConfigs tikaConfigs = TikaConfigs.load(pluginsConfigPath);
+        TikaPluginManager tikaPluginManager = TikaPluginManager.load(tikaConfigs);
+
+        this.asyncConfig = AsyncConfig.load(tikaConfigs);
+        this.pipesReporter = ReporterManager.load(tikaPluginManager, tikaConfigs);
         LOG.debug("loaded reporter {}", pipesReporter.getClass());
         this.fetchEmitTuples = new ArrayBlockingQueue<>(asyncConfig.getQueueSize());
         this.emitDatumTuples = new ArrayBlockingQueue<>(100);
@@ -115,7 +121,7 @@ public class AsyncProcessor implements Closeable {
                         new FetchEmitWorker(asyncConfig, fetchEmitTuples, emitDatumTuples));
             }
 
-            EmitterManager emitterManager = EmitterManager.load(TikaPluginManager.load(asyncConfig.getPipesPluginsConfig()));
+            EmitterManager emitterManager = EmitterManager.load(tikaPluginManager, tikaConfigs);
             for (int i = 0; i < asyncConfig.getNumEmitters(); i++) {
                 executorCompletionService.submit(
                         new AsyncEmitter(asyncConfig, emitDatumTuples, emitterManager));

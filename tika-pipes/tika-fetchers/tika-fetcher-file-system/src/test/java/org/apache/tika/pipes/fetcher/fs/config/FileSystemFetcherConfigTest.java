@@ -19,6 +19,7 @@ package org.apache.tika.pipes.fetcher.fs.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
@@ -34,7 +35,7 @@ public class FileSystemFetcherConfigTest {
                 }
                 """;
 
-        FileSystemFetcherConfig config = FileSystemFetcherConfig.load(json);
+        FileSystemFetcherConfig config = FileSystemFetcherConfig.load(new ObjectMapper().readTree(json));
         assertEquals("/some/base/path", config.getBasePath());
         assertTrue(config.isExtractFileSystemMetadata());
     }

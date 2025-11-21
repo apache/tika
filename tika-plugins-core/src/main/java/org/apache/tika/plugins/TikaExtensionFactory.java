@@ -28,6 +28,6 @@ public interface TikaExtensionFactory<T extends TikaExtension> extends Extension
      *
      * @return name of the extension in the config file
      */
-    String getExtensionName();
+    String getName();
     T buildExtension(ExtensionConfig extensionConfig) throws IOException, TikaConfigException;
 }

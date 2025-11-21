@@ -63,7 +63,7 @@ public class FileSystemFetcher extends AbstractTikaExtension implements Fetcher 
 
     private FileSystemFetcherConfig defaultFileSystemFetcherConfig;
 
-    public FileSystemFetcher(ExtensionConfig pluginConfig) throws IOException, TikaConfigException {
+    public FileSystemFetcher(ExtensionConfig pluginConfig) throws TikaConfigException {
         super(pluginConfig);
         defaultFileSystemFetcherConfig = FileSystemFetcherConfig.load(pluginConfig.jsonConfig());
         checkConfig(defaultFileSystemFetcherConfig);

@@ -17,56 +17,29 @@
 package org.apache.tika.async.cli;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import org.apache.tika.io.IOUtils;
+import org.apache.tika.pipes.core.async.AsyncConfig;
 import org.apache.tika.utils.StringUtils;
 
 public class PluginsWriter {
 
-    final static String JSON_TEMPLATE = """
-            {
-              "fsf" : {
-                "file-system-fetcher": {
-                  "basePath": "FETCHER_BASE_PATH",
-                  "extractFileSystemMetadata": false
-                }
-              },
-              "fse": {
-                "file-system-emitter": {
-                  "basePath": "EMITTER_BASE_PATH",
-                  "fileExtension": "json",
-                  "onExists": "EXCEPTION"
-                }
-              },
-              "fspi": {
-                "file-system-pipes-iterator": {
-                  "basePath": "FETCHER_BASE_PATH",
-                  "countTotal": true,
-                  "baseConfig": {
-                    "fetcherId": "fsf",
-                    "emitterId": "fse",
-                    "handlerConfig": {
-                      "type": "TEXT",
-                      "parseMode": "RMETA",
-                      "writeLimit": -1,
-                      "maxEmbeddedResources": -1,
-                      "throwOnWriteLimitReached": true
-                    },
-                    "onParseException": "EMIT",
-                    "maxWaitMs": 600000,
-                    "queueSize": 10000
-                  }
-                }
-              },
-              "pluginsPaths": "PLUGINS_PATHS"
-            }
-            """;
-    private final SimpleAsyncConfig simpleAsyncConfig;
 
-    public PluginsWriter(SimpleAsyncConfig simpleAsyncConfig) {
+    private final SimpleAsyncConfig simpleAsyncConfig;
+    private final Path pluginsPath;
+
+    public PluginsWriter(SimpleAsyncConfig simpleAsyncConfig, Path pluginsConfig) {
         this.simpleAsyncConfig = simpleAsyncConfig;
+        this.pluginsPath = pluginsConfig;
     }
 
     void write(Path output) throws IOException {
@@ -79,15 +52,34 @@ public class PluginsWriter {
             }
         }
         try {
-            String json = JSON_TEMPLATE.replace("FETCHER_BASE_PATH", baseInput.toAbsolutePath().toString());
+            String jsonTemplate = new String(getClass().getResourceAsStream("/config-template.json").readAllBytes(), StandardCharsets.UTF_8);
+            String json = jsonTemplate.replace("FETCHER_BASE_PATH", baseInput.toAbsolutePath().toString());
             json = json.replace("EMITTER_BASE_PATH", baseOutput.toAbsolutePath().toString());
             String pluginString = StringUtils.isBlank(simpleAsyncConfig.getPluginsDir()) ? "plugins" : simpleAsyncConfig.getPluginsDir();
             Path plugins = Paths.get(pluginString);
             if (Files.isDirectory(plugins)) {
                 pluginString = plugins.toAbsolutePath().toString();
             }
-            json = json.replace("PLUGINS_PATHS", pluginString);
-            Files.writeString(output, json);
+            json = json.replace("PLUGIN_ROOTS", pluginString);
+            AsyncConfig asyncConfig = new AsyncConfig();
+
+            asyncConfig.setNumClients(simpleAsyncConfig.getNumClients() == null ? 2 : simpleAsyncConfig.getNumClients());
+            asyncConfig.setTikaConfig(Paths.get(simpleAsyncConfig.getTikaConfig()));
+            asyncConfig.setPipesPluginsConfig(
+                    StringUtils.isBlank(simpleAsyncConfig.getAsyncConfig()) ? pluginsPath :
+                            Paths.get(simpleAsyncConfig.getAsyncConfig()));
+
+            if (simpleAsyncConfig.getXmx() != null) {
+                asyncConfig.setForkedJvmArgs(List.of(simpleAsyncConfig.getXmx()));
+            }
+            if (simpleAsyncConfig.getTimeoutMs() != null) {
+                asyncConfig.setTimeoutMillis(simpleAsyncConfig.getTimeoutMs());
+            }
+            ObjectMapper objectMapper = new ObjectMapper();
+            ObjectNode root = (ObjectNode) objectMapper.readTree(json.getBytes(StandardCharsets.UTF_8));
+            root.set("async", objectMapper.valueToTree(asyncConfig));
+
+            Files.writeString(output, root.toString());
         } catch (Exception e) {
             throw new IOException(e);
         }

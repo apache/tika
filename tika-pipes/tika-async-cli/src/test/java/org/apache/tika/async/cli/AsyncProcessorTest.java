@@ -56,33 +56,6 @@ public class AsyncProcessorTest extends TikaTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(AsyncProcessorTest.class);
 
-
-    final static String JSON_TEMPLATE_TEST = """
-                {
-                  "fsf": {
-                    "file-system-fetcher": {
-                      "basePath": "FETCHER_BASE_PATH",
-                      "extractFileSystemMetadata": false
-                    }
-                  },
-                  "fse-json": {
-                    "file-system-emitter": {
-                      "basePath": "JSON_EMITTER_BASE_PATH",
-                      "fileExtension": "",
-                      "onExists": "EXCEPTION"
-                    }
-                  },
-                  "fse-bytes": {
-                    "file-system-emitter": {
-                      "basePath": "BYTES_EMITTER_BASE_PATH",
-                      "fileExtension": "",
-                      "onExists": "EXCEPTION"
-                    }
-                  },
-                  "pluginsPaths": "PLUGINS_PATHS"
-                }
-            """;
-
     //TODO -- integrate json pipes iterator and run with AyncProcessor.main
     @TempDir
     private Path basedir;
@@ -97,7 +70,7 @@ public class AsyncProcessorTest extends TikaTest {
     private Path tikaConfigPath;
 
     @BeforeEach
-    public void setUp() throws IOException {
+    public void setUp() throws Exception {
         inputDir = basedir.resolve("input");
 
         outputDir = basedir.resolve("output");
@@ -119,12 +92,14 @@ public class AsyncProcessorTest extends TikaTest {
         tikaConfigPath = configDir.resolve("tika-config.xml");
         Files.copy(AsyncProcessorTest.class.getResourceAsStream("/configs/tika-config-default.xml"), tikaConfigPath);
         Path pipesConfig = configDir.resolve("tika-pipes.json");
-        String jsonTemp = JSON_TEMPLATE_TEST
+        String json = Files.readString(Paths.get(AsyncProcessorTest.class.getResource("/configs/config-template.json").toURI()), StandardCharsets.UTF_8);
+        String jsonTemp = json
                 .replace("FETCHER_BASE_PATH", inputDir.toAbsolutePath().toString())
                 .replace("JSON_EMITTER_BASE_PATH", jsonOutputDir.toAbsolutePath().toString())
                 .replace("BYTES_EMITTER_BASE_PATH", bytesOutputDir.toAbsolutePath().toString())
-                .replace("PLUGINS_PATHS", pluginsDir.toAbsolutePath().toString());
-
+                .replace("PLUGIN_ROOTS", pluginsDir.toAbsolutePath().toString())
+                .replace("TIKA_CONFIG", tikaConfigPath.toAbsolutePath().toString())
+                .replace("PLUGINS_CONFIG", pipesConfig.toAbsolutePath().toString());
 
         Files.writeString(pipesConfig, jsonTemp, StandardCharsets.UTF_8);
 

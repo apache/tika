@@ -1,0 +1,61 @@
+{
+  "fetchers": {
+    "file-system-fetcher": {
+      "fsf": {
+        "basePath": "FETCHER_BASE_PATH",
+        "extractFileSystemMetadata": false
+      }
+    }
+  },
+  "emitters": {
+    "file-system-emitter": {
+      "fse": {
+        "basePath": "EMITTER_BASE_PATH",
+        "fileExtension": "jsn",
+        "onExists": "EXCEPTION",
+        "prettyPrint": true
+      }
+    }
+  },
+  "pipes-iterator": {
+    "file-system-pipes-iterator": {
+      "basePath": "FETCHER_BASE_PATH",
+      "countTotal": true,
+      "baseConfig": {
+        "fetcherId": "fsf",
+        "emitterId": "fse",
+        "handlerConfig": {
+          "type": "TEXT",
+          "parseMode": "RMETA",
+          "writeLimit": -1,
+          "maxEmbeddedResources": -1,
+          "throwOnWriteLimitReached": true
+        },
+        "onParseException": "EMIT",
+        "maxWaitMs": 600000,
+        "queueSize": 10000
+      }
+    }
+  },
+  "async": {
+    "emitWithinMillis": 10000,
+    "emitMaxEstimatedBytes": 100000,
+    "queueSize": 10000,
+    "numEmitters": 1,
+    "emitIntermediateResults": false,
+    "maxForEmitBatchBytes": 100000,
+    "timeoutMillis": 60000,
+    "startupTimeoutMillis": 240000,
+    "sleepOnStartupTimeoutMillis": 240000,
+    "shutdownClientAfterMillis": 300000,
+    "numClients": 4,
+    "maxFilesProcessedPerProcess": 10000,
+    "staleFetcherTimeoutSeconds": 600,
+    "staleFetcherDelaySeconds": 60,
+    "forkedJvmArgs": ["-Xmx1g", "-XX:+UseG1GC"],
+    "tikaConfig": "TIKA_CONFIG",
+    "pipesPluginsConfig": "PLUGINS_CONFIG",
+    "javaPath": "java"
+  },
+  "pluginRoots": "PLUGIN_ROOTS"
+}

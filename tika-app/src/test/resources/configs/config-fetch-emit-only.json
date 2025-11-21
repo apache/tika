@@ -1,0 +1,21 @@
+{
+  "fetchers": {
+    "file-system-fetcher": {
+      "fsf": {
+        "basePath": "FETCHER_BASE_PATH",
+        "extractFileSystemMetadata": false
+      }
+    }
+  },
+  "emitters": {
+    "file-system-emitter": {
+      "fse": {
+        "basePath": "EMITTER_BASE_PATH",
+        "fileExtension": "jsn",
+        "onExists": "EXCEPTION",
+        "prettyPrint": true
+      }
+    }
+  },
+  "pluginRoots": "PLUGIN_ROOTS"
+}

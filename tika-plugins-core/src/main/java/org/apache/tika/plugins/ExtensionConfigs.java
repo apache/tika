@@ -40,11 +40,11 @@ public class ExtensionConfigs {
 
     public void add(ExtensionConfig extensionConfig) {
         if (idToConfig.containsKey(extensionConfig.id())) {
-            throw new IllegalArgumentException("Can't overwrite existing extension config for extensionName: " + extensionConfig.extensionName());
+            throw new IllegalArgumentException("Can't overwrite existing extension config for extensionName: " + extensionConfig.name());
         }
         idToConfig.put(extensionConfig.id(), extensionConfig);
         extensionIdsToConfig
-                .computeIfAbsent(extensionConfig.extensionName(), k -> new ArrayList<>()).add(extensionConfig);
+                .computeIfAbsent(extensionConfig.name(), k -> new ArrayList<>()).add(extensionConfig);
     }
 
     public Optional<ExtensionConfig> getById(String id) {

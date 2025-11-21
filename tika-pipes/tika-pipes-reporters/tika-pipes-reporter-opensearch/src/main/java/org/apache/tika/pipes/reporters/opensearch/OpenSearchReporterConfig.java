@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.Set;
 
 import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
@@ -29,9 +30,9 @@ public record OpenSearchReporterConfig(String openSearchUrl, Set<String> include
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static OpenSearchReporterConfig load(String json) throws IOException, TikaConfigException {
+    public static OpenSearchReporterConfig load(JsonNode json) throws IOException, TikaConfigException {
         try {
-            return OBJECT_MAPPER.readValue(json, OpenSearchReporterConfig.class);
+            return OBJECT_MAPPER.treeToValue(json, OpenSearchReporterConfig.class);
         } catch (JacksonException e) {
             throw new TikaConfigException("problem w json", e);
         }

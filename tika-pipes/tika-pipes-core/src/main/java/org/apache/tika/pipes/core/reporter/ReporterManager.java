@@ -17,20 +17,18 @@
 package org.apache.tika.pipes.core.reporter;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import org.pf4j.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.reporter.PipesReporter;
 import org.apache.tika.pipes.api.reporter.PipesReporterFactory;
-import org.apache.tika.plugins.ExtensionConfigs;
+import org.apache.tika.plugins.PluginComponentLoader;
 import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.plugins.TikaPluginManager;
 
@@ -41,24 +39,19 @@ import org.apache.tika.plugins.TikaPluginManager;
  */
 public class ReporterManager {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ReporterManager.class);
+    public static final String CONFIG_KEY = "pipes-reporters";
 
-    public static PipesReporter load(TikaPluginManager tikaPluginManager) throws IOException, TikaConfigException {
-        if (tikaPluginManager.getStartedPlugins().isEmpty()) {
-            tikaPluginManager.loadPlugins();
-            tikaPluginManager.startPlugins();
+    public static PipesReporter load(PluginManager pluginManager, TikaConfigs tikaConfigs) throws IOException, TikaConfigException {
+
+        JsonNode node = tikaConfigs.getRoot().get(CONFIG_KEY);
+
+        List<PipesReporter> reporters =  PluginComponentLoader.loadUnnamedInstances(pluginManager, PipesReporterFactory.class, node);
+        if (reporters.isEmpty()) {
+            return NoOpReporter.NO_OP;
+        } else if (reporters.size() == 1) {
+            return reporters.get(0);
+        } else {
+            return new CompositePipesReporter(reporters);
         }
-        List<PipesReporter> pipesReporters = new ArrayList<>();
-        for (PipesReporter pipesReporter : tikaPluginManager.buildConfiguredExtensions(PipesReporterFactory.class)) {
-            LOG.info("Pf4j loaded plugin: " + pipesReporter.getClass());
-            pipesReporters.add(pipesReporter);
-        }
-        if (pipesReporters.size() == 1) {
-            return pipesReporters.get(0);
-        }
-        if (pipesReporters.size() > 1) {
-            return new CompositePipesReporter(pipesReporters);
-        }
-        return NoOpReporter.NO_OP;
     }
 }

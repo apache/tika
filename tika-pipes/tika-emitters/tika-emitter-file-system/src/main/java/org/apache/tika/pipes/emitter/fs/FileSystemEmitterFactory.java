@@ -31,7 +31,7 @@ public class FileSystemEmitterFactory implements EmitterFactory {
     private static final String EXTENSION_NAME = "file-system-emitter";
 
     @Override
-    public String getExtensionName() {
+    public String getName() {
         return EXTENSION_NAME;
     }
 

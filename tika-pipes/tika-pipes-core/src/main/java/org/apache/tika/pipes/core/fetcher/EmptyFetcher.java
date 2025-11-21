@@ -34,6 +34,6 @@ public class EmptyFetcher implements Fetcher {
 
     @Override
     public ExtensionConfig getExtensionConfig() {
-        return new ExtensionConfig("empty", "empty-fetcher", "");
+        return new ExtensionConfig("empty", "empty-fetcher", null);
     }
 }

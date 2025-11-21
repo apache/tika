@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.exception.TikaConfigException;
@@ -49,7 +50,8 @@ public class FileSystemFetcherTest {
     @Test
     public void testNullByte() throws Exception {
         assertThrows(TikaConfigException.class, () -> {
-            ExtensionConfig pluginConfig = new ExtensionConfig("test", "test", "{ \"basePath\":\"bad\u0000path\"}");
+            ExtensionConfig pluginConfig = new ExtensionConfig("test", "test",
+                    new ObjectMapper().readTree("{ \"basePath\":\"bad\\u0000path\"}"));
             Fetcher f = new FileSystemFetcherFactory().buildExtension(pluginConfig);
         });
     }

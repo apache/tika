@@ -27,11 +27,11 @@ import org.apache.tika.plugins.ExtensionConfig;
 
 @Extension
 public class HttpFetcherFactory implements FetcherFactory {
-    private static final String EXTENSION_NAME = "http-fetcher";
+    private static final String NAME = "http-fetcher";
 
     @Override
-    public String getExtensionName() {
-        return EXTENSION_NAME;
+    public String getName() {
+        return NAME;
     }
 
     @Override

@@ -19,11 +19,13 @@ package org.apache.tika.async.cli;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.w3c.dom.Document;
@@ -32,6 +34,8 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.pipes.core.async.AsyncConfig;
+import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -44,26 +48,13 @@ public class TikaConfigAsyncWriterTest {
         SimpleAsyncConfig simpleAsyncConfig = new SimpleAsyncConfig("input", "output", 4,
                 10000L, "-Xmx1g", null, p.toAbsolutePath().toString(), null,
                 BasicContentHandlerFactory.HANDLER_TYPE.TEXT, false, null);
-        Path target = dir.resolve("combined.xml");
-        TikaConfigAsyncWriter writer = new TikaConfigAsyncWriter(simpleAsyncConfig);
-        writer.write(target);
+        PluginsWriter pluginsWriter = new PluginsWriter(simpleAsyncConfig);
 
-        Set<String> expected = Set.of("service-loader", "parsers", "async");
-        Set<String> properties = loadProperties(target);
-        assertEquals(expected, properties);
+        Path tmp = Files.createTempFile(dir, "plugins-",".json");
+        pluginsWriter.write(tmp);
+        TikaConfigs configs = TikaConfigs.load(tmp);
+        AsyncConfig asyncConfig = AsyncConfig.load(configs);
+        assertEquals("-Xmx1g", asyncConfig.getForkedJvmArgs().get(0));
     }
 
-    private Set<String> loadProperties(Path path) throws TikaException, IOException, SAXException {
-        Document document = XMLReaderUtils.buildDOM(path);
-        Element properties = document.getDocumentElement();
-        assertEquals("properties", properties.getLocalName());
-        Set<String> children = new HashSet<>();
-        for (int i = 0; i < properties.getChildNodes().getLength(); i++) {
-            Node n = properties.getChildNodes().item(i);
-            if (n.getLocalName() != null) {
-                children.add(n.getLocalName());
-            }
-        }
-        return children;
-    }
 }

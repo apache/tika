@@ -1,15 +1,21 @@
 package org.apache.tika.plugins;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pf4j.DefaultPluginLoader;
 import org.pf4j.DefaultPluginManager;
 import org.pf4j.PluginClassLoader;
@@ -25,27 +31,35 @@ import org.apache.tika.exception.TikaConfigException;
 
 public class TikaPluginManager extends DefaultPluginManager {
 
+
     private static final Logger LOG = LoggerFactory.getLogger(TikaPluginManager.class);
 
-    private final TikaConfigs tikaConfigs;
-
-    public static TikaPluginManager load(Path path) throws TikaConfigException, IOException {
-        return new TikaPluginManager(TikaConfigs.load(path));
+    public static TikaPluginManager load(Path p) throws TikaConfigException, IOException {
+        try (InputStream is = Files.newInputStream(p)) {
+            return load(is);
+        }
     }
 
     public static TikaPluginManager load(InputStream is) throws TikaConfigException, IOException {
-        return new TikaPluginManager(TikaConfigs.load(is));
+        return load(TikaConfigs.load(is));
     }
 
-    public TikaPluginManager(TikaConfigs tikaConfigs) throws IOException {
-        super(tikaConfigs.getPluginRoots());
-        this.tikaConfigs = tikaConfigs;
-        init();
+    public static TikaPluginManager load(TikaConfigs tikaConfigs) throws TikaConfigException, IOException {
+        JsonNode root = tikaConfigs.getRoot();
+        JsonNode pluginRoots = root.get("pluginRoots");
+        if (pluginRoots == null) {
+            throw new TikaConfigException("pluginRoots must be specified");
+        }
+        List<Path> roots = TikaConfigs.OBJECT_MAPPER.convertValue(pluginRoots,
+                new TypeReference<List<Path>>() {});
+        if (roots.isEmpty()) {
+            throw new TikaConfigException("pluginRoots must not be empty");
+        }
+        return new TikaPluginManager(roots);
     }
 
     public TikaPluginManager(List<Path> pluginRoots) throws IOException{
         super(pluginRoots);
-        this.tikaConfigs = null;
         init();
     }
 
@@ -83,28 +97,6 @@ public class TikaPluginManager extends DefaultPluginManager {
     protected PluginLoader createPluginLoader() {
         return new TikaPluginLoader(this);
     }
-
-    public <E extends TikaExtension, F extends TikaExtensionFactory<E>> List<E> buildConfiguredExtensions(Class<F> clazz)
-            throws TikaConfigException, IOException {
-
-        List<F> factories = getExtensions(clazz);
-        List<E> extensions = new ArrayList<>();
-        //in some circumstances (when the plugins are available on the classpath and in a plugin dir), factories are loaded twice
-        Set<String> seen = new HashSet<>();
-        for (TikaExtensionFactory<E> factory : factories) {
-            if (seen.contains(factory.getExtensionName())) {
-                continue;
-            }
-            seen.add(factory.getExtensionName());
-            String extensionName = factory.getExtensionName();
-            for (ExtensionConfig extensionConfig : tikaConfigs.getExtensionConfigs().getByExtensionName(extensionName)) {
-                E extension = factory.buildExtension(extensionConfig);
-                extensions.add(extension);
-            }
-        }
-        return extensions;
-    }
-
 
 
     private static class TikaPluginLoader extends DefaultPluginLoader {

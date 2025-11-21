@@ -23,6 +23,7 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
@@ -53,9 +54,9 @@ public record JDBCPipesReporterConfig(String connectionString, Set<String> inclu
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static JDBCPipesReporterConfig load(String json) throws IOException, TikaConfigException {
+    public static JDBCPipesReporterConfig load(JsonNode json) throws IOException, TikaConfigException {
         try {
-            return OBJECT_MAPPER.readValue(json, JDBCPipesReporterConfig.class);
+            return OBJECT_MAPPER.treeToValue(json, JDBCPipesReporterConfig.class);
         } catch (JacksonException e) {
             throw new TikaConfigException("problem w json", e);
         }
