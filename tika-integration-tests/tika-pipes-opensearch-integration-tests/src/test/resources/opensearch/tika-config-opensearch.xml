@@ -62,18 +62,4 @@
       </mappings>
     </metadataFilter>
   </metadataFilters>
-  <async>
-    <maxForEmitBatchBytes>10000</maxForEmitBatchBytes>
-    <emitMaxEstimatedBytes>100000</emitMaxEstimatedBytes>
-    <emitWithinMillis>60000</emitWithinMillis>
-    <numEmitters>1</numEmitters>
-    <numClients>3</numClients>
-    <tikaConfig>TIKA_CONFIG</tikaConfig>
-    <forkedJvmArgs>
-      <arg>-Xmx512m</arg>
-      <arg>-XX:ParallelGCThreads=2</arg>
-      <arg>-Dlog4j.configurationFile=LOG4J_PROPERTIES_FILE</arg>
-    </forkedJvmArgs>
-    <timeoutMillis>60000</timeoutMillis>
-  </async>
 </properties>

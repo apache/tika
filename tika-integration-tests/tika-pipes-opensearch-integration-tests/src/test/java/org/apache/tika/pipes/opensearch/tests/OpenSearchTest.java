@@ -57,6 +57,7 @@ import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.emitter.opensearch.HttpClientConfig;
 import org.apache.tika.pipes.emitter.opensearch.JsonResponse;
 import org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitterConfig;
+import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.plugins.TikaPluginManager;
 
 @Testcontainers(disabledWithoutDocker = true)
@@ -91,7 +92,9 @@ public class OpenSearchTest {
 
     @Test
     public void testPluginsConfig(@TempDir Path pipesDirectory) throws Exception {
-        Path pluginsConfg = getPluginsConfig(pipesDirectory, OpenSearchEmitterConfig.AttachmentStrategy.PARENT_CHILD, OpenSearchEmitterConfig.UpdateStrategy.OVERWRITE,
+        Path pluginsConfg = getPluginsConfig(pipesDirectory.resolve("tika-config.xml"),
+                pipesDirectory, OpenSearchEmitterConfig.AttachmentStrategy.PARENT_CHILD,
+                OpenSearchEmitterConfig.UpdateStrategy.OVERWRITE,
                 HandlerConfig.PARSE_MODE.RMETA, "https://opensearch", Paths.get("testDocs"));
         //      PipesReporter reporter = ReporterManager.load(pluginsConfg);
 //        System.out.println(reporter);
@@ -357,11 +360,13 @@ public class OpenSearchTest {
 
         String endpoint = CONTAINER.getHttpHostAddress() + "/" + TEST_INDEX;
         sendMappings(client, endpoint, TEST_INDEX, "opensearch-mappings.json");
-        Path pluginsConfigFile = getPluginsConfig(pipesDirectory, OpenSearchEmitterConfig.AttachmentStrategy.SEPARATE_DOCUMENTS,
+        Path pluginsConfigFile = getPluginsConfig(null,  pipesDirectory, OpenSearchEmitterConfig.AttachmentStrategy.SEPARATE_DOCUMENTS,
                         OpenSearchEmitterConfig.UpdateStrategy.UPSERT, HandlerConfig.PARSE_MODE.RMETA,
                         endpoint, testDocDirectory);
+
+        TikaConfigs tikaConfigs = TikaConfigs.load(pluginsConfigFile);
         Emitter emitter = EmitterManager
-                .load(TikaPluginManager.load(pluginsConfigFile)).getEmitter();
+                .load(TikaPluginManager.load(tikaConfigs), tikaConfigs).getEmitter();
         Metadata metadata = new Metadata();
         metadata.set("mime", "mimeA");
         metadata.set("title", "titleA");
@@ -431,7 +436,7 @@ public class OpenSearchTest {
                           HandlerConfig.PARSE_MODE parseMode, String endpoint, Path pipesDirectory, Path testDocDirectory) throws Exception {
 
         Path tikaConfigFile = getTikaConfigFile(pipesDirectory);
-        Path pluginsConfig = getPluginsConfig(pipesDirectory, attachmentStrategy, updateStrategy, parseMode,
+        Path pluginsConfig = getPluginsConfig(tikaConfigFile, pipesDirectory, attachmentStrategy, updateStrategy, parseMode,
                 endpoint, testDocDirectory);
 
         TikaCLI.main(new String[]{"-a", pluginsConfig.toAbsolutePath().toString(), "-c",  tikaConfigFile.toAbsolutePath().toString()});
@@ -443,11 +448,6 @@ public class OpenSearchTest {
 
     private Path getTikaConfigFile(Path pipesDirectory) throws IOException {
         Path tikaConfigFile = pipesDirectory.resolve("ta-opensearch.xml");
-        Path log4jPropFile = pipesDirectory.resolve("tmp-log4j2.xml");
-        try (InputStream is = OpenSearchTest.class
-                .getResourceAsStream("/pipes-fork-server-custom-log4j2.xml")) {
-            Files.copy(is, log4jPropFile);
-        }
 
         String tikaConfigTemplateXml;
         try (InputStream is = OpenSearchTest.class
@@ -456,14 +456,14 @@ public class OpenSearchTest {
         }
 
         String tikaConfigXml =
-                createTikaConfigXml(tikaConfigFile, log4jPropFile, tikaConfigTemplateXml);
+                createTikaConfigXml(tikaConfigFile, tikaConfigTemplateXml);
         writeStringToPath(tikaConfigFile, tikaConfigXml);
 
         return tikaConfigFile;
     }
 
     @NotNull
-    private Path getPluginsConfig(Path pipesDirectory, OpenSearchEmitterConfig.AttachmentStrategy attachmentStrategy,
+    private Path getPluginsConfig(Path tikaConfig, Path pipesDirectory, OpenSearchEmitterConfig.AttachmentStrategy attachmentStrategy,
                                        OpenSearchEmitterConfig.UpdateStrategy updateStrategy,
                                        HandlerConfig.PARSE_MODE parseMode, String endpoint, Path testDocDirectory) throws IOException {
         String json = new String(OpenSearchTest.class.getResourceAsStream("/opensearch/plugins-template.json").readAllBytes(), StandardCharsets.UTF_8);
@@ -482,14 +482,27 @@ public class OpenSearchTest {
             res = res.replace("INCLUDE_ROUTING", "false");
         }
         res = res.replace("OPEN_SEARCH_URL", endpoint);
+        if (tikaConfig != null) {
+            res = res.replace("TIKA_CONFIG", tikaConfig
+                    .toAbsolutePath()
+                    .toString());
+        }
+        Path log4jPropFile = pipesDirectory.resolve("log4j2.xml");
+        try (InputStream is = OpenSearchTest.class
+                .getResourceAsStream("/pipes-fork-server-custom-log4j2.xml")) {
+            Files.copy(is, log4jPropFile);
+        }
+
+        res = res.replace("LOG4J_PROPERTIES_FILE", log4jPropFile.toAbsolutePath().toString());
+
         Path pluginsConfig = pipesDirectory.resolve("plugins-config.json");
+        res = res.replace("PLUGINS_CONFIG", pluginsConfig.toAbsolutePath().toString());
         Files.writeString(pluginsConfig, res, StandardCharsets.UTF_8);
         return pluginsConfig;
     }
 
-    private String createTikaConfigXml(Path tikaConfigFile, Path log4jPropFile, String xml) {
-        xml = xml.replace("TIKA_CONFIG", tikaConfigFile.toAbsolutePath().toString())
-                 .replace("LOG4J_PROPERTIES_FILE", log4jPropFile.toAbsolutePath().toString());
+    private String createTikaConfigXml(Path tikaConfigFile, String xml) {
+        xml = xml.replace("TIKA_CONFIG", tikaConfigFile.toAbsolutePath().toString());
         return xml;
     }
 

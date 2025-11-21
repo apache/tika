@@ -243,7 +243,8 @@ public class PluginComponentLoaderTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testDuplicateFactoryNamesThrows() throws Exception {
+    public void testDuplicateFactoryNamesSkipsDuplicate() throws Exception {
+        // Duplicates are silently skipped (first one wins, or plugin version preferred over classpath)
         MockExtensionFactory duplicateFactory = new MockExtensionFactory("type-a"); // same name as factoryA
 
         PluginManager pmWithDupes = mock(PluginManager.class);
@@ -251,10 +252,20 @@ public class PluginComponentLoaderTest {
         when(pmWithDupes.getExtensions(MockExtensionFactory.class))
                 .thenReturn(Arrays.asList(factoryA, duplicateFactory));
 
-        JsonNode configNode = objectMapper.readTree("{}");
+        String json = """
+                {
+                    "type-a": {
+                        "instance1": {}
+                    }
+                }
+                """;
+        JsonNode configNode = objectMapper.readTree(json);
 
-        assertThrows(TikaConfigException.class,
-                () -> PluginComponentLoader.loadInstances(pmWithDupes, MockExtensionFactory.class, configNode));
+        // Should not throw - duplicates are skipped
+        Map<String, MockTikaExtension> instances =
+                PluginComponentLoader.loadInstances(pmWithDupes, MockExtensionFactory.class, configNode);
+
+        assertEquals(1, instances.size());
     }
 
     @Test

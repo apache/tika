@@ -48,7 +48,7 @@ public class TikaConfigAsyncWriterTest {
         SimpleAsyncConfig simpleAsyncConfig = new SimpleAsyncConfig("input", "output", 4,
                 10000L, "-Xmx1g", null, p.toAbsolutePath().toString(), null,
                 BasicContentHandlerFactory.HANDLER_TYPE.TEXT, false, null);
-        PluginsWriter pluginsWriter = new PluginsWriter(simpleAsyncConfig);
+        PluginsWriter pluginsWriter = new PluginsWriter(simpleAsyncConfig, null);
 
         Path tmp = Files.createTempFile(dir, "plugins-",".json");
         pluginsWriter.write(tmp);

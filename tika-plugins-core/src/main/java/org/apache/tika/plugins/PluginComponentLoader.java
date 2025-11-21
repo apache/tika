@@ -163,9 +163,21 @@ public class PluginComponentLoader {
         Map<String, TikaExtensionFactory<T>> factories = new HashMap<>();
         for (TikaExtensionFactory<T> factory : pluginManager.getExtensions(factoryClass)) {
             String name = factory.getName();
-            if (factories.putIfAbsent(name, factory) != null) {
-                throw new TikaConfigException("Duplicate factory name: " + name);
+            ClassLoader cl = factory.getClass().getClassLoader();
+            boolean isFromPlugin = cl instanceof org.pf4j.PluginClassLoader;
+
+            TikaExtensionFactory<T> existing = factories.get(name);
+            if (existing != null) {
+                boolean existingIsFromPlugin = existing.getClass().getClassLoader()
+                        instanceof org.pf4j.PluginClassLoader;
+                if (isFromPlugin && !existingIsFromPlugin) {
+                    // Replace classpath version with plugin version
+                    factories.put(name, factory);
+                }
+                // Otherwise skip duplicate (keep existing)
+                continue;
             }
+            factories.put(name, factory);
         }
         return factories;
     }
