@@ -90,7 +90,7 @@
             <configuration>
               <outputDirectory>${project.build.directory}/lib</outputDirectory>
               <includeScope>runtime</includeScope>
-              <excludeGroupIds>org.apache.tika</excludeGroupIds>
+              <excludeGroupIds>org.apache.tika,org.apache.kafka,com.fasterxml.jackson.core,com.fasterxml.jackson.datatype</excludeGroupIds>
             </configuration>
           </execution>
         </executions>
