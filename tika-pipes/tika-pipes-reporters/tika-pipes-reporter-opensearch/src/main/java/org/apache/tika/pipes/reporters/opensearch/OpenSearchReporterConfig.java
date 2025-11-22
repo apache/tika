@@ -28,11 +28,14 @@ public record OpenSearchReporterConfig(String openSearchUrl, Set<String> include
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static OpenSearchReporterConfig load(String json) throws TikaConfigException {
+    public static OpenSearchReporterConfig load(final String json)
+            throws TikaConfigException {
         try {
-            return OBJECT_MAPPER.readValue(json, OpenSearchReporterConfig.class);
+            return OBJECT_MAPPER.readValue(json,
+                    OpenSearchReporterConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse OpenSearchReporterConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse OpenSearchReporterConfig from JSON", e);
         }
     }
 

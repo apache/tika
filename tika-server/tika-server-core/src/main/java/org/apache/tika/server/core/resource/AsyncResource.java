@@ -24,7 +24,6 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import jakarta.ws.rs.BadRequestException;
@@ -49,9 +48,9 @@ import org.apache.tika.pipes.core.async.AsyncProcessor;
 import org.apache.tika.pipes.core.async.OfferLargerThanQueueSize;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
-import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTupleList;
+import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.plugins.TikaPluginManager;
 
 @Path("/async")

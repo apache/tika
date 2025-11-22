@@ -17,7 +17,6 @@
 package org.apache.tika.pipes.core.emitter;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,7 +31,6 @@ import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.EmitterFactory;
 import org.apache.tika.plugins.PluginComponentLoader;
 import org.apache.tika.plugins.TikaConfigs;
-import org.apache.tika.plugins.TikaPluginManager;
 
 /**
  * Utility class that will apply the appropriate emitter

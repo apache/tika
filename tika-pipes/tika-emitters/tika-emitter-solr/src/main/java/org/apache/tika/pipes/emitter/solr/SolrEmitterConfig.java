@@ -54,11 +54,13 @@ public record SolrEmitterConfig(
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static SolrEmitterConfig load(String json) throws TikaConfigException {
+    public static SolrEmitterConfig load(final String json)
+            throws TikaConfigException {
         try {
             return OBJECT_MAPPER.readValue(json, SolrEmitterConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse SolrEmitterConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse SolrEmitterConfig from JSON", e);
         }
     }
 

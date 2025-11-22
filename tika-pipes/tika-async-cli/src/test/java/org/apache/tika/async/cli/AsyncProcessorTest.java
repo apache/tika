@@ -21,7 +21,6 @@ import static org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig.DE
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;

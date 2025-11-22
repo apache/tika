@@ -52,11 +52,14 @@ public record JDBCPipesReporterConfig(String connectionString, Set<String> inclu
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static JDBCPipesReporterConfig load(String json) throws TikaConfigException {
+    public static JDBCPipesReporterConfig load(final String json)
+            throws TikaConfigException {
         try {
-            return OBJECT_MAPPER.readValue(json, JDBCPipesReporterConfig.class);
+            return OBJECT_MAPPER.readValue(json,
+                    JDBCPipesReporterConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse JDBCPipesReporterConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse JDBCPipesReporterConfig from JSON", e);
         }
     }
 

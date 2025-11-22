@@ -29,11 +29,13 @@ public class GCSPipesIteratorConfig implements PipesIteratorConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static GCSPipesIteratorConfig load(String json) throws TikaConfigException {
+    public static GCSPipesIteratorConfig load(final String json)
+            throws TikaConfigException {
         try {
             return OBJECT_MAPPER.readValue(json, GCSPipesIteratorConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse GCSPipesIteratorConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse GCSPipesIteratorConfig from JSON", e);
         }
     }
 

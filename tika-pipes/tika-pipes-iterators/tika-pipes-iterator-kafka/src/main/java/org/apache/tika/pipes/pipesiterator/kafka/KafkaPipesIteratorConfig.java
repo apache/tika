@@ -29,11 +29,14 @@ public class KafkaPipesIteratorConfig implements PipesIteratorConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static KafkaPipesIteratorConfig load(String json) throws TikaConfigException {
+    public static KafkaPipesIteratorConfig load(final String json)
+            throws TikaConfigException {
         try {
-            return OBJECT_MAPPER.readValue(json, KafkaPipesIteratorConfig.class);
+            return OBJECT_MAPPER.readValue(json,
+                    KafkaPipesIteratorConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse KafkaPipesIteratorConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse KafkaPipesIteratorConfig from JSON", e);
         }
     }
 

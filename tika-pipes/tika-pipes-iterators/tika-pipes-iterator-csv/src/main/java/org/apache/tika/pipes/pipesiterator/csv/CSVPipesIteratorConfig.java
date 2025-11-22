@@ -30,11 +30,14 @@ public class CSVPipesIteratorConfig implements PipesIteratorConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static CSVPipesIteratorConfig load(String json) throws TikaConfigException {
+    public static CSVPipesIteratorConfig load(final String json)
+            throws TikaConfigException {
         try {
-            return OBJECT_MAPPER.readValue(json, CSVPipesIteratorConfig.class);
+            return OBJECT_MAPPER.readValue(json,
+                    CSVPipesIteratorConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse CSVPipesIteratorConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse CSVPipesIteratorConfig from JSON", e);
         }
     }
 

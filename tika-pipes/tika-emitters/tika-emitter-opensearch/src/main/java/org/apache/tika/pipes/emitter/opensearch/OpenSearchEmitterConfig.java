@@ -34,11 +34,14 @@ public record OpenSearchEmitterConfig(String openSearchUrl, String idField, Atta
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static OpenSearchEmitterConfig load(String json) throws TikaConfigException {
+    public static OpenSearchEmitterConfig load(final String json)
+            throws TikaConfigException {
         try {
-            return OBJECT_MAPPER.readValue(json, OpenSearchEmitterConfig.class);
+            return OBJECT_MAPPER.readValue(json,
+                    OpenSearchEmitterConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse OpenSearchEmitterConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse OpenSearchEmitterConfig from JSON", e);
         }
     }
 

@@ -17,20 +17,16 @@
 package org.apache.tika.pipes.core.reporter;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.pf4j.PluginManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.reporter.PipesReporter;
 import org.apache.tika.pipes.api.reporter.PipesReporterFactory;
 import org.apache.tika.plugins.PluginComponentLoader;
 import org.apache.tika.plugins.TikaConfigs;
-import org.apache.tika.plugins.TikaPluginManager;
 
 /**
  * Utility class to hold multiple fetchers.

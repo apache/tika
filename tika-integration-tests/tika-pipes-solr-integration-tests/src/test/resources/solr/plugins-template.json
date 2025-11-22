@@ -1,0 +1,68 @@
+{
+  "fetchers": {
+    "file-system-fetcher": {
+      "fsf": {
+        "basePath": "FETCHER_BASE_PATH"
+      }
+    }
+  },
+  "emitters": {
+    "solr-emitter": {
+      "se": {
+        "solrCollection": "testcol",
+        SOLR_CONNECTION_EMITTER,
+        "updateStrategy": "UPDATE_STRATEGY",
+        "attachmentStrategy": "ATTACHMENT_STRATEGY",
+        "commitWithin": 1,
+        "idField": "id",
+        "embeddedFileFieldName": "embedded",
+        "connectionTimeout": 10000,
+        "socketTimeout": 60000
+      }
+    }
+  },
+  "pipes-iterator": {
+    "solr-pipes-iterator": {
+      "solrCollection": "testcol",
+      SOLR_CONNECTION_ITERATOR,
+      "idField": "id",
+      "parsingIdField": "parsing_id_i",
+      "failCountField": "fail_count_i",
+      "sizeFieldName": "size_i",
+      "rows": 100,
+      "connectionTimeout": 10000,
+      "socketTimeout": 60000,
+      "baseConfig": {
+        "fetcherId": "fsf",
+        "emitterId": "se",
+        "handlerConfig": {
+          "type": "TEXT",
+          "parseMode": "PARSE_MODE",
+          "writeLimit": -1,
+          "maxEmbeddedResources": -1,
+          "throwOnWriteLimitReached": true
+        },
+        "onParseException": "EMIT",
+        "maxWaitMs": 600000,
+        "queueSize": 10000
+      }
+    }
+  },
+  "async": {
+    "maxForEmitBatchBytes": 10000,
+    "emitMaxEstimatedBytes": 100000,
+    "emitWithinMillis": 10,
+    "numEmitters": 1,
+    "numClients": 1,
+    "tikaConfig": "TIKA_CONFIG",
+    "pipesPluginsConfig": "PLUGINS_CONFIG",
+    "forkedJvmArgs": [
+      "-Xmx1g",
+      "-XX:ParallelGCThreads=2",
+      "-XX:+ExitOnOutOfMemoryError",
+      "-Dlog4j.configurationFile=LOG4J_PROPERTIES_FILE"
+    ],
+    "timeoutMillis": 60000
+  },
+  "plugin-roots": "target/plugins"
+}

@@ -19,7 +19,6 @@ package org.apache.tika.pipes.fetcher.fs.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;

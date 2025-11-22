@@ -33,11 +33,13 @@ public record AZBlobEmitterConfig(
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static AZBlobEmitterConfig load(String json) throws TikaConfigException {
+    public static AZBlobEmitterConfig load(final String json)
+            throws TikaConfigException {
         try {
             return OBJECT_MAPPER.readValue(json, AZBlobEmitterConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse AZBlobEmitterConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse AZBlobEmitterConfig from JSON", e);
         }
     }
 

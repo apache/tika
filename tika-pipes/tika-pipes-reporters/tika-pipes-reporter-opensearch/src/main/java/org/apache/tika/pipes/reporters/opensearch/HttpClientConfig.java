@@ -25,7 +25,7 @@ public record HttpClientConfig(String userName, String password,
                                String authScheme, int connectionTimeout, int socketTimeout, String proxyHost, int proxyPort) {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    public static HttpClientConfig load(String json) throws IOException {
+    public static HttpClientConfig load(final String json) throws IOException {
         return OBJECT_MAPPER.readValue(json, HttpClientConfig.class);
     }
 

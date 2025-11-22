@@ -29,11 +29,14 @@ public class AZBlobPipesIteratorConfig implements PipesIteratorConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static AZBlobPipesIteratorConfig load(String json) throws TikaConfigException {
+    public static AZBlobPipesIteratorConfig load(final String json)
+            throws TikaConfigException {
         try {
-            return OBJECT_MAPPER.readValue(json, AZBlobPipesIteratorConfig.class);
+            return OBJECT_MAPPER.readValue(json,
+                    AZBlobPipesIteratorConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse AZBlobPipesIteratorConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse AZBlobPipesIteratorConfig from JSON", e);
         }
     }
 

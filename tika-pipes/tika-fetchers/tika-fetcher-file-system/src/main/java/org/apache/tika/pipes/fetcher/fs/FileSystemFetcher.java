@@ -27,7 +27,6 @@ import java.nio.file.attribute.FileTime;
 import java.util.Date;
 import java.util.Optional;
 
-import org.pf4j.Extension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

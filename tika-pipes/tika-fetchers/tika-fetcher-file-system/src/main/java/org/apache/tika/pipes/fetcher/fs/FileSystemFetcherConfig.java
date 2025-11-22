@@ -25,11 +25,14 @@ public class FileSystemFetcherConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static FileSystemFetcherConfig load(String json) throws TikaConfigException {
+    public static FileSystemFetcherConfig load(final String json)
+            throws TikaConfigException {
         try {
-            return OBJECT_MAPPER.readValue(json, FileSystemFetcherConfig.class);
+            return OBJECT_MAPPER.readValue(json,
+                    FileSystemFetcherConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse FileSystemFetcherConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse FileSystemFetcherConfig from JSON", e);
         }
     }
 

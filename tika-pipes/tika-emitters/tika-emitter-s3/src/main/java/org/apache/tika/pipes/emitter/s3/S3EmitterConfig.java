@@ -39,11 +39,13 @@ public record S3EmitterConfig(
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static S3EmitterConfig load(String json) throws TikaConfigException {
+    public static S3EmitterConfig load(final String json)
+            throws TikaConfigException {
         try {
             return OBJECT_MAPPER.readValue(json, S3EmitterConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse S3EmitterConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse S3EmitterConfig from JSON", e);
         }
     }
 
@@ -57,9 +59,9 @@ public record S3EmitterConfig(
         if (credentialsProvider == null || credentialsProvider.isBlank()) {
             throw new TikaConfigException("'credentialsProvider' must be set to 'profile', 'instance' or 'key_secret'");
         }
-        if (!credentialsProvider.equals("profile") &&
-            !credentialsProvider.equals("instance") &&
-            !credentialsProvider.equals("key_secret")) {
+        if (!credentialsProvider.equals("profile")
+                && !credentialsProvider.equals("instance")
+                && !credentialsProvider.equals("key_secret")) {
             throw new TikaConfigException(
                     "credentialsProvider must be 'profile', 'instance' or 'key_secret', but was: " + credentialsProvider);
         }

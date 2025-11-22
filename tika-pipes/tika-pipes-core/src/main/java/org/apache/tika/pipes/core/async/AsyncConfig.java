@@ -17,9 +17,6 @@
 package org.apache.tika.pipes.core.async;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.core.PipesConfigBase;

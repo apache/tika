@@ -28,11 +28,14 @@ public record FileSystemReporterConfig(Path statusFile, long reportUpdateMs) imp
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static FileSystemReporterConfig load(String json) throws TikaConfigException {
+    public static FileSystemReporterConfig load(final String json)
+            throws TikaConfigException {
         try {
-            return OBJECT_MAPPER.readValue(json, FileSystemReporterConfig.class);
+            return OBJECT_MAPPER.readValue(json,
+                    FileSystemReporterConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse FileSystemReporterConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse FileSystemReporterConfig from JSON", e);
         }
     }
 }

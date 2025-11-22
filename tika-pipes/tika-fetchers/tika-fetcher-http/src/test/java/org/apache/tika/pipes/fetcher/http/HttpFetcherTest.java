@@ -33,7 +33,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
@@ -179,8 +178,7 @@ class HttpFetcherTest extends TikaTest {
 
         Mockito
                 .when(httpClient.execute(httpGetArgumentCaptor.capture(), ArgumentMatchers.any(HttpContext.class))).thenReturn(response);
-        Mockito
-                .when(response.getStatusLine()).thenReturn(new StatusLine() {
+        Mockito.when(response.getStatusLine()).thenReturn(new StatusLine() {
             @Override
             public ProtocolVersion getProtocolVersion() {
                 return new HttpGet("http://localhost").getProtocolVersion();

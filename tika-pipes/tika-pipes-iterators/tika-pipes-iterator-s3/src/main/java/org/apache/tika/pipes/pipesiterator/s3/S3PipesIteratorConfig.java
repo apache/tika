@@ -29,11 +29,13 @@ public class S3PipesIteratorConfig implements PipesIteratorConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static S3PipesIteratorConfig load(String json) throws TikaConfigException {
+    public static S3PipesIteratorConfig load(final String json)
+            throws TikaConfigException {
         try {
             return OBJECT_MAPPER.readValue(json, S3PipesIteratorConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse S3PipesIteratorConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse S3PipesIteratorConfig from JSON", e);
         }
     }
 

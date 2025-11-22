@@ -25,10 +25,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -50,7 +46,6 @@ import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.emitter.s3.S3Emitter;
-import org.apache.tika.pipes.pipesiterator.PipesIteratorBase;
 
 // To enable these tests, fill OUTDIR and bucket, and adjust profile and region if needed.
 // TODO: Update these tests to use the new pf4j plugin system with JSON configuration

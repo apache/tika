@@ -28,11 +28,13 @@ public class HttpFetcherConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static HttpFetcherConfig load(String json) throws TikaConfigException {
+    public static HttpFetcherConfig load(final String json)
+            throws TikaConfigException {
         try {
             return OBJECT_MAPPER.readValue(json, HttpFetcherConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse HttpFetcherConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse HttpFetcherConfig from JSON", e);
         }
     }
 

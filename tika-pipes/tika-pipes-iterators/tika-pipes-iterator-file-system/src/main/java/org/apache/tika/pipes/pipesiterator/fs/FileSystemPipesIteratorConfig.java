@@ -30,11 +30,15 @@ public class FileSystemPipesIteratorConfig implements PipesIteratorConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static FileSystemPipesIteratorConfig load(String json) throws TikaConfigException {
+    public static FileSystemPipesIteratorConfig load(final String json)
+            throws TikaConfigException {
         try {
-            return OBJECT_MAPPER.readValue(json, FileSystemPipesIteratorConfig.class);
+            return OBJECT_MAPPER.readValue(json,
+                    FileSystemPipesIteratorConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse FileSystemPipesIteratorConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse FileSystemPipesIteratorConfig from JSON",
+                    e);
         }
     }
 

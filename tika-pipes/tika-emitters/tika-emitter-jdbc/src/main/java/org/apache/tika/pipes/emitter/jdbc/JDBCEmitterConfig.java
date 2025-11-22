@@ -18,7 +18,6 @@ package org.apache.tika.pipes.emitter.jdbc;
 
 import java.util.LinkedHashMap;
 import java.util.Locale;
-import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -50,11 +49,13 @@ public record JDBCEmitterConfig(
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static JDBCEmitterConfig load(String json) throws TikaConfigException {
+    public static JDBCEmitterConfig load(final String json)
+            throws TikaConfigException {
         try {
             return OBJECT_MAPPER.readValue(json, JDBCEmitterConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse JDBCEmitterConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse JDBCEmitterConfig from JSON", e);
         }
     }
 

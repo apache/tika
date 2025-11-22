@@ -25,11 +25,13 @@ public class GCSFetcherConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static GCSFetcherConfig load(String json) throws TikaConfigException {
+    public static GCSFetcherConfig load(final String json)
+            throws TikaConfigException {
         try {
             return OBJECT_MAPPER.readValue(json, GCSFetcherConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse GCSFetcherConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse GCSFetcherConfig from JSON", e);
         }
     }
 

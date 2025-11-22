@@ -17,22 +17,16 @@
 package org.apache.tika.pipes.core.pipesiterator;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.pf4j.PluginManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.api.pipesiterator.PipesIteratorFactory;
 import org.apache.tika.plugins.PluginComponentLoader;
 import org.apache.tika.plugins.TikaConfigs;
-import org.apache.tika.plugins.TikaPluginManager;
 
 /**
  * Utility class to hold a single pipes iterator

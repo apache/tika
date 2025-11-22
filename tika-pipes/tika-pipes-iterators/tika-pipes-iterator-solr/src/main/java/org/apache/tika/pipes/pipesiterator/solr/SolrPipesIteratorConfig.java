@@ -31,11 +31,14 @@ public class SolrPipesIteratorConfig implements PipesIteratorConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static SolrPipesIteratorConfig load(String json) throws TikaConfigException {
+    public static SolrPipesIteratorConfig load(final String json)
+            throws TikaConfigException {
         try {
-            return OBJECT_MAPPER.readValue(json, SolrPipesIteratorConfig.class);
+            return OBJECT_MAPPER.readValue(json,
+                    SolrPipesIteratorConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse SolrPipesIteratorConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse SolrPipesIteratorConfig from JSON", e);
         }
     }
 

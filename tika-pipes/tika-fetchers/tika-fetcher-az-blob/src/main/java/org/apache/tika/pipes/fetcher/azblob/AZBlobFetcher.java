@@ -76,9 +76,9 @@ public class AZBlobFetcher extends AbstractTikaExtension implements Fetcher {
 
     private void initialize() throws TikaConfigException {
         // Validation - if the user has set one of these, they need to have set all of them
-        if (!StringUtils.isBlank(config.getSasToken()) ||
-            !StringUtils.isBlank(config.getEndpoint()) ||
-            !StringUtils.isBlank(config.getContainer())) {
+        if (!StringUtils.isBlank(config.getSasToken())
+                || !StringUtils.isBlank(config.getEndpoint())
+                || !StringUtils.isBlank(config.getContainer())) {
             mustNotBeEmpty("sasToken", config.getSasToken());
             mustNotBeEmpty("endpoint", config.getEndpoint());
             mustNotBeEmpty("container", config.getContainer());

@@ -25,11 +25,13 @@ public class S3FetcherConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static S3FetcherConfig load(String json) throws TikaConfigException {
+    public static S3FetcherConfig load(final String json)
+            throws TikaConfigException {
         try {
             return OBJECT_MAPPER.readValue(json, S3FetcherConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse S3FetcherConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse S3FetcherConfig from JSON", e);
         }
     }
 

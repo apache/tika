@@ -28,11 +28,15 @@ public class MicrosoftGraphFetcherConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static MicrosoftGraphFetcherConfig load(String json) throws TikaConfigException {
+    public static MicrosoftGraphFetcherConfig load(final String json)
+            throws TikaConfigException {
         try {
-            return OBJECT_MAPPER.readValue(json, MicrosoftGraphFetcherConfig.class);
+            return OBJECT_MAPPER.readValue(json,
+                    MicrosoftGraphFetcherConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse MicrosoftGraphFetcherConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse MicrosoftGraphFetcherConfig from JSON",
+                    e);
         }
     }
 

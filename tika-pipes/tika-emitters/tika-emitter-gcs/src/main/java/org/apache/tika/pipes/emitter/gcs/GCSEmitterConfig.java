@@ -31,11 +31,13 @@ public record GCSEmitterConfig(
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static GCSEmitterConfig load(String json) throws TikaConfigException {
+    public static GCSEmitterConfig load(final String json)
+            throws TikaConfigException {
         try {
             return OBJECT_MAPPER.readValue(json, GCSEmitterConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse GCSEmitterConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse GCSEmitterConfig from JSON", e);
         }
     }
 

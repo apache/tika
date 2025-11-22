@@ -18,7 +18,6 @@ package org.apache.tika.pipes.emitter.solr;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -229,17 +228,15 @@ public class SolrEmitter extends AbstractEmitter {
                 if (updateStrategy == SolrEmitterConfig.UpdateStrategy.ADD) {
                     solrInputDocument.setField(n, vals[0]);
                 } else {
-                    solrInputDocument.setField(n, new HashMap<String, String>() {{
-                        put("set", vals[0]);
-                    }});
+                    solrInputDocument.setField(n,
+                            java.util.Collections.singletonMap("set", vals[0]));
                 }
             } else {
                 if (updateStrategy == SolrEmitterConfig.UpdateStrategy.ADD) {
                     solrInputDocument.setField(n, vals);
                 } else {
-                    solrInputDocument.setField(n, new HashMap<String, String[]>() {{
-                        put("set", vals);
-                    }});
+                    solrInputDocument.setField(n,
+                            java.util.Collections.singletonMap("set", vals));
                 }
             }
         }

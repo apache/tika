@@ -50,11 +50,13 @@ public record KafkaEmitterConfig(
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static KafkaEmitterConfig load(String json) throws TikaConfigException {
+    public static KafkaEmitterConfig load(final String json)
+            throws TikaConfigException {
         try {
             return OBJECT_MAPPER.readValue(json, KafkaEmitterConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse KafkaEmitterConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse KafkaEmitterConfig from JSON", e);
         }
     }
 

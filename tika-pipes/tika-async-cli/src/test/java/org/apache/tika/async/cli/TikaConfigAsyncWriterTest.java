@@ -18,26 +18,16 @@ package org.apache.tika.async.cli;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashSet;
-import java.util.Set;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
 
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.core.async.AsyncConfig;
 import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.sax.BasicContentHandlerFactory;
-import org.apache.tika.utils.XMLReaderUtils;
 
 public class TikaConfigAsyncWriterTest {
 

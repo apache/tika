@@ -25,11 +25,13 @@ public class AZBlobFetcherConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static AZBlobFetcherConfig load(String json) throws TikaConfigException {
+    public static AZBlobFetcherConfig load(final String json)
+            throws TikaConfigException {
         try {
             return OBJECT_MAPPER.readValue(json, AZBlobFetcherConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse AZBlobFetcherConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse AZBlobFetcherConfig from JSON", e);
         }
     }
 

@@ -29,11 +29,14 @@ public class JDBCPipesIteratorConfig implements PipesIteratorConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static JDBCPipesIteratorConfig load(String json) throws TikaConfigException {
+    public static JDBCPipesIteratorConfig load(final String json)
+            throws TikaConfigException {
         try {
-            return OBJECT_MAPPER.readValue(json, JDBCPipesIteratorConfig.class);
+            return OBJECT_MAPPER.readValue(json,
+                    JDBCPipesIteratorConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse JDBCPipesIteratorConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse JDBCPipesIteratorConfig from JSON", e);
         }
     }
 

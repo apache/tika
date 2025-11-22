@@ -29,11 +29,14 @@ public record FileSystemEmitterConfig(String basePath, String fileExtension, ON_
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static FileSystemEmitterConfig load(String json) throws TikaConfigException {
+    public static FileSystemEmitterConfig load(final String json)
+            throws TikaConfigException {
         try {
-            return OBJECT_MAPPER.readValue(json, FileSystemEmitterConfig.class);
+            return OBJECT_MAPPER.readValue(json,
+                    FileSystemEmitterConfig.class);
         } catch (JsonProcessingException e) {
-            throw new TikaConfigException("Failed to parse FileSystemEmitterConfig from JSON", e);
+            throw new TikaConfigException(
+                    "Failed to parse FileSystemEmitterConfig from JSON", e);
         }
     }
 
