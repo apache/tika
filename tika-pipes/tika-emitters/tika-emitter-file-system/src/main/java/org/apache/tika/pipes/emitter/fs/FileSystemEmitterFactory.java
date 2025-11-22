@@ -25,14 +25,31 @@ import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.EmitterFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating file system emitters.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "emitters": {
+ *   "file-system-emitter": {
+ *     "my-emitter": {
+ *       "basePath": "/path/to/output",
+ *       "fileExtension": "json",
+ *       "onExists": "SKIP",
+ *       "prettyPrint": true
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class FileSystemEmitterFactory implements EmitterFactory {
 
-    private static final String EXTENSION_NAME = "file-system-emitter";
+    private static final String NAME = "file-system-emitter";
 
     @Override
     public String getName() {
-        return EXTENSION_NAME;
+        return NAME;
     }
 
     @Override

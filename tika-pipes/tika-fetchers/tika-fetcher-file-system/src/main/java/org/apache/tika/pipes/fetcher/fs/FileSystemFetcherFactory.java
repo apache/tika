@@ -25,6 +25,21 @@ import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.fetcher.FetcherFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating file system fetchers.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "fetchers": {
+ *   "file-system-fetcher": {
+ *     "my-fetcher": {
+ *       "basePath": "/path/to/files",
+ *       "extractFileSystemMetadata": true
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class FileSystemFetcherFactory implements FetcherFactory {
 

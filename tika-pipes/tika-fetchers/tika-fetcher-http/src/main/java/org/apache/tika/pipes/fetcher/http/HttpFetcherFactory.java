@@ -25,6 +25,24 @@ import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.fetcher.FetcherFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating HTTP fetchers.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "fetchers": {
+ *   "http-fetcher": {
+ *     "my-http-fetcher": {
+ *       "userName": "user",
+ *       "password": "pass",
+ *       "connectTimeout": 30000,
+ *       "socketTimeout": 120000,
+ *       "maxConnections": 200
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class HttpFetcherFactory implements FetcherFactory {
     private static final String NAME = "http-fetcher";

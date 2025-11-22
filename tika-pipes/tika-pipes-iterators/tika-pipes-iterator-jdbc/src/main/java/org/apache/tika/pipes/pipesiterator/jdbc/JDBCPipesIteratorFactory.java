@@ -24,14 +24,33 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.pipesiterator.PipesIteratorFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating JDBC pipes iterators.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "pipes-iterator": {
+ *   "jdbc-pipes-iterator": {
+ *     "connection": "jdbc:postgresql://localhost/mydb",
+ *     "select": "select id, path from documents",
+ *     "fetchKeyColumn": "path",
+ *     "idColumn": "id",
+ *     "baseConfig": {
+ *       "fetcherId": "my-fetcher",
+ *       "emitterId": "my-emitter"
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class JDBCPipesIteratorFactory implements PipesIteratorFactory {
 
-    public static final String EXTENSION_NAME = "jdbc-pipes-iterator";
+    public static final String NAME = "jdbc-pipes-iterator";
 
     @Override
     public String getName() {
-        return EXTENSION_NAME;
+        return NAME;
     }
 
     @Override

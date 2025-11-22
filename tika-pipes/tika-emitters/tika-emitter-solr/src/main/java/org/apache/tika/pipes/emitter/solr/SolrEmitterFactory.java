@@ -25,14 +25,32 @@ import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.EmitterFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating Solr emitters.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "emitters": {
+ *   "solr-emitter": {
+ *     "my-solr-emitter": {
+ *       "solrCollection": "my-collection",
+ *       "solrUrls": ["http://localhost:8983/solr"],
+ *       "idField": "id",
+ *       "commitWithin": 1000,
+ *       "attachmentStrategy": "PARENT_CHILD"
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class SolrEmitterFactory implements EmitterFactory {
 
-    private static final String EXTENSION_NAME = "solr-emitter";
+    private static final String NAME = "solr-emitter";
 
     @Override
     public String getName() {
-        return EXTENSION_NAME;
+        return NAME;
     }
 
     @Override

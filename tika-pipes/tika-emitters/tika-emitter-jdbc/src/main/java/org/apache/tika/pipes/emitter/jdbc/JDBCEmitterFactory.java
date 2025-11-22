@@ -25,14 +25,30 @@ import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.EmitterFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating JDBC emitters.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "emitters": {
+ *   "jdbc-emitter": {
+ *     "my-jdbc-emitter": {
+ *       "connection": "jdbc:postgresql://localhost/mydb",
+ *       "insert": "insert into docs (id, content) values (?, ?)",
+ *       "keys": {"id": "X-TIKA:content", "content": "content"}
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class JDBCEmitterFactory implements EmitterFactory {
 
-    private static final String EXTENSION_NAME = "jdbc-emitter";
+    private static final String NAME = "jdbc-emitter";
 
     @Override
     public String getName() {
-        return EXTENSION_NAME;
+        return NAME;
     }
 
     @Override

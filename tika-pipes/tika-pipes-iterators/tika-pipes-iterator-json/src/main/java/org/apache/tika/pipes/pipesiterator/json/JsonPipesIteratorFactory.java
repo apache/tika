@@ -24,14 +24,30 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.pipesiterator.PipesIteratorFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating JSON pipes iterators.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "pipes-iterator": {
+ *   "json-pipes-iterator": {
+ *     "jsonPath": "/path/to/files.json",
+ *     "baseConfig": {
+ *       "fetcherId": "my-fetcher",
+ *       "emitterId": "my-emitter"
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class JsonPipesIteratorFactory implements PipesIteratorFactory {
 
-    public static final String EXTENSION_NAME = "json-pipes-iterator";
+    public static final String NAME = "json-pipes-iterator";
 
     @Override
     public String getName() {
-        return EXTENSION_NAME;
+        return NAME;
     }
 
     @Override

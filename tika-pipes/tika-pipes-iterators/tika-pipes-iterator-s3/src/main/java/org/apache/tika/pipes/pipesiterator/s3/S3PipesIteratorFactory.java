@@ -24,14 +24,34 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.pipesiterator.PipesIteratorFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating S3 pipes iterators.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "pipes-iterator": {
+ *   "s3-pipes-iterator": {
+ *     "region": "us-east-1",
+ *     "bucket": "my-bucket",
+ *     "prefix": "documents/",
+ *     "credentialsProvider": "profile",
+ *     "profile": "default",
+ *     "baseConfig": {
+ *       "fetcherId": "my-fetcher",
+ *       "emitterId": "my-emitter"
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class S3PipesIteratorFactory implements PipesIteratorFactory {
 
-    public static final String EXTENSION_NAME = "s3-pipes-iterator";
+    public static final String NAME = "s3-pipes-iterator";
 
     @Override
     public String getName() {
-        return EXTENSION_NAME;
+        return NAME;
     }
 
     @Override

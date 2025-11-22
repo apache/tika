@@ -25,14 +25,33 @@ import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.EmitterFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating S3 emitters.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "emitters": {
+ *   "s3-emitter": {
+ *     "my-s3-emitter": {
+ *       "region": "us-east-1",
+ *       "bucket": "my-bucket",
+ *       "credentialsProvider": "profile",
+ *       "profile": "default",
+ *       "prefix": "output/",
+ *       "fileExtension": "json"
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class S3EmitterFactory implements EmitterFactory {
 
-    private static final String EXTENSION_NAME = "s3-emitter";
+    private static final String NAME = "s3-emitter";
 
     @Override
     public String getName() {
-        return EXTENSION_NAME;
+        return NAME;
     }
 
     @Override

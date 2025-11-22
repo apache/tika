@@ -25,14 +25,32 @@ import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.fetcher.FetcherFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating S3 fetchers.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "fetchers": {
+ *   "s3-fetcher": {
+ *     "my-s3-fetcher": {
+ *       "region": "us-east-1",
+ *       "bucket": "my-bucket",
+ *       "credentialsProvider": "profile",
+ *       "profile": "default",
+ *       "extractUserMetadata": true
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class S3FetcherFactory implements FetcherFactory {
 
-    public static final String EXTENSION_NAME = "s3-fetcher";
+    public static final String NAME = "s3-fetcher";
 
     @Override
     public String getName() {
-        return EXTENSION_NAME;
+        return NAME;
     }
 
     @Override

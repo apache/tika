@@ -23,14 +23,28 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.reporter.PipesReporterFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating OpenSearch pipes reporters.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "reporter": {
+ *   "opensearch-pipes-reporter": {
+ *     "openSearchUrl": "http://localhost:9200/tika-status",
+ *     "includes": ["PARSE_SUCCESS", "PARSE_EXCEPTION"],
+ *     "keyPrefix": "status_"
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class OpenSearchReporterFactory implements PipesReporterFactory {
 
-    public static final String EXTENSION_NAME = "opensearch-pipes-reporter";
+    public static final String NAME = "opensearch-pipes-reporter";
 
     @Override
     public String getName() {
-        return EXTENSION_NAME;
+        return NAME;
     }
 
     @Override

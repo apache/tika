@@ -25,14 +25,34 @@ import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.fetcher.FetcherFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating Microsoft Graph fetchers.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "fetchers": {
+ *   "microsoft-graph-fetcher": {
+ *     "my-graph-fetcher": {
+ *       "spoolToTemp": true,
+ *       "scopes": ["https://graph.microsoft.com/.default"],
+ *       "clientSecretCredentialsConfig": {
+ *         "tenantId": "tenant-id",
+ *         "clientId": "client-id",
+ *         "clientSecret": "client-secret"
+ *       }
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class MicrosoftGraphFetcherFactory implements FetcherFactory {
 
-    public static final String EXTENSION_NAME = "microsoft-graph-fetcher";
+    public static final String NAME = "microsoft-graph-fetcher";
 
     @Override
     public String getName() {
-        return EXTENSION_NAME;
+        return NAME;
     }
 
     @Override

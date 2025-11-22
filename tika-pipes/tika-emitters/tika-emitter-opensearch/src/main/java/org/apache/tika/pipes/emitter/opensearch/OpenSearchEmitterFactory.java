@@ -25,14 +25,32 @@ import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.EmitterFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating OpenSearch emitters.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "emitters": {
+ *   "opensearch-emitter": {
+ *     "my-opensearch-emitter": {
+ *       "openSearchUrl": "http://localhost:9200/my-index",
+ *       "idField": "id",
+ *       "attachmentStrategy": "PARENT_CHILD",
+ *       "updateStrategy": "UPSERT",
+ *       "commitWithin": 1000
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class OpenSearchEmitterFactory implements EmitterFactory {
 
-    public static final String EXTENSION_NAME = "opensearch-emitter";
+    public static final String NAME = "opensearch-emitter";
 
     @Override
     public String getName() {
-        return EXTENSION_NAME;
+        return NAME;
     }
 
     @Override

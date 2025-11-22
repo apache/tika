@@ -25,14 +25,32 @@ import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.EmitterFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating Azure Blob Storage emitters.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "emitters": {
+ *   "az-blob-emitter": {
+ *     "my-az-emitter": {
+ *       "sasToken": "your-sas-token",
+ *       "endpoint": "https://account.blob.core.windows.net",
+ *       "container": "my-container",
+ *       "prefix": "output/",
+ *       "fileExtension": "json"
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class AZBlobEmitterFactory implements EmitterFactory {
 
-    private static final String EXTENSION_NAME = "az-blob-emitter";
+    private static final String NAME = "az-blob-emitter";
 
     @Override
     public String getName() {
-        return EXTENSION_NAME;
+        return NAME;
     }
 
     @Override

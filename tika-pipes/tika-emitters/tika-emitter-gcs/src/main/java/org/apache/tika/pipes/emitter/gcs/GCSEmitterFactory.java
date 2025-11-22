@@ -25,14 +25,31 @@ import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.EmitterFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating Google Cloud Storage emitters.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "emitters": {
+ *   "gcs-emitter": {
+ *     "my-gcs-emitter": {
+ *       "projectId": "my-project",
+ *       "bucket": "my-bucket",
+ *       "prefix": "output/",
+ *       "fileExtension": "json"
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class GCSEmitterFactory implements EmitterFactory {
 
-    private static final String EXTENSION_NAME = "gcs-emitter";
+    private static final String NAME = "gcs-emitter";
 
     @Override
     public String getName() {
-        return EXTENSION_NAME;
+        return NAME;
     }
 
     @Override

@@ -24,14 +24,32 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.pipesiterator.PipesIteratorFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating Google Cloud Storage pipes iterators.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "pipes-iterator": {
+ *   "gcs-pipes-iterator": {
+ *     "projectId": "my-project",
+ *     "bucket": "my-bucket",
+ *     "prefix": "documents/",
+ *     "baseConfig": {
+ *       "fetcherId": "my-fetcher",
+ *       "emitterId": "my-emitter"
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class GCSPipesIteratorFactory implements PipesIteratorFactory {
 
-    public static final String EXTENSION_NAME = "gcs-pipes-iterator";
+    public static final String NAME = "gcs-pipes-iterator";
 
     @Override
     public String getName() {
-        return EXTENSION_NAME;
+        return NAME;
     }
 
     @Override

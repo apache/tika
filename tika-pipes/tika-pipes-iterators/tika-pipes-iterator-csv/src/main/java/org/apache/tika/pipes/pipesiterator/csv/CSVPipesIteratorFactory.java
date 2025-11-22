@@ -24,14 +24,32 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.pipesiterator.PipesIteratorFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating CSV pipes iterators.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "pipes-iterator": {
+ *   "csv-pipes-iterator": {
+ *     "csvPath": "/path/to/files.csv",
+ *     "fetchKeyColumn": "path",
+ *     "emitKeyColumn": "id",
+ *     "baseConfig": {
+ *       "fetcherId": "my-fetcher",
+ *       "emitterId": "my-emitter"
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class CSVPipesIteratorFactory implements PipesIteratorFactory {
 
-    public static final String EXTENSION_NAME = "csv-pipes-iterator";
+    public static final String NAME = "csv-pipes-iterator";
 
     @Override
     public String getName() {
-        return EXTENSION_NAME;
+        return NAME;
     }
 
     @Override

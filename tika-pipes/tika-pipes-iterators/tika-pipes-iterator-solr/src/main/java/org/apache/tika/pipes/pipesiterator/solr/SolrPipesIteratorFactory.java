@@ -24,14 +24,33 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.pipesiterator.PipesIteratorFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating Solr pipes iterators.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "pipes-iterator": {
+ *   "solr-pipes-iterator": {
+ *     "solrCollection": "my-collection",
+ *     "solrUrls": ["http://localhost:8983/solr"],
+ *     "idField": "id",
+ *     "rows": 5000,
+ *     "baseConfig": {
+ *       "fetcherId": "my-fetcher",
+ *       "emitterId": "my-emitter"
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class SolrPipesIteratorFactory implements PipesIteratorFactory {
 
-    public static final String EXTENSION_NAME = "solr-pipes-iterator";
+    public static final String NAME = "solr-pipes-iterator";
 
     @Override
     public String getName() {
-        return EXTENSION_NAME;
+        return NAME;
     }
 
     @Override

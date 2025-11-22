@@ -24,6 +24,20 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.reporter.PipesReporterFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating JDBC pipes reporters.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "reporter": {
+ *   "jdbc-reporter": {
+ *     "connectionString": "jdbc:postgresql://localhost/mydb",
+ *     "tableName": "tika_status",
+ *     "createTable": true
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class JDBCPipesReporterFactory implements PipesReporterFactory {
 

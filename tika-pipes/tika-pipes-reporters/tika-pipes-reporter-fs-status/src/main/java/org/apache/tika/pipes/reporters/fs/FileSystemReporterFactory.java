@@ -24,14 +24,27 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.reporter.PipesReporterFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating file system status reporters.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "reporter": {
+ *   "file-system-reporter": {
+ *     "statusFile": "/path/to/status.json",
+ *     "reportUpdateMs": 1000
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class FileSystemReporterFactory implements PipesReporterFactory {
 
-    public static final String EXTENSION_NAME = "file-system-reporter";
+    public static final String NAME = "file-system-reporter";
 
     @Override
     public String getName() {
-        return EXTENSION_NAME;
+        return NAME;
     }
 
     @Override

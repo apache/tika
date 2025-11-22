@@ -25,14 +25,31 @@ import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.EmitterFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating Kafka emitters.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "emitters": {
+ *   "kafka-emitter": {
+ *     "my-kafka-emitter": {
+ *       "topic": "my-topic",
+ *       "bootstrapServers": "localhost:9092",
+ *       "acks": "all",
+ *       "lingerMs": 5000
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class KafkaEmitterFactory implements EmitterFactory {
 
-    private static final String EXTENSION_NAME = "kafka-emitter";
+    private static final String NAME = "kafka-emitter";
 
     @Override
     public String getName() {
-        return EXTENSION_NAME;
+        return NAME;
     }
 
     @Override

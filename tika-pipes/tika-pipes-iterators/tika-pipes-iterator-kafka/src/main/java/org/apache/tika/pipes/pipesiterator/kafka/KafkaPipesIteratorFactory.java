@@ -24,14 +24,33 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.pipesiterator.PipesIteratorFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating Kafka pipes iterators.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "pipes-iterator": {
+ *   "kafka-pipes-iterator": {
+ *     "topic": "my-topic",
+ *     "bootstrapServers": "localhost:9092",
+ *     "groupId": "my-group",
+ *     "autoOffsetReset": "earliest",
+ *     "baseConfig": {
+ *       "fetcherId": "my-fetcher",
+ *       "emitterId": "my-emitter"
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class KafkaPipesIteratorFactory implements PipesIteratorFactory {
 
-    public static final String EXTENSION_NAME = "kafka-pipes-iterator";
+    public static final String NAME = "kafka-pipes-iterator";
 
     @Override
     public String getName() {
-        return EXTENSION_NAME;
+        return NAME;
     }
 
     @Override

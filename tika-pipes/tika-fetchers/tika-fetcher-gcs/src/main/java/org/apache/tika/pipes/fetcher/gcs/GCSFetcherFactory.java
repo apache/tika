@@ -25,14 +25,31 @@ import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.fetcher.FetcherFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating Google Cloud Storage fetchers.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "fetchers": {
+ *   "gcs-fetcher": {
+ *     "my-gcs-fetcher": {
+ *       "projectId": "my-project",
+ *       "bucket": "my-bucket",
+ *       "spoolToTemp": true,
+ *       "extractUserMetadata": true
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class GCSFetcherFactory implements FetcherFactory {
 
-    public static final String EXTENSION_NAME = "gcs-fetcher";
+    public static final String NAME = "gcs-fetcher";
 
     @Override
     public String getName() {
-        return EXTENSION_NAME;
+        return NAME;
     }
 
     @Override

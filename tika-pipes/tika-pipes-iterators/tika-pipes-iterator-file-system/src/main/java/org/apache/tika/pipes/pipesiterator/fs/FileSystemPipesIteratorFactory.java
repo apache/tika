@@ -24,14 +24,31 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.pipesiterator.PipesIteratorFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating file system pipes iterators.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "pipes-iterator": {
+ *   "file-system-pipes-iterator": {
+ *     "basePath": "/path/to/files",
+ *     "countTotal": true,
+ *     "baseConfig": {
+ *       "fetcherId": "my-fetcher",
+ *       "emitterId": "my-emitter"
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class FileSystemPipesIteratorFactory implements PipesIteratorFactory {
 
-    public static final String EXTENSION_NAME = "file-system-pipes-iterator";
+    public static final String NAME = "file-system-pipes-iterator";
 
     @Override
     public String getName() {
-        return EXTENSION_NAME;
+        return NAME;
     }
 
     @Override

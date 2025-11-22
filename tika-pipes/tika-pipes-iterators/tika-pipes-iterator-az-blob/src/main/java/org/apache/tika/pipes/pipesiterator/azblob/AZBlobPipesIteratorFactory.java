@@ -24,14 +24,33 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.pipesiterator.PipesIteratorFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating Azure Blob Storage pipes iterators.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "pipes-iterator": {
+ *   "az-blob-pipes-iterator": {
+ *     "sasToken": "your-sas-token",
+ *     "endpoint": "https://account.blob.core.windows.net",
+ *     "container": "my-container",
+ *     "prefix": "documents/",
+ *     "baseConfig": {
+ *       "fetcherId": "my-fetcher",
+ *       "emitterId": "my-emitter"
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class AZBlobPipesIteratorFactory implements PipesIteratorFactory {
 
-    public static final String EXTENSION_NAME = "az-blob-pipes-iterator";
+    public static final String NAME = "az-blob-pipes-iterator";
 
     @Override
     public String getName() {
-        return EXTENSION_NAME;
+        return NAME;
     }
 
     @Override

@@ -25,14 +25,31 @@ import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.fetcher.FetcherFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
+/**
+ * Factory for creating Azure Blob Storage fetchers.
+ *
+ * <p>Example JSON configuration:
+ * <pre>
+ * "fetchers": {
+ *   "az-blob-fetcher": {
+ *     "my-az-fetcher": {
+ *       "sasToken": "your-sas-token",
+ *       "endpoint": "https://account.blob.core.windows.net",
+ *       "container": "my-container",
+ *       "extractUserMetadata": true
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
 @Extension
 public class AZBlobFetcherFactory implements FetcherFactory {
 
-    public static final String EXTENSION_NAME = "az-blob-fetcher";
+    public static final String NAME = "az-blob-fetcher";
 
     @Override
     public String getName() {
-        return EXTENSION_NAME;
+        return NAME;
     }
 
     @Override
