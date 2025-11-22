@@ -33,7 +33,7 @@ public class PipesConfig extends PipesConfigBase {
 
     private long maxWaitForClientMillis = 60000;
 
-    public static PipesConfig load(Path tikaConfig) throws IOException, TikaConfigException {
+    public static PipesConfig load(Path tikaConfig, Path pipesPluginsConfig) throws IOException, TikaConfigException {
         PipesConfig pipesConfig = new PipesConfig();
         try (InputStream is = Files.newInputStream(tikaConfig)) {
             Set<String> settings = pipesConfig.configure("pipes", is);
@@ -43,12 +43,14 @@ public class PipesConfig extends PipesConfigBase {
                     "config file; will use {} for pipes", tikaConfig);
             pipesConfig.setTikaConfig(tikaConfig);
         }
+        pipesConfig.setPipesPluginsConfig(pipesPluginsConfig);
         return pipesConfig;
     }
 
-    public static PipesConfig load(InputStream tikaConfigInputStream) throws IOException, TikaConfigException {
+    public static PipesConfig load(InputStream tikaConfigInputStream, Path pipesPluginsConfig) throws IOException, TikaConfigException {
         PipesConfig pipesConfig = new PipesConfig();
         pipesConfig.configure("pipes", tikaConfigInputStream);
+        pipesConfig.setPipesPluginsConfig(pipesPluginsConfig);
         return pipesConfig;
     }
 

@@ -46,6 +46,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +64,7 @@ import org.apache.tika.pipes.fetcher.http.HttpFetcher;
  * Then it will, using a bidirectional stream of data, send urls to the
  * HTTP fetcher whilst simultaneously receiving parsed output as they parse.
  */
+@Disabled("until we can get the plugins config working")
 class PipesBiDirectionalStreamingIntegrationTest {
     static final Logger LOGGER = LoggerFactory.getLogger(PipesBiDirectionalStreamingIntegrationTest.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();

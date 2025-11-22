@@ -16,6 +16,8 @@
  */
 package org.apache.tika.pipes.core;
 
+import static org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig.DEFAULT_HANDLER_CONFIG;
+
 import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -66,17 +68,20 @@ import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
-import org.apache.tika.pipes.core.emitter.EmitData;
-import org.apache.tika.pipes.core.emitter.EmitKey;
-import org.apache.tika.pipes.core.emitter.Emitter;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.HandlerConfig;
+import org.apache.tika.pipes.api.emitter.EmitKey;
+import org.apache.tika.pipes.api.emitter.Emitter;
+import org.apache.tika.pipes.api.emitter.StreamEmitter;
+import org.apache.tika.pipes.api.fetcher.Fetcher;
+import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
-import org.apache.tika.pipes.core.emitter.StreamEmitter;
-import org.apache.tika.pipes.core.emitter.TikaEmitterException;
 import org.apache.tika.pipes.core.extractor.BasicEmbeddedDocumentBytesHandler;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.extractor.EmittingEmbeddedDocumentBytesHandler;
-import org.apache.tika.pipes.core.fetcher.Fetcher;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.apache.tika.plugins.TikaConfigs;
+import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
@@ -127,9 +132,16 @@ public class PipesServer implements Runnable {
         }
     }
 
+    public enum EMIT_STRATEGY {
+        EMIT_ALL,
+        PASSBACK_ALL,
+        DYNAMIC
+    }
+
     private final Object[] lock = new Object[0];
     private long checkForTimeoutMs = 1000;
     private final Path tikaConfigPath;
+    private final Path pipesConfigPath;
     private final DataInputStream input;
     private final DataOutputStream output;
     //if an extract is larger than this value, emit it directly;
@@ -138,6 +150,7 @@ public class PipesServer implements Runnable {
     private final long maxForEmitBatchBytes;
     private final long defaultServerParseTimeoutMillis;
     private final long serverWaitTimeoutMillis;
+    private final EMIT_STRATEGY emitStrategy;
     private volatile long serverParseTimeoutMillis;
     private Parser autoDetectParser;
     private Parser rMetaParser;
@@ -148,11 +161,12 @@ public class PipesServer implements Runnable {
     private volatile long since;
 
 
-    public PipesServer(Path tikaConfigPath, InputStream in, PrintStream out,
+    public PipesServer(Path tikaConfigPath, Path pipesConfigPath,
+                       InputStream in, PrintStream out,
                        long maxForEmitBatchBytes, long serverParseTimeoutMillis,
-                       long serverWaitTimeoutMillis)
-            throws IOException, TikaException, SAXException {
+                       long serverWaitTimeoutMillis) {
         this.tikaConfigPath = tikaConfigPath;
+        this.pipesConfigPath = pipesConfigPath;
         this.input = new DataInputStream(in);
         this.output = new DataOutputStream(out);
         this.maxForEmitBatchBytes = maxForEmitBatchBytes;
@@ -161,18 +175,26 @@ public class PipesServer implements Runnable {
         this.serverWaitTimeoutMillis = serverWaitTimeoutMillis;
         this.parsing = false;
         this.since = System.currentTimeMillis();
+        if (maxForEmitBatchBytes == 0) {
+            emitStrategy = EMIT_STRATEGY.EMIT_ALL;
+        } else if (maxForEmitBatchBytes < 0) {
+            emitStrategy = EMIT_STRATEGY.PASSBACK_ALL;
+        } else {
+            emitStrategy = EMIT_STRATEGY.DYNAMIC;
+        }
     }
 
 
     public static void main(String[] args) throws Exception {
         try {
             Path tikaConfig = Paths.get(args[0]);
-            long maxForEmitBatchBytes = Long.parseLong(args[1]);
-            long serverParseTimeoutMillis = Long.parseLong(args[2]);
-            long serverWaitTimeoutMillis = Long.parseLong(args[3]);
+            Path pipesPluginsConfig = Paths.get(args[1]);
+            long maxForEmitBatchBytes = Long.parseLong(args[2]);
+            long serverParseTimeoutMillis = Long.parseLong(args[3]);
+            long serverWaitTimeoutMillis = Long.parseLong(args[4]);
 
             PipesServer server =
-                    new PipesServer(tikaConfig, System.in, System.out, maxForEmitBatchBytes,
+                    new PipesServer(tikaConfig, pipesPluginsConfig, System.in, System.out, maxForEmitBatchBytes,
                             serverParseTimeoutMillis, serverWaitTimeoutMillis);
             System.setIn(UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[0]).get());
             System.setOut(System.err);
@@ -290,9 +312,9 @@ public class PipesServer implements Runnable {
         Emitter emitter = null;
 
         try {
-            emitter = emitterManager.getEmitter(emitKey.getEmitterName());
+            emitter = emitterManager.getEmitter(emitKey.getEmitterId());
         } catch (IllegalArgumentException e) {
-            String noEmitterMsg = getNoEmitterMsg(taskId);
+            String noEmitterMsg = getNoEmitterMsg(taskId, emitKey.getEmitterId());
             LOG.warn(noEmitterMsg);
             write(STATUS.EMITTER_NOT_FOUND, noEmitterMsg);
             return;
@@ -304,7 +326,7 @@ public class PipesServer implements Runnable {
             } else {
                 emitter.emit(emitKey.getEmitKey(), parseData.getMetadataList(), parseContext);
             }
-        } catch (IOException | TikaEmitterException e) {
+        } catch (IOException e) {
             LOG.warn("emit exception", e);
             String msg = ExceptionUtils.getStackTrace(e);
             byte[] bytes = msg.getBytes(StandardCharsets.UTF_8);
@@ -337,12 +359,12 @@ public class PipesServer implements Runnable {
             exit(1);
         }
 
-        EmitData filteredEmitData = new EmitData(emitKey, filtered, parseExceptionStack);
+        EmitDataImpl filteredEmitDataTuple = new EmitDataImpl(emitKey.getEmitKey(), filtered, parseExceptionStack);
 
         try {
             UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
             try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
-                objectOutputStream.writeObject(filteredEmitData);
+                objectOutputStream.writeObject(filteredEmitDataTuple);
             }
             write(STATUS.EMIT_SUCCESS_PASS_BACK, bos.toByteArray());
         } catch (IOException e) {
@@ -470,21 +492,16 @@ public class PipesServer implements Runnable {
             injectUserMetadata(t.getMetadata(), parseData.getMetadataList());
             EmitKey emitKey = t.getEmitKey();
             if (StringUtils.isBlank(emitKey.getEmitKey())) {
-                emitKey = new EmitKey(emitKey.getEmitterName(), t.getFetchKey().getFetchKey());
+                emitKey = new EmitKey(emitKey.getEmitterId(), t.getFetchKey().getFetchKey());
                 t.setEmitKey(emitKey);
             }
-            EmitData emitData = new EmitData(t.getEmitKey(), parseData.getMetadataList(), stack);
-            if (embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes() &&
-                    parseData.toBePackagedForStreamEmitter()) {
-                emit(t.getId(), emitKey, embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes(),
-                        parseData, stack, parseContext);
-            } else if (maxForEmitBatchBytes >= 0 &&
-                    emitData.getEstimatedSizeBytes() >= maxForEmitBatchBytes) {
+            EmitDataImpl emitDataTuple = new EmitDataImpl(t.getEmitKey().getEmitKey(), parseData.getMetadataList(), stack);
+            if (shouldEmit(embeddedDocumentBytesConfig, parseData, emitDataTuple)) {
                 emit(t.getId(), emitKey, embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes(),
                         parseData, stack, parseContext);
             } else {
                 //send back to the client
-                write(emitData);
+                write(emitDataTuple);
             }
             if (LOG.isTraceEnabled()) {
                 LOG.trace("timer -- emitted: {} ms", System.currentTimeMillis() - start);
@@ -492,6 +509,22 @@ public class PipesServer implements Runnable {
         } else {
             write(STATUS.PARSE_EXCEPTION_NO_EMIT, stack);
         }
+    }
+
+    private boolean shouldEmit(EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig, MetadataListAndEmbeddedBytes parseData, EmitDataImpl emitDataTuple) {
+        if (emitStrategy == EMIT_STRATEGY.EMIT_ALL) {
+            return true;
+        } else if (embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes() &&
+                parseData.toBePackagedForStreamEmitter()) {
+            return true;
+        } else if (emitStrategy == EMIT_STRATEGY.PASSBACK_ALL) {
+            return false;
+        } else if (emitStrategy == EMIT_STRATEGY.DYNAMIC) {
+            if (emitDataTuple.getEstimatedSizeBytes() >= maxForEmitBatchBytes) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void filterMetadata(FetchEmitTuple t, List<Metadata> metadataList) {
@@ -525,9 +558,9 @@ public class PipesServer implements Runnable {
 
     private Fetcher getFetcher(FetchEmitTuple t) {
         try {
-            return fetcherManager.getFetcher(t.getFetchKey().getFetcherName());
+            return fetcherManager.getFetcher(t.getFetchKey().getFetcherId());
         } catch (IllegalArgumentException e) {
-            String noFetcherMsg = getNoFetcherMsg(t.getFetchKey().getFetcherName());
+            String noFetcherMsg = getNoFetcherMsg(t.getFetchKey().getFetcherId());
             LOG.warn(noFetcherMsg);
             write(STATUS.FETCHER_NOT_FOUND, noFetcherMsg);
             return null;
@@ -554,9 +587,9 @@ public class PipesServer implements Runnable {
         return null;
     }
 
-    private String getNoFetcherMsg(String fetcherName) {
+    private String getNoFetcherMsg(String fetcherId) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Fetcher '").append(fetcherName).append("'");
+        sb.append("Fetcher '").append(fetcherId).append("'");
         sb.append(" not found.");
         sb.append("\nThe configured FetcherManager supports:");
         int i = 0;
@@ -569,9 +602,9 @@ public class PipesServer implements Runnable {
         return sb.toString();
     }
 
-    private String getNoEmitterMsg(String emitterName) {
+    private String getNoEmitterMsg(String taskName, String emitterName) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Emitter '").append(emitterName).append("'");
+        sb.append("Emitter for task='").append(taskName).append("' emitter='").append(emitterName).append("'");
         sb.append(" not found.");
         sb.append("\nThe configured emitterManager supports:");
         int i = 0;
@@ -615,7 +648,7 @@ public class PipesServer implements Runnable {
             throws TikaConfigException {
         ParseContext parseContext = fetchEmitTuple.getParseContext();
         if (parseContext.get(HandlerConfig.class) == null) {
-            parseContext.set(HandlerConfig.class, HandlerConfig.DEFAULT_HANDLER_CONFIG);
+            parseContext.set(HandlerConfig.class, DEFAULT_HANDLER_CONFIG);
         }
         EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);
         if (embeddedDocumentBytesConfig == null) {
@@ -659,7 +692,7 @@ public class PipesServer implements Runnable {
 
         ContentHandler handler = contentHandlerFactory.getNewContentHandler();
         parseContext.set(DocumentSelector.class, new DocumentSelector() {
-            final int maxEmbedded = handlerConfig.maxEmbeddedResources;
+            final int maxEmbedded = handlerConfig.getMaxEmbeddedResources();
             int embedded = 0;
 
             @Override
@@ -817,13 +850,17 @@ public class PipesServer implements Runnable {
     }
 
     protected void initializeResources() throws TikaException, IOException, SAXException {
+        TikaConfigs tikaConfigs = TikaConfigs.load(pipesConfigPath);
+
+        TikaPluginManager tikaPluginManager = TikaPluginManager.load(tikaConfigs);
+
         //TODO allowed named configurations in tika config
         this.tikaConfig = new TikaConfig(tikaConfigPath);
-        this.fetcherManager = FetcherManager.load(tikaConfigPath);
+        this.fetcherManager = FetcherManager.load(tikaPluginManager, tikaConfigs);
         //skip initialization of the emitters if emitting
         //from the pipesserver is turned off.
         if (maxForEmitBatchBytes > -1) {
-            this.emitterManager = EmitterManager.load(tikaConfigPath);
+            this.emitterManager = EmitterManager.load(tikaPluginManager, tikaConfigs);
         } else {
             LOG.debug("'maxForEmitBatchBytes' < 0. Not initializing emitters in PipesServer");
             this.emitterManager = null;
@@ -863,7 +900,7 @@ public class PipesServer implements Runnable {
         }
     }
 
-    private void write(EmitData emitData) {
+    private void write(EmitDataImpl emitData) {
         try {
             UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
             try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {

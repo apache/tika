@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import static org.apache.tika.pipes.core.pipesiterator.PipesIterator.COMPLETED_SEMAPHORE;
+import static org.apache.tika.pipes.pipesiterator.PipesIteratorBase.COMPLETED_SEMAPHORE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -31,22 +31,22 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.pipesiterator.csv.CSVPipesIterator;
+import org.apache.tika.plugins.ExtensionConfig;
 
 public class TestCSVPipesIterator {
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Test
     public void testSimple() throws Exception {
         Path p = get("test-simple.csv");
-        CSVPipesIterator it = new CSVPipesIterator();
-        it.setFetcherName("fsf");
-        it.setEmitterName("fse");
-        it.setCsvPath(p);
-        it.setFetchKeyColumn("fetchKey");
+        CSVPipesIterator it = createIterator(p, "fsf", "fse", "fetchKey", null, null);
         int numConsumers = 2;
         ExecutorService es = Executors.newFixedThreadPool(numConsumers);
         ExecutorCompletionService c = new ExecutorCompletionService(es);
@@ -92,15 +92,37 @@ public class TestCSVPipesIterator {
     @Test
     public void testBadFetchKeyCol() throws Exception {
         Path p = get("test-simple.csv");
-        CSVPipesIterator it = new CSVPipesIterator();
-        it.setFetcherName("fs");
-        it.setCsvPath(p);
         assertThrows(RuntimeException.class, () -> {
-            it.setFetchKeyColumn("fetchKeyDoesntExist");
+            CSVPipesIterator it = createIterator(p, "fs", "fse", "fetchKeyDoesntExist", null, null);
             for (FetchEmitTuple t : it) {
 
             }
         });
+    }
+
+    private CSVPipesIterator createIterator(Path csvPath, String fetcherName, String emitterName,
+                                             String fetchKeyColumn, String emitKeyColumn, String idColumn) throws Exception {
+        ObjectNode jsonConfig = OBJECT_MAPPER.createObjectNode();
+        jsonConfig.put("csvPath", csvPath.toAbsolutePath().toString());
+        if (fetchKeyColumn != null) {
+            jsonConfig.put("fetchKeyColumn", fetchKeyColumn);
+        }
+        if (emitKeyColumn != null) {
+            jsonConfig.put("emitKeyColumn", emitKeyColumn);
+        }
+        if (idColumn != null) {
+            jsonConfig.put("idColumn", idColumn);
+        }
+
+        // Add baseConfig
+        ObjectNode baseConfig = OBJECT_MAPPER.createObjectNode();
+        baseConfig.put("fetcherId", fetcherName);
+        baseConfig.put("emitterId", emitterName);
+        jsonConfig.set("baseConfig", baseConfig);
+
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-csv-iterator", "csv-pipes-iterator",
+                OBJECT_MAPPER.writeValueAsString(jsonConfig));
+        return CSVPipesIterator.build(extensionConfig);
     }
 
     private Path get(String testFileName) throws Exception {

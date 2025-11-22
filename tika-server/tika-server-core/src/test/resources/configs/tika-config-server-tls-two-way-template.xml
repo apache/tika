@@ -20,10 +20,7 @@
     <port>9999</port>
     <taskTimeoutMillis>1000000</taskTimeoutMillis>
     <minimumTimeoutMillis>10000</minimumTimeoutMillis>
-    <maxFiles>10000</maxFiles>
-    <forkedJvmArgs>
-      <arg>-Xmx1g</arg>
-    </forkedJvmArgs>
+    <taskPulseMillis>100</taskPulseMillis>
     <endpoints>
       <endpoint>rmeta</endpoint>
     </endpoints>

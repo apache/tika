@@ -104,167 +104,6 @@
         </configuration>
       </plugin>
       <plugin>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>${maven.shade.version}</version>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <createDependencyReducedPom>
-                false
-              </createDependencyReducedPom>
-              <artifactSet>
-                <excludes>
-                  <exclude>org.apache.tika:tika-core:jar:</exclude>
-                  <exclude>org.apache.tika:tika-translate:jar:</exclude>
-                  <exclude>org.apache.tika:tika-parsers-standard-package:jar:</exclude>
-                  <exclude>org.apache.tika:tika-pipes-core:jar:</exclude>
-                  <exclude>org.apache.tika:tika-langdetect-optimaize:jar:</exclude>
-                  <exclude>org.apache.tika:tika-handler-boilerpipe:jar:</exclude>
-                  <exclude>org.apache.tika:tika-parser-digest-commons:jar:</exclude>
-                  <exclude>org.apache.tika:tika-parser-zip-commons:jar:</exclude>
-                  <exclude>commons-codec:commons-codec:jar:</exclude>
-                  <exclude>org.apache.commons:commons-compress:jar:</exclude>
-                  <exclude>org.apache.commons:commons-csv:jar:</exclude>
-                  <exclude>org.apache.cxf:cxf-core:jar:</exclude>
-                  <exclude>com.fasterxml.woodstox:woodstox-core:jar:</exclude>
-                  <exclude>org.codehaus.woodstox:stax2-api:jar:</exclude>
-                  <exclude>org.apache.ws.xmlschema:xmlschema-core:jar:</exclude>
-                  <exclude>jakarta.ws.rs:jakarta.ws.rs-api:jar:</exclude>
-                  <exclude>jakarta.annotation:jakarta.annotation-api:jar:</exclude>
-                  <exclude>org.bouncycastle:bcjmail-jdk18on:jar:</exclude>
-                  <exclude>org.bouncycastle:bcutil-jdk18on:jar:</exclude>
-                  <exclude>org.bouncycastle:bcpkix-jdk18on:jar:</exclude>
-                  <exclude>org.bouncycastle:bcprov-jdk18on:jar:</exclude>
-                  <exclude>de.l3s.boilerpipe:boilerpipe:jar:</exclude>
-                  <exclude>com.optimaize.languagedetector:language-detector:jar:</exclude>
-                  <exclude>net.arnx:jsonic:jar:</exclude>
-                  <exclude>com.intellij:annotations:jar:</exclude>
-                  <exclude>com.google.guava:guava:jar:</exclude>
-                  <exclude>com.google.guava:failureaccess:jar:</exclude>
-                  <exclude>com.google.guava:listenablefuture:jar:</exclude>
-                  <exclude>com.google.code.findbugs:jsr305:jar:</exclude>
-                  <exclude>org.checkerframework:checker-qual:jar:</exclude>
-                  <exclude>com.google.errorprone:error_prone_annotations:jar:</exclude>
-                  <exclude>com.google.j2objc:j2objc-annotations:jar:</exclude>
-                  <exclude>com.memetix:microsoft-translator-java-api:jar:</exclude>
-                  <exclude>com.googlecode.json-simple:json-simple:jar:</exclude>
-                  <exclude>org.glassfish.jaxb:jaxb-runtime</exclude>
-                  <exclude>jakarta.xml.bind:jakarta.xml.bind-api:jar:</exclude>
-                  <exclude>org.glassfish.jaxb:txw2:jar:</exclude>
-                  <exclude>com.sun.istack:istack-commons-runtime:jar:</exclude>
-                  <exclude>com.sun.activation:jakarta.activation:jar:</exclude> <!-- NOT SURA these coordinates are correcte -->
-                  <exclude>com.fasterxml.jackson.core:jackson-core:jar:</exclude>
-                  <exclude>com.fasterxml.jackson.jaxrs:jackson-jakarta-rs-json-provider:jar:</exclude>
-                  <exclude>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:jar:</exclude>
-                  <exclude>com.fasterxml.jackson.module:jackson-module-jaxb-annotations:jar:</exclude>
-                  <exclude>com.fasterxml.jackson.core:jackson-annotations:jar:</exclude>
-                  <exclude>com.fasterxml.jackson.core:jackson-databind:jar:</exclude>
-                  <exclude>commons-io:commons-io:jar:</exclude>
-                  <exclude>org.slf4j:jcl-over-slf4j:jar:</exclude>
-                  <exclude>org.slf4j:slf4j-api:jar:</exclude>
-                  <exclude>commons-logging:commons-logging:jar:</exclude>
-                  <exclude>org.apache.cxf:cxf-rt-rs-client:jar:</exclude>
-                  <exclude>org.apache.commons:commons-lang3:jar:</exclude>
-                  <exclude>commons-cli:commons-cli:jar:</exclude>
-                  <exclude>org.apache.cxf:cxf-rt-rs-security-cors:jar:</exclude>
-                  <exclude>org.eclipse.jetty:jetty-io:jar:</exclude>
-                  <exclude>org.eclipse.jetty:jetty-util:jar:</exclude>
-                  <exclude>org.eclipse.jetty:jetty-http:jar:</exclude>
-                  <exclude>org.eclipse.jetty:jetty-security:jar:</exclude>
-                  <exclude>org.eclipse.jetty:jetty-server:jar:</exclude>
-                  <exclude>org.eclipse.jetty:jetty-continuation:jar:</exclude>
-                  <exclude>javax.servlet:javax.servlet-api:jar:</exclude>
-                  <exclude>org.apache.cxf:cxf-rt-transports-http:jar:</exclude>
-                  <exclude>org.apache.cxf:cxf-rt-transports-http-jetty:jar:</exclude>
-                  <exclude>org.apache.cxf:cxf-rt-security:jar:</exclude>
-                  <exclude>org.apache.cxf:cxf-rt-frontend-jaxrs:jar:</exclude>
-                </excludes>
-              </artifactSet>
-              <filters>
-                <filter>
-                  <artifact>*:*</artifact>
-                  <excludes>
-                    <exclude>module-info.class</exclude>
-                    <exclude>META-INF/versions/9/module-info.class</exclude>
-                    <exclude>META-INF/maven/plugin.xml</exclude>
-                    <exclude>META-INF/*.SF</exclude>
-                    <exclude>META-INF/*.DSA</exclude>
-                    <exclude>META-INF/*.RSA</exclude>
-                    <exclude>META-INF/*.txt</exclude>
-                    <exclude>META-INF/ASL2.0</exclude>
-                    <exclude>META-INF/DEPENDENCIES</exclude>
-                    <exclude>META-INF/LICENSE</exclude>
-                    <exclude>META-INF/NOTICE</exclude>
-                    <exclude>META-INF/README</exclude>
-                    <exclude>META-INF/MANIFEST.MF</exclude>
-                    <exclude>LICENSE.txt</exclude>
-                    <exclude>NOTICE.txt</exclude>
-                    <exclude>CHANGES</exclude>
-                    <exclude>README</exclude>
-                    <exclude>builddef.lst</exclude>
-                  </excludes>
-                </filter>
-              </filters>
-              <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <mainClass>org.apache.tika.server.core.TikaServerCli</mainClass>
-                  <manifestEntries>
-                    <Multi-Release>true</Multi-Release>
-                  </manifestEntries>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
-                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
-                  <resource>META-INF/LICENSE</resource>
-                  <file>target/classes/META-INF/LICENSE</file>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
-                  <resource>META-INF/NOTICE</resource>
-                  <file>target/classes/META-INF/NOTICE</file>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
-                  <resource>META-INF/DEPENDENCIES</resource>
-                  <file>target/classes/META-INF/DEPENDENCIES</file>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                  <resource>META-INF/spring.handlers</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                  <resource>META-INF/spring.schemas</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                  <resource>META-INF/cxf/cxf.extension</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
-                  <resource>META-INF/extensions.xml</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
-                  <resource>META-INF/cxf/extensions.xml</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                  <resource>META-INF/cxf/bus-extensions.txt</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
-                  <resource>META-INF/cxf/bus-extensions.xml</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
-                  <resource>META-INF/wsdl.plugin.xml</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
-                  <resource>META-INF/tools.service.validator.xml</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
-                  <resource>META-INF/cxf/java2wsbeans.xml</resource>
-                </transformer>
-              </transformers>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
@@ -274,6 +113,38 @@
             </manifestEntries>
           </archive>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-plugins</id>
+            <phase>process-test-resources</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/plugins</outputDirectory>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.apache.tika</groupId>
+                  <artifactId>tika-fetcher-file-system</artifactId>
+                  <version>${project.version}</version>
+                  <type>zip</type>
+                  <overWrite>true</overWrite>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.apache.tika</groupId>
+                  <artifactId>tika-emitter-file-system</artifactId>
+                  <version>${project.version}</version>
+                  <type>zip</type>
+                  <overWrite>true</overWrite>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.rat</groupId>
@@ -291,7 +162,7 @@
         <artifactId>maven-assembly-plugin</artifactId>
         <configuration>
           <descriptors>
-            <descriptor>assembly.xml</descriptor>
+            <descriptor>src/main/assembly/assembly.xml</descriptor>
           </descriptors>
         </configuration>
         <executions>

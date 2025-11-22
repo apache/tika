@@ -21,12 +21,14 @@ import java.util.List;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.api.emitter.AbstractEmitter;
+import org.apache.tika.plugins.ExtensionConfig;
 
-public class EmptyEmitter implements Emitter {
+public class EmptyEmitter extends AbstractEmitter {
 
-    @Override
-    public String getName() {
-        return "empty";
+
+    public EmptyEmitter(ExtensionConfig pluginConfig) throws IOException {
+        super(pluginConfig);
     }
 
     @Override
@@ -35,8 +37,4 @@ public class EmptyEmitter implements Emitter {
 
     }
 
-    @Override
-    public void emit(List<? extends EmitData> emitData) throws IOException, TikaEmitterException {
-
-    }
 }

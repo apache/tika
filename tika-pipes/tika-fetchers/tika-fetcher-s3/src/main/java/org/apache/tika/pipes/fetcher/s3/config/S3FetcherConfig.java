@@ -16,19 +16,34 @@
  */
 package org.apache.tika.pipes.fetcher.s3.config;
 
-import org.apache.tika.pipes.core.fetcher.config.AbstractConfig;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class S3FetcherConfig extends AbstractConfig {
-    private boolean spoolToTemp;
+import org.apache.tika.exception.TikaConfigException;
+
+public class S3FetcherConfig {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    public static S3FetcherConfig load(final String json)
+            throws TikaConfigException {
+        try {
+            return OBJECT_MAPPER.readValue(json, S3FetcherConfig.class);
+        } catch (JsonProcessingException e) {
+            throw new TikaConfigException(
+                    "Failed to parse S3FetcherConfig from JSON", e);
+        }
+    }
+
+    private boolean spoolToTemp = true;
     private String region;
     private String profile;
     private String bucket;
-    private String commaDelimitedLongs;
     private String prefix;
-    private boolean extractUserMetadata;
+    private boolean extractUserMetadata = true;
     private int maxConnections;
     private String credentialsProvider;
-    private long maxLength;
+    private long maxLength = -1;
     private String accessKey;
     private String secretKey;
     private String endpointConfigurationService;
@@ -68,15 +83,6 @@ public class S3FetcherConfig extends AbstractConfig {
 
     public S3FetcherConfig setBucket(String bucket) {
         this.bucket = bucket;
-        return this;
-    }
-
-    public String getCommaDelimitedLongs() {
-        return commaDelimitedLongs;
-    }
-
-    public S3FetcherConfig setCommaDelimitedLongs(String commaDelimitedLongs) {
-        this.commaDelimitedLongs = commaDelimitedLongs;
         return this;
     }
 

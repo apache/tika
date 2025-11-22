@@ -45,7 +45,7 @@ import org.apache.tika.metadata.listfilter.MetadataListFilter;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
-import org.apache.tika.pipes.core.HandlerConfig;
+import org.apache.tika.pipes.api.HandlerConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.server.core.MetadataList;
@@ -58,7 +58,8 @@ public class RecursiveMetadataResource {
     protected static final BasicContentHandlerFactory.HANDLER_TYPE DEFAULT_HANDLER_TYPE = BasicContentHandlerFactory.HANDLER_TYPE.XML;
     private static final Logger LOG = LoggerFactory.getLogger(RecursiveMetadataResource.class);
 
-    public static List<Metadata> parseMetadata(InputStream is, Metadata metadata, MultivaluedMap<String, String> httpHeaders, UriInfo info, HandlerConfig handlerConfig)
+    public static List<Metadata> parseMetadata(InputStream is, Metadata metadata, MultivaluedMap<String, String> httpHeaders,
+                                               UriInfo info, HandlerConfig handlerConfig)
             throws Exception {
 
         final ParseContext context = new ParseContext();

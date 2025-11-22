@@ -38,13 +38,15 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.apache.tika.plugins.TikaConfigs;
+import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.server.core.resource.TikaResource;
 import org.apache.tika.server.core.writer.JSONMessageBodyWriter;
 
 public class TikaResourceFetcherTest extends CXFTestBase {
 
-    private static final String TIKA_PATH = "/tika";
 
+    private static final String TIKA_PATH = "/tika";
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
@@ -71,18 +73,29 @@ public class TikaResourceFetcherTest extends CXFTestBase {
             throw new RuntimeException(e);
         }
         String configXML = getStringFromInputStream(TikaResourceFetcherTest.class.getResourceAsStream("/configs/tika-config-server-fetcher-template.xml"));
-        configXML = configXML.replace("{FETCHER_BASE_PATH}", inputDir
-                .toAbsolutePath()
-                .toString());
 
         configXML = configXML.replace("{PORT}", "9998");
         return new ByteArrayInputStream(configXML.getBytes(StandardCharsets.UTF_8));
     }
 
+    protected String getPipesInputPath() {
+        Path inputDir = null;
+        try {
+            inputDir = Paths.get(TikaResourceFetcherTest.class
+                    .getResource("/test-documents/")
+                    .toURI());
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+        return inputDir.toAbsolutePath().toString();
+    }
+
     @Override
     protected InputStreamFactory getInputStreamFactory(InputStream is) {
         try (TikaInputStream tis = TikaInputStream.get(is)) {
-            FetcherManager fetcherManager = FetcherManager.load(tis.getPath());
+            TikaConfigs tikaConfigs = TikaConfigs.load(tis.getPath());
+            TikaPluginManager pluginManager = TikaPluginManager.load(tikaConfigs);
+            FetcherManager fetcherManager = FetcherManager.load(pluginManager, tikaConfigs);
             return new FetcherStreamFactory(fetcherManager);
         } catch (IOException | TikaConfigException e) {
             throw new RuntimeException(e);
@@ -92,7 +105,7 @@ public class TikaResourceFetcherTest extends CXFTestBase {
     @Test
     public void testHeader() throws Exception {
         MultivaluedMap<String, String> map = new MultivaluedHashMap<>();
-        map.putSingle("fetcherName", "fsf");
+        map.putSingle("fetcherId", FETCHER_ID);
         map.putSingle("fetchKey", "mock/hello_world.xml");
         Response response = WebClient
                 .create(endPoint + TIKA_PATH)
@@ -107,7 +120,7 @@ public class TikaResourceFetcherTest extends CXFTestBase {
     public void testQueryPart() throws Exception {
         Response response = WebClient
                 .create(endPoint + TIKA_PATH)
-                .query("fetcherName", "fsf")
+                .query("fetcherId", FETCHER_ID)
                 .query("fetchKey", "mock/hello_world.xml")
                 .accept("text/xml")
                 .put(null);
@@ -120,7 +133,7 @@ public class TikaResourceFetcherTest extends CXFTestBase {
     public void testNonAsciiInQueryParameters() throws Exception {
         Response response = WebClient
                 .create(endPoint + TIKA_PATH)
-                .query("fetcherName", "fsf")
+                .query("fetcherId", FETCHER_ID)
                 .query("fetchKey", "mock/中文.xml")
                 .accept("text/xml")
                 .put(null);
@@ -133,7 +146,7 @@ public class TikaResourceFetcherTest extends CXFTestBase {
     public void testNonAsciiUrlEncodedInQueryParameters() throws Exception {
         Response response = WebClient
                 .create(endPoint + TIKA_PATH)
-                .query("fetcherName", "fsf")
+                .query("fetcherPlugId", FETCHER_ID)
                 .query("fetchKey", "mock/%E4%B8%AD%E6%96%87.xml")
                 .accept("text/xml")
                 .put(null);

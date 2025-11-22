@@ -33,16 +33,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-pipes-core</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-    </dependency>
-    <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>
     </dependency>
@@ -54,10 +44,48 @@
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
           <archive>
+            <manifest>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+            </manifest>
             <manifestEntries>
               <Automatic-Module-Name>org.apache.tika.pipes.reporters.fs.status</Automatic-Module-Name>
+              <Plugin-Id>file-system-status-reporter</Plugin-Id>
+              <Plugin-Version>${project.version}</Plugin-Version>
+              <Plugin-Class>org.apache.tika.pipes.reporters.fs.FileSystemReporterPlugin</Plugin-Class>
+              <Plugin-Provider>Local File System reporter</Plugin-Provider>
+              <Plugin-Description>Capable of reporting status to the file system</Plugin-Description>
+              <!--              <Plugin-Requires>1.0.0</Plugin-Requires> -->
+              <Plugin-Dependencies></Plugin-Dependencies>
             </manifestEntries>
           </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <configuration>
+          <descriptors>
+            <descriptor>src/main/assembly/assembly.xml</descriptor>
+          </descriptors>
+          <appendAssemblyId>false</appendAssemblyId>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <annotationProcessors>
+            <annotationProcessor>org.pf4j.processor.ExtensionAnnotationProcessor</annotationProcessor>
+          </annotationProcessors>
         </configuration>
       </plugin>
     </plugins>

@@ -32,18 +32,16 @@ import com.azure.storage.blob.models.BlobProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.fetcher.AbstractFetcher;
+import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.azblob.config.AZBlobFetcherConfig;
+import org.apache.tika.plugins.AbstractTikaExtension;
+import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -56,48 +54,64 @@ import org.apache.tika.utils.StringUtils;
  * 2) If you have different endpoints or sas tokens or containers across
  * your requests, your fetchKey will be the complete SAS url pointing to the blob.
  */
-public class AZBlobFetcher extends AbstractFetcher implements Initializable {
-    public AZBlobFetcher() {
-
-    }
-    public AZBlobFetcher(AZBlobFetcherConfig azBlobFetcherConfig) {
-        setContainer(azBlobFetcherConfig.getContainer());
-        setEndpoint(azBlobFetcherConfig.getEndpoint());
-        setSasToken(azBlobFetcherConfig.getSasToken());
-        setSpoolToTemp(azBlobFetcherConfig.isSpoolToTemp());
-        setExtractUserMetadata(azBlobFetcherConfig.isExtractUserMetadata());
-    }
+public class AZBlobFetcher extends AbstractTikaExtension implements Fetcher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AZBlobFetcher.class);
-    private static String PREFIX = "az-blob";
-    private String sasToken;
-    private String container;
-    private String endpoint;
+    private static final String PREFIX = "az-blob";
+
+    private AZBlobFetcherConfig config;
     private BlobClientFactory blobClientFactory;
-    private boolean extractUserMetadata = true;
-    private BlobServiceClient blobServiceClient;
-    private BlobContainerClient blobContainerClient;
-    private boolean spoolToTemp = true;
+
+    private AZBlobFetcher(ExtensionConfig pluginConfig) {
+        super(pluginConfig);
+    }
+
+    public static AZBlobFetcher build(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
+        AZBlobFetcherConfig config = AZBlobFetcherConfig.load(extensionConfig.jsonConfig());
+        AZBlobFetcher fetcher = new AZBlobFetcher(extensionConfig);
+        fetcher.config = config;
+        fetcher.initialize();
+        return fetcher;
+    }
+
+    private void initialize() throws TikaConfigException {
+        // Validation - if the user has set one of these, they need to have set all of them
+        if (!StringUtils.isBlank(config.getSasToken())
+                || !StringUtils.isBlank(config.getEndpoint())
+                || !StringUtils.isBlank(config.getContainer())) {
+            mustNotBeEmpty("sasToken", config.getSasToken());
+            mustNotBeEmpty("endpoint", config.getEndpoint());
+            mustNotBeEmpty("container", config.getContainer());
+        }
+
+        if (!StringUtils.isBlank(config.getSasToken())) {
+            LOGGER.debug("Setting up immutable endpoint, token and container");
+            blobClientFactory = new SingleBlobContainerFactory(
+                    config.getEndpoint(), config.getSasToken(), config.getContainer());
+        } else {
+            LOGGER.debug("Setting up blobclientfactory to receive the full sas url for the blob");
+            blobClientFactory = new SASUrlFactory();
+        }
+    }
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
+    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext)
+            throws TikaException, IOException {
 
-        LOGGER.debug("about to fetch fetchkey={} from endpoint ({})", fetchKey, endpoint);
+        LOGGER.debug("about to fetch fetchkey={} from endpoint ({})", fetchKey, config.getEndpoint());
 
         try {
             BlobClient blobClient = blobClientFactory.getClient(fetchKey);
 
-            if (extractUserMetadata) {
+            if (config.isExtractUserMetadata()) {
                 BlobProperties properties = blobClient.getProperties();
                 if (properties.getMetadata() != null) {
-                    for (Map.Entry<String, String> e : properties
-                            .getMetadata()
-                            .entrySet()) {
+                    for (Map.Entry<String, String> e : properties.getMetadata().entrySet()) {
                         metadata.add(PREFIX + ":" + e.getKey(), e.getValue());
                     }
                 }
             }
-            if (!spoolToTemp) {
+            if (!config.isSpoolToTemp()) {
                 return TikaInputStream.get(blobClient.openInputStream());
             } else {
                 long start = System.currentTimeMillis();
@@ -114,64 +128,6 @@ public class AZBlobFetcher extends AbstractFetcher implements Initializable {
         }
     }
 
-    @Field
-    public void setSpoolToTemp(boolean spoolToTemp) {
-        this.spoolToTemp = spoolToTemp;
-    }
-
-    @Field
-    public void setSasToken(String sasToken) {
-        this.sasToken = sasToken;
-    }
-
-    @Field
-    public void setEndpoint(String endpoint) {
-        this.endpoint = endpoint;
-    }
-
-    @Field
-    public void setContainer(String container) {
-        this.container = container;
-    }
-
-    /**
-     * Whether or not to extract user metadata from the blob object
-     *
-     * @param extractUserMetadata
-     */
-    @Field
-    public void setExtractUserMetadata(boolean extractUserMetadata) {
-        this.extractUserMetadata = extractUserMetadata;
-    }
-
-
-    /**
-     * This initializes the az blob container client
-     *
-     * @param params params to use for initialization
-     * @throws TikaConfigException
-     */
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
-        if (!StringUtils.isBlank(sasToken)) {
-            LOGGER.debug("Setting up immutable endpoint, token and container");
-            blobClientFactory = new SingleBlobContainerFactory(endpoint, sasToken, container);
-        } else {
-            LOGGER.debug("Setting up blobclientfactory to recieve the full sas url for the blob");
-            blobClientFactory = new SASUrlFactory();
-        }
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
-        //if the user has set one of these, they need to have set all of them
-        if (!StringUtils.isBlank(this.sasToken) || !StringUtils.isBlank(this.endpoint) || !StringUtils.isBlank(this.container)) {
-            mustNotBeEmpty("sasToken", this.sasToken);
-            mustNotBeEmpty("endpoint", this.endpoint);
-            mustNotBeEmpty("container", this.container);
-        }
-    }
-
     private interface BlobClientFactory {
         BlobClient getClient(String fetchKey);
     }
@@ -180,7 +136,6 @@ public class AZBlobFetcher extends AbstractFetcher implements Initializable {
         private final BlobContainerClient blobContainerClient;
 
         private SingleBlobContainerFactory(String endpoint, String sasToken, String container) {
-            //TODO -- allow authentication via other methods
             BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
                     .endpoint(endpoint)
                     .sasToken(sasToken)

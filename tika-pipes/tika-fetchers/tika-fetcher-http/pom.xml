@@ -17,7 +17,8 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
     <artifactId>tika-fetchers</artifactId>
     <groupId>org.apache.tika</groupId>
@@ -27,6 +28,12 @@
 
   <artifactId>tika-fetcher-http</artifactId>
   <name>Apache Tika http fetcher</name>
+  <properties>
+    <!-- Never include the core artifacts in your plugin lib directory. If you do, it will cause the classloading
+      to get messed up when finding your plugins. -->
+    <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-pipes-core</plugin.excluded.artifactIds>
+
+  </properties>
 
   <dependencies>
     <dependency>
@@ -79,18 +86,74 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.6.1</version>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/lib</outputDirectory>
+              <includeScope>runtime</includeScope>
+              <excludeArtifactIds>${plugin.excluded.artifactIds}</excludeArtifactIds>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
           <archive>
+            <manifest>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+            </manifest>
             <manifestEntries>
               <Automatic-Module-Name>org.apache.tika.pipes.fetcher.http</Automatic-Module-Name>
+              <Plugin-Id>tika-fetcher-http</Plugin-Id>
+              <Plugin-Version>${project.version}</Plugin-Version>
+              <Plugin-Class>org.apache.tika.pipes.fetcher.http.HttpFetcherPlugin</Plugin-Class>
+              <Plugin-Description>Capable of fetching from an http source</Plugin-Description>
+              <!--              <Plugin-Requires>1.0.0</Plugin-Requires> -->
+              <Plugin-Dependencies></Plugin-Dependencies>
+
             </manifestEntries>
           </archive>
         </configuration>
       </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <configuration>
+          <descriptors>
+            <descriptor>src/main/assembly/assembly.xml</descriptor>
+          </descriptors>
+          <appendAssemblyId>false</appendAssemblyId>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <annotationProcessors>
+            <annotationProcessor>org.pf4j.processor.ExtensionAnnotationProcessor</annotationProcessor>
+          </annotationProcessors>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
-
   <scm>
     <tag>3.0.0-rc1</tag>
   </scm>

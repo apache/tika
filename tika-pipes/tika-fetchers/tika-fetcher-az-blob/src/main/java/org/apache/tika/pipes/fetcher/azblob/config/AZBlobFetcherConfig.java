@@ -16,57 +16,68 @@
  */
 package org.apache.tika.pipes.fetcher.azblob.config;
 
-import org.apache.tika.pipes.core.fetcher.config.AbstractConfig;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class AZBlobFetcherConfig extends AbstractConfig {
-    private boolean spoolToTemp;
+import org.apache.tika.exception.TikaConfigException;
+
+public class AZBlobFetcherConfig {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    public static AZBlobFetcherConfig load(final String json)
+            throws TikaConfigException {
+        try {
+            return OBJECT_MAPPER.readValue(json, AZBlobFetcherConfig.class);
+        } catch (JsonProcessingException e) {
+            throw new TikaConfigException(
+                    "Failed to parse AZBlobFetcherConfig from JSON", e);
+        }
+    }
+
+    private boolean spoolToTemp = true;
     private String sasToken;
     private String endpoint;
     private String container;
-    private boolean extractUserMetadata;
+    private boolean extractUserMetadata = true;
 
     public boolean isSpoolToTemp() {
         return spoolToTemp;
     }
 
-    public AZBlobFetcherConfig setSpoolToTemp(boolean spoolToTemp) {
+    public void setSpoolToTemp(boolean spoolToTemp) {
         this.spoolToTemp = spoolToTemp;
-        return this;
     }
 
     public String getSasToken() {
         return sasToken;
     }
 
-    public AZBlobFetcherConfig setSasToken(String sasToken) {
+    public void setSasToken(String sasToken) {
         this.sasToken = sasToken;
-        return this;
     }
 
     public String getEndpoint() {
         return endpoint;
     }
 
-    public AZBlobFetcherConfig setEndpoint(String endpoint) {
+    public void setEndpoint(String endpoint) {
         this.endpoint = endpoint;
-        return this;
     }
 
     public String getContainer() {
         return container;
     }
 
-    public AZBlobFetcherConfig setContainer(String container) {
+    public void setContainer(String container) {
         this.container = container;
-        return this;
     }
 
     public boolean isExtractUserMetadata() {
         return extractUserMetadata;
     }
 
-    public AZBlobFetcherConfig setExtractUserMetadata(boolean extractUserMetadata) {
+    public void setExtractUserMetadata(boolean extractUserMetadata) {
         this.extractUserMetadata = extractUserMetadata;
-        return this;
     }
 }

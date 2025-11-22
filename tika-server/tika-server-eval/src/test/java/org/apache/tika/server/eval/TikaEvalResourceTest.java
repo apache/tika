@@ -65,7 +65,7 @@ public class TikaEvalResourceTest {
 
     @BeforeAll
     public static void setUp() throws Exception {
-        ServerStatus serverStatus = new ServerStatus("", 0, true);
+        ServerStatus serverStatus = new ServerStatus();
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
         //set compression interceptors
         sf.setOutInterceptors(Collections.singletonList(new GZIPOutInterceptor()));

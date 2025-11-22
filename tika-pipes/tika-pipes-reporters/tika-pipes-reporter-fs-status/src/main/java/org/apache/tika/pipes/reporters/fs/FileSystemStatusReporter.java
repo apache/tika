@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,16 +32,13 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.pipes.core.FetchEmitTuple;
-import org.apache.tika.pipes.core.PipesReporter;
-import org.apache.tika.pipes.core.PipesResult;
-import org.apache.tika.pipes.core.async.AsyncStatus;
-import org.apache.tika.pipes.core.pipesiterator.TotalCountResult;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.PipesResult;
+import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
+import org.apache.tika.pipes.api.reporter.PipesReporter;
+import org.apache.tika.plugins.AbstractTikaExtension;
+import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.utils.ExceptionUtils;
 
 /**
@@ -58,16 +53,21 @@ import org.apache.tika.utils.ExceptionUtils;
  *  the unit tests for how to deserialize AsyncStatus.
  *
  */
-public class FileSystemStatusReporter extends PipesReporter
-        implements Initializable {
+public class FileSystemStatusReporter extends AbstractTikaExtension implements PipesReporter {
+
+    public static FileSystemStatusReporter build(ExtensionConfig pluginConfig) throws TikaConfigException, IOException {
+        FileSystemReporterConfig config = FileSystemReporterConfig.load(pluginConfig.jsonConfig());
+
+        FileSystemStatusReporter fileSystemStatusReporter = new FileSystemStatusReporter(pluginConfig, config);
+        fileSystemStatusReporter.configure();
+        return fileSystemStatusReporter;
+    }
 
     private static final Logger LOG = LoggerFactory.getLogger(FileSystemStatusReporter.class);
 
     ObjectMapper objectMapper;
-    private Path statusFile;
 
-    private long reportUpdateMillis = 1000;
-
+    private final FileSystemReporterConfig config;
     private volatile boolean crashed = false;
 
     Thread reporterThread;
@@ -76,18 +76,25 @@ public class FileSystemStatusReporter extends PipesReporter
 
     private TotalCountResult totalCountResult = new TotalCountResult(0,
             TotalCountResult.STATUS.NOT_COMPLETED);
-    @Field
-    public void setStatusFile(String path) {
-        this.statusFile = Paths.get(path);
+
+    private FileSystemStatusReporter(ExtensionConfig pluginConfig, FileSystemReporterConfig config) {
+        super(pluginConfig);
+        this.config = config;
     }
 
-    @Field
-    public void setReportUpdateMillis(long millis) {
-        this.reportUpdateMillis = millis;
-    }
+    private void configure() throws TikaConfigException {
 
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
+        if (config.statusFile() == null) {
+            throw new TikaConfigException("must initialize 'statusFile'");
+        }
+        if (! Files.isDirectory(config.statusFile().getParent())) {
+            try {
+                Files.createDirectories(config.statusFile().getParent());
+            } catch (IOException e) {
+                throw new TikaConfigException("couldn't create directory for status file", e);
+            }
+        }
+
         objectMapper = JsonMapper.builder()
                 .addModule(new JavaTimeModule())
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
@@ -97,7 +104,7 @@ public class FileSystemStatusReporter extends PipesReporter
             public void run() {
                 try {
                     while (true) {
-                        Thread.sleep(reportUpdateMillis);
+                        Thread.sleep(config.reportUpdateMs());
                         report(AsyncStatus.ASYNC_STATUS.STARTED);
                     }
                 } catch (InterruptedException e) {
@@ -114,7 +121,7 @@ public class FileSystemStatusReporter extends PipesReporter
         Map<PipesResult.STATUS, Long> localCounts = new HashMap<>();
         counts.entrySet().forEach( e -> localCounts.put(e.getKey(), e.getValue().longValue()));
         asyncStatus.update(localCounts, totalCountResult, status);
-        try (Writer writer = Files.newBufferedWriter(statusFile, StandardCharsets.UTF_8)) {
+        try (Writer writer = Files.newBufferedWriter(config.statusFile(), StandardCharsets.UTF_8)) {
             objectMapper.writeValue(writer, asyncStatus);
         } catch (IOException e) {
             LOG.warn("couldn't write report", e);
@@ -123,25 +130,10 @@ public class FileSystemStatusReporter extends PipesReporter
 
     private synchronized void crash(String crashMessage) {
         asyncStatus.updateCrash(crashMessage);
-        try (Writer writer = Files.newBufferedWriter(statusFile, StandardCharsets.UTF_8)) {
+        try (Writer writer = Files.newBufferedWriter(config.statusFile(), StandardCharsets.UTF_8)) {
             objectMapper.writeValue(writer, asyncStatus);
         } catch (IOException e) {
             LOG.warn("couldn't write report", e);
-        }
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
-        if (statusFile == null) {
-            throw new TikaConfigException("must initialize 'statusFile'");
-        }
-        if (! Files.isDirectory(statusFile.getParent())) {
-            try {
-                Files.createDirectories(statusFile.getParent());
-            } catch (IOException e) {
-                throw new TikaConfigException("couldn't create directory for status file", e);
-            }
         }
     }
 
@@ -179,7 +171,7 @@ public class FileSystemStatusReporter extends PipesReporter
 
     @Override
     public void report(FetchEmitTuple t, PipesResult result, long elapsed) {
-        counts.computeIfAbsent(result.getStatus(),
+        counts.computeIfAbsent(result.status(),
                 k -> new LongAdder()).increment();
     }
 
@@ -195,5 +187,10 @@ public class FileSystemStatusReporter extends PipesReporter
     @Override
     public boolean supportsTotalCount() {
         return true;
+    }
+
+    @Override
+    public ExtensionConfig getExtensionConfig() {
+        return null;
     }
 }

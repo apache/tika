@@ -248,7 +248,6 @@ public class TikaJsonDeserializer {
                     m.invoke(obj, argClass.cast(null));
                     return;
                 } catch (Exception e) {
-                    e.printStackTrace();
                     //swallow
                 }
             }

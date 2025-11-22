@@ -16,17 +16,11 @@
   limitations under the License.
 -->
 <properties>
-  <fetchers>
-    <fetcher class="org.apache.tika.pipes.fetcher.fs.FileSystemFetcher">
-      <name>fsf</name>
-      <basePath>{FETCHER_BASE_PATH}</basePath>
-    </fetcher>
-  </fetchers>
   <server>
     <port>{PORT}</port>
     <taskTimeoutMillis>54321</taskTimeoutMillis>
     <enableUnsecureFeatures>true</enableUnsecureFeatures>
-    <noFork>true</noFork>
+    <taskPulseMillis>100</taskPulseMillis>
     <endpoints>
       <endpoint>tika</endpoint>
     </endpoints>

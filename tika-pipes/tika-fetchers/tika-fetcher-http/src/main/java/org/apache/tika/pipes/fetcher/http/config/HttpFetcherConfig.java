@@ -19,9 +19,25 @@ package org.apache.tika.pipes.fetcher.http.config;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.tika.pipes.core.fetcher.config.AbstractConfig;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class HttpFetcherConfig extends AbstractConfig {
+import org.apache.tika.exception.TikaConfigException;
+
+public class HttpFetcherConfig {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    public static HttpFetcherConfig load(final String json)
+            throws TikaConfigException {
+        try {
+            return OBJECT_MAPPER.readValue(json, HttpFetcherConfig.class);
+        } catch (JsonProcessingException e) {
+            throw new TikaConfigException(
+                    "Failed to parse HttpFetcherConfig from JSON", e);
+        }
+    }
+
     private String userName;
     private String password;
     private String ntDomain;

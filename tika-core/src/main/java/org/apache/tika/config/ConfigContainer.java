@@ -1,0 +1,70 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.tika.config;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+/**
+ * This is effectively a copy of ParseContext that is to be used when serialization
+ * intervenes between the caller and the processor as in tika-pipes, and elsewhere.
+ *
+ * The goal of this is to delegate deserialization to the consumers/receivers.
+ */
+public class ConfigContainer {
+
+    private final Map<String, String> configs = new HashMap<>();
+
+    public <T> void set(Class<T> key, String value) {
+        if (value != null) {
+            configs.put(key.getName(), value);
+        }
+    }
+
+    public void set(String name, String value) {
+        if (value != null) {
+            configs.put(name, value);
+        }
+    }
+
+    public <T> Optional<String> get(Class<T> key) {
+        return Optional.ofNullable(configs.get(key.getName()));
+    }
+
+    public Optional<String> get(String key) {
+        return Optional.ofNullable(configs.get(key));
+    }
+
+    public String get(String key, String defaultMissing) {
+        String val = configs.get(key);
+        if (val == null) {
+            return defaultMissing;
+        }
+        return val;
+    }
+
+    public Set<String> getKeys() {
+        return Collections.unmodifiableSet(configs.keySet());
+    }
+
+    public boolean isEmpty() {
+        return configs.isEmpty();
+    }
+}

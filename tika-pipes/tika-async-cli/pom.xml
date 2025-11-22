@@ -41,15 +41,30 @@
       <groupId>commons-cli</groupId>
       <artifactId>commons-cli</artifactId>
     </dependency>
-    <!-- logging -->
+    <!-- tests -->
     <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-fetcher-file-system</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+      <type>zip</type>
     </dependency>
     <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-slf4j2-impl</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-emitter-file-system</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+      <type>zip</type>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-pipes-iterator-file-system</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+      <type>zip</type>
+    </dependency>
+
+
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-core</artifactId>
@@ -66,10 +81,49 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Automatic-Module-Name>org.apache.tika.pipes.reporters.fs.status</Automatic-Module-Name>
+              <Automatic-Module-Name>org.apache.tika.async.cli.TikaAsyncCLI</Automatic-Module-Name>
             </manifestEntries>
           </archive>
         </configuration>
+      </plugin>
+      <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-dependency-plugin</artifactId>
+      <executions>
+      <execution>
+        <id>copy-plugins</id>
+        <phase>process-test-resources</phase>
+        <goals>
+          <goal>copy</goal>
+        </goals>
+        <configuration>
+          <outputDirectory>${project.build.directory}/plugins</outputDirectory>
+          <artifactItems>
+            <artifactItem>
+              <groupId>org.apache.tika</groupId>
+              <artifactId>tika-fetcher-file-system</artifactId>
+              <version>${project.version}</version>
+              <type>zip</type>
+              <overWrite>true</overWrite>
+            </artifactItem>
+            <artifactItem>
+              <groupId>org.apache.tika</groupId>
+              <artifactId>tika-emitter-file-system</artifactId>
+              <version>${project.version}</version>
+              <type>zip</type>
+              <overWrite>true</overWrite>
+            </artifactItem>
+            <artifactItem>
+              <groupId>org.apache.tika</groupId>
+              <artifactId>tika-pipes-iterator-file-system</artifactId>
+              <version>${project.version}</version>
+              <type>zip</type>
+              <overWrite>true</overWrite>
+            </artifactItem>
+          </artifactItems>
+        </configuration>
+      </execution>
+      </executions>
       </plugin>
     </plugins>
   </build>

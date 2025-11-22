@@ -16,8 +16,6 @@
  */
 package org.apache.tika.pipes.pipesiterator.jdbc;
 
-import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
-
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -27,24 +25,21 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.FetchEmitTuple;
-import org.apache.tika.pipes.core.HandlerConfig;
-import org.apache.tika.pipes.core.emitter.EmitKey;
-import org.apache.tika.pipes.core.fetcher.FetchKey;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.HandlerConfig;
+import org.apache.tika.pipes.api.emitter.EmitKey;
+import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig;
+import org.apache.tika.pipes.pipesiterator.PipesIteratorBase;
+import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -65,103 +60,89 @@ import org.apache.tika.utils.StringUtils;
  *      <li>The 'emitKeyColumn' value is not added to the metadata.</li>
  *  </ul>
  */
-public class JDBCPipesIterator extends PipesIterator implements Initializable {
-
+public class JDBCPipesIterator extends PipesIteratorBase {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JDBCPipesIterator.class);
 
-    private String idColumn;
-    private String fetchKeyColumn;
-    private String fetchKeyRangeStartColumn;
-    private String fetchKeyRangeEndColumn;
-    private String emitKeyColumn;
-    private String connection;
-    private String select;
+    private final JDBCPipesIteratorConfig config;
+    private final Connection db;
 
-    private int fetchSize = -1;
+    private JDBCPipesIterator(JDBCPipesIteratorConfig config, ExtensionConfig extensionConfig) throws TikaConfigException {
+        super(extensionConfig);
+        this.config = config;
 
-    private int queryTimeoutSeconds = -1;
+        if (StringUtils.isBlank(config.getConnection())) {
+            throw new TikaConfigException("connection must not be empty");
+        }
+        if (StringUtils.isBlank(config.getSelect())) {
+            throw new TikaConfigException("select must not be empty");
+        }
 
-    private Connection db;
+        PipesIteratorBaseConfig baseConfig = config.getBaseConfig();
+        String fetcherName = baseConfig.fetcherId();
+        String emitterName = baseConfig.emitterId();
 
-    @Field
-    public void setIdColumn(String idColumn) {
-        this.idColumn = idColumn;
-    }
+        if (StringUtils.isBlank(fetcherName) && !StringUtils.isBlank(config.getFetchKeyColumn())) {
+            throw new TikaConfigException("If you specify a 'fetchKeyColumn', you must specify a 'fetcherPluginId'");
+        }
 
-    @Field
-    public void setFetchKeyColumn(String fetchKeyColumn) {
-        this.fetchKeyColumn = fetchKeyColumn;
-    }
+        if (StringUtils.isBlank(emitterName) && !StringUtils.isBlank(config.getEmitKeyColumn())) {
+            throw new TikaConfigException("If you specify an 'emitKeyColumn', you must specify an 'emitterPluginId'");
+        }
 
-    @Field
-    public void setFetchKeyRangeStartColumn(String fetchKeyRangeStartColumn) {
-        this.fetchKeyRangeStartColumn = fetchKeyRangeStartColumn;
-    }
+        if (StringUtils.isBlank(emitterName) && StringUtils.isBlank(fetcherName)) {
+            LOGGER.warn("no fetcher or emitter specified?!");
+        }
 
-    @Field
-    public void setFetchKeyRangeEndColumn(String fetchKeyRangeEndColumn) {
-        this.fetchKeyRangeEndColumn = fetchKeyRangeEndColumn;
-    }
+        if (StringUtils.isEmpty(config.getFetchKeyColumn())) {
+            LOGGER.warn("no fetch key column has been specified");
+        }
 
-    @Field
-    public void setEmitKeyColumn(String fetchKeyColumn) {
-        this.emitKeyColumn = fetchKeyColumn;
-    }
-
-    @Field
-    public void setConnection(String connection) {
-        this.connection = connection;
-    }
-
-    public String getSelect() {
-        return select;
-    }
-
-    @Field
-    public void setSelect(String select) {
-        this.select = select;
-    }
-
-    @Field
-    public void setFetchSize(int fetchSize) throws TikaConfigException {
-        if (fetchSize == 0) {
+        if (config.getFetchSize() == 0) {
             throw new TikaConfigException("Can't set fetch size == 0");
         }
-        if (fetchSize < 0) {
+        if (config.getFetchSize() < 0) {
             LOGGER.info("fetch size < 0; no fetch size will be set");
         }
-        this.fetchSize = fetchSize;
+
+        // Initialize DB connection
+        try {
+            this.db = DriverManager.getConnection(config.getConnection());
+        } catch (SQLException e) {
+            throw new TikaConfigException("couldn't connect to db", e);
+        }
     }
 
-    public void setQueryTimeoutSeconds(int seconds) {
-        this.queryTimeoutSeconds = seconds;
+    public static JDBCPipesIterator build(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
+        JDBCPipesIteratorConfig config = JDBCPipesIteratorConfig.load(extensionConfig.jsonConfig());
+        return new JDBCPipesIterator(config, extensionConfig);
     }
 
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
-        String fetcherName = getFetcherName();
-        String emitterName = getEmitterName();
+        PipesIteratorBaseConfig baseConfig = config.getBaseConfig();
+        String fetcherPluginId = baseConfig.fetcherId();
+        String emitterName = baseConfig.emitterId();
         FetchEmitKeyIndices fetchEmitKeyIndices = null;
         List<String> headers = new ArrayList<>();
         int rowCount = 0;
-        HandlerConfig handlerConfig = getHandlerConfig();
-        LOGGER.debug("select: {}", select);
+        HandlerConfig handlerConfig = baseConfig.handlerConfig();
+        LOGGER.debug("select: {}", config.getSelect());
         try (Statement st = db.createStatement()) {
-            if (fetchSize > 0) {
-                st.setFetchSize(fetchSize);
+            if (config.getFetchSize() > 0) {
+                st.setFetchSize(config.getFetchSize());
             }
-            if (queryTimeoutSeconds > 0) {
-                st.setQueryTimeout(queryTimeoutSeconds);
+            if (config.getQueryTimeoutSeconds() > 0) {
+                st.setQueryTimeout(config.getQueryTimeoutSeconds());
             }
-            try (ResultSet rs = st.executeQuery(select)) {
+            try (ResultSet rs = st.executeQuery(config.getSelect())) {
                 while (rs.next()) {
                     if (headers.size() == 0) {
                         fetchEmitKeyIndices = loadHeaders(rs.getMetaData(), headers);
-                        checkFetchEmitValidity(fetcherName, emitterName, fetchEmitKeyIndices, headers);
+                        checkFetchEmitValidity(fetcherPluginId, emitterName, fetchEmitKeyIndices, headers);
                     }
                     try {
-                        processRow(fetcherName, emitterName, headers, fetchEmitKeyIndices, rs, handlerConfig);
+                        processRow(fetcherPluginId, emitterName, headers, fetchEmitKeyIndices, rs, handlerConfig, baseConfig);
                     } catch (SQLException e) {
                         LOGGER.warn("Failed to insert: " + rs, e);
                     }
@@ -183,24 +164,25 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
         }
     }
 
-    private void checkFetchEmitValidity(String fetcherName, String emitterName, FetchEmitKeyIndices fetchEmitKeyIndices, List<String> headers) throws IOException {
-
-        if (!StringUtils.isBlank(fetchKeyColumn) && fetchEmitKeyIndices.fetchKeyIndex < 0) {
-            throw new IOException(new TikaConfigException("Couldn't find fetchkey column: " + fetchKeyColumn));
+    private void checkFetchEmitValidity(String fetcherPluginId, String emitterName, FetchEmitKeyIndices fetchEmitKeyIndices, List<String> headers) throws IOException {
+        if (!StringUtils.isBlank(config.getFetchKeyColumn()) && fetchEmitKeyIndices.fetchKeyIndex < 0) {
+            throw new IOException(new TikaConfigException("Couldn't find fetchkey column: " + config.getFetchKeyColumn()));
         }
-        if (!StringUtils.isBlank(emitKeyColumn) && fetchEmitKeyIndices.emitKeyIndex < 0) {
-            throw new IOException(new TikaConfigException("Couldn't find emitKey column: " + emitKeyColumn));
+        if (!StringUtils.isBlank(config.getEmitKeyColumn()) && fetchEmitKeyIndices.emitKeyIndex < 0) {
+            throw new IOException(new TikaConfigException("Couldn't find emitKey column: " + config.getEmitKeyColumn()));
         }
-        if (!StringUtils.isBlank(idColumn) && fetchEmitKeyIndices.idIndex < 0) {
-            throw new IOException(new TikaConfigException("Couldn't find id column: " + idColumn));
+        if (!StringUtils.isBlank(config.getIdColumn()) && fetchEmitKeyIndices.idIndex < 0) {
+            throw new IOException(new TikaConfigException("Couldn't find id column: " + config.getIdColumn()));
         }
-        if (StringUtils.isBlank(idColumn)) {
+        if (StringUtils.isBlank(config.getIdColumn())) {
             LOGGER.warn("id column is blank, using fetchkey column as the id column");
             fetchEmitKeyIndices.idIndex = fetchEmitKeyIndices.fetchKeyIndex;
         }
     }
 
-    private void processRow(String fetcherName, String emitterName, List<String> headers, FetchEmitKeyIndices fetchEmitKeyIndices, ResultSet rs, HandlerConfig handlerConfig)
+    private void processRow(String fetcherPluginId, String emitterName, List<String> headers,
+                            FetchEmitKeyIndices fetchEmitKeyIndices, ResultSet rs,
+                            HandlerConfig handlerConfig, PipesIteratorBaseConfig baseConfig)
             throws SQLException, TimeoutException, InterruptedException {
         Metadata metadata = new Metadata();
         String fetchKey = "";
@@ -208,9 +190,7 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
         long fetchEndRange = -1l;
         String emitKey = "";
         String id = "";
-        for (int i = 1; i <= rs
-                .getMetaData()
-                .getColumnCount(); i++) {
+        for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
             //a single column can be the fetch key and the emit key, etc.
             boolean isUsed = false;
             if (i == fetchEmitKeyIndices.fetchKeyIndex) {
@@ -244,7 +224,6 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
             if (i == fetchEmitKeyIndices.fetchEndRangeIndex) {
                 fetchEndRange = getLong(i, rs);
                 isUsed = true;
-
             }
             if (!isUsed) {
                 String val = getString(i, rs);
@@ -255,31 +234,22 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
         }
         ParseContext parseContext = new ParseContext();
         parseContext.set(HandlerConfig.class, handlerConfig);
-        tryToAdd(new FetchEmitTuple(id, new FetchKey(fetcherName, fetchKey, fetchStartRange, fetchEndRange), new EmitKey(emitterName, emitKey), metadata, parseContext,
-                getOnParseException()));
+        tryToAdd(new FetchEmitTuple(id, new FetchKey(fetcherPluginId, fetchKey, fetchStartRange, fetchEndRange), new EmitKey(emitterName, emitKey), metadata, parseContext,
+                baseConfig.onParseException()));
     }
 
     private String toString(ResultSet rs) throws SQLException {
         StringBuilder sb = new StringBuilder();
-        for (int i = 1; i <= rs
-                .getMetaData()
-                .getColumnCount(); i++) {
+        for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
             String val = rs.getString(i);
             val = (val == null) ? "" : val;
             val = (val.length() > 100) ? val.substring(0, 100) : val;
-            sb
-                    .append(rs
-                            .getMetaData()
-                            .getColumnLabel(i))
-                    .append(":")
-                    .append(val)
-                    .append("\n");
+            sb.append(rs.getMetaData().getColumnLabel(i)).append(":").append(val).append("\n");
         }
         return sb.toString();
     }
 
     private String getString(int i, ResultSet rs) throws SQLException {
-        //TODO: improve this later with special handling for numerals/dates/timestamps, etc
         String val = rs.getString(i);
         if (rs.wasNull()) {
             return null;
@@ -295,7 +265,6 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
         return val;
     }
 
-
     private FetchEmitKeyIndices loadHeaders(ResultSetMetaData metaData, List<String> headers) throws SQLException {
         int idIndex = -1;
         int fetchKeyIndex = -1;
@@ -304,57 +273,24 @@ public class JDBCPipesIterator extends PipesIterator implements Initializable {
         int emitKeyIndex = -1;
         for (int i = 1; i <= metaData.getColumnCount(); i++) {
             String colLabel = metaData.getColumnLabel(i);
-            if (colLabel.equalsIgnoreCase(fetchKeyColumn)) {
+            if (colLabel.equalsIgnoreCase(config.getFetchKeyColumn())) {
                 fetchKeyIndex = i;
             }
-            if (colLabel.equalsIgnoreCase(fetchKeyRangeStartColumn)) {
+            if (colLabel.equalsIgnoreCase(config.getFetchKeyRangeStartColumn())) {
                 fetchKeyStartRangeIndex = i;
             }
-            if (colLabel.equalsIgnoreCase(fetchKeyRangeEndColumn)) {
+            if (colLabel.equalsIgnoreCase(config.getFetchKeyRangeEndColumn())) {
                 fetchKeyEndRangeIndex = i;
             }
-            if (colLabel.equalsIgnoreCase(emitKeyColumn)) {
+            if (colLabel.equalsIgnoreCase(config.getEmitKeyColumn())) {
                 emitKeyIndex = i;
             }
-            if (colLabel.equalsIgnoreCase(idColumn)) {
+            if (colLabel.equalsIgnoreCase(config.getIdColumn())) {
                 idIndex = i;
             }
             headers.add(metaData.getColumnLabel(i));
         }
         return new FetchEmitKeyIndices(idIndex, fetchKeyIndex, fetchKeyStartRangeIndex, fetchKeyEndRangeIndex, emitKeyIndex);
-    }
-
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
-        try {
-            db = DriverManager.getConnection(connection);
-        } catch (SQLException e) {
-            throw new TikaConfigException("couldn't connect to db", e);
-        }
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
-        super.checkInitialization(problemHandler);
-        mustNotBeEmpty("connection", this.connection);
-        mustNotBeEmpty("select", this.select);
-
-        if (StringUtils.isBlank(getFetcherName()) && !StringUtils.isBlank(fetchKeyColumn)) {
-            throw new TikaConfigException("If you specify a 'fetchKeyColumn', you must specify a 'fetcherName'");
-        }
-
-        if (StringUtils.isBlank(getEmitterName()) && !StringUtils.isBlank(emitKeyColumn)) {
-            throw new TikaConfigException("If you specify an 'emitKeyColumn', you must specify an 'emitterName'");
-        }
-
-        if (StringUtils.isBlank(getEmitterName()) && StringUtils.isBlank(getFetcherName())) {
-            LOGGER.warn("no fetcher or emitter specified?!");
-        }
-
-        if (StringUtils.isEmpty(fetchKeyColumn)) {
-            LOGGER.warn("no fetch key column has been specified");
-        }
-
     }
 
     private static class FetchEmitKeyIndices {

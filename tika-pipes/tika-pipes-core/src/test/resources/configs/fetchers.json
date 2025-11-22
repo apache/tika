@@ -1,0 +1,10 @@
+{
+  "fsf-extract-false": {
+    "file-system-fetcher": {
+      "config": {
+        "basePath": "{BASE_PATH}",
+        "extractFileSystemMetadata": false
+      }
+    }
+  }
+}

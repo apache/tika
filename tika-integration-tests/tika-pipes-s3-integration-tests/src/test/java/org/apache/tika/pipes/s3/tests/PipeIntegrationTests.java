@@ -25,10 +25,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -45,24 +41,22 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.pipes.core.FetchEmitTuple;
-import org.apache.tika.pipes.core.emitter.Emitter;
-import org.apache.tika.pipes.core.emitter.EmitterManager;
-import org.apache.tika.pipes.core.fetcher.Fetcher;
-import org.apache.tika.pipes.core.fetcher.FetcherManager;
-import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.emitter.Emitter;
+import org.apache.tika.pipes.api.fetcher.Fetcher;
+import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.emitter.s3.S3Emitter;
 
 // To enable these tests, fill OUTDIR and bucket, and adjust profile and region if needed.
-@Disabled("turn these into actual tests with mock s3")
+// TODO: Update these tests to use the new pf4j plugin system with JSON configuration
+@Disabled("turn these into actual tests with mock s3 - needs update for new plugin system")
 public class PipeIntegrationTests {
 
     private static final Path OUTDIR = Paths.get("");
 
     /**
      * This downloads files from a specific bucket.
-     * @throws Exception 
+     * @throws Exception
      */
     @Test
     public void testBruteForce() throws Exception {
@@ -96,84 +90,8 @@ public class PipeIntegrationTests {
         System.out.println("iterated: " + cnt + " sz: " + sz);
     }
 
-    // to test this, files must be in the fetcher bucket
-    @Test
-    public void testS3ToFS() throws Exception {
-        Fetcher fetcher = getFetcher("tika-config-s3ToFs.xml", "s3f");
-        PipesIterator pipesIterator = getPipesIterator("tika-config-s3ToFs.xml");
-
-        int numConsumers = 1;
-        ExecutorService es = Executors.newFixedThreadPool(numConsumers + 1);
-        ExecutorCompletionService<Long> completionService = new ExecutorCompletionService<>(es);
-        ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(1000);
-
-        completionService.submit(
-                new CallablePipesIterator(pipesIterator, queue, 60000, numConsumers));
-        for (int i = 0; i < numConsumers; i++) {
-            completionService.submit(new FSFetcherEmitter(queue, fetcher, null));
-        }
-
-        for (int i = 0; i < numConsumers; i++) {
-            queue.offer(PipesIterator.COMPLETED_SEMAPHORE);
-        }
-        int finished = 0;
-        try {
-            while (finished++ < numConsumers + 1) {
-                Future<Long> future = completionService.take();
-                future.get();
-            }
-        } finally {
-            es.shutdownNow();
-        }
-    }
-
-    // to test this, files must be in the iterator bucket
-    @Test
-    public void testS3ToS3() throws Exception {
-        Fetcher fetcher = getFetcher("tika-config-s3Tos3.xml", "s3f");
-        Emitter emitter = getEmitter("tika-config-s3Tos3.xml", "s3e");
-        PipesIterator pipesIterator = getPipesIterator("tika-config-s3Tos3.xml");
-        int numConsumers = 20;
-        ExecutorService es = Executors.newFixedThreadPool(numConsumers + 1);
-        ExecutorCompletionService<Long> completionService = new ExecutorCompletionService<>(es);
-        ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(1000);
-        completionService.submit(new CallablePipesIterator(pipesIterator,
-                queue, 60000, numConsumers));
-        for (int i = 0; i < numConsumers; i++) {
-            completionService.submit(new S3FetcherEmitter(queue, fetcher, (S3Emitter) emitter));
-        }
-        for (int i = 0; i < numConsumers; i++) {
-            queue.offer(PipesIterator.COMPLETED_SEMAPHORE);
-        }
-        int finished = 0;
-        try {
-            while (finished++ < numConsumers + 1) {
-                Future<Long> future = completionService.take();
-                future.get();
-            }
-        } finally {
-            es.shutdownNow();
-        }
-    }
-
-    private Fetcher getFetcher(String fileName, String fetcherName) throws Exception {
-        FetcherManager manager = FetcherManager.load(getPath(fileName));
-        return manager.getFetcher(fetcherName);
-    }
-
-    private Emitter getEmitter(String fileName, String emitterName) throws Exception {
-        EmitterManager manager = EmitterManager.load(getPath(fileName));
-        return manager.getEmitter(emitterName);
-    }
-
-    private PipesIterator getPipesIterator(String fileName) throws Exception {
-        return PipesIterator.build(getPath(fileName));
-    }
-
-    private Path getPath(String fileName) throws Exception {
-        return Paths.get(PipeIntegrationTests.class.getResource("/" + fileName).toURI());
-    }
-
+    // TODO: Implement tests using new plugin system with JSON configuration
+    // The old tests used XML-based config loading which is no longer supported
 
     private static class FSFetcherEmitter implements Callable<Long> {
         private static final AtomicInteger counter = new AtomicInteger(0);

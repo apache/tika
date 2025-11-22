@@ -17,49 +17,47 @@
 package org.apache.tika.pipes.core.emitter;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.tika.config.ConfigBase;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.pf4j.PluginManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.pipes.api.emitter.Emitter;
+import org.apache.tika.pipes.api.emitter.EmitterFactory;
+import org.apache.tika.plugins.PluginComponentLoader;
+import org.apache.tika.plugins.TikaConfigs;
 
 /**
- * Utility class that will apply the appropriate fetcher
- * to the fetcherString based on the prefix.
+ * Utility class that will apply the appropriate emitter
+ * to the emitterString based on the prefix.
  * <p>
- * This does not allow multiple fetchers supporting the same prefix.
+ * This does not allow multiple emitters supporting the same prefix.
  */
-public class EmitterManager extends ConfigBase {
+public class EmitterManager {
+    public static final String CONFIG_KEY = "emitters";
+
+    private static final Logger LOG = LoggerFactory.getLogger(EmitterManager.class);
 
     private final Map<String, Emitter> emitterMap = new ConcurrentHashMap<>();
 
-    public static EmitterManager load(Path tikaConfigPath) throws IOException, TikaConfigException {
-        try (InputStream is = Files.newInputStream(tikaConfigPath) ) {
-            return EmitterManager.buildComposite(
-                    "emitters", EmitterManager.class,
-                    "emitter",
-                    Emitter.class, is);
-        }
+    public static EmitterManager load(PluginManager pluginManager, TikaConfigs tikaConfigs) throws IOException, TikaConfigException {
+        JsonNode fetchersNode = tikaConfigs.getRoot().get(CONFIG_KEY);
+        Map<String, Emitter> fetchers =
+                PluginComponentLoader.loadInstances(pluginManager, EmitterFactory.class, fetchersNode);
+        return new EmitterManager(fetchers);
     }
 
     private EmitterManager() {
 
     }
 
-    public EmitterManager(List<Emitter> emitters) {
-        for (Emitter emitter : emitters) {
-            if (emitterMap.containsKey(emitter.getName())) {
-                throw new IllegalArgumentException(
-                        "Multiple emitters cannot support the same name: " + emitter.getName());
-            }
-            emitterMap.put(emitter.getName(), emitter);
-
-        }
+    private EmitterManager(Map<String, Emitter> emitters) {
+        emitterMap.putAll(emitters);
     }
 
     public Set<String> getSupported() {
@@ -82,11 +80,11 @@ public class EmitterManager extends ConfigBase {
      * @return
      */
     public Emitter getEmitter() {
-        if (emitterMap.size() == 0) {
+        if (emitterMap.isEmpty()) {
             throw new IllegalArgumentException("emitters size must == 1 for the no arg call");
         }
         if (emitterMap.size() > 1) {
-            throw new IllegalArgumentException("need to specify 'emitterName' if > 1 emitters are" +
+            throw new IllegalArgumentException("need to specify 'emitterId' if > 1 emitters are" +
                     " available");
         }
         for (Emitter emitter : emitterMap.values()) {
