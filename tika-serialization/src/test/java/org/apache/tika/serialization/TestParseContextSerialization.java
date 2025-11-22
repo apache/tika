@@ -58,7 +58,6 @@ public class TestParseContextSerialization {
             }
             json = writer.toString();
         }
-        System.out.println("json: " + json);
         ObjectMapper mapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
         module.addDeserializer(ParseContext.class, new ParseContextDeserializer());

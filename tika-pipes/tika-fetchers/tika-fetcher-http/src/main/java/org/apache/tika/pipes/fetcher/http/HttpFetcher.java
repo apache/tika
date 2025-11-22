@@ -88,7 +88,6 @@ import org.apache.tika.utils.StringUtils;
 public class HttpFetcher extends AbstractTikaExtension implements Fetcher, RangeFetcher {
 
     public static HttpFetcher build(ExtensionConfig pluginConfig) throws TikaConfigException, IOException {
-        System.out.println("json: " + pluginConfig.jsonConfig());
         HttpFetcherConfig httpFetcherConfig = HttpFetcherConfig.load(pluginConfig.jsonConfig());
         HttpFetcher fetcher = new HttpFetcher(pluginConfig, httpFetcherConfig);
         fetcher.initialize();

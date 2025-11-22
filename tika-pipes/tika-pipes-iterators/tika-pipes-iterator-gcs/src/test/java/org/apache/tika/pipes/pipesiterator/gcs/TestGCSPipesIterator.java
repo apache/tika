@@ -57,7 +57,6 @@ public class TestGCSPipesIterator {
             c.submit(fetcher);
         }
         for (FetchEmitTuple t : it) {
-            System.out.println(t);
             queue.offer(t);
         }
         for (int i = 0; i < numConsumers; i++) {

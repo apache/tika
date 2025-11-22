@@ -133,8 +133,7 @@ class HttpFetcherTest extends TikaTest {
         try {
             httpFetcher.fetch(TEST_URL, meta, new ParseContext());
         } catch (IOException e) {
-            e.printStackTrace();
-            debug(meta);
+            //swallow
         }
         assertThrows(IOException.class, () -> httpFetcher.fetch(TEST_URL, meta, new ParseContext()));
 

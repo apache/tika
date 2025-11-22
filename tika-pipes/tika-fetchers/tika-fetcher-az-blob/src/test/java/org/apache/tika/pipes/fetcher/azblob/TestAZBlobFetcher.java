@@ -54,6 +54,5 @@ public class TestAZBlobFetcher extends TikaTest {
         try (Reader reader = new BufferedReader(new InputStreamReader(fetcher.fetch(FETCH_STRING, new Metadata(), new ParseContext()), StandardCharsets.UTF_8))) {
             metadataList = JsonMetadataList.fromJson(reader);
         }
-        debug(metadataList);
     }
 }

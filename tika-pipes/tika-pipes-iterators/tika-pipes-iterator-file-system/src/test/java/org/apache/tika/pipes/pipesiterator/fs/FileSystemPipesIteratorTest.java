@@ -1,4 +1,4 @@
-package org.apache.tika.pipes.pipesiterator.fs;/*
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -14,6 +14,7 @@ package org.apache.tika.pipes.pipesiterator.fs;/*
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.pipes.pipesiterator.fs;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -48,7 +49,6 @@ public class FileSystemPipesIteratorTest {
         FileSystemPipesIteratorConfig c = new FileSystemPipesIteratorConfig();
         StringWriter sw = new StringWriter();
         objectMapper.writerWithDefaultPrettyPrinter().writeValue(sw, c);
-        System.out.println(sw);
 
         FileSystemPipesIteratorConfig deserialized = objectMapper.readValue(sw.toString(), FileSystemPipesIteratorConfig.class);
         assertEquals(c, deserialized);
