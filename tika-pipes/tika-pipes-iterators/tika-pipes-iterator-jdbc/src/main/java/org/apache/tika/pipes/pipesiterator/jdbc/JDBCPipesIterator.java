@@ -180,7 +180,9 @@ public class JDBCPipesIterator extends PipesIteratorBase {
         }
     }
 
-    private void processRow(String fetcherPluginId, String emitterName, List<String> headers, FetchEmitKeyIndices fetchEmitKeyIndices, ResultSet rs, HandlerConfig handlerConfig, PipesIteratorBaseConfig baseConfig)
+    private void processRow(String fetcherPluginId, String emitterName, List<String> headers,
+                            FetchEmitKeyIndices fetchEmitKeyIndices, ResultSet rs,
+                            HandlerConfig handlerConfig, PipesIteratorBaseConfig baseConfig)
             throws SQLException, TimeoutException, InterruptedException {
         Metadata metadata = new Metadata();
         String fetchKey = "";

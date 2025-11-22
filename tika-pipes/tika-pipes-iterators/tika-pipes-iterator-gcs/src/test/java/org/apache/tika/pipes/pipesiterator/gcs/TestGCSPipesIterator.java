@@ -89,8 +89,8 @@ public class TestGCSPipesIterator {
 
         // Add baseConfig
         ObjectNode baseConfig = OBJECT_MAPPER.createObjectNode();
-        baseConfig.put("fetcherPluginId", fetcherName);
-        baseConfig.put("emitterPluginId", emitterName);
+        baseConfig.put("fetcherId", fetcherName);
+        baseConfig.put("emitterId", emitterName);
         jsonConfig.set("baseConfig", baseConfig);
 
         ExtensionConfig extensionConfig = new ExtensionConfig("test-gcs-iterator", "gcs-pipes-iterator", jsonConfig);

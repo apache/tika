@@ -164,8 +164,8 @@ public class TestJDBCPipesIterator {
 
         // Add baseConfig
         ObjectNode baseConfig = OBJECT_MAPPER.createObjectNode();
-        baseConfig.put("fetcherPluginId", "s3f");
-        baseConfig.put("emitterPluginId", "s3e");
+        baseConfig.put("fetcherId", "s3f");
+        baseConfig.put("emitterId", "s3e");
         baseConfig.put("queueSize", 57);
         jsonConfig.set("baseConfig", baseConfig);
 

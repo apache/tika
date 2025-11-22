@@ -89,6 +89,7 @@
               <outputDirectory>${project.build.directory}/lib</outputDirectory>
               <includeScope>runtime</includeScope>
               <excludeArtifactIds>${plugin.excluded.artifactIds}</excludeArtifactIds>
+              <excludeGroupIds>org.apache.logging.log4j,org.slf4j</excludeGroupIds>
             </configuration>
           </execution>
         </executions>

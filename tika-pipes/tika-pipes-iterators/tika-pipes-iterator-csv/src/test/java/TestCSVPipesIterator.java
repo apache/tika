@@ -31,7 +31,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
@@ -117,8 +116,8 @@ public class TestCSVPipesIterator {
 
         // Add baseConfig
         ObjectNode baseConfig = OBJECT_MAPPER.createObjectNode();
-        baseConfig.put("fetcherPluginId", fetcherName);
-        baseConfig.put("emitterPluginId", emitterName);
+        baseConfig.put("fetcherId", fetcherName);
+        baseConfig.put("emitterId", emitterName);
         jsonConfig.set("baseConfig", baseConfig);
 
         ExtensionConfig extensionConfig = new ExtensionConfig("test-csv-iterator", "csv-pipes-iterator", jsonConfig);
