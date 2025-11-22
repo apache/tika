@@ -35,7 +35,7 @@ public class FileSystemFetcherConfigTest {
                 }
                 """;
 
-        FileSystemFetcherConfig config = FileSystemFetcherConfig.load(new ObjectMapper().readTree(json));
+        FileSystemFetcherConfig config = FileSystemFetcherConfig.load(json);
         assertEquals("/some/base/path", config.getBasePath());
         assertTrue(config.isExtractFileSystemMetadata());
     }

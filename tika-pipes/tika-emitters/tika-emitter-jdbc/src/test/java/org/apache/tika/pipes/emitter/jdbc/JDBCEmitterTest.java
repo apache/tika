@@ -101,7 +101,8 @@ public class JDBCEmitterTest {
                 "first_only",
                 keys);
 
-        ExtensionConfig extensionConfig = new ExtensionConfig("test-jdbc", "jdbc-emitter", configNode);
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-jdbc", "jdbc-emitter",
+                MAPPER.writeValueAsString(configNode));
         JDBCEmitter emitter = JDBCEmitter.build(extensionConfig);
 
         List<String[]> data = new ArrayList<>();
@@ -170,7 +171,8 @@ public class JDBCEmitterTest {
                 "first_only",
                 keys);
 
-        ExtensionConfig extensionConfig = new ExtensionConfig("test-jdbc", "jdbc-emitter", configNode);
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-jdbc", "jdbc-emitter",
+                MAPPER.writeValueAsString(configNode));
         JDBCEmitter emitter = JDBCEmitter.build(extensionConfig);
 
         List<String[]> data = new ArrayList<>();
@@ -225,7 +227,8 @@ public class JDBCEmitterTest {
                 "all",
                 keys);
 
-        ExtensionConfig extensionConfig = new ExtensionConfig("test-jdbc", "jdbc-emitter", configNode);
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-jdbc", "jdbc-emitter",
+                MAPPER.writeValueAsString(configNode));
         JDBCEmitter emitter = JDBCEmitter.build(extensionConfig);
 
         List<Metadata> data = new ArrayList<>();
@@ -277,7 +280,8 @@ public class JDBCEmitterTest {
         configNode.put("multivaluedFieldStrategy", "concatenate");
         configNode.put("multivaluedFieldDelimiter", ", ");
 
-        ExtensionConfig extensionConfig = new ExtensionConfig("test-jdbc", "jdbc-emitter", configNode);
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-jdbc", "jdbc-emitter",
+                MAPPER.writeValueAsString(configNode));
         JDBCEmitter emitter = JDBCEmitter.build(extensionConfig);
 
         List<Metadata> data = new ArrayList<>();
@@ -325,7 +329,8 @@ public class JDBCEmitterTest {
                 "first_only",
                 keys);
 
-        ExtensionConfig extensionConfig = new ExtensionConfig("test-jdbc", "jdbc-emitter", configNode);
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-jdbc", "jdbc-emitter",
+                MAPPER.writeValueAsString(configNode));
         JDBCEmitter emitter = JDBCEmitter.build(extensionConfig);
 
         List<String[]> data = new ArrayList<>();

@@ -16,13 +16,11 @@
  */
 package org.apache.tika.pipes.pipesiterator.solr;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import com.fasterxml.jackson.core.JacksonException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
@@ -33,11 +31,11 @@ public class SolrPipesIteratorConfig implements PipesIteratorConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static SolrPipesIteratorConfig load(JsonNode jsonNode) throws IOException, TikaConfigException {
+    public static SolrPipesIteratorConfig load(String json) throws TikaConfigException {
         try {
-            return OBJECT_MAPPER.treeToValue(jsonNode, SolrPipesIteratorConfig.class);
-        } catch (JacksonException e) {
-            throw new TikaConfigException("problem with json", e);
+            return OBJECT_MAPPER.readValue(json, SolrPipesIteratorConfig.class);
+        } catch (JsonProcessingException e) {
+            throw new TikaConfigException("Failed to parse SolrPipesIteratorConfig from JSON", e);
         }
     }
 

@@ -68,7 +68,8 @@ public class TestJsonPipesIterator {
         ObjectNode jsonConfig = OBJECT_MAPPER.createObjectNode();
         jsonConfig.put("jsonPath", jsonPath.toAbsolutePath().toString());
 
-        ExtensionConfig extensionConfig = new ExtensionConfig("test-json-iterator", "json-pipes-iterator", jsonConfig);
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-json-iterator", "json-pipes-iterator",
+                OBJECT_MAPPER.writeValueAsString(jsonConfig));
         return JsonPipesIterator.build(extensionConfig);
     }
 

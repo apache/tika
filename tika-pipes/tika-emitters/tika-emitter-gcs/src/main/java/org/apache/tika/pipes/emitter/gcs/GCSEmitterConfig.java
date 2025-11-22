@@ -16,10 +16,8 @@
  */
 package org.apache.tika.pipes.emitter.gcs;
 
-import java.io.IOException;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
@@ -33,8 +31,12 @@ public record GCSEmitterConfig(
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static GCSEmitterConfig load(JsonNode jsonNode) throws IOException {
-        return OBJECT_MAPPER.treeToValue(jsonNode, GCSEmitterConfig.class);
+    public static GCSEmitterConfig load(String json) throws TikaConfigException {
+        try {
+            return OBJECT_MAPPER.readValue(json, GCSEmitterConfig.class);
+        } catch (JsonProcessingException e) {
+            throw new TikaConfigException("Failed to parse GCSEmitterConfig from JSON", e);
+        }
     }
 
     public void validate() throws TikaConfigException {

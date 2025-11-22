@@ -93,7 +93,8 @@ public class TestGCSPipesIterator {
         baseConfig.put("emitterId", emitterName);
         jsonConfig.set("baseConfig", baseConfig);
 
-        ExtensionConfig extensionConfig = new ExtensionConfig("test-gcs-iterator", "gcs-pipes-iterator", jsonConfig);
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-gcs-iterator", "gcs-pipes-iterator",
+                OBJECT_MAPPER.writeValueAsString(jsonConfig));
         return GCSPipesIterator.build(extensionConfig);
     }
 

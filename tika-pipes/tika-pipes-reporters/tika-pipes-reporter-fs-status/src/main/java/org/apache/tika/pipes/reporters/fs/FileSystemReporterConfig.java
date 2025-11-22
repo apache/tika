@@ -16,12 +16,10 @@
  */
 package org.apache.tika.pipes.reporters.fs;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Path;
 
-import com.fasterxml.jackson.core.JacksonException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
@@ -30,11 +28,11 @@ public record FileSystemReporterConfig(Path statusFile, long reportUpdateMs) imp
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static FileSystemReporterConfig load(JsonNode jsonNode) throws IOException, TikaConfigException {
+    public static FileSystemReporterConfig load(String json) throws TikaConfigException {
         try {
-            return OBJECT_MAPPER.treeToValue(jsonNode, FileSystemReporterConfig.class);
-        } catch (JacksonException e) {
-            throw new TikaConfigException("problem w json", e);
+            return OBJECT_MAPPER.readValue(json, FileSystemReporterConfig.class);
+        } catch (JsonProcessingException e) {
+            throw new TikaConfigException("Failed to parse FileSystemReporterConfig from JSON", e);
         }
     }
 }

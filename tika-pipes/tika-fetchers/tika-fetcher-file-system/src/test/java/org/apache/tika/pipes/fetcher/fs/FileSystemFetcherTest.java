@@ -51,7 +51,7 @@ public class FileSystemFetcherTest {
     public void testNullByte() throws Exception {
         assertThrows(TikaConfigException.class, () -> {
             ExtensionConfig pluginConfig = new ExtensionConfig("test", "test",
-                    new ObjectMapper().readTree("{ \"basePath\":\"bad\\u0000path\"}"));
+                    "{ \"basePath\":\"bad\\u0000path\"}");
             Fetcher f = new FileSystemFetcherFactory().buildExtension(pluginConfig);
         });
     }

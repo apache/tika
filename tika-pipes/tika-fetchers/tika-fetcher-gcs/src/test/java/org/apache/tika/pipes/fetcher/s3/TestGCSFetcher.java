@@ -56,7 +56,8 @@ public class TestGCSFetcher {
         jsonConfig.put("projectId", "my-project");
         jsonConfig.put("bucket", "my-bucket");
 
-        ExtensionConfig extensionConfig = new ExtensionConfig("test-gcs-fetcher", "gcs-fetcher", jsonConfig);
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-gcs-fetcher", "gcs-fetcher",
+                OBJECT_MAPPER.writeValueAsString(jsonConfig));
         GCSFetcher fetcher = GCSFetcher.build(extensionConfig);
 
         Metadata metadata = new Metadata();

@@ -48,11 +48,7 @@ class ExpiringFetcherStoreTest {
 
                 @Override
                 public ExtensionConfig getExtensionConfig() {
-                    try {
-                        return new ExtensionConfig("nick", "factory-plugin-id", MAPPER.readTree("{}"));
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
+                    return new ExtensionConfig("nick", "factory-plugin-id", "{}");
                 }
             };
             expiringFetcherStore.createFetcher(fetcher, fetcher.getExtensionConfig());

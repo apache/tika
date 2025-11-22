@@ -16,28 +16,30 @@
  */
 package org.apache.tika.pipes.emitter.opensearch;
 
-import java.io.IOException;
-
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-
+import org.apache.tika.exception.TikaConfigException;
 
 public record OpenSearchEmitterConfig(String openSearchUrl, String idField, AttachmentStrategy attachmentStrategy,
                                       UpdateStrategy updateStrategy, int commitWithin,
                                       String embeddedFileFieldName, HttpClientConfig httpClientConfig) {
     public enum AttachmentStrategy {
         SEPARATE_DOCUMENTS, PARENT_CHILD,
-        //anything else?
     }
 
     public enum UpdateStrategy {
         OVERWRITE, UPSERT
-        //others?
     }
+
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    public static OpenSearchEmitterConfig load(JsonNode json) throws IOException {
-        return OBJECT_MAPPER.treeToValue(json, OpenSearchEmitterConfig.class);
+
+    public static OpenSearchEmitterConfig load(String json) throws TikaConfigException {
+        try {
+            return OBJECT_MAPPER.readValue(json, OpenSearchEmitterConfig.class);
+        } catch (JsonProcessingException e) {
+            throw new TikaConfigException("Failed to parse OpenSearchEmitterConfig from JSON", e);
+        }
     }
 
 }

@@ -16,10 +16,8 @@
  */
 package org.apache.tika.pipes.emitter.kafka;
 
-import java.io.IOException;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
@@ -52,8 +50,12 @@ public record KafkaEmitterConfig(
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static KafkaEmitterConfig load(JsonNode jsonNode) throws IOException {
-        return OBJECT_MAPPER.treeToValue(jsonNode, KafkaEmitterConfig.class);
+    public static KafkaEmitterConfig load(String json) throws TikaConfigException {
+        try {
+            return OBJECT_MAPPER.readValue(json, KafkaEmitterConfig.class);
+        } catch (JsonProcessingException e) {
+            throw new TikaConfigException("Failed to parse KafkaEmitterConfig from JSON", e);
+        }
     }
 
     public void validate() throws TikaConfigException {

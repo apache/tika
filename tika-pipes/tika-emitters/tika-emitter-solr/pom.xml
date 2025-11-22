@@ -96,7 +96,7 @@
             <configuration>
               <outputDirectory>${project.build.directory}/lib</outputDirectory>
               <includeScope>runtime</includeScope>
-              <excludeGroupIds>org.apache.tika,org.apache.httpcomponents,org.apache.httpcomponents.client5,org.apache.httpcomponents.core5,com.fasterxml.jackson.core,com.fasterxml.jackson.datatype</excludeGroupIds>
+              <excludeGroupIds>org.apache.tika,org.apache.httpcomponents,org.apache.httpcomponents.client5,org.apache.httpcomponents.core5</excludeGroupIds>
             </configuration>
           </execution>
         </executions>

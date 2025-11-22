@@ -120,7 +120,8 @@ public class TestCSVPipesIterator {
         baseConfig.put("emitterId", emitterName);
         jsonConfig.set("baseConfig", baseConfig);
 
-        ExtensionConfig extensionConfig = new ExtensionConfig("test-csv-iterator", "csv-pipes-iterator", jsonConfig);
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-csv-iterator", "csv-pipes-iterator",
+                OBJECT_MAPPER.writeValueAsString(jsonConfig));
         return CSVPipesIterator.build(extensionConfig);
     }
 

@@ -16,8 +16,13 @@
  */
 package org.apache.tika.plugins;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
-public record ExtensionConfig(String id, String name, JsonNode jsonConfig) {
+/**
+ * Configuration for a plugin extension.
+ *
+ * @param id         unique instance identifier
+ * @param name       the plugin type name
+ * @param jsonConfig the raw JSON configuration string for the plugin to parse
+ */
+public record ExtensionConfig(String id, String name, String jsonConfig) {
 
 }

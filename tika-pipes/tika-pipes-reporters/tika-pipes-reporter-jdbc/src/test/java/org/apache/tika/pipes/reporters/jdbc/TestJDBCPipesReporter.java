@@ -90,8 +90,7 @@ public class TestJDBCPipesReporter {
         int numThreads = 10;
         int numIterations = 200;
         String json = JSON_TEMPLATE.replace("CONNECTION_STRING", connectionString);
-        JsonNode configNode = MAPPER.readTree(json);
-        JDBCPipesReporter reporter = JDBCPipesReporter.build(new ExtensionConfig("test-jdbc", "jdbc-reporter", configNode));
+        JDBCPipesReporter reporter = JDBCPipesReporter.build(new ExtensionConfig("test-jdbc", "jdbc-reporter", json));
 
         Map<PipesResult.STATUS, Long> expected = runBatch(reporter, numThreads, numIterations);
         reporter.close();
@@ -115,8 +114,7 @@ public class TestJDBCPipesReporter {
 
 
         String json = JSON_TEMPLATE_INCLUDES.replace("CONNECTION_STRING", connectionString);
-        JsonNode configNode = MAPPER.readTree(json);
-        JDBCPipesReporter reporter = JDBCPipesReporter.build(new ExtensionConfig("", "", configNode));
+        JDBCPipesReporter reporter = JDBCPipesReporter.build(new ExtensionConfig("", "", json));
         int numThreads = 10;
         int numIterations = 200;
 
@@ -144,8 +142,7 @@ public class TestJDBCPipesReporter {
         String connectionString = "jdbc:h2:file:" + dbDir.toAbsolutePath();
 
         String json = JSON_TEMPLATE_EXCLUDES.replace("CONNECTION_STRING", connectionString);
-        JsonNode configNode = MAPPER.readTree(json);
-        JDBCPipesReporter reporter = JDBCPipesReporter.build(new ExtensionConfig("", "", configNode));
+        JDBCPipesReporter reporter = JDBCPipesReporter.build(new ExtensionConfig("", "", json));
         int numThreads = 10;
         int numIterations = 200;
 

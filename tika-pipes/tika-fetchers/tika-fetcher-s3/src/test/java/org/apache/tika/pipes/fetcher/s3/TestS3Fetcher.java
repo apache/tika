@@ -46,7 +46,8 @@ public class TestS3Fetcher {
         jsonConfig.put("profile", profile);
         jsonConfig.put("credentialsProvider", "profile");
 
-        ExtensionConfig extensionConfig = new ExtensionConfig("test-s3-fetcher", "s3-fetcher", jsonConfig);
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-s3-fetcher", "s3-fetcher",
+                OBJECT_MAPPER.writeValueAsString(jsonConfig));
         S3Fetcher fetcher = S3Fetcher.build(extensionConfig);
 
         Metadata metadata = new Metadata();

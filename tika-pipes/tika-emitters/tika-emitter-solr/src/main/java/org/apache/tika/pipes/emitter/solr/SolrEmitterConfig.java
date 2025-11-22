@@ -16,12 +16,11 @@
  */
 package org.apache.tika.pipes.emitter.solr;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
@@ -55,8 +54,12 @@ public record SolrEmitterConfig(
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static SolrEmitterConfig load(JsonNode jsonNode) throws IOException {
-        return OBJECT_MAPPER.treeToValue(jsonNode, SolrEmitterConfig.class);
+    public static SolrEmitterConfig load(String json) throws TikaConfigException {
+        try {
+            return OBJECT_MAPPER.readValue(json, SolrEmitterConfig.class);
+        } catch (JsonProcessingException e) {
+            throw new TikaConfigException("Failed to parse SolrEmitterConfig from JSON", e);
+        }
     }
 
     public void validate() throws TikaConfigException {

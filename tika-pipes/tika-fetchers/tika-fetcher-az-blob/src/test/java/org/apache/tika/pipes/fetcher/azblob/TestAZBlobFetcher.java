@@ -46,7 +46,8 @@ public class TestAZBlobFetcher extends TikaTest {
         jsonConfig.put("container", "my-container");
         jsonConfig.put("sasToken", "my-sas-token");
 
-        ExtensionConfig extensionConfig = new ExtensionConfig("test-az-blob-fetcher", "az-blob-fetcher", jsonConfig);
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-az-blob-fetcher", "az-blob-fetcher",
+                OBJECT_MAPPER.writeValueAsString(jsonConfig));
         AZBlobFetcher fetcher = AZBlobFetcher.build(extensionConfig);
 
         List<Metadata> metadataList = null;

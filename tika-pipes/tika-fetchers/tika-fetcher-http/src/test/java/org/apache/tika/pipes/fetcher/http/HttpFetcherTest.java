@@ -102,7 +102,7 @@ class HttpFetcherTest extends TikaTest {
 
         String json = OBJECT_MAPPER.writeValueAsString(httpFetcherConfig);
         httpFetcher = (HttpFetcher) new HttpFetcherFactory().buildExtension(new ExtensionConfig("id", "factoryPluginId",
-                OBJECT_MAPPER.readTree(json)));
+                json));
         final HttpResponse mockResponse = buildMockResponse(HttpStatus.SC_OK, IOUtils.toInputStream(CONTENT, Charset.defaultCharset()));
 
         mockClientResponse(mockResponse);

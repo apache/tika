@@ -9,12 +9,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pf4j.PluginManager;
 
 import org.apache.tika.exception.TikaConfigException;
 
 public class PluginComponentLoader {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     /**
      * Load a singleton component from config.
@@ -45,7 +49,8 @@ public class PluginComponentLoader {
         }
 
         // Use typeName as id for singletons
-        T instance = factory.buildExtension(new ExtensionConfig(typeName, typeName, config));
+        T instance = factory.buildExtension(
+                new ExtensionConfig(typeName, typeName, toJsonString(config)));
         return Optional.of(instance);
     }
 
@@ -95,7 +100,8 @@ public class PluginComponentLoader {
                     String instanceId = instanceEntry.getKey();
                     JsonNode config = instanceEntry.getValue();
 
-                    T instance = factory.buildExtension(new ExtensionConfig(instanceId, typeName, config));
+                    T instance = factory.buildExtension(
+                            new ExtensionConfig(instanceId, typeName, toJsonString(config)));
 
                     if (instances.putIfAbsent(instanceId, instance) != null) {
                         throw new TikaConfigException("Duplicate instance id: " + instanceId);
@@ -144,7 +150,8 @@ public class PluginComponentLoader {
             }
 
             // Use typeName as id for unnamed instances
-            T instance = factory.buildExtension(new ExtensionConfig(typeName, typeName, config));
+            T instance = factory.buildExtension(
+                    new ExtensionConfig(typeName, typeName, toJsonString(config)));
             instances.add(instance);
         }
 
@@ -193,6 +200,14 @@ public class PluginComponentLoader {
             throw new TikaConfigException("'" + contextName + "' has multiple type wrappers");
         }
         return typeName;
+    }
+
+    private static String toJsonString(JsonNode node) throws TikaConfigException {
+        try {
+            return OBJECT_MAPPER.writeValueAsString(node);
+        } catch (JsonProcessingException e) {
+            throw new TikaConfigException("Failed to serialize config to JSON string", e);
+        }
     }
 }
 

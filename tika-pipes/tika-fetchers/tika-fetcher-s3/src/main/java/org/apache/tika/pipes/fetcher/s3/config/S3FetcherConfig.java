@@ -16,8 +16,7 @@
  */
 package org.apache.tika.pipes.fetcher.s3.config;
 
-import com.fasterxml.jackson.core.JacksonException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
@@ -26,11 +25,11 @@ public class S3FetcherConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static S3FetcherConfig load(JsonNode json) throws TikaConfigException {
+    public static S3FetcherConfig load(String json) throws TikaConfigException {
         try {
-            return OBJECT_MAPPER.treeToValue(json, S3FetcherConfig.class);
-        } catch (JacksonException e) {
-            throw new TikaConfigException("problem with json", e);
+            return OBJECT_MAPPER.readValue(json, S3FetcherConfig.class);
+        } catch (JsonProcessingException e) {
+            throw new TikaConfigException("Failed to parse S3FetcherConfig from JSON", e);
         }
     }
 

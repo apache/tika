@@ -55,7 +55,8 @@ public class TestS3PipesIterator {
         baseConfig.put("emitterId", "fs");
         jsonConfig.set("baseConfig", baseConfig);
 
-        ExtensionConfig extensionConfig = new ExtensionConfig("test-s3-iterator", "s3-pipes-iterator", jsonConfig);
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-s3-iterator", "s3-pipes-iterator",
+                OBJECT_MAPPER.writeValueAsString(jsonConfig));
         S3PipesIterator it = S3PipesIterator.build(extensionConfig);
 
         int numConsumers = 6;

@@ -53,7 +53,8 @@ public class SolrEmitterDevTest {
         ArrayNode urlsNode = configNode.putArray("solrUrls");
         urlsNode.add(url);
 
-        ExtensionConfig extensionConfig = new ExtensionConfig("test-solr", "solr-emitter", configNode);
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-solr", "solr-emitter",
+                mapper.writeValueAsString(configNode));
         SolrEmitter solrEmitter = SolrEmitter.build(extensionConfig);
 
         Metadata metadata = new Metadata();

@@ -169,7 +169,8 @@ public class TestJDBCPipesIterator {
         baseConfig.put("queueSize", 57);
         jsonConfig.set("baseConfig", baseConfig);
 
-        ExtensionConfig extensionConfig = new ExtensionConfig("test-jdbc-iterator", "jdbc-pipes-iterator", jsonConfig);
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-jdbc-iterator", "jdbc-pipes-iterator",
+                OBJECT_MAPPER.writeValueAsString(jsonConfig));
         return JDBCPipesIterator.build(extensionConfig);
     }
 

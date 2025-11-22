@@ -46,7 +46,8 @@ public class TestAZBlobEmitter {
         configNode.put("prefix", "output");
         configNode.put("fileExtension", "json");
 
-        ExtensionConfig extensionConfig = new ExtensionConfig("test-az-blob", "az-blob-emitter", configNode);
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-az-blob", "az-blob-emitter",
+                mapper.writeValueAsString(configNode));
         AZBlobEmitter emitter = AZBlobEmitter.build(extensionConfig);
 
         List<Metadata> metadataList = new ArrayList<>();

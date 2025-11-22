@@ -54,7 +54,8 @@ public class TestAZBlobPipesIterator {
         baseConfigNode.put("emitterId", "test-emitter");
         configNode.set("baseConfig", baseConfigNode);
 
-        ExtensionConfig extensionConfig = new ExtensionConfig("test-az-blob", "az-blob-pipes-iterator", configNode);
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-az-blob", "az-blob-pipes-iterator",
+                MAPPER.writeValueAsString(configNode));
         AZBlobPipesIterator it = AZBlobPipesIterator.build(extensionConfig);
 
         int numConsumers = 2;

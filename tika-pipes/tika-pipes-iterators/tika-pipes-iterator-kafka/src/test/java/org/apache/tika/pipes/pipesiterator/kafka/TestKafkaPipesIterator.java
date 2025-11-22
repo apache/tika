@@ -54,7 +54,8 @@ public class TestKafkaPipesIterator {
         baseConfigNode.put("emitterId", "test-emitter");
         configNode.set("baseConfig", baseConfigNode);
 
-        ExtensionConfig extensionConfig = new ExtensionConfig("test-kafka", "kafka-pipes-iterator", configNode);
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-kafka", "kafka-pipes-iterator",
+                MAPPER.writeValueAsString(configNode));
         KafkaPipesIterator it = KafkaPipesIterator.build(extensionConfig);
 
         int numConsumers = 6;

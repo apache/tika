@@ -16,11 +16,9 @@
  */
 package org.apache.tika.pipes.pipesiterator.s3;
 
-import java.io.IOException;
 import java.util.Objects;
 
-import com.fasterxml.jackson.core.JacksonException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
@@ -31,11 +29,11 @@ public class S3PipesIteratorConfig implements PipesIteratorConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static S3PipesIteratorConfig load(JsonNode jsonNode) throws IOException, TikaConfigException {
+    public static S3PipesIteratorConfig load(String json) throws TikaConfigException {
         try {
-            return OBJECT_MAPPER.treeToValue(jsonNode, S3PipesIteratorConfig.class);
-        } catch (JacksonException e) {
-            throw new TikaConfigException("problem with json", e);
+            return OBJECT_MAPPER.readValue(json, S3PipesIteratorConfig.class);
+        } catch (JsonProcessingException e) {
+            throw new TikaConfigException("Failed to parse S3PipesIteratorConfig from JSON", e);
         }
     }
 

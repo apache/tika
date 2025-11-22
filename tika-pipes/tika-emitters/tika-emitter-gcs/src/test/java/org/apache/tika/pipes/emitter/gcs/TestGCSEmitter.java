@@ -45,7 +45,8 @@ public class TestGCSEmitter {
         configNode.put("prefix", "output");
         configNode.put("fileExtension", "json");
 
-        ExtensionConfig extensionConfig = new ExtensionConfig("test-gcs", "gcs-emitter", configNode);
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-gcs", "gcs-emitter",
+                mapper.writeValueAsString(configNode));
         GCSEmitter emitter = GCSEmitter.build(extensionConfig);
 
         List<Metadata> metadataList = new ArrayList<>();

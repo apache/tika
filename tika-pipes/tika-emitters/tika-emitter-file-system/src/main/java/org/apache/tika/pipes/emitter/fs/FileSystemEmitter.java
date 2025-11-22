@@ -158,7 +158,11 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
         if (extensionConfigs != null) {
             Optional<ExtensionConfig> pluginConfigOpt = extensionConfigs.getById(getExtensionConfig().id());
             if (pluginConfigOpt.isPresent()) {
-                config = FileSystemEmitterConfig.load(pluginConfigOpt.get().jsonConfig());
+                try {
+                    config = FileSystemEmitterConfig.load(pluginConfigOpt.get().jsonConfig());
+                } catch (TikaConfigException e) {
+                    throw new IOException("Failed to load config", e);
+                }
                 checkConfig(config);
             }
         }

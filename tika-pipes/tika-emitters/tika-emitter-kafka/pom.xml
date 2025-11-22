@@ -85,7 +85,7 @@
               <outputDirectory>${project.build.directory}/lib</outputDirectory>
               <includeScope>runtime</includeScope>
               <excludeArtifactIds>${plugin.excluded.artifactIds}</excludeArtifactIds>
-              <excludeGroupIds>org.apache.kafka,com.fasterxml.jackson.core,com.fasterxml.jackson.datatype</excludeGroupIds>
+              <excludeGroupIds>org.apache.kafka</excludeGroupIds>
             </configuration>
           </execution>
         </executions>

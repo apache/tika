@@ -64,9 +64,8 @@ public class TestFileSystemStatusReporter {
         Path path = Files.createTempFile(tmpDir, "tika-fssr-", ".xml");
 
         String jsonStr = JSON_TEMPLATE.replace("STATUS_FILE", path.toAbsolutePath().toString());
-        JsonNode configNode = MAPPER.readTree(jsonStr);
         FileSystemStatusReporter reporter = new FileSystemReporterFactory().buildExtension(
-                new ExtensionConfig("test-fs-reporter", "fs-status-reporter", configNode));
+                new ExtensionConfig("test-fs-reporter", "fs-status-reporter", jsonStr));
         final ObjectMapper objectMapper = JsonMapper.builder()
                 .addModule(new JavaTimeModule())
                 .build();

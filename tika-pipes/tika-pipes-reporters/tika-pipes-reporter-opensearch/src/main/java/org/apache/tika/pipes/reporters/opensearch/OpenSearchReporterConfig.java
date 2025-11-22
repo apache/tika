@@ -16,11 +16,9 @@
  */
 package org.apache.tika.pipes.reporters.opensearch;
 
-import java.io.IOException;
 import java.util.Set;
 
-import com.fasterxml.jackson.core.JacksonException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
@@ -30,11 +28,11 @@ public record OpenSearchReporterConfig(String openSearchUrl, Set<String> include
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static OpenSearchReporterConfig load(JsonNode json) throws IOException, TikaConfigException {
+    public static OpenSearchReporterConfig load(String json) throws TikaConfigException {
         try {
-            return OBJECT_MAPPER.treeToValue(json, OpenSearchReporterConfig.class);
-        } catch (JacksonException e) {
-            throw new TikaConfigException("problem w json", e);
+            return OBJECT_MAPPER.readValue(json, OpenSearchReporterConfig.class);
+        } catch (JsonProcessingException e) {
+            throw new TikaConfigException("Failed to parse OpenSearchReporterConfig from JSON", e);
         }
     }
 

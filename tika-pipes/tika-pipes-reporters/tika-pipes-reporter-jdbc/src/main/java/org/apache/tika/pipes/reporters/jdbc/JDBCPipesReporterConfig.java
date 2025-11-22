@@ -16,14 +16,12 @@
  */
 package org.apache.tika.pipes.reporters.jdbc;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JacksonException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
@@ -54,11 +52,11 @@ public record JDBCPipesReporterConfig(String connectionString, Set<String> inclu
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static JDBCPipesReporterConfig load(JsonNode json) throws IOException, TikaConfigException {
+    public static JDBCPipesReporterConfig load(String json) throws TikaConfigException {
         try {
-            return OBJECT_MAPPER.treeToValue(json, JDBCPipesReporterConfig.class);
-        } catch (JacksonException e) {
-            throw new TikaConfigException("problem w json", e);
+            return OBJECT_MAPPER.readValue(json, JDBCPipesReporterConfig.class);
+        } catch (JsonProcessingException e) {
+            throw new TikaConfigException("Failed to parse JDBCPipesReporterConfig from JSON", e);
         }
     }
 

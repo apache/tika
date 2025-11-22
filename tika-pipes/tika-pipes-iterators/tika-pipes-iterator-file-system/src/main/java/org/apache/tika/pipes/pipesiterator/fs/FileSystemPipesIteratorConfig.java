@@ -16,12 +16,10 @@
  */
 package org.apache.tika.pipes.pipesiterator.fs;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Objects;
 
-import com.fasterxml.jackson.core.JacksonException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
@@ -32,11 +30,11 @@ public class FileSystemPipesIteratorConfig implements PipesIteratorConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static FileSystemPipesIteratorConfig load(JsonNode jsonNode) throws IOException, TikaConfigException {
+    public static FileSystemPipesIteratorConfig load(String json) throws TikaConfigException {
         try {
-            return OBJECT_MAPPER.treeToValue(jsonNode, FileSystemPipesIteratorConfig.class);
-        } catch (JacksonException e) {
-            throw new TikaConfigException("problem w json", e);
+            return OBJECT_MAPPER.readValue(json, FileSystemPipesIteratorConfig.class);
+        } catch (JsonProcessingException e) {
+            throw new TikaConfigException("Failed to parse FileSystemPipesIteratorConfig from JSON", e);
         }
     }
 

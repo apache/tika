@@ -185,9 +185,7 @@ public class ExtractProfileRunner {
         json = json.replace("FETCHER_BASE_PATH", inputDir.toAbsolutePath().toString());
 
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode jsonNode = objectMapper.readTree(json);
-            return FileSystemPipesIterator.build(new ExtensionConfig("", "", jsonNode));
+            return FileSystemPipesIterator.build(new ExtensionConfig("", "", json));
         } catch (TikaConfigException e) {
             throw new IOException(e);
         }

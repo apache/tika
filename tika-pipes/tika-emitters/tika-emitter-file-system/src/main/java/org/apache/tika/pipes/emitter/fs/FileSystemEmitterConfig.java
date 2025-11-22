@@ -16,12 +16,10 @@
  */
 package org.apache.tika.pipes.emitter.fs;
 
-import java.io.IOException;
-
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-
+import org.apache.tika.exception.TikaConfigException;
 
 public record FileSystemEmitterConfig(String basePath, String fileExtension, ON_EXISTS onExists, boolean prettyPrint) {
 
@@ -31,8 +29,12 @@ public record FileSystemEmitterConfig(String basePath, String fileExtension, ON_
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static FileSystemEmitterConfig load(JsonNode jsonNode) throws IOException {
-        return OBJECT_MAPPER.treeToValue(jsonNode, FileSystemEmitterConfig.class);
+    public static FileSystemEmitterConfig load(String json) throws TikaConfigException {
+        try {
+            return OBJECT_MAPPER.readValue(json, FileSystemEmitterConfig.class);
+        } catch (JsonProcessingException e) {
+            throw new TikaConfigException("Failed to parse FileSystemEmitterConfig from JSON", e);
+        }
     }
 
 }
