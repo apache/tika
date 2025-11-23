@@ -14,14 +14,13 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.1.0 https://maven.apache.org/xsd/maven-4.1.0.xsd">
+  <modelVersion>4.1.0</modelVersion>
 
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
     <version>4.0.0-SNAPSHOT</version>
-    <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
   <artifactId>tika-pipes</artifactId>
@@ -29,15 +28,15 @@
   <url>https://tika.apache.org/</url>
   <packaging>pom</packaging>
 
-  <modules>
-    <module>tika-pipes-core</module>
-    <module>tika-httpclient-commons</module>
-    <module>tika-fetchers</module>
-    <module>tika-emitters</module>
-    <module>tika-pipes-iterators</module>
-    <module>tika-pipes-reporters</module>
-    <module>tika-async-cli</module>
-  </modules>
+  <subprojects>
+    <subproject>tika-pipes-core</subproject>
+    <subproject>tika-httpclient-commons</subproject>
+    <subproject>tika-fetchers</subproject>
+    <subproject>tika-emitters</subproject>
+    <subproject>tika-pipes-iterators</subproject>
+    <subproject>tika-pipes-reporters</subproject>
+    <subproject>tika-async-cli</subproject>
+  </subprojects>
   <dependencies>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>

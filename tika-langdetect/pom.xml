@@ -17,28 +17,27 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.1.0 https://maven.apache.org/xsd/maven-4.1.0.xsd">
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
     <version>4.0.0-SNAPSHOT</version>
-    <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
-  <modelVersion>4.0.0</modelVersion>
+  <modelVersion>4.1.0</modelVersion>
 
   <artifactId>tika-langdetect</artifactId>
   <packaging>pom</packaging>
   <name>Apache Tika language detection</name>
   <url>https://tika.apache.org/</url>
 
-  <modules>
-    <module>tika-langdetect-test-commons</module>
-    <module>tika-langdetect-tika</module>
-    <module>tika-langdetect-lingo24</module>
-    <module>tika-langdetect-optimaize</module>
-    <module>tika-langdetect-mitll-text</module>
-    <module>tika-langdetect-opennlp</module>
-  </modules>
+  <subprojects>
+    <subproject>tika-langdetect-test-commons</subproject>
+    <subproject>tika-langdetect-tika</subproject>
+    <subproject>tika-langdetect-lingo24</subproject>
+    <subproject>tika-langdetect-optimaize</subproject>
+    <subproject>tika-langdetect-mitll-text</subproject>
+    <subproject>tika-langdetect-opennlp</subproject>
+  </subprojects>
 
   <dependencies>
     <dependency>

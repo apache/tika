@@ -17,28 +17,27 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.1.0 https://maven.apache.org/xsd/maven-4.1.0.xsd">
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
     <version>4.0.0-SNAPSHOT</version>
-    <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
-  <modelVersion>4.0.0</modelVersion>
+  <modelVersion>4.1.0</modelVersion>
 
   <artifactId>tika-parsers</artifactId>
   <name>Apache Tika parser modules</name>
 
   <packaging>pom</packaging>
-  <modules>
+  <subprojects>
     <!-- basic parsers - avoid network dependent parsers, native code -->
-    <module>tika-parsers-standard</module>
+    <subproject>tika-parsers-standard</subproject>
     <!-- allow network dependent parsers and native code  -->
-    <module>tika-parsers-extended</module>
+    <subproject>tika-parsers-extended</subproject>
     <!-- potentially massive dependencies (e.g. dl4j)    -->
-    <module>tika-parsers-ml</module>
-  </modules>
+    <subproject>tika-parsers-ml</subproject>
+  </subprojects>
 
   <dependencies>
     <!-- test dependencies -->
