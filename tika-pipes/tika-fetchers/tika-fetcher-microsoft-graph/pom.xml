@@ -29,13 +29,13 @@
   <name>Apache Tika Microsoft Graph Pipes Fetcher</name>
 
   <properties>
-    <microsoft-graph.version>6.56.0</microsoft-graph.version>
+    <microsoft-graph.version>6.57.0</microsoft-graph.version>
     <wiremock.version>3.3.1</wiremock.version>
     <msal4j.version>1.30.0-beta</msal4j.version>
-    <kotlin-stdlib.version>2.3.0-Beta2</kotlin-stdlib.version>
-    <microsoft-kiota.version>1.8.11</microsoft-kiota.version>
+    <kotlin-stdlib.version>2.3.0-RC</kotlin-stdlib.version>
+    <microsoft-kiota.version>1.9.0</microsoft-kiota.version>
     <!-- Never include the core artifacts in your plugin lib directory. If you do, it will cause the classloading
-     to get messed up when finding your plugins. -->
+    to get messed up when finding your plugins. -->
     <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-serialization,tika-plugins-core</plugin.excluded.artifactIds>
   </properties>
 
