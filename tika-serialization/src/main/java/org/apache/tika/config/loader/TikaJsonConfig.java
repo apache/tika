@@ -22,7 +22,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -169,9 +168,7 @@ public class TikaJsonConfig {
             return result;
         }
 
-        Iterator<Map.Entry<String, JsonNode>> fields = root.fields();
-        while (fields.hasNext()) {
-            Map.Entry<String, JsonNode> entry = fields.next();
+        for (Map.Entry<String, JsonNode> entry : root.properties()) {
             String componentType = entry.getKey();
             JsonNode typeNode = entry.getValue();
 
@@ -181,10 +178,7 @@ public class TikaJsonConfig {
             }
 
             Map<String, JsonNode> components = new LinkedHashMap<>();
-            Iterator<Map.Entry<String, JsonNode>> componentFields = typeNode.fields();
-
-            while (componentFields.hasNext()) {
-                Map.Entry<String, JsonNode> componentEntry = componentFields.next();
+            for (Map.Entry<String, JsonNode> componentEntry : typeNode.properties()) {
                 components.put(componentEntry.getKey(), componentEntry.getValue());
             }
 
@@ -203,9 +197,7 @@ public class TikaJsonConfig {
             return result;
         }
 
-        Iterator<Map.Entry<String, JsonNode>> fields = root.fields();
-        while (fields.hasNext()) {
-            Map.Entry<String, JsonNode> entry = fields.next();
+        for (Map.Entry<String, JsonNode> entry : root.properties()) {
             String componentType = entry.getKey();
             JsonNode typeNode = entry.getValue();
 
@@ -222,10 +214,9 @@ public class TikaJsonConfig {
                 }
 
                 // Each array item should have exactly one field: { "component-name": {...config...} }
-                Iterator<Map.Entry<String, JsonNode>> itemFields = arrayItem.fields();
-                if (itemFields.hasNext()) {
-                    Map.Entry<String, JsonNode> componentEntry = itemFields.next();
+                for (Map.Entry<String, JsonNode> componentEntry : arrayItem.properties()) {
                     components.add(Map.entry(componentEntry.getKey(), componentEntry.getValue()));
+                    break; // Only take the first field
                 }
             }
 

@@ -244,4 +244,31 @@ public class TikaLoaderTest {
                         .contains(MediaType.parse("application/test+minimal")),
                 "Should NOT support application/test+minimal");
     }
+
+    @Test
+    public void testDefaultParserWithExclusions() throws Exception {
+        // Config has "default-parser" with exclude list
+        URL configUrl = getClass().getResource("/configs/test-default-parser-with-exclusions.json");
+        Path configPath = Path.of(configUrl.toURI());
+
+        TikaLoader loader = TikaLoader.load(configPath);
+        Parser compositeParser = loader.loadParsers();
+
+        ParseContext context = new ParseContext();
+
+        // Verify ConfigurableTestParser is supported (explicitly configured)
+        assertTrue(compositeParser.getSupportedTypes(context)
+                        .contains(MediaType.parse("application/test+configurable")),
+                "Should support application/test+configurable");
+
+        // Verify MinimalTestParser is NOT supported (excluded via default-parser config)
+        assertTrue(!compositeParser.getSupportedTypes(context)
+                        .contains(MediaType.parse("application/test+minimal")),
+                "Should NOT support application/test+minimal (excluded)");
+
+        // Verify FallbackTestParser is NOT supported (excluded via default-parser config)
+        assertTrue(!compositeParser.getSupportedTypes(context)
+                        .contains(MediaType.parse("application/test+fallback")),
+                "Should NOT support application/test+fallback (excluded)");
+    }
 }

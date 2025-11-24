@@ -16,6 +16,8 @@
  */
 package org.apache.tika.annotation;
 
+import java.util.Locale;
+
 /**
  * Utility for converting Java class names to kebab-case.
  * Used for automatic component name generation from class names.
@@ -58,7 +60,7 @@ public class KebabCaseConverter {
                 .replaceAll("([a-zA-Z])(\\d)", "$1-$2")
                 // Insert hyphen between digit and letter: "2Text" -> "2-Text"
                 .replaceAll("(\\d)([a-zA-Z])", "$1-$2")
-                .toLowerCase();
+                .toLowerCase(Locale.ROOT);
 
         return result;
     }

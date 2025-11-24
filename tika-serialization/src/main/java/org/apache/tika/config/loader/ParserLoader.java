@@ -92,11 +92,34 @@ public class ParserLoader {
             ComponentRegistry registry = new ComponentRegistry("parsers", classLoader);
             List<Map.Entry<String, JsonNode>> parsers = config.getArrayComponents("parsers");
 
-            // Check if "default-parser" is in the list
+            // Check if "default-parser" is in the list and extract exclusions
             boolean hasDefaultParser = false;
+            Set<Class<?>> excludedParserClasses = new HashSet<>();
+
             for (Map.Entry<String, JsonNode> entry : parsers) {
                 if ("default-parser".equals(entry.getKey())) {
                     hasDefaultParser = true;
+
+                    // Parse exclusions from default-parser config
+                    JsonNode configNode = entry.getValue();
+                    if (configNode != null && configNode.has("exclude")) {
+                        JsonNode excludeNode = configNode.get("exclude");
+                        if (excludeNode.isArray()) {
+                            for (JsonNode excludeName : excludeNode) {
+                                if (excludeName.isTextual()) {
+                                    String parserName = excludeName.asText();
+                                    try {
+                                        Class<?> parserClass = registry.getComponentClass(parserName);
+                                        excludedParserClasses.add(parserClass);
+                                        LOG.debug("Excluding parser from SPI: {}", parserName);
+                                    } catch (TikaConfigException e) {
+                                        LOG.warn("Unknown parser in default-parser exclude list: {}",
+                                                parserName);
+                                    }
+                                }
+                            }
+                        }
+                    }
                     break;
                 }
             }
@@ -122,6 +145,9 @@ public class ParserLoader {
             for (ParsedParserConfig parsed : parsedConfigs.values()) {
                 configuredParserClasses.add(parsed.parser.getClass());
             }
+
+            // Add excluded parsers to the configured set so they won't be loaded from SPI
+            configuredParserClasses.addAll(excludedParserClasses);
 
             // Second pass: apply decorations that may reference other parsers
             for (ParsedParserConfig parsed : parsedConfigs.values()) {
