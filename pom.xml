@@ -38,6 +38,7 @@
     <module>tika-parent</module>
     <module>tika-bom</module>
     <module>tika-core</module>
+    <module>tika-annotation-processor</module>
     <module>tika-serialization</module>
     <module>tika-plugins-core</module>
     <module>tika-detectors</module>

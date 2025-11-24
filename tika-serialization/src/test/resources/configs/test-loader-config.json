@@ -1,0 +1,25 @@
+{
+  "parsers": [
+    {
+      "configurable-test-parser": {
+        "name": "configured-parser",
+        "bufferSize": 2048,
+        "enabled": true,
+        "mode": "advanced"
+      }
+    },
+    {
+      "fallback-test-parser": {
+        "_decorate": {
+          "mimeInclude": ["application/test+fallback"],
+          "fallbacks": ["minimal-test-parser"]
+        },
+        "message": "primary parser",
+        "failOnPurpose": false
+      }
+    },
+    {
+      "minimal-test-parser": {}
+    }
+  ]
+}
