@@ -46,6 +46,8 @@ public class ComponentRegistryTest {
                 "Should have fallback-test-parser");
         assertTrue(registry.hasComponent("minimal-test-parser"),
                 "Should have minimal-test-parser");
+        assertTrue(registry.hasComponent("opt-in-test-parser"),
+                "Should have opt-in-test-parser");
     }
 
     @Test
@@ -66,7 +68,7 @@ public class ComponentRegistryTest {
 
         Map<String, Class<?>> all = registry.getAllComponents();
         assertNotNull(all, "All components map should not be null");
-        assertTrue(all.size() >= 3, "Should have at least 3 test parsers");
+        assertTrue(all.size() >= 4, "Should have at least 4 test parsers");
     }
 
     @Test
@@ -86,5 +88,21 @@ public class ComponentRegistryTest {
         assertThrows(TikaConfigException.class, () -> {
             new ComponentRegistry("non-existent-type", getClass().getClassLoader());
         });
+    }
+
+    @Test
+    public void testOptInParserInRegistry() throws Exception {
+        ComponentRegistry registry = new ComponentRegistry("parsers",
+                getClass().getClassLoader());
+
+        // Verify opt-in parser (spi=false) is in the registry
+        assertTrue(registry.hasComponent("opt-in-test-parser"),
+                "Should have opt-in-test-parser in registry");
+
+        Class<?> clazz = registry.getComponentClass("opt-in-test-parser");
+        assertNotNull(clazz, "Component class should not be null");
+        assertEquals("org.apache.tika.config.loader.OptInTestParser",
+                clazz.getName(),
+                "OptInTestParser should be in registry even with spi=false");
     }
 }

@@ -120,8 +120,12 @@ public class TikaComponentProcessor extends AbstractProcessor {
             componentName = KebabCaseConverter.toKebabCase(simpleName);
         }
 
+        // Check if component should be included in SPI
+        boolean includeSpi = annotation.spi();
+
         messager.printMessage(Diagnostic.Kind.NOTE,
-                "Processing @TikaComponent: " + className + " -> " + componentName);
+                "Processing @TikaComponent: " + className + " -> " + componentName +
+                " (SPI: " + includeSpi + ")");
 
         // Find all implemented service interfaces
         List<String> serviceInterfaces = findServiceInterfaces(element);
@@ -133,12 +137,15 @@ public class TikaComponentProcessor extends AbstractProcessor {
             return;
         }
 
-        // Add to SPI services
+        // Process each service interface
         for (String serviceInterface : serviceInterfaces) {
-            spiServices.computeIfAbsent(serviceInterface, k -> new LinkedHashSet<>())
-                    .add(className);
+            // Add to SPI services only if spi = true
+            if (includeSpi) {
+                spiServices.computeIfAbsent(serviceInterface, k -> new LinkedHashSet<>())
+                        .add(className);
+            }
 
-            // Add to index files
+            // Always add to index files (regardless of SPI setting)
             String indexFileName = SERVICE_INTERFACES.get(serviceInterface);
             if (indexFileName != null) {
                 Map<String, String> index = indexFiles.computeIfAbsent(indexFileName,

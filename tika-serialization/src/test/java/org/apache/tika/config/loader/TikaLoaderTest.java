@@ -271,4 +271,48 @@ public class TikaLoaderTest {
                         .contains(MediaType.parse("application/test+fallback")),
                 "Should NOT support application/test+fallback (excluded)");
     }
+
+    @Test
+    public void testOptInParserExplicitLoad() throws Exception {
+        // Config explicitly loads opt-in parser (spi=false)
+        URL configUrl = getClass().getResource("/configs/test-opt-in-parser-explicit.json");
+        Path configPath = Path.of(configUrl.toURI());
+
+        TikaLoader loader = TikaLoader.load(configPath);
+        Parser compositeParser = loader.loadParsers();
+
+        // Parse with the opt-in parser
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.CONTENT_TYPE, "application/test+optin");
+
+        try (InputStream stream = new ByteArrayInputStream("test".getBytes(StandardCharsets.UTF_8))) {
+            compositeParser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        }
+
+        // Verify opt-in parser was loaded
+        assertEquals("opt-in", metadata.get("parser-type"));
+        assertEquals("success", metadata.get("opt-in-parser"));
+    }
+
+    @Test
+    public void testOptInParserNotLoadedBySpi() throws Exception {
+        // Config uses default-parser - should NOT load opt-in parser (spi=false)
+        URL configUrl = getClass().getResource("/configs/test-opt-in-parser-with-default.json");
+        Path configPath = Path.of(configUrl.toURI());
+
+        TikaLoader loader = TikaLoader.load(configPath);
+        Parser compositeParser = loader.loadParsers();
+
+        ParseContext context = new ParseContext();
+
+        // Verify regular SPI parsers are supported
+        assertTrue(compositeParser.getSupportedTypes(context)
+                        .contains(MediaType.parse("application/test+configurable")),
+                "Should support application/test+configurable (SPI)");
+
+        // Verify opt-in parser is NOT supported (spi=false, not explicitly configured)
+        assertTrue(!compositeParser.getSupportedTypes(context)
+                        .contains(MediaType.parse("application/test+optin")),
+                "Should NOT support application/test+optin (opt-in only, not in SPI)");
+    }
 }

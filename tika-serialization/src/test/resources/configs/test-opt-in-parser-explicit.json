@@ -1,0 +1,7 @@
+{
+  "parsers": [
+    {
+      "opt-in-test-parser": {}
+    }
+  ]
+}

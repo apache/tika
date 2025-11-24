@@ -38,12 +38,17 @@ import java.lang.annotation.Target;
  * <pre>
  * {@code @TikaComponent}
  * public class PDFParser extends AbstractParser {
- *     // auto-generates name "pdf-parser"
+ *     // auto-generates name "pdf-parser", included in SPI
  * }
  *
  * {@code @TikaComponent(name = "tesseract-ocr")}
  * public class TesseractOCRParser extends AbstractParser {
- *     // explicit name override
+ *     // explicit name override, included in SPI
+ * }
+ *
+ * {@code @TikaComponent(spi = false)}
+ * public class DWGReadParser extends AbstractParser {
+ *     // available by name, but NOT auto-loaded by default-parser
  * }
  * </pre>
  *
@@ -61,4 +66,16 @@ public @interface TikaComponent {
      * @return the component name, or empty string for auto-generation
      */
     String name() default "";
+
+    /**
+     * Whether this component should be included in SPI files for automatic
+     * discovery via ServiceLoader. When false, the component is only available
+     * via explicit configuration (not loaded by "default-parser").
+     *
+     * <p>Use {@code spi = false} for opt-in components that users must explicitly
+     * enable in their configuration.
+     *
+     * @return true to include in SPI (default), false to require explicit config
+     */
+    boolean spi() default true;
 }
