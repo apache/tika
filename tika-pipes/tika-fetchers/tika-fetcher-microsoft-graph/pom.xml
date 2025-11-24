@@ -29,11 +29,11 @@
   <name>Apache Tika Microsoft Graph Pipes Fetcher</name>
 
   <properties>
-    <microsoft-graph.version>6.56.0</microsoft-graph.version>
+    <microsoft-graph.version>6.57.0</microsoft-graph.version>
     <wiremock.version>3.3.1</wiremock.version>
     <msal4j.version>1.23.1</msal4j.version>
     <kotlin-stdlib.version>2.2.21</kotlin-stdlib.version>
-    <microsoft-kiota.version>1.8.12</microsoft-kiota.version>
+    <microsoft-kiota.version>1.9.0</microsoft-kiota.version>
   </properties>
 
   <dependencyManagement>
