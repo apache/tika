@@ -16,28 +16,6 @@
  */
 package org.apache.tika.pipes.pipesiterator.filelist;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.concurrent.TimeoutException;
-
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.FetchEmitTuple;
-import org.apache.tika.pipes.core.HandlerConfig;
-import org.apache.tika.pipes.core.emitter.EmitKey;
-import org.apache.tika.pipes.core.fetcher.FetchKey;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
-import org.apache.tika.utils.StringUtils;
-
 /**
  * Reads a list of file names/relative paths from a UTF-8 file.
  * One file name/relative path per line.  This path is used for the fetch key,
@@ -48,7 +26,9 @@ import org.apache.tika.utils.StringUtils;
  *
  *
  */
-public class FileListPipesIterator extends PipesIterator implements Initializable {
+public class FileListPipesIterator {}
+//TODO -- this next
+/*extends PipesIteratorBase {
 
     @Field
     private String fileList;
@@ -67,8 +47,8 @@ public class FileListPipesIterator extends PipesIterator implements Initializabl
             String line = reader.readLine();
             while (line != null) {
                 if (! line.startsWith("#") && !StringUtils.isBlank(line)) {
-                    FetchKey fetchKey = new FetchKey(getFetcherName(), line);
-                    EmitKey emitKey = new EmitKey(getEmitterName(), line);
+                    FetchKey fetchKey = new FetchKey(getFetcherId(), line);
+                    EmitKey emitKey = new EmitKey(getEmitterId(), line);
                     ParseContext parseContext = new ParseContext();
                     parseContext.set(HandlerConfig.class, getHandlerConfig());
                     tryToAdd(new FetchEmitTuple(line, fetchKey, emitKey,
@@ -95,8 +75,8 @@ public class FileListPipesIterator extends PipesIterator implements Initializabl
             throws TikaConfigException {
         //these should all be fatal
         TikaConfig.mustNotBeEmpty("fileList", fileList);
-        TikaConfig.mustNotBeEmpty("fetcherName", getFetcherName());
-        TikaConfig.mustNotBeEmpty("emitterName", getFetcherName());
+        TikaConfig.mustNotBeEmpty("fetcherId", getFetcherId());
+        TikaConfig.mustNotBeEmpty("emitterId", getEmitterId());
 
         fileListPath = Paths.get(fileList);
         if (!Files.isRegularFile(fileListPath)) {
@@ -105,3 +85,5 @@ public class FileListPipesIterator extends PipesIterator implements Initializabl
         }
     }
 }
+
+ */

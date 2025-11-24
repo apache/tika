@@ -16,47 +16,59 @@
  */
 package org.apache.tika.pipes.fetcher.gcs.config;
 
-import org.apache.tika.pipes.core.fetcher.config.AbstractConfig;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class GCSFetcherConfig extends AbstractConfig {
-    private boolean spoolToTemp;
+import org.apache.tika.exception.TikaConfigException;
+
+public class GCSFetcherConfig {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    public static GCSFetcherConfig load(final String json)
+            throws TikaConfigException {
+        try {
+            return OBJECT_MAPPER.readValue(json, GCSFetcherConfig.class);
+        } catch (JsonProcessingException e) {
+            throw new TikaConfigException(
+                    "Failed to parse GCSFetcherConfig from JSON", e);
+        }
+    }
+
+    private boolean spoolToTemp = true;
     private String projectId;
     private String bucket;
-    private boolean extractUserMetadata;
+    private boolean extractUserMetadata = true;
 
     public boolean isSpoolToTemp() {
         return spoolToTemp;
     }
 
-    public GCSFetcherConfig setSpoolToTemp(boolean spoolToTemp) {
+    public void setSpoolToTemp(boolean spoolToTemp) {
         this.spoolToTemp = spoolToTemp;
-        return this;
     }
 
     public String getProjectId() {
         return projectId;
     }
 
-    public GCSFetcherConfig setProjectId(String projectId) {
+    public void setProjectId(String projectId) {
         this.projectId = projectId;
-        return this;
     }
 
     public String getBucket() {
         return bucket;
     }
 
-    public GCSFetcherConfig setBucket(String bucket) {
+    public void setBucket(String bucket) {
         this.bucket = bucket;
-        return this;
     }
 
     public boolean isExtractUserMetadata() {
         return extractUserMetadata;
     }
 
-    public GCSFetcherConfig setExtractUserMetadata(boolean extractUserMetadata) {
+    public void setExtractUserMetadata(boolean extractUserMetadata) {
         this.extractUserMetadata = extractUserMetadata;
-        return this;
     }
 }

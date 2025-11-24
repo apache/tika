@@ -281,6 +281,8 @@ public class TikaCLITest {
 
     @Test
     public void testRUnpack() throws Exception {
+        //TODO -- rework this to use two separate emitters
+        //one for bytes and one for json
         String[] expectedChildren = new String[]{
                 "testPDFPackage.pdf.json",
                 //the first two test that the default single file config is working
@@ -396,10 +398,17 @@ public class TikaCLITest {
 
     private void testRecursiveUnpack(String targetFile, String[] expectedChildrenFileNames, int expectedLength) throws Exception {
         Path input = Paths.get(new URI(resourcePrefix + "/" + targetFile));
-        String[] params = {"-Z", input.toAbsolutePath().toString(),
-                extractDir.toAbsolutePath().toString()};
+        Path pluginsDir = Paths.get("target/plugins");
+
+        String[] params = {"-Z",
+                "-p", ProcessUtils.escapeCommandLine(pluginsDir.toAbsolutePath().toString()),
+                ProcessUtils.escapeCommandLine(input.toAbsolutePath().toString()),
+                ProcessUtils.escapeCommandLine(extractDir
+                .toAbsolutePath()
+                .toString())};
 
         TikaCLI.main(params);
+
         Set<String> fileNames = getFileNames(extractDir);
         String[] jsonFile = extractDir
                 .toFile()
@@ -408,7 +417,7 @@ public class TikaCLITest {
         assertEquals(expectedLength, jsonFile.length);
 
         for (String expectedChildName : expectedChildrenFileNames) {
-            assertTrue(fileNames.contains(expectedChildName));
+            assertTrue(fileNames.contains(expectedChildName), expectedChildName);
         }
     }
 

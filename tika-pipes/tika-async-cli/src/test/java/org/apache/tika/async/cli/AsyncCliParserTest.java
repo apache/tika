@@ -27,13 +27,14 @@ public class AsyncCliParserTest {
 
     @Test
     public void testBasic() throws Exception {
+        // Simple two-argument form sets defaults
         SimpleAsyncConfig simpleAsyncConfig = TikaAsyncCLI.parseCommandLine(new String[]{"input", "output"});
         assertEquals("input", simpleAsyncConfig.getInputDir());
         assertEquals("output", simpleAsyncConfig.getOutputDir());
         assertNull(simpleAsyncConfig.getFileList());
-        assertNull(simpleAsyncConfig.getNumClients());
-        assertNull(simpleAsyncConfig.getTimeoutMs());
-        assertNull(simpleAsyncConfig.getXmx());
+        assertEquals(1, simpleAsyncConfig.getNumClients());
+        assertEquals(30000L, simpleAsyncConfig.getTimeoutMs());
+        assertEquals("-Xmx1g", simpleAsyncConfig.getXmx());
 
         simpleAsyncConfig = TikaAsyncCLI.parseCommandLine(new String[]{"-o", "output", "-i", "input"});
         assertEquals("input", simpleAsyncConfig.getInputDir());

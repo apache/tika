@@ -19,7 +19,6 @@ package org.apache.tika.pipes.fetchers.microsoftgraph;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
 
 import com.azure.identity.ClientCertificateCredentialBuilder;
 import com.azure.identity.ClientSecretCredentialBuilder;
@@ -27,89 +26,63 @@ import com.microsoft.graph.serviceclient.GraphServiceClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.fetcher.AbstractFetcher;
+import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.fetchers.microsoftgraph.config.ClientCertificateCredentialsConfig;
 import org.apache.tika.pipes.fetchers.microsoftgraph.config.ClientSecretCredentialsConfig;
 import org.apache.tika.pipes.fetchers.microsoftgraph.config.MicrosoftGraphFetcherConfig;
+import org.apache.tika.plugins.AbstractTikaExtension;
+import org.apache.tika.plugins.ExtensionConfig;
 
 /**
  * Fetches files from Microsoft Graph API.
  * Fetch keys are ${siteDriveId},${driveItemId}
  */
-public class MicrosoftGraphFetcher extends AbstractFetcher implements Initializable {
+public class MicrosoftGraphFetcher extends AbstractTikaExtension implements Fetcher {
     private static final Logger LOGGER = LoggerFactory.getLogger(MicrosoftGraphFetcher.class);
+
+    private MicrosoftGraphFetcherConfig config;
     private GraphServiceClient graphClient;
-    private MicrosoftGraphFetcherConfig microsoftGraphFetcherConfig;
-    private long[] throttleSeconds;
 
-    public MicrosoftGraphFetcher() {
-
+    private MicrosoftGraphFetcher(ExtensionConfig pluginConfig) {
+        super(pluginConfig);
     }
 
-    public MicrosoftGraphFetcher(MicrosoftGraphFetcherConfig microsoftGraphFetcherConfig) {
-        this.microsoftGraphFetcherConfig = microsoftGraphFetcherConfig;
+    public static MicrosoftGraphFetcher build(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
+        MicrosoftGraphFetcherConfig config = MicrosoftGraphFetcherConfig.load(extensionConfig.jsonConfig());
+        MicrosoftGraphFetcher fetcher = new MicrosoftGraphFetcher(extensionConfig);
+        fetcher.config = config;
+        fetcher.initialize();
+        return fetcher;
     }
 
-    /**
-     * Set seconds to throttle retries as a comma-delimited list, e.g.: 30,60,120,600
-     *
-     * @param commaDelimitedLongs
-     * @throws TikaConfigException
-     */
-    @Field
-    public void setThrottleSeconds(String commaDelimitedLongs) throws TikaConfigException {
-        String[] longStrings = commaDelimitedLongs.split(",");
-        long[] seconds = new long[longStrings.length];
-        for (int i = 0; i < longStrings.length; i++) {
-            try {
-                seconds[i] = Long.parseLong(longStrings[i]);
-            } catch (NumberFormatException e) {
-                throw new TikaConfigException(e.getMessage());
-            }
-        }
-        setThrottleSeconds(seconds);
-    }
-
-    public void setThrottleSeconds(long[] throttleSeconds) {
-        this.throttleSeconds = throttleSeconds;
-    }
-
-    @Override
-    public void initialize(Map<String, Param> map) {
-        String[] scopes = microsoftGraphFetcherConfig
-                .getScopes().toArray(new String[0]);
-        if (microsoftGraphFetcherConfig.getClientCertificateCredentialsConfig() != null) {
-            ClientCertificateCredentialsConfig credentials = microsoftGraphFetcherConfig.getClientCertificateCredentialsConfig();
+    private void initialize() throws TikaConfigException {
+        String[] scopes = config.getScopes().toArray(new String[0]);
+        if (config.getClientCertificateCredentialsConfig() != null) {
+            ClientCertificateCredentialsConfig credentials = config.getClientCertificateCredentialsConfig();
             graphClient = new GraphServiceClient(
                     new ClientCertificateCredentialBuilder().clientId(credentials.getClientId())
                             .tenantId(credentials.getTenantId()).pfxCertificate(
                                     new ByteArrayInputStream(credentials.getCertificateBytes()))
                             .clientCertificatePassword(credentials.getCertificatePassword())
                             .build(), scopes);
-        } else if (microsoftGraphFetcherConfig.getClientSecretCredentialsConfig() != null) {
-            ClientSecretCredentialsConfig credentials = microsoftGraphFetcherConfig.getClientSecretCredentialsConfig();
+        } else if (config.getClientSecretCredentialsConfig() != null) {
+            ClientSecretCredentialsConfig credentials = config.getClientSecretCredentialsConfig();
             graphClient = new GraphServiceClient(
                     new ClientSecretCredentialBuilder().tenantId(credentials.getTenantId())
                             .clientId(credentials.getClientId())
                             .clientSecret(credentials.getClientSecret()).build(), scopes);
+        } else {
+            throw new TikaConfigException("Must specify either clientCertificateCredentialsConfig or clientSecretCredentialsConfig");
         }
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler initializableProblemHandler)
-            throws TikaConfigException {
-    }
-
-    @Override
     public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
+        long[] throttleSeconds = config.getThrottleSeconds();
         int tries = 0;
         Exception ex;
         do {
@@ -128,13 +101,15 @@ public class MicrosoftGraphFetcher extends AbstractFetcher implements Initializa
                 LOGGER.warn("Exception fetching on retry=" + tries, e);
                 ex = e;
             }
-            LOGGER.warn("Sleeping for {} seconds before retry", throttleSeconds[tries]);
-            try {
-                Thread.sleep(throttleSeconds[tries]);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+            if (throttleSeconds != null && tries < throttleSeconds.length) {
+                LOGGER.warn("Sleeping for {} seconds before retry", throttleSeconds[tries]);
+                try {
+                    Thread.sleep(throttleSeconds[tries] * 1000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
             }
-        } while (++tries < throttleSeconds.length);
+        } while (throttleSeconds != null && ++tries < throttleSeconds.length);
         throw new TikaException("Could not parse " + fetchKey, ex);
     }
 }

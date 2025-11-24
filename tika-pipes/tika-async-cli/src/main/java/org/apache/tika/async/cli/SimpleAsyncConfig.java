@@ -27,12 +27,14 @@ class SimpleAsyncConfig {
     private String xmx;
     private String fileList;
     private String tikaConfig;//path to the tikaConfig file to be used in the forked process
+    private String asyncConfig;
     private boolean extractBytes;
     private final BasicContentHandlerFactory.HANDLER_TYPE handlerType;
-
+    private final String pluginsDir;
     //TODO -- switch to a builder
     public SimpleAsyncConfig(String inputDir, String outputDir, Integer numClients, Long timeoutMs, String xmx, String fileList,
-                             String tikaConfig, BasicContentHandlerFactory.HANDLER_TYPE handlerType, boolean extractBytes) {
+                             String tikaConfig, String asyncConfig, BasicContentHandlerFactory.HANDLER_TYPE handlerType, boolean extractBytes,
+                             String pluginsDir) {
         this.inputDir = inputDir;
         this.outputDir = outputDir;
         this.numClients = numClients;
@@ -40,8 +42,10 @@ class SimpleAsyncConfig {
         this.xmx = xmx;
         this.fileList = fileList;
         this.tikaConfig = tikaConfig;
+        this.asyncConfig = asyncConfig;
         this.handlerType = handlerType;
         this.extractBytes = extractBytes;
+        this.pluginsDir = pluginsDir;
     }
 
     public String getInputDir() {
@@ -72,11 +76,19 @@ class SimpleAsyncConfig {
         return tikaConfig;
     }
 
+    public String getAsyncConfig() {
+        return asyncConfig;
+    }
+
     public boolean isExtractBytes() {
         return extractBytes;
     }
 
     public BasicContentHandlerFactory.HANDLER_TYPE getHandlerType() {
         return handlerType;
+    }
+
+    public String getPluginsDir() {
+        return pluginsDir;
     }
 }

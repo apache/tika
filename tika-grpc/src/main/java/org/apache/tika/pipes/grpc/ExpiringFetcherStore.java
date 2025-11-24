@@ -29,14 +29,14 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.pipes.core.fetcher.AbstractFetcher;
-import org.apache.tika.pipes.core.fetcher.config.AbstractConfig;
+import org.apache.tika.pipes.api.fetcher.Fetcher;
+import org.apache.tika.plugins.ExtensionConfig;
 
 public class ExpiringFetcherStore implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(ExpiringFetcherStore.class);
     public static final long EXPIRE_JOB_INITIAL_DELAY = 1L;
-    private final Map<String, AbstractFetcher> fetchers = Collections.synchronizedMap(new HashMap<>());
-    private final Map<String, AbstractConfig> fetcherConfigs = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, Fetcher> fetchers = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, ExtensionConfig> fetcherConfigs = Collections.synchronizedMap(new HashMap<>());
     private final Map<String, Instant> fetcherLastAccessed = Collections.synchronizedMap(new HashMap<>());
 
     private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
@@ -44,18 +44,18 @@ public class ExpiringFetcherStore implements AutoCloseable {
     public ExpiringFetcherStore(int expireAfterSeconds, int checkForExpiredFetchersDelaySeconds) {
         executorService.scheduleAtFixedRate(() -> {
             Set<String> expired = new HashSet<>();
-            for (String fetcherName : fetchers.keySet()) {
-                Instant lastAccessed = fetcherLastAccessed.get(fetcherName);
+            for (String fetcherPluginId : fetchers.keySet()) {
+                Instant lastAccessed = fetcherLastAccessed.get(fetcherPluginId);
                 if (lastAccessed == null) {
-                    LOG.error("Detected a fetcher with no last access time. FetcherName={}", fetcherName);
-                    expired.add(fetcherName);
+                    LOG.error("Detected a fetcher with no last access time. FetcherName={}", fetcherPluginId);
+                    expired.add(fetcherPluginId);
                 } else if (Instant
                         .now()
                         .isAfter(lastAccessed.plusSeconds(expireAfterSeconds))) {
-                    LOG.info("Detected stale fetcher {} hasn't been accessed in {} seconds. " + "Deleting.", fetcherName, Instant
+                    LOG.info("Detected stale fetcher {} hasn't been accessed in {} seconds. " + "Deleting.", fetcherPluginId, Instant
                             .now()
                             .getEpochSecond() - lastAccessed.getEpochSecond());
-                    expired.add(fetcherName);
+                    expired.add(fetcherPluginId);
                 }
             }
             for (String expiredFetcherId : expired) {
@@ -64,18 +64,18 @@ public class ExpiringFetcherStore implements AutoCloseable {
         }, EXPIRE_JOB_INITIAL_DELAY, checkForExpiredFetchersDelaySeconds, TimeUnit.SECONDS);
     }
 
-    public boolean deleteFetcher(String fetcherName) {
-        boolean success = fetchers.remove(fetcherName) != null;
-        fetcherConfigs.remove(fetcherName);
-        fetcherLastAccessed.remove(fetcherName);
+    public boolean deleteFetcher(String fetcherPluginId) {
+        boolean success = fetchers.remove(fetcherPluginId) != null;
+        fetcherConfigs.remove(fetcherPluginId);
+        fetcherLastAccessed.remove(fetcherPluginId);
         return success;
     }
 
-    public Map<String, AbstractFetcher> getFetchers() {
+    public Map<String, Fetcher> getFetchers() {
         return fetchers;
     }
 
-    public Map<String, AbstractConfig> getFetcherConfigs() {
+    public Map<String, ExtensionConfig> getFetcherConfigs() {
         return fetcherConfigs;
     }
 
@@ -83,15 +83,17 @@ public class ExpiringFetcherStore implements AutoCloseable {
      * This method will get the fetcher, but will also log the access the fetcher as having
      * been accessed. This prevents the scheduled job from removing the stale fetcher.
      */
-    public <T extends AbstractFetcher> T getFetcherAndLogAccess(String fetcherName) {
-        fetcherLastAccessed.put(fetcherName, Instant.now());
-        return (T) fetchers.get(fetcherName);
+    public <T extends Fetcher> T getFetcherAndLogAccess(String fetcherPluginId) {
+        fetcherLastAccessed.put(fetcherPluginId, Instant.now());
+        return (T) fetchers.get(fetcherPluginId);
     }
 
-    public <T extends AbstractFetcher, C extends AbstractConfig> void createFetcher(T fetcher, C config) {
-        fetchers.put(fetcher.getName(), fetcher);
-        fetcherConfigs.put(fetcher.getName(), config);
-        getFetcherAndLogAccess(fetcher.getName());
+    public <T extends Fetcher> void createFetcher(T fetcher, ExtensionConfig config) {
+        String id = fetcher.getExtensionConfig().id();
+
+        fetchers.put(id, fetcher);
+        fetcherConfigs.put(id, config);
+        getFetcherAndLogAccess(id);
     }
 
     @Override

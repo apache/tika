@@ -22,31 +22,44 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.Initializable;
-import org.apache.tika.pipes.core.FetchEmitTuple;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
+import org.apache.tika.pipes.pipesiterator.PipesIteratorBase;
+import org.apache.tika.plugins.ExtensionConfig;
 
 /**
  * Iterates through a UTF-8 text file with one FetchEmitTuple
  * json object per line.
  */
-public class JsonPipesIterator extends PipesIterator implements Initializable {
+public class JsonPipesIterator extends PipesIteratorBase {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JsonPipesIterator.class);
 
-    private Path jsonPath;
+    private final JsonPipesIteratorConfig config;
+
+    private JsonPipesIterator(JsonPipesIteratorConfig config, ExtensionConfig extensionConfig) throws TikaConfigException {
+        super(extensionConfig);
+        this.config = config;
+
+        if (config.getJsonPath() == null) {
+            throw new TikaConfigException("jsonPath must not be empty");
+        }
+    }
+
+    public static JsonPipesIterator build(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
+        JsonPipesIteratorConfig config = JsonPipesIteratorConfig.load(extensionConfig.jsonConfig());
+        return new JsonPipesIterator(config, extensionConfig);
+    }
 
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
-        try (BufferedReader reader = Files.newBufferedReader(jsonPath, StandardCharsets.UTF_8)) {
+        try (BufferedReader reader = Files.newBufferedReader(config.getJsonPath(), StandardCharsets.UTF_8)) {
             String line = reader.readLine();
             while (line != null) {
                 try (Reader r = new StringReader(line)) {
@@ -57,9 +70,5 @@ public class JsonPipesIterator extends PipesIterator implements Initializable {
                 }
             }
         }
-    }
-
-    public void setJsonPath(String jsonPath) {
-        this.jsonPath = Paths.get(jsonPath);
     }
 }

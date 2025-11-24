@@ -37,6 +37,20 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>tika-fetcher-file-system</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+      <type>zip</type>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-pipes-iterator-file-system</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+      <type>zip</type>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>tika-emitter-opensearch</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
@@ -45,7 +59,6 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-pipes-reporter-opensearch</artifactId>
       <version>${project.version}</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -80,7 +93,54 @@
         </excludes>
     </configuration>
   </plugin>
-</plugins>
+      <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-dependency-plugin</artifactId>
+      <executions>
+      <execution>
+        <id>copy-plugins</id>
+        <phase>process-test-resources</phase>
+        <goals>
+          <goal>copy</goal>
+<!--          <goal>copy</goal>-->
+        </goals>
+        <configuration>
+          <outputDirectory>${project.build.directory}/plugins</outputDirectory>
+          <artifactItems>
+            <artifactItem>
+              <groupId>org.apache.tika</groupId>
+              <artifactId>tika-fetcher-file-system</artifactId>
+              <version>${project.version}</version>
+              <type>zip</type>
+              <overWrite>true</overWrite>
+            </artifactItem>
+            <artifactItem>
+              <groupId>org.apache.tika</groupId>
+              <artifactId>tika-emitter-opensearch</artifactId>
+              <version>${project.version}</version>
+              <type>zip</type>
+              <overWrite>true</overWrite>
+            </artifactItem>
+            <artifactItem>
+              <groupId>org.apache.tika</groupId>
+              <artifactId>tika-pipes-reporter-opensearch</artifactId>
+              <version>${project.version}</version>
+              <type>zip</type>
+              <overWrite>true</overWrite>
+            </artifactItem>
+            <artifactItem>
+              <groupId>org.apache.tika</groupId>
+              <artifactId>tika-pipes-iterator-file-system</artifactId>
+              <version>${project.version}</version>
+              <type>zip</type>
+              <overWrite>true</overWrite>
+            </artifactItem>
+          </artifactItems>
+        </configuration>
+      </execution>
+      </executions>
+      </plugin>
+    </plugins>
     </build>
 
   <scm>

@@ -1,0 +1,51 @@
+{
+  "fetchers": {
+    "file-system-fetcher": {
+      "fsf": {
+        "basePath": "FETCHER_BASE_PATH",
+        "extractFileSystemMetadata": false
+      }
+    }
+  },
+  "emitters": {
+    "file-system-emitter": {
+      "fse": {
+        "basePath": "EMITTER_BASE_PATH",
+        "fileExtension": "json",
+        "onExists": "EXCEPTION"
+      }
+    }
+  },
+  "pipes-iterator": {
+    "file-system-pipes-iterator": {
+      "fspi": {
+        "basePath": "FETCHER_BASE_PATH",
+        "countTotal": true,
+        "baseConfig": {
+          "fetcherId": "fsf",
+          "emitterId": "fse",
+          "handlerConfig": {
+            "type": "TEXT",
+            "parseMode": "RMETA",
+            "writeLimit": -1,
+            "maxEmbeddedResources": -1,
+            "throwOnWriteLimitReached": true
+          },
+          "onParseException": "EMIT",
+          "maxWaitMs": 600000,
+          "queueSize": 10000
+        }
+      }
+    }
+  },
+  "async": {
+    "tikaConfig": "TIKA_CONFIG",
+    "pipesPluginsConfig": "PLUGINS_CONFIG",
+    "numClients": 4,
+    "timeoutMillis": 5000,
+    "emitIntermediateResults": EMIT_INTERMEDIATE_RESULTS,
+    "forkedJvmArgs": ["-Xmx512m"],
+    "maxForEmitBatchBytes": 1000000
+  },
+  "plugin-roots": "PLUGINS_PATHS"
+}

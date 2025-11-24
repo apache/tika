@@ -21,18 +21,19 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.Collections;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.fetcher.Fetcher;
-import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.apache.tika.plugins.ExtensionConfig;
 
 @Disabled("write actual unit tests")
 public class TestS3Fetcher {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String FETCH_STRING = "";
     private final Path outputFile = Paths.get("");
     private final String region = "us-east-1";
@@ -40,22 +41,15 @@ public class TestS3Fetcher {
 
     @Test
     public void testBasic() throws Exception {
-        S3Fetcher fetcher = new S3Fetcher();
-        fetcher.setProfile(profile);
-        fetcher.setRegion(region);
-        fetcher.initialize(Collections.EMPTY_MAP);
+        ObjectNode jsonConfig = OBJECT_MAPPER.createObjectNode();
+        jsonConfig.put("region", region);
+        jsonConfig.put("profile", profile);
+        jsonConfig.put("credentialsProvider", "profile");
 
-        Metadata metadata = new Metadata();
-        try (InputStream is = fetcher.fetch(FETCH_STRING, metadata, new ParseContext())) {
-            Files.copy(is, outputFile, StandardCopyOption.REPLACE_EXISTING);
-        }
-    }
+        ExtensionConfig extensionConfig = new ExtensionConfig("test-s3-fetcher", "s3-fetcher",
+                OBJECT_MAPPER.writeValueAsString(jsonConfig));
+        S3Fetcher fetcher = S3Fetcher.build(extensionConfig);
 
-    @Test
-    public void testConfig() throws Exception {
-        FetcherManager fetcherManager = FetcherManager.load(
-                Paths.get(this.getClass().getResource("/tika-config-s3.xml").toURI()));
-        Fetcher fetcher = fetcherManager.getFetcher("s3");
         Metadata metadata = new Metadata();
         try (InputStream is = fetcher.fetch(FETCH_STRING, metadata, new ParseContext())) {
             Files.copy(is, outputFile, StandardCopyOption.REPLACE_EXISTING);

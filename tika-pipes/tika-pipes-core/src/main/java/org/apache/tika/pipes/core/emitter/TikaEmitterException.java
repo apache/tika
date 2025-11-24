@@ -16,9 +16,9 @@
  */
 package org.apache.tika.pipes.core.emitter;
 
-import org.apache.tika.exception.TikaException;
+import java.io.IOException;
 
-public class TikaEmitterException extends TikaException {
+public class TikaEmitterException extends IOException {
     public TikaEmitterException(String msg) {
         super(msg);
     }

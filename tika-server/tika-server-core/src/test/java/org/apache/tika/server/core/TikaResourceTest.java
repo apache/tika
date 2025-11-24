@@ -101,29 +101,6 @@ public class TikaResourceTest extends CXFTestBase {
     }
 
     @Test
-    public void testOOMInLegacyMode() throws Exception {
-
-        Response response = null;
-        try {
-            response = WebClient
-                    .create(endPoint + TIKA_PATH)
-                    .accept("text/plain")
-                    .put(ClassLoader.getSystemResourceAsStream(TEST_OOM));
-        } catch (Exception e) {
-            //oom may or may not cause an exception depending
-            //on the timing
-        }
-
-        response = WebClient
-                .create(endPoint + TIKA_PATH)
-                .accept("text/plain")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
-        String responseMsg = getStringFromInputStream((InputStream) response.getEntity());
-
-        assertContains("hello world", responseMsg);
-    }
-
-    @Test
     public void testApplicationWadl() throws Exception {
         Response response = WebClient
                 .create(endPoint + TIKA_PATH + "?_wadl")

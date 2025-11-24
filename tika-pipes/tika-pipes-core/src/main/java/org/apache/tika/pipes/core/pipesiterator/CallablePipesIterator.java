@@ -16,13 +16,16 @@
  */
 package org.apache.tika.pipes.core.pipesiterator;
 
+import static org.apache.tika.pipes.api.pipesiterator.PipesIterator.COMPLETED_SEMAPHORE;
+
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 
 /**
  * This is a simple wrapper around {@link PipesIterator}
@@ -99,7 +102,7 @@ public class CallablePipesIterator implements Callable<Long> {
                 enqueued.incrementAndGet();
             }
             for (int i = 0; i < numConsumers; i++) {
-                boolean offered = queue.offer(PipesIterator.COMPLETED_SEMAPHORE, timeoutMillis,
+                boolean offered = queue.offer(COMPLETED_SEMAPHORE, timeoutMillis,
                         TimeUnit.MILLISECONDS);
                 if (!offered) {
                     throw new TimeoutException("timed out trying to offer the completed " +
@@ -113,7 +116,7 @@ public class CallablePipesIterator implements Callable<Long> {
                 enqueued.incrementAndGet();
             }
             for (int i = 0; i < numConsumers; i++) {
-                queue.put(PipesIterator.COMPLETED_SEMAPHORE);
+                queue.put(COMPLETED_SEMAPHORE);
             }
         }
         return enqueued.get();

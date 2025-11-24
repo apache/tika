@@ -16,36 +16,28 @@
  */
 package org.apache.tika.pipes.reporters.opensearch;
 
-import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
-
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.client.TikaClientException;
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.ExternalProcess;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.pipes.core.FetchEmitTuple;
-import org.apache.tika.pipes.core.PipesReporter;
-import org.apache.tika.pipes.core.PipesResult;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.PipesResult;
+import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
+import org.apache.tika.pipes.reporters.PipesReporterBase;
+import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.utils.StringUtils;
 
 /**
  * As of the 2.5.0 release, this is ALPHA version.  There may be breaking changes
  * in the future.
  */
-public class OpenSearchPipesReporter extends PipesReporter implements Initializable {
+public class OpenSearchPipesReporter extends PipesReporterBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(OpenSearchPipesReporter.class);
 
@@ -53,42 +45,50 @@ public class OpenSearchPipesReporter extends PipesReporter implements Initializa
     public static String DEFAULT_PARSE_STATUS_KEY = "parse_status";
     public static String DEFAULT_EXIT_VALUE_KEY = "exit_value";
 
+
+
+    public static OpenSearchPipesReporter build(ExtensionConfig pluginConfig) throws TikaConfigException, IOException {
+        OpenSearchReporterConfig config = OpenSearchReporterConfig.load(pluginConfig.jsonConfig());
+        return new OpenSearchPipesReporter(pluginConfig, config);
+    }
+
     private OpenSearchClient openSearchClient;
-    private String openSearchUrl;
     private HttpClientFactory httpClientFactory = new HttpClientFactory();
 
-    private Set<String> includeStatus = new HashSet<>();
-
-    private Set<String> excludeStatus = new HashSet<>();
-
+    //TODO -- move these into the config and make then configurable it anyone needs these
     private String parseTimeKey = DEFAULT_PARSE_TIME_KEY;
 
     private String parseStatusKey = DEFAULT_PARSE_STATUS_KEY;
 
     private String exitValueKey = DEFAULT_EXIT_VALUE_KEY;
 
-    private boolean includeRouting = false;
+    private final OpenSearchReporterConfig config;
+    public OpenSearchPipesReporter(ExtensionConfig pluginConfig, OpenSearchReporterConfig config) throws TikaConfigException {
+        super(pluginConfig, config.includes(), config.excludes());
+        this.config = config;
+        init();
+    }
 
 
     @Override
     public void report(FetchEmitTuple t, PipesResult result, long elapsed) {
-        if (! shouldReport(result)) {
+        if (! accept(result.status())) {
             return;
         }
 
         Metadata metadata = new Metadata();
-        metadata.set(parseStatusKey, result.getStatus().name());
+        metadata.set(parseStatusKey, result.status().name());
         metadata.set(parseTimeKey, Long.toString(elapsed));
-        if (result.getEmitData() != null && result.getEmitData().getMetadataList() != null &&
-                result.getEmitData().getMetadataList().size() > 0) {
-            Metadata m = result.getEmitData().getMetadataList().get(0);
+        if (result.emitData() != null && result.emitData().getMetadataList() != null &&
+                result.emitData().getMetadataList().size() > 0) {
+            Metadata m = result.emitData().getMetadataList().get(0);
             if (m.get(ExternalProcess.EXIT_VALUE) != null) {
                 metadata.set(exitValueKey, m.get(ExternalProcess.EXIT_VALUE));
             }
         }
         //TODO -- we're not currently doing anything with the message
         try {
-            if (includeRouting) {
+            if (config.includeRouting()) {
                 openSearchClient.emitDocument(t.getEmitKey().getEmitKey(),
                         t.getEmitKey().getEmitKey(), metadata);
             } else {
@@ -103,6 +103,16 @@ public class OpenSearchPipesReporter extends PipesReporter implements Initializa
     }
 
     @Override
+    public void report(TotalCountResult totalCountResult) {
+        //
+    }
+
+    @Override
+    public boolean supportsTotalCount() {
+        return false;
+    }
+
+    @Override
     public void error(Throwable t) {
         LOG.error("crashed", t);
     }
@@ -112,132 +122,32 @@ public class OpenSearchPipesReporter extends PipesReporter implements Initializa
         LOG.error("crashed {}", msg);
     }
 
-    private boolean shouldReport(PipesResult result) {
-        if (includeStatus.size() > 0) {
-            if (includeStatus.contains(result.getStatus().name())) {
-                return true;
-            }
-            return false;
-        }
-        if (excludeStatus.size() > 0 && excludeStatus.contains(result.getStatus().name())) {
-            return false;
-        }
-        return true;
-    }
+    public void init() throws TikaConfigException {
+        HttpClientConfig http = config.httpClientConfig();
+        httpClientFactory.setUserName(http.userName());
+        httpClientFactory.setPassword(http.password());
+        /*
+            turn these back on as necessary
+        httpClientFactory.setSocketTimeout(http.socketTimeout());
+        httpClientFactory.setConnectTimeout(http.connectionTimeout());
+        httpClientFactory.setAuthScheme(http.authScheme());
+        httpClientFactory.setProxyHost(http.proxyHost());
+        httpClientFactory.setProxyPort(http.proxyPort());
 
-    @Field
-    public void setConnectionTimeout(int connectionTimeout) {
-        httpClientFactory.setConnectTimeout(connectionTimeout);
-    }
-
-    @Field
-    public void setSocketTimeout(int socketTimeout) {
-        httpClientFactory.setSocketTimeout(socketTimeout);
-    }
-
-    //this is the full url, including the collection, e.g. https://localhost:9200/my-collection
-    @Field
-    public void setOpenSearchUrl(String openSearchUrl) {
-        this.openSearchUrl = openSearchUrl;
-    }
-
-    @Field
-    public void setUserName(String userName) {
-        httpClientFactory.setUserName(userName);
-    }
-
-    @Field
-    public void setPassword(String password) {
-        httpClientFactory.setPassword(password);
-    }
-
-    @Field
-    public void setAuthScheme(String authScheme) {
-        httpClientFactory.setAuthScheme(authScheme);
-    }
-
-    @Field
-    public void setProxyHost(String proxyHost) {
-        httpClientFactory.setProxyHost(proxyHost);
-    }
-
-    @Field
-    public void setProxyPort(int proxyPort) {
-        httpClientFactory.setProxyPort(proxyPort);
-    }
-
-    @Field
-    public void setIncludeStatuses(List<String> statusList) {
-        includeStatus.addAll(statusList);
-    }
-
-    @Field
-    public void setExcludeStatuses(List<String> statusList) {
-        excludeStatus.addAll(statusList);
-    }
-
-    @Field
-    public void setIncludeRouting(boolean includeRouting) {
-        this.includeRouting = includeRouting;
-    }
-    /**
-     * This prefixes the keys before sending them to OpenSearch.
-     * For example, "pdfinfo_", would have this reporter sending
-     * "pdfinfo_status" and "pdfinfo_parse_time" to OpenSearch.
-     * @param keyPrefix
-     */
-    @Field
-    public void setKeyPrefix(String keyPrefix) {
-        this.parseStatusKey = keyPrefix + DEFAULT_PARSE_STATUS_KEY;
-        this.parseTimeKey = keyPrefix + DEFAULT_PARSE_TIME_KEY;
-        this.exitValueKey = keyPrefix + DEFAULT_EXIT_VALUE_KEY;
-    }
-
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
-        if (StringUtils.isBlank(openSearchUrl)) {
+         */
+        parseStatusKey = StringUtils.isBlank(config.keyPrefix()) ? parseStatusKey : config.keyPrefix() + parseStatusKey;
+        parseTimeKey = StringUtils.isBlank(config.keyPrefix()) ? parseTimeKey : config.keyPrefix() + parseTimeKey;
+        if (StringUtils.isBlank(config.openSearchUrl())) {
             throw new TikaConfigException("Must specify an open search url!");
         } else {
             openSearchClient =
-                    new OpenSearchClient(openSearchUrl,
+                    new OpenSearchClient(config.openSearchUrl(),
                             httpClientFactory.build());
         }
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
-        mustNotBeEmpty("openSearchUrl", this.openSearchUrl);
-        for (String status : includeStatus) {
-            if (excludeStatus.contains(status)) {
-                throw new TikaConfigException("Can't have a status in both include and exclude: " +
-                        status);
-            }
-        }
-        Set<String> statuses = new HashSet<>();
-        StringBuilder sb = new StringBuilder();
-        int i = 0;
-        for (PipesResult.STATUS status : PipesResult.STATUS.values()) {
-            statuses.add(status.name());
-            i++;
-            if (i > 1) {
-                sb.append(", ");
-            }
-            sb.append(status.name());
-        }
-        for (String include : includeStatus) {
-            if (! statuses.contains(include)) {
-                throw new TikaConfigException("I regret I don't recognize '" +
-                        include + "' in the include list. " +
-                        "I recognize: " + sb.toString());
-            }
-        }
-        for (String exclude : excludeStatus) {
-            if (! statuses.contains(exclude)) {
-                throw new TikaConfigException("I regret I don't recognize '" +
-                        exclude + "' in the exclude list. " +
-                        "I recognize: " + sb.toString());
-            }
-        }
+    public void close() throws IOException {
+
     }
 }

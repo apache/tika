@@ -27,8 +27,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -42,6 +44,7 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.cxf.binding.BindingFactoryManager;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
@@ -50,6 +53,8 @@ import org.apache.cxf.transport.common.gzip.GZIPInInterceptor;
 import org.apache.cxf.transport.common.gzip.GZIPOutInterceptor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.digestutils.CommonsDigester;
@@ -57,10 +62,61 @@ import org.apache.tika.server.core.resource.TikaResource;
 import org.apache.tika.server.core.resource.UnpackerResource;
 
 public abstract class CXFTestBase {
+
+    private static final Logger LOG = LoggerFactory.getLogger(CXFTestBase.class);
+
+    public final static String FETCHER_ID = "fsf";
+    public final static String EMITTER_JSON_ID = "fse-json";
+    public final static String EMITTER_BYTES_ID = "fse-bytes";
+
+    public final static String JSON_TEMPLATE = """
+            {
+              "fetchers": {
+                "file-system-fetcher": {
+                  "fsf": {
+                    "basePath": "FETCHER_BASE_PATH",
+                    "extractFileSystemMetadata": false
+                  }
+                }
+              },
+              "emitters": {
+                "file-system-emitter": {
+                  "fse-json": {
+                    "basePath": "JSON_EMITTER_BASE_PATH",
+                    "fileExtension": "json",
+                    "onExists": "EXCEPTION"
+                  },
+                  "fse-bytes": {
+                    "basePath": "BYTES_EMITTER_BASE_PATH",
+                    "fileExtension": "",
+                    "onExists": "EXCEPTION"
+                  }
+                }
+              },
+              "plugin-roots": "PLUGINS_PATHS"
+            }
+            """;
+
     protected static final String endPoint = "http://localhost:" + TikaServerConfig.DEFAULT_PORT;
     protected final static int DIGESTER_READ_LIMIT = 20 * 1024 * 1024;
     protected Server server;
     protected TikaConfig tika;
+
+    public static void createPluginsConfig(Path configPath, Path inputDir, Path jsonOutputDir, Path bytesOutputDir) throws IOException {
+
+        Path pluginsDir = Paths.get("target/plugins");
+        if (! Files.isDirectory(pluginsDir)) {
+            LOG.warn("CAN'T FIND PLUGINS DIR. pwd={}", Paths.get("").toAbsolutePath().toString());
+        }
+        String json = CXFTestBase.JSON_TEMPLATE.replace("FETCHER_BASE_PATH", inputDir.toAbsolutePath().toString())
+                                   .replace("JSON_EMITTER_BASE_PATH", jsonOutputDir.toAbsolutePath().toString())
+                                   .replace("PLUGINS_PATHS", pluginsDir.toAbsolutePath().toString());
+        if (bytesOutputDir != null) {
+            json = json.replace("BYTES_EMITTER_BASE_PATH", bytesOutputDir.toAbsolutePath().toString());
+        }
+
+        Files.writeString(configPath, json, StandardCharsets.UTF_8);
+    }
 
     public static void assertContains(String needle, String haystack) {
         assertTrue(haystack.contains(needle), needle + " not found in:\n" + haystack);
@@ -122,8 +178,9 @@ public abstract class CXFTestBase {
 
         this.tika = new TikaConfig(getTikaConfigInputStream());
         TikaServerConfig tikaServerConfig = getTikaServerConfig();
-        TikaResource.init(tika, tikaServerConfig, new CommonsDigester(DIGESTER_READ_LIMIT, "md5," + "sha1:32"), getInputStreamFactory(getTikaConfigInputStream()),
-                new ServerStatus("", 0, true));
+        TikaResource.init(tika, tikaServerConfig, new CommonsDigester(DIGESTER_READ_LIMIT, "md5," + "sha1:32"),
+                getInputStreamFactory(getPipesConfigInputStream()),
+                new ServerStatus());
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
         //set compression interceptors
         sf.setOutInterceptors(Collections.singletonList(new GZIPOutInterceptor()));
@@ -159,6 +216,36 @@ public abstract class CXFTestBase {
         return new ByteArrayInputStream(new String(
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + "<properties>\n" + "    <parsers>\n" + "        <parser class=\"org.apache.tika.parser.DefaultParser\"/>\n" +
                         "    </parsers>\n" + "</properties>").getBytes(UTF_8));
+    }
+
+    protected InputStream getPipesConfigInputStream() throws IOException {
+        if (getPipesInputPath() == null) {
+            return null;
+        }
+
+        Path pluginsDir = Paths.get("target/plugins");
+        if (!Files.isDirectory(pluginsDir)) {
+            LOG.warn("CAN'T FIND PLUGINS DIR. pwd={}", Paths
+                    .get("")
+                    .toAbsolutePath()
+                    .toString());
+        }
+        String json = CXFTestBase.JSON_TEMPLATE
+                .replace("FETCHER_BASE_PATH", getPipesInputPath())
+                .replace("PLUGINS_PATHS", pluginsDir
+                        .toAbsolutePath()
+                        .toString());
+
+
+        return UnsynchronizedByteArrayInputStream
+                .builder()
+                .setByteArray(json.getBytes(UTF_8))
+                .get();
+
+    }
+
+    protected String getPipesInputPath() {
+        return null;
     }
 
     /**

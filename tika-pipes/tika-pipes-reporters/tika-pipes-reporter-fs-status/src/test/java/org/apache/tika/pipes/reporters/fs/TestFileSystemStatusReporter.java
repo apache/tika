@@ -40,21 +40,31 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.pipes.core.PipesReporter;
-import org.apache.tika.pipes.core.PipesResult;
-import org.apache.tika.pipes.core.async.AsyncStatus;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
-import org.apache.tika.pipes.core.pipesiterator.TotalCountResult;
+import org.apache.tika.pipes.api.PipesResult;
+import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
+import org.apache.tika.pipes.api.reporter.PipesReporter;
+import org.apache.tika.plugins.ExtensionConfig;
 
 public class TestFileSystemStatusReporter {
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    private static String JSON_TEMPLATE = """
+            {
+                "statusFile": "STATUS_FILE",
+                "reportUpdateMs": 100
+            }
+            """;
+
     @Test
     public void testBasic(@TempDir Path tmpDir) throws Exception {
-        FileSystemStatusReporter reporter = new FileSystemStatusReporter();
+
         Path path = Files.createTempFile(tmpDir, "tika-fssr-", ".xml");
-        reporter.setStatusFile(path.toAbsolutePath().toString());
-        reporter.setReportUpdateMillis(100);
-        reporter.initialize(new HashMap<>());
+
+        String jsonStr = JSON_TEMPLATE.replace("STATUS_FILE", path.toAbsolutePath().toString());
+        FileSystemStatusReporter reporter = new FileSystemReporterFactory().buildExtension(
+                new ExtensionConfig("test-fs-reporter", "fs-status-reporter", jsonStr));
         final ObjectMapper objectMapper = JsonMapper.builder()
                 .addModule(new JavaTimeModule())
                 .build();

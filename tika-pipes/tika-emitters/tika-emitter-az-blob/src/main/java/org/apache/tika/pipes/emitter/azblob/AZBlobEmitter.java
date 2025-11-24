@@ -16,8 +16,6 @@
  */
 package org.apache.tika.pipes.emitter.azblob;
 
-import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
@@ -25,7 +23,6 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 
 import com.azure.core.credential.AzureSasCredential;
 import com.azure.storage.blob.BlobClient;
@@ -38,132 +35,124 @@ import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.emitter.AbstractEmitter;
-import org.apache.tika.pipes.core.emitter.StreamEmitter;
-import org.apache.tika.pipes.core.emitter.TikaEmitterException;
+import org.apache.tika.pipes.api.emitter.AbstractStreamEmitter;
+import org.apache.tika.pipes.api.emitter.StreamEmitter;
+import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.utils.StringUtils;
 
-
 /**
- * Emit files to Azure blob storage. Must set endpoint, sasToken and container via config.
+ * Emitter to write files to Azure Blob Storage.
+ *
+ * <p>Example JSON configuration:</p>
+ * <pre>
+ * {
+ *   "emitters": {
+ *     "az-blob-emitter": {
+ *       "my-azure": {
+ *         "endpoint": "https://myaccount.blob.core.windows.net",
+ *         "sasToken": "sv=2020-08-04&amp;ss=b...",
+ *         "container": "my-container",
+ *         "prefix": "output",
+ *         "fileExtension": "json",
+ *         "overwriteExisting": false
+ *       }
+ *     }
+ *   }
+ * }
+ * </pre>
  */
-
-public class AZBlobEmitter extends AbstractEmitter implements Initializable, StreamEmitter {
+public class AZBlobEmitter extends AbstractStreamEmitter implements StreamEmitter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AZBlobEmitter.class);
-    private String fileExtension = "json";
 
-    private String prefix = "";
+    private final AZBlobEmitterConfig config;
+    private final BlobContainerClient blobContainerClient;
 
-    private String sasToken;
-    private String container;
-    private String endpoint;
-    private BlobServiceClient blobServiceClient;
-    private BlobContainerClient blobContainerClient;
-    private boolean overwriteExisting = false;
+    public static AZBlobEmitter build(ExtensionConfig extensionConfig) throws TikaConfigException, IOException {
+        AZBlobEmitterConfig config = AZBlobEmitterConfig.load(extensionConfig.jsonConfig());
+        config.validate();
+        BlobContainerClient containerClient = buildContainerClient(config);
+        return new AZBlobEmitter(extensionConfig, config, containerClient);
+    }
 
-    /**
-     * Requires the src-bucket/path/to/my/file.txt in the {@link TikaCoreProperties#SOURCE_PATH}.
-     *
-     * @param emitKey
-     * @param metadataList
-     * @param parseContext
-     * @throws IOException
-     * @throws TikaEmitterException
-     */
+    private AZBlobEmitter(ExtensionConfig extensionConfig, AZBlobEmitterConfig config, BlobContainerClient containerClient) {
+        super(extensionConfig);
+        this.config = config;
+        this.blobContainerClient = containerClient;
+    }
+
+    private static BlobContainerClient buildContainerClient(AZBlobEmitterConfig config) {
+        BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
+                .endpoint(config.endpoint())
+                .credential(new AzureSasCredential(config.sasToken()))
+                .buildClient();
+        return blobServiceClient.getBlobContainerClient(config.container());
+    }
+
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException, TikaEmitterException {
+    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException {
         if (metadataList == null || metadataList.isEmpty()) {
-            throw new TikaEmitterException("metadata list must not be null or of size 0");
+            throw new IOException("metadata list must not be null or empty");
         }
-        //TODO: estimate size of metadata list.  Above a certain size,
-        //create a temp file?
-        UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream
-                .builder()
-                .get();
+        UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
         try (Writer writer = new OutputStreamWriter(bos, StandardCharsets.UTF_8)) {
             JsonMetadataList.toJson(metadataList, writer);
-        } catch (IOException e) {
-            throw new TikaEmitterException("can't jsonify", e);
         }
         Metadata metadata = new Metadata();
         emit(emitKey, TikaInputStream.get(bos.toByteArray(), metadata), metadata, parseContext);
-
     }
 
-    /**
-     * @param path         object path; prefix will be prepended
-     * @param is           inputStream to copy, if a TikaInputStream contains an underlying file,
-     *                     the client will upload the file; if a content-length is included in the
-     *                     metadata, the client will upload the stream with the content-length;
-     *                     otherwise, the client will copy the stream to a byte array and then
-     *                     upload.
-     * @param userMetadata this will be written to the az blob's properties.metadata
-     * @param parseContext
-     * @throws IOException if there is a Runtime client exception
-     * @throws TikaEmitterException if there is a Runtime client exception
-     */
     @Override
-    public void emit(String path, InputStream is, Metadata userMetadata, ParseContext parseContext) throws IOException, TikaEmitterException {
+    public void emit(String emitKey, InputStream inputStream, Metadata userMetadata, ParseContext parseContext) throws IOException {
         String lengthString = userMetadata.get(Metadata.CONTENT_LENGTH);
         long length = -1;
         if (lengthString != null) {
             try {
                 length = Long.parseLong(lengthString);
             } catch (NumberFormatException e) {
-                LOGGER.warn("Bad content-length: " + lengthString);
+                LOGGER.warn("Bad content-length: {}", lengthString);
             }
         }
-        if (is instanceof TikaInputStream && ((TikaInputStream) is).hasFile()) {
-            write(path, userMetadata, ((TikaInputStream) is).getPath());
+        if (inputStream instanceof TikaInputStream && ((TikaInputStream) inputStream).hasFile()) {
+            write(emitKey, userMetadata, ((TikaInputStream) inputStream).getPath());
         } else if (length > -1) {
             LOGGER.debug("relying on the content-length set in the metadata object: {}", length);
-            write(path, userMetadata, is, length);
+            write(emitKey, userMetadata, inputStream, length);
         } else {
-            try (UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream
-                    .builder()
-                    .get()) {
-                IOUtils.copy(is, bos);
-                write(path, userMetadata, bos.toByteArray());
+            try (UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get()) {
+                IOUtils.copy(inputStream, bos);
+                write(emitKey, userMetadata, bos.toByteArray());
             }
         }
     }
 
     private void write(String path, Metadata userMetadata, InputStream is, long length) {
         String actualPath = getActualPath(path);
-        LOGGER.debug("about to emit to target container: ({}) path:({})", container, actualPath);
+        LOGGER.debug("about to emit to target container: ({}) path:({})", config.container(), actualPath);
         BlobClient blobClient = blobContainerClient.getBlobClient(actualPath);
         updateMetadata(blobClient, userMetadata);
-        blobClient.upload(is, length, overwriteExisting);
+        blobClient.upload(is, length, config.overwriteExisting());
     }
 
     private void write(String path, Metadata userMetadata, Path file) {
         String actualPath = getActualPath(path);
-        LOGGER.debug("about to emit to target container: ({}) path:({})", container, actualPath);
+        LOGGER.debug("about to emit to target container: ({}) path:({})", config.container(), actualPath);
         BlobClient blobClient = blobContainerClient.getBlobClient(actualPath);
         updateMetadata(blobClient, userMetadata);
-
-        blobClient.uploadFromFile(file
-                .toAbsolutePath()
-                .toString(), overwriteExisting);
+        blobClient.uploadFromFile(file.toAbsolutePath().toString(), config.overwriteExisting());
     }
 
     private void write(String path, Metadata userMetadata, byte[] bytes) throws IOException {
         String actualPath = getActualPath(path);
-        LOGGER.debug("about to emit to target container: ({}) path:({})", container, actualPath);
+        LOGGER.debug("about to emit to target container: ({}) path:({})", config.container(), actualPath);
         BlobClient blobClient = blobContainerClient.getBlobClient(actualPath);
         updateMetadata(blobClient, userMetadata);
-        blobClient.upload(UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get(), bytes.length, overwriteExisting);
+        blobClient.upload(UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get(), bytes.length, config.overwriteExisting());
     }
 
     private void updateMetadata(BlobClient blobClient, Metadata userMetadata) {
@@ -175,91 +164,23 @@ public class AZBlobEmitter extends AbstractEmitter implements Initializable, Str
             if (vals.length > 1) {
                 LOGGER.warn("Can only write the first value for key {}. I see {} values.", n, vals.length);
             }
-            blobClient
-                    .getProperties()
-                    .getMetadata()
-                    .put(n, vals[0]);
+            blobClient.getProperties().getMetadata().put(n, vals[0]);
         }
-
     }
 
     private String getActualPath(final String path) {
         String ret;
+        String prefix = config.getNormalizedPrefix();
         if (!StringUtils.isBlank(prefix)) {
             ret = prefix + "/" + path;
         } else {
             ret = path;
         }
 
+        String fileExtension = config.getFileExtensionOrDefault();
         if (!StringUtils.isBlank(fileExtension)) {
             ret += "." + fileExtension;
         }
         return ret;
     }
-
-    @Field
-    public void setSasToken(String sasToken) {
-        this.sasToken = sasToken;
-    }
-
-    @Field
-    public void setEndpoint(String endpoint) {
-        this.endpoint = endpoint;
-    }
-
-    @Field
-    public void setContainer(String container) {
-        this.container = container;
-    }
-
-    @Field
-    public void setOverwriteExisting(boolean overwriteExisting) {
-        this.overwriteExisting = overwriteExisting;
-    }
-
-    @Field
-    public void setPrefix(String prefix) {
-        //strip final "/" if it exists
-        if (prefix.endsWith("/")) {
-            this.prefix = prefix.substring(0, prefix.length() - 1);
-        } else {
-            this.prefix = prefix;
-        }
-    }
-
-    /**
-     * If you want to customize the output file's file extension.
-     * Do not include the "."
-     *
-     * @param fileExtension
-     */
-    @Field
-    public void setFileExtension(String fileExtension) {
-        this.fileExtension = fileExtension;
-    }
-
-
-    /**
-     * This initializes the az blob container client
-     *
-     * @param params params to use for initialization
-     * @throws TikaConfigException
-     */
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
-        //TODO -- allow authentication via other methods
-        blobServiceClient = new BlobServiceClientBuilder()
-                .endpoint(endpoint)
-                .credential(new AzureSasCredential(sasToken))
-                .buildClient();
-        blobContainerClient = blobServiceClient.getBlobContainerClient(container);
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
-        mustNotBeEmpty("sasToken", this.sasToken);
-        mustNotBeEmpty("endpoint", this.endpoint);
-        mustNotBeEmpty("container", this.container);
-    }
-
 }

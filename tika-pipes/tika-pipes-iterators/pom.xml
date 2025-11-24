@@ -34,6 +34,8 @@
   <!-- see also org.apache.tika.pipes.pipesiterator.fs.FileSystemIterator
        in tika-core if you want a file system directory crawler -->
   <modules>
+    <module>tika-pipes-iterator-commons</module>
+    <module>tika-pipes-iterator-file-system</module>
     <module>tika-pipes-iterator-csv</module>
     <module>tika-pipes-iterator-json</module>
     <module>tika-pipes-iterator-jdbc</module>
@@ -44,6 +46,44 @@
     <module>tika-pipes-iterator-az-blob</module>
   </modules>
 
+  <properties>
+    <!-- Override below properties in each plugin's pom.xml -->
+    <plugin.id/>
+    <plugin.class/>
+    <plugin.version/>
+    <plugin.provider/>
+    <plugin.dependencies/>
+  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>org.pf4j</groupId>
+      <artifactId>pf4j</artifactId>
+      <!-- !!! VERY IMPORTANT -->
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-pipes-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-core</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-plugins-core</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j2-impl</artifactId>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
   <build>
     <plugins>
       <plugin>

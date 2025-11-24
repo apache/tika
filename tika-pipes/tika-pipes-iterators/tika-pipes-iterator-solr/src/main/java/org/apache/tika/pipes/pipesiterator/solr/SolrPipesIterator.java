@@ -16,8 +16,6 @@
  */
 package org.apache.tika.pipes.pipesiterator.solr;
 
-import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
@@ -40,188 +38,138 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.client.HttpClientFactory;
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.FetchEmitTuple;
-import org.apache.tika.pipes.core.HandlerConfig;
-import org.apache.tika.pipes.core.emitter.EmitKey;
-import org.apache.tika.pipes.core.fetcher.FetchKey;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.HandlerConfig;
+import org.apache.tika.pipes.api.emitter.EmitKey;
+import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig;
+import org.apache.tika.pipes.pipesiterator.PipesIteratorBase;
+import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.utils.StringUtils;
 
 /**
  * Iterates through results from a Solr query.
  */
-public class SolrPipesIterator extends PipesIterator implements Initializable {
+public class SolrPipesIterator extends PipesIteratorBase {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SolrPipesIterator.class);
-    private final HttpClientFactory httpClientFactory;
-    private String solrCollection;
-    /**
-     * You can specify solrUrls, or you can specify solrZkHosts and use use zookeeper to determine the solr server urls.
-     */
-    private List<String> solrUrls = Collections.emptyList();
-    private List<String> solrZkHosts = Collections.emptyList();
-    private String solrZkChroot;
-    private List<String> filters = Collections.emptyList();
-    private String idField;
-    private String parsingIdField;
-    private String failCountField;
-    private String sizeFieldName;
-    private List<String> additionalFields = Collections.emptyList();
-    private int rows = 5000;
-    private int connectionTimeout = 10000;
-    private int socketTimeout = 60000;
 
-    public SolrPipesIterator() throws TikaConfigException {
+    private SolrPipesIteratorConfig config;
+    private HttpClientFactory httpClientFactory;
+
+    private SolrPipesIterator(ExtensionConfig pluginConfig) {
+        super(pluginConfig);
+    }
+
+    public static SolrPipesIterator build(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
+        SolrPipesIterator iterator = new SolrPipesIterator(extensionConfig);
+        iterator.configure();
+        return iterator;
+    }
+
+    private void configure() throws IOException, TikaConfigException {
+        config = SolrPipesIteratorConfig.load(pluginConfig.jsonConfig());
+
+        // Validation
+        if (StringUtils.isBlank(config.getSolrCollection())) {
+            throw new TikaConfigException("solrCollection must not be empty");
+        }
+        if (StringUtils.isBlank(config.getIdField())) {
+            throw new TikaConfigException("idField must not be empty");
+        }
+        if (StringUtils.isBlank(config.getParsingIdField())) {
+            throw new TikaConfigException("parsingIdField must not be empty");
+        }
+        if (StringUtils.isBlank(config.getFailCountField())) {
+            throw new TikaConfigException("failCountField must not be empty");
+        }
+        if (StringUtils.isBlank(config.getSizeFieldName())) {
+            throw new TikaConfigException("sizeFieldName must not be empty");
+        }
+        List<String> solrUrls = config.getSolrUrls() != null ? config.getSolrUrls() : Collections.emptyList();
+        List<String> solrZkHosts = config.getSolrZkHosts() != null ? config.getSolrZkHosts() : Collections.emptyList();
+        if (solrUrls.isEmpty() && solrZkHosts.isEmpty()) {
+            throw new TikaConfigException("expected either param solrUrls or param solrZkHosts, but neither was specified");
+        }
+        if (!solrUrls.isEmpty() && !solrZkHosts.isEmpty()) {
+            throw new TikaConfigException("expected either param solrUrls or param solrZkHosts, but both were specified");
+        }
+
+        // Initialize HTTP client factory
         httpClientFactory = new HttpClientFactory();
-    }
-
-    @Field
-    public void setSolrZkHosts(List<String> solrZkHosts) {
-        this.solrZkHosts = solrZkHosts;
-    }
-
-    @Field
-    public void setSolrZkChroot(String solrZkChroot) {
-        this.solrZkChroot = solrZkChroot;
-    }
-
-    @Field
-    public void setSolrCollection(String solrCollection) {
-        this.solrCollection = solrCollection;
-    }
-
-    @Field
-    public void setSolrUrls(List<String> solrUrls) {
-        this.solrUrls = solrUrls;
-    }
-
-    @Field
-    public void setFilters(List<String> filters) {
-        this.filters = filters;
-    }
-
-    @Field
-    public void setAdditionalFields(List<String> additionalFields) {
-        this.additionalFields = additionalFields;
-    }
-
-    @Field
-    public void setIdField(String idField) {
-        this.idField = idField;
-    }
-
-    @Field
-    public void setParsingIdField(String parsingIdField) {
-        this.parsingIdField = parsingIdField;
-    }
-
-    @Field
-    public void setFailCountField(String failCountField) {
-        this.failCountField = failCountField;
-    }
-
-    @Field
-    public void setSizeFieldName(String sizeFieldName) {
-        this.sizeFieldName = sizeFieldName;
-    }
-
-    @Field
-    public void setRows(int rows) {
-        this.rows = rows;
-    }
-
-    @Field
-    public void setConnectionTimeout(int connectionTimeout) {
-        this.connectionTimeout = connectionTimeout;
-    }
-
-    @Field
-    public void setSocketTimeout(int socketTimeout) {
-        this.socketTimeout = socketTimeout;
-    }
-
-    //TODO -- add other httpclient configurations??
-    @Field
-    public void setUserName(String userName) {
-        httpClientFactory.setUserName(userName);
-    }
-
-    @Field
-    public void setPassword(String password) {
-        httpClientFactory.setPassword(password);
-    }
-
-    @Field
-    public void setAuthScheme(String authScheme) {
-        httpClientFactory.setAuthScheme(authScheme);
-    }
-
-    @Field
-    public void setProxyHost(String proxyHost) {
-        httpClientFactory.setProxyHost(proxyHost);
-    }
-
-    @Field
-    public void setProxyPort(int proxyPort) {
-        httpClientFactory.setProxyPort(proxyPort);
+        if (!StringUtils.isBlank(config.getUserName())) {
+            httpClientFactory.setUserName(config.getUserName());
+        }
+        if (!StringUtils.isBlank(config.getPassword())) {
+            httpClientFactory.setPassword(config.getPassword());
+        }
+        if (!StringUtils.isBlank(config.getAuthScheme())) {
+            httpClientFactory.setAuthScheme(config.getAuthScheme());
+        }
+        if (!StringUtils.isBlank(config.getProxyHost())) {
+            httpClientFactory.setProxyHost(config.getProxyHost());
+        }
+        if (config.getProxyPort() > 0) {
+            httpClientFactory.setProxyPort(config.getProxyPort());
+        }
     }
 
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
-        String fetcherName = getFetcherName();
-        String emitterName = getEmitterName();
+        PipesIteratorBaseConfig baseConfig = config.getBaseConfig();
+        String fetcherId = baseConfig.fetcherId();
+        String emitterId = baseConfig.emitterId();
 
         try (SolrClient solrClient = createSolrClient()) {
             int fileCount = 0;
 
             SolrQuery query = new SolrQuery();
             query.set("q", "*:*");
-            query.setRows(rows);
+            query.setRows(config.getRows());
 
             Set<String> allFields = new HashSet<>();
             allFields.add("id");
-            allFields.add(idField);
-            allFields.add(parsingIdField);
-            allFields.add(failCountField);
-            allFields.add(sizeFieldName);
+            allFields.add(config.getIdField());
+            allFields.add(config.getParsingIdField());
+            allFields.add(config.getFailCountField());
+            allFields.add(config.getSizeFieldName());
+            List<String> additionalFields = config.getAdditionalFields() != null ? config.getAdditionalFields() : Collections.emptyList();
             allFields.addAll(additionalFields);
 
             query.setFields(allFields.toArray(new String[]{}));
-            query.setSort(SolrQuery.SortClause.asc(parsingIdField));
+            query.setSort(SolrQuery.SortClause.asc(config.getParsingIdField()));
             query.addSort(SolrQuery.SortClause.asc("id"));
+            List<String> filters = config.getFilters() != null ? config.getFilters() : Collections.emptyList();
             query.setFilterQueries(filters.toArray(new String[]{}));
 
-            HandlerConfig handlerConfig = getHandlerConfig();
+            HandlerConfig handlerConfig = baseConfig.handlerConfig();
 
             String cursorMark = CursorMarkParams.CURSOR_MARK_START;
             boolean done = false;
             while (!done) {
                 query.set(CursorMarkParams.CURSOR_MARK_PARAM, cursorMark);
-                QueryResponse qr = solrClient.query(solrCollection, query);
+                QueryResponse qr = solrClient.query(config.getSolrCollection(), query);
                 long totalToFetch = qr
                         .getResults()
                         .getNumFound();
                 String nextCursorMark = qr.getNextCursorMark();
-                LOGGER.info("Query to fetch files to parse collection={}, q={}, onCount={}, totalCount={}", solrCollection, query, fileCount, totalToFetch);
+                LOGGER.info("Query to fetch files to parse collection={}, q={}, onCount={}, totalCount={}", config.getSolrCollection(), query, fileCount, totalToFetch);
                 for (SolrDocument sd : qr.getResults()) {
                     ++fileCount;
-                    String fetchKey = (String) sd.getFieldValue(idField);
-                    String emitKey = (String) sd.getFieldValue(idField);
+                    String fetchKey = (String) sd.getFieldValue(config.getIdField());
+                    String emitKey = (String) sd.getFieldValue(config.getIdField());
                     Metadata metadata = new Metadata();
                     for (String nextField : allFields) {
                         metadata.add(nextField, (String) sd.getFieldValue(nextField));
                     }
-                    LOGGER.info("iterator doc: {}, idField={}, fetchKey={}", sd, idField, fetchKey);
+                    LOGGER.info("iterator doc: {}, idField={}, fetchKey={}", sd, config.getIdField(), fetchKey);
                     ParseContext parseContext = new ParseContext();
                     parseContext.set(HandlerConfig.class, handlerConfig);
-                    tryToAdd(new FetchEmitTuple(fetchKey, new FetchKey(fetcherName, fetchKey), new EmitKey(emitterName, emitKey), new Metadata(), parseContext,
-                            getOnParseException()));
+                    tryToAdd(new FetchEmitTuple(fetchKey, new FetchKey(fetcherId, fetchKey), new EmitKey(emitterId, emitKey), new Metadata(), parseContext,
+                            baseConfig.onParseException()));
                 }
                 if (cursorMark.equals(nextCursorMark)) {
                     done = true;
@@ -234,7 +182,10 @@ public class SolrPipesIterator extends PipesIterator implements Initializable {
     }
 
     private SolrClient createSolrClient() throws TikaConfigException {
-        if (solrUrls == null || solrUrls.isEmpty()) {
+        List<String> solrUrls = config.getSolrUrls() != null ? config.getSolrUrls() : Collections.emptyList();
+        List<String> solrZkHosts = config.getSolrZkHosts() != null ? config.getSolrZkHosts() : Collections.emptyList();
+
+        if (solrUrls.isEmpty()) {
             //TODO -- there's more that we need to pass through, including ssl etc.
             Http2SolrClient.Builder http2SolrClientBuilder = new Http2SolrClient.Builder();
             if (!StringUtils.isBlank(httpClientFactory.getUserName())) {
@@ -242,36 +193,20 @@ public class SolrPipesIterator extends PipesIterator implements Initializable {
             }
             http2SolrClientBuilder
                     .withRequestTimeout(httpClientFactory.getRequestTimeout(), TimeUnit.MILLISECONDS)
-                    .withConnectionTimeout(connectionTimeout, TimeUnit.MILLISECONDS);
+                    .withConnectionTimeout(config.getConnectionTimeout(), TimeUnit.MILLISECONDS);
 
 
             Http2SolrClient http2SolrClient = http2SolrClientBuilder.build();
-            return new CloudSolrClient.Builder(solrZkHosts, Optional.ofNullable(solrZkChroot))
+            return new CloudSolrClient.Builder(solrZkHosts, Optional.ofNullable(config.getSolrZkChroot()))
                     .withHttpClient(http2SolrClient)
                     .build();
 
         }
         return new LBHttpSolrClient.Builder()
-                .withConnectionTimeout(connectionTimeout)
-                .withSocketTimeout(socketTimeout)
+                .withConnectionTimeout(config.getConnectionTimeout())
+                .withSocketTimeout(config.getSocketTimeout())
                 .withHttpClient(httpClientFactory.build())
                 .withBaseSolrUrls(solrUrls.toArray(new String[]{}))
                 .build();
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
-        super.checkInitialization(problemHandler);
-        mustNotBeEmpty("solrCollection", this.solrCollection);
-        mustNotBeEmpty("urlFieldName", this.idField);
-        mustNotBeEmpty("parsingIdField", this.parsingIdField);
-        mustNotBeEmpty("failCountField", this.failCountField);
-        mustNotBeEmpty("sizeFieldName", this.sizeFieldName);
-        if ((this.solrUrls == null || this.solrUrls.isEmpty()) && (this.solrZkHosts == null || this.solrZkHosts.isEmpty())) {
-            throw new IllegalArgumentException("expected either param solrUrls or param solrZkHosts, but neither was specified");
-        }
-        if (this.solrUrls != null && !this.solrUrls.isEmpty() && this.solrZkHosts != null && !this.solrZkHosts.isEmpty()) {
-            throw new IllegalArgumentException("expected either param solrUrls or param solrZkHosts, but both were specified");
-        }
     }
 }

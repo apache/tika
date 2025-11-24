@@ -30,56 +30,67 @@ import com.google.cloud.storage.StorageOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.fetcher.AbstractFetcher;
+import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.gcs.config.GCSFetcherConfig;
+import org.apache.tika.plugins.AbstractTikaExtension;
+import org.apache.tika.plugins.ExtensionConfig;
 
 /**
  * Fetches files from google cloud storage. Must set projectId and bucket via the config.
  */
-public class GCSFetcher extends AbstractFetcher implements Initializable {
-    public GCSFetcher() {
+public class GCSFetcher extends AbstractTikaExtension implements Fetcher {
 
-    }
-    public GCSFetcher(GCSFetcherConfig gcsFetcherConfig) {
-        setBucket(gcsFetcherConfig.getBucket());
-        setProjectId(gcsFetcherConfig.getProjectId());
-        setSpoolToTemp(gcsFetcherConfig.isSpoolToTemp());
-        setExtractUserMetadata(gcsFetcherConfig.isExtractUserMetadata());
-    }
-    private static String PREFIX = "gcs";
+    private static final String PREFIX = "gcs";
     private static final Logger LOGGER = LoggerFactory.getLogger(GCSFetcher.class);
-    private String projectId;
-    private String bucket;
-    private boolean extractUserMetadata = true;
+
+    private GCSFetcherConfig config;
     private Storage storage;
-    private boolean spoolToTemp = true;
+
+    private GCSFetcher(ExtensionConfig pluginConfig) {
+        super(pluginConfig);
+    }
+
+    public static GCSFetcher build(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
+        GCSFetcherConfig config = GCSFetcherConfig.load(extensionConfig.jsonConfig());
+        GCSFetcher fetcher = new GCSFetcher(extensionConfig);
+        fetcher.config = config;
+        fetcher.initialize();
+        return fetcher;
+    }
+
+    private void initialize() throws TikaConfigException {
+        mustNotBeEmpty("bucket", config.getBucket());
+        mustNotBeEmpty("projectId", config.getProjectId());
+
+        storage = StorageOptions.newBuilder()
+                .setProjectId(config.getProjectId())
+                .build()
+                .getService();
+    }
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
+    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext)
+            throws TikaException, IOException {
 
-        LOGGER.debug("about to fetch fetchkey={} from bucket ({})", fetchKey, bucket);
+        LOGGER.debug("about to fetch fetchkey={} from bucket ({})", fetchKey, config.getBucket());
 
         try {
-            Blob blob = storage.get(BlobId.of(bucket, fetchKey));
+            Blob blob = storage.get(BlobId.of(config.getBucket(), fetchKey));
 
-            if (extractUserMetadata) {
+            if (config.isExtractUserMetadata()) {
                 if (blob.getMetadata() != null) {
                     for (Map.Entry<String, String> e : blob.getMetadata().entrySet()) {
                         metadata.add(PREFIX + ":" + e.getKey(), e.getValue());
                     }
                 }
             }
-            if (!spoolToTemp) {
+            if (!config.isSpoolToTemp()) {
                 return TikaInputStream.get(blob.getContent());
             } else {
                 long start = System.currentTimeMillis();
@@ -94,52 +105,5 @@ public class GCSFetcher extends AbstractFetcher implements Initializable {
         } catch (Exception e) {
             throw new IOException("gcs storage exception", e);
         }
-    }
-
-    @Field
-    public void setSpoolToTemp(boolean spoolToTemp) {
-        this.spoolToTemp = spoolToTemp;
-    }
-
-    @Field
-    public void setProjectId(String projectId) {
-        this.projectId = projectId;
-    }
-
-    @Field
-    public void setBucket(String bucket) {
-        this.bucket = bucket;
-    }
-
-    /**
-     * Whether or not to extract user metadata from the S3Object
-     *
-     * @param extractUserMetadata
-     */
-    @Field
-    public void setExtractUserMetadata(boolean extractUserMetadata) {
-        this.extractUserMetadata = extractUserMetadata;
-    }
-
-    //TODO: parameterize extracting other blob metadata, eg. md5, crc, etc.
-
-    /**
-     * This initializes the gcs storage client.
-     *
-     * @param params params to use for initialization
-     * @throws TikaConfigException
-     */
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
-        //params have already been set...ignore them
-        //TODO -- add other params to the builder as needed
-        storage = StorageOptions.newBuilder().setProjectId(projectId).build().getService();
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
-        mustNotBeEmpty("bucket", this.bucket);
-        mustNotBeEmpty("projectId", this.projectId);
     }
 }

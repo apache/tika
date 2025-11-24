@@ -51,8 +51,10 @@ import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.emitter.EmitData;
-import org.apache.tika.pipes.core.emitter.EmitKey;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.PipesResult;
+import org.apache.tika.pipes.api.emitter.EmitKey;
+import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
 
@@ -175,7 +177,7 @@ public class PipesClient implements Closeable {
                 throw new InterruptedException("thread interrupt");
             }
             PipesResult result = readResults(t, start);
-            while (result.getStatus().equals(PipesResult.STATUS.INTERMEDIATE_RESULT)) {
+            while (result.status() == PipesResult.STATUS.INTERMEDIATE_RESULT) {
                 intermediateResult[0] = result;
                 result = readResults(t, start);
             }
@@ -189,7 +191,7 @@ public class PipesClient implements Closeable {
                         pipesClientId,
                         System.currentTimeMillis() - readStart);
             }
-            if (result.getStatus() == PipesResult.STATUS.OOM) {
+            if (result.status() == PipesResult.STATUS.OOM) {
                 return buildFatalResult(result, intermediateResult);
             }
             return result;
@@ -213,7 +215,7 @@ public class PipesClient implements Closeable {
             if (!process.isAlive() && TIMEOUT_EXIT_CODE == process.exitValue()) {
                 LOG.warn("pipesClientId={} server timeout: {} in {} ms", pipesClientId, t.getId(),
                         elapsed);
-                return buildFatalResult(PipesResult.TIMEOUT, intermediateResult);
+                return buildFatalResult(PipesResults.TIMEOUT, intermediateResult);
             }
             process.waitFor(500, TimeUnit.MILLISECONDS);
             if (process.isAlive()) {
@@ -223,13 +225,13 @@ public class PipesClient implements Closeable {
                 LOG.warn("pipesClientId={} crash: {} in {} ms with exit code {}", pipesClientId,
                         t.getId(), elapsed, process.exitValue());
             }
-            return buildFatalResult(PipesResult.UNSPECIFIED_CRASH, intermediateResult);
+            return buildFatalResult(PipesResults.UNSPECIFIED_CRASH, intermediateResult);
         } catch (TimeoutException e) {
             long elapsed = System.currentTimeMillis() - start;
             destroyForcibly();
             LOG.warn("pipesClientId={} client timeout: {} in {} ms", pipesClientId, t.getId(),
                     elapsed);
-            return buildFatalResult(PipesResult.TIMEOUT, intermediateResult);
+            return buildFatalResult(PipesResults.TIMEOUT, intermediateResult);
         } finally {
             futureTask.cancel(true);
         }
@@ -242,12 +244,12 @@ public class PipesClient implements Closeable {
             return result;
         } else {
             if (LOG.isTraceEnabled()) {
-                LOG.trace("intermediate result: {}", intermediateResult[0].getEmitData());
+                LOG.trace("intermediate result: {}", intermediateResult[0].emitData());
             }
-            intermediateResult[0].getEmitData().getMetadataList().get(0).set(
-                    TikaCoreProperties.PIPES_RESULT, result.getStatus().toString());
-            return new PipesResult(result.getStatus(),
-                    intermediateResult[0].getEmitData(), true);
+            intermediateResult[0].emitData().getMetadataList().get(0).set(
+                    TikaCoreProperties.PIPES_RESULT, result.status().toString());
+            return new PipesResult(result.status(),
+                    intermediateResult[0].emitData(), true);
         }
     }
 
@@ -301,11 +303,11 @@ public class PipesClient implements Closeable {
         switch (status) {
             case OOM:
                 LOG.warn("pipesClientId={} oom: {} in {} ms", pipesClientId, t.getId(), millis);
-                return PipesResult.OOM;
+                return PipesResults.OOM;
             case TIMEOUT:
                 LOG.warn("pipesClientId={} server response timeout: {} in {} ms", pipesClientId,
                         t.getId(), millis);
-                return PipesResult.TIMEOUT;
+                return PipesResults.TIMEOUT;
             case EMIT_EXCEPTION:
                 LOG.warn("pipesClientId={} emit exception: {} in {} ms", pipesClientId, t.getId(),
                         millis);
@@ -344,11 +346,11 @@ public class PipesClient implements Closeable {
             case EMIT_SUCCESS:
                 LOG.debug("pipesClientId={} emit success: {} in {} ms", pipesClientId, t.getId(),
                         millis);
-                return PipesResult.EMIT_SUCCESS;
+                return PipesResults.EMIT_SUCCESS;
             case EMIT_SUCCESS_PARSE_EXCEPTION:
                 return readMessage(PipesResult.STATUS.EMIT_SUCCESS_PARSE_EXCEPTION);
             case EMPTY_OUTPUT:
-                return PipesResult.EMPTY_OUTPUT;
+                return PipesResults.EMPTY_OUTPUT;
             //fall through
             case READY:
             case CALL:
@@ -376,7 +378,7 @@ public class PipesClient implements Closeable {
         input.readFully(bytes);
         try (ObjectInputStream objectInputStream = new ObjectInputStream(
                 UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
-            EmitData emitData = (EmitData) objectInputStream.readObject();
+            EmitDataImpl emitData = (EmitDataImpl) objectInputStream.readObject();
 
             String stack = emitData.getContainerStackTrace();
             if (StringUtils.isBlank(stack)) {
@@ -405,8 +407,8 @@ public class PipesClient implements Closeable {
         try (ObjectInputStream objectInputStream = new ObjectInputStream(
                 UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
             Metadata metadata = (Metadata) objectInputStream.readObject();
-            EmitData emitData = new EmitData(emitKey, Collections.singletonList(metadata));
-            return new PipesResult(PipesResult.STATUS.INTERMEDIATE_RESULT, emitData, true);
+            EmitDataImpl emitDataTuple = new EmitDataImpl(emitKey.getEmitKey(), Collections.singletonList(metadata));
+            return new PipesResult(PipesResult.STATUS.INTERMEDIATE_RESULT, emitDataTuple, true);
         } catch (ClassNotFoundException e) {
             LOG.error("class not found exception deserializing data", e);
             //this should be catastrophic
@@ -570,7 +572,7 @@ public class PipesClient implements Closeable {
         commandLine.add("org.apache.tika.pipes.core.PipesServer");
         commandLine.add(ProcessUtils.escapeCommandLine(
                 pipesConfig.getTikaConfig().toAbsolutePath().toString()));
-
+        commandLine.add(ProcessUtils.escapeCommandLine(pipesConfig.getPipesPluginsConfig().toAbsolutePath().toString()));
         commandLine.add(Long.toString(pipesConfig.getMaxForEmitBatchBytes()));
         commandLine.add(Long.toString(pipesConfig.getTimeoutMillis()));
         commandLine.add(Long.toString(pipesConfig.getShutdownClientAfterMillis()));

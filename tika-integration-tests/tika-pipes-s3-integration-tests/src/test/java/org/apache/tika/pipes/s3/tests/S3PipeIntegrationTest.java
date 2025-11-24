@@ -29,7 +29,6 @@ import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -53,7 +52,6 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import org.apache.tika.cli.TikaCLI;
-import org.apache.tika.pipes.core.HandlerConfig;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Testcontainers(disabledWithoutDocker = true)
@@ -126,26 +124,49 @@ class S3PipeIntegrationTest {
         // create some test files and insert into fetch bucket
         createTestFiles();
 
-        // Let's fetch it
-        File tikaConfigFile = new File("target", "ta.xml");
+        // Setup config files
+        File tikaConfigFile = new File("target", "ta-s3.xml");
         File log4jPropFile = new File("target", "tmp-log4j2.xml");
+        File pluginsConfigFile = new File("target", "plugins-config-s3.json");
+
         try (InputStream is = this.getClass()
                 .getResourceAsStream("/pipes-fork-server-custom-log4j2.xml")) {
             Assertions.assertNotNull(is);
             FileUtils.copyInputStreamToFile(is, log4jPropFile);
         }
-        String tikaConfigTemplateXml;
-        try (InputStream is = this.getClass()
-                .getResourceAsStream("/tika-config-s3-integration-test.xml")) {
-            assert is != null;
-            tikaConfigTemplateXml = IOUtils.toString(is, StandardCharsets.UTF_8);
-        }
-        try {
-            String tikaConfigXml =
-                    createTikaConfigXml(tikaConfigFile, log4jPropFile, tikaConfigTemplateXml);
 
-            FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);
-            TikaCLI.main(new String[]{"-a", "-c", tikaConfigFile.getAbsolutePath()});
+        // Copy tika-config XML
+        String tikaConfigXml;
+        try (InputStream is = this.getClass().getResourceAsStream("/s3/tika-config-s3.xml")) {
+            assert is != null;
+            tikaConfigXml = IOUtils.toString(is, StandardCharsets.UTF_8);
+        }
+        FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);
+
+        // Create plugins config JSON
+        String pluginsTemplate;
+        try (InputStream is = this.getClass().getResourceAsStream("/s3/plugins-template.json")) {
+            assert is != null;
+            pluginsTemplate = IOUtils.toString(is, StandardCharsets.UTF_8);
+        }
+
+        String pluginsConfig = pluginsTemplate
+                .replace("{TIKA_CONFIG}", tikaConfigFile.getAbsolutePath())
+                .replace("{PLUGINS_CONFIG}", pluginsConfigFile.getAbsolutePath())
+                .replace("{LOG4J_PROPERTIES_FILE}", log4jPropFile.getAbsolutePath())
+                .replace("{PARSE_MODE}", org.apache.tika.pipes.api.HandlerConfig.PARSE_MODE.RMETA.name())
+                .replace("{PIPE_ITERATOR_BUCKET}", FETCH_BUCKET)
+                .replace("{EMIT_BUCKET}", EMIT_BUCKET)
+                .replace("{FETCH_BUCKET}", FETCH_BUCKET)
+                .replace("{ACCESS_KEY}", ACCESS_KEY)
+                .replace("{SECRET_KEY}", SECRET_KEY)
+                .replace("{ENDPOINT_CONFIGURATION_SERVICE}", MINIO_ENDPOINT)
+                .replace("{REGION}", REGION.id());
+
+        FileUtils.writeStringToFile(pluginsConfigFile, pluginsConfig, StandardCharsets.UTF_8);
+
+        try {
+            TikaCLI.main(new String[]{"-a", pluginsConfigFile.getAbsolutePath(), "-c", tikaConfigFile.getAbsolutePath()});
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -157,19 +178,5 @@ class S3PipeIntegrationTest {
             Assertions.assertTrue(data.contains("body-of-" + testFile),
                         "Should be able to read the parsed body of the HTML file as the body of the document");
         }
-    }
-
-    @NotNull
-    private String createTikaConfigXml(File tikaConfigFile, File log4jPropFile,
-                                       String tikaConfigTemplateXml) {
-        return tikaConfigTemplateXml.replace("{TIKA_CONFIG}", tikaConfigFile.getAbsolutePath())
-                .replace("{LOG4J_PROPERTIES_FILE}", log4jPropFile.getAbsolutePath())
-                .replace("{PATH_TO_DOCS}", testFileFolder.getAbsolutePath())
-                .replace("{PARSE_MODE}", HandlerConfig.PARSE_MODE.RMETA.name())
-                .replace("{PIPE_ITERATOR_BUCKET}", FETCH_BUCKET)
-                .replace("{EMIT_BUCKET}", EMIT_BUCKET).replace("{FETCH_BUCKET}", FETCH_BUCKET)
-                .replace("{ACCESS_KEY}", ACCESS_KEY).replace("{SECRET_KEY}", SECRET_KEY)
-                .replace("{ENDPOINT_CONFIGURATION_SERVICE}", MINIO_ENDPOINT)
-                .replace("{REGION}", REGION.id());
     }
 }

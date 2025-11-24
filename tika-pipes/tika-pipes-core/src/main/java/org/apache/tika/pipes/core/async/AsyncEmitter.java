@@ -30,10 +30,9 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.pipes.core.emitter.EmitData;
-import org.apache.tika.pipes.core.emitter.Emitter;
+import org.apache.tika.pipes.api.emitter.EmitData;
+import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
-import org.apache.tika.pipes.core.emitter.TikaEmitterException;
 import org.apache.tika.utils.ExceptionUtils;
 
 /**
@@ -42,18 +41,18 @@ import org.apache.tika.utils.ExceptionUtils;
  */
 public class AsyncEmitter implements Callable<Integer> {
 
-    static final EmitData EMIT_DATA_STOP_SEMAPHORE = new EmitData(null, null, null);
+    static final EmitDataPair EMIT_DATA_STOP_SEMAPHORE = new EmitDataPair(null, null);
     static final int EMITTER_FUTURE_CODE = 2;
 
     private static final Logger LOG = LoggerFactory.getLogger(AsyncEmitter.class);
 
     private final AsyncConfig asyncConfig;
     private final EmitterManager emitterManager;
-    private final ArrayBlockingQueue<EmitData> emitDataQueue;
+    private final ArrayBlockingQueue<EmitDataPair> emitDataQueue;
 
     Instant lastEmitted = Instant.now();
 
-    public AsyncEmitter(AsyncConfig asyncConfig, ArrayBlockingQueue<EmitData> emitData,
+    public AsyncEmitter(AsyncConfig asyncConfig, ArrayBlockingQueue<EmitDataPair> emitData,
                         EmitterManager emitterManager) {
         this.asyncConfig = asyncConfig;
         this.emitDataQueue = emitData;
@@ -65,14 +64,14 @@ public class AsyncEmitter implements Callable<Integer> {
         EmitDataCache cache = new EmitDataCache(asyncConfig.getEmitMaxEstimatedBytes());
 
         while (true) {
-            EmitData emitData = emitDataQueue.poll(500, TimeUnit.MILLISECONDS);
-            if (emitData == EMIT_DATA_STOP_SEMAPHORE) {
+            EmitDataPair emitDataPair = emitDataQueue.poll(500, TimeUnit.MILLISECONDS);
+            if (emitDataPair == EMIT_DATA_STOP_SEMAPHORE) {
                 cache.emitAll();
                 return EMITTER_FUTURE_CODE;
             }
-            if (emitData != null) {
+            if (emitDataPair != null) {
                 //this can block on emitAll
-                cache.add(emitData);
+                cache.add(emitDataPair);
             } else {
                 LOG.trace("Nothing on the async queue");
             }
@@ -102,17 +101,17 @@ public class AsyncEmitter implements Callable<Integer> {
             estimatedSize += newBytes;
         }
 
-        void add(EmitData data) {
+        void add(EmitDataPair emitDataPair) {
             size++;
-            long sz = data.getEstimatedSizeBytes();
+            long sz = emitDataPair.emitData().getEstimatedSizeBytes();
             if (estimatedSize + sz > maxBytes) {
                 LOG.debug("estimated size ({}) > maxBytes({}), going to emitAll",
                         (estimatedSize + sz), maxBytes);
                 emitAll();
             }
-            List<EmitData> cached = map.computeIfAbsent(data.getEmitKey().getEmitterName(), k -> new ArrayList<>());
+            List<EmitData> cached = map.computeIfAbsent(emitDataPair.emitterId(), k -> new ArrayList<>());
             updateEstimatedSize(sz);
-            cached.add(data);
+            cached.add(emitDataPair.emitData());
         }
 
         private void emitAll() {
@@ -131,11 +130,11 @@ public class AsyncEmitter implements Callable<Integer> {
             lastEmitted = Instant.now();
         }
 
-        private void tryToEmit(Emitter emitter, List<EmitData> cachedEmitData) {
+        private void tryToEmit(Emitter emitter, List<? extends EmitData> emitData) {
 
             try {
-                emitter.emit(cachedEmitData);
-            } catch (IOException | TikaEmitterException e) {
+                emitter.emit(emitData);
+            } catch (IOException e) {
                 LOG.warn("emitter class ({}): {}", emitter.getClass(),
                         ExceptionUtils.getStackTrace(e));
             }

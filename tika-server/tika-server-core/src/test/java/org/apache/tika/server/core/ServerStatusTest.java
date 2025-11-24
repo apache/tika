@@ -35,7 +35,7 @@ public class ServerStatusTest {
 
     @Test
     public void testBadId() throws Exception {
-        ServerStatus status = new ServerStatus("", 0);
+        ServerStatus status = new ServerStatus();
         assertThrows(IllegalArgumentException.class, () -> {
             status.complete(2);
         });
@@ -49,7 +49,7 @@ public class ServerStatusTest {
         int filesToProcess = 20;
         ExecutorService service = Executors.newFixedThreadPool(numThreads);
         ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(service);
-        ServerStatus serverStatus = new ServerStatus("", 0);
+        ServerStatus serverStatus = new ServerStatus();
         for (int i = 0; i < numThreads; i++) {
             completionService.submit(new MockTask(serverStatus, filesToProcess));
         }

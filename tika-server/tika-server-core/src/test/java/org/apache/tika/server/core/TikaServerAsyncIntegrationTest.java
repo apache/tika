@@ -18,6 +18,9 @@ package org.apache.tika.server.core;
 
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig.DEFAULT_HANDLER_CONFIG;
+import static org.apache.tika.server.core.CXFTestBase.EMITTER_JSON_ID;
+import static org.apache.tika.server.core.CXFTestBase.FETCHER_ID;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -46,10 +49,10 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.FetchEmitTuple;
-import org.apache.tika.pipes.core.HandlerConfig;
-import org.apache.tika.pipes.core.emitter.EmitKey;
-import org.apache.tika.pipes.core.fetcher.FetchKey;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.HandlerConfig;
+import org.apache.tika.pipes.api.emitter.EmitKey;
+import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTupleList;
 import org.apache.tika.utils.ProcessUtils;
 
@@ -58,8 +61,6 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerAsyncIntegrationTest.class);
     private static final int NUM_FILES = 100;
-    private static final String EMITTER_NAME = "fse";
-    private static final String FETCHER_NAME = "fsf";
     private static FetchEmitTuple.ON_PARSE_EXCEPTION ON_PARSE_EXCEPTION = FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT;
 
     @TempDir
@@ -67,6 +68,7 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
     private static Path TMP_OUTPUT_DIR;
     private static String TIKA_CONFIG_XML;
     private static Path TIKA_CONFIG;
+    private static Path PLUGINS_CONFIG;
     private static List<String> FILE_LIST = new ArrayList<>();
     private static String[] FILES = new String[]{"hello_world.xml", "null_pointer.xml",
             // "heavy_hang_30000.xml", "real_oom.xml",
@@ -96,16 +98,16 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
         TIKA_CONFIG = TMP_DIR.resolve("tika-config.xml");
 
         TIKA_CONFIG_XML =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<fetchers>" + "<fetcher class=\"org.apache.tika.pipes.fetcher.fs.FileSystemFetcher\">" + "<name>" +
-                        FETCHER_NAME + "</name>" + "<basePath>" + inputDir.toAbsolutePath() + "</basePath>" + "</fetcher>" + "</fetchers>" + "<emitters>" +
-                        "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">" + "<name>" + EMITTER_NAME + "</name>" + "<basePath>" +
-                        TMP_OUTPUT_DIR.toAbsolutePath() + "</basePath>" + "</emitter>" + "</emitters>" + "<server><endpoints><endpoint>async</endpoint></endpoints>" +
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>"  + "<server><endpoints><endpoint>async</endpoint></endpoints>" +
                         "<enableUnsecureFeatures>true</enableUnsecureFeatures></server>" + "<async><tikaConfig>" + ProcessUtils.escapeCommandLine(TIKA_CONFIG
                         .toAbsolutePath()
                         .toString()) + "</tikaConfig><numClients>10</numClients><forkedJvmArgs><arg>-Xmx256m" + "</arg></forkedJvmArgs><timeoutMillis>5000</timeoutMillis>" +
                         "</async>" + "</properties>";
 
         FileUtils.write(TIKA_CONFIG.toFile(), TIKA_CONFIG_XML, UTF_8);
+
+        PLUGINS_CONFIG = TMP_DIR.resolve("plugins-config.json");
+        CXFTestBase.createPluginsConfig(PLUGINS_CONFIG, inputDir, TMP_OUTPUT_DIR, null);
     }
 
 
@@ -128,16 +130,19 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
         Thread serverThread = new Thread(() -> TikaServerCli.main(new String[]{
                 //for debugging/development, use no fork; otherwise go with the default
                 //"-noFork",
-                "-p", INTEGRATION_TEST_PORT, "-config", TIKA_CONFIG.toAbsolutePath().toString()}));
+                "-p", INTEGRATION_TEST_PORT, "-config", TIKA_CONFIG.toAbsolutePath().toString(),
+                "-a", PLUGINS_CONFIG.toAbsolutePath().toString() }));
         serverThread.start();
 
         try {
             long start = System.currentTimeMillis();
 
             JsonNode response = sendAsync(FILE_LIST);
+
             String status = response
                     .get("status")
                     .asText();
+
             if (!"ok".equals(status)) {
                 fail("bad status: '" + status + "' -> " + response.toPrettyString());
             }
@@ -171,14 +176,17 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
                 .create(endPoint + "/async")
                 .accept("application/json")
                 .post(json);
+        if (response.getStatus() != 200) {
+            throw new IllegalArgumentException("status must be 200, but I got: " + response.getStatus());
+        }
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         return new ObjectMapper().readTree(reader);
     }
 
     private FetchEmitTuple getFetchEmitTuple(String fileName) throws IOException {
         ParseContext parseContext = new ParseContext();
-        parseContext.set(HandlerConfig.class, HandlerConfig.DEFAULT_HANDLER_CONFIG);
+        parseContext.set(HandlerConfig.class, DEFAULT_HANDLER_CONFIG);
 
-        return new FetchEmitTuple(fileName, new FetchKey(FETCHER_NAME, fileName), new EmitKey(EMITTER_NAME, ""), new Metadata(), parseContext, ON_PARSE_EXCEPTION);
+        return new FetchEmitTuple(fileName, new FetchKey(FETCHER_ID, fileName), new EmitKey(EMITTER_JSON_ID, ""), new Metadata(), parseContext, ON_PARSE_EXCEPTION);
     }
 }

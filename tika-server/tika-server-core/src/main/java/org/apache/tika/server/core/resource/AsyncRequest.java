@@ -18,7 +18,7 @@ package org.apache.tika.server.core.resource;
 
 import java.util.List;
 
-import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.api.FetchEmitTuple;
 
 public class AsyncRequest {
     private final List<FetchEmitTuple> tuples;

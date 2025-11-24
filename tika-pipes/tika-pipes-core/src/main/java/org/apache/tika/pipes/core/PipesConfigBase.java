@@ -17,7 +17,6 @@
 package org.apache.tika.pipes.core;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -60,6 +59,7 @@ public class PipesConfigBase extends ConfigBase {
     private int staleFetcherDelaySeconds = DEFAULT_STALE_FETCHER_DELAY_SECONDS;
     private List<String> forkedJvmArgs = new ArrayList<>();
     private Path tikaConfig;
+    private Path pipesPluginsConfig;
     private String javaPath = "java";
 
     public long getTimeoutMillis() {
@@ -131,9 +131,14 @@ public class PipesConfigBase extends ConfigBase {
         this.tikaConfig = tikaConfig;
     }
 
-    public void setTikaConfig(String tikaConfig) {
-        setTikaConfig(Paths.get(tikaConfig));
+    public Path getPipesPluginsConfig() {
+        return pipesPluginsConfig;
     }
+
+    public void setPipesPluginsConfig(Path pipesPluginsConfig) {
+        this.pipesPluginsConfig = pipesPluginsConfig;
+    }
+
 
     public String getJavaPath() {
         return javaPath;

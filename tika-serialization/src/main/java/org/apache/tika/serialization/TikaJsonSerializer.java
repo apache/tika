@@ -98,7 +98,6 @@ public class TikaJsonSerializer {
      */
     public static void serializeObject(String fieldName, Object obj, JsonGenerator jsonGenerator) throws TikaSerializationException {
 
-
         try {
             Constructor constructor = obj
                     .getClass()
@@ -131,7 +130,7 @@ public class TikaJsonSerializer {
 
             jsonGenerator.writeEndObject();
         } catch (IOException e) {
-            throw new TikaSerializationException("couldn't serialize", e);
+            throw new TikaSerializationException("problem", e);
         }
     }
 

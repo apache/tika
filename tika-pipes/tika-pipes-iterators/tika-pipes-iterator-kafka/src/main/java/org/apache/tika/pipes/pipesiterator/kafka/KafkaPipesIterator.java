@@ -16,9 +16,9 @@
  */
 package org.apache.tika.pipes.pipesiterator.kafka;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeoutException;
 
@@ -30,85 +30,56 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.FetchEmitTuple;
-import org.apache.tika.pipes.core.HandlerConfig;
-import org.apache.tika.pipes.core.emitter.EmitKey;
-import org.apache.tika.pipes.core.fetcher.FetchKey;
-import org.apache.tika.pipes.core.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.HandlerConfig;
+import org.apache.tika.pipes.api.emitter.EmitKey;
+import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig;
+import org.apache.tika.pipes.pipesiterator.PipesIteratorBase;
+import org.apache.tika.plugins.ExtensionConfig;
 
-public class KafkaPipesIterator extends PipesIterator implements Initializable {
+public class KafkaPipesIterator extends PipesIteratorBase {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaPipesIterator.class);
-    String topic;
-    String bootstrapServers;
-    String keySerializer;
-    String valueSerializer;
-    String groupId;
-    String autoOffsetReset = "earliest";
-    int pollDelayMs = 100;
-    int emitMax = -1;
-    int groupInitialRebalanceDelayMs = 3000;
 
-    private Properties props;
+    public static KafkaPipesIterator build(ExtensionConfig extensionConfig) throws TikaConfigException, IOException {
+        KafkaPipesIterator iterator = new KafkaPipesIterator(extensionConfig);
+        iterator.configure();
+        return iterator;
+    }
+
+    private KafkaPipesIteratorConfig config;
     private KafkaConsumer<String, String> consumer;
 
-
-    @Field
-    public void setTopic(String topic) {
-        this.topic = topic;
+    private KafkaPipesIterator(ExtensionConfig extensionConfig) {
+        super(extensionConfig);
     }
 
-    @Field
-    public void setGroupId(String groupId) {
-        this.groupId = groupId;
+    private void configure() throws IOException, TikaConfigException {
+        config = KafkaPipesIteratorConfig.load(pluginConfig.jsonConfig());
+        checkConfig(config);
+
+        Properties props = new Properties();
+        safePut(props, ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, config.getBootstrapServers());
+        safePut(props, ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+                serializerClass(config.getKeySerializer(), StringDeserializer.class));
+        safePut(props, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+                serializerClass(config.getValueSerializer(), StringDeserializer.class));
+        safePut(props, ConsumerConfig.GROUP_ID_CONFIG, config.getGroupId());
+        safePut(props, ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, config.getAutoOffsetReset());
+        safePut(props, "group.initial.rebalance.delay.ms", config.getGroupInitialRebalanceDelayMs());
+
+        consumer = new KafkaConsumer<>(props);
+        consumer.subscribe(Arrays.asList(config.getTopic()));
     }
 
-    @Field
-    public void setBootstrapServers(String bootstrapServers) {
-        this.bootstrapServers = bootstrapServers;
-    }
-
-    @Field
-    public void setKeySerializer(String keySerializer) {
-        this.keySerializer = keySerializer;
-    }
-
-    @Field
-    public void setAutoOffsetReset(String autoOffsetReset) {
-        this.autoOffsetReset = autoOffsetReset;
-    }
-
-    @Field
-    public void setValueSerializer(String valueSerializer) {
-        this.valueSerializer = valueSerializer;
-    }
-
-    @Field
-    public void setPollDelayMs(int pollDelayMs) {
-        this.pollDelayMs = pollDelayMs;
-    }
-
-    @Field
-    public void setGroupInitialRebalanceDelayMs(int groupInitialRebalanceDelayMs) {
-        this.groupInitialRebalanceDelayMs = groupInitialRebalanceDelayMs;
-    }
-
-    /**
-     * If the kafka pipe iterator will keep polling for more documents until it returns an empty result.
-     * If you set emitMax is set to > 0, it will stop polling if the number of documents you
-     * have emitted so far > emitMax.
-     */
-    @Field
-    public void setEmitMax(int emitMax) {
-        this.emitMax = emitMax;
+    private void checkConfig(KafkaPipesIteratorConfig config) throws TikaConfigException {
+        TikaConfig.mustNotBeEmpty("bootstrapServers", config.getBootstrapServers());
+        TikaConfig.mustNotBeEmpty("topic", config.getTopic());
     }
 
     private void safePut(Properties props, String key, Object val) {
@@ -117,46 +88,29 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
         }
     }
 
-    @Override
-    public void initialize(Map<String, Param> params) {
-        props = new Properties();
-        safePut(props, ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        safePut(props, ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, serializerClass(keySerializer, StringDeserializer.class));
-        safePut(props, ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, serializerClass(valueSerializer, StringDeserializer.class));
-        safePut(props, ConsumerConfig.GROUP_ID_CONFIG, groupId);
-        safePut(props, ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, autoOffsetReset);
-        safePut(props, "group.inital.rebalance.delay.ms", groupInitialRebalanceDelayMs);
-        consumer = new KafkaConsumer<>(props);
-        consumer.subscribe(Arrays.asList(topic));
-    }
-
-    private Object serializerClass(String className, Class defaultClass) {
+    private Object serializerClass(String className, Class<?> defaultClass) {
         try {
             return className == null ? defaultClass : Class.forName(className);
         } catch (ClassNotFoundException e) {
-            LOGGER.error("Could not find key serializer class: {}", className);
-            return null;
+            LOGGER.error("Could not find serializer class: {}", className);
+            return defaultClass;
         }
     }
 
     @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
-        super.checkInitialization(problemHandler);
-        TikaConfig.mustNotBeEmpty("bootstrapServers", this.bootstrapServers);
-        TikaConfig.mustNotBeEmpty("topic", this.topic);
-    }
-
-    @Override
     protected void enqueue() throws InterruptedException, TimeoutException {
-        String fetcherName = getFetcherName();
-        String emitterName = getEmitterName();
+        PipesIteratorBaseConfig baseConfig = config.getBaseConfig();
+        String fetcherId = baseConfig.fetcherId();
+        String emitterId = baseConfig.emitterId();
+        HandlerConfig handlerConfig = baseConfig.handlerConfig();
+
         long start = System.currentTimeMillis();
         int count = 0;
-        HandlerConfig handlerConfig = getHandlerConfig();
+        int emitMax = config.getEmitMax();
         ConsumerRecords<String, String> records;
 
         do {
-            records = consumer.poll(Duration.ofMillis(pollDelayMs));
+            records = consumer.poll(Duration.ofMillis(config.getPollDelayMs()));
             for (ConsumerRecord<String, String> r : records) {
                 long elapsed = System.currentTimeMillis() - start;
                 if (LOGGER.isDebugEnabled()) {
@@ -164,10 +118,13 @@ public class KafkaPipesIterator extends PipesIterator implements Initializable {
                 }
                 ParseContext parseContext = new ParseContext();
                 parseContext.set(HandlerConfig.class, handlerConfig);
-                tryToAdd(new FetchEmitTuple(r.key(), new FetchKey(fetcherName, r.key()), new EmitKey(emitterName, r.key()), new Metadata(), parseContext, getOnParseException()));
+                tryToAdd(new FetchEmitTuple(r.key(), new FetchKey(fetcherId, r.key()),
+                        new EmitKey(emitterId, r.key()), new Metadata(), parseContext,
+                        baseConfig.onParseException()));
                 ++count;
             }
-        } while ((emitMax > 0 || count < emitMax) && !records.isEmpty());
+        } while ((emitMax < 0 || count < emitMax) && !records.isEmpty());
+
         long elapsed = System.currentTimeMillis() - start;
         LOGGER.info("Finished enqueuing {} files in {} ms", count, elapsed);
     }

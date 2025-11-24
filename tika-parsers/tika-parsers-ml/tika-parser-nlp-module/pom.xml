@@ -193,7 +193,7 @@
                         <executions>
                             <execution>
                                 <id>testSetup</id>
-                                <phase>generate-test-resources</phase>
+                                <phase>process-test-resources</phase>
                                 <goals>
                                     <goal>execute</goal>
                                 </goals>

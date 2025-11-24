@@ -24,7 +24,6 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import jakarta.ws.rs.BadRequestException;
@@ -43,29 +42,31 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.core.async.AsyncProcessor;
 import org.apache.tika.pipes.core.async.OfferLargerThanQueueSize;
-import org.apache.tika.pipes.core.emitter.EmitData;
+import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
-import org.apache.tika.pipes.core.fetcher.FetchKey;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTupleList;
+import org.apache.tika.plugins.TikaConfigs;
+import org.apache.tika.plugins.TikaPluginManager;
 
 @Path("/async")
 public class AsyncResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(AsyncResource.class);
     private final AsyncProcessor asyncProcessor;
-    private final Set<String> supportedFetchers;
     private final EmitterManager emitterManager;
     long maxQueuePauseMs = 60000;
     private ArrayBlockingQueue<FetchEmitTuple> queue;
 
-    public AsyncResource(java.nio.file.Path tikaConfigPath, Set<String> supportedFetchers) throws TikaException, IOException, SAXException {
-        this.asyncProcessor = new AsyncProcessor(tikaConfigPath);
-        this.supportedFetchers = supportedFetchers;
-        this.emitterManager = EmitterManager.load(tikaConfigPath);
+    public AsyncResource(java.nio.file.Path tikaConfigPath, java.nio.file.Path pluginsConfig) throws TikaException, IOException, SAXException {
+        this.asyncProcessor = new AsyncProcessor(tikaConfigPath, pluginsConfig);
+        TikaConfigs tikaConfigs = TikaConfigs.load(pluginsConfig);
+        TikaPluginManager pluginManager = TikaPluginManager.load(tikaConfigs);
+        this.emitterManager = EmitterManager.load(pluginManager, tikaConfigs);
     }
 
     public ArrayBlockingQueue<FetchEmitTuple> getFetchEmitQueue(int queueSize) {
@@ -73,7 +74,7 @@ public class AsyncResource {
         return queue;
     }
 
-    public ArrayBlockingQueue<EmitData> getEmitDataQueue(int size) {
+    public ArrayBlockingQueue<EmitDataImpl> getEmitDataQueue(int size) {
         return new ArrayBlockingQueue<>(size);
     }
 
@@ -103,19 +104,14 @@ public class AsyncResource {
         //the requested fetchers and emitters
         //throw early
         for (FetchEmitTuple t : request.getTuples()) {
-            if (!supportedFetchers.contains(t
-                    .getFetchKey()
-                    .getFetcherName())) {
-                return badFetcher(t.getFetchKey());
-            }
             if (!emitterManager
                     .getSupported()
                     .contains(t
                             .getEmitKey()
-                            .getEmitterName())) {
+                            .getEmitterId())) {
                 return badEmitter(t
                         .getEmitKey()
-                        .getEmitterName());
+                        .getEmitterId());
             }
             ParseContext parseContext = t.getParseContext();
             EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);
@@ -177,7 +173,7 @@ public class AsyncResource {
     }
 
     private Map<String, Object> badFetcher(FetchKey fetchKey) {
-        throw new BadRequestException("can't find fetcher for " + fetchKey.getFetcherName());
+        throw new BadRequestException("can't find fetcher for " + fetchKey.getFetcherId());
     }
 
     private AsyncRequest deserializeASyncRequest(InputStream is) throws IOException {

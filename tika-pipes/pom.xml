@@ -30,24 +30,24 @@
   <packaging>pom</packaging>
 
   <modules>
+    <module>tika-pipes-api</module>
     <module>tika-pipes-core</module>
     <module>tika-httpclient-commons</module>
     <module>tika-fetchers</module>
     <module>tika-emitters</module>
     <module>tika-pipes-iterators</module>
     <module>tika-pipes-reporters</module>
+    <module>tika-pipes-integration-tests</module>
     <module>tika-async-cli</module>
   </modules>
   <dependencies>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-core</artifactId>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-slf4j2-impl</artifactId>
-      <scope>test</scope>
     </dependency>
   </dependencies>
   <build>

@@ -25,7 +25,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
-import org.apache.tika.pipes.core.FetchEmitTuple;
+import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.utils.StringUtils;
 
 public class FetchEmitTupleSerializer extends JsonSerializer<FetchEmitTuple> {
@@ -43,13 +43,13 @@ public class FetchEmitTupleSerializer extends JsonSerializer<FetchEmitTuple> {
 
         jsonGenerator.writeStartObject();
         jsonGenerator.writeStringField(ID, t.getId());
-        jsonGenerator.writeStringField(FETCHER, t.getFetchKey().getFetcherName());
+        jsonGenerator.writeStringField(FETCHER, t.getFetchKey().getFetcherId());
         jsonGenerator.writeStringField(FETCH_KEY, t.getFetchKey().getFetchKey());
         if (t.getFetchKey().hasRange()) {
             jsonGenerator.writeNumberField(FETCH_RANGE_START, t.getFetchKey().getRangeStart());
             jsonGenerator.writeNumberField(FETCH_RANGE_END, t.getFetchKey().getRangeEnd());
         }
-        jsonGenerator.writeStringField(EMITTER, t.getEmitKey().getEmitterName());
+        jsonGenerator.writeStringField(EMITTER, t.getEmitKey().getEmitterId());
         if (!StringUtils.isBlank(t.getEmitKey().getEmitKey())) {
             jsonGenerator.writeStringField(EMIT_KEY, t.getEmitKey().getEmitKey());
         }
