@@ -1,0 +1,2100 @@
+{
+  "id": "myid-0",
+  "fetcher": "fs",
+  "fetchKey": "0.xml",
+  "emitter": "fs",
+  "emitKey": "0.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-1",
+  "fetcher": "fs",
+  "fetchKey": "1.xml",
+  "emitter": "fs",
+  "emitKey": "1.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-2",
+  "fetcher": "fs",
+  "fetchKey": "2.xml",
+  "emitter": "fs",
+  "emitKey": "2.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-3",
+  "fetcher": "fs",
+  "fetchKey": "3.xml",
+  "emitter": "fs",
+  "emitKey": "3.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-4",
+  "fetcher": "fs",
+  "fetchKey": "4.xml",
+  "emitter": "fs",
+  "emitKey": "4.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-5",
+  "fetcher": "fs",
+  "fetchKey": "5.xml",
+  "emitter": "fs",
+  "emitKey": "5.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-6",
+  "fetcher": "fs",
+  "fetchKey": "6.xml",
+  "emitter": "fs",
+  "emitKey": "6.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-7",
+  "fetcher": "fs",
+  "fetchKey": "7.xml",
+  "emitter": "fs",
+  "emitKey": "7.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-8",
+  "fetcher": "fs",
+  "fetchKey": "8.xml",
+  "emitter": "fs",
+  "emitKey": "8.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-9",
+  "fetcher": "fs",
+  "fetchKey": "9.xml",
+  "emitter": "fs",
+  "emitKey": "9.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-10",
+  "fetcher": "fs",
+  "fetchKey": "10.xml",
+  "emitter": "fs",
+  "emitKey": "10.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-11",
+  "fetcher": "fs",
+  "fetchKey": "11.xml",
+  "emitter": "fs",
+  "emitKey": "11.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-12",
+  "fetcher": "fs",
+  "fetchKey": "12.xml",
+  "emitter": "fs",
+  "emitKey": "12.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-13",
+  "fetcher": "fs",
+  "fetchKey": "13.xml",
+  "emitter": "fs",
+  "emitKey": "13.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-14",
+  "fetcher": "fs",
+  "fetchKey": "14.xml",
+  "emitter": "fs",
+  "emitKey": "14.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-15",
+  "fetcher": "fs",
+  "fetchKey": "15.xml",
+  "emitter": "fs",
+  "emitKey": "15.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-16",
+  "fetcher": "fs",
+  "fetchKey": "16.xml",
+  "emitter": "fs",
+  "emitKey": "16.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-17",
+  "fetcher": "fs",
+  "fetchKey": "17.xml",
+  "emitter": "fs",
+  "emitKey": "17.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-18",
+  "fetcher": "fs",
+  "fetchKey": "18.xml",
+  "emitter": "fs",
+  "emitKey": "18.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-19",
+  "fetcher": "fs",
+  "fetchKey": "19.xml",
+  "emitter": "fs",
+  "emitKey": "19.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-20",
+  "fetcher": "fs",
+  "fetchKey": "20.xml",
+  "emitter": "fs",
+  "emitKey": "20.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-21",
+  "fetcher": "fs",
+  "fetchKey": "21.xml",
+  "emitter": "fs",
+  "emitKey": "21.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-22",
+  "fetcher": "fs",
+  "fetchKey": "22.xml",
+  "emitter": "fs",
+  "emitKey": "22.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-23",
+  "fetcher": "fs",
+  "fetchKey": "23.xml",
+  "emitter": "fs",
+  "emitKey": "23.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-24",
+  "fetcher": "fs",
+  "fetchKey": "24.xml",
+  "emitter": "fs",
+  "emitKey": "24.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-25",
+  "fetcher": "fs",
+  "fetchKey": "25.xml",
+  "emitter": "fs",
+  "emitKey": "25.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-26",
+  "fetcher": "fs",
+  "fetchKey": "26.xml",
+  "emitter": "fs",
+  "emitKey": "26.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-27",
+  "fetcher": "fs",
+  "fetchKey": "27.xml",
+  "emitter": "fs",
+  "emitKey": "27.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-28",
+  "fetcher": "fs",
+  "fetchKey": "28.xml",
+  "emitter": "fs",
+  "emitKey": "28.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-29",
+  "fetcher": "fs",
+  "fetchKey": "29.xml",
+  "emitter": "fs",
+  "emitKey": "29.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-30",
+  "fetcher": "fs",
+  "fetchKey": "30.xml",
+  "emitter": "fs",
+  "emitKey": "30.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-31",
+  "fetcher": "fs",
+  "fetchKey": "31.xml",
+  "emitter": "fs",
+  "emitKey": "31.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-32",
+  "fetcher": "fs",
+  "fetchKey": "32.xml",
+  "emitter": "fs",
+  "emitKey": "32.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-33",
+  "fetcher": "fs",
+  "fetchKey": "33.xml",
+  "emitter": "fs",
+  "emitKey": "33.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-34",
+  "fetcher": "fs",
+  "fetchKey": "34.xml",
+  "emitter": "fs",
+  "emitKey": "34.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-35",
+  "fetcher": "fs",
+  "fetchKey": "35.xml",
+  "emitter": "fs",
+  "emitKey": "35.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-36",
+  "fetcher": "fs",
+  "fetchKey": "36.xml",
+  "emitter": "fs",
+  "emitKey": "36.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-37",
+  "fetcher": "fs",
+  "fetchKey": "37.xml",
+  "emitter": "fs",
+  "emitKey": "37.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-38",
+  "fetcher": "fs",
+  "fetchKey": "38.xml",
+  "emitter": "fs",
+  "emitKey": "38.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-39",
+  "fetcher": "fs",
+  "fetchKey": "39.xml",
+  "emitter": "fs",
+  "emitKey": "39.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-40",
+  "fetcher": "fs",
+  "fetchKey": "40.xml",
+  "emitter": "fs",
+  "emitKey": "40.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-41",
+  "fetcher": "fs",
+  "fetchKey": "41.xml",
+  "emitter": "fs",
+  "emitKey": "41.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-42",
+  "fetcher": "fs",
+  "fetchKey": "42.xml",
+  "emitter": "fs",
+  "emitKey": "42.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-43",
+  "fetcher": "fs",
+  "fetchKey": "43.xml",
+  "emitter": "fs",
+  "emitKey": "43.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-44",
+  "fetcher": "fs",
+  "fetchKey": "44.xml",
+  "emitter": "fs",
+  "emitKey": "44.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-45",
+  "fetcher": "fs",
+  "fetchKey": "45.xml",
+  "emitter": "fs",
+  "emitKey": "45.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-46",
+  "fetcher": "fs",
+  "fetchKey": "46.xml",
+  "emitter": "fs",
+  "emitKey": "46.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-47",
+  "fetcher": "fs",
+  "fetchKey": "47.xml",
+  "emitter": "fs",
+  "emitKey": "47.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-48",
+  "fetcher": "fs",
+  "fetchKey": "48.xml",
+  "emitter": "fs",
+  "emitKey": "48.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-49",
+  "fetcher": "fs",
+  "fetchKey": "49.xml",
+  "emitter": "fs",
+  "emitKey": "49.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-50",
+  "fetcher": "fs",
+  "fetchKey": "50.xml",
+  "emitter": "fs",
+  "emitKey": "50.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-51",
+  "fetcher": "fs",
+  "fetchKey": "51.xml",
+  "emitter": "fs",
+  "emitKey": "51.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-52",
+  "fetcher": "fs",
+  "fetchKey": "52.xml",
+  "emitter": "fs",
+  "emitKey": "52.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-53",
+  "fetcher": "fs",
+  "fetchKey": "53.xml",
+  "emitter": "fs",
+  "emitKey": "53.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-54",
+  "fetcher": "fs",
+  "fetchKey": "54.xml",
+  "emitter": "fs",
+  "emitKey": "54.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-55",
+  "fetcher": "fs",
+  "fetchKey": "55.xml",
+  "emitter": "fs",
+  "emitKey": "55.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-56",
+  "fetcher": "fs",
+  "fetchKey": "56.xml",
+  "emitter": "fs",
+  "emitKey": "56.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-57",
+  "fetcher": "fs",
+  "fetchKey": "57.xml",
+  "emitter": "fs",
+  "emitKey": "57.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-58",
+  "fetcher": "fs",
+  "fetchKey": "58.xml",
+  "emitter": "fs",
+  "emitKey": "58.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-59",
+  "fetcher": "fs",
+  "fetchKey": "59.xml",
+  "emitter": "fs",
+  "emitKey": "59.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-60",
+  "fetcher": "fs",
+  "fetchKey": "60.xml",
+  "emitter": "fs",
+  "emitKey": "60.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-61",
+  "fetcher": "fs",
+  "fetchKey": "61.xml",
+  "emitter": "fs",
+  "emitKey": "61.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-62",
+  "fetcher": "fs",
+  "fetchKey": "62.xml",
+  "emitter": "fs",
+  "emitKey": "62.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-63",
+  "fetcher": "fs",
+  "fetchKey": "63.xml",
+  "emitter": "fs",
+  "emitKey": "63.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-64",
+  "fetcher": "fs",
+  "fetchKey": "64.xml",
+  "emitter": "fs",
+  "emitKey": "64.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-65",
+  "fetcher": "fs",
+  "fetchKey": "65.xml",
+  "emitter": "fs",
+  "emitKey": "65.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-66",
+  "fetcher": "fs",
+  "fetchKey": "66.xml",
+  "emitter": "fs",
+  "emitKey": "66.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-67",
+  "fetcher": "fs",
+  "fetchKey": "67.xml",
+  "emitter": "fs",
+  "emitKey": "67.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-68",
+  "fetcher": "fs",
+  "fetchKey": "68.xml",
+  "emitter": "fs",
+  "emitKey": "68.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-69",
+  "fetcher": "fs",
+  "fetchKey": "69.xml",
+  "emitter": "fs",
+  "emitKey": "69.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-70",
+  "fetcher": "fs",
+  "fetchKey": "70.xml",
+  "emitter": "fs",
+  "emitKey": "70.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-71",
+  "fetcher": "fs",
+  "fetchKey": "71.xml",
+  "emitter": "fs",
+  "emitKey": "71.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-72",
+  "fetcher": "fs",
+  "fetchKey": "72.xml",
+  "emitter": "fs",
+  "emitKey": "72.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-73",
+  "fetcher": "fs",
+  "fetchKey": "73.xml",
+  "emitter": "fs",
+  "emitKey": "73.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-74",
+  "fetcher": "fs",
+  "fetchKey": "74.xml",
+  "emitter": "fs",
+  "emitKey": "74.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-75",
+  "fetcher": "fs",
+  "fetchKey": "75.xml",
+  "emitter": "fs",
+  "emitKey": "75.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-76",
+  "fetcher": "fs",
+  "fetchKey": "76.xml",
+  "emitter": "fs",
+  "emitKey": "76.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-77",
+  "fetcher": "fs",
+  "fetchKey": "77.xml",
+  "emitter": "fs",
+  "emitKey": "77.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-78",
+  "fetcher": "fs",
+  "fetchKey": "78.xml",
+  "emitter": "fs",
+  "emitKey": "78.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-79",
+  "fetcher": "fs",
+  "fetchKey": "79.xml",
+  "emitter": "fs",
+  "emitKey": "79.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-80",
+  "fetcher": "fs",
+  "fetchKey": "80.xml",
+  "emitter": "fs",
+  "emitKey": "80.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-81",
+  "fetcher": "fs",
+  "fetchKey": "81.xml",
+  "emitter": "fs",
+  "emitKey": "81.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-82",
+  "fetcher": "fs",
+  "fetchKey": "82.xml",
+  "emitter": "fs",
+  "emitKey": "82.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-83",
+  "fetcher": "fs",
+  "fetchKey": "83.xml",
+  "emitter": "fs",
+  "emitKey": "83.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-84",
+  "fetcher": "fs",
+  "fetchKey": "84.xml",
+  "emitter": "fs",
+  "emitKey": "84.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-85",
+  "fetcher": "fs",
+  "fetchKey": "85.xml",
+  "emitter": "fs",
+  "emitKey": "85.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-86",
+  "fetcher": "fs",
+  "fetchKey": "86.xml",
+  "emitter": "fs",
+  "emitKey": "86.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-87",
+  "fetcher": "fs",
+  "fetchKey": "87.xml",
+  "emitter": "fs",
+  "emitKey": "87.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-88",
+  "fetcher": "fs",
+  "fetchKey": "88.xml",
+  "emitter": "fs",
+  "emitKey": "88.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-89",
+  "fetcher": "fs",
+  "fetchKey": "89.xml",
+  "emitter": "fs",
+  "emitKey": "89.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-90",
+  "fetcher": "fs",
+  "fetchKey": "90.xml",
+  "emitter": "fs",
+  "emitKey": "90.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-91",
+  "fetcher": "fs",
+  "fetchKey": "91.xml",
+  "emitter": "fs",
+  "emitKey": "91.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-92",
+  "fetcher": "fs",
+  "fetchKey": "92.xml",
+  "emitter": "fs",
+  "emitKey": "92.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-93",
+  "fetcher": "fs",
+  "fetchKey": "93.xml",
+  "emitter": "fs",
+  "emitKey": "93.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-94",
+  "fetcher": "fs",
+  "fetchKey": "94.xml",
+  "emitter": "fs",
+  "emitKey": "94.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-95",
+  "fetcher": "fs",
+  "fetchKey": "95.xml",
+  "emitter": "fs",
+  "emitKey": "95.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-96",
+  "fetcher": "fs",
+  "fetchKey": "96.xml",
+  "emitter": "fs",
+  "emitKey": "96.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-97",
+  "fetcher": "fs",
+  "fetchKey": "97.xml",
+  "emitter": "fs",
+  "emitKey": "97.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-98",
+  "fetcher": "fs",
+  "fetchKey": "98.xml",
+  "emitter": "fs",
+  "emitKey": "98.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}
+{
+  "id": "myid-99",
+  "fetcher": "fs",
+  "fetchKey": "99.xml",
+  "emitter": "fs",
+  "emitKey": "99.xml.json",
+  "handlerConfig": {
+    "type": "text",
+    "parseMode": "rmeta",
+    "writeLimit": -1,
+    "maxEmbeddedResources": -1
+  },
+  "onParseException": "emit",
+  "embeddedDocumentBytesConfig": {
+    "extractEmbeddedDocumentBytes": true,
+    "zeroPadName": 0,
+    "suffixStrategy": "NONE",
+    "embeddedIdPrefix": "-",
+    "includeOriginal": false
+  }
+}

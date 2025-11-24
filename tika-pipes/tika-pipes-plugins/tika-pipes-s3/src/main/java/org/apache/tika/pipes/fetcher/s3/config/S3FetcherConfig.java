@@ -1,0 +1,178 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.tika.pipes.fetcher.s3.config;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.apache.tika.exception.TikaConfigException;
+
+public class S3FetcherConfig {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    public static S3FetcherConfig load(final String json)
+            throws TikaConfigException {
+        try {
+            return OBJECT_MAPPER.readValue(json, S3FetcherConfig.class);
+        } catch (JsonProcessingException e) {
+            throw new TikaConfigException(
+                    "Failed to parse S3FetcherConfig from JSON", e);
+        }
+    }
+
+    private boolean spoolToTemp = true;
+    private String region;
+    private String profile;
+    private String bucket;
+    private String prefix;
+    private boolean extractUserMetadata = true;
+    private int maxConnections;
+    private String credentialsProvider;
+    private long maxLength = -1;
+    private String accessKey;
+    private String secretKey;
+    private String endpointConfigurationService;
+    private boolean pathStyleAccessEnabled;
+    private long[] throttleSeconds;
+
+    public boolean isSpoolToTemp() {
+        return spoolToTemp;
+    }
+
+    public S3FetcherConfig setSpoolToTemp(boolean spoolToTemp) {
+        this.spoolToTemp = spoolToTemp;
+        return this;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public S3FetcherConfig setRegion(String region) {
+        this.region = region;
+        return this;
+    }
+
+    public String getProfile() {
+        return profile;
+    }
+
+    public S3FetcherConfig setProfile(String profile) {
+        this.profile = profile;
+        return this;
+    }
+
+    public String getBucket() {
+        return bucket;
+    }
+
+    public S3FetcherConfig setBucket(String bucket) {
+        this.bucket = bucket;
+        return this;
+    }
+
+    public String getPrefix() {
+        return prefix;
+    }
+
+    public S3FetcherConfig setPrefix(String prefix) {
+        this.prefix = prefix;
+        return this;
+    }
+
+    public boolean isExtractUserMetadata() {
+        return extractUserMetadata;
+    }
+
+    public S3FetcherConfig setExtractUserMetadata(boolean extractUserMetadata) {
+        this.extractUserMetadata = extractUserMetadata;
+        return this;
+    }
+
+    public int getMaxConnections() {
+        return maxConnections;
+    }
+
+    public S3FetcherConfig setMaxConnections(int maxConnections) {
+        this.maxConnections = maxConnections;
+        return this;
+    }
+
+    public String getCredentialsProvider() {
+        return credentialsProvider;
+    }
+
+    public S3FetcherConfig setCredentialsProvider(String credentialsProvider) {
+        this.credentialsProvider = credentialsProvider;
+        return this;
+    }
+
+    public long getMaxLength() {
+        return maxLength;
+    }
+
+    public S3FetcherConfig setMaxLength(long maxLength) {
+        this.maxLength = maxLength;
+        return this;
+    }
+
+    public String getAccessKey() {
+        return accessKey;
+    }
+
+    public S3FetcherConfig setAccessKey(String accessKey) {
+        this.accessKey = accessKey;
+        return this;
+    }
+
+    public String getSecretKey() {
+        return secretKey;
+    }
+
+    public S3FetcherConfig setSecretKey(String secretKey) {
+        this.secretKey = secretKey;
+        return this;
+    }
+
+    public String getEndpointConfigurationService() {
+        return endpointConfigurationService;
+    }
+
+    public S3FetcherConfig setEndpointConfigurationService(String endpointConfigurationService) {
+        this.endpointConfigurationService = endpointConfigurationService;
+        return this;
+    }
+
+    public boolean isPathStyleAccessEnabled() {
+        return pathStyleAccessEnabled;
+    }
+
+    public S3FetcherConfig setPathStyleAccessEnabled(boolean pathStyleAccessEnabled) {
+        this.pathStyleAccessEnabled = pathStyleAccessEnabled;
+        return this;
+    }
+
+    public long[] getThrottleSeconds() {
+        return throttleSeconds;
+    }
+
+    public S3FetcherConfig setThrottleSeconds(long[] throttleSeconds) {
+        this.throttleSeconds = throttleSeconds;
+        return this;
+    }
+}

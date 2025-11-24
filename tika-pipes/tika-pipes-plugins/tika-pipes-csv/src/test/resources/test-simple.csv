@@ -1,0 +1,6 @@
+id,project,fetchKey
+1,projecta,path/to/my/file1
+2,projectb,path/to/my/file2
+3,projecta,path/to/my/file3
+4,projectb,path/to/my/file4
+5,projecta,path/to/my/file5
