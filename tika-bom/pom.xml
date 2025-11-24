@@ -305,32 +305,32 @@
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
-        <artifactId>tika-emitter-gcs</artifactId>
+        <artifactId>tika-pipes-gcs</artifactId>
         <version>4.0.0-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
-        <artifactId>tika-emitter-jdbc</artifactId>
+        <artifactId>tika-pipes-jdbc</artifactId>
         <version>4.0.0-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
-        <artifactId>tika-emitter-kafka</artifactId>
+        <artifactId>tika-pipes-kafka</artifactId>
         <version>4.0.0-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
-        <artifactId>tika-emitter-opensearch</artifactId>
+        <artifactId>tika-pipes-opensearch</artifactId>
         <version>4.0.0-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
-        <artifactId>tika-emitter-s3</artifactId>
+        <artifactId>tika-pipes-s3</artifactId>
         <version>4.0.0-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
-        <artifactId>tika-emitter-solr</artifactId>
+        <artifactId>tika-pipes-solr</artifactId>
         <version>4.0.0-SNAPSHOT</version>
       </dependency>
 
@@ -341,7 +341,7 @@
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
-        <artifactId>tika-fetcher-http</artifactId>
+        <artifactId>tika-pipes-http</artifactId>
         <version>4.0.0-SNAPSHOT</version>
       </dependency>
       <dependency>
@@ -352,7 +352,7 @@
 
       <dependency>
         <groupId>org.apache.tika</groupId>
-        <artifactId>tika-pipes-iterator-csv</artifactId>
+        <artifactId>tika-pipes-csv</artifactId>
         <version>4.0.0-SNAPSHOT</version>
       </dependency>
       <dependency>

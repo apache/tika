@@ -24,7 +24,7 @@
       <parser-exclude class="org.apache.tika.parser.ocr.TesseractOCRParser"/>
     </parser>
   </parsers>
-  <pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
+  <pipesIterator class="org.apache.tika.pipes.iterator.fs.FileSystemPipesIterator">
     <params>
       <fetcherId>fs</fetcherId>
       <emitterName>fs</emitterName>
