@@ -96,21 +96,7 @@
               <artifactItems>
                 <artifactItem>
                   <groupId>org.apache.tika</groupId>
-                  <artifactId>tika-fetcher-file-system</artifactId>
-                  <version>${project.version}</version>
-                  <type>zip</type>
-                  <overWrite>true</overWrite>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>org.apache.tika</groupId>
-                  <artifactId>tika-emitter-file-system</artifactId>
-                  <version>${project.version}</version>
-                  <type>zip</type>
-                  <overWrite>true</overWrite>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>org.apache.tika</groupId>
-                  <artifactId>tika-fetcher-http</artifactId>
+                  <artifactId>tika-pipes-file-system</artifactId>
                   <version>${project.version}</version>
                   <type>zip</type>
                   <overWrite>true</overWrite>

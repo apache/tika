@@ -25,7 +25,7 @@
       <profile><!-- fill in here --></profile>
     </fetcher>
   </fetchers>
-  <pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
+  <pipesIterator class="org.apache.tika.pipes.iterator.fs.FileSystemPipesIterator">
     <fetcherId>fs</fetcherId>
     <basePath>basePath</basePath>
   </pipesIterator>

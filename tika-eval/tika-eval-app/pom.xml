@@ -37,7 +37,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
-      <artifactId>tika-pipes-iterator-file-system</artifactId>
+      <artifactId>tika-pipes-file-system</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

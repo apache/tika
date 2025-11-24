@@ -104,7 +104,7 @@
       </params>
     </emitter>
   </emitters>
-  <pipesIterator class="org.apache.tika.pipes.pipesiterator.kafka.KafkaPipesIterator">
+  <pipesIterator class="org.apache.tika.pipes.iterator.kafka.KafkaPipesIterator">
     <params>
       <topic>{PIPE_ITERATOR_TOPIC}</topic>
       <bootstrapServers>{BOOTSTRAP_SERVERS}</bootstrapServers>

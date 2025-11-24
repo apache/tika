@@ -16,14 +16,14 @@
   limitations under the License.
 -->
 <properties>
-  <pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
+  <pipesIterator class="org.apache.tika.pipes.iterator.fs.FileSystemPipesIterator">
     <params>
       <fetcherId>fsf1</fetcherId>
       <emitterId>fse1</emitterId>
       <basePath>/my/base/path1</basePath>
     </params>
   </pipesIterator>
-  <pipesIterator class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
+  <pipesIterator class="org.apache.tika.pipes.iterator.fs.FileSystemPipesIterator">
     <params>
       <fetcherId>fsf2</fetcherId>
       <emitterId>fse2</emitterId>
