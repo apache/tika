@@ -17,6 +17,7 @@
 package org.apache.tika.annotation;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
 
@@ -59,7 +60,7 @@ public class KebabCaseConverterTest {
 
     @Test
     public void testEdgeCases() {
-        assertEquals("", KebabCaseConverter.toKebabCase(null));
+        assertNull(KebabCaseConverter.toKebabCase(null));
         assertEquals("", KebabCaseConverter.toKebabCase(""));
         assertEquals("a", KebabCaseConverter.toKebabCase("A"));
         assertEquals("ab", KebabCaseConverter.toKebabCase("AB"));
