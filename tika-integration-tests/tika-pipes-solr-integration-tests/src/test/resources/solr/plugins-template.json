@@ -10,7 +10,8 @@
     "solr-emitter": {
       "se": {
         "solrCollection": "testcol",
-        SOLR_CONNECTION_EMITTER,
+        "solrUrls": SOLR_URLS,
+        "solrZkHosts": SOLR_ZK_HOSTS,
         "updateStrategy": "UPDATE_STRATEGY",
         "attachmentStrategy": "ATTACHMENT_STRATEGY",
         "commitWithin": 1,
@@ -24,7 +25,8 @@
   "pipes-iterator": {
     "solr-pipes-iterator": {
       "solrCollection": "testcol",
-      SOLR_CONNECTION_ITERATOR,
+      "solrUrls": SOLR_URLS,
+      "solrZkHosts": SOLR_ZK_HOSTS,
       "idField": "id",
       "parsingIdField": "parsing_id_i",
       "failCountField": "fail_count_i",

@@ -32,12 +32,8 @@
   <url>https://tika.apache.org/</url>
 
   <properties>
-    <plugin.id>s3-pipes-iterator</plugin.id>
-    <plugin.class>org.apache.tika.pipes.pipesiterator.s3.S3PipesIteratorPlugin</plugin.class>
-    <plugin.version>4.0.0-SNAPSHOT</plugin.version>
-    <plugin.provider>S3 Pipes Iterator</plugin.provider>
-    <plugin.dependencies />
-    <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-pipes-core,tika-serialization,tika-plugins-core,tika-pipes-iterator-commons</plugin.excluded.artifactIds>
+    <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-serialization,tika-plugins-core,tika-pipes-iterator-commons</plugin.excluded.artifactIds>
+    <plugin.excluded.groupIds>org.apache.logging.log4j,org.slf4j</plugin.excluded.groupIds>
   </properties>
 
   <dependencies>
@@ -77,7 +73,7 @@
               <outputDirectory>${project.build.directory}/lib</outputDirectory>
               <includeScope>runtime</includeScope>
               <excludeArtifactIds>${plugin.excluded.artifactIds}</excludeArtifactIds>
-              <excludeGroupIds>org.apache.logging.log4j,org.slf4j</excludeGroupIds>
+              <excludeGroupIds>${plugin.excluded.groupIds}</excludeGroupIds>
             </configuration>
           </execution>
         </executions>
@@ -87,18 +83,8 @@
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
           <archive>
-            <manifest>
-              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-            </manifest>
             <manifestEntries>
               <Automatic-Module-Name>org.apache.tika.pipes.pipesiterator.s3</Automatic-Module-Name>
-              <Plugin-Id>s3-pipes-iterator</Plugin-Id>
-              <Plugin-Version>${project.version}</Plugin-Version>
-              <Plugin-Class>org.apache.tika.pipes.pipesiterator.s3.S3PipesIteratorPlugin</Plugin-Class>
-              <Plugin-Provider>S3 Pipes Iterator</Plugin-Provider>
-              <Plugin-Description>Iterates over S3 buckets</Plugin-Description>
-              <Plugin-Dependencies></Plugin-Dependencies>
             </manifestEntries>
           </archive>
         </configuration>

@@ -28,31 +28,27 @@
   <artifactId>tika-emitter-file-system</artifactId>
   <name>Apache Tika file system emitter</name>
   <properties>
-    <plugin.id>file-system-emitter</plugin.id>
-    <plugin.class>org.apache.tika.pipes.emitter.fs.FileSystemEmitterPlugin</plugin.class>
-    <plugin.version>4.0.0-SNAPSHOT</plugin.version>
-    <plugin.provider>Local File System Emitter</plugin.provider>
-    <plugin.dependencies />
     <!-- Never include the core artifacts in your plugin lib directory. If you do, it will cause the classloading
      to get messed up when finding your plugins. -->
-    <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-pipes-core</plugin.excluded.artifactIds>
+    <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-serialization,tika-plugins-core</plugin.excluded.artifactIds>
+    <plugin.excluded.groupIds>org.apache.logging.log4j,org.slf4j</plugin.excluded.groupIds>
   </properties>
   <dependencies>
     <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.tika</groupId>
-      <artifactId>tika-core</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-pipes-api</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.tika</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>tika-serialization</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -64,6 +60,18 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <Automatic-Module-Name>org.apache.tika.pipes.emitter.fs</Automatic-Module-Name>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
@@ -79,30 +87,10 @@
               <outputDirectory>${project.build.directory}/lib</outputDirectory>
               <includeScope>runtime</includeScope>
               <excludeArtifactIds>${plugin.excluded.artifactIds}</excludeArtifactIds>
+              <excludeGroupIds>${plugin.excluded.groupIds}</excludeGroupIds>
             </configuration>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <configuration>
-          <archive>
-            <manifest>
-              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-            </manifest>
-            <manifestEntries>
-              <Plugin-Id>file-system-emitter</Plugin-Id>
-              <Plugin-Version>${project.version}</Plugin-Version>
-              <Plugin-Class>org.apache.tika.pipes.emitter.fs.FileSystemEmitterPlugin</Plugin-Class>
-              <Plugin-Provider>Local File System Emitter</Plugin-Provider>
-              <Plugin-Description>Capable of fetching the local file system</Plugin-Description>
-<!--              <Plugin-Requires>1.0.0</Plugin-Requires> -->
-              <Plugin-Dependencies></Plugin-Dependencies>
-            </manifestEntries>
-          </archive>
-        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>

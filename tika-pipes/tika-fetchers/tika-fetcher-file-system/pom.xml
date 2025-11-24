@@ -35,8 +35,24 @@
     <plugin.dependencies />
     <!-- Never include the core artifacts in your plugin lib directory. If you do, it will cause the classloading
      to get messed up when finding your plugins. -->
-    <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-pipes-core</plugin.excluded.artifactIds>
+    <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-serialization,tika-plugins-core</plugin.excluded.artifactIds>
+    <plugin.excluded.groupIds>org.apache.logging.log4j,org.slf4j</plugin.excluded.groupIds>
   </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-pipes-api</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-core</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
 
   <build>
     <plugins>
@@ -55,6 +71,7 @@
               <outputDirectory>${project.build.directory}/lib</outputDirectory>
               <includeScope>runtime</includeScope>
               <excludeArtifactIds>${plugin.excluded.artifactIds}</excludeArtifactIds>
+              <excludeGroupIds>${plugin.excluded.groupIds}</excludeGroupIds>
             </configuration>
           </execution>
         </executions>
@@ -65,18 +82,10 @@
         <version>3.4.2</version>
         <configuration>
           <archive>
-            <manifest>
-              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-            </manifest>
             <manifestEntries>
-              <Plugin-Id>file-system-fetcher</Plugin-Id>
-              <Plugin-Version>${project.version}</Plugin-Version>
-              <Plugin-Class>org.apache.tika.pipes.fetcher.fs.FileSystemFetcherPlugin</Plugin-Class>
-              <Plugin-Provider>Local File System Fetcher</Plugin-Provider>
-              <Plugin-Description>Capable of fetching the local file system</Plugin-Description>
-<!--              <Plugin-Requires>1.0.0</Plugin-Requires> -->
-              <Plugin-Dependencies></Plugin-Dependencies>
+              <Automatic-Module-Name>org.apache.tika.pipes.fetcher.fs</Automatic-Module-Name>
+            </manifestEntries>
+            <manifestEntries>
             </manifestEntries>
           </archive>
         </configuration>

@@ -57,6 +57,11 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-pipes-iterator-commons</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>com.martensigwart</groupId>
       <artifactId>fakeload</artifactId>
       <version>${fakeload.version}</version>

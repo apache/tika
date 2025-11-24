@@ -31,8 +31,8 @@
   <properties>
     <!-- Never include the core artifacts in your plugin lib directory. If you do, it will cause the classloading
       to get messed up when finding your plugins. -->
-    <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-pipes-core</plugin.excluded.artifactIds>
-
+    <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-serialization,tika-plugins-core</plugin.excluded.artifactIds>
+    <plugin.excluded.groupIds>org.apache.logging.log4j,org.slf4j</plugin.excluded.groupIds>
   </properties>
 
   <dependencies>
@@ -43,7 +43,13 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-pipes-core</artifactId>
+      <artifactId>tika-pipes-api</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-core</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -80,6 +86,12 @@
       <artifactId>mockito-core</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-pipes-core</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -99,6 +111,7 @@
               <outputDirectory>${project.build.directory}/lib</outputDirectory>
               <includeScope>runtime</includeScope>
               <excludeArtifactIds>${plugin.excluded.artifactIds}</excludeArtifactIds>
+              <excludeGroupIds>${plugin.excluded.groupIds}</excludeGroupIds>
             </configuration>
           </execution>
         </executions>
@@ -108,19 +121,8 @@
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
           <archive>
-            <manifest>
-              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-            </manifest>
             <manifestEntries>
               <Automatic-Module-Name>org.apache.tika.pipes.fetcher.http</Automatic-Module-Name>
-              <Plugin-Id>tika-fetcher-http</Plugin-Id>
-              <Plugin-Version>${project.version}</Plugin-Version>
-              <Plugin-Class>org.apache.tika.pipes.fetcher.http.HttpFetcherPlugin</Plugin-Class>
-              <Plugin-Description>Capable of fetching from an http source</Plugin-Description>
-              <!--              <Plugin-Requires>1.0.0</Plugin-Requires> -->
-              <Plugin-Dependencies></Plugin-Dependencies>
-
             </manifestEntries>
           </archive>
         </configuration>

@@ -38,7 +38,8 @@
     <plugin.dependencies />
     <!-- Never include the core artifacts in your plugin lib directory. If you do, it will cause the classloading
      to get messed up when finding your plugins. -->
-    <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-pipes-core</plugin.excluded.artifactIds>
+    <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-serialization,tika-plugins-core,tika-pipes-iterator-commons</plugin.excluded.artifactIds>
+    <plugin.excluded.groupIds>org.apache.logging.log4j,org.slf4j</plugin.excluded.groupIds>
   </properties>
 
   <dependencies>
@@ -66,6 +67,7 @@
               <outputDirectory>${project.build.directory}/lib</outputDirectory>
               <includeScope>runtime</includeScope>
               <excludeArtifactIds>${plugin.excluded.artifactIds}</excludeArtifactIds>
+              <excludeGroupIds>${plugin.excluded.groupIds}</excludeGroupIds>
             </configuration>
           </execution>
         </executions>
@@ -75,18 +77,8 @@
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
           <archive>
-            <manifest>
-              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-            </manifest>
             <manifestEntries>
-              <Plugin-Id>file-system-pipes-iterator</Plugin-Id>
-              <Plugin-Version>${project.version}</Plugin-Version>
-              <Plugin-Class>org.apache.tika.pipes.pipesiterator.fs.FileSystemFetcherPlugin</Plugin-Class>
-              <Plugin-Provider>Local File System Pipes iterator</Plugin-Provider>
-              <Plugin-Description>Capable of iterating files on the local file system</Plugin-Description>
-              <!--              <Plugin-Requires>1.0.0</Plugin-Requires> -->
-              <Plugin-Dependencies></Plugin-Dependencies>
+              <Automatic-Module-Name>org.apache.tika.pipes.pipesiterator.fs</Automatic-Module-Name>
             </manifestEntries>
           </archive>
         </configuration>

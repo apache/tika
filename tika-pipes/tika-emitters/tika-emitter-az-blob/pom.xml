@@ -30,17 +30,28 @@
   <packaging>jar</packaging>
 
   <properties>
-    <plugin.id>tika-emitter-az-blob</plugin.id>
-    <plugin.class>org.apache.tika.pipes.emitter.azblob.AZBlobEmitterPlugin</plugin.class>
-    <plugin.version>${project.version}</plugin.version>
-    <plugin.provider>Apache Tika</plugin.provider>
-    <plugin.dependencies/>
+    <!-- You want to make sure you don't load competing dependencies in your plugin or your classloading is going
+     to get messed up when finding your plugins. -->
+    <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-serialization,tika-plugins-core</plugin.excluded.artifactIds>
+    <plugin.excluded.groupIds>org.apache.logging.log4j,org.slf4j</plugin.excluded.groupIds>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-pipes-core</artifactId>
+      <artifactId>tika-pipes-api</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-core</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-serialization</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -63,11 +74,6 @@
           <archive>
             <manifestEntries>
               <Automatic-Module-Name>org.apache.tika.pipes.emitter.azblob</Automatic-Module-Name>
-              <Plugin-Id>${plugin.id}</Plugin-Id>
-              <Plugin-Class>${plugin.class}</Plugin-Class>
-              <Plugin-Version>${plugin.version}</Plugin-Version>
-              <Plugin-Provider>${plugin.provider}</Plugin-Provider>
-              <Plugin-Dependencies>${plugin.dependencies}</Plugin-Dependencies>
             </manifestEntries>
           </archive>
         </configuration>
@@ -85,7 +91,8 @@
             <configuration>
               <outputDirectory>${project.build.directory}/lib</outputDirectory>
               <includeScope>runtime</includeScope>
-              <excludeGroupIds>org.apache.tika</excludeGroupIds>
+              <excludeArtifactIds>${plugin.excluded.artifactIds}</excludeArtifactIds>
+              <excludeGroupIds>${plugin.excluded.groupIds}</excludeGroupIds>
             </configuration>
           </execution>
         </executions>

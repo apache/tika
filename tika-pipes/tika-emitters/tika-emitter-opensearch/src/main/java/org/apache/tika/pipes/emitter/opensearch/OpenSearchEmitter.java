@@ -31,7 +31,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.emitter.AbstractEmitter;
 import org.apache.tika.pipes.api.emitter.EmitData;
-import org.apache.tika.pipes.core.emitter.TikaEmitterException;
 import org.apache.tika.plugins.ExtensionConfig;
 
 
@@ -59,7 +58,7 @@ public class OpenSearchEmitter extends AbstractEmitter {
     }
 
     @Override
-    public void emit(List<? extends EmitData> emitData) throws IOException, TikaEmitterException {
+    public void emit(List<? extends EmitData> emitData) throws IOException {
         if (emitData == null || emitData.isEmpty()) {
             LOG.debug("metadataList is null or empty");
             return;
@@ -71,14 +70,14 @@ public class OpenSearchEmitter extends AbstractEmitter {
             LOG.info("successfully emitted {} docs", emitData.size());
         } catch (TikaClientException e) {
             LOG.warn("problem emitting docs", e);
-            throw new TikaEmitterException(e.getMessage());
+            throw new IOException(e.getMessage(), e);
         }
     }
 
     @Override
     public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext)
-            throws IOException, TikaEmitterException {
-        if (metadataList == null || metadataList.size() == 0) {
+            throws IOException {
+        if (metadataList == null || metadataList.isEmpty()) {
             LOG.debug("metadataList is null or empty");
             return;
         }
@@ -88,7 +87,7 @@ public class OpenSearchEmitter extends AbstractEmitter {
             LOG.info("successfully emitted one doc");
         } catch (TikaClientException e) {
             LOG.warn("problem emitting doc", e);
-            throw new TikaEmitterException("failed to add document", e);
+            throw new IOException("failed to add document", e);
         }
     }
 

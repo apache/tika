@@ -28,10 +28,22 @@
     <artifactId>tika-fetcher-gcs</artifactId>
     <name>Apache Tika Google Cloud Storage fetcher</name>
 
+    <properties>
+        <!-- Never include the core artifacts in your plugin lib directory. If you do, it will cause the classloading
+         to get messed up when finding your plugins. -->
+        <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-serialization,tika-plugins-core</plugin.excluded.artifactIds>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>tika-pipes-core</artifactId>
+            <artifactId>tika-pipes-api</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>tika-core</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>

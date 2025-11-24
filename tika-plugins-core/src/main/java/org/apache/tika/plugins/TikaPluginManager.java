@@ -25,7 +25,9 @@ import java.util.List;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.pf4j.DefaultExtensionFinder;
 import org.pf4j.DefaultPluginManager;
+import org.pf4j.ExtensionFinder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +65,23 @@ public class TikaPluginManager extends DefaultPluginManager {
     public TikaPluginManager(List<Path> pluginRoots) throws IOException {
         super(pluginRoots);
         init();
+    }
+
+    /**
+     * Override to disable classpath scanning for extensions.
+     * By default, PF4J's DefaultExtensionFinder scans both plugins AND the classpath:
+     * - LegacyExtensionFinder scans for extensions.idx files (causes errors for unpackaged JARs)
+     * - ServiceProviderExtensionFinder scans META-INF/services (finds Lombok and other libs)
+     *
+     * We only want to discover extensions from the configured plugin directories,
+     * not from the application classpath. The DefaultExtensionFinder without any
+     * additional finders will only scan the loaded plugins.
+     */
+    @Override
+    protected ExtensionFinder createExtensionFinder() {
+        // Return a DefaultExtensionFinder without any classpath-scanning finders.
+        // This will only discover extensions within the loaded plugin JARs.
+        return new DefaultExtensionFinder(this);
     }
 
     private void init() throws IOException {

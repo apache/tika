@@ -29,26 +29,23 @@
   <name>Apache Tika Kafka emitter</name>
 
   <properties>
-    <plugin.id>kafka-emitter</plugin.id>
-    <plugin.class>org.apache.tika.pipes.emitter.kafka.KafkaEmitterPlugin</plugin.class>
-    <plugin.version>4.0.0-SNAPSHOT</plugin.version>
-    <plugin.provider>Kafka Emitter</plugin.provider>
-    <plugin.dependencies />
     <!-- Never include the core artifacts in your plugin lib directory. If you do, it will cause the classloading
      to get messed up when finding your plugins. -->
-    <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-pipes-core,tika-serialization,tika-plugins-core</plugin.excluded.artifactIds>
+    <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-serialization,tika-plugins-core</plugin.excluded.artifactIds>
+    <plugin.excluded.groupIds>org.apache.kafka,org.apache.logging.log4j,org.slf4j</plugin.excluded.groupIds>
   </properties>
 
   <dependencies>
     <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-pipes-api</artifactId>
+      <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
+
     <dependency>
-      <groupId>org.apache.tika</groupId>
-      <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -85,7 +82,7 @@
               <outputDirectory>${project.build.directory}/lib</outputDirectory>
               <includeScope>runtime</includeScope>
               <excludeArtifactIds>${plugin.excluded.artifactIds}</excludeArtifactIds>
-              <excludeGroupIds>org.apache.kafka</excludeGroupIds>
+              <excludeGroupIds>${plugin.excluded.groupIds}</excludeGroupIds>
             </configuration>
           </execution>
         </executions>
@@ -95,18 +92,8 @@
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
           <archive>
-            <manifest>
-              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-            </manifest>
             <manifestEntries>
               <Automatic-Module-Name>org.apache.tika.pipes.emitter.kafka</Automatic-Module-Name>
-              <Plugin-Id>kafka-emitter</Plugin-Id>
-              <Plugin-Version>${project.version}</Plugin-Version>
-              <Plugin-Class>org.apache.tika.pipes.emitter.kafka.KafkaEmitterPlugin</Plugin-Class>
-              <Plugin-Provider>Kafka Emitter</Plugin-Provider>
-              <Plugin-Description>Capable of emitting to Apache Kafka</Plugin-Description>
-              <Plugin-Dependencies></Plugin-Dependencies>
             </manifestEntries>
           </archive>
         </configuration>

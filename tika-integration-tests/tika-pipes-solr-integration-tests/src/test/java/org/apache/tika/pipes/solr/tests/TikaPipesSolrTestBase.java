@@ -278,11 +278,14 @@ public abstract class TikaPipesSolrTestBase {
             json = IOUtils.toString(is, StandardCharsets.UTF_8);
         }
 
-        String solrConnection;
+        String solrUrls;
+        String solrZkHosts;
         if (useZk()) {
-            solrConnection = "\"solrZkHosts\": [\"" + solrHost + ":" + zkPort + "\"]";
+            solrUrls = "[]";
+            solrZkHosts = "[\"" + solrHost + ":" + zkPort + "\"]";
         } else {
-            solrConnection = "\"solrUrls\": [\"http://" + solrHost + ":" + solrPort + "/solr\"]";
+            solrUrls = "[\"http://" + solrHost + ":" + solrPort + "/solr\"]";
+            solrZkHosts = "[]";
         }
 
         String res = json.replace("UPDATE_STRATEGY", updateStrategy.toString())
@@ -290,8 +293,8 @@ public abstract class TikaPipesSolrTestBase {
                 .replaceAll("FETCHER_BASE_PATH",
                         Matcher.quoteReplacement(testFileFolder.toAbsolutePath().toString()))
                 .replace("PARSE_MODE", parseMode.name())
-                .replace("SOLR_CONNECTION_EMITTER,", solrConnection + ",")
-                .replace("SOLR_CONNECTION_ITERATOR,", solrConnection + ",");
+                .replace("SOLR_URLS", solrUrls)
+                .replace("SOLR_ZK_HOSTS", solrZkHosts);
 
         if (tikaConfig != null) {
             res = res.replace("TIKA_CONFIG", tikaConfig.toAbsolutePath().toString());

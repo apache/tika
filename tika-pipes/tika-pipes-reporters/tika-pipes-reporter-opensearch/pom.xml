@@ -30,6 +30,10 @@
 
   <name>Apache Tika Pipes Reporter - OpenSearch</name>
   <url>https://tika.apache.org/</url>
+  <properties>
+    <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-serialization,tika-plugins-core</plugin.excluded.artifactIds>
+    <plugin.excluded.groupIds>org.apache.logging.log4j,org.slf4j</plugin.excluded.groupIds>
+  </properties>
 
   <dependencies>
     <dependency>
@@ -47,22 +51,31 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.6.1</version>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/lib</outputDirectory>
+              <includeScope>runtime</includeScope>
+              <excludeArtifactIds>${plugin.excluded.artifactIds}</excludeArtifactIds>
+              <excludeGroupIds>${plugin.excluded.groupIds}</excludeGroupIds>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
           <archive>
-            <manifest>
-              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-            </manifest>
             <manifestEntries>
               <Automatic-Module-Name>org.apache.tika.pipes.reporters.opensearch</Automatic-Module-Name>
-              <Plugin-Id>opensearch-pipes-reporter</Plugin-Id>
-              <Plugin-Version>${project.version}</Plugin-Version>
-              <Plugin-Class>org.apache.tika.pipes.reporters.opensearch.OpenSearchReporterPlugin</Plugin-Class>
-              <Plugin-Provider>OpenSearch pipes reporter</Plugin-Provider>
-              <Plugin-Description>OpenSearch pipes reporter</Plugin-Description>
-              <!--              <Plugin-Requires>1.0.0</Plugin-Requires> -->
-              <Plugin-Dependencies></Plugin-Dependencies>
             </manifestEntries>
           </archive>
         </configuration>
