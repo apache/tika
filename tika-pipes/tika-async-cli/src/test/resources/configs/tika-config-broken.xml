@@ -18,7 +18,7 @@
   under the License.
 -->
 <properties>
-  <pipesIterato class="org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator">
+  <pipesIterato class="org.apache.tika.pipes.iterator.fs.FileSystemPipesIterator">
     <fetcheName>fs</fetcheName>
     <basePath>basePath</basePath>
   </pipesIterato>

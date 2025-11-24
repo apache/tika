@@ -52,33 +52,20 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-pipes-iterator-kafka</artifactId>
+      <artifactId>tika-pipes-kafka</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-pipes-iterator-kafka</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-      <type>zip</type>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-fetcher-file-system</artifactId>
+      <artifactId>tika-pipes-file-system</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
       <type>zip</type>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-emitter-kafka</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-emitter-kafka</artifactId>
+      <artifactId>tika-pipes-kafka</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
       <type>zip</type>
@@ -123,21 +110,14 @@
               <artifactItems>
                 <artifactItem>
                   <groupId>org.apache.tika</groupId>
-                  <artifactId>tika-fetcher-file-system</artifactId>
+                  <artifactId>tika-pipes-file-system</artifactId>
                   <version>${project.version}</version>
                   <type>zip</type>
                   <overWrite>true</overWrite>
                 </artifactItem>
                 <artifactItem>
                   <groupId>org.apache.tika</groupId>
-                  <artifactId>tika-emitter-kafka</artifactId>
-                  <version>${project.version}</version>
-                  <type>zip</type>
-                  <overWrite>true</overWrite>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>org.apache.tika</groupId>
-                  <artifactId>tika-pipes-iterator-kafka</artifactId>
+                  <artifactId>tika-pipes-kafka</artifactId>
                   <version>${project.version}</version>
                   <type>zip</type>
                   <overWrite>true</overWrite>

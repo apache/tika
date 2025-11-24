@@ -33,12 +33,11 @@
     <module>tika-pipes-api</module>
     <module>tika-pipes-core</module>
     <module>tika-httpclient-commons</module>
-    <module>tika-fetchers</module>
-    <module>tika-emitters</module>
-    <module>tika-pipes-iterators</module>
-    <module>tika-pipes-reporters</module>
-    <module>tika-pipes-integration-tests</module>
+    <module>tika-pipes-reporter-commons</module>
+    <module>tika-pipes-iterator-commons</module>
+    <module>tika-pipes-plugins</module>
     <module>tika-async-cli</module>
+    <module>tika-pipes-integration-tests</module>
   </modules>
   <dependencies>
     <dependency>
