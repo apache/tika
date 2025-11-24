@@ -100,7 +100,7 @@
       <basePath>/path/to/extracts</basePath>
     </emitter>
   </emitters>
-  <pipesIterator class="org.apache.tika.pipes.pipesiterator.solr.SolrPipesIterator">
+  <pipesIterator class="org.apache.tika.pipes.emitter.solr.SolrPipesIterator">
     <solrCollection>testcol</solrCollection>
     {SOLR_CONNECTION}
     <idField>id</idField>

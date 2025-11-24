@@ -61,7 +61,7 @@ import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;
-import org.apache.tika.pipes.pipesiterator.fs.FileSystemPipesIterator;
+import org.apache.tika.pipes.iterator.fs.FileSystemPipesIterator;
 import org.apache.tika.plugins.ExtensionConfig;
 
 public class ExtractProfileRunner {
