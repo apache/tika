@@ -119,7 +119,7 @@ public class JsonMetadataTest {
     public void testLargeValues() throws Exception {
         //TIKA-4154
         TikaConfig tikaConfig = null;
-        try (InputStream is = JsonMetadata.class.getResourceAsStream("/config/tika-config-json.xml")) {
+        try (InputStream is = JsonMetadata.class.getResourceAsStream("/configs/tika-config-json.xml")) {
             tikaConfig = new TikaConfig(is);
         }
         StringBuilder sb = new StringBuilder();

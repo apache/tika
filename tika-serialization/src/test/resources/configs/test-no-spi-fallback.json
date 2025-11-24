@@ -1,0 +1,11 @@
+{
+  "parsers": [
+    {
+      "configurable-test-parser": {
+        "name": "no-spi-fallback",
+        "bufferSize": 512,
+        "enabled": true
+      }
+    }
+  ]
+}

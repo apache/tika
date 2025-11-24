@@ -1,0 +1,16 @@
+{
+  "parsers": [
+    {
+      "configurable-test-parser": {
+        "name": "explicitly-configured",
+        "bufferSize": 4096,
+        "enabled": true
+      }
+    },
+    {
+      "default-parser": {
+        "exclude": ["minimal-test-parser", "fallback-test-parser"]
+      }
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "parsers": [
+    {
+      "configurable-test-parser": {
+        "name": "with-default-config",
+        "bufferSize": 1024,
+        "enabled": true
+      }
+    },
+    {
+      "default-parser": {}
+    }
+  ]
+}
