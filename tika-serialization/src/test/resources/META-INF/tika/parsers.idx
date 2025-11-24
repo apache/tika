@@ -1,0 +1,4 @@
+# Test parsers index for tika-serialization module tests
+configurable-test-parser=org.apache.tika.config.loader.ConfigurableTestParser
+fallback-test-parser=org.apache.tika.config.loader.FallbackTestParser
+minimal-test-parser=org.apache.tika.config.loader.MinimalTestParser
