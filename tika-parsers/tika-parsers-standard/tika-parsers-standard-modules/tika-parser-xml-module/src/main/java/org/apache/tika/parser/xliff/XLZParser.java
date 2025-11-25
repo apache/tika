@@ -28,6 +28,7 @@ import java.util.zip.ZipInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -40,6 +41,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 /**
  * Parser for XLZ Archives.
  */
+@TikaComponent
 public class XLZParser implements Parser {
 
     /**

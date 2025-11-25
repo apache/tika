@@ -31,6 +31,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.io.EndianUtils;
@@ -53,6 +54,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * An MIT-licensed python parser with test files is:
  * https://github.com/psd-tools/psd-tools
  */
+@TikaComponent
 public class PSDParser implements Parser {
 
     /**

@@ -31,6 +31,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.utils.CharsetUtils;
@@ -44,6 +45,7 @@ import org.apache.tika.utils.CharsetUtils;
  *
  * @since Apache Tika 1.2
  */
+@TikaComponent(spi = false)
 public class HtmlEncodingDetector implements EncodingDetector {
 
     // TIKA-357 - use bigger buffer for meta tag sniffing (was 4K)

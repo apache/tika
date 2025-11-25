@@ -27,6 +27,7 @@ import com.github.junrar.rarfile.FileHeader;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.UnsupportedFormatException;
@@ -43,6 +44,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 /**
  * Parser for Rar files.
  */
+@TikaComponent
 public class RarParser implements Parser {
     private static final long serialVersionUID = 6157727985054451501L;
 

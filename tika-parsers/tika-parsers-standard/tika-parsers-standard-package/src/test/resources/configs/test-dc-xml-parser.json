@@ -1,0 +1,5 @@
+{
+  "parsers": [
+    {"dc-xml-parser": {}}
+  ]
+}

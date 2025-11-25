@@ -31,6 +31,7 @@ import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -42,6 +43,7 @@ import org.apache.tika.parser.Parser;
  * For now, this parser isn't even registered.  It contains
  * code that will detect the newer 2018 .keynote, .numbers, .pages files.
  */
+@TikaComponent
 public class IWork18PackageParser implements Parser {
 
     private final static Set<MediaType> supportedTypes = Collections.unmodifiableSet(

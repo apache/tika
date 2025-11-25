@@ -62,6 +62,7 @@ import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -122,6 +123,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * If your PDFs contain marked content or tags, consider
  * {@link PDFParserConfig#setExtractMarkedContent(boolean)}
  */
+@TikaComponent
 public class PDFParser implements Parser, RenderingParser, Initializable {
 
     public static final MediaType MEDIA_TYPE = MediaType.application("pdf");

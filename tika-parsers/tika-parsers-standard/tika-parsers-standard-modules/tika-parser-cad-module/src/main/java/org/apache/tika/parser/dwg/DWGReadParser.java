@@ -48,6 +48,7 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -82,7 +83,7 @@ import org.apache.tika.utils.ProcessUtils;
  * <p>
  * String : cleanDwgReadReplaceWith - * replacement characters dwgReadExecutable
  */
-
+@TikaComponent(spi = false)
 public class DWGReadParser extends AbstractDWGParser {
     private static final Logger LOG = LoggerFactory.getLogger(DWGReadParser.class);
     /**

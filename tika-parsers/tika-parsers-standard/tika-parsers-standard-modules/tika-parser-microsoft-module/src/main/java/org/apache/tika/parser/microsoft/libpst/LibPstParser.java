@@ -37,6 +37,7 @@ import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
@@ -55,6 +56,7 @@ import org.apache.tika.utils.StringUtils;
  * the GPL-3 libpst/readpst commandline tool and configuring
  * Tika to call this library via tika-config.xml
  */
+@TikaComponent(spi = false)
 public class LibPstParser implements Parser, Initializable {
 
     public static final MediaType MS_OUTLOOK_PST_MIMETYPE = MediaType.application("vnd.ms-outlook-pst");

@@ -27,6 +27,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TailStream;
 import org.apache.tika.metadata.Metadata;
@@ -46,6 +47,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * @see <a href="https://id3.org/id3v2.4.0-structure">MP3 ID3 Version 2.4 Structure Specification</a>
  * @see <a href="https://id3.org/id3v2.4.0-frames">MP3 ID3 Version 2.4 Frames Specification</a>
  */
+@TikaComponent
 public class Mp3Parser implements Parser {
 
     /**

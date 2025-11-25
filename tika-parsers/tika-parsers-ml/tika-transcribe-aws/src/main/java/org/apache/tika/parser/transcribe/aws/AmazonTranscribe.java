@@ -67,6 +67,7 @@ import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -88,6 +89,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * @since Tika 2.0
  */
 
+@TikaComponent
 public class AmazonTranscribe implements Parser, Initializable {
     private static final Logger LOG = LoggerFactory.getLogger(AmazonTranscribe.class);
     private TranscribeAsyncClient amazonTranscribeAsync;

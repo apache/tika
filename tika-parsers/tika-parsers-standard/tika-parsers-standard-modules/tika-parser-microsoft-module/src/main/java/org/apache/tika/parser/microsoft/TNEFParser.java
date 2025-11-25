@@ -31,6 +31,7 @@ import org.apache.poi.hsmf.datatypes.MAPIProperty;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -47,6 +48,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * A POI-powered Tika Parser for TNEF (Transport Neutral
  * Encoding Format) messages, aka winmail.dat
  */
+@TikaComponent
 public class TNEFParser implements Parser {
     private static final long serialVersionUID = 4611820730372823452L;
 

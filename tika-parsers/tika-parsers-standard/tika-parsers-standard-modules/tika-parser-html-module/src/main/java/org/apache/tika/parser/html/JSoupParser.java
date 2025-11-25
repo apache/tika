@@ -46,6 +46,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -59,6 +60,7 @@ import org.apache.tika.parser.ParseContext;
  * and post-processes the events to produce XHTML and metadata expected by
  * Tika clients.
  */
+@TikaComponent
 public class JSoupParser extends AbstractEncodingDetectorParser {
 
     /**

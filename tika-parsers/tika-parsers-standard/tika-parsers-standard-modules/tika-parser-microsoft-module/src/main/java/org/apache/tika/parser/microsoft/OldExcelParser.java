@@ -29,6 +29,7 @@ import org.apache.poi.hssf.extractor.OldExcelExtractor;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -40,6 +41,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * A POI-powered Tika Parser for very old versions of Excel, from
  * pre-OLE2 days, such as Excel 4.
  */
+@TikaComponent
 public class OldExcelParser implements Parser {
     private static final long serialVersionUID = 4611820730372823452L;
 

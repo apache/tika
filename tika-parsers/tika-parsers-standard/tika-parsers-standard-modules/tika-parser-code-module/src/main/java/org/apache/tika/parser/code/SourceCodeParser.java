@@ -46,6 +46,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
@@ -63,6 +64,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * @author Hong-Thai.Nguyen
  * @since 1.6
  */
+@TikaComponent
 public class SourceCodeParser extends AbstractEncodingDetectorParser {
 
     private static final long serialVersionUID = -4543476498190054160L;

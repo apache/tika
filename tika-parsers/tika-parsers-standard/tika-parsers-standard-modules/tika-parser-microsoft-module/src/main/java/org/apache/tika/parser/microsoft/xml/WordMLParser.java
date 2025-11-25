@@ -33,6 +33,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -49,6 +50,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * <p>
  * See <a href="https://en.wikipedia.org/wiki/Microsoft_Office_XML_formats">https://en.wikipedia.org/wiki/Microsoft_Office_XML_formats</a>
  */
+@TikaComponent
 public class WordMLParser extends AbstractXML2003Parser {
     //map between wordml and xhtml entities
     private static final Map<String, String> WORDML_TO_XHTML;

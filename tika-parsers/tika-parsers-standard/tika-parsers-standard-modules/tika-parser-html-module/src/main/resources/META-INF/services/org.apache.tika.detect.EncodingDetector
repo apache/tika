@@ -12,4 +12,8 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
+# TODO: This is a manual service file because EncodingDetectors are not re-sorted at runtime
+# (unlike Parsers/Detectors which call ServiceLoaderUtils.sortLoadedClasses()).
+# Need to implement a runtime priority mechanism for proper ordering across modules.
 org.apache.tika.parser.html.HtmlEncodingDetector

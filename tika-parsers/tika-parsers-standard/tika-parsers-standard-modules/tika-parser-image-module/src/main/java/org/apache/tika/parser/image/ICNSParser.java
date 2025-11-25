@@ -28,6 +28,7 @@ import org.apache.commons.io.IOUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.metadata.Metadata;
@@ -39,6 +40,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 /**
  * A basic parser class for Apple ICNS icon files
  */
+@TikaComponent
 public class ICNSParser implements Parser {
     public static final String ICNS_MIME_TYPE = "image/icns";
     private static final long serialVersionUID = 922010233654248327L;

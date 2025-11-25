@@ -34,6 +34,7 @@ import org.apache.poi.util.RecordFormatException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -45,6 +46,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * This parser offers a very rough capability to extract text if there
  * is text stored in the WMF files.
  */
+@TikaComponent
 public class WMFParser implements Parser {
 
     private static final MediaType MEDIA_TYPE = MediaType.image("wmf");

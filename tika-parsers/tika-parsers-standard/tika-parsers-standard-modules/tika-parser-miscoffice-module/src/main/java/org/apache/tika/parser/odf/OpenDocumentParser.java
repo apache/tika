@@ -35,6 +35,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -52,6 +53,7 @@ import org.apache.tika.utils.XMLReaderUtils;
 /**
  * OpenOffice parser
  */
+@TikaComponent
 public class OpenDocumentParser implements Parser {
 
     /**

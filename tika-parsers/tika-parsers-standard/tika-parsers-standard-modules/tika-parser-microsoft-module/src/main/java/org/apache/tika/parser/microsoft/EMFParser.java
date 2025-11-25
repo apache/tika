@@ -36,6 +36,7 @@ import org.apache.poi.util.StringUtil;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -62,6 +63,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * We'd have to do something like what PDFBox or XPS do to sort the
  * runs and then put the cow back together from the hamburger...lol...
  */
+@TikaComponent
 public class EMFParser implements Parser {
 
     public static Property EMF_ICON_ONLY = Property.internalBoolean("emf:iconOnly");

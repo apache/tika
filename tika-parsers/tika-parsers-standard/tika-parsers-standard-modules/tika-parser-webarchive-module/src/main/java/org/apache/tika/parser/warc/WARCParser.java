@@ -34,6 +34,7 @@ import org.netpreserve.jwarc.WarcResponse;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -52,6 +53,7 @@ import org.apache.tika.utils.StringUtils;
 /**
  * This uses jwarc to parse warc files and arc files
  */
+@TikaComponent
 public class WARCParser implements Parser {
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(

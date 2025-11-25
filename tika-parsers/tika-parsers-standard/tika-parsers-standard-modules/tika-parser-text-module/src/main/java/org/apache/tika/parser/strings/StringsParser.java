@@ -39,6 +39,7 @@ import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.FileCommandDetector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -60,6 +61,7 @@ import org.apache.tika.utils.SystemUtils;
  *
  * @author gtotaro
  */
+@TikaComponent(spi = false)
 public class StringsParser implements Parser, Initializable {
     /**
      * Serial version UID

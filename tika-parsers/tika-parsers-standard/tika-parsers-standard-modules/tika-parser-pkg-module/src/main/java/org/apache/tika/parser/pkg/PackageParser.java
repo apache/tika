@@ -60,6 +60,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -86,6 +87,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * are not installed, an IOException will be thrown, and potentially
  * wrapped in a TikaException.
  */
+@TikaComponent
 public class PackageParser extends AbstractEncodingDetectorParser {
 
     //We used to avoid overwriting file types if the file type

@@ -26,11 +26,13 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.utils.CharsetUtils;
 
+@TikaComponent(spi = false)
 public class Icu4jEncodingDetector implements EncodingDetector {
 
     @Field

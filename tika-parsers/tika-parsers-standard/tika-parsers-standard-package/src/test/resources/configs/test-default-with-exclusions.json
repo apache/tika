@@ -1,0 +1,9 @@
+{
+  "parsers": [
+    {
+      "default-parser": {
+        "exclude": ["pdf-parser", "html-parser"]
+      }
+    }
+  ]
+}

@@ -31,6 +31,7 @@ import com.dd.plist.PropertyListParser;
 import org.apache.commons.io.IOUtils;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -45,6 +46,7 @@ import org.apache.tika.mime.MediaType;
  *
  * @since 1.25
  */
+@TikaComponent
 public class BPListDetector implements Detector {
 
     //xml versions

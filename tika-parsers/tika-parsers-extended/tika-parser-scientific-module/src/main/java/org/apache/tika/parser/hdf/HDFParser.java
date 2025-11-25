@@ -32,6 +32,7 @@ import ucar.nc2.Attribute;
 import ucar.nc2.Group;
 import ucar.nc2.NetcdfFile;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -48,6 +49,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * "http://www.unidata.ucar.edu/software/netcdf-java/formats/FileTypes.html"
  * >this link</a> for more information.
  */
+@TikaComponent
 public class HDFParser implements Parser {
 
     /**

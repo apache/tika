@@ -43,6 +43,7 @@ import com.dd.plist.UID;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.apple.BPListDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -63,6 +64,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  *
  * @since 1.25
  */
+@TikaComponent
 public class PListParser implements Parser {
 
     private static final String ARR = "array";

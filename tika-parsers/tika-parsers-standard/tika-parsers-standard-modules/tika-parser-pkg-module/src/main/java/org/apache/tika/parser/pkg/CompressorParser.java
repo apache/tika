@@ -61,6 +61,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -76,6 +77,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 /**
  * Parser for various compression formats.
  */
+@TikaComponent
 public class CompressorParser implements Parser {
 
     /**

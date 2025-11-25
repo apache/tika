@@ -32,6 +32,7 @@ import com.epam.parso.impl.SasFileReaderImpl;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Database;
 import org.apache.tika.metadata.HttpHeaders;
@@ -49,6 +50,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * Processes the SAS7BDAT data columnar database file used by SAS and
  * other similar languages.
  */
+@TikaComponent
 public class SAS7BDATParser implements Parser {
     private static final long serialVersionUID = -2775485539937983150L;
 

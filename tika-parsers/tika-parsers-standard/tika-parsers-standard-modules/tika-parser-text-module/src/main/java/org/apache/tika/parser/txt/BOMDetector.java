@@ -24,9 +24,14 @@ import java.nio.charset.UnsupportedCharsetException;
 import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.IOUtils;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.metadata.Metadata;
 
+/*
+ This is an optional detector that is not loaded automatically by SPI. You need to configure it.
+ */
+@TikaComponent(spi = false)
 public class BOMDetector implements EncodingDetector {
 
     private static final ByteOrderMark[] BOMS =

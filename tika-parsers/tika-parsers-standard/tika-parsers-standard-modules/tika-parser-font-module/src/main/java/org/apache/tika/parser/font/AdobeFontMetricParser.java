@@ -28,6 +28,7 @@ import org.apache.fontbox.afm.FontMetrics;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -40,6 +41,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 /**
  * Parser for AFM Font Files
  */
+@TikaComponent
 public class AdobeFontMetricParser implements Parser {
     // TIKA-1325 Replace these with properties, from a well known standard
     static final String MET_AVG_CHAR_WIDTH = "AvgCharacterWidth";
