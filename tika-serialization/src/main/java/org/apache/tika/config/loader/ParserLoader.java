@@ -211,12 +211,14 @@ public class ParserLoader {
     @SuppressWarnings("unchecked")
     private Parser instantiateParser(Class<?> parserClass, String configJson)
             throws TikaConfigException {
+
         try {
             // Try constructor with String parameter (JSON config)
             try {
                 Constructor<?> constructor = parserClass.getConstructor(String.class);
                 return (Parser) constructor.newInstance(configJson);
             } catch (NoSuchMethodException e) {
+                // TODO -- entrypoint for actual configuration
                 // Fall back to zero-arg constructor
                 return (Parser) ServiceLoaderUtils.newInstance(parserClass,
                         new org.apache.tika.config.ServiceLoader(classLoader));

@@ -26,10 +26,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.parser.Parser;
 
 /**
  * Parsed representation of a Tika JSON configuration file.
@@ -57,7 +60,14 @@ import org.apache.tika.exception.TikaConfigException;
  */
 public class TikaJsonConfig {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = createObjectMapper();
+
+    private static ObjectMapper createObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        // Fail on unknown properties to catch configuration errors early
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+        return mapper;
+    }
 
     private final JsonNode rootNode;
     private final Map<String, Map<String, JsonNode>> componentsByType;

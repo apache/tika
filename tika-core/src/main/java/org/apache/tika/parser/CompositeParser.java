@@ -97,6 +97,10 @@ public class CompositeParser implements Parser {
         this(new MediaTypeRegistry());
     }
 
+    public CompositeParser(CompositeParser compositeParser) {
+        this(compositeParser.registry, compositeParser);
+    }
+
     public Map<MediaType, Parser> getParsers(ParseContext context) {
         Map<MediaType, Parser> map = new HashMap<>();
         for (Parser parser : parsers) {

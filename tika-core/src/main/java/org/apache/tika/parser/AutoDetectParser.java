@@ -90,6 +90,16 @@ public class AutoDetectParser extends CompositeParser {
         setAutoDetectParserConfig(AutoDetectParserConfig.DEFAULT);
     }
 
+    public AutoDetectParser(CompositeParser parser, Detector detector, AutoDetectParserConfig autoDetectParserConfig) {
+        super(parser);
+        setDetector(detector);
+        setAutoDetectParserConfig(autoDetectParserConfig);
+    }
+
+    public static Parser build(CompositeParser parser, Detector detector, AutoDetectParserConfig autoDetectParserConfig) {
+        return new AutoDetectParser(parser, detector, autoDetectParserConfig);
+    }
+
     public AutoDetectParser(TikaConfig config) {
         super(config.getMediaTypeRegistry(), getParser(config));
         setFallback(buildFallbackParser(config));

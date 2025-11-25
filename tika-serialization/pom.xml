@@ -47,6 +47,13 @@
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
+    <!-- Annotation processor - contains @TikaComponent -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-annotation-processor</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
