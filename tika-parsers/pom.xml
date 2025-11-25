@@ -41,6 +41,14 @@
   </modules>
 
   <dependencies>
+    <!-- Annotation processor - contains @TikaComponent and ensures build order.
+     "provided" because it is only used at compile time -->
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-annotation-processor</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
     <!-- test dependencies -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>

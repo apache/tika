@@ -64,7 +64,8 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- Annotation processor - contains @TikaComponent and ensures build order -->
+    <!-- Annotation processor - contains @TikaComponent and ensures build order.
+         "provided" because it is only used at compile time -->
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-annotation-processor</artifactId>
