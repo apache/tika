@@ -146,24 +146,22 @@ public class TikaComponentProcessor extends AbstractProcessor {
                         .add(className);
             }
 
-            // Add to index files only if spi = true
-            if (includeSpi) {
-                String indexFileName = SERVICE_INTERFACES.get(serviceInterface);
-                if (indexFileName != null) {
-                    Map<String, String> index = indexFiles.computeIfAbsent(indexFileName,
-                            k -> new LinkedHashMap<>());
+            // Always add to index files for name-based lookup, regardless of spi value
+            String indexFileName = SERVICE_INTERFACES.get(serviceInterface);
+            if (indexFileName != null) {
+                Map<String, String> index = indexFiles.computeIfAbsent(indexFileName,
+                        k -> new LinkedHashMap<>());
 
-                    // Check for duplicate names
-                    if (index.containsKey(componentName)) {
-                        String existingClass = index.get(componentName);
-                        if (!existingClass.equals(className)) {
-                            messager.printMessage(Diagnostic.Kind.ERROR,
-                                    "Duplicate component name '" + componentName + "' for classes: " +
-                                    existingClass + " and " + className, element);
-                        }
-                    } else {
-                        index.put(componentName, className);
+                // Check for duplicate names
+                if (index.containsKey(componentName)) {
+                    String existingClass = index.get(componentName);
+                    if (!existingClass.equals(className)) {
+                        messager.printMessage(Diagnostic.Kind.ERROR,
+                                "Duplicate component name '" + componentName + "' for classes: " +
+                                existingClass + " and " + className, element);
                     }
+                } else {
+                    index.put(componentName, className);
                 }
             }
         }
