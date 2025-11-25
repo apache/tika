@@ -307,6 +307,7 @@
     <puppycrawl.version>12.1.2</puppycrawl.version>
     <rat.version>0.17</rat.version>
     <scm.version>2.2.1</scm.version>
+    <spotless.goal>apply</spotless.goal>
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
@@ -1450,6 +1451,47 @@
         </executions>
       </plugin>
       <plugin>
+             <groupId>com.diffplug.spotless</groupId>
+             <artifactId>spotless-maven-plugin</artifactId>
+             <version>3.1.0</version>
+             <configuration>
+               <!--<java>
+           <googleJavaFormat/>
+         </java> -->
+               <java>
+                 <licenseHeader>
+                   <file>${maven.multiModuleProjectDirectory}/tika-parent/license-header.txt</file>
+                   <delimiter>package </delimiter>
+                 </licenseHeader>
+
+                 <eclipse>
+                   <!-- find the versions here: https://download.eclipse.org/eclipse/downloads/ -->
+                   <version>4.37</version>
+                   <file>${maven.multiModuleProjectDirectory}/tika-parent/google-style-eclipse.xml</file>
+                 </eclipse>
+
+                 <indent>
+                   <spaces>true</spaces>
+                   <spacesPerTab>4</spacesPerTab>
+                 </indent>
+
+                 <removeUnusedImports/>
+                 <importOrder>
+                   <order></order>
+                 </importOrder>
+                 <formatAnnotations/>
+               </java>
+             </configuration>
+             <executions>
+               <execution>
+                 <goals>
+                   <goal>${spotless.goal}</goal>
+                 </goals>
+                 <phase>process-sources</phase>
+               </execution>
+             </executions>
+           </plugin>
+    <plugin>
         <!-- mvn validate -->
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
@@ -1464,7 +1506,7 @@
         <executions>
           <execution>
             <id>validate</id>
-            <phase>validate</phase>
+            <phase>process-classes</phase>
             <configuration>
               <configLocation>checkstyle.xml</configLocation>
               <consoleOutput>false</consoleOutput>
@@ -1575,6 +1617,14 @@
         </plugins>
       </build>
     </profile>
+        <profile>
+          <id>ci</id>
+          <properties>
+            <!-- Override the Spotless goal when this profile is active -->
+            <spotless.goal>check</spotless.goal>
+          </properties>
+        </profile>
+
   </profiles>
   <!--
       <connection>scm:git:https://github.com/apache/</connection>
