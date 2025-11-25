@@ -1455,6 +1455,7 @@
              <artifactId>spotless-maven-plugin</artifactId>
              <version>3.1.0</version>
              <configuration>
+               <ratchetFrom>origin/main</ratchetFrom>
                <!--<java>
            <googleJavaFormat/>
          </java> -->
@@ -1477,7 +1478,7 @@
 
                  <removeUnusedImports/>
                  <importOrder>
-                   <order></order>
+                   <order>java,javax,org,com</order>
                  </importOrder>
                  <formatAnnotations/>
                </java>

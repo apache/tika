@@ -9,14 +9,14 @@
     <setting id="org.eclipse.jdt.core.formatter.comment.format_javadoc_comments" value="false"/>
     <setting id="org.eclipse.jdt.core.formatter.comment.format_block_comments" value="false"/>
     <setting id="org.eclipse.jdt.core.formatter.join_lines_in_comments" value="false"/>
-    <!--<setting id="org.eclipse.jdt.core.formatter.alignment_for_enum_constants" value="33"/>
+    <setting id="org.eclipse.jdt.core.formatter.alignment_for_enum_constants" value="33"/>
     <setting id="org.eclipse.jdt.core.formatter.brace_position_for_switch" value="next_line"/>
     <setting id="org.eclipse.jdt.core.formatter.alignment_for_expressions_in_parenthesized_expression" value="17"/>
     <setting id="org.eclipse.jdt.core.formatter.alignment_for_expressions_in_return_statement" value="17"/>
     <setting id="org.eclipse.jdt.core.formatter.lineSplit" value="120"/>
     <setting id="org.eclipse.jdt.core.formatter.comment.line_length" value="100"/>
 
-     original features from the file as downloaded
+     <!-- original features from the file as downloaded -->
     <setting id="org.eclipse.jdt.core.formatter.comment.new_lines_at_block_boundaries" value="true"/>
     <setting id="org.eclipse.jdt.core.formatter.comment.insert_new_line_before_root_tags" value="insert"/>
     <setting id="org.eclipse.jdt.core.formatter.disabling_tag" value="@formatter:off"/>
@@ -338,6 +338,6 @@
     <setting id="org.eclipse.jdt.core.formatter.alignment_for_for_statement" value="16"/>
     <setting id="org.eclipse.jdt.core.formatter.insert_space_before_opening_angle_bracket_in_type_arguments" value="do not insert"/>
     <setting id="org.eclipse.jdt.core.formatter.never_indent_block_comments_on_first_column" value="false"/>
-    <setting id="org.eclipse.jdt.core.formatter.keep_then_statement_on_same_line" value="false"/>-->
+    <setting id="org.eclipse.jdt.core.formatter.keep_then_statement_on_same_line" value="false"/>
   </profile>
 </profiles>
