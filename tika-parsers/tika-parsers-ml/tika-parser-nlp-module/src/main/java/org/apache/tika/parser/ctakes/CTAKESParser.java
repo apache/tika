@@ -22,7 +22,6 @@ import java.io.InputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.TikaComponent;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -51,7 +50,6 @@ import org.apache.tika.parser.ParserDecorator;
  * <p>Because this is a Parser Decorator, and not a normal Parser in
  * it's own right, it isn't normally selected via the Parser Service Loader.
  */
-@TikaComponent
 public class CTAKESParser extends ParserDecorator {
     /**
      * Serial version UID
