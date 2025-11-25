@@ -551,11 +551,14 @@ public class TikaResource {
             throws IOException, TikaException {
         Metadata metadata = new Metadata();
         parseToMetadata(getInputStream(att.getObject(InputStream.class), metadata, httpHeaders, info), metadata, preparePostHeaderMap(att, httpHeaders), info, handlerTypeName);
-        TikaResource
+        List<Metadata> ret = TikaResource
                 .getConfig()
                 .getMetadataFilter()
-                .filter(metadata);
-        return metadata;
+                .filter(List.of(metadata));
+        if (ret == null || ret.isEmpty()) {
+            return new Metadata();
+        }
+        return ret.get(0);
     }
 
     @PUT
@@ -566,10 +569,13 @@ public class TikaResource {
             throws IOException, TikaException {
         Metadata metadata = new Metadata();
         parseToMetadata(getInputStream(is, metadata, httpHeaders, info), metadata, httpHeaders.getRequestHeaders(), info, handlerTypeName);
-        TikaResource
+        List<Metadata> ret = TikaResource
                 .getConfig()
                 .getMetadataFilter()
-                .filter(metadata);
+                .filter(List.of(metadata));
+        if (ret == null || ret.isEmpty()) {
+            return new Metadata();
+        }
         return metadata;
     }
 

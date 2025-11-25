@@ -14,11 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.metadata.filter;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.List;
 
 import org.w3c.dom.Element;
 
@@ -27,15 +27,9 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 
-/**
- * Filters the metadata in place after the parse
- *
- * @since Apache Tika 1.25
- */
 public abstract class MetadataFilter extends ConfigBase implements Serializable {
-
     /**
-     * Loads the metadata filter from the config file if it exists, otherwise returns NoOpFilter
+     * Loads the metadata list filter from the config file if it exists, otherwise returns NoOpFilter
      * @param root
      * @return
      * @throws TikaConfigException
@@ -54,5 +48,14 @@ public abstract class MetadataFilter extends ConfigBase implements Serializable 
         }
     }
 
-    public abstract void filter(Metadata metadata) throws TikaException;
+    /**
+     * For efficiency's sake, the original metadata list and data therein may be modified.
+     * Users are responsible for doing a defensive copy before calling filter if mutability
+     * would be problematic.
+     *
+     * @param metadataList
+     * @return
+     * @throws TikaException
+     */
+    public abstract List<Metadata> filter(List<Metadata> metadataList) throws TikaException;
 }

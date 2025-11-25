@@ -17,14 +17,13 @@
 package org.apache.tika.langdetect.optimaize.metadatafilter;
 
 import org.apache.tika.config.Field;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.filter.MetadataFilter;
+import org.apache.tika.metadata.filter.MetadataFilterBase;
 
-public class OptimaizeMetadataFilter extends MetadataFilter {
+public class OptimaizeMetadataFilter extends MetadataFilterBase {
 
     private int maxCharsForDetection = OptimaizeLangDetector.DEFAULT_MAX_CHARS_FOR_DETECTION;
 
@@ -34,7 +33,7 @@ public class OptimaizeMetadataFilter extends MetadataFilter {
     }
 
     @Override
-    public void filter(Metadata metadata) throws TikaException {
+    public void filter(Metadata metadata) {
         OptimaizeLangDetector detector = new OptimaizeLangDetector(maxCharsForDetection);
         detector.loadModels();
         String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);

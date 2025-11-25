@@ -19,6 +19,7 @@ package org.apache.tika.pipes.emitter.solr;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -66,7 +67,7 @@ public class SolrEmitterDevTest {
         mappings.put(TikaCoreProperties.CREATED.getName(), "created");
         mappings.put(TikaCoreProperties.TIKA_CONTENT.getName(), "content");
         filter.setMappings(mappings);
-        filter.filter(metadata);
+        metadata = filter.filter(List.of(metadata)).get(0);
 
         solrEmitter.emit(emitKey, Collections.singletonList(metadata), new ParseContext());
     }

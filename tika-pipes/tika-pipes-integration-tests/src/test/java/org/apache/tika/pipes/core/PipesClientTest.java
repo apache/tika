@@ -29,12 +29,10 @@ import org.junit.jupiter.api.io.TempDir;
 import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.filter.AttachmentCountingListFilter;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.filter.MockUpperCaseFilter;
-import org.apache.tika.metadata.listfilter.AttachmentCountingListFilter;
-import org.apache.tika.metadata.listfilter.CompositeMetadataListFilter;
-import org.apache.tika.metadata.listfilter.MetadataListFilter;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
@@ -88,8 +86,8 @@ public class PipesClientTest {
     @Test
     public void testMetadataListFilter(@TempDir Path tmp) throws Exception {
         ParseContext parseContext = new ParseContext();
-        MetadataListFilter metadataFilter = new CompositeMetadataListFilter(List.of(new AttachmentCountingListFilter()));
-        parseContext.set(MetadataListFilter.class, metadataFilter);
+        MetadataFilter metadataFilter = new CompositeMetadataFilter(List.of(new AttachmentCountingListFilter()));
+        parseContext.set(MetadataFilter.class, metadataFilter);
 
         String testFile = "mock-embedded.xml";
 
@@ -111,8 +109,8 @@ public class PipesClientTest {
         //I did both manually during development, but unit tests are better. :D
         ParseContext parseContext = new ParseContext();
         parseContext.set(TikaTaskTimeout.class, new TikaTaskTimeout(1000));
-        MetadataListFilter metadataFilter = new CompositeMetadataListFilter(List.of(new AttachmentCountingListFilter()));
-        parseContext.set(MetadataListFilter.class, metadataFilter);
+        MetadataFilter metadataFilter = new CompositeMetadataFilter(List.of(new AttachmentCountingListFilter()));
+        parseContext.set(MetadataFilter.class, metadataFilter);
 
         String testFile = "mock-timeout-10s.xml";
         PipesClient pipesClient = init(tmp, testFile);

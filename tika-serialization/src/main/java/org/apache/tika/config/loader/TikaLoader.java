@@ -80,7 +80,7 @@ public class TikaLoader {
     private Parser parsers;
     private Detector detectors;
     private EncodingDetector encodingDetectors;
-    private MetadataFilter metadataFilters;
+    private MetadataFilter metadataFilter;
     private Renderer renderers;
     private ConfigLoader configLoader;
 
@@ -198,14 +198,14 @@ public class TikaLoader {
      * @throws TikaConfigException if loading fails
      */
     public synchronized MetadataFilter loadMetadataFilters() throws TikaConfigException {
-        if (metadataFilters == null) {
+        if (metadataFilter == null) {
             CompositeComponentLoader<MetadataFilter> loader = new CompositeComponentLoader<>(
                     MetadataFilter.class, "metadataFilters", "metadata-filters",
                     classLoader, objectMapper);
             List<MetadataFilter> filterList = loader.loadFromArray(config);
-            metadataFilters = new CompositeMetadataFilter(filterList);
+            metadataFilter = new CompositeMetadataFilter(filterList);
         }
-        return metadataFilters;
+        return metadataFilter;
     }
 
     /**

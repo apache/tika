@@ -14,15 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.metadata.listfilter;
+package org.apache.tika.metadata.filter;
 
 import java.util.List;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 
-public class NoOpListFilter extends MetadataListFilter {
+/**
+ * Base class for iterating a call to {@link #filter(Metadata)} on a list
+ * of metadata objects. This should be used on context-free metadata filters that
+ * do not require knowledge of more than a single metadata object at a time
+ */
+public abstract class MetadataFilterBase extends MetadataFilter {
+
     @Override
-    public List<Metadata> filter(List<Metadata> metadataList) {
+    public List<Metadata> filter(List<Metadata> metadataList) throws TikaException {
+        for (Metadata m : metadataList) {
+            filter(m);
+        }
         return metadataList;
     }
+
+    protected abstract void filter(Metadata metadata);
 }

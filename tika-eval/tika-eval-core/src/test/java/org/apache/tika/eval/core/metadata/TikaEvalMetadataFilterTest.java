@@ -18,6 +18,8 @@ package org.apache.tika.eval.core.metadata;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
@@ -36,7 +38,7 @@ public class TikaEvalMetadataFilterTest {
             String content = "the quick brown fox, Zothro 1234 1235, jumped over the lazy dog";
             metadata.set(TikaCoreProperties.TIKA_CONTENT, content);
 
-            filter.filter(metadata);
+            metadata = filter.filter(List.of(metadata)).get(0);
             assertEquals("eng", metadata.get(TikaEvalMetadataFilter.LANGUAGE));
             assertEquals(12, (int) metadata.getInt(TikaEvalMetadataFilter.NUM_TOKENS));
             assertEquals(11, (int) metadata.getInt(TikaEvalMetadataFilter.NUM_UNIQUE_TOKENS));

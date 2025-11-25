@@ -29,14 +29,13 @@ import org.apache.tika.eval.core.textstats.CompositeTextStatsCalculator;
 import org.apache.tika.eval.core.textstats.TextStatsCalculator;
 import org.apache.tika.eval.core.tokens.CommonTokenResult;
 import org.apache.tika.eval.core.tokens.TokenCounts;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.filter.MetadataFilter;
+import org.apache.tika.metadata.filter.MetadataFilterBase;
 
-public class TikaEvalMetadataFilter extends MetadataFilter {
+public class TikaEvalMetadataFilter extends MetadataFilterBase {
 
     public static String TIKA_EVAL_NS = "tika-eval" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
@@ -73,7 +72,7 @@ public class TikaEvalMetadataFilter extends MetadataFilter {
 
 
     @Override
-    public void filter(Metadata metadata) throws TikaException {
+    public void filter(Metadata metadata) {
         String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
         if (StringUtils.isAllBlank(content)) {
             return;

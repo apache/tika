@@ -14,45 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.metadata.listfilter;
+package org.apache.tika.metadata.filter;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 
-public class CompositeMetadataListFilter extends MetadataListFilter {
-
-    //no longer final to allow for no arg initialization during serialization
-    private List<MetadataListFilter> filters;
-
-    public CompositeMetadataListFilter() {
-        filters = new ArrayList<>();
-    }
-    public CompositeMetadataListFilter(List<MetadataListFilter> filters) {
-        this.filters = filters;
-    }
-
-    public void setFilters(List<MetadataListFilter> filters) {
-        this.filters.clear();
-        this.filters.addAll(filters);
-    }
-
-    public List<MetadataListFilter> getFilters() {
-        return filters;
-    }
-
+public class AttachmentCountingListFilter extends MetadataFilter {
     @Override
     public List<Metadata> filter(List<Metadata> metadataList) throws TikaException {
-        for (MetadataListFilter filter : filters) {
-            metadataList = filter.filter(metadataList);
+        if (metadataList == null || metadataList.isEmpty()) {
+            return metadataList;
         }
+        metadataList.get(0).set("X-TIKA:attachment_count", Integer.toString(metadataList.size() - 1));
         return metadataList;
-    }
-
-    @Override
-    public String toString() {
-        return "CompositeMetadataListFilter{" + "filters=" + filters + '}';
     }
 }
