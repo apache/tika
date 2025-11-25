@@ -64,8 +64,6 @@ import org.apache.tika.language.translate.DefaultTranslator;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.filter.NoOpFilter;
-import org.apache.tika.metadata.listfilter.MetadataListFilter;
-import org.apache.tika.metadata.listfilter.NoOpListFilter;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeTypeException;
@@ -108,7 +106,6 @@ public class TikaConfig {
     private final EncodingDetector encodingDetector;
     private final Renderer renderer;
     private final MetadataFilter metadataFilter;
-    private final MetadataListFilter metadataListFilter;
     private final AutoDetectParserConfig autoDetectParserConfig;
     private static final Map<String, InitializableProblemHandler> strategyMap = new HashMap<>();
 
@@ -191,7 +188,6 @@ public class TikaConfig {
         this.translator = translatorLoader.loadOverall(element, mimeTypes, loader);
         this.executorService = executorLoader.loadOverall(element, mimeTypes, loader);
         this.metadataFilter = MetadataFilter.load(element, true);
-        this.metadataListFilter = MetadataListFilter.load(element, true);
         this.autoDetectParserConfig = AutoDetectParserConfig.load(element);
         this.serviceLoader = loader;
         setMaxJsonStringFieldLength(element);
@@ -220,7 +216,6 @@ public class TikaConfig {
         this.translator = getDefaultTranslator(serviceLoader);
         this.executorService = getDefaultExecutorService();
         this.metadataFilter = new NoOpFilter();
-        this.metadataListFilter = new NoOpListFilter();
         this.autoDetectParserConfig = AutoDetectParserConfig.DEFAULT;
         TIMES_INSTANTIATED.incrementAndGet();
     }
@@ -267,7 +262,6 @@ public class TikaConfig {
             this.translator = getDefaultTranslator(serviceLoader);
             this.executorService = getDefaultExecutorService();
             this.metadataFilter = new NoOpFilter();
-            this.metadataListFilter = new NoOpListFilter();
             this.autoDetectParserConfig = AutoDetectParserConfig.DEFAULT;
         } else {
             ServiceLoader tmpServiceLoader = new ServiceLoader();
@@ -295,7 +289,6 @@ public class TikaConfig {
                 this.executorService =
                         executorLoader.loadOverall(element, mimeTypes, serviceLoader);
                 this.metadataFilter = MetadataFilter.load(element, true);
-                this.metadataListFilter = MetadataListFilter.load(element, true);
                 this.autoDetectParserConfig = AutoDetectParserConfig.load(element);
                 setMaxJsonStringFieldLength(element);
             } catch (SAXException e) {
@@ -642,10 +635,6 @@ public class TikaConfig {
 
     public MetadataFilter getMetadataFilter() {
         return metadataFilter;
-    }
-
-    public MetadataListFilter getMetadataListFilter() {
-        return metadataListFilter;
     }
 
     public AutoDetectParserConfig getAutoDetectParserConfig() {

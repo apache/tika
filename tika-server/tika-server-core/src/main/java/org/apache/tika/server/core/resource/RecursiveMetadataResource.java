@@ -41,7 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.listfilter.MetadataListFilter;
+import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
@@ -87,8 +87,10 @@ public class RecursiveMetadataResource {
             //we shouldn't get here?
             LOG.error("something went seriously wrong", e);
         }
-        MetadataListFilter metadataListFilter = context.get(MetadataListFilter.class, getConfig().getMetadataListFilter());
-        return metadataListFilter.filter(handler.getMetadataList());
+        MetadataFilter metadataFilter = context.get(MetadataFilter.class, getConfig().getMetadataFilter());
+        //note that the filter may modify the contents of handler's metadata list.
+        //do a deep copy if that's problematic.
+        return metadataFilter.filter(handler.getMetadataList());
     }
 
     static HandlerConfig buildHandlerConfig(MultivaluedMap<String, String> httpHeaders, String handlerTypeName, HandlerConfig.PARSE_MODE parseMode) {

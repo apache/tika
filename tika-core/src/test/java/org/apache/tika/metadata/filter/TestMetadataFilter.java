@@ -23,12 +23,14 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.AbstractTikaConfigTest;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -46,7 +48,7 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         metadata.set("author", "author");
 
         MetadataFilter defaultFilter = new DefaultMetadataFilter();
-        defaultFilter.filter(metadata);
+        metadata = filterOne(defaultFilter, metadata);
 
         assertEquals(2, metadata.names().length);
         assertEquals("title", metadata.get("title"));
@@ -60,7 +62,7 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         metadata.set("author", "author");
 
         MetadataFilter filter = new IncludeFieldMetadataFilter(set("title"));
-        filter.filter(metadata);
+        metadata = filterOne(filter, metadata);
         assertEquals(1, metadata.names().length);
         assertEquals("title", metadata.get("title"));
         assertNull(metadata.get("author"));
@@ -73,7 +75,7 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         metadata.set("author", "author");
 
         MetadataFilter filter = new ExcludeFieldMetadataFilter(set("title"));
-        filter.filter(metadata);
+        metadata = filterOne(filter, metadata);
         assertEquals(1, metadata.names().length);
         assertEquals("author", metadata.get("author"));
         assertNull(metadata.get("title"));
@@ -87,7 +89,7 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         metadata.set("author", "author");
         metadata.set("content", "content");
 
-        config.getMetadataFilter().filter(metadata);
+        metadata = filterOne(config.getMetadataFilter(), metadata);
 
         assertEquals(2, metadata.size());
         assertEquals("title", metadata.get("title"));
@@ -102,8 +104,7 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         metadata.set("author", "author");
         metadata.set("content", "content");
 
-        config.getMetadataFilter().filter(metadata);
-
+        metadata = filterOne(config.getMetadataFilter(), metadata);
         assertEquals(1, metadata.size());
         assertEquals("content", metadata.get("content"));
     }
@@ -119,7 +120,7 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         metadata.set("author", "author");
         metadata.set("content", "content");
 
-        config.getMetadataFilter().filter(metadata);
+        metadata = filterOne(config.getMetadataFilter(), metadata);
 
         assertEquals(2, metadata.size());
         assertArrayEquals(expectedTitles, metadata.getValues("title"));
@@ -133,12 +134,12 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         metadata.set("author", "author");
 
         MetadataFilter filter = new ClearByMimeMetadataFilter(set("image/jpeg", "application/pdf"));
-        filter.filter(metadata);
+        metadata = filterOne(filter, metadata);
         assertEquals(0, metadata.size());
 
         metadata.set(Metadata.CONTENT_TYPE, MediaType.text("plain").toString());
         metadata.set("author", "author");
-        filter.filter(metadata);
+        metadata = filterOne(filter, metadata);
         assertEquals(2, metadata.size());
         assertEquals("author", metadata.get("author"));
 
@@ -153,12 +154,12 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         metadata.set("author", "author");
 
         MetadataFilter filter = config.getMetadataFilter();
-        filter.filter(metadata);
+        metadata = filterOne(filter, metadata);
         assertEquals(0, metadata.size());
 
         metadata.set(Metadata.CONTENT_TYPE, MediaType.text("plain").toString());
         metadata.set("author", "author");
-        filter.filter(metadata);
+        metadata = filterOne(filter, metadata);
         assertEquals(2, metadata.size());
         assertEquals("AUTHOR", metadata.get("author"));
     }
@@ -173,7 +174,7 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         metadata.set("a", "a-value");
 
         MetadataFilter filter = config.getMetadataFilter();
-        filter.filter(metadata);
+        metadata = filterOne(filter, metadata);
         assertEquals("quick brown fox", metadata.get("content"));
         assertEquals("a-value", metadata.get("b"));
         assertNull(metadata.get("author"));
@@ -201,7 +202,7 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
 
         MetadataFilter filter = config.getMetadataFilter();
-        filter.filter(metadata);
+        metadata = filterOne(filter, metadata);
         assertEquals("quick brown fox", metadata.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("text/html", metadata.get("mime"));
     }
@@ -215,7 +216,7 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         metadata.set(Metadata.CONTENT_TYPE, "text/html");
 
         MetadataFilter filter = config.getMetadataFilter();
-        filter.filter(metadata);
+        metadata = filterOne(filter, metadata);
         assertEquals("quick brown fox", metadata.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("text/html", metadata.get("mime"));
     }
@@ -229,7 +230,7 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
 
         MetadataFilter filter = config.getMetadataFilter();
-        filter.filter(metadata);
+        metadata = filterOne(filter, metadata);
         assertEquals("quick brown fox", metadata.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("text/html", metadata.get(Metadata.CONTENT_TYPE));
 
@@ -239,7 +240,7 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         metadata.add(TikaCoreProperties.TIKA_CONTENT.toString(), "text/plain; charset=UTF-8");
         metadata.add(TikaCoreProperties.TIKA_CONTENT.toString(), "application/pdf; charset=UTF-8");
 
-        filter.filter(metadata);
+        metadata = filterOne(filter, metadata);
         assertEquals(1, metadata.getValues(Metadata.CONTENT_TYPE).length);
         assertEquals("text/html", metadata.get(Metadata.CONTENT_TYPE));
     }
@@ -252,15 +253,18 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
 
         MetadataFilter filter = config.getMetadataFilter();
-        filter.filter(metadata);
+        metadata = filterOne(filter, metadata);
         assertEquals(0, metadata.names().length);
 
         metadata = new Metadata();
         metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.ALTERNATE_FORMAT_CHUNK
                 .name());
         metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
-        filter.filter(metadata);
+        metadata = filterOne(filter, metadata);
         assertEquals(2, metadata.names().length);
     }
 
+    private static Metadata filterOne(MetadataFilter filter, Metadata singleMetadata) throws TikaException {
+        return filter.filter(List.of(singleMetadata)).get(0);
+    }
 }

@@ -26,7 +26,6 @@ import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.utils.StringUtils;
 
@@ -53,7 +52,7 @@ import org.apache.tika.utils.StringUtils;
  * will overwrite the value in that field. Again, if there are multiple
  * values in that field, those will all be overwritten.
  */
-public class CaptureGroupMetadataFilter extends MetadataFilter implements Initializable {
+public class CaptureGroupMetadataFilter extends MetadataFilterBase implements Initializable {
 
     private String regexString;
     private Pattern regex;
@@ -61,7 +60,7 @@ public class CaptureGroupMetadataFilter extends MetadataFilter implements Initia
     private String targetField;
 
     @Override
-    public void filter(Metadata metadata) throws TikaException {
+    protected void filter(Metadata metadata) {
         String val = metadata.get(sourceField);
         if (StringUtils.isBlank(val)) {
             return;

@@ -18,11 +18,11 @@ package org.apache.tika.pipes.core;
 
 import java.io.Serializable;
 
-import org.apache.tika.metadata.listfilter.MetadataListFilter;
+import org.apache.tika.metadata.filter.MetadataFilter;
 
 /**
  * Filter/Select some of the emitted output and pass it back to the client parser.
  */
-public abstract class PassbackFilter extends MetadataListFilter implements Serializable {
+public abstract class PassbackFilter extends MetadataFilter implements Serializable {
 
 }

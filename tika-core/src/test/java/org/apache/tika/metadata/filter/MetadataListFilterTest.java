@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.metadata.listfilter;
+package org.apache.tika.metadata.filter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -31,10 +31,10 @@ public class MetadataListFilterTest {
     public void testBasic() throws Exception {
         TikaConfig tikaConfig;
         try (InputStream is = MetadataListFilterTest.class.getResourceAsStream(
-                "metadatalistfilter-config.xml")) {
+                "metadatafilter-config.xml")) {
             tikaConfig = new TikaConfig(is);
         }
-        CompositeMetadataListFilter compositeMetadataListFilter = (CompositeMetadataListFilter) tikaConfig.getMetadataListFilter();
+        CompositeMetadataFilter compositeMetadataListFilter = (CompositeMetadataFilter) tikaConfig.getMetadataFilter();
         assertEquals(1, compositeMetadataListFilter.getFilters().size());
         assertTrue(compositeMetadataListFilter.getFilters().get(0) instanceof AttachmentCountingListFilter);
     }

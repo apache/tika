@@ -20,17 +20,16 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.tika.config.Field;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 
-public class FieldNameMappingFilter extends MetadataFilter {
+public class FieldNameMappingFilter extends MetadataFilterBase {
 
     Map<String, String> mappings = new LinkedHashMap<>();
 
     boolean excludeUnmapped = true;
 
     @Override
-    public void filter(Metadata metadata) throws TikaException {
+    protected void filter(Metadata metadata) {
         if (excludeUnmapped) {
             for (String n : metadata.names()) {
                 if (mappings.containsKey(n)) {
