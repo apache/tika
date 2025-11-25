@@ -15,9 +15,6 @@
  * limitations under the License.
  */
 
-/**
- * Copied and pasted from Tess4j (https://sourceforge.net/projects/tess4j/)
- */
 package org.apache.tika.parser.ocr.tess4j;
 
 import java.awt.image.BufferedImage;
@@ -25,6 +22,9 @@ import java.awt.image.BufferedImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Copied and pasted from Tess4j (https://sourceforge.net/projects/tess4j/)
+ */
 public class ImageDeskew {
     private static final Logger LOG = LoggerFactory.getLogger(ImageDeskew.class);
 

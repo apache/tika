@@ -307,6 +307,7 @@
     <puppycrawl.version>12.2.0</puppycrawl.version>
     <rat.version>0.17</rat.version>
     <scm.version>2.2.1</scm.version>
+    <spotless.goal>apply</spotless.goal>
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
@@ -1455,7 +1456,51 @@
         </executions>
       </plugin>
       <plugin>
-        <!-- mvn validate -->
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>3.1.0</version>
+        <configuration>
+          <java>
+            <includes>
+              <include>src/main/java/**/*.java</include>
+              <include>src/test/java/**/*.java</include>
+            </includes>
+            <excludes>
+              <exclude>**/CharsetDetector.java</exclude>
+              <exclude>**/CharsetMatch.java</exclude>
+              <exclude>**/CharsetRecog*.java</exclude>
+              <exclude>**/onenote/fsshttpb/unsigned/U*.java</exclude>
+              <exclude>**/IPTC.java</exclude>
+              <exclude>**/Photoshop.java</exclude>
+              <exclude>**/QuattroPro.java</exclude>
+              <exclude>**/WordPerfect.java</exclude>
+              <exclude>**/XMPRights.java</exclude>
+            </excludes>
+            <licenseHeader>
+              <file>${maven.multiModuleProjectDirectory}/tika-parent/license-header.txt</file>
+              <delimiter>package</delimiter>
+            </licenseHeader>
+            <indent>
+              <spaces>true</spaces>
+              <spacesPerTab>4</spacesPerTab>
+            </indent>
+            <removeUnusedImports/>
+            <importOrder>
+              <order>\#,java|javax,,org.apache.tika</order>
+            </importOrder>
+          </java>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>${spotless.goal}</goal>
+            </goals>
+            <phase>process-sources</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+      <!-- mvn validate -->
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
         <version>${checkstyle.plugin.version}</version>
@@ -1469,7 +1514,7 @@
         <executions>
           <execution>
             <id>validate</id>
-            <phase>validate</phase>
+            <phase>process-classes</phase>
             <configuration>
               <configLocation>checkstyle.xml</configLocation>
               <consoleOutput>false</consoleOutput>
@@ -1580,6 +1625,14 @@
         </plugins>
       </build>
     </profile>
+        <profile>
+          <id>ci</id>
+          <properties>
+            <!-- Override the Spotless goal when this profile is active -->
+            <spotless.goal>check</spotless.goal>
+          </properties>
+        </profile>
+
   </profiles>
   <!--
       <connection>scm:git:https://github.com/apache/</connection>

@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-/* $Id: XMPPacketParser.java 750418 2009-03-05 11:03:54Z vhennebert $ */
-
 package org.apache.tika.parser.xmp;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
@@ -24,6 +22,8 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+
+/* $Id: XMPPacketParser.java 750418 2009-03-05 11:03:54Z vhennebert $ */
 
 /**
  * This class is a parser for XMP packets. By default, it tries to locate the first XMP packet
@@ -110,4 +110,3 @@ public class XMPPacketScanner {
     }
 
 }
-
