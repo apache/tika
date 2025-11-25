@@ -31,8 +31,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.parser.CompositeParser;
-import org.apache.tika.parser.Parser;
 
 /**
  * Parsed representation of a Tika JSON configuration file.

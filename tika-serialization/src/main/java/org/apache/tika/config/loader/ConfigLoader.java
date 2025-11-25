@@ -50,16 +50,13 @@ public class ConfigLoader {
      * Reserved keys for complex components that require special handling.
      * These cannot be loaded via ConfigLoader - use TikaLoader methods instead.
      */
-    private static final Set<String> PROHIBITED_KEYS = Set.of(
-        "parsers",
-        "detectors",
-        "encoding-detectors",
-        "encodingDetectors",
-        "metadata-filters",
-        "metadataFilters",
-        "renderers",
-        "translators"
-    );
+    private static final Set<String> PROHIBITED_KEYS =
+            Set.of("parsers", "detectors", "encoding-detectors", "encodingDetectors", "metadata-filters", "metadataFilters", "renderers", "translators");
+
+    private static final Set<String> PROHIBITED_CLASSES =
+            Set.of("org.apache.tika.parser.Parser", "org.apache.tika.detect.Detector",
+                    "org.apache.tika.renderer.Renderer",
+                    "org.apache.tika.detect.EncodingDetector", "org.apache.tika.metadata.filter.MetadataFilter");
 
     private final TikaJsonConfig config;
     private final ObjectMapper objectMapper;
@@ -324,11 +321,7 @@ public class ConfigLoader {
     private void validateClass(Class<?> clazz) throws TikaConfigException {
         // Check for known complex component types (defense in depth)
         String className = clazz.getName();
-        if (className.equals("org.apache.tika.parser.Parser") ||
-            className.equals("org.apache.tika.detect.Detector") ||
-            className.equals("org.apache.tika.renderer.Renderer") ||
-            className.equals("org.apache.tika.detect.EncodingDetector") ||
-            className.equals("org.apache.tika.metadata.filter.MetadataFilter")) {
+        if (PROHIBITED_CLASSES.contains(className)) {
             throw new TikaConfigException(
                 clazz.getSimpleName() + " is a Tika component interface. " +
                 "Use the appropriate TikaLoader method (e.g., loadParsers(), loadDetectors()).");

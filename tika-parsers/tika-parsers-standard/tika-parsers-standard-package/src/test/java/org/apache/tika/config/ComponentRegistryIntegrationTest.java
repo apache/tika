@@ -16,6 +16,7 @@
  */
 package org.apache.tika.config;
 
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -32,13 +33,12 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.jupiter.api.Test;
+
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
-import org.apache.tika.detect.microsoft.POIFSContainerDetector;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.xml.DcXMLParser;
-import org.junit.jupiter.api.Test;
 
 /**
  * Integration tests to verify that the annotation processor correctly generated
@@ -152,7 +152,7 @@ public class ComponentRegistryIntegrationTest {
     public void testIndexFilesHaveCorrectFormat() throws Exception {
         // Verify index files have Apache license and correct format
         Enumeration<URL> resources = getClass().getClassLoader()
-                .getResources("META-INF/tika/parsers.idx");
+                                               .getResources("META-INF/tika/parsers.idx");
 
         assertTrue(resources.hasMoreElements(), "At least one parsers.idx should exist");
 
