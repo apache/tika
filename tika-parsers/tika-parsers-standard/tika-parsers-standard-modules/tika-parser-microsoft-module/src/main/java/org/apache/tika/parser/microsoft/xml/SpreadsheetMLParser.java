@@ -27,6 +27,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -39,6 +40,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * <p>
  * See <a href="https://en.wikipedia.org/wiki/Microsoft_Office_XML_formats">https://en.wikipedia.org/wiki/Microsoft_Office_XML_formats</a>
  */
+@TikaComponent
 public class SpreadsheetMLParser extends AbstractXML2003Parser {
 
     final static String CELL = "cell";

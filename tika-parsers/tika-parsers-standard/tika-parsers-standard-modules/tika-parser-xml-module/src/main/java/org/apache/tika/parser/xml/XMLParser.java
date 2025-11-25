@@ -27,6 +27,7 @@ import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -41,6 +42,7 @@ import org.apache.tika.utils.XMLReaderUtils;
 /**
  * XML parser.
  */
+@TikaComponent(spi = false)
 public class XMLParser implements Parser {
 
     /**

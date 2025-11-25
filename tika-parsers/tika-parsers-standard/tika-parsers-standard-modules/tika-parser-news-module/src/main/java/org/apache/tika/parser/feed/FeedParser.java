@@ -33,6 +33,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -47,6 +48,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * Uses Rome for parsing the feeds. A feed description is put in a paragraph
  * with its link and title in an anchor.
  */
+@TikaComponent
 public class FeedParser implements Parser {
 
     /**

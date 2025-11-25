@@ -28,6 +28,7 @@ import org.apache.commons.io.IOUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.MachineMetadata;
@@ -41,6 +42,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 /**
  * Parser for executable files. Currently supports ELF and PE
  */
+@TikaComponent
 public class ExecutableParser implements Parser, MachineMetadata {
     /**
      * Serial version UID

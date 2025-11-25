@@ -44,6 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
@@ -57,6 +58,7 @@ import org.apache.tika.parser.microsoft.OfficeParser;
  * This should work for all OLE2 documents, whether
  * they are ones supported by POI or not.
  */
+@TikaComponent
 public class POIFSContainerDetector implements Detector {
 
     /**

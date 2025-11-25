@@ -26,6 +26,7 @@ import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -36,6 +37,7 @@ import org.apache.tika.sax.TaggedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 
+@TikaComponent
 public class DIFParser implements Parser {
 
     /**

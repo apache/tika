@@ -29,6 +29,7 @@ import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
@@ -39,6 +40,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.EndDocumentShieldingContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
+@TikaComponent
 public class MIFParser extends AbstractEncodingDetectorParser {
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(new HashSet<>(

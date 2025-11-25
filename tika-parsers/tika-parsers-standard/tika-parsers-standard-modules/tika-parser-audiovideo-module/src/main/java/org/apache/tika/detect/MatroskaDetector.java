@@ -22,12 +22,14 @@ import java.io.InputStream;
 
 import org.apache.commons.io.IOUtils;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
 /**
  * Detector for Matroska (MKV and WEBM) files based on the EBML header.
  */
+@TikaComponent
 public class MatroskaDetector implements Detector {
 
     /** For serialization compatibility. */

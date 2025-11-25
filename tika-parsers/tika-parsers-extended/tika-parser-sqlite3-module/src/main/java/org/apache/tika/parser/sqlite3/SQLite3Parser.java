@@ -29,6 +29,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -53,6 +54,7 @@ import org.apache.tika.parser.Parser;
  * If using a TikaInputStream, make sure to close it to delete the temp file
  * that has to be created.
  */
+@TikaComponent
 public class SQLite3Parser implements Parser, Initializable {
 
     public static final String SQLITE3_PREFIX = "sqlite3:";

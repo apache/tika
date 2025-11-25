@@ -28,6 +28,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.UnsupportedFormatException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -43,6 +44,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 /**
  * Parser for universal executable files.
  */
+@TikaComponent
 public class UniversalExecutableParser implements Parser {
     private static final long serialVersionUID = 1L;
 

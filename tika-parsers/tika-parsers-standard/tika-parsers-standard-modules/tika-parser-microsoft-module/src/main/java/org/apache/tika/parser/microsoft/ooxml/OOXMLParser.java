@@ -27,6 +27,7 @@ import org.apache.poi.openxml4j.util.ZipSecureFile;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -36,6 +37,7 @@ import org.apache.tika.parser.microsoft.AbstractOfficeParser;
 /**
  * Office Open XML (OOXML) parser.
  */
+@TikaComponent
 public class OOXMLParser extends AbstractOfficeParser {
     protected static final String SIGNATURE_RELATIONSHIP =
             "http://schemas.openxmlformats.org/package/2006/relationships/digital-signature/origin";

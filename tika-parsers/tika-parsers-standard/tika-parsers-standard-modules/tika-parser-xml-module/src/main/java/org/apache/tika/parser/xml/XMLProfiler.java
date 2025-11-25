@@ -33,6 +33,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -66,6 +67,7 @@ import org.apache.tika.utils.XMLReaderUtils;
  * xmp in other file formats.  Please open a ticket.
  * </p>
  */
+@TikaComponent(spi = false)
 public class XMLProfiler implements Parser {
 
 

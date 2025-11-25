@@ -31,6 +31,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -50,6 +51,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * <p>
  * Based on the Microsoft specs MS-ONE and MS-ONESTORE.
  */
+@TikaComponent
 public class OneNoteParser implements Parser {
 
     public static final String ONE_NOTE_PREFIX = "onenote:";

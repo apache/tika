@@ -37,6 +37,7 @@ import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -55,6 +56,7 @@ import org.apache.tika.utils.StringUtils;
  * Mbox (mailbox) parser. This version extracts each mail from Mbox and uses the
  * DelegatingParser to process each mail.
  */
+@TikaComponent
 public class MboxParser implements Parser {
 
     public static final String MBOX_MIME_TYPE = "application/mbox";

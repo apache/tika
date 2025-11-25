@@ -24,6 +24,7 @@ import java.util.Set;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -34,6 +35,7 @@ import org.apache.tika.parser.xmp.JempboxExtractor;
 /**
  * Tries to scrape XMP out of JXL
  */
+@TikaComponent
 public class JXLParser implements Parser {
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.image(

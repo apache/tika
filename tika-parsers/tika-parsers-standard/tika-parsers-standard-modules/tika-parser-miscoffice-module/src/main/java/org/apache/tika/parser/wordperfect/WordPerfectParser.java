@@ -27,6 +27,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.UnsupportedFormatException;
@@ -43,6 +44,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  *
  * @author Pascal Essiembre
  */
+@TikaComponent
 public class WordPerfectParser implements Parser {
 
     final static MediaType WP_BASE = MediaType.application("vnd.wordperfect");

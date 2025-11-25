@@ -29,6 +29,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.ZeroByteFileException;
@@ -49,6 +50,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  *
  * @author jnioche@digitalpebble.com
  */
+@TikaComponent
 public class RFC822Parser implements Parser {
     /**
      * Serial version UID

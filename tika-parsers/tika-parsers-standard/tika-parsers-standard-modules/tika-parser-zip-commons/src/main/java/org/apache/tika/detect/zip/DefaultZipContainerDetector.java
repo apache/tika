@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.LoadErrorHandler;
 import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
@@ -59,6 +60,7 @@ import org.apache.tika.mime.MediaType;
  * Finally, if the file is not detected as an archive format, this runs
  * commons-compress' compressor format detector.
  */
+@TikaComponent
 public class DefaultZipContainerDetector implements Detector {
 
     //Regrettably, some tiff files can be incorrectly identified

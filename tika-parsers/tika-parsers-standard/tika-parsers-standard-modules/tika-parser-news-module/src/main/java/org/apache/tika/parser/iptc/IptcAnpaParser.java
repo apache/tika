@@ -32,6 +32,7 @@ import java.util.TimeZone;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -43,6 +44,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 /**
  * Parser for IPTC ANPA New Wire Feeds
  */
+@TikaComponent
 public class IptcAnpaParser implements Parser {
     /**
      * Serial version UID

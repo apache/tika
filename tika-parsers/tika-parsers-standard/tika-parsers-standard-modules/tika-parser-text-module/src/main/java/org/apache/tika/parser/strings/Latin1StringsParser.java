@@ -25,6 +25,7 @@ import java.util.Set;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -47,6 +48,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * <p>
  * The implementation is optimized for fast parsing with only one pass.
  */
+@TikaComponent(spi = false)
 public class Latin1StringsParser implements Parser {
 
     private static final long serialVersionUID = 1L;

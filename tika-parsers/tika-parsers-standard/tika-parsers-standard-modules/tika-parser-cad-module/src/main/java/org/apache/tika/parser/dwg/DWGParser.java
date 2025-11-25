@@ -26,6 +26,7 @@ import org.apache.poi.util.StringUtil;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
@@ -41,6 +42,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * Note that we use Apache POI for various parts of the processing, as
  * lots of the low level string/int/short concepts are the same.
  */
+@TikaComponent
 public class DWGParser extends AbstractDWGParser {
     public static String DWG_CUSTOM_META_PREFIX = "dwg-custom:";
     /**

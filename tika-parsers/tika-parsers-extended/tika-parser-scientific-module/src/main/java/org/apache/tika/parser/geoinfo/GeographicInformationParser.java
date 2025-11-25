@@ -61,6 +61,7 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -71,7 +72,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.DateUtils;
 
-
+@TikaComponent
 public class GeographicInformationParser implements Parser {
 
     public static final String geoInfoType = "text/iso19139+xml";

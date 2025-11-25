@@ -50,6 +50,7 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -65,6 +66,7 @@ import org.apache.tika.utils.RereadableInputStream;
 /**
  * Tika parser for Time Stamped Data Envelope (application/timestamped-data)
  */
+@TikaComponent
 public class TSDParser implements Parser {
     public static final String TSD_MIME_TYPE = "application/timestamped-data";
     private static final long serialVersionUID = 3268158344501763323L;

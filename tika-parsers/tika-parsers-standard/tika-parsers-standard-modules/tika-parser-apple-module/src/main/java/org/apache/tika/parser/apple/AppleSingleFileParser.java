@@ -29,6 +29,7 @@ import org.apache.commons.io.IOUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -49,6 +50,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * <p>
  * See <a href="http://kaiser-edv.de/documents/AppleSingle_AppleDouble.pdf">spec document</a>.
  */
+@TikaComponent
 public class AppleSingleFileParser implements Parser {
 
     private static final int MAX_FIELD_LENGTH = 1_073_741_824;

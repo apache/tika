@@ -31,6 +31,7 @@ import ucar.nc2.Dimension;
 import ucar.nc2.NetcdfFile;
 import ucar.nc2.Variable;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -49,6 +50,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * href="http://www.unidata.ucar.edu/software/netcdf-java/">NetCDF for Java</a>
  * API.
  */
+@TikaComponent
 public class NetCDFParser implements Parser {
 
     /**

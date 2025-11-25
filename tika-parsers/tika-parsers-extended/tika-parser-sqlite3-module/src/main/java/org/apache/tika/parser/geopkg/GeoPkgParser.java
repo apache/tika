@@ -31,6 +31,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -65,6 +66,7 @@ import org.apache.tika.parser.sqlite3.SQLite3Parser;
  * <p>
  *   Or use an empty list to parse all columns.
  */
+@TikaComponent
 public class GeoPkgParser extends SQLite3Parser {
 
     /**

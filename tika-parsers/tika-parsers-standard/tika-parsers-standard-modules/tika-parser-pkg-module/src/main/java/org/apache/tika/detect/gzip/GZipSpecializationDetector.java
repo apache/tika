@@ -26,6 +26,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -34,6 +35,7 @@ import org.apache.tika.mime.MediaType;
  * This is designed to detect commonly gzipped file types such as warc.gz.
  * This is a first step.  We still need to implement tar.gz and svg.gz and ???
  */
+@TikaComponent
 public class GZipSpecializationDetector implements Detector {
     public static MediaType GZ = MediaType.application("gzip");
     public static MediaType WARC_GZ = MediaType.application("warc+gz");

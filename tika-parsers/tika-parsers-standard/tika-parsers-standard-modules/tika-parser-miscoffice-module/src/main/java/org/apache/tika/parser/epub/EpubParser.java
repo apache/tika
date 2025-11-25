@@ -47,6 +47,7 @@ import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
@@ -72,6 +73,7 @@ import org.apache.tika.zip.utils.ZipSalvager;
 /**
  * Epub parser
  */
+@TikaComponent
 public class EpubParser implements Parser {
 
     /**

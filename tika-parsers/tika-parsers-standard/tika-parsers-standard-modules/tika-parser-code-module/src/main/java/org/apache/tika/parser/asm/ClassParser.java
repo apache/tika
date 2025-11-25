@@ -24,6 +24,7 @@ import java.util.Set;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -33,6 +34,7 @@ import org.apache.tika.parser.Parser;
 /**
  * Parser for Java .class files.
  */
+@TikaComponent
 public class ClassParser implements Parser {
 
     /**

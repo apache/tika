@@ -33,6 +33,7 @@ import com.jmatio.types.MLStructure;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -44,7 +45,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 
 //JMatIO imports
 
-
+@TikaComponent
 public class MatParser implements Parser {
 
     public static final String MATLAB_MIME_TYPE = "application/x-matlab-data";

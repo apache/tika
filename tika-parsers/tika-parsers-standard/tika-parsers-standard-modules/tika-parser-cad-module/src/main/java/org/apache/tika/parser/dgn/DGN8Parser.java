@@ -28,6 +28,7 @@ import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -40,6 +41,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 /**
  * This is a VERY LIMITED parser. It parses metadata out of dgn8 files.
  */
+@TikaComponent
 public class DGN8Parser implements Parser {
 
     Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.image("vnd.dgn; version=8"));

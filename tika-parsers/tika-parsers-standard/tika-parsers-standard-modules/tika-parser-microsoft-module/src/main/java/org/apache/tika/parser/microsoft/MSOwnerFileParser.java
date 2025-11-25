@@ -26,6 +26,7 @@ import org.apache.commons.io.IOUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -38,6 +39,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * Parser for temporary MSOFfice files.
  * This currently only extracts the owner's name.
  */
+@TikaComponent
 public class MSOwnerFileParser implements Parser {
 
     private static final int ASCII_CHUNK_LENGTH = 54;

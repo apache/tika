@@ -39,6 +39,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaConfigException;
@@ -69,6 +70,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * {@link org.apache.commons.csv.CSVParser} is lost.
  * </p>
  */
+@TikaComponent
 public class TextAndCSVParser extends AbstractEncodingDetectorParser {
 
     static final MediaType CSV = MediaType.text("csv");

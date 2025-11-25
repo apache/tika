@@ -28,6 +28,7 @@ import org.apache.commons.io.IOUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
@@ -41,7 +42,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * A basic text extracting parser for the CADKey PRT (CAD Drawing)
  * format. It outputs text from note entries.
  */
-
+@TikaComponent
 public class PRTParser implements Parser {
 
     public static final String PRT_MIME_TYPE = "application/x-prt";

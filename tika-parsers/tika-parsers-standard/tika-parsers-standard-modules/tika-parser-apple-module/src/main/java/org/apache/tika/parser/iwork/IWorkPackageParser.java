@@ -35,6 +35,7 @@ import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.XmlRootExtractor;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -55,6 +56,7 @@ import org.apache.tika.utils.XMLReaderUtils;
  * <li>Numbers format version 1.x. Currently only tested with Numbers version 2.0.x
  * </ol>
  */
+@TikaComponent
 public class IWorkPackageParser implements Parser {
 
     /**

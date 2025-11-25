@@ -28,6 +28,7 @@ import org.apache.poi.util.LittleEndian;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -42,6 +43,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * ActiveMime is a macro container format used in some mso files.  See, e.g.
  * <a href="https://mastodon.social/@Ange/110027138524274526">Ange's toot</a>.
  */
+@TikaComponent
 public class ActiveMimeParser implements Parser {
 
     private static final MediaType MEDIA_TYPE = MediaType.application("x-activemime");

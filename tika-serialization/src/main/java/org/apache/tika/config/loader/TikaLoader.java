@@ -16,6 +16,7 @@
  */
 package org.apache.tika.config.loader;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -29,6 +30,9 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.AutoDetectParserConfig;
+import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.renderer.CompositeRenderer;
 import org.apache.tika.renderer.Renderer;
@@ -78,6 +82,7 @@ public class TikaLoader {
     private EncodingDetector encodingDetectors;
     private MetadataFilter metadataFilter;
     private Renderer renderers;
+    private ConfigLoader configLoader;
 
     private TikaLoader(TikaJsonConfig config, ClassLoader classLoader,
                        MediaTypeRegistry mediaTypeRegistry) {
@@ -220,6 +225,36 @@ public class TikaLoader {
             renderers = new CompositeRenderer(rendererList);
         }
         return renderers;
+    }
+
+    public Parser loadAutoDetectParser() throws TikaConfigException, IOException {
+        AutoDetectParserConfig adpConfig = configs().load(AutoDetectParserConfig.class);
+        if (adpConfig == null) {
+            adpConfig = new AutoDetectParserConfig();
+        }
+        return AutoDetectParser.build((CompositeParser)loadParsers(), loadDetectors(), adpConfig);
+    }
+
+    /**
+     * Returns a ConfigLoader for loading simple configuration objects.
+     * <p>
+     * Use this for POJOs and simple config classes. For complex components like
+     * Parsers, Detectors, etc., use the specific load methods on TikaLoader.
+     *
+     * <p>Usage:
+     * <pre>
+     * HandlerConfig config = loader.configs().load("handler-config", HandlerConfig.class);
+     * // Or use kebab-case auto-conversion:
+     * HandlerConfig config = loader.configs().load(HandlerConfig.class);
+     * </pre>
+     *
+     * @return the ConfigLoader instance
+     */
+    public synchronized ConfigLoader configs() {
+        if (configLoader == null) {
+            configLoader = new ConfigLoader(config, objectMapper);
+        }
+        return configLoader;
     }
 
     /**

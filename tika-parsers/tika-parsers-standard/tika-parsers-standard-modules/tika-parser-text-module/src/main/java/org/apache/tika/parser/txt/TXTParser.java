@@ -26,6 +26,7 @@ import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
@@ -48,6 +49,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * <dd><code>text/plain; charset=...</code></dd>
  * </dl>
  */
+@TikaComponent(spi = false)
 public class TXTParser extends AbstractEncodingDetectorParser {
 
     /**

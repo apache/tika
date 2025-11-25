@@ -1,4 +1,0 @@
-# Test parsers for tika-serialization module
-org.apache.tika.config.loader.ConfigurableTestParser
-org.apache.tika.config.loader.FallbackTestParser
-org.apache.tika.config.loader.MinimalTestParser

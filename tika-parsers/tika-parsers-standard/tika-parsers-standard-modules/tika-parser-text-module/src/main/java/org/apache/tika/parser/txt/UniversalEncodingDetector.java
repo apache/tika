@@ -21,9 +21,11 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.metadata.Metadata;
 
+@TikaComponent(spi = false)
 public class UniversalEncodingDetector implements EncodingDetector {
 
     private static final int BUFSIZE = 1024;

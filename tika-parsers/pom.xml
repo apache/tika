@@ -41,6 +41,14 @@
   </modules>
 
   <dependencies>
+    <!-- Annotation processor - contains @TikaComponent and ensures build order.
+     "provided" because it is only used at compile time -->
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-annotation-processor</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
     <!-- test dependencies -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -92,6 +100,24 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.apache.tika</groupId>
+              <artifactId>tika-annotation-processor</artifactId>
+              <version>${project.version}</version>
+            </path>
+            <path>
+              <groupId>org.apache.tika</groupId>
+              <artifactId>tika-core</artifactId>
+              <version>${project.version}</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.rat</groupId>

@@ -1,0 +1,8 @@
+{
+  "handler-config": {
+    "timeout": 5000,
+    "retries": 3,
+    "enabled": true,
+    "unexpectedField": "this should cause an error"
+  }
+}

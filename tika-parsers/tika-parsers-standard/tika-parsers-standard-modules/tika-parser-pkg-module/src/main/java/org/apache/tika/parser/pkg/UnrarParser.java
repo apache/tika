@@ -32,6 +32,7 @@ import org.apache.commons.io.IOUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
@@ -52,6 +53,7 @@ import org.apache.tika.utils.ProcessUtils;
  * and on the path.  This is not the default rar parser and must
  * be selected via the tika-config.xml.
  */
+@TikaComponent(spi = false)
 public class UnrarParser implements Parser {
     private static final long serialVersionUID = 6157727985054451501L;
 

@@ -26,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -57,7 +58,25 @@ import org.apache.tika.exception.TikaConfigException;
  */
 public class TikaJsonConfig {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = createObjectMapper();
+
+    private static ObjectMapper createObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+
+        // Fail on unknown properties to catch configuration errors early
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+
+        // Prevent null values being assigned to primitive fields (int, boolean, etc.)
+        mapper.configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, true);
+
+        // Ensure enums are properly validated (not just numeric values)
+        mapper.configure(DeserializationFeature.FAIL_ON_NUMBERS_FOR_ENUMS, true);
+
+        // Catch duplicate keys in JSON objects
+        mapper.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, true);
+
+        return mapper;
+    }
 
     private final JsonNode rootNode;
     private final Map<String, Map<String, JsonNode>> componentsByType;

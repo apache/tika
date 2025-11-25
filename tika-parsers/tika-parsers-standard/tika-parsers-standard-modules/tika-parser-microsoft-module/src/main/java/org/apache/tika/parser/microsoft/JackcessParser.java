@@ -31,6 +31,7 @@ import com.healthmarketscience.jackcess.util.LinkResolver;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.UnsupportedFormatException;
@@ -51,6 +52,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * Many, many thanks to LexisNexis®/Health Market Science (HMS), Brian O'Neill,
  * and James Ahlborn for relicensing Jackcess to Apache v2.0!
  */
+@TikaComponent
 public class JackcessParser implements Parser {
 
     public static final String SUMMARY_PROPERTY_PREFIX =

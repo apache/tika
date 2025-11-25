@@ -25,6 +25,7 @@ import java.nio.charset.Charset;
 import org.apache.commons.io.input.BoundedInputStream;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -51,6 +52,7 @@ import org.apache.tika.mime.MediaType;
  * }</pre>
  * <p>
  */
+@TikaComponent(spi = false)
 public final class StandardHtmlEncodingDetector implements EncodingDetector {
     private static final int META_TAG_BUFFER_SIZE = 8192;
 

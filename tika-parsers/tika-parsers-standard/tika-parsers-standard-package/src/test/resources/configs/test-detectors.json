@@ -1,0 +1,5 @@
+{
+  "detectors": [
+    {"poifs-container-detector": {}}
+  ]
+}
