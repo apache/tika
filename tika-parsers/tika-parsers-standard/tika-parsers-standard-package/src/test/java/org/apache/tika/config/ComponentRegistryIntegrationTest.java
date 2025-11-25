@@ -113,18 +113,30 @@ public class ComponentRegistryIntegrationTest {
     }
 
     @Test
-    public void testXmlParserNotInIndexButDcXmlParserIs() throws Exception {
-        // XMLParser has spi=false so should NOT be in index
-        // DcXMLParser should be in index
+    public void testSpiFalseParserInIndexButNotInSpi() throws Exception {
+        // XMLParser has spi=false:
+        // - SHOULD be in index (for name-based configuration)
+        // - should NOT be in SPI (for auto-discovery via ServiceLoader)
         Map<String, String> parserIndex = readAllIndexFiles("META-INF/tika/parsers.idx");
 
-        assertFalse(parserIndex.containsKey("xml-parser"),
-                "xml-parser should NOT be in index (spi=false)");
+        // Verify xml-parser IS in index for name-based config
+        assertTrue(parserIndex.containsKey("xml-parser"),
+                "xml-parser should be in index (spi=false still allows name-based config)");
+        assertEquals("org.apache.tika.parser.xml.XMLParser",
+                parserIndex.get("xml-parser"),
+                "xml-parser should map to XMLParser class");
+
+        // Verify dc-xml-parser is also in index
         assertTrue(parserIndex.containsKey("dc-xml-parser"),
                 "dc-xml-parser should be in index");
         assertEquals("org.apache.tika.parser.xml.DcXMLParser",
                 parserIndex.get("dc-xml-parser"),
                 "dc-xml-parser should map to DcXMLParser class");
+
+        // Verify xml-parser is NOT in SPI file
+        Map<String, Boolean> spiParsers = readAllSpiFiles("META-INF/services/org.apache.tika.parser.Parser");
+        assertFalse(spiParsers.containsKey("org.apache.tika.parser.xml.XMLParser"),
+                "XMLParser should NOT be in SPI (spi=false prevents auto-discovery)");
     }
 
     @Test
@@ -253,5 +265,35 @@ public class ComponentRegistryIntegrationTest {
             }
         }
         return index;
+    }
+
+    /**
+     * Reads all SPI service files from all JARs on the classpath.
+     * Returns a map of class names (as keys) to true for easy lookup.
+     */
+    private Map<String, Boolean> readAllSpiFiles(String resourcePath) throws Exception {
+        Map<String, Boolean> spiClasses = new HashMap<>();
+        Enumeration<URL> resources = getClass().getClassLoader().getResources(resourcePath);
+
+        assertTrue(resources.hasMoreElements(),
+                "At least one " + resourcePath + " file should exist");
+
+        while (resources.hasMoreElements()) {
+            URL url = resources.nextElement();
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    // Skip comments and empty lines
+                    line = line.trim();
+                    if (line.isEmpty() || line.startsWith("#")) {
+                        continue;
+                    }
+                    spiClasses.put(line, true);
+                }
+            }
+        }
+
+        return spiClasses;
     }
 }
