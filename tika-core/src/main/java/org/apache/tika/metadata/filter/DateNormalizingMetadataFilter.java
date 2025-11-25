@@ -27,7 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.Field;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 
@@ -43,7 +42,7 @@ import org.apache.tika.metadata.Property;
  * if the file format does not specify a timezone.
  *
  */
-public class DateNormalizingMetadataFilter extends MetadataFilter {
+public class DateNormalizingMetadataFilter extends MetadataFilterBase {
 
     private static TimeZone UTC = TimeZone.getTimeZone("UTC");
 
@@ -51,8 +50,7 @@ public class DateNormalizingMetadataFilter extends MetadataFilter {
 
     private TimeZone defaultTimeZone = UTC;
 
-    @Override
-    public void filter(Metadata metadata) throws TikaException {
+    protected void filter(Metadata metadata) {
         SimpleDateFormat dateFormatter = null;
         SimpleDateFormat utcFormatter = null;
         for (String n : metadata.names()) {

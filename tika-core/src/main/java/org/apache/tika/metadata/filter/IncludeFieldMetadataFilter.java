@@ -22,10 +22,9 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.tika.config.Field;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 
-public class IncludeFieldMetadataFilter extends MetadataFilter {
+public class IncludeFieldMetadataFilter extends MetadataFilterBase {
     private final Set<String> includeSet;
 
     public IncludeFieldMetadataFilter() {
@@ -49,7 +48,7 @@ public class IncludeFieldMetadataFilter extends MetadataFilter {
     }
 
     @Override
-    public void filter(Metadata metadata) throws TikaException {
+    protected void filter(Metadata metadata) {
 
         for (String n : metadata.names()) {
             if (!includeSet.contains(n)) {

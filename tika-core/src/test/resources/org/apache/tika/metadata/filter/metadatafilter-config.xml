@@ -16,7 +16,7 @@
   limitations under the License.
 -->
 <properties>
-  <metadataListFilters>
-    <metadataListFilter class="org.apache.tika.metadata.listfilter.AttachmentCountingListFilter"/>
-  </metadataListFilters>
+  <metadataFilters>
+    <metadataFilter class="org.apache.tika.metadata.filter.AttachmentCountingListFilter"/>
+  </metadataFilters>
 </properties>

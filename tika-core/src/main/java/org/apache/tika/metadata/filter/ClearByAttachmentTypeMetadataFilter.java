@@ -23,7 +23,6 @@ import java.util.Set;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -32,7 +31,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
  * attachment type matches one of the types.  The idea is that you might not want
  * to store/transmit metadata for images or specific file types.
  */
-public class ClearByAttachmentTypeMetadataFilter extends MetadataFilter {
+public class ClearByAttachmentTypeMetadataFilter extends MetadataFilterBase {
     private final Set<String> types;
 
     public ClearByAttachmentTypeMetadataFilter() {
@@ -43,8 +42,8 @@ public class ClearByAttachmentTypeMetadataFilter extends MetadataFilter {
         this.types = types;
     }
 
-    @Override
-    public void filter(Metadata metadata) throws TikaException {
+
+    protected void filter(Metadata metadata) {
         String type = metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
         if (type == null) {
             return;
@@ -87,4 +86,6 @@ public class ClearByAttachmentTypeMetadataFilter extends MetadataFilter {
     public List<String> getTypes() {
         return new ArrayList<>(types);
     }
+
+
 }

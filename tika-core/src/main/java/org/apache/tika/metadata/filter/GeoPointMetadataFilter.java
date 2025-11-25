@@ -17,7 +17,6 @@
 package org.apache.tika.metadata.filter;
 
 import org.apache.tika.config.Field;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
@@ -29,7 +28,7 @@ import org.apache.tika.utils.StringUtils;
  *
  * If you need any other mappings, please open a ticket on our JIRA.
  */
-public class GeoPointMetadataFilter extends MetadataFilter {
+public class GeoPointMetadataFilter extends MetadataFilterBase {
 
     String geoPointFieldName = "location";
 
@@ -49,7 +48,7 @@ public class GeoPointMetadataFilter extends MetadataFilter {
     }
 
     @Override
-    public void filter(Metadata metadata) throws TikaException {
+    protected void filter(Metadata metadata) {
         String lat = metadata.get(TikaCoreProperties.LATITUDE);
         if (StringUtils.isEmpty(lat)) {
             return;

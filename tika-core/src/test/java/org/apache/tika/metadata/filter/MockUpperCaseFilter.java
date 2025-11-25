@@ -18,16 +18,15 @@ package org.apache.tika.metadata.filter;
 
 import java.util.Locale;
 
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 
 /**
  * Mock Filter for testing uppercasing of all values
  */
-public class MockUpperCaseFilter extends MetadataFilter {
+public class MockUpperCaseFilter extends MetadataFilterBase {
 
     @Override
-    public void filter(Metadata metadata) throws TikaException {
+    protected void filter(Metadata metadata) {
         for (String n : metadata.names()) {
             String[] vals = metadata.getValues(n);
             metadata.remove(n);

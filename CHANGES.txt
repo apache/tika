@@ -1,15 +1,29 @@
 Release 4.0.0-BETA1 - ???
+
   BREAKING CHANGES
+
+   * Moved towards default json based configuration (TIKA-4544 and many others).
+
+   * tika-pipes implementation modules have been reorganized by
+     resource (tika-pipes-solr) vs task (tika-pipes-fetcher-solr)
+     (TIKA-4543). Note that the file-system pipes components have
+     been taken out of tika-pipes-core and placed in their own
+     pf4j module: tika-pipes-file-system.
+
+   * tika-pipes implementation modules are now pf4j plugins (TIKA-4519).
 
    * tika-pipes core classes have been moved to a new module: tika-pipes-core,
      and the FileSystem pipes components have moved (TIKA-4334).
 
-   * Headers are no longer injected into the body/content of MSG files (TIKA-4345). Please open
-     a ticket if you need this behavior across email formats.
+   * MetadataListFilter has been renamed MetadataFilter, and
+     MetadataFilter has been removed (TIKA-4546).
 
    * Removed several modules, including: tika-batch (TIKA-4333), snaps deployment (TIKA-4502),
      dotnet (TIKA-4332), advanced media module (TIKA-4500), tika-dl module (TIKA-4499),
      tika-fuzzing module (TIKA-4506).
+
+   * Headers are no longer injected into the body/content of MSG files (TIKA-4345). Please open
+     a ticket if you need this behavior across email formats.
 
    * API changes in the EmbeddedStreamTranslator (TIKA-4518).
 

@@ -16,6 +16,8 @@
  */
 package org.apache.tika.metadata.filter;
 
+import java.util.List;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 
@@ -27,8 +29,9 @@ public class NoOpFilter extends MetadataFilter {
 
     public static final NoOpFilter NOOP_FILTER = new NoOpFilter();
 
+
     @Override
-    public void filter(Metadata metadata) throws TikaException {
-        //no op
+    public List<Metadata> filter(List<Metadata> metadataList) throws TikaException {
+        return metadataList;
     }
 }

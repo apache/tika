@@ -103,7 +103,7 @@ public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrappe
         super.endEmbeddedDocument(contentHandler, metadata);
         addContent(contentHandler, metadata);
         try {
-            metadataFilter.filter(metadata);
+            metadataFilter.filter(List.of(metadata));
         } catch (TikaException e) {
             throw new SAXException(e);
         }
@@ -123,7 +123,7 @@ public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrappe
         super.endDocument(contentHandler, metadata);
         addContent(contentHandler, metadata);
         try {
-            metadataFilter.filter(metadata);
+            metadataFilter.filter(List.of(metadata));
         } catch (TikaException e) {
             throw new SAXException(e);
         }
