@@ -64,8 +64,19 @@ public class TikaJsonConfig {
 
     private static ObjectMapper createObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
+
         // Fail on unknown properties to catch configuration errors early
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+
+        // Prevent null values being assigned to primitive fields (int, boolean, etc.)
+        mapper.configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, true);
+
+        // Ensure enums are properly validated (not just numeric values)
+        mapper.configure(DeserializationFeature.FAIL_ON_NUMBERS_FOR_ENUMS, true);
+
+        // Catch duplicate keys in JSON objects
+        mapper.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, true);
+
         return mapper;
     }
 
