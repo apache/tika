@@ -1184,7 +1184,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
-        <version>2.19.1</version> <!-- 2.20.0 has a bug, see https://github.com/mojohaus/versions/issues/1313 -->
+        <version>2.20.1</version>
         <configuration>
           <generateBackupPoms>false</generateBackupPoms>
         </configuration>
