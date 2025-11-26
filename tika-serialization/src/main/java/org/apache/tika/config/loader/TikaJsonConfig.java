@@ -36,9 +36,37 @@ import org.apache.tika.exception.TikaConfigException;
  * Parsed representation of a Tika JSON configuration file.
  * Provides access to component configurations by type (parsers, detectors, etc.).
  *
- * <p>JSON structure:
+ * <p>This class serves as the single source of truth for JSON parsing across
+ * core Tika (parsers, detectors) and tika-pipes (fetchers, emitters) components.
+ * It performs no validation - consumers validate only their own keys.
+ *
+ * <p><b>Unified Configuration Usage:</b>
+ * <pre>
+ * // Parse config once
+ * TikaJsonConfig jsonConfig = TikaJsonConfig.load(Paths.get("config.json"));
+ *
+ * // Load core Tika components (same classloader)
+ * TikaLoader tikaLoader = TikaLoader.load(jsonConfig);
+ * Parser parser = tikaLoader.loadParsers();
+ * Detector detector = tikaLoader.loadDetectors();
+ *
+ * // Load pipes/plugin components (different classloader)
+ * TikaPluginManager pluginManager = TikaPluginManager.load(jsonConfig);
+ * pluginManager.loadPlugins();
+ * pluginManager.startPlugins();
+ *
+ * // Extract config for plugins (crosses classloader boundary as string)
+ * JsonNode fetchersNode = jsonConfig.getRootNode().get("fetchers");
+ * if (fetchersNode != null) {
+ *     String fetcherConfigJson = fetchersNode.toString();
+ *     // Pass string to plugin - safe across classloader boundary
+ * }
+ * </pre>
+ *
+ * <p><b>JSON structure:</b>
  * <pre>
  * {
+ *   // Core Tika components (validated by TikaLoader)
  *   "parsers": [
  *     { "pdf-parser": { "_decorate": {...}, "ocrStrategy": "AUTO", ... } },
  *     { "html-parser": { ... } },
@@ -48,7 +76,14 @@ import org.apache.tika.exception.TikaConfigException;
  *     { "mime-magic-detector": {} },
  *     { "zip-container-detector": { "maxDepth": 10 } }
  *   ],
- *   ...
+ *
+ *   // Pipes components (validated by TikaConfigs)
+ *   "plugin-roots": ["/path/to/plugins"],
+ *   "fetchers": [...],
+ *   "emitters": [...],
+ *
+ *   // Custom extensions (prefix with x-)
+ *   "x-my-custom-config": { ... }
  * }
  * </pre>
  *
@@ -245,6 +280,33 @@ public class TikaJsonConfig {
         }
 
         return result;
+    }
+
+    /**
+     * Deserializes a configuration value for the given key.
+     *
+     * @param key the configuration key
+     * @param clazz the target class
+     * @param <T> the type to deserialize to
+     * @return the deserialized value, or null if key doesn't exist
+     * @throws IOException if deserialization fails
+     */
+    public <T> T deserialize(String key, Class<T> clazz) throws IOException {
+        JsonNode node = rootNode.get(key);
+        if (node == null || node.isNull()) {
+            return null;
+        }
+        return OBJECT_MAPPER.treeToValue(node, clazz);
+    }
+
+    /**
+     * Checks if a configuration key exists.
+     *
+     * @param key the configuration key
+     * @return true if the key exists and is not null
+     */
+    public boolean hasKey(String key) {
+        return rootNode.has(key) && !rootNode.get(key).isNull();
     }
 
     /**
