@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 
 public class TikaConfigsTest {
@@ -59,7 +60,7 @@ public class TikaConfigsTest {
                 () -> loadFromString(json));
 
         assertTrue(ex.getMessage().contains("pipes-reporter"));
-        assertTrue(ex.getMessage().contains("Unknown config key"));
+        assertTrue(ex.getMessage().contains("Unknown pipes config key"));
     }
 
     @Test
@@ -141,6 +142,6 @@ public class TikaConfigsTest {
     }
 
     private TikaConfigs loadFromString(String json) throws Exception {
-        return TikaConfigs.load(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+        return TikaConfigs.load(TikaJsonConfig.load(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8))));
     }
 }
