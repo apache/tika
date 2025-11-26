@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-name: main jdk17 windows build
+name: main jdk17 windows build (multi-locale)
 
 on:
   pull_request:
@@ -29,6 +29,10 @@ jobs:
     strategy:
       matrix:
         java: [ '17' ]
+        locale: [ 'tr_TR.UTF-8', 'de_DE.UTF-8' ]
+    env:
+      LANG: ${{ matrix.locale }}
+      LC_ALL: ${{ matrix.locale }}
 
     steps:
       - uses: actions/checkout@v4
@@ -40,5 +44,4 @@ jobs:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
       - name: Build with Maven
-        working-directory: 'tika build dir'
         run: mvn clean test install javadoc:aggregate
