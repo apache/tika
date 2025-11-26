@@ -87,7 +87,7 @@ public class TikaResourceFetcherTest extends CXFTestBase {
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
-        return inputDir.toAbsolutePath().toString();
+        return inputDir.toAbsolutePath().toString().replace("\\", "/");
     }
 
     @Override

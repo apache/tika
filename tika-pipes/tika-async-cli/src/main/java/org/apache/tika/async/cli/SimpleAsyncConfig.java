@@ -91,4 +91,21 @@ class SimpleAsyncConfig {
     public String getPluginsDir() {
         return pluginsDir;
     }
+
+    @Override
+    public String toString() {
+        return "SimpleAsyncConfig{" +
+                "inputDir='" + inputDir + '\'' +
+                ", outputDir='" + outputDir + '\'' +
+                ", numClients=" + numClients +
+                ", timeoutMs=" + timeoutMs +
+                ", xmx='" + xmx + '\'' +
+                ", fileList='" + fileList + '\'' +
+                ", tikaConfig='" + tikaConfig + '\'' +
+                ", asyncConfig='" + asyncConfig + '\'' +
+                ", extractBytes=" + extractBytes +
+                ", handlerType=" + handlerType +
+                ", pluginsDir='" + pluginsDir + '\'' +
+                '}';
+    }
 }

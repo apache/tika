@@ -68,6 +68,7 @@ public class PluginsTestHelper {
             json = json.replace("PLUGINS_CONFIG", pipesConfig.toAbsolutePath().toString());
         }
         json = json.replace("EMIT_INTERMEDIATE_RESULTS", String.valueOf(emitIntermediateResults));
+        json = json.replace("\\", "/");
         Files.write(pipesConfig, json.getBytes(StandardCharsets.UTF_8));
         return pipesConfig;
     }

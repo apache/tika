@@ -99,7 +99,7 @@ public class AsyncProcessorTest extends TikaTest {
                 .replace("PLUGIN_ROOTS", pluginsDir.toAbsolutePath().toString())
                 .replace("TIKA_CONFIG", tikaConfigPath.toAbsolutePath().toString())
                 .replace("PLUGINS_CONFIG", pipesConfig.toAbsolutePath().toString());
-
+        jsonTemp = jsonTemp.replace("\\", "/");
         Files.writeString(pipesConfig, jsonTemp, StandardCharsets.UTF_8);
 
         Path mock = inputDir.resolve("mock.xml");

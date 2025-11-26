@@ -401,11 +401,9 @@ public class TikaCLITest {
         Path pluginsDir = Paths.get("target/plugins");
 
         String[] params = {"-Z",
-                "-p", ProcessUtils.escapeCommandLine(pluginsDir.toAbsolutePath().toString()),
-                ProcessUtils.escapeCommandLine(input.toAbsolutePath().toString()),
-                ProcessUtils.escapeCommandLine(extractDir
-                .toAbsolutePath()
-                .toString())};
+                "-p", pluginsDir.toAbsolutePath().toString(),
+                input.toAbsolutePath().toString(),
+                extractDir.toAbsolutePath().toString()};
 
         TikaCLI.main(params);
 
@@ -429,7 +427,6 @@ public class TikaCLITest {
                 return FileVisitResult.CONTINUE;
             }
 
-            @Override
             public @NotNull FileVisitResult visitFile(Path path, @NotNull BasicFileAttributes basicFileAttributes) throws IOException {
                 names.add(extractDir.relativize(path).toString().replace('\\', '/'));
                 return FileVisitResult.CONTINUE;

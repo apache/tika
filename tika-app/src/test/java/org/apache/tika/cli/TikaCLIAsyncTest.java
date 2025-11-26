@@ -77,6 +77,7 @@ public class TikaCLIAsyncTest {
                         .replace("TIKA_CONFIG", ASYNC_CONFIG.toAbsolutePath().toString());
 
                 ;
+        json = json.replace("\\", "/");
         Files.writeString(ASYNC_PLUGINS_CONFIG, json, UTF_8);
     }
 
