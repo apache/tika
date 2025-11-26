@@ -181,6 +181,7 @@ public class ExtractProfileRunner {
             json = new String(is.readAllBytes(), StandardCharsets.UTF_8);
         }
         json = json.replace("FETCHER_BASE_PATH", inputDir.toAbsolutePath().toString());
+        json = json.replace("\\", "/");
 
         try {
             return FileSystemPipesIterator.build(new ExtensionConfig("", "", json));

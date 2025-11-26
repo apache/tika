@@ -176,11 +176,6 @@
       <version>${zstd.version}</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-serialization</artifactId>
-      <scope>test</scope>
-    </dependency>
     <!-- For legal reasons (incompatible license), jai-imageio-jpeg2000 is to be used
     only in the tests and may not be distributed. See also LEGAL-195 -->
     <dependency>
@@ -199,13 +194,6 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-serialization</artifactId>
       <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>

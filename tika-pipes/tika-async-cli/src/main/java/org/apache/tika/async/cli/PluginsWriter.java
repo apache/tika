@@ -58,7 +58,7 @@ public class PluginsWriter {
             if (Files.isDirectory(plugins)) {
                 pluginString = plugins.toAbsolutePath().toString();
             }
-            json = json.replace("PLUGIN_ROOTS", pluginString);
+            json = json.replace("PLUGIN_ROOTS", pluginString).replace("\\", "/");
             AsyncConfig asyncConfig = new AsyncConfig();
 
             asyncConfig.setNumClients(simpleAsyncConfig.getNumClients() == null ? 2 : simpleAsyncConfig.getNumClients());

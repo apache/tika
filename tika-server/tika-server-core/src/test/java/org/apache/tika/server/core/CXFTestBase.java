@@ -114,7 +114,7 @@ public abstract class CXFTestBase {
         if (bytesOutputDir != null) {
             json = json.replace("BYTES_EMITTER_BASE_PATH", bytesOutputDir.toAbsolutePath().toString());
         }
-
+        json = json.replace("\\", "/");
         Files.writeString(configPath, json, StandardCharsets.UTF_8);
     }
 
@@ -236,7 +236,7 @@ public abstract class CXFTestBase {
                         .toAbsolutePath()
                         .toString());
 
-
+        json = json.replace("\\", "/");
         return UnsynchronizedByteArrayInputStream
                 .builder()
                 .setByteArray(json.getBytes(UTF_8))
