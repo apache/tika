@@ -30,6 +30,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -41,7 +42,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.plugins.AbstractTikaExtension;
 import org.apache.tika.plugins.ExtensionConfig;
-import org.apache.tika.plugins.ExtensionConfigs;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -76,12 +76,11 @@ public class FileSystemFetcher extends AbstractTikaExtension implements Fetcher 
                     "a file name with this character in it.");
         }
         FileSystemFetcherConfig config = defaultFileSystemFetcherConfig;
-        ExtensionConfigs pluginConfigManager = parseContext.get(ExtensionConfigs.class);
-        if (pluginConfigManager != null) {
-            Optional<ExtensionConfig> pluginConfigOpt = pluginConfigManager.getById(getExtensionConfig().id());
-            if (pluginConfigOpt.isPresent()) {
-                ExtensionConfig pluginConfig = pluginConfigOpt.get();
-                config = FileSystemFetcherConfig.load(pluginConfig.jsonConfig());
+        ConfigContainer configContainer = parseContext.get(ConfigContainer.class);
+        if (configContainer != null) {
+            Optional<String> configJson = configContainer.get(getExtensionConfig().id());
+            if (configJson.isPresent()) {
+                config = FileSystemFetcherConfig.load(configJson.get());
                 checkConfig(config);
             }
         }
