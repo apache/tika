@@ -1,0 +1,16 @@
+{
+  "parsers": [],
+  "detectors": [
+    {
+      "default-detector": {
+        "exclude": [
+          "default-zip-container-detector",
+          "poifs-container-detector"
+        ]
+      }
+    },
+    {
+      "empty-detector": {}
+    }
+  ]
+}

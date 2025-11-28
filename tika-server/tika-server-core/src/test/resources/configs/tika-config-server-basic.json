@@ -1,0 +1,12 @@
+{
+  "server": {
+    "taskTimeoutMillis": 120000,
+    "minimumTimeoutMillis": 10,
+    "taskPulseMillis": 100,
+    "port": 9999,
+    "endpoints": [
+      "rmeta",
+      "status"
+    ]
+  }
+}

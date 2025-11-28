@@ -1,0 +1,17 @@
+{
+  "parsers": [
+    {
+      "default-parser": {}
+    },
+    {
+      "pdf-parser": {
+        "sortByPosition": true
+      }
+    }
+  ],
+  "renderers": [
+    {
+      "pdfbox-renderer": {}
+    }
+  ]
+}

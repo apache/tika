@@ -1,0 +1,18 @@
+{
+  "parsers": [
+    {
+      "default-parser" : {}
+    },
+    {
+      "tesseract-ocr-parser": {
+       "maxFileSizeToOcr": 100
+      }
+    },
+    {
+      "pdf-parser": {
+        "extractInlineImages": false,
+        "ocrStrategy": "OCR_ONLY"
+      }
+    }
+  ]
+}

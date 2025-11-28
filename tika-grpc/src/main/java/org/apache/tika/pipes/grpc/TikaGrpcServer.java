@@ -92,6 +92,7 @@ public class TikaGrpcServer {
         } else {
             creds = InsecureServerCredentials.create();
         }
+        //TODO -- this has to be converted to json
         if (tikaConfigXml == null) {
             // Create a default tika config
             tikaConfigXml = Files.createTempFile("tika-config", ".xml").toFile();
@@ -100,11 +101,10 @@ public class TikaGrpcServer {
             }
         }
         File tikaConfigFile = new File(tikaConfigXml.getAbsolutePath());
-        File pluginsConfig = new File(tikaPlugins.getAbsolutePath());
         healthStatusManager.setStatus(TikaGrpcServer.class.getSimpleName(), ServingStatus.SERVING);
         server = Grpc
                 .newServerBuilderForPort(port, creds)
-                .addService(new TikaGrpcServerImpl(tikaConfigFile.getAbsolutePath(), pluginsConfig.getAbsolutePath()))
+                .addService(new TikaGrpcServerImpl(tikaConfigFile.getAbsolutePath()))
                 .addService(healthStatusManager.getHealthService())
                 .addService(ProtoReflectionServiceV1.newInstance())
                 .build()

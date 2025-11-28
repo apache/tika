@@ -1,0 +1,11 @@
+{
+  "server": {
+    "port": "{PORT}",
+    "taskTimeoutMillis": 54321,
+    "enableUnsecureFeatures": true,
+    "taskPulseMillis": 100,
+    "endpoints": [
+      "tika"
+    ]
+  }
+}

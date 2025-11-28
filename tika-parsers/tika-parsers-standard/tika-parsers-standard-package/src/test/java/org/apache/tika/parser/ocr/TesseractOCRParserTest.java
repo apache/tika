@@ -17,17 +17,25 @@
 package org.apache.tika.parser.ocr;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.ConfigContainer;
+import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.PolymorphicObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
@@ -183,7 +191,7 @@ public class TesseractOCRParserTest extends TikaTest {
         assertTrue(metadataList.get(0).names().length > 10);
         assertTrue(metadataList.get(1).names().length > 10);
         //test at least one value
-        assertEquals("deflate", metadataList.get(1).get("Compression CompressionTypeName"));
+        assertEquals("deflate", metadataList.get(1).get("img:Compression CompressionTypeName"));
 
         //make sure that tesseract is showing up in the full set of "parsed bys"
         assertContains(TesseractOCRParser.class.getName(),
@@ -198,7 +206,7 @@ public class TesseractOCRParserTest extends TikaTest {
         String xml = getXML("testOCR.jpg").xml;
         assertContains("OCR Testing", xml);
         //test metadata extraction
-        assertContains("<meta name=\"Image Width\" content=\"136 pixels\" />", xml);
+        assertContains("<meta name=\"img:Image Width\" content=\"136 pixels\" />", xml);
 
         //TIKA-2169
         assertContainsCount("<html", xml, 1);
@@ -269,4 +277,125 @@ public class TesseractOCRParserTest extends TikaTest {
     }
     //TODO: add unit tests for jp2/jpx/ppm TIKA-2174
 
+    @Test
+    public void testUpdatingConfigs() throws Exception {
+        ObjectMapper mapper = PolymorphicObjectMapperFactory.getMapper();
+
+        // Create default config (simulating parser initialization)
+        TesseractOCRConfig defaultConfig = new TesseractOCRConfig();
+        defaultConfig.setLanguage("eng");
+        defaultConfig.setMinFileSizeToOcr(100);
+        defaultConfig.setOutputType(TesseractOCRConfig.OUTPUT_TYPE.TXT);
+        defaultConfig.addOtherTesseractConfig("k1", "a1");
+        defaultConfig.addOtherTesseractConfig("k2", "a2");
+
+        // Create runtime config updates (simulating per-request config)
+        Map<String, Object> runtimeUpdates = new HashMap<>();
+        runtimeUpdates.put("language", "fra");
+        runtimeUpdates.put("minFileSizeToOcr", 1000);
+        runtimeUpdates.put("outputType", "HOCR");
+        Map<String, String> otherConfig = new HashMap<>();
+        otherConfig.put("k1", "b1");
+        otherConfig.put("k2", "b2");
+        runtimeUpdates.put("otherTesseractConfig", otherConfig);
+
+        // Store runtime config in ConfigContainer
+        ParseContext context = new ParseContext();
+        ConfigContainer configContainer = new ConfigContainer();
+        configContainer.set("tesseract-ocr-parser", mapper.writeValueAsString(runtimeUpdates));
+        context.set(ConfigContainer.class, configContainer);
+
+        // Merge configs using ParseContextConfig
+        TesseractOCRConfig mergedConfig = ParseContextConfig.getConfig(
+                context, "tesseract-ocr-parser", TesseractOCRConfig.class, defaultConfig);
+
+        // Verify merged config has runtime overrides
+        assertEquals("fra", mergedConfig.getLanguage());
+        assertEquals(1000, mergedConfig.getMinFileSizeToOcr());
+        assertEquals(TesseractOCRConfig.OUTPUT_TYPE.HOCR, mergedConfig.getOutputType());
+        assertEquals("b1", mergedConfig.getOtherTesseractConfig().get("k1"));
+        assertEquals("b2", mergedConfig.getOtherTesseractConfig().get("k2"));
+
+        // Verify default config was NOT modified (immutability)
+        assertEquals("eng", defaultConfig.getLanguage());
+        assertEquals(100, defaultConfig.getMinFileSizeToOcr());
+        assertEquals(TesseractOCRConfig.OUTPUT_TYPE.TXT, defaultConfig.getOutputType());
+        assertEquals("a1", defaultConfig.getOtherTesseractConfig().get("k1"));
+        assertEquals("a2", defaultConfig.getOtherTesseractConfig().get("k2"));
+    }
+
+    @Test
+    public void testRuntimeConfigPathValidation() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+
+        // Test that setting tesseractPath at runtime throws exception
+        Map<String, Object> configWithTesseractPath = new HashMap<>();
+        configWithTesseractPath.put("tesseractPath", "/some/path");
+
+        ParseContext context = new ParseContext();
+        ConfigContainer configContainer = new ConfigContainer();
+        configContainer.set("tesseract-ocr-parser", mapper.writeValueAsString(configWithTesseractPath));
+        context.set(ConfigContainer.class, configContainer);
+
+        IOException exception = assertThrows(IOException.class, () -> {
+            ParseContextConfig.getConfig(
+                    context,
+                    "tesseract-ocr-parser",
+                    TesseractOCRConfig.RuntimeConfig.class,
+                    new TesseractOCRConfig.RuntimeConfig());
+        });
+        assertTrue(exception.getMessage().contains("Cannot modify tesseractPath at runtime"));
+
+        // Test that setting tessdataPath at runtime throws exception
+        Map<String, Object> configWithTessdataPath = new HashMap<>();
+        configWithTessdataPath.put("tessdataPath", "/some/path");
+
+        configContainer = new ConfigContainer();
+        configContainer.set("tesseract-ocr-parser", mapper.writeValueAsString(configWithTessdataPath));
+        context.set(ConfigContainer.class, configContainer);
+
+        exception = assertThrows(IOException.class, () -> {
+            ParseContextConfig.getConfig(
+                    context,
+                    "tesseract-ocr-parser",
+                    TesseractOCRConfig.RuntimeConfig.class,
+                    new TesseractOCRConfig.RuntimeConfig());
+        });
+        assertTrue(exception.getMessage().contains("Cannot modify tessdataPath at runtime"));
+
+        // Test that setting imageMagickPath at runtime throws exception
+        Map<String, Object> configWithImageMagickPath = new HashMap<>();
+        configWithImageMagickPath.put("imageMagickPath", "/some/path");
+
+        configContainer = new ConfigContainer();
+        configContainer.set("tesseract-ocr-parser", mapper.writeValueAsString(configWithImageMagickPath));
+        context.set(ConfigContainer.class, configContainer);
+
+        exception = assertThrows(IOException.class, () -> {
+            ParseContextConfig.getConfig(
+                    context,
+                    "tesseract-ocr-parser",
+                    TesseractOCRConfig.RuntimeConfig.class,
+                    new TesseractOCRConfig.RuntimeConfig());
+        });
+        assertTrue(exception.getMessage().contains("Cannot modify imageMagickPath at runtime"));
+
+        // Test that setting non-path fields works fine
+        Map<String, Object> validRuntimeConfig = new HashMap<>();
+        validRuntimeConfig.put("language", "fra");
+        validRuntimeConfig.put("skipOcr", true);
+
+        configContainer = new ConfigContainer();
+        configContainer.set("tesseract-ocr-parser", mapper.writeValueAsString(validRuntimeConfig));
+        context.set(ConfigContainer.class, configContainer);
+
+        // This should not throw
+        TesseractOCRConfig.RuntimeConfig runtimeConfig = ParseContextConfig.getConfig(
+                context,
+                "tesseract-ocr-parser",
+                TesseractOCRConfig.RuntimeConfig.class,
+                new TesseractOCRConfig.RuntimeConfig());
+        assertEquals("fra", runtimeConfig.getLanguage());
+        assertTrue(runtimeConfig.isSkipOcr());
+    }
 }

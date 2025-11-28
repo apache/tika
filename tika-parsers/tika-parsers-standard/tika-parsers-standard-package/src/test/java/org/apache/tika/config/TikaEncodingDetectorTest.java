@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,15 +32,16 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.Tika;
+import org.apache.tika.TikaLoaderHelper;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.CompositeEncodingDetector;
 import org.apache.tika.detect.EncodingDetector;
-import org.apache.tika.detect.NonDetectingEncodingDetector;
+import org.apache.tika.detect.OverrideEncodingDetector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
@@ -53,8 +53,8 @@ import org.apache.tika.parser.txt.UniversalEncodingDetector;
 public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
 
     @Test
-    public void testDefault() {
-        EncodingDetector detector = TikaConfig.getDefaultConfig().getEncodingDetector();
+    public void testDefault() throws TikaConfigException {
+        EncodingDetector detector = TikaLoader.loadDefault().loadEncodingDetectors();
         assertTrue(detector instanceof CompositeEncodingDetector);
         List<EncodingDetector> detectors = ((CompositeEncodingDetector) detector).getDetectors();
         assertEquals(3, detectors.size());
@@ -65,8 +65,8 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
 
     @Test
     public void testExcludeList() throws Exception {
-        TikaConfig config = getConfig("TIKA-2273-exclude-encoding-detector-default.xml");
-        EncodingDetector detector = config.getEncodingDetector();
+        TikaLoader tikaLoader = TikaLoaderHelper.getLoader("TIKA-2273-exclude-encoding-detector-default.json");
+        EncodingDetector detector = tikaLoader.loadEncodingDetectors();
         assertTrue(detector instanceof CompositeEncodingDetector);
         List<EncodingDetector> detectors = ((CompositeEncodingDetector) detector).getDetectors();
         assertEquals(2, detectors.size());
@@ -79,19 +79,19 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
         assertTrue(detectors1Children.get(0) instanceof UniversalEncodingDetector);
         assertTrue(detectors1Children.get(1) instanceof Icu4jEncodingDetector);
 
-        assertTrue(detectors.get(1) instanceof NonDetectingEncodingDetector);
+        assertTrue(detectors.get(1) instanceof OverrideEncodingDetector);
 
     }
 
     @Test
     public void testParameterization() throws Exception {
-        TikaConfig config = getConfig("TIKA-2273-parameterize-encoding-detector.xml");
-        EncodingDetector detector = config.getEncodingDetector();
+        TikaLoader tikaLoader = TikaLoaderHelper.getLoader("TIKA-2273-parameterize-encoding-detector.json");
+        EncodingDetector detector = tikaLoader.loadEncodingDetectors();
         assertTrue(detector instanceof CompositeEncodingDetector);
         List<EncodingDetector> detectors = ((CompositeEncodingDetector) detector).getDetectors();
         assertEquals(2, detectors.size());
-        assertTrue(((Icu4jEncodingDetector) detectors.get(0)).isStripMarkup());
-        assertTrue(detectors.get(1) instanceof NonDetectingEncodingDetector);
+        assertTrue(((Icu4jEncodingDetector) detectors.get(0)).getDefaultConfig().stripMarkup);
+        assertTrue(detectors.get(1) instanceof OverrideEncodingDetector);
     }
 
     @Test
@@ -104,9 +104,8 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
 
     @Test
     public void testEncodingDetectorConfigurability() throws Exception {
-        TikaConfig tikaConfig = new TikaConfig(getResourceAsStream(
-                "/org/apache/tika/config/TIKA-2273-no-icu4j-encoding-detector.xml"));
-        AutoDetectParser p = new AutoDetectParser(tikaConfig);
+        TikaLoader tikaLoader = TikaLoaderHelper.getLoader("TIKA-2273-no-icu4j-encoding-detector.json");
+        Parser p = tikaLoader.loadAutoDetectParser();
 
         try {
             Metadata metadata = getXML("english.cp500.txt", p).metadata;
@@ -115,7 +114,7 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
             assertContains("Failed to detect", e.getMessage());
         }
 
-        Tika tika = new Tika(tikaConfig);
+        Tika tika = new Tika(tikaLoader.loadDetectors(), tikaLoader.loadAutoDetectParser());
         Path tmp = null;
         try {
             tmp = Files.createTempFile("tika-encoding-test", ".txt");
@@ -133,12 +132,9 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
 
     @Test
     public void testNonDetectingDetectorParams() throws Exception {
-        TikaConfig tikaConfig = null;
-        try (InputStream is = getResourceAsStream(
-                "/org/apache/tika/config/TIKA-2273-non-detecting-params.xml")) {
-            tikaConfig = new TikaConfig(is);
-        }
-        AutoDetectParser p = new AutoDetectParser(tikaConfig);
+        TikaLoader tikaLoader = TikaLoaderHelper.getLoader("TIKA-2273-override-detector-params.json");
+
+        Parser p = tikaLoader.loadAutoDetectParser();
         List<Parser> parsers = new ArrayList<>();
         findEncodingDetectionParsers(p, parsers);
 
@@ -149,28 +145,24 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
         assertEquals(1, ((CompositeEncodingDetector) encodingDetector).getDetectors().size());
         EncodingDetector child =
                 ((CompositeEncodingDetector) encodingDetector).getDetectors().get(0);
-        assertTrue(child instanceof NonDetectingEncodingDetector);
+        assertTrue(child instanceof OverrideEncodingDetector);
 
         assertEquals(StandardCharsets.UTF_16LE,
-                ((NonDetectingEncodingDetector) child).getCharset());
+                ((OverrideEncodingDetector) child).getCharset());
 
     }
 
     @Test
     public void testNonDetectingDetectorParamsBadCharset() throws Exception {
-        try (InputStream is = getResourceAsStream(
-                "/org/apache/tika/config/TIKA-2273-non-detecting-params-bad-charset.xml")) {
-            assertThrows(TikaConfigException.class, () -> {
-                TikaConfig tikaConfig = new TikaConfig(is);
-            });
-        }
+        TikaLoader tikaLoader = TikaLoaderHelper.getLoader("TIKA-2273-non-detecting-params-bad-charset.json");
+        assertThrows(TikaConfigException.class, tikaLoader::loadEncodingDetectors);
+
     }
 
     @Test
     public void testConfigurabilityOfUserSpecified() throws Exception {
-        TikaConfig tikaConfig = new TikaConfig(getResourceAsStream(
-                "/org/apache/tika/config/TIKA-2273-encoding-detector-outside-static-init.xml"));
-        AutoDetectParser p = new AutoDetectParser(tikaConfig);
+        TikaLoader tikaLoader = TikaLoaderHelper.getLoader("TIKA-2273-encoding-detector-outside-static-init.json");
+        Parser p = tikaLoader.loadAutoDetectParser();
 
         //make sure that all static and non-static parsers are using the same encoding detector!
         List<Parser> parsers = new ArrayList<>();
@@ -202,9 +194,8 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
 
     @Test
     public void testMarkLimitUnit() throws Exception {
-        TikaConfig tikaConfig = new TikaConfig(getResourceAsStream(
-                "/org/apache/tika/config/TIKA-2485-encoding-detector-mark-limits.xml"));
-        AutoDetectParser p = new AutoDetectParser(tikaConfig);
+        TikaLoader tikaLoader = TikaLoaderHelper.getLoader("TIKA-2485-encoding-detector-mark-limits.json");
+        Parser p = tikaLoader.loadAutoDetectParser();
         List<Parser> parsers = new ArrayList<>();
         findEncodingDetectionParsers(p, parsers);
 
@@ -226,7 +217,7 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
                             childParser.getClass().toString());
                 } else if (childEncodingDetector instanceof Icu4jEncodingDetector) {
                     assertEquals(64002,
-                            ((Icu4jEncodingDetector) childEncodingDetector).getMarkLimit(),
+                            ((Icu4jEncodingDetector) childEncodingDetector).getDefaultConfig().markLimit,
                             childParser.getClass().toString());
                 }
             }
@@ -260,9 +251,7 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
         assertNotContained("g\u00E5 til", xml);
 
         //now test that fix works
-        TikaConfig tikaConfig = new TikaConfig(getResourceAsStream(
-                "/org/apache/tika/config/TIKA-2485-encoding-detector-mark-limits.xml"));
-        p = new AutoDetectParser(tikaConfig);
+        p = TikaLoaderHelper.getLoader("TIKA-2485-encoding-detector-mark-limits.json").loadAutoDetectParser();
 
         metadata = new Metadata();
         xml = getXML(TikaInputStream.get(bytes), p, metadata).xml;
@@ -288,4 +277,5 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
             encodingDetectionParsers.add(p);
         }
     }
+
 }

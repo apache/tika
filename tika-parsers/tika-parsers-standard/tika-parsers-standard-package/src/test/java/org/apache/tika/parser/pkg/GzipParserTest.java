@@ -23,6 +23,7 @@ import java.io.InputStream;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -113,13 +114,10 @@ public class GzipParserTest extends AbstractPkgTest {
     @Test
     public void testDecompressConcatenatedOffInTikaConfig() throws Exception {
 
-        TikaConfig tikaConfig = null;
-        try (InputStream is = getResourceAsStream("tika-gzip-config.xml")) {
-            tikaConfig = new TikaConfig(is);
-        }
-        Parser p = new AutoDetectParser(tikaConfig);
+        Parser p = TikaLoaderHelper.getLoader("tika-gz-decompress-concatenated.json").loadAutoDetectParser();
         assertContains("<p>a</p>",
                 getRecursiveMetadata("multiple.gz", p).get(1)
                         .get(TikaCoreProperties.TIKA_CONTENT));
     }
+
 }

@@ -65,7 +65,7 @@ public class KafkaEmitter extends AbstractEmitter {
     private final Producer<String, String> producer;
 
     public static KafkaEmitter build(ExtensionConfig extensionConfig) throws TikaConfigException, IOException {
-        KafkaEmitterConfig config = KafkaEmitterConfig.load(extensionConfig.jsonConfig());
+        KafkaEmitterConfig config = KafkaEmitterConfig.load(extensionConfig.json());
         config.validate();
         Producer<String, String> producer = buildProducer(config);
         return new KafkaEmitter(extensionConfig, config, producer);

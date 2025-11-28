@@ -60,7 +60,7 @@ public class KafkaPipesIterator extends PipesIteratorBase {
     }
 
     private void configure() throws IOException, TikaConfigException {
-        config = KafkaPipesIteratorConfig.load(pluginConfig.jsonConfig());
+        config = KafkaPipesIteratorConfig.load(pluginConfig.json());
         checkConfig(config);
 
         Properties props = new Properties();

@@ -51,9 +51,10 @@ public class TranslateResource {
 
     public TranslateResource(ServerStatus serverStatus, long timeoutMillis) {
         this.loader = new ServiceLoader(ServiceLoader.class.getClassLoader(), LoadErrorHandler.WARN);
-        this.defaultTranslator = TikaResource
-                .getConfig()
-                .getTranslator();
+        //TODO -- implement translators
+        //this.defaultTranslator = TikaResource
+          //      .getTikaLoader()
+            //    .getTranslator();
         this.serverStatus = serverStatus;
         this.timeoutMillis = timeoutMillis;
     }

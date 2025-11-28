@@ -21,7 +21,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Field;
+import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -31,7 +34,16 @@ import org.apache.tika.metadata.TikaCoreProperties;
  * attachment type matches one of the types.  The idea is that you might not want
  * to store/transmit metadata for images or specific file types.
  */
+@TikaComponent
 public class ClearByAttachmentTypeMetadataFilter extends MetadataFilterBase {
+
+    /**
+     * Configuration class for JSON deserialization.
+     */
+    public static class Config {
+        public List<String> types = new ArrayList<>();
+    }
+
     private final Set<String> types;
 
     public ClearByAttachmentTypeMetadataFilter() {
@@ -40,6 +52,27 @@ public class ClearByAttachmentTypeMetadataFilter extends MetadataFilterBase {
 
     public ClearByAttachmentTypeMetadataFilter(Set<String> types) {
         this.types = types;
+    }
+
+    /**
+     * Constructor with explicit Config object.
+     *
+     * @param config the configuration
+     */
+    public ClearByAttachmentTypeMetadataFilter(Config config) throws TikaConfigException {
+        this.types = new HashSet<>();
+        // Validate types using existing validation logic
+        setTypes(config.types);
+    }
+
+    /**
+     * Constructor for JSON configuration.
+     * Requires Jackson on the classpath.
+     *
+     * @param jsonConfig JSON configuration
+     */
+    public ClearByAttachmentTypeMetadataFilter(JsonConfig jsonConfig) throws TikaConfigException {
+        this(ConfigDeserializer.buildConfig(jsonConfig, Config.class));
     }
 
 

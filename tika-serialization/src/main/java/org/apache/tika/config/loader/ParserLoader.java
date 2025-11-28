@@ -33,6 +33,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.mime.MediaType;
@@ -40,8 +41,10 @@ import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
+import org.apache.tika.parser.RenderingParser;
 import org.apache.tika.parser.multiple.AbstractMultipleParser.MetadataPolicy;
 import org.apache.tika.parser.multiple.FallbackParser;
+import org.apache.tika.renderer.Renderer;
 import org.apache.tika.utils.ServiceLoaderUtils;
 
 /**
@@ -54,6 +57,7 @@ public class ParserLoader {
     private final ClassLoader classLoader;
     private final ObjectMapper objectMapper;
     private final EncodingDetector encodingDetector;
+    private final Renderer renderer;
 
     /**
      * Holds parsed config data before decoration is applied.
@@ -72,10 +76,11 @@ public class ParserLoader {
     }
 
     public ParserLoader(ClassLoader classLoader, ObjectMapper objectMapper,
-                        EncodingDetector encodingDetector) {
+                        EncodingDetector encodingDetector, Renderer renderer) {
         this.classLoader = classLoader;
         this.objectMapper = objectMapper;
         this.encodingDetector = encodingDetector;
+        this.renderer = renderer;
     }
 
     /**
@@ -111,14 +116,9 @@ public class ParserLoader {
                             for (JsonNode excludeName : excludeNode) {
                                 if (excludeName.isTextual()) {
                                     String parserName = excludeName.asText();
-                                    try {
-                                        Class<?> parserClass = registry.getComponentClass(parserName);
-                                        excludedParserClasses.add(parserClass);
-                                        LOG.debug("Excluding parser from SPI: {}", parserName);
-                                    } catch (TikaConfigException e) {
-                                        LOG.warn("Unknown parser in default-parser exclude list: {}",
-                                                parserName);
-                                    }
+                                    Class<?> parserClass = registry.getComponentClass(parserName);
+                                    excludedParserClasses.add(parserClass);
+                                    LOG.debug("Excluding parser from SPI: {}", parserName);
                                 }
                             }
                         }
@@ -212,18 +212,25 @@ public class ParserLoader {
     }
 
     @SuppressWarnings("unchecked")
-    private Parser instantiateParser(Class<?> parserClass, String configJson)
+    private Parser instantiateParser(Class<?> parserClass, JsonConfig jsonConfig)
             throws TikaConfigException {
 
         try {
             Parser parser;
 
-            // Try constructor with String parameter (JSON config)
+            // Try constructor with JsonConfig parameter
             try {
-                //TODO -- change this from String to JsonConfig or simple wrapper class
-                Constructor<?> constructor = parserClass.getConstructor(String.class);
-                parser = (Parser) constructor.newInstance(configJson);
+                Constructor<?> constructor = parserClass.getConstructor(JsonConfig.class);
+                parser = (Parser) constructor.newInstance(jsonConfig);
             } catch (NoSuchMethodException e) {
+                // Check if JSON config has actual configuration
+                if (hasConfiguration(jsonConfig)) {
+                    throw new TikaConfigException(
+                            "Parser '" + parserClass.getName() + "' has configuration in JSON, " +
+                            "but does not have a constructor that accepts JsonConfig. " +
+                            "Please add a constructor: public " + parserClass.getSimpleName() + "(JsonConfig jsonConfig)");
+                }
+
                 // Try constructor with EncodingDetector parameter (for AbstractEncodingDetectorParser)
                 if (AbstractEncodingDetectorParser.class.isAssignableFrom(parserClass)) {
                     try {
@@ -241,10 +248,43 @@ public class ParserLoader {
                 }
             }
 
+            // Inject renderer for RenderingParser instances
+            if (parser instanceof RenderingParser && renderer != null) {
+                ((RenderingParser) parser).setRenderer(renderer);
+            }
+
             return parser;
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new TikaConfigException("Failed to instantiate parser: " +
                     parserClass.getName(), e);
+        }
+    }
+
+    /**
+     * Checks if the JsonConfig contains actual configuration (non-empty JSON object with fields).
+     *
+     * @param jsonConfig the JSON configuration
+     * @return true if there's meaningful configuration, false if empty or just "{}"
+     */
+    private boolean hasConfiguration(JsonConfig jsonConfig) {
+        if (jsonConfig == null) {
+            return false;
+        }
+        String json = jsonConfig.json();
+        if (json == null || json.trim().isEmpty()) {
+            return false;
+        }
+        // Parse to check if it's an empty object or has actual fields
+        try {
+            JsonNode node = objectMapper.readTree(json);
+            // Check if it's an object and has at least one field
+            if (node.isObject() && node.size() > 0) {
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            // If we can't parse it, assume it has configuration to be safe
+            return true;
         }
     }
 
@@ -305,7 +345,12 @@ public class ParserLoader {
                             parser.getClass().getName());
                     continue;
                 }
-
+                if (AbstractEncodingDetectorParser.class.isAssignableFrom(parser.getClass())) {
+                    ((AbstractEncodingDetectorParser)parser).setEncodingDetector(encodingDetector);
+                }
+                if (parser instanceof RenderingParser && renderer != null) {
+                    ((RenderingParser) parser).setRenderer(renderer);
+                }
                 result.add(parser);
             } catch (Exception e) {
                 // Log and skip problematic SPI providers

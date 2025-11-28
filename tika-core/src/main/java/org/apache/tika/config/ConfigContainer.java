@@ -57,20 +57,23 @@ public class ConfigContainer {
         }
     }
 
-    public <T> Optional<String> get(Class<T> key) {
-        return Optional.ofNullable(configs.get(key.getName()));
+    public <T> Optional<JsonConfig> get(Class<T> key) {
+        String json = configs.get(key.getName());
+        return json == null ? Optional.empty() : Optional.of(() -> json);
     }
 
-    public Optional<String> get(String key) {
-        return Optional.ofNullable(configs.get(key));
+    public Optional<JsonConfig> get(String key) {
+        String json = configs.get(key);
+        return json == null ? Optional.empty() : Optional.of(() -> json);
     }
 
-    public String get(String key, String defaultMissing) {
+    public JsonConfig get(String key, String defaultMissing) {
         String val = configs.get(key);
         if (val == null) {
-            return defaultMissing;
+            val = defaultMissing;
         }
-        return val;
+        final String jsonValue = val;
+        return () -> jsonValue;
     }
 
     public Set<String> getKeys() {

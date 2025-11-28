@@ -20,7 +20,7 @@
     <parsers/>
     <encodingDetectors>
         <!-- One other detector, to check ordering -->
-        <encodingDetector class="org.apache.tika.detect.NonDetectingEncodingDetector">
+        <encodingDetector class="org.apache.tika.detect.OverrideEncodingDetector">
             <params>
                 <param name="charset" type="string">UTF-16LE</param>
             </params>

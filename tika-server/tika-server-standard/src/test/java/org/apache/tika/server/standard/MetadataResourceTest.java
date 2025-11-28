@@ -93,6 +93,7 @@ public class MetadataResourceTest extends CXFTestBase {
 
         assertNotNull(metadata.get(TikaCoreProperties.CREATOR.getName()));
         assertEquals("Maxim Valyanskiy", metadata.get(TikaCoreProperties.CREATOR.getName()));
+
         assertEquals("f8be45c34e8919eedba48cc8d207fbf0", metadata.get("X-TIKA:digest:MD5"), "X-TIKA:digest:MD5");
     }
 

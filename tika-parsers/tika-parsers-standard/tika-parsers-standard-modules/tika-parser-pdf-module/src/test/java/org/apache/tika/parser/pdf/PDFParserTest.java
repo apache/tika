@@ -1128,8 +1128,8 @@ public class PDFParserTest extends TikaTest {
             assertContains("Left column line 1 Left column line 2 ", text);
 
             //test a new PDFParserConfig and setting another value
-            //this tests that the underlying "sortByPosition" as set
-            //in the config file is still operative
+            //this tests that a new PDFParserConfig completely resets
+            //behavior
             config = new PDFParserConfig();
             config.setOcrDPI(10000);
             config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.NO_OCR);
@@ -1137,11 +1137,8 @@ public class PDFParserTest extends TikaTest {
             text = getText("testPDFTwoTextBoxes.pdf", p, new Metadata(), pc);
             text = text.replaceAll("\\s+", " ");
 
-            // Column text is now interleaved:
-            assertContains(
-                    "Left column line 1 Right column line 1 Left " +
-                            "colu mn line 2 Right column line 2",
-                    text);
+            // Column text is not interleaved:
+            assertContains("Left column line 1 Left column line 2 ", text);
         }
     }
 

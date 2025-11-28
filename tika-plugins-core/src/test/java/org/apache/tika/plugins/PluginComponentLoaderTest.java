@@ -336,7 +336,7 @@ public class PluginComponentLoaderTest {
         // For singletons, id and name are both the typeName
         assertEquals("type-a", result.get().getExtensionConfig().id());
         assertEquals("type-a", result.get().getExtensionConfig().name());
-        JsonNode parsedConfig = objectMapper.readTree(result.get().getExtensionConfig().jsonConfig());
+        JsonNode parsedConfig = objectMapper.readTree(result.get().getExtensionConfig().json());
         assertEquals("/input", parsedConfig.get("basePath").asText());
     }
 
@@ -490,7 +490,7 @@ public class PluginComponentLoaderTest {
                 PluginComponentLoader.loadUnnamedInstances(pluginManager, MockExtensionFactory.class, configNode);
 
         assertEquals(1, instances.size());
-        JsonNode config = objectMapper.readTree(instances.get(0).getExtensionConfig().jsonConfig());
+        JsonNode config = objectMapper.readTree(instances.get(0).getExtensionConfig().json());
         assertEquals("/reports", config.get("basePath").asText());
         assertTrue(config.get("enabled").asBoolean());
     }

@@ -42,8 +42,8 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.TikaTaskTimeout;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaConfigException;
@@ -139,8 +139,6 @@ public class PipesServer implements Runnable {
 
     private final Object[] lock = new Object[0];
     private long checkForTimeoutMs = 1000;
-    private final Path tikaConfigPath;
-    private final Path pipesConfigPath;
     private final DataInputStream input;
     private final DataOutputStream output;
     //if an extract is larger than this value, emit it directly;
@@ -149,23 +147,24 @@ public class PipesServer implements Runnable {
     private final long maxForEmitBatchBytes;
     private final long defaultServerParseTimeoutMillis;
     private final long serverWaitTimeoutMillis;
+    private final TikaLoader tikaLoader;
+    private final MetadataFilter defaultMetadataFilter;
     private final EMIT_STRATEGY emitStrategy;
     private volatile long serverParseTimeoutMillis;
     private Parser autoDetectParser;
     private Parser rMetaParser;
-    private TikaConfig tikaConfig;
     private FetcherManager fetcherManager;
     private EmitterManager emitterManager;
     private volatile boolean parsing;
     private volatile long since;
 
 
-    public PipesServer(Path tikaConfigPath, Path pipesConfigPath,
+    public PipesServer(Path tikaConfigPath,
                        InputStream in, PrintStream out,
                        long maxForEmitBatchBytes, long serverParseTimeoutMillis,
-                       long serverWaitTimeoutMillis) {
-        this.tikaConfigPath = tikaConfigPath;
-        this.pipesConfigPath = pipesConfigPath;
+                       long serverWaitTimeoutMillis) throws TikaConfigException {
+        this.tikaLoader = TikaLoader.load(tikaConfigPath);
+        this.defaultMetadataFilter = tikaLoader.loadMetadataFilters();
         this.input = new DataInputStream(in);
         this.output = new DataOutputStream(out);
         this.maxForEmitBatchBytes = maxForEmitBatchBytes;
@@ -187,13 +186,12 @@ public class PipesServer implements Runnable {
     public static void main(String[] args) throws Exception {
         try {
             Path tikaConfig = Paths.get(args[0]);
-            Path pipesPluginsConfig = Paths.get(args[1]);
-            long maxForEmitBatchBytes = Long.parseLong(args[2]);
-            long serverParseTimeoutMillis = Long.parseLong(args[3]);
-            long serverWaitTimeoutMillis = Long.parseLong(args[4]);
+            long maxForEmitBatchBytes = Long.parseLong(args[1]);
+            long serverParseTimeoutMillis = Long.parseLong(args[2]);
+            long serverWaitTimeoutMillis = Long.parseLong(args[3]);
 
             PipesServer server =
-                    new PipesServer(tikaConfig, pipesPluginsConfig, System.in, System.out, maxForEmitBatchBytes,
+                    new PipesServer(tikaConfig, System.in, System.out, maxForEmitBatchBytes,
                             serverParseTimeoutMillis, serverWaitTimeoutMillis);
             System.setIn(UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[0]).get());
             System.setOut(System.err);
@@ -342,6 +340,7 @@ public class PipesServer implements Runnable {
         STATUS status = (StringUtils.isBlank(parseExceptionStack)) ? STATUS.EMIT_SUCCESS :
                 STATUS.EMIT_SUCCESS_PARSE_EXCEPTION;
         PassbackFilter filter = parseContext.get(PassbackFilter.class);
+        LOG.debug("PASSBACK FILTER: {}", filter);
         if (filter == null) {
             if (status == STATUS.EMIT_SUCCESS) {
                 write(status);
@@ -528,7 +527,7 @@ public class PipesServer implements Runnable {
     private void filterMetadata(FetchEmitTuple t, MetadataListAndEmbeddedBytes parseData) {
         MetadataFilter filter = t.getParseContext().get(MetadataFilter.class);
         if (filter == null) {
-            filter = tikaConfig.getMetadataFilter();
+            filter = defaultMetadataFilter;
         }
         if (filter instanceof NoOpFilter) {
             return;
@@ -834,12 +833,12 @@ public class PipesServer implements Runnable {
     }
 
     protected void initializeResources() throws TikaException, IOException, SAXException {
-        TikaConfigs tikaConfigs = TikaConfigs.load(pipesConfigPath);
 
-        TikaPluginManager tikaPluginManager = TikaPluginManager.load(tikaConfigs);
+        TikaPluginManager tikaPluginManager = TikaPluginManager.load(tikaLoader.getConfig());
 
+        //TODO -- fix this -- get rid of TikaConfigs
+        TikaConfigs tikaConfigs = TikaConfigs.load(tikaLoader.getConfig());
         //TODO allowed named configurations in tika config
-        this.tikaConfig = new TikaConfig(tikaConfigPath);
         this.fetcherManager = FetcherManager.load(tikaPluginManager, tikaConfigs);
         //skip initialization of the emitters if emitting
         //from the pipesserver is turned off.
@@ -849,7 +848,7 @@ public class PipesServer implements Runnable {
             LOG.debug("'maxForEmitBatchBytes' < 0. Not initializing emitters in PipesServer");
             this.emitterManager = null;
         }
-        this.autoDetectParser = new AutoDetectParser(this.tikaConfig);
+        this.autoDetectParser = tikaLoader.loadAutoDetectParser();
         if (((AutoDetectParser) autoDetectParser).getAutoDetectParserConfig()
                 .getDigesterFactory() != null) {
             this.digester = ((AutoDetectParser) autoDetectParser).getAutoDetectParserConfig()

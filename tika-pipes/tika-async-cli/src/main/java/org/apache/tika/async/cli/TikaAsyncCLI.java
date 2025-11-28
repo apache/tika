@@ -65,9 +65,7 @@ public class TikaAsyncCLI {
         options.addOption("h", "handlerType", true, "handler type: t=text, h=html, x=xml, b=body, i=ignore");
         options.addOption("p", "pluginsDir", true, "plugins directory");
         //options.addOption("l", "fileList", true, "file list");
-        options.addOption("c", "config", true, "tikaConfig to inherit from -- " +
-                "commandline options will not overwrite existing iterators, emitters, fetchers and async");
-        options.addOption("a", "asyncConfig", true, "asyncConfig/plugins to use");
+        options.addOption("c", "config", true, "tikaConfig.json");
         options.addOption("Z", "unzip", false, "extract raw bytes from attachments");
 
         return options;
@@ -91,7 +89,7 @@ public class TikaAsyncCLI {
                 if (pipesIteratorOpt.isEmpty()) {
                     throw new IllegalArgumentException("Must specify a pipes iterator if supplying a .json file");
                 }
-                processWithTikaConfig(pipesIteratorOpt.get(), Paths.get(args[0]), Paths.get(args[1]), null);
+                processWithTikaConfig(pipesIteratorOpt.get(), Paths.get(args[0]), null);
                 return;
             }
         }
@@ -99,36 +97,24 @@ public class TikaAsyncCLI {
         SimpleAsyncConfig simpleAsyncConfig = parseCommandLine(args);
 
         Path tikaConfig = StringUtils.isBlank(simpleAsyncConfig.getTikaConfig()) ? null : Paths.get(simpleAsyncConfig.getTikaConfig());
-        Path pluginsConfig = StringUtils.isBlank(simpleAsyncConfig.getAsyncConfig()) ? null : Paths.get(simpleAsyncConfig.getAsyncConfig());
-        Path tmpPluginsConfig = null;
         Path tmpTikaConfig = null;
         PipesIterator pipesIterator = null;
 
         try {
             if (tikaConfig == null) {
-                tmpTikaConfig = Files.createTempFile("tika-async-tmp-", ".xml");
+                tmpTikaConfig = Files.createTempFile("tika-async-tmp-", ".json");
                 tikaConfig = tmpTikaConfig;
-                TikaConfigAsyncWriter tikaConfigAsyncWriter = new TikaConfigAsyncWriter(simpleAsyncConfig);
-                tikaConfigAsyncWriter.write(tikaConfig);
-            }
-            if (pluginsConfig == null) {
-                tmpPluginsConfig = Files.createTempFile("tika-async-tmp-", ".json");
-                pluginsConfig = tmpPluginsConfig;
-
-                PluginsWriter pluginsWriter = new PluginsWriter(simpleAsyncConfig, pluginsConfig);
-                pluginsWriter.write(pluginsConfig);
+                PluginsWriter pluginsWriter = new PluginsWriter(simpleAsyncConfig, tikaConfig);
+                pluginsWriter.write(tikaConfig);
             }
 
-            pipesIterator = buildPipesIterator(pluginsConfig, simpleAsyncConfig);
+            pipesIterator = buildPipesIterator(tikaConfig, simpleAsyncConfig);
 
 
-            processWithTikaConfig(pipesIterator, tikaConfig, pluginsConfig, simpleAsyncConfig);
+            processWithTikaConfig(pipesIterator, tikaConfig, simpleAsyncConfig);
         } finally {
             if (tmpTikaConfig != null) {
                 Files.delete(tmpTikaConfig);
-            }
-            if (tmpPluginsConfig != null) {
-                Files.delete(tmpPluginsConfig);
             }
         }
     }
@@ -159,7 +145,7 @@ public class TikaAsyncCLI {
     static SimpleAsyncConfig parseCommandLine(String[] args) throws TikaConfigException, ParseException, IOException {
         if (args.length == 2 && ! args[0].startsWith("-")) {
             return new SimpleAsyncConfig(args[0], args[1], 1,
-                    30000L, "-Xmx1g", null, null, null,
+                    30000L, "-Xmx1g", null, null,
                     BasicContentHandlerFactory.HANDLER_TYPE.TEXT, false, null);
         }
 
@@ -255,7 +241,7 @@ public class TikaAsyncCLI {
         }
 
         return new SimpleAsyncConfig(inputDir, outputDir,
-                numClients, timeoutMs, xmx, fileList, tikaConfig, asyncConfig, handlerType,
+                numClients, timeoutMs, xmx, fileList, tikaConfig, handlerType,
                 extractBytes, pluginsDir);
     }
 
@@ -271,9 +257,9 @@ public class TikaAsyncCLI {
     }
 
 
-    private static void processWithTikaConfig(PipesIterator pipesIterator, Path tikaConfigPath, Path pluginsConfig, SimpleAsyncConfig asyncConfig) throws Exception {
+    private static void processWithTikaConfig(PipesIterator pipesIterator, Path tikaConfigPath, SimpleAsyncConfig asyncConfig) throws Exception {
         long start = System.currentTimeMillis();
-        try (AsyncProcessor processor = new AsyncProcessor(tikaConfigPath, pluginsConfig, pipesIterator)) {
+        try (AsyncProcessor processor = new AsyncProcessor(tikaConfigPath, pipesIterator)) {
 
             for (FetchEmitTuple t : pipesIterator) {
                 configureExtractBytes(t, asyncConfig);

@@ -1,0 +1,13 @@
+{
+  "auto-detect-parser-config": {
+    "spoolToDisk": 1000000,
+    "outputThreshold": 1000000,
+    "digesterFactory": {
+      "@class": "org.apache.tika.parser.digestutils.CommonsDigesterFactory",
+      "markLimit": 100000,
+      "algorithmString": "sha256:32,md5",
+      "skipContainerDocument": true
+    },
+    "throwOnZeroBytes": false
+  }
+}

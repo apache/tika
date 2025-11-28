@@ -1,0 +1,28 @@
+{
+  "server": {
+    "port": 9999,
+    "taskTimeoutMillis": 54321,
+    "taskPulseMillis": 100,
+    "enableUnsecureFeatures": true,
+    "endpoints": [
+      "rmeta"
+    ]
+  },
+  "fetchers": {
+    "file-system-fetcher": {
+      "fsf": {
+        "basePath": "BASE_PATH",
+        "extractFileSystemMetadata": false
+      }
+    }
+  },
+  "emitters": {
+    "file-system-emitter": {
+      "fse-json": {
+        "basePath": "BASE_PATH",
+        "onExists": "EXCEPTION"
+      }
+    }
+  },
+  "plugin-roots": "target/plugins"
+}

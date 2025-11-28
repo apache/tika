@@ -16,46 +16,182 @@
  */
 package org.apache.tika.pipes.core;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Set;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import org.apache.tika.exception.TikaConfigException;
+public class PipesConfig {
 
-public class PipesConfig extends PipesConfigBase {
+    /**
+     * default size to send back to the PipesClient for batch
+     * emitting.  If an extract is larger than this, it will be emitted
+     * directly from the forked PipesServer.
+     */
+    public static final long DEFAULT_MAX_FOR_EMIT_BATCH = 100000;
 
-    private static final Logger LOG = LoggerFactory.getLogger(PipesClient.class);
+    public static final long DEFAULT_TIMEOUT_MILLIS = 60000;
 
-    private long maxWaitForClientMillis = 60000;
+    public static final long DEFAULT_STARTUP_TIMEOUT_MILLIS = 240000;
 
-    public static PipesConfig load(Path tikaConfig, Path pipesPluginsConfig) throws IOException, TikaConfigException {
-        PipesConfig pipesConfig = new PipesConfig();
-        try (InputStream is = Files.newInputStream(tikaConfig)) {
-            Set<String> settings = pipesConfig.configure("pipes", is);
-        }
-        if (pipesConfig.getTikaConfig() == null) {
-            LOG.debug("A separate tikaConfig was not specified in the <pipes/> element in the  " +
-                    "config file; will use {} for pipes", tikaConfig);
-            pipesConfig.setTikaConfig(tikaConfig);
-        }
-        pipesConfig.setPipesPluginsConfig(pipesPluginsConfig);
-        return pipesConfig;
+    public static final long DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLS = 300000;
+
+    public static final int DEFAULT_NUM_CLIENTS = 4;
+
+    public static final int DEFAULT_MAX_FILES_PROCESSED_PER_PROCESS = 10000;
+
+    public static final long DEFAULT_MAX_WAIT_FOR_CLIENT_MS = 60000;
+
+    //if an extract is larger than this, the forked PipesServer should
+    //emit the extract directly and not send the contents back to the PipesClient
+    private long maxForEmitBatchBytes = DEFAULT_MAX_FOR_EMIT_BATCH;
+    private long timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
+    private long startupTimeoutMillis = DEFAULT_STARTUP_TIMEOUT_MILLIS;
+    private long sleepOnStartupTimeoutMillis = DEFAULT_STARTUP_TIMEOUT_MILLIS;
+
+    private long shutdownClientAfterMillis = DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLS;
+    private int numClients = DEFAULT_NUM_CLIENTS;
+
+    private long maxWaitForClientMillis = DEFAULT_MAX_WAIT_FOR_CLIENT_MS;
+    private int maxFilesProcessedPerProcess = DEFAULT_MAX_FILES_PROCESSED_PER_PROCESS;
+    public static final int DEFAULT_STALE_FETCHER_TIMEOUT_SECONDS = 600;
+    private int staleFetcherTimeoutSeconds = DEFAULT_STALE_FETCHER_TIMEOUT_SECONDS;
+    public static final int DEFAULT_STALE_FETCHER_DELAY_SECONDS = 60;
+    private int staleFetcherDelaySeconds = DEFAULT_STALE_FETCHER_DELAY_SECONDS;
+
+    private ArrayList<String> forkedJvmArgs = new ArrayList<>();
+    private String javaPath = "java";
+
+
+    private String tikaConfig;
+
+    public long getTimeoutMillis() {
+        return timeoutMillis;
     }
 
-    public static PipesConfig load(InputStream tikaConfigInputStream, Path pipesPluginsConfig) throws IOException, TikaConfigException {
-        PipesConfig pipesConfig = new PipesConfig();
-        pipesConfig.configure("pipes", tikaConfigInputStream);
-        pipesConfig.setPipesPluginsConfig(pipesPluginsConfig);
-        return pipesConfig;
+    /**
+     * How long to wait in milliseconds before timing out the forked process.
+     * @param timeoutMillis
+     */
+    public void setTimeoutMillis(long timeoutMillis) {
+        this.timeoutMillis = timeoutMillis;
     }
 
-    private PipesConfig() {
+    public long getShutdownClientAfterMillis() {
+        return shutdownClientAfterMillis;
+    }
 
+    /**
+     * If the client has been inactive after this many milliseconds,
+     * shut it down.
+     *
+     * @param shutdownClientAfterMillis
+     */
+    public void setShutdownClientAfterMillis(long shutdownClientAfterMillis) {
+        this.shutdownClientAfterMillis = shutdownClientAfterMillis;
+    }
+
+    public int getNumClients() {
+        return numClients;
+    }
+
+    public void setNumClients(int numClients) {
+        this.numClients = numClients;
+    }
+
+    public void setForkedJvmArgs(ArrayList<String> jvmArgs) {
+        this.forkedJvmArgs = jvmArgs;
+    }
+    //ArrayList to make jackson happy
+    public ArrayList<String> getForkedJvmArgs() {
+        return forkedJvmArgs;
+    }
+
+    public void setStartupTimeoutMillis(long startupTimeoutMillis) {
+        this.startupTimeoutMillis = startupTimeoutMillis;
+    }
+
+
+    /**
+     * Restart the forked PipesServer after it has processed this many files to avoid
+     * slow-building memory leaks.
+     * @return
+     */
+    public int getMaxFilesProcessedPerProcess() {
+        return maxFilesProcessedPerProcess;
+    }
+
+    public void setMaxFilesProcessedPerProcess(int maxFilesProcessedPerProcess) {
+        this.maxFilesProcessedPerProcess = maxFilesProcessedPerProcess;
+    }
+
+    @JsonIgnore
+    public Path getTikaConfigPath() {
+        return tikaConfig != null ? Paths.get(tikaConfig) : null;
+    }
+
+    public String getTikaConfig() {
+        return tikaConfig;
+    }
+
+    public void setTikaConfig(String tikaConfig) {
+        this.tikaConfig = tikaConfig;
+    }
+
+    public String getJavaPath() {
+        return javaPath;
+    }
+
+    public void setJavaPath(String javaPath) {
+        this.javaPath = javaPath;
+    }
+
+    public long getStartupTimeoutMillis() {
+        return startupTimeoutMillis;
+    }
+
+    /**
+     *  What is the maximum bytes size per extract that
+     *  will be allowed to be shipped back to the emit queue in the forking process.
+     *  If an extract is too big, skip the emit queue and forward it directly from the
+     *  forked PipesServer.
+     *  If set to <code>0</code>, this will never send an extract back for batch emitting,
+     *  but will always emit the extract directly from the forked PipeServer.
+     *  If set to <code>-1</code>, this will always send the extract back for batch emitting.
+     *
+     * @return the threshold extract size at which to emit directly from the forked PipeServer
+     */
+    public long getMaxForEmitBatchBytes() {
+        return maxForEmitBatchBytes;
+    }
+
+    public void setMaxForEmitBatchBytes(long maxForEmitBatchBytes) {
+        this.maxForEmitBatchBytes = maxForEmitBatchBytes;
+    }
+
+    public long getSleepOnStartupTimeoutMillis() {
+        return sleepOnStartupTimeoutMillis;
+    }
+
+    public void setSleepOnStartupTimeoutMillis(long sleepOnStartupTimeoutMillis) {
+        this.sleepOnStartupTimeoutMillis = sleepOnStartupTimeoutMillis;
+    }
+
+    public int getStaleFetcherTimeoutSeconds() {
+        return staleFetcherTimeoutSeconds;
+    }
+
+    public void setStaleFetcherTimeoutSeconds(int staleFetcherTimeoutSeconds) {
+        this.staleFetcherTimeoutSeconds = staleFetcherTimeoutSeconds;
+    }
+
+    public int getStaleFetcherDelaySeconds() {
+        return staleFetcherDelaySeconds;
+    }
+
+    public void setStaleFetcherDelaySeconds(int staleFetcherDelaySeconds) {
+        this.staleFetcherDelaySeconds = staleFetcherDelaySeconds;
     }
 
     public long getMaxWaitForClientMillis() {
@@ -66,3 +202,4 @@ public class PipesConfig extends PipesConfigBase {
         this.maxWaitForClientMillis = maxWaitForClientMillis;
     }
 }
+

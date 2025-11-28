@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ConfigContainer;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -67,7 +68,7 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
     }
 
     private void configure() throws TikaConfigException, IOException {
-        fileSystemEmitterConfig = FileSystemEmitterConfig.load(pluginConfig.jsonConfig());
+        fileSystemEmitterConfig = FileSystemEmitterConfig.load(pluginConfig.json());
         checkConfig(fileSystemEmitterConfig);
     }
 
@@ -157,17 +158,18 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
         FileSystemEmitterConfig config = fileSystemEmitterConfig;
         ConfigContainer configContainer = parseContext.get(ConfigContainer.class);
         if (configContainer != null) {
-            Optional<String> configJson = configContainer.get(getExtensionConfig().id());
+            Optional<JsonConfig> configJson = configContainer.get(getExtensionConfig().id());
             if (configJson.isPresent()) {
                 // Check if basePath is present in runtime config - this is not allowed for security
                 if (configJson
                         .get()
+                        .json()
                         .contains("\"basePath\"")) {
                     throw new TikaConfigException("Cannot change 'basePath' at runtime for security reasons. " + "basePath can only be set during initialization.");
                 }
 
                 // Load runtime config (excludes basePath for security)
-                FileSystemEmitterRuntimeConfig runtimeConfig = FileSystemEmitterRuntimeConfig.load(configJson.get());
+                FileSystemEmitterRuntimeConfig runtimeConfig = FileSystemEmitterRuntimeConfig.load(configJson.get().json());
 
                 // Merge runtime config into default config while preserving basePath
                 config = new FileSystemEmitterConfig(fileSystemEmitterConfig.basePath(), runtimeConfig.getFileExtension(), runtimeConfig.getOnExists(),

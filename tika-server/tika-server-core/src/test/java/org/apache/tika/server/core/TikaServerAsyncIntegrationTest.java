@@ -37,7 +37,6 @@ import java.util.Random;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.core.Response;
-import org.apache.commons.io.FileUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,7 +53,6 @@ import org.apache.tika.pipes.api.HandlerConfig;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTupleList;
-import org.apache.tika.utils.ProcessUtils;
 
 @Disabled("useful for development...need to turn it into a real unit test")
 public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
@@ -66,9 +64,7 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
     @TempDir
     private static Path TMP_DIR;
     private static Path TMP_OUTPUT_DIR;
-    private static String TIKA_CONFIG_XML;
     private static Path TIKA_CONFIG;
-    private static Path PLUGINS_CONFIG;
     private static List<String> FILE_LIST = new ArrayList<>();
     private static String[] FILES = new String[]{"hello_world.xml", "null_pointer.xml",
             // "heavy_hang_30000.xml", "real_oom.xml",
@@ -95,19 +91,9 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
 
             }
         }
-        TIKA_CONFIG = TMP_DIR.resolve("tika-config.xml");
+        TIKA_CONFIG = TMP_DIR.resolve("tika-config.json");
 
-        TIKA_CONFIG_XML =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>"  + "<server><endpoints><endpoint>async</endpoint></endpoints>" +
-                        "<enableUnsecureFeatures>true</enableUnsecureFeatures></server>" + "<async><tikaConfig>" + ProcessUtils.escapeCommandLine(TIKA_CONFIG
-                        .toAbsolutePath()
-                        .toString()) + "</tikaConfig><numClients>10</numClients><forkedJvmArgs><arg>-Xmx256m" + "</arg></forkedJvmArgs><timeoutMillis>5000</timeoutMillis>" +
-                        "</async>" + "</properties>";
-
-        FileUtils.write(TIKA_CONFIG.toFile(), TIKA_CONFIG_XML, UTF_8);
-
-        PLUGINS_CONFIG = TMP_DIR.resolve("plugins-config.json");
-        CXFTestBase.createPluginsConfig(PLUGINS_CONFIG, inputDir, TMP_OUTPUT_DIR, null);
+        CXFTestBase.createPluginsConfig(TIKA_CONFIG, inputDir, TMP_OUTPUT_DIR, null, null);
     }
 
 
@@ -130,8 +116,7 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
         Thread serverThread = new Thread(() -> TikaServerCli.main(new String[]{
                 //for debugging/development, use no fork; otherwise go with the default
                 //"-noFork",
-                "-p", INTEGRATION_TEST_PORT, "-config", TIKA_CONFIG.toAbsolutePath().toString(),
-                "-a", PLUGINS_CONFIG.toAbsolutePath().toString() }));
+                "-p", INTEGRATION_TEST_PORT, "-config", TIKA_CONFIG.toAbsolutePath().toString() }));
         serverThread.start();
 
         try {

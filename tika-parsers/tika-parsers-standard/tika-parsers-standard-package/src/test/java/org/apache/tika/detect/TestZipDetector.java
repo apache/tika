@@ -40,7 +40,6 @@ import org.apache.tika.metadata.Metadata;
 public class TestZipDetector extends TikaTest {
 
     private static final String ZIP_FILE = "testTika4424.zip";
-    private static final String SKIP_ZIP_CONTAINER_CONFIG = "tika-4424-config.xml";
 
     private static final Detector DETECTOR = TikaConfig
             .getDefaultConfig()
@@ -117,21 +116,6 @@ public class TestZipDetector extends TikaTest {
 
             String result = tika.detect(tikaInputStream, ZIP_FILE);
             assertEquals("application/vnd.google-earth.kmz", result);
-        }
-    }
-
-    @Test
-    public void detectPlainZipUsingPlainInputStream() throws Exception {
-        try (InputStream tikaConfigInputStream = TestZipDetector.class.getResourceAsStream("/configs/" + SKIP_ZIP_CONTAINER_CONFIG);
-                InputStream inputStream = TestZipDetector.class.getResourceAsStream("/test-documents/" + ZIP_FILE)) {
-
-            assertNotNull(tikaConfigInputStream);
-            assertNotNull(inputStream);
-
-            Tika tika = new Tika(new TikaConfig(tikaConfigInputStream));
-
-            String result = tika.detect(inputStream, ZIP_FILE);
-            assertEquals("application/zip", result);
         }
     }
 

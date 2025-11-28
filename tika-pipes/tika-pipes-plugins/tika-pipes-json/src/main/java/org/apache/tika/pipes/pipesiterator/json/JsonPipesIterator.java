@@ -53,7 +53,7 @@ public class JsonPipesIterator extends PipesIteratorBase {
     }
 
     public static JsonPipesIterator build(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
-        JsonPipesIteratorConfig config = JsonPipesIteratorConfig.load(extensionConfig.jsonConfig());
+        JsonPipesIteratorConfig config = JsonPipesIteratorConfig.load(extensionConfig.json());
         return new JsonPipesIterator(config, extensionConfig);
     }
 

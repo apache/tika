@@ -96,7 +96,7 @@ public class S3Fetcher extends AbstractTikaExtension implements Fetcher, RangeFe
     }
 
     public static S3Fetcher build(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
-        S3FetcherConfig config = S3FetcherConfig.load(extensionConfig.jsonConfig());
+        S3FetcherConfig config = S3FetcherConfig.load(extensionConfig.json());
         S3Fetcher fetcher = new S3Fetcher(extensionConfig);
         fetcher.config = config;
         fetcher.initialize();

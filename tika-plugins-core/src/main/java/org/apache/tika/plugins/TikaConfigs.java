@@ -62,7 +62,8 @@ public class TikaConfigs {
             "renderers",
             "translators",
             "auto-detect-parser-config",
-            "autoDetectParserConfig"
+            "autoDetectParserConfig",
+            "server"
     );
 
     static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()

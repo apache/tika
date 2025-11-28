@@ -1,0 +1,22 @@
+{
+  "server": {
+    "port": 9999,
+    "taskTimeoutMillis": 1000000,
+    "minimumTimeoutMillis": 10000,
+    "taskPulseMillis": 100,
+    "endpoints": [
+      "rmeta"
+    ],
+    "tlsConfig": {
+      "active": true,
+      "keyStoreType": "PKCS12",
+      "keyStorePassword": "tika-secret",
+      "keyStoreFile": "{SSL_KEYS}/tika-server-keystore.p12",
+      "trustStoreType": "PKCS12",
+      "trustStorePassword": "tika-secret",
+      "trustStoreFile": "{SSL_KEYS}/tika-server-truststore.p12",
+      "clientAuthenticationWanted": true,
+      "clientAuthenticationRequired": true
+    }
+  }
+}

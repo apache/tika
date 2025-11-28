@@ -25,6 +25,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import org.apache.tika.config.JsonConfig;
+
 /**
  * Extracts framework-level configuration from component JSON,
  * separating fields prefixed with underscore from component-specific config.
@@ -39,9 +41,9 @@ public class FrameworkConfig {
     private static final String DECORATE_KEY = "_decorate";
 
     private final ParserDecoration decoration;
-    private final String componentConfigJson;
+    private final JsonConfig componentConfigJson;
 
-    private FrameworkConfig(ParserDecoration decoration, String componentConfigJson) {
+    private FrameworkConfig(ParserDecoration decoration, JsonConfig componentConfigJson) {
         this.decoration = decoration;
         this.componentConfigJson = componentConfigJson;
     }
@@ -57,8 +59,9 @@ public class FrameworkConfig {
     public static FrameworkConfig extract(JsonNode configNode,
                                            ObjectMapper objectMapper) throws IOException {
         if (configNode == null || !configNode.isObject()) {
-            return new FrameworkConfig(null,
-                    objectMapper.writeValueAsString(configNode));
+            String jsonString = objectMapper.writeValueAsString(configNode);
+            JsonConfig jsonConfig = () -> jsonString;
+            return new FrameworkConfig(null, jsonConfig);
         }
 
         ObjectNode objNode = (ObjectNode) configNode.deepCopy();
@@ -71,7 +74,8 @@ public class FrameworkConfig {
         }
 
         // Remaining fields are component-specific config
-        String componentConfigJson = objectMapper.writeValueAsString(objNode);
+        String jsonString = objectMapper.writeValueAsString(objNode);
+        JsonConfig componentConfigJson = () -> jsonString;
 
         return new FrameworkConfig(decoration, componentConfigJson);
     }
@@ -115,7 +119,7 @@ public class FrameworkConfig {
         return decoration;
     }
 
-    public String getComponentConfigJson() {
+    public JsonConfig getComponentConfigJson() {
         return componentConfigJson;
     }
 

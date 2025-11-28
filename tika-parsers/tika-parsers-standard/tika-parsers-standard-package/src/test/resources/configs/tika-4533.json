@@ -1,0 +1,13 @@
+{
+  "auto-detect-parser-config": {
+    "maximumCompressionRatio": 100,
+    "maximumDepth": 100,
+    "maximumPackageEntryDepth": 100,
+    "throwOnZeroBytes": false,
+    "digesterFactory": {
+      "@class": "org.apache.tika.parser.digestutils.CommonsDigesterFactory",
+      "markLimit": 100000,
+      "algorithmString": "sha256"
+    }
+  }
+}

@@ -29,7 +29,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.GlobalSettings;
 import org.apache.tika.metadata.Metadata;
 
 public class JsonMetadataList {
@@ -44,7 +44,7 @@ public class JsonMetadataList {
         factory.setStreamReadConstraints(StreamReadConstraints
                 .builder()
                 .maxNestingDepth(10)
-                .maxStringLength(TikaConfig.getMaxJsonStringFieldLength())
+                .maxStringLength(GlobalSettings.getMaxJsonStringFieldLength())
                 .maxNumberLength(500)
 //                                                              .maxDocumentLength(1000000)
                 .build());
@@ -100,8 +100,8 @@ public class JsonMetadataList {
             return null;
         }
         if (OBJECT_MAPPER.getFactory().streamReadConstraints().getMaxStringLength()
-                != TikaConfig.getMaxJsonStringFieldLength()) {
-            OBJECT_MAPPER = buildObjectMapper(TikaConfig.getMaxJsonStringFieldLength());
+                != GlobalSettings.getMaxJsonStringFieldLength()) {
+            OBJECT_MAPPER = buildObjectMapper(GlobalSettings.getMaxJsonStringFieldLength());
         }
 
         return OBJECT_MAPPER.readValue(reader, new TypeReference<List<Metadata>>(){});

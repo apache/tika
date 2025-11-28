@@ -1,4 +1,44 @@
 {
+  "parsers": [
+    {
+      "default-parser": {}
+    },
+    {
+      "pdf-parser": {
+        "extractActions": true
+      }
+    },
+    {
+      "ooxml-parser": {
+        "includeDeletedContent": true,
+        "includeMoveFromContent": true,
+        "extractMacros": true
+      }
+    },
+    {
+      "office-parser": {
+        "extractMacros": true
+      }
+    }
+  ],
+  "metadata-filters": [
+    {
+      "date-normalizing-metadata-filter": {}
+    },
+    {
+      "field-name-mapping-filter": {
+        "excludeUnmapped": true,
+        "mappings": {
+          "X-TIKA:content": "content_s",
+          "Content-Length": "length_i",
+          "dc:creator": "creators_ss",
+          "dc:title": "title_s",
+          "Content-Type": "mime_s",
+          "X-TIKA:EXCEPTION:container_exception": "tika_exception_s"
+        }
+      }
+    }
+  ],
   "fetchers": {
     "file-system-fetcher": {
       "fsf": {
@@ -60,7 +100,6 @@
     "numEmitters": 1,
     "numClients": 1,
     "tikaConfig": "TIKA_CONFIG",
-    "pipesPluginsConfig": "PLUGINS_CONFIG",
     "forkedJvmArgs": [
       "-Xmx1g",
       "-XX:ParallelGCThreads=2",

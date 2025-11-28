@@ -20,13 +20,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -47,11 +45,6 @@ import org.apache.tika.plugins.TikaPluginManager;
 
 public class PipesServerTest extends TikaTest {
 
-    @BeforeAll
-    public static void setUp() {
-        //System.setProperty("pf4j.pluginsDir", "../tika-fetchers/tika-fetcher-file-system/target/plugins");
-    }
-
     /**
      * This test is useful for stepping through the debugger on PipesServer
      * without having to attach the debugger to the forked process.
@@ -62,14 +55,10 @@ public class PipesServerTest extends TikaTest {
     @Test
     public void testBasic(@TempDir Path tmp) throws Exception {
         String testDoc = "mock_times.xml";
-        Path pipesConfig = PluginsTestHelper.getFileSystemFetcherConfig(tmp);
+        Path tikaConfig = PluginsTestHelper.getFileSystemFetcherConfig(tmp);
         PluginsTestHelper.copyTestFilesToTmpInput(tmp, testDoc);
 
-        Path tikaConfig = tmp.resolve("tika-config.xml");
-        Files.copy(PipesServerTest.class.getResourceAsStream("TIKA-3941.xml"), tikaConfig);
-
-
-        PipesServer pipesServer = new PipesServer(tikaConfig, pipesConfig,
+        PipesServer pipesServer = new PipesServer(tikaConfig,
                 UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[0]).get(),
                 new PrintStream(UnsynchronizedByteArrayOutputStream.builder().get(), true,
                         StandardCharsets.UTF_8.name()),
@@ -80,7 +69,7 @@ public class PipesServerTest extends TikaTest {
         FetchEmitTuple fetchEmitTuple = new FetchEmitTuple("id",
                 new FetchKey("fsf", testDoc),
                 new EmitKey("", ""));
-        TikaConfigs tikaConfigs = TikaConfigs.load(pipesConfig);
+        TikaConfigs tikaConfigs = TikaConfigs.load(tikaConfig);
         TikaPluginManager pluginManager = TikaPluginManager.load(tikaConfigs);
         Fetcher fetcher = FetcherManager.load(pluginManager, tikaConfigs).getFetcher();
         PipesServer.MetadataListAndEmbeddedBytes
@@ -93,14 +82,11 @@ public class PipesServerTest extends TikaTest {
     public void testEmbeddedStreamEmitter(@TempDir Path tmp) throws Exception {
 
         String testDoc = "basic_embedded.xml";
-        Path pipesConfig = PluginsTestHelper.getFileSystemFetcherConfig(tmp);
+        Path tikaConfig = PluginsTestHelper.getFileSystemFetcherConfig(tmp);
         PluginsTestHelper.copyTestFilesToTmpInput(tmp, testDoc);
 
-        Path tikaConfig = tmp.resolve("tika-config.xml");
-        Files.copy(PipesServerTest.class.getResourceAsStream("TIKA-4207.xml"), tikaConfig);
 
-
-        PipesServer pipesServer = new PipesServer(tikaConfig, pipesConfig,
+        PipesServer pipesServer = new PipesServer(tikaConfig,
                 UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[0]).get(),
                 new PrintStream(UnsynchronizedByteArrayOutputStream.builder().get(), true,
                         StandardCharsets.UTF_8.name()),
@@ -116,7 +102,7 @@ public class PipesServerTest extends TikaTest {
         FetchEmitTuple fetchEmitTuple = new FetchEmitTuple("id",
                 new FetchKey("fs", testDoc),
                 new EmitKey("", ""), new Metadata(), parseContext);
-        TikaConfigs tikaConfigs = TikaConfigs.load(pipesConfig);
+        TikaConfigs tikaConfigs = TikaConfigs.load(tikaConfig);
         TikaPluginManager pluginManager = TikaPluginManager.load(tikaConfigs);
         Fetcher fetcher = FetcherManager.load(pluginManager, tikaConfigs).getFetcher();
         PipesServer.MetadataListAndEmbeddedBytes
@@ -144,13 +130,10 @@ public class PipesServerTest extends TikaTest {
     @Test
     public void testEmbeddedStreamEmitterLimitBytes(@TempDir Path tmp) throws Exception {
         String testDoc = "basic_embedded.xml";
-        Path pipesConfig = PluginsTestHelper.getFileSystemFetcherConfig(tmp);
+        Path pipesConfig = PluginsTestHelper.getFileSystemFetcherConfig("tika-config-truncate.json", tmp);
         PluginsTestHelper.copyTestFilesToTmpInput(tmp, testDoc);
 
-        Path tikaConfig = tmp.resolve("tika-config.xml");
-        Files.copy(PipesServerTest.class.getResourceAsStream("TIKA-4207-limit-bytes.xml"), tikaConfig);
-
-        PipesServer pipesServer = new PipesServer(tikaConfig, pipesConfig,
+        PipesServer pipesServer = new PipesServer(pipesConfig,
                 UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[0]).get(),
                 new PrintStream(UnsynchronizedByteArrayOutputStream.builder().get(), true,
                         StandardCharsets.UTF_8.name()),

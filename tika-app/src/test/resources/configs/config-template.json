@@ -54,7 +54,6 @@
     "staleFetcherDelaySeconds": 60,
     "forkedJvmArgs": ["-Xmx1g", "-XX:+UseG1GC"],
     "tikaConfig": "TIKA_CONFIG",
-    "pipesPluginsConfig": "PLUGINS_CONFIG",
     "javaPath": "java"
   },
   "plugin-roots": "PLUGIN_ROOTS"

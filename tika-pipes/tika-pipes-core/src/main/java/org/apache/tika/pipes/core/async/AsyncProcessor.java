@@ -33,7 +33,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
@@ -73,14 +75,14 @@ public class AsyncProcessor implements Closeable {
     private boolean addedEmitterSemaphores = false;
     boolean isShuttingDown = false;
 
-    public AsyncProcessor(Path tikaConfigPath, Path pluginsConfigPath) throws TikaException, IOException {
-        this(tikaConfigPath, pluginsConfigPath, null);
+    public AsyncProcessor(Path tikaConfigPath) throws TikaException, IOException {
+        this(tikaConfigPath, null);
     }
 
-    public AsyncProcessor(Path tikaConfigPath, Path pluginsConfigPath, PipesIterator pipesIterator) throws TikaException, IOException {
-        TikaConfigs tikaConfigs = TikaConfigs.load(pluginsConfigPath);
+    public AsyncProcessor(Path tikaConfigPath, PipesIterator pipesIterator) throws TikaException, IOException {
+        TikaConfigs tikaConfigs = TikaConfigs.load(tikaConfigPath);
         TikaPluginManager tikaPluginManager = TikaPluginManager.load(tikaConfigs);
-
+        MetadataFilter metadataFilter = TikaLoader.load(tikaConfigPath).loadMetadataFilters();
         this.asyncConfig = AsyncConfig.load(tikaConfigs);
         this.pipesReporter = ReporterManager.load(tikaPluginManager, tikaConfigs);
         LOG.debug("loaded reporter {}", pipesReporter.getClass());
@@ -92,11 +94,11 @@ public class AsyncProcessor implements Closeable {
         this.executorCompletionService =
                 new ExecutorCompletionService<>(executorService);
         try {
-            if (asyncConfig.getTikaConfig() != null && !tikaConfigPath.toAbsolutePath().equals(asyncConfig.getTikaConfig().toAbsolutePath())) {
+            if (asyncConfig.getTikaConfig() != null && !tikaConfigPath.toAbsolutePath().equals(asyncConfig.getTikaConfigPath().toAbsolutePath())) {
                 LOG.warn("TikaConfig for AsyncProcessor ({}) is different " +
                                 "from TikaConfig for workers ({}). If this is intended," +
                                 " please ignore this warning.", tikaConfigPath.toAbsolutePath(),
-                        asyncConfig.getTikaConfig().toAbsolutePath());
+                        asyncConfig.getTikaConfigPath().toAbsolutePath());
             }
             this.executorCompletionService.submit(() -> {
                 while (true) {

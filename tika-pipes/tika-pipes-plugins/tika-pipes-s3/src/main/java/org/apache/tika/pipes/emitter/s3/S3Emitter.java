@@ -91,7 +91,7 @@ public class S3Emitter extends AbstractStreamEmitter {
     private final S3Client s3Client;
 
     public static S3Emitter build(ExtensionConfig extensionConfig) throws TikaConfigException, IOException {
-        S3EmitterConfig config = S3EmitterConfig.load(extensionConfig.jsonConfig());
+        S3EmitterConfig config = S3EmitterConfig.load(extensionConfig.json());
         config.validate();
         S3Client s3Client = buildS3Client(config);
         return new S3Emitter(extensionConfig, config, s3Client);

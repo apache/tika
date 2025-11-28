@@ -29,7 +29,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.detect.EncodingDetector;
-import org.apache.tika.detect.NonDetectingEncodingDetector;
+import org.apache.tika.detect.OverrideEncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaTypeRegistry;
@@ -90,7 +90,7 @@ public class PickBestTextEncodingParser extends AbstractMultipleParser {
                 .get(CharsetTester.class)
                 .getNextCharset();
         Charset charsetCS = Charset.forName(charset);
-        context.set(EncodingDetector.class, new NonDetectingEncodingDetector(charsetCS));
+        context.set(EncodingDetector.class, new OverrideEncodingDetector(charsetCS));
     }
 
     @Override

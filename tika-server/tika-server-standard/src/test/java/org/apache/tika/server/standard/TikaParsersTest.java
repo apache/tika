@@ -54,7 +54,7 @@ public class TikaParsersTest extends CXFTestBase {
 
     @Override
     protected InputStream getTikaConfigInputStream() {
-        return getClass().getResourceAsStream("/config/tika-config-for-server-tests.xml");
+        return getClass().getResourceAsStream("/configs/tika-config-for-server-tests.json");
     }
 
     protected String getPath(boolean withDetails) {
@@ -71,7 +71,6 @@ public class TikaParsersTest extends CXFTestBase {
                     .get();
 
             String text = getStringFromInputStream((InputStream) response.getEntity());
-            assertContains("org.apache.tika.parser.DefaultParser (Composite Parser)", text);
             assertContains(OpusParser.class.getName(), text);
             assertContains(PackageParser.class.getName(), text);
             assertContains(OOXMLParser.class.getName(), text);
@@ -100,12 +99,11 @@ public class TikaParsersTest extends CXFTestBase {
                     .get();
 
             String text = getStringFromInputStream((InputStream) response.getEntity());
-            assertContains("<h3>DefaultParser</h3>", text);
             assertContains("Composite", text);
 
-            assertContains("<h4>OpusParser", text);
-            assertContains("<h4>PackageParser", text);
-            assertContains("<h4>OOXMLParser", text);
+            assertContains("<h3>OpusParser", text);
+            assertContains("<h3>PackageParser", text);
+            assertContains("<h3>OOXMLParser", text);
 
             assertContains(OpusParser.class.getName(), text);
             assertContains(PackageParser.class.getName(), text);
@@ -153,47 +151,40 @@ public class TikaParsersTest extends CXFTestBase {
             boolean hasOpus = false, hasOOXML = false, hasZip = false;
             int nonComposite = 0;
             int composite = 0;
+            assertTrue(children.size() > 50);
             for (Object o : children) {
                 Map<String, Object> child = (Map<String, Object>) o;
                 assertEquals(true, child.containsKey("name"));
                 assertEquals(true, child.containsKey("composite"));
 
-                List<Object> grandChildrenArr = (List) child.get("children");
-                if (grandChildrenArr == null) {
-                    continue;
+                if (child.get("composite") == Boolean.FALSE) {
+                    nonComposite++;
+                } else {
+                    composite++;
                 }
-                assertTrue(grandChildrenArr.size() > 50);
-                for (Object grandChildO : grandChildrenArr) {
-                    Map<String, Object> grandChildren = (Map<String, Object>) grandChildO;
 
-                    if (grandChildren.get("composite") == Boolean.FALSE) {
-                        nonComposite++;
-                    } else {
-                        composite++;
-                    }
-
-                    // Will only have mime types if requested
-                    if (grandChildren.get("composite") == Boolean.FALSE) {
-                        assertEquals(details, grandChildren.containsKey("supportedTypes"));
-                    }
-
-                    String name = (String) grandChildren.get("name");
-                    if (OpusParser.class
-                            .getName()
-                            .equals(name)) {
-                        hasOpus = true;
-                    }
-                    if (OOXMLParser.class
-                            .getName()
-                            .equals(name)) {
-                        hasOOXML = true;
-                    }
-                    if (PackageParser.class
-                            .getName()
-                            .equals(name)) {
-                        hasZip = true;
-                    }
+                // Will only have mime types if requested
+                if (child.get("composite") == Boolean.FALSE) {
+                    assertEquals(details, child.containsKey("supportedTypes"));
                 }
+
+                String name = (String) child.get("name");
+                if (OpusParser.class
+                        .getName()
+                        .equals(name)) {
+                    hasOpus = true;
+                }
+                if (OOXMLParser.class
+                        .getName()
+                        .equals(name)) {
+                    hasOOXML = true;
+                }
+                if (PackageParser.class
+                        .getName()
+                        .equals(name)) {
+                    hasZip = true;
+                }
+
             }
             assertEquals(true, hasOpus);
             assertEquals(true, hasOOXML);

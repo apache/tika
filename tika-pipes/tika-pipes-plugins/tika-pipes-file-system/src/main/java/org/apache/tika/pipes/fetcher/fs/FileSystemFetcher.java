@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ConfigContainer;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -64,7 +65,7 @@ public class FileSystemFetcher extends AbstractTikaExtension implements Fetcher 
 
     public FileSystemFetcher(ExtensionConfig pluginConfig) throws TikaConfigException {
         super(pluginConfig);
-        defaultFileSystemFetcherConfig = FileSystemFetcherConfig.load(pluginConfig.jsonConfig());
+        defaultFileSystemFetcherConfig = FileSystemFetcherConfig.load(pluginConfig.json());
         checkConfig(defaultFileSystemFetcherConfig);
     }
 
@@ -78,11 +79,11 @@ public class FileSystemFetcher extends AbstractTikaExtension implements Fetcher 
         FileSystemFetcherConfig config = defaultFileSystemFetcherConfig;
         ConfigContainer configContainer = parseContext.get(ConfigContainer.class);
         if (configContainer != null) {
-            Optional<String> configJson = configContainer.get(getExtensionConfig().id());
+            Optional<JsonConfig> configJson = configContainer.get(getExtensionConfig().id());
             if (configJson.isPresent()) {
                 try {
                     // Check if basePath is present in runtime config - this is not allowed for security
-                    if (configJson.get().contains("\"basePath\"")) {
+                    if (configJson.get().json().contains("\"basePath\"")) {
                         throw new TikaConfigException(
                                 "Cannot change 'basePath' at runtime for security reasons. " +
                                         "basePath can only be set during initialization.");
@@ -90,7 +91,7 @@ public class FileSystemFetcher extends AbstractTikaExtension implements Fetcher 
 
                     // Load runtime config (excludes basePath for security)
                     FileSystemFetcherRuntimeConfig runtimeConfig =
-                            FileSystemFetcherRuntimeConfig.load(configJson.get());
+                            FileSystemFetcherRuntimeConfig.load(configJson.get().json());
 
                     // Merge runtime config into default config while preserving basePath
                     config = new FileSystemFetcherConfig()

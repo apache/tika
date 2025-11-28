@@ -63,6 +63,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.config.ConfigContainer;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
@@ -88,7 +89,7 @@ import org.apache.tika.utils.StringUtils;
 public class HttpFetcher extends AbstractTikaExtension implements Fetcher, RangeFetcher {
 
     public static HttpFetcher build(ExtensionConfig pluginConfig) throws TikaConfigException, IOException {
-        HttpFetcherConfig httpFetcherConfig = HttpFetcherConfig.load(pluginConfig.jsonConfig());
+        HttpFetcherConfig httpFetcherConfig = HttpFetcherConfig.load(pluginConfig.json());
         HttpFetcher fetcher = new HttpFetcher(pluginConfig, httpFetcherConfig);
         fetcher.initialize();
         return fetcher;
@@ -209,9 +210,9 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
         if (configContainer == null) {
             return null;
         }
-        Optional<String> jsonOpt = configContainer.get(HttpFetcher.class);
+        Optional<JsonConfig> jsonOpt = configContainer.get(HttpFetcher.class);
         if (jsonOpt.isPresent()) {
-            additionalHttpFetcherConfig = OM.readValue(jsonOpt.get(), HttpFetcherConfig.class);
+            additionalHttpFetcherConfig = OM.readValue(jsonOpt.get().json(), HttpFetcherConfig.class);
         }
         return additionalHttpFetcherConfig;
     }

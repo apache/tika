@@ -88,19 +88,16 @@ public class AsyncProcessorTest extends TikaTest {
             LOG.warn("CAN'T FIND PLUGINS DIR. pwd={}", Paths.get("").toAbsolutePath().toString());
         }
 
-        tikaConfigPath = configDir.resolve("tika-config.xml");
-        Files.copy(AsyncProcessorTest.class.getResourceAsStream("/configs/tika-config-default.xml"), tikaConfigPath);
-        Path pipesConfig = configDir.resolve("tika-pipes.json");
+        tikaConfigPath = configDir.resolve("tika-config.json");
         String json = Files.readString(Paths.get(AsyncProcessorTest.class.getResource("/configs/config-template.json").toURI()), StandardCharsets.UTF_8);
         String jsonTemp = json
                 .replace("FETCHER_BASE_PATH", inputDir.toAbsolutePath().toString())
                 .replace("JSON_EMITTER_BASE_PATH", jsonOutputDir.toAbsolutePath().toString())
                 .replace("BYTES_EMITTER_BASE_PATH", bytesOutputDir.toAbsolutePath().toString())
                 .replace("PLUGIN_ROOTS", pluginsDir.toAbsolutePath().toString())
-                .replace("TIKA_CONFIG", tikaConfigPath.toAbsolutePath().toString())
-                .replace("PLUGINS_CONFIG", pipesConfig.toAbsolutePath().toString());
+                .replace("TIKA_CONFIG", tikaConfigPath.toAbsolutePath().toString());
         jsonTemp = jsonTemp.replace("\\", "/");
-        Files.writeString(pipesConfig, jsonTemp, StandardCharsets.UTF_8);
+        Files.writeString(tikaConfigPath, jsonTemp, StandardCharsets.UTF_8);
 
         Path mock = inputDir.resolve("mock.xml");
         try (OutputStream os = Files.newOutputStream(mock)) {
@@ -112,7 +109,7 @@ public class AsyncProcessorTest extends TikaTest {
     public void testRecursiveUnpacking() throws Exception {
 //        TikaAsyncCLI cli = new TikaAsyncCLI();
         //      cli.main(new String[]{ configDir.resolve("tika-config.xml").toAbsolutePath().toString()});
-        AsyncProcessor processor = new AsyncProcessor(tikaConfigPath, configDir.resolve("tika-pipes.json"));
+        AsyncProcessor processor = new AsyncProcessor(configDir.resolve("tika-config.json"));
 
         EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = new EmbeddedDocumentBytesConfig(true);
         embeddedDocumentBytesConfig.setIncludeOriginal(true);

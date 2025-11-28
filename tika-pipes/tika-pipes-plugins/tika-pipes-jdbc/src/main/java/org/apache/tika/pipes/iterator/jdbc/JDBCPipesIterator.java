@@ -114,7 +114,7 @@ public class JDBCPipesIterator extends PipesIteratorBase {
     }
 
     public static JDBCPipesIterator build(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
-        JDBCPipesIteratorConfig config = JDBCPipesIteratorConfig.load(extensionConfig.jsonConfig());
+        JDBCPipesIteratorConfig config = JDBCPipesIteratorConfig.load(extensionConfig.json());
         return new JDBCPipesIterator(config, extensionConfig);
     }
 

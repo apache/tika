@@ -52,6 +52,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.DefaultEmbeddedStreamTranslator;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -212,9 +213,7 @@ public class UnpackerResource {
 
             if (!name.contains(".") && contentType != null) {
                 try {
-                    String ext = TikaResource
-                            .getConfig()
-                            .getMimeRepository()
+                    String ext = TikaLoader.getMimeTypes()
                             .forName(contentType)
                             .getExtension();
 

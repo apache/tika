@@ -18,14 +18,15 @@ package org.apache.tika.extractor;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
+@TikaComponent(name = "runpack-extractor-factory")
 public class RUnpackExtractorFactory implements EmbeddedDocumentByteStoreExtractorFactory {
 
     public static long DEFAULT_MAX_EMBEDDED_BYTES_FOR_EXTRACTION = 10l * 1024l * 1024l * 1024l;
@@ -43,27 +44,27 @@ public class RUnpackExtractorFactory implements EmbeddedDocumentByteStoreExtract
     }
 
     @Field
-    public void setEmbeddedBytesIncludeMimeTypes(List<String> includeMimeTypes) {
+    public void setEmbeddedBytesIncludeMimeTypes(Set<String> includeMimeTypes) {
         embeddedBytesIncludeMimeTypes = new HashSet<>();
         embeddedBytesIncludeMimeTypes.addAll(includeMimeTypes);
     }
 
     @Field
-    public void setEmbeddedBytesExcludeMimeTypes(List<String> excludeMimeTypes) {
+    public void setEmbeddedBytesExcludeMimeTypes(Set<String> excludeMimeTypes) {
         embeddedBytesExcludeMimeTypes = new HashSet<>();
         embeddedBytesExcludeMimeTypes.addAll(excludeMimeTypes);
 
     }
 
     @Field
-    public void setEmbeddedBytesIncludeEmbeddedResourceTypes(List<String> includeAttachmentTypes) {
+    public void setEmbeddedBytesIncludeEmbeddedResourceTypes(Set<String> includeAttachmentTypes) {
         embeddedBytesIncludeEmbeddedResourceTypes = new HashSet<>();
         embeddedBytesIncludeEmbeddedResourceTypes.addAll(includeAttachmentTypes);
 
     }
 
     @Field
-    public void setEmbeddedBytesExcludeEmbeddedResourceTypes(List<String> excludeAttachmentTypes) {
+    public void setEmbeddedBytesExcludeEmbeddedResourceTypes(Set<String> excludeAttachmentTypes) {
         embeddedBytesExcludeEmbeddedResourceTypes = new HashSet<>();
         embeddedBytesExcludeEmbeddedResourceTypes.addAll(excludeAttachmentTypes);
 
@@ -84,6 +85,30 @@ public class RUnpackExtractorFactory implements EmbeddedDocumentByteStoreExtract
             throw new TikaConfigException("maxEmbeddedBytesForExtraction must be >= 0");
         }
         this.maxEmbeddedBytesForExtraction = maxEmbeddedBytesForExtraction;
+    }
+
+    public boolean isWriteFileNameToContent() {
+        return writeFileNameToContent;
+    }
+
+    public Set<String> getEmbeddedBytesIncludeMimeTypes() {
+        return embeddedBytesIncludeMimeTypes;
+    }
+
+    public Set<String> getEmbeddedBytesExcludeMimeTypes() {
+        return embeddedBytesExcludeMimeTypes;
+    }
+
+    public Set<String> getEmbeddedBytesIncludeEmbeddedResourceTypes() {
+        return embeddedBytesIncludeEmbeddedResourceTypes;
+    }
+
+    public Set<String> getEmbeddedBytesExcludeEmbeddedResourceTypes() {
+        return embeddedBytesExcludeEmbeddedResourceTypes;
+    }
+
+    public long getMaxEmbeddedBytesForExtraction() {
+        return maxEmbeddedBytesForExtraction;
     }
 
     @Override

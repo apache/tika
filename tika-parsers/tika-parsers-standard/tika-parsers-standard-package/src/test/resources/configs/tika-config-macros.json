@@ -1,0 +1,17 @@
+{
+  "parsers": [
+    {
+      "default-parser" : {}
+    },
+    {
+      "open-document-parser": {
+       "extractMacros": true
+      }
+    },
+    {
+      "flat-open-document-parser": {
+        "extractMacros": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "server": {
+    "taskTimeoutMillis": 120000,
+    "taskPulseMillis": 100,
+    "port": 9999,
+    "enableUnsecure": true,
+    "endpoints": [
+      "emit",
+      "async",
+      "status"
+    ]
+  }
+}

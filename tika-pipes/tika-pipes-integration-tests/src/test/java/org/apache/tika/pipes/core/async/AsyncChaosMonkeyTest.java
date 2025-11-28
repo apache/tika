@@ -66,7 +66,6 @@ public class AsyncChaosMonkeyTest {
 
     private Path inputDir;
     private Path outputDir;
-    private Path pipesPluginsConfigPath;
 
     private int ok = 0;
     private int oom = 0;
@@ -85,15 +84,6 @@ public class AsyncChaosMonkeyTest {
         oom = 0;
         timeouts = 0;
         crash = 0;
-        Path tikaConfigPath = Files.createTempFile(configDir, "tika-config-", ".xml");
-        String xml =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<properties>" +
-                " <autoDetectParserConfig>\n" +
-                        "    <digesterFactory\n" +
-                        "        class=\"org.apache.tika.pipes.core.async.MockDigesterFactory\"/>\n" +
-                "</autoDetectParserConfig>" +
-                        "</properties>";
-        Files.write(tikaConfigPath, xml.getBytes(StandardCharsets.UTF_8));
 
 
         Random r = new Random();
@@ -114,8 +104,7 @@ public class AsyncChaosMonkeyTest {
             }
         }
         MockReporter.RESULTS.clear();
-        pipesPluginsConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(configDir, inputDir, outputDir, tikaConfigPath, emitIntermediateResults);
-        return tikaConfigPath;
+        return PluginsTestHelper.getFileSystemFetcherConfig(configDir, inputDir, outputDir, emitIntermediateResults);
     }
 
 /*
@@ -134,7 +123,7 @@ public class AsyncChaosMonkeyTest {
 
     @Test
     public void testBasic(@TempDir Path tmpDir) throws Exception {
-        AsyncProcessor processor = new AsyncProcessor(setUp(tmpDir, false), pipesPluginsConfigPath);
+        AsyncProcessor processor = new AsyncProcessor(setUp(tmpDir, false));
         for (int i = 0; i < totalFiles; i++) {
             FetchEmitTuple t = new FetchEmitTuple("myId-" + i,
                     new FetchKey(fetcherPluginId, i + ".xml"),
@@ -159,7 +148,7 @@ public class AsyncChaosMonkeyTest {
 
     @Test
     public void testEmitIntermediate(@TempDir Path tmpDir) throws Exception {
-        AsyncProcessor processor = new AsyncProcessor(setUp(tmpDir, true), pipesPluginsConfigPath);
+        AsyncProcessor processor = new AsyncProcessor(setUp(tmpDir, true));
         for (int i = 0; i < totalFiles; i++) {
             FetchEmitTuple t = new FetchEmitTuple("myId-" + i, new FetchKey(fetcherPluginId, i + ".xml"),
                     new EmitKey(emitterPluginId, "emit-" + i), new Metadata());

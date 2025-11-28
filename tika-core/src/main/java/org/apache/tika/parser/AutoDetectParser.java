@@ -90,50 +90,46 @@ public class AutoDetectParser extends CompositeParser {
         setAutoDetectParserConfig(AutoDetectParserConfig.DEFAULT);
     }
 
-    public AutoDetectParser(CompositeParser parser, Detector detector, AutoDetectParserConfig autoDetectParserConfig) {
-        super(parser);
+    public AutoDetectParser(MediaTypeRegistry mediaTypeRegistry, Parser parser, Detector detector, AutoDetectParserConfig autoDetectParserConfig) {
+        super(mediaTypeRegistry, parser);
+        setFallback(buildFallbackParser(parser, autoDetectParserConfig.getDigesterFactory()));
         setDetector(detector);
         setAutoDetectParserConfig(autoDetectParserConfig);
     }
 
     public static Parser build(CompositeParser parser, Detector detector, AutoDetectParserConfig autoDetectParserConfig) {
-        return new AutoDetectParser(parser, detector, autoDetectParserConfig);
+        return new AutoDetectParser(parser.getMediaTypeRegistry(), getParser(parser, autoDetectParserConfig.getDigesterFactory()), detector, autoDetectParserConfig);
     }
 
     public AutoDetectParser(TikaConfig config) {
-        super(config.getMediaTypeRegistry(), getParser(config));
-        setFallback(buildFallbackParser(config));
+        super(config.getMediaTypeRegistry(), getParser(config.getParser(), config.getAutoDetectParserConfig().getDigesterFactory()));
+        setFallback(buildFallbackParser(config.getParser(), config.getAutoDetectParserConfig().getDigesterFactory()));
         setDetector(config.getDetector());
         setAutoDetectParserConfig(config.getAutoDetectParserConfig());
-
     }
 
-    private static Parser buildFallbackParser(TikaConfig config) {
+    private static Parser buildFallbackParser(Parser defaultParser, DigestingParser.DigesterFactory digesterFactory) {
         Parser fallback = null;
-        Parser p = config.getParser();
+        Parser p = defaultParser;
         if (p instanceof DefaultParser) {
             fallback = ((DefaultParser)p).getFallback();
         } else {
             fallback = new EmptyParser();
         }
 
-        if (config.getAutoDetectParserConfig().getDigesterFactory() == null) {
+        if (digesterFactory == null) {
             return fallback;
         } else {
-            return new DigestingParser(fallback,
-                    config.getAutoDetectParserConfig().getDigesterFactory().build(),
-                    config.getAutoDetectParserConfig().getDigesterFactory().isSkipContainerDocument());
+            return new DigestingParser(fallback, digesterFactory.build(), digesterFactory.isSkipContainerDocument());
         }
 
     }
 
-    private static Parser getParser(TikaConfig config) {
-        if (config.getAutoDetectParserConfig().getDigesterFactory() == null) {
-            return config.getParser();
+    private static Parser getParser(Parser defaultParser, DigestingParser.DigesterFactory digesterFactory) {
+        if (digesterFactory == null) {
+            return defaultParser;
         }
-        return new DigestingParser(config.getParser(),
-                config.getAutoDetectParserConfig().getDigesterFactory().build(),
-                config.getAutoDetectParserConfig().getDigesterFactory().isSkipContainerDocument());
+        return new DigestingParser(defaultParser,digesterFactory.build(), digesterFactory.isSkipContainerDocument());
     }
 
     /**

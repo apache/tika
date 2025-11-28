@@ -64,7 +64,7 @@ import org.apache.tika.utils.StringUtils;
  * <p>
  * This uses Drew Noakes' metadata-extractor: https://github.com/drewnoakes/metadata-extractor
  */
-@TikaComponent
+@TikaComponent(name = "mp4-parser")
 public class MP4Parser implements Parser {
     /**
      * Serial version UID

@@ -41,4 +41,24 @@ public class ImageGraphicsEngineFactory implements Serializable {
         return new ImageGraphicsEngine(page, pageNumber, embeddedDocumentExtractor, pdfParserConfig,
                 processedInlineImages, imageCounter, xhtml, parentMetadata, parseContext);
     }
+
+    /**
+     * Returns the factory type for serialization purposes.
+     * This allows Jackson to serialize the factory object without requiring additional dependencies.
+     *
+     * @return the fully qualified class name of this factory
+     */
+    public String getFactoryType() {
+        return getClass().getName();
+    }
+
+    /**
+     * Setter for factory type to complete the JavaBean pattern for Jackson deserialization.
+     * This is a no-op since the factory type is derived from the class itself.
+     *
+     * @param factoryType the factory type (ignored)
+     */
+    public void setFactoryType(String factoryType) {
+        // No-op: factory type is determined by the class, not set externally
+    }
 }

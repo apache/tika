@@ -35,6 +35,7 @@ import javax.xml.namespace.QName;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 
 import org.apache.tika.Tika;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.TextDetector;
 import org.apache.tika.detect.XmlRootExtractor;
@@ -55,6 +56,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
  * (if available) to restore the stream back to the state it was before type
  * detection if it wants to process the stream based on the detected type.
  */
+@TikaComponent(spi = false)
 public final class MimeTypes implements Detector, Serializable {
 
     /**

@@ -62,7 +62,6 @@
     "numEmitters": 1,
     "numClients": 1,
     "tikaConfig": "{TIKA_CONFIG}",
-    "pipesPluginsConfig": "{PLUGINS_CONFIG}",
     "forkedJvmArgs": [
       "-Xmx1g",
       "-XX:ParallelGCThreads=2",

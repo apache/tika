@@ -24,8 +24,8 @@ public class AsyncHelperTest {
 
     @Test
     public void testBasic() throws Exception {
-        String[] args = new String[]{"-a", "blah.json", "--config=blah.xml", "-i", "input.docx", "-o", "output/dir"};
-        String[] expected = new String[]{"-a", "blah.json", "-c", "blah.xml", "-i", "input.docx", "-o", "output/dir"};
+        String[] args = new String[]{"-a", "--config=blah.json", "-i", "input.docx", "-o", "output/dir"};
+        String[] expected = new String[]{"-c", "blah.json", "-i", "input.docx", "-o", "output/dir"};
         assertArrayEquals(expected, AsyncHelper.translateArgs(args));
     }
 }

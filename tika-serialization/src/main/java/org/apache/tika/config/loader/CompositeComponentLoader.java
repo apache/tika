@@ -30,6 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.utils.ServiceLoaderUtils;
 
@@ -86,6 +87,15 @@ public class CompositeComponentLoader<T> {
         if (!config.hasComponentSection(componentTypeName)) {
             // Section doesn't exist - use SPI fallback
             return loadAllFromSpi();
+        }
+
+        // Check if section is using object format instead of array format
+        JsonNode sectionNode = config.getRootNode().get(componentTypeName);
+        if (sectionNode != null && !sectionNode.isArray()) {
+            throw new TikaConfigException(
+                    "Configuration section '" + componentTypeName + "' must be an array, not an object. " +
+                    "Expected format: \"" + componentTypeName + "\": [{\"component-name\": {...}}], " +
+                    "Got object format: \"" + componentTypeName + "\": {\"component-name\": {...}}");
         }
 
         // Section exists - load only explicitly configured components (no SPI)
@@ -163,21 +173,56 @@ public class CompositeComponentLoader<T> {
     }
 
     @SuppressWarnings("unchecked")
-    private T instantiateComponent(Class<?> componentClass, String configJson)
+    private T instantiateComponent(Class<?> componentClass, JsonConfig configJson)
             throws TikaConfigException {
         try {
-            // Try constructor with String parameter (JSON config)
+            // Try constructor with JsonConfig parameter
             try {
-                Constructor<?> constructor = componentClass.getConstructor(String.class);
+                Constructor<?> constructor = componentClass.getConstructor(JsonConfig.class);
                 return (T) constructor.newInstance(configJson);
             } catch (NoSuchMethodException e) {
-                // Fall back to zero-arg constructor
+                // Check if JSON config has actual configuration
+                if (hasConfiguration(configJson)) {
+                    throw new TikaConfigException(
+                            "Component '" + componentClass.getName() + "' has configuration in JSON, " +
+                            "but does not have a constructor that accepts JsonConfig. " +
+                            "Please add a constructor: public " + componentClass.getSimpleName() + "(JsonConfig jsonConfig)");
+                }
+                // Fall back to zero-arg constructor if no configuration provided
                 return (T) ServiceLoaderUtils.newInstance(componentClass,
                         new org.apache.tika.config.ServiceLoader(classLoader));
             }
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new TikaConfigException("Failed to instantiate component: " +
                     componentClass.getName(), e);
+        }
+    }
+
+    /**
+     * Checks if the JsonConfig contains actual configuration (non-empty JSON object with fields).
+     *
+     * @param jsonConfig the JSON configuration
+     * @return true if there's meaningful configuration, false if empty or just "{}"
+     */
+    private boolean hasConfiguration(JsonConfig jsonConfig) {
+        if (jsonConfig == null) {
+            return false;
+        }
+        String json = jsonConfig.json();
+        if (json == null || json.trim().isEmpty()) {
+            return false;
+        }
+        // Parse to check if it's an empty object or has actual fields
+        try {
+            JsonNode node = objectMapper.readTree(json);
+            // Check if it's an object and has at least one field
+            if (node.isObject() && node.size() > 0) {
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            // If we can't parse it, assume it has configuration to be safe
+            return true;
         }
     }
 
@@ -205,8 +250,12 @@ public class CompositeComponentLoader<T> {
             // Get component class
             Class<?> componentClass = registry.getComponentClass(name);
 
+            // Wrap JSON string in JsonConfig
+            String jsonString = objectMapper.writeValueAsString(configNode);
+            JsonConfig jsonConfig = () -> jsonString;
+
             // Instantiate component
-            return instantiateComponent(componentClass, objectMapper.writeValueAsString(configNode));
+            return instantiateComponent(componentClass, jsonConfig);
 
         } catch (Exception e) {
             throw new TikaConfigException("Failed to load component '" + name + "' of type " +

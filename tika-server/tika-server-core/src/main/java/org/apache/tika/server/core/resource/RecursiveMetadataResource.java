@@ -19,7 +19,7 @@ package org.apache.tika.server.core.resource;
 
 import static org.apache.tika.server.core.resource.TikaResource.fillMetadata;
 import static org.apache.tika.server.core.resource.TikaResource.fillParseContext;
-import static org.apache.tika.server.core.resource.TikaResource.getConfig;
+import static org.apache.tika.server.core.resource.TikaResource.getTikaLoader;
 
 import java.io.InputStream;
 import java.util.List;
@@ -74,8 +74,8 @@ public class RecursiveMetadataResource {
         RecursiveParserWrapperHandler handler =
                 new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(type, handlerConfig.getWriteLimit(), handlerConfig.isThrowOnWriteLimitReached(), context),
                         handlerConfig.getMaxEmbeddedResources(), TikaResource
-                        .getConfig()
-                        .getMetadataFilter());
+                        .getTikaLoader()
+                        .loadMetadataFilters());
         try {
             TikaResource.parse(wrapper, LOG, "/rmeta", is, handler, metadata, context);
         } catch (TikaServerParseException e) {
@@ -87,7 +87,7 @@ public class RecursiveMetadataResource {
             //we shouldn't get here?
             LOG.error("something went seriously wrong", e);
         }
-        MetadataFilter metadataFilter = context.get(MetadataFilter.class, getConfig().getMetadataFilter());
+        MetadataFilter metadataFilter = context.get(MetadataFilter.class, getTikaLoader().loadMetadataFilters());
         //note that the filter may modify the contents of handler's metadata list.
         //do a deep copy if that's problematic.
         return metadataFilter.filter(handler.getMetadataList());

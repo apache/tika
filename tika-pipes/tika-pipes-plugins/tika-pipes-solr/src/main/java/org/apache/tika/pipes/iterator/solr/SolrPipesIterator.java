@@ -71,7 +71,7 @@ public class SolrPipesIterator extends PipesIteratorBase {
     }
 
     private void configure() throws IOException, TikaConfigException {
-        config = SolrPipesIteratorConfig.load(pluginConfig.jsonConfig());
+        config = SolrPipesIteratorConfig.load(pluginConfig.json());
 
         // Validation
         if (StringUtils.isBlank(config.getSolrCollection())) {

@@ -65,7 +65,7 @@ public class GCSPipesIterator extends PipesIteratorBase {
     }
 
     public static GCSPipesIterator build(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
-        GCSPipesIteratorConfig config = GCSPipesIteratorConfig.load(extensionConfig.jsonConfig());
+        GCSPipesIteratorConfig config = GCSPipesIteratorConfig.load(extensionConfig.json());
         return new GCSPipesIterator(config, extensionConfig);
     }
 

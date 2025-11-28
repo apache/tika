@@ -28,22 +28,28 @@ import org.slf4j.LoggerFactory;
 public class PluginsTestHelper {
     private static final Logger LOG = LoggerFactory.getLogger(PluginsTestHelper.class);
 
+    static final String DEFAULT_TEMPLATE_NAME = "tika-config-basic.json";
     public static Path getFileSystemFetcherConfig(Path configBase) throws Exception {
-        return getFileSystemFetcherConfig(configBase, configBase.resolve("input"), configBase.resolve("output"), null);
+        return  getFileSystemFetcherConfig(DEFAULT_TEMPLATE_NAME, configBase);
     }
 
     public static Path getFileSystemFetcherConfig(Path configBase, Path fetcherBase, Path emitterBase) throws Exception {
-        return getFileSystemFetcherConfig(configBase, fetcherBase, emitterBase, null);
+        return getFileSystemFetcherConfig(DEFAULT_TEMPLATE_NAME, configBase, fetcherBase, emitterBase, false);
     }
 
-    public static Path getFileSystemFetcherConfig(Path configBase, Path fetcherBase, Path emitterBase, Path tikaConfigPath) throws Exception {
-        return getFileSystemFetcherConfig(configBase, fetcherBase, emitterBase, tikaConfigPath, false);
+
+    public static Path getFileSystemFetcherConfig(String templateName, Path configBase) throws Exception {
+        return getFileSystemFetcherConfig(templateName, configBase, configBase.resolve("input"), configBase.resolve("output"), false);
     }
 
-    public static Path getFileSystemFetcherConfig(Path configBase, Path fetcherBase, Path emitterBase, Path tikaConfigPath, boolean emitIntermediateResults) throws Exception {
+    public static Path getFileSystemFetcherConfig(Path configBase, Path fetcherBase, Path emitterBase, boolean emitIntermediateResults) throws Exception {
+        return getFileSystemFetcherConfig(DEFAULT_TEMPLATE_NAME, configBase, fetcherBase, emitterBase, emitIntermediateResults);
+    }
+
+    public static Path getFileSystemFetcherConfig(String templateName, Path configBase, Path fetcherBase, Path emitterBase, boolean emitIntermediateResults) throws Exception {
         Path pipesConfig = configBase.resolve("pipes-config.json");
 
-        Path tikaPluginsTemplate = Paths.get("src", "test", "resources", "configs", "fetchers-emitters.json");
+        Path tikaPluginsTemplate = Paths.get(PluginsTestHelper.class.getResource("/configs/" + templateName).toURI());
         String json = Files.readString(tikaPluginsTemplate, StandardCharsets.UTF_8);
 
         json = json.replace("FETCHER_BASE_PATH", fetcherBase
@@ -63,11 +69,8 @@ public class PluginsTestHelper {
         } else {
             LOG.warn("Couldn't find plugins from {}",  pwd.toAbsolutePath());
         }
-        if (tikaConfigPath != null) {
-            json = json.replace("TIKA_CONFIG", tikaConfigPath.toAbsolutePath().toString());
-            json = json.replace("PLUGINS_CONFIG", pipesConfig.toAbsolutePath().toString());
-        }
         json = json.replace("EMIT_INTERMEDIATE_RESULTS", String.valueOf(emitIntermediateResults));
+        json = json.replace("TIKA_CONFIG", pipesConfig.toAbsolutePath().toString());
         json = json.replace("\\", "/");
         Files.write(pipesConfig, json.getBytes(StandardCharsets.UTF_8));
         return pipesConfig;

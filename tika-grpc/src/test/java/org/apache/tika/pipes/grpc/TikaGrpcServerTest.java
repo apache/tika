@@ -105,7 +105,7 @@ public class TikaGrpcServerTest {
         Server server = InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
-                .addService(new TikaGrpcServerImpl(tikaConfigXml.getAbsolutePath(), tikaPluginsJson.getAbsolutePath()))
+                .addService(new TikaGrpcServerImpl(tikaConfigXml.getAbsolutePath()))
                 .build()
                 .start();
         resources.register(server, Duration.ofSeconds(10));
@@ -200,7 +200,7 @@ public class TikaGrpcServerTest {
         Server server = InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
-                .addService(new TikaGrpcServerImpl(tikaConfigXml.getAbsolutePath(), tikaPluginsJson.getAbsolutePath()))
+                .addService(new TikaGrpcServerImpl(tikaConfigXml.getAbsolutePath()))
                 .build()
                 .start();
         resources.register(server, Duration.ofSeconds(10));

@@ -16,13 +16,11 @@
  */
 package org.apache.tika.config.loader;
 
-import java.lang.reflect.Modifier;
 import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.apache.tika.exception.TikaConfigException;
 
@@ -42,6 +40,42 @@ import org.apache.tika.exception.TikaConfigException;
  *
  * // Load by class name (auto-converts to kebab-case)
  * HandlerConfig config = loader.configs().load(HandlerConfig.class);
+ *
+ * // Load server configuration (tika-server-core module)
+ * TikaServerConfig serverConfig = loader.configs().load("server", TikaServerConfig.class);
+ *
+ * // Load async configuration (tika-pipes-core module)
+ * AsyncConfig asyncConfig = loader.configs().load("async", AsyncConfig.class);
+ *
+ * // Load pipes configuration (tika-pipes-core module)
+ * PipesConfig pipesConfig = loader.configs().load("pipes", PipesConfig.class);
+ * </pre>
+ *
+ * <p>JSON configuration examples:
+ * <pre>
+ * {
+ *   "server": {
+ *     "port": 9998,
+ *     "host": "localhost",
+ *     "taskTimeoutMillis": 300000,
+ *     "enableUnsecureFeatures": false,
+ *     "endpoints": ["all"]
+ *   },
+ *   "async": {
+ *     "emitWithinMillis": 10000,
+ *     "emitMaxEstimatedBytes": 100000,
+ *     "queueSize": 10000,
+ *     "numEmitters": 1,
+ *     "numClients": 4,
+ *     "timeoutMillis": 60000
+ *   },
+ *   "pipes": {
+ *     "numClients": 4,
+ *     "timeoutMillis": 60000,
+ *     "maxFilesProcessedPerProcess": 10000,
+ *     "forkedJvmArgs": ["-Xmx2g", "-XX:+UseG1GC"]
+ *   }
+ * }
  * </pre>
  */
 public class ConfigLoader {
@@ -129,39 +163,16 @@ public class ConfigLoader {
                 return loadFromClassName(node.asText(), clazz);
             }
 
-            // Strategy 2: Object with @class field - explicit type
-            if (node.isObject() && node.has("@class")) {
-                String className = node.get("@class").asText();
-                Class<?> targetClass = Class.forName(className);
-                if (!clazz.isAssignableFrom(targetClass)) {
-                    throw new TikaConfigException(
-                        "Class " + className + " is not assignable to " + clazz.getName());
-                }
-                // Remove @class field before deserializing (Jackson doesn't recognize it)
-                ObjectNode objectNode = ((ObjectNode) node).deepCopy();
-                objectNode.remove("@class");
-                return objectMapper.treeToValue(objectNode, (Class<T>) targetClass);
-            }
-
-            // Strategy 3: Direct deserialization (for concrete classes)
-            if (clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers())) {
-                throw new TikaConfigException(
-                    "Cannot deserialize " + clazz.getName() + " - it is " +
-                    (clazz.isInterface() ? "an interface" : "abstract") + ". " +
-                    "Specify implementation using:\n" +
-                    "  - String value: \"" + key + "\": \"com.example.MyImpl\"\n" +
-                    "  - Object with @class: \"" + key + "\": {\"@class\": \"com.example.MyImpl\", ...}");
-            }
-
+            // Strategy 2: Let Jackson handle everything else
+            // Jackson's activateDefaultTyping will automatically handle @class fields
+            // for interfaces/abstract classes via the PolymorphicObjectMapperFactory configuration
             return objectMapper.treeToValue(node, clazz);
-        } catch (ClassNotFoundException e) {
-            throw new TikaConfigException(
-                "Class not found for '" + key + "': " + e.getMessage(), e);
         } catch (JsonProcessingException e) {
             throw new TikaConfigException(
                 "Failed to deserialize '" + key + "' into " + clazz.getName(), e);
         }
     }
+
 
     /**
      * Loads a class from a string (fully qualified class name).

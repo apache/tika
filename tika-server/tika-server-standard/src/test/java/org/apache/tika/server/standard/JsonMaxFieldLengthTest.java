@@ -63,7 +63,7 @@ public class JsonMaxFieldLengthTest extends CXFTestBase {
 
     @Override
     protected InputStream getTikaConfigInputStream() {
-        return getClass().getResourceAsStream("/config/tika-config-json.xml");
+        return getClass().getResourceAsStream("/configs/tika-config-json.json");
     }
 
     @Test

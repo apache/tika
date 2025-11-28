@@ -20,7 +20,6 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Parse context. Used to pass context information to Tika parsers.
@@ -86,13 +85,22 @@ public class ParseContext implements Serializable {
     }
 
     public boolean isEmpty() {
-        return context.size() == 0;
+        return context.isEmpty();
     }
 
-    //this should really only be used for serialization
-    public Set<String> keySet() {
-        return Collections
-                .unmodifiableSet(context.keySet());
+
+    /**
+     * Returns the internal context map for serialization purposes.
+     * The returned map is unmodifiable.
+     * <p>
+     * This method is intended for use by serialization frameworks only.
+     * Keys are fully-qualified class names, values are the objects stored in the context.
+     *
+     * @return an unmodifiable view of the context map
+     * @since Apache Tika 4.0
+     */
+    public Map<String, Object> getContextMap() {
+        return Collections.unmodifiableMap(context);
     }
 
     @Override

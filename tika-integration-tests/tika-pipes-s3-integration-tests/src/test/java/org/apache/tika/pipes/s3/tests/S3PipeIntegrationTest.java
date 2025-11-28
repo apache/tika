@@ -125,23 +125,14 @@ class S3PipeIntegrationTest {
         createTestFiles();
 
         // Setup config files
-        File tikaConfigFile = new File("target", "ta-s3.xml");
         File log4jPropFile = new File("target", "tmp-log4j2.xml");
-        File pluginsConfigFile = new File("target", "plugins-config-s3.json");
+        File tikaConfigFile = new File("target", "plugins-config-s3.json");
 
         try (InputStream is = this.getClass()
                 .getResourceAsStream("/pipes-fork-server-custom-log4j2.xml")) {
             Assertions.assertNotNull(is);
             FileUtils.copyInputStreamToFile(is, log4jPropFile);
         }
-
-        // Copy tika-config XML
-        String tikaConfigXml;
-        try (InputStream is = this.getClass().getResourceAsStream("/s3/tika-config-s3.xml")) {
-            assert is != null;
-            tikaConfigXml = IOUtils.toString(is, StandardCharsets.UTF_8);
-        }
-        FileUtils.writeStringToFile(tikaConfigFile, tikaConfigXml, StandardCharsets.UTF_8);
 
         // Create plugins config JSON
         String pluginsTemplate;
@@ -152,7 +143,6 @@ class S3PipeIntegrationTest {
 
         String pluginsConfig = pluginsTemplate
                 .replace("{TIKA_CONFIG}", tikaConfigFile.getAbsolutePath())
-                .replace("{PLUGINS_CONFIG}", pluginsConfigFile.getAbsolutePath())
                 .replace("{LOG4J_PROPERTIES_FILE}", log4jPropFile.getAbsolutePath())
                 .replace("{PARSE_MODE}", org.apache.tika.pipes.api.HandlerConfig.PARSE_MODE.RMETA.name())
                 .replace("{PIPE_ITERATOR_BUCKET}", FETCH_BUCKET)
@@ -163,10 +153,10 @@ class S3PipeIntegrationTest {
                 .replace("{ENDPOINT_CONFIGURATION_SERVICE}", MINIO_ENDPOINT)
                 .replace("{REGION}", REGION.id());
 
-        FileUtils.writeStringToFile(pluginsConfigFile, pluginsConfig, StandardCharsets.UTF_8);
+        FileUtils.writeStringToFile(tikaConfigFile, pluginsConfig, StandardCharsets.UTF_8);
 
         try {
-            TikaCLI.main(new String[]{"-a", pluginsConfigFile.getAbsolutePath(), "-c", tikaConfigFile.getAbsolutePath()});
+            TikaCLI.main(new String[]{"-a", "-c", tikaConfigFile.getAbsolutePath()});
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

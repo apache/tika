@@ -30,6 +30,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.serialization.MetadataSerializer;
+import org.apache.tika.serialization.ParseContextDeserializer;
 import org.apache.tika.serialization.ParseContextSerializer;
 
 public class JsonFetchEmitTupleList {
@@ -42,6 +43,7 @@ public class JsonFetchEmitTupleList {
         module.addSerializer(FetchEmitTuple.class, new FetchEmitTupleSerializer());
         module.addSerializer(Metadata.class, new MetadataSerializer());
         module.addSerializer(ParseContext.class, new ParseContextSerializer());
+        module.addDeserializer(ParseContext.class, new ParseContextDeserializer());
         OBJECT_MAPPER.registerModule(module);
     }
 

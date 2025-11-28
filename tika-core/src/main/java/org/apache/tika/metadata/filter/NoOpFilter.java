@@ -18,6 +18,7 @@ package org.apache.tika.metadata.filter;
 
 import java.util.List;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 
@@ -25,6 +26,7 @@ import org.apache.tika.metadata.Metadata;
  * This filter performs no operations on the metadata
  * and leaves it untouched.
  */
+@TikaComponent
 public class NoOpFilter extends MetadataFilter {
 
     public static final NoOpFilter NOOP_FILTER = new NoOpFilter();

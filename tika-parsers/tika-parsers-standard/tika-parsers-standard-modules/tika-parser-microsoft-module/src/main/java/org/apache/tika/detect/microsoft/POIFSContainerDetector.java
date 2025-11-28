@@ -43,7 +43,9 @@ import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Field;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.BoundedInputStream;
@@ -60,6 +62,13 @@ import org.apache.tika.parser.microsoft.OfficeParser;
  */
 @TikaComponent
 public class POIFSContainerDetector implements Detector {
+
+    /**
+     * Configuration class for JSON deserialization.
+     */
+    public static class Config {
+        public int markLimit = -1;
+    }
 
     /**
      * The OLE base file format
@@ -259,6 +268,31 @@ public class POIFSContainerDetector implements Detector {
 
     @Field
     private int markLimit = -1;
+
+    /**
+     * Default constructor for SPI loading.
+     */
+    public POIFSContainerDetector() {
+    }
+
+    /**
+     * Constructor with explicit Config object.
+     *
+     * @param config the configuration
+     */
+    public POIFSContainerDetector(Config config) {
+        this.markLimit = config.markLimit;
+    }
+
+    /**
+     * Constructor for JSON configuration.
+     * Requires Jackson on the classpath.
+     *
+     * @param jsonConfig JSON configuration
+     */
+    public POIFSContainerDetector(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, Config.class));
+    }
 
     /**
      * Internal detection of the specific kind of OLE2 document, based on the

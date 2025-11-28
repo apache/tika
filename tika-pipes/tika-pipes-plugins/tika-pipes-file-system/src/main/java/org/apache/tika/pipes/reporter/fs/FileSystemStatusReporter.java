@@ -56,7 +56,7 @@ import org.apache.tika.utils.ExceptionUtils;
 public class FileSystemStatusReporter extends AbstractTikaExtension implements PipesReporter {
 
     public static FileSystemStatusReporter build(ExtensionConfig pluginConfig) throws TikaConfigException, IOException {
-        FileSystemReporterConfig config = FileSystemReporterConfig.load(pluginConfig.jsonConfig());
+        FileSystemReporterConfig config = FileSystemReporterConfig.load(pluginConfig.json());
 
         FileSystemStatusReporter fileSystemStatusReporter = new FileSystemStatusReporter(pluginConfig, config);
         fileSystemStatusReporter.configure();

@@ -24,6 +24,6 @@
             <encodingDetector-exclude class="org.apache.tika.parser.html.HtmlEncodingDetector"/>
         </encodingDetector>
         <!-- One other detector, to check ordering -->
-        <encodingDetector class="org.apache.tika.detect.NonDetectingEncodingDetector"/>
+        <encodingDetector class="org.apache.tika.detect.OverrideEncodingDetector"/>
     </encodingDetectors>
 </properties>

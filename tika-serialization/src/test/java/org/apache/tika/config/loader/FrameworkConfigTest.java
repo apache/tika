@@ -64,7 +64,7 @@ public class FrameworkConfigTest {
         assertEquals(1, decoration.getFallbacks().size());
         assertEquals("backup-parser", decoration.getFallbacks().get(0));
 
-        assertFalse(config.getComponentConfigJson().contains("_decorate"),
+        assertFalse(config.getComponentConfigJson().json().contains("_decorate"),
                 "Component config should not contain _decorate");
     }
 
@@ -113,7 +113,7 @@ public class FrameworkConfigTest {
 
         FrameworkConfig config = FrameworkConfig.extract(node, MAPPER);
 
-        String componentJson = config.getComponentConfigJson();
+        String componentJson = config.getComponentConfigJson().json();
 
         // Verify framework fields are removed
         assertFalse(componentJson.contains("_decorate"), "Should not contain _decorate");

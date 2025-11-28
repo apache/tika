@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import java.io.File;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashSet;
@@ -132,6 +131,8 @@ public class TesseractOCRParserTest extends TikaTest {
         TesseractOCRConfig config = new TesseractOCRConfig();
         config.setApplyRotation(true);
         config.setResize(100);
+        config.setEnableImagePreprocessing(true);
+
         ParseContext parseContext = new ParseContext();
         parseContext.set(TesseractOCRConfig.class, config);
         Metadata metadata = getMetadata(MediaType.image("png"));
@@ -305,40 +306,6 @@ public class TesseractOCRParserTest extends TikaTest {
             System.out.println("We don't have dedicated image parsers " +
                     "for these formats, which are handled by tesseract: " + mt);
         }
-    }
-
-    @Test
-    public void testTrailingSlashInPathBehavior() {
-
-        TesseractOCRParser parser = new TesseractOCRParser();
-        parser.setTesseractPath("blah");
-        assertEquals("blah" + File.separator, parser.getTesseractPath());
-        parser.setTesseractPath("blah" + File.separator);
-        assertEquals("blah" + File.separator, parser.getTesseractPath());
-        parser.setTesseractPath("");
-        assertEquals("", parser.getTesseractPath());
-
-        parser.setTessdataPath("blahdata");
-        assertEquals("blahdata" + File.separator, parser.getTessdataPath());
-        parser.setTessdataPath("blahdata" + File.separator);
-        assertEquals("blahdata" + File.separator, parser.getTessdataPath());
-        parser.setTessdataPath("");
-        assertEquals("", parser.getTessdataPath());
-
-        parser.setImageMagickPath("imagemagickpath");
-        assertEquals("imagemagickpath" + File.separator, parser.getImageMagickPath());
-        parser.setImageMagickPath("imagemagickpath" + File.separator);
-        assertEquals("imagemagickpath" + File.separator, parser.getImageMagickPath());
-        parser.setImageMagickPath("");
-        assertEquals("", parser.getImageMagickPath());
-    }
-
-    @Test
-    public void testBogusPathCheck() {
-        //allow path that doesn't actually exist
-        TesseractOCRParser parser = new TesseractOCRParser();
-        parser.setTesseractPath("blahdeblahblah");
-        assertEquals("blahdeblahblah" + File.separator, parser.getTesseractPath());
     }
 
     @Test

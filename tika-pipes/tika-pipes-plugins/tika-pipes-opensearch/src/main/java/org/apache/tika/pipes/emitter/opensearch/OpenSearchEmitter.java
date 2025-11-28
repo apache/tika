@@ -43,7 +43,7 @@ public class OpenSearchEmitter extends AbstractEmitter {
     private static final Logger LOG = LoggerFactory.getLogger(OpenSearchEmitter.class);
 
     public static OpenSearchEmitter build(ExtensionConfig pluginConfig) throws TikaConfigException, IOException {
-        OpenSearchEmitterConfig config = OpenSearchEmitterConfig.load(pluginConfig.jsonConfig());
+        OpenSearchEmitterConfig config = OpenSearchEmitterConfig.load(pluginConfig.json());
         return new OpenSearchEmitter(pluginConfig, config);
     }
 

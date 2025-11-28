@@ -1,0 +1,15 @@
+{
+  "parsers": [],
+  "encoding-detectors": [
+    {
+      "default-encoding-detector": {
+        "exclude": [
+          "html-encoding-detector"
+        ]
+      }
+    },
+    {
+      "override-encoding-detector": {}
+    }
+  ]
+}

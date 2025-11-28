@@ -1,0 +1,38 @@
+{
+  "server": {
+    "port": 9999,
+    "taskTimeoutMillis": 54321,
+    "taskPulseMillis": 100,
+    "minimumTimeoutMillis": 10,
+    "enableUnsecureFeatures": true,
+    "endpoints": [
+      "rmeta"
+    ],
+    "tlsConfig": {
+      "active": true,
+      "keyStoreType": "myType",
+      "keyStorePassword": "pass",
+      "keyStoreFile": "/something/or/other",
+      "trustStoreType": "myType2",
+      "trustStorePassword": "pass2",
+      "trustStoreFile": "/something/or/other2"
+    }
+  },
+  "fetchers": {
+    "file-system-fetcher": {
+      "fsf": {
+        "basePath": "BASE_PATH",
+        "extractFileSystemMetadata": false
+      }
+    }
+  },
+  "emitters": {
+    "file-system-emitter": {
+      "fse-json": {
+        "basePath": "BASE_PATH",
+        "onExists": "EXCEPTION"
+      }
+    }
+  },
+  "plugin-roots": "target/plugins"
+}

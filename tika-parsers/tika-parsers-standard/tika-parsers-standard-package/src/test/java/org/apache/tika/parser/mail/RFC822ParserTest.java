@@ -27,11 +27,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
@@ -41,7 +40,6 @@ public class RFC822ParserTest extends TikaTest {
 
     //legacy RFC822 behavior...extract every alternative part
     private static Parser EXTRACT_ALL_ALTERNATIVES_PARSER;
-    private static TikaConfig TIKA_CONFIG;
 
     private static InputStream getStream(String name) {
         InputStream stream =
@@ -52,12 +50,8 @@ public class RFC822ParserTest extends TikaTest {
 
     @BeforeAll
     public static void setUp() throws Exception {
-
-        try (InputStream is = getStream(
-                "org/apache/tika/parser/mail/tika-config-extract-all-alternatives.xml")) {
-            TIKA_CONFIG = new TikaConfig(is);
-        }
-        EXTRACT_ALL_ALTERNATIVES_PARSER = new AutoDetectParser(TIKA_CONFIG);
+        EXTRACT_ALL_ALTERNATIVES_PARSER = TikaLoaderHelper
+                .getLoader("tika-config-rfc822-extract-alternatives.json").loadAutoDetectParser();
     }
 
     /**

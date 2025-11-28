@@ -25,6 +25,6 @@
                 <param name="stripMarkup" type="bool">true</param>
             </params>
         </encodingDetector>
-        <encodingDetector class="org.apache.tika.detect.NonDetectingEncodingDetector"/>
+        <encodingDetector class="org.apache.tika.detect.OverrideEncodingDetector"/>
     </encodingDetectors>
 </properties>

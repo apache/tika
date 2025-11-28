@@ -30,7 +30,6 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.Tika;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -40,14 +39,11 @@ import org.apache.tika.metadata.TikaCoreProperties;
  */
 public class TestParsers extends MultiThreadedTikaTest {
 
-    private static TikaConfig TIKA_CONFIG;
-
     private static Tika TIKA;
 
     @BeforeAll
     public static void setUp() throws Exception {
-        TIKA_CONFIG = TikaConfig.getDefaultConfig();
-        TIKA = new Tika(TIKA_CONFIG);
+        TIKA = new Tika();
     }
 
     @Test

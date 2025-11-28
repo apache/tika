@@ -18,18 +18,20 @@ package org.apache.tika.config.loader;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.apache.tika.detect.CompositeDetector;
-import org.apache.tika.detect.CompositeEncodingDetector;
+import org.apache.tika.config.GlobalSettings;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
+import org.apache.tika.metadata.filter.NoOpFilter;
 import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.AutoDetectParserConfig;
 import org.apache.tika.parser.CompositeParser;
@@ -76,22 +78,36 @@ public class TikaLoader {
     private final ObjectMapper objectMapper;
 
     // Cached instances (lazy loaded)
-    private static MediaTypeRegistry mediaTypeRegistry;
+    private static MimeTypes mimeTypes;
+    private static TikaLoader defaultLoader;
     private Parser parsers;
+    private Parser autoDetectParser;
     private Detector detectors;
     private EncodingDetector encodingDetectors;
     private MetadataFilter metadataFilter;
     private Renderer renderers;
     private ConfigLoader configLoader;
+    private GlobalSettings globalSettings;
 
     private TikaLoader(TikaJsonConfig config, ClassLoader classLoader) {
         this.config = config;
         this.classLoader = classLoader;
-        this.objectMapper = TikaJsonConfig.getObjectMapper();
+        this.objectMapper = PolymorphicObjectMapperFactory.getMapper();
+    }
+
+    /**
+     * Initializes the loader by loading global settings.
+     * Should be called by all factory methods after construction.
+     *
+     * @throws TikaConfigException if loading global settings fails
+     */
+    private void init() throws TikaConfigException {
+        loadGlobalSettings();
     }
 
     /**
      * Loads a Tika configuration from a file.
+     * Global settings are automatically loaded and applied during initialization.
      *
      * @param configPath the path to the JSON configuration file
      * @return the Tika loader
@@ -103,6 +119,7 @@ public class TikaLoader {
 
     /**
      * Loads a Tika configuration from a file with a specific class loader.
+     * Global settings are automatically loaded and applied during initialization.
      *
      * @param configPath the path to the JSON configuration file
      * @param classLoader the class loader to use for loading components
@@ -112,7 +129,42 @@ public class TikaLoader {
     public static TikaLoader load(Path configPath, ClassLoader classLoader)
             throws TikaConfigException {
         TikaJsonConfig config = TikaJsonConfig.load(configPath);
-        return new TikaLoader(config, classLoader);
+        TikaLoader loader = new TikaLoader(config, classLoader);
+        loader.init();
+        return loader;
+    }
+
+    /**
+     * Creates a default Tika loader with no configuration file.
+     * All components (parsers, detectors, etc.) will be loaded from SPI.
+     * Returns a cached instance if already created.
+     *
+     * @return the Tika loader
+     */
+    public static synchronized TikaLoader loadDefault() {
+        if (defaultLoader == null) {
+            defaultLoader = loadDefault(Thread.currentThread().getContextClassLoader());
+        }
+        return defaultLoader;
+    }
+
+    /**
+     * Creates a default Tika loader with no configuration file and a specific class loader.
+     * All components (parsers, detectors, etc.) will be loaded from SPI.
+     *
+     * @param classLoader the class loader to use for loading components
+     * @return the Tika loader
+     */
+    public static TikaLoader loadDefault(ClassLoader classLoader) {
+        TikaJsonConfig config = TikaJsonConfig.loadDefault();
+        TikaLoader loader = new TikaLoader(config, classLoader);
+        try {
+            loader.init();
+        } catch (TikaConfigException e) {
+            // Default config should never throw, but wrap in RuntimeException if it does
+            throw new RuntimeException("Failed to initialize default TikaLoader", e);
+        }
+        return loader;
     }
 
     /**
@@ -131,7 +183,10 @@ public class TikaLoader {
             // Load EncodingDetectors first - some parsers need them during construction
             EncodingDetector encodingDetector = loadEncodingDetectors();
 
-            ParserLoader loader = new ParserLoader(classLoader, objectMapper, encodingDetector);
+            // Load Renderers - some parsers need them during construction
+            Renderer renderer = loadRenderers();
+
+            ParserLoader loader = new ParserLoader(classLoader, objectMapper, encodingDetector, renderer);
             parsers = loader.load(config);
         }
         return parsers;
@@ -139,8 +194,11 @@ public class TikaLoader {
 
     /**
      * Loads and returns all detectors.
-     * If "detectors" section exists in config, uses only those listed (no SPI fallback).
-     * If section missing, uses SPI to discover detectors.
+     * Supports "default-detector" marker for SPI fallback with optional exclusions.
+     * If "detectors" section exists:
+     *   - If "default-detector" is present: loads configured detectors + SPI detectors (minus exclusions)
+     *   - If "default-detector" is absent: loads only configured detectors (no SPI)
+     * If "detectors" section missing: uses SPI to discover all detectors.
      * Results are cached - subsequent calls return the same instance.
      *
      * @return the detector (typically a CompositeDetector internally)
@@ -148,18 +206,19 @@ public class TikaLoader {
      */
     public synchronized Detector loadDetectors() throws TikaConfigException {
         if (detectors == null) {
-            CompositeComponentLoader<Detector> loader = new CompositeComponentLoader<>(
-                    Detector.class, "detectors", "detectors", classLoader, objectMapper);
-            List<Detector> detectorList = loader.loadFromArray(config);
-            detectors = new CompositeDetector(getMediaTypeRegistry(), detectorList);
+            DetectorLoader loader = new DetectorLoader(classLoader, objectMapper);
+            detectors = loader.load(config);
         }
         return detectors;
     }
 
     /**
      * Loads and returns all encoding detectors.
-     * If "encodingDetectors" section exists in config, uses only those listed (no SPI fallback).
-     * If section missing, uses SPI to discover encoding detectors.
+     * Supports "default-encoding-detector" marker for SPI fallback with optional exclusions.
+     * If "encoding-detectors" section exists:
+     *   - If "default-encoding-detector" is present: loads configured detectors + SPI detectors (minus exclusions)
+     *   - If "default-encoding-detector" is absent: loads only configured detectors (no SPI)
+     * If "encoding-detectors" section missing: uses SPI to discover encoding detectors.
      * Results are cached - subsequent calls return the same instance.
      *
      * @return the encoding detector (typically a CompositeEncodingDetector internally)
@@ -167,19 +226,17 @@ public class TikaLoader {
      */
     public synchronized EncodingDetector loadEncodingDetectors() throws TikaConfigException {
         if (encodingDetectors == null) {
-            CompositeComponentLoader<EncodingDetector> loader = new CompositeComponentLoader<>(
-                    EncodingDetector.class, "encodingDetectors", "encoding-detectors",
-                    classLoader, objectMapper);
-            List<EncodingDetector> detectorList = loader.loadFromArray(config);
-            encodingDetectors = new CompositeEncodingDetector(detectorList);
+            EncodingDetectorLoader loader = new EncodingDetectorLoader(classLoader, objectMapper);
+            encodingDetectors = loader.load(config);
         }
         return encodingDetectors;
     }
 
     /**
      * Loads and returns all metadata filters.
-     * If "metadataFilters" section exists in config, uses only those listed (no SPI fallback).
-     * If section missing, uses SPI to discover metadata filters.
+     * Metadata filters are opt-in only - they are NOT loaded from SPI by default.
+     * If "metadata-filters" section exists in config, uses only those listed.
+     * If section missing, returns an empty filter (no SPI fallback).
      * Results are cached - subsequent calls return the same instance.
      *
      * @return the metadata filter (typically a CompositeMetadataFilter internally)
@@ -187,11 +244,24 @@ public class TikaLoader {
      */
     public synchronized MetadataFilter loadMetadataFilters() throws TikaConfigException {
         if (metadataFilter == null) {
-            CompositeComponentLoader<MetadataFilter> loader = new CompositeComponentLoader<>(
-                    MetadataFilter.class, "metadataFilters", "metadata-filters",
-                    classLoader, objectMapper);
-            List<MetadataFilter> filterList = loader.loadFromArray(config);
-            metadataFilter = new CompositeMetadataFilter(filterList);
+            List<MetadataFilter> filterList;
+
+            // Check if metadata-filters section exists in config
+            if (config.hasComponentSection("metadata-filters")) {
+                // Load explicitly configured filters (no SPI fallback)
+                CompositeComponentLoader<MetadataFilter> loader = new CompositeComponentLoader<>(
+                        MetadataFilter.class, "metadata-filters", "metadata-filters",
+                        classLoader, objectMapper);
+                filterList = loader.loadFromArray(config);
+            } else {
+                // No config section - metadata filters are opt-in only, don't load from SPI
+                filterList = Collections.emptyList();
+            }
+            if (filterList.isEmpty()) {
+                metadataFilter = NoOpFilter.NOOP_FILTER;
+            } else {
+                metadataFilter = new CompositeMetadataFilter(filterList);
+            }
         }
         return metadataFilter;
     }
@@ -215,12 +285,23 @@ public class TikaLoader {
         return renderers;
     }
 
-    public Parser loadAutoDetectParser() throws TikaConfigException, IOException {
-        AutoDetectParserConfig adpConfig = configs().load(AutoDetectParserConfig.class);
-        if (adpConfig == null) {
-            adpConfig = new AutoDetectParserConfig();
+    /**
+     * Loads and returns an AutoDetectParser configured with this loader's parsers and detectors.
+     * Results are cached - subsequent calls return the same instance.
+     *
+     * @return the auto-detect parser
+     * @throws TikaConfigException if loading fails
+     * @throws IOException if loading AutoDetectParserConfig fails
+     */
+    public synchronized Parser loadAutoDetectParser() throws TikaConfigException, IOException {
+        if (autoDetectParser == null) {
+            AutoDetectParserConfig adpConfig = configs().load(AutoDetectParserConfig.class);
+            if (adpConfig == null) {
+                adpConfig = new AutoDetectParserConfig();
+            }
+            autoDetectParser = AutoDetectParser.build((CompositeParser)loadParsers(), loadDetectors(), adpConfig);
         }
-        return AutoDetectParser.build((CompositeParser)loadParsers(), loadDetectors(), adpConfig);
+        return autoDetectParser;
     }
 
     /**
@@ -271,9 +352,78 @@ public class TikaLoader {
      * @return the media type registry
      */
     public static synchronized MediaTypeRegistry getMediaTypeRegistry() {
-        if (mediaTypeRegistry == null) {
-            mediaTypeRegistry = MediaTypeRegistry.getDefaultRegistry();
+        return getMimeTypes().getMediaTypeRegistry();
+    }
+
+    public static synchronized MimeTypes getMimeTypes() {
+        if (mimeTypes == null) {
+            mimeTypes = MimeTypes.getDefaultMimeTypes();
         }
-        return mediaTypeRegistry;
+        return mimeTypes;
+    }
+
+    /**
+     * Loads global configuration settings from the JSON config.
+     * These settings are applied to Tika's static configuration when loaded.
+     *
+     * <p>Settings include:
+     * <ul>
+     *   <li>maxJsonStringFieldLength - Maximum JSON string field length (static, affects all JSON parsing)</li>
+     *   <li>service-loader.initializableProblemHandler - How to handle initialization problems</li>
+     *   <li>xml-reader-utils - XML parser security settings</li>
+     * </ul>
+     *
+     * <p>Example JSON:
+     * <pre>
+     * {
+     *   "maxJsonStringFieldLength": 50000000,
+     *   "service-loader": {
+     *     "initializableProblemHandler": "ignore"
+     *   },
+     *   "xml-reader-utils": {
+     *     "maxEntityExpansions": 1000,
+     *     "maxNumReuses": 100,
+     *     "poolSize": 10
+     *   }
+     * }
+     * </pre>
+     *
+     * @return the global settings, or an empty object if no settings are configured
+     * @throws TikaConfigException if loading fails
+     */
+    public synchronized GlobalSettings loadGlobalSettings() throws TikaConfigException {
+        if (globalSettings == null) {
+            globalSettings = new GlobalSettings();
+
+            // Load maxJsonStringFieldLength from top level and set it statically
+            if (config.getRootNode().has("maxJsonStringFieldLength")) {
+                GlobalSettings.setMaxJsonStringFieldLength(
+                        config.getRootNode().get("maxJsonStringFieldLength").asInt());
+            }
+
+            // Load service-loader config
+            GlobalSettings.ServiceLoaderConfig serviceLoaderConfig =
+                    configs().load("service-loader", GlobalSettings.ServiceLoaderConfig.class);
+            if (serviceLoaderConfig != null) {
+                globalSettings.setServiceLoader(serviceLoaderConfig);
+            }
+
+            // Load xml-reader-utils config
+            GlobalSettings.XmlReaderUtilsConfig xmlReaderUtilsConfig =
+                    configs().load("xml-reader-utils", GlobalSettings.XmlReaderUtilsConfig.class);
+            if (xmlReaderUtilsConfig != null) {
+                globalSettings.setXmlReaderUtils(xmlReaderUtilsConfig);
+            }
+        }
+        return globalSettings;
+    }
+
+    /**
+     * Gets the global settings if they have been loaded.
+     *
+     * @return the global settings, or null if not yet loaded
+     */
+    public GlobalSettings getGlobalSettings() {
+        return globalSettings;
     }
 }

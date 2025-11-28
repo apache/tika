@@ -1,0 +1,57 @@
+{
+  "fetchers": {
+    "file-system-fetcher": {
+      "fsf": {
+        "basePath": "FETCHER_BASE_PATH",
+        "extractFileSystemMetadata": false
+      }
+    }
+  },
+  "emitters": {
+    "file-system-emitter": {
+      "fse-json": {
+        "basePath": "JSON_EMITTER_BASE_PATH",
+        "fileExtension": "json",
+        "onExists": "EXCEPTION"
+      },
+      "fse-bytes": {
+        "basePath": "BYTES_EMITTER_BASE_PATH",
+        "fileExtension": "",
+        "onExists": "EXCEPTION"
+      }
+    }
+  },
+  "server": {
+    "port": 9999,
+    "taskTimeoutMillis": TIMEOUT_MILLIS,
+    "taskPulseMillis": 100,
+    "enableUnsecureFeatures": true,
+    "endpoints": [
+      "rmeta",
+      "status",
+      "async",
+      "pipes"
+    ]
+  },
+  "async": {
+    "tikaConfig": "TIKA_CONFIG",
+    "numClients": 2,
+    "timeoutMillis": TIMEOUT_MILLIS,
+    "emitIntermediateResults": false,
+    "forkedJvmArgs": [
+      "-Xmx512m"
+    ],
+    "maxForEmitBatchBytes": 1000000
+  },
+  "auto-detect-parser-config": {
+    "spoolToDisk": 1000000,
+    "outputThreshold": 1000000,
+    "digesterFactory": {
+      "@class": "org.apache.tika.parser.digestutils.CommonsDigesterFactory",
+      "markLimit": 100000,
+      "algorithmString": "md5,sha1:32"
+    },
+    "throwOnZeroBytes": false
+  },
+  "plugin-roots": "PLUGINS_PATHS"
+}

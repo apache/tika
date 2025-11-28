@@ -1,0 +1,12 @@
+{
+  "parsers": [
+    {
+      "default-parser":{}
+    },
+    {
+      "compressor-parser": {
+        "decompressConcatenated": false
+      }
+    }
+  ]
+}

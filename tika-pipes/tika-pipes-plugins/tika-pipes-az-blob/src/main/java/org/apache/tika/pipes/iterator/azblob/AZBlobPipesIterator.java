@@ -63,7 +63,7 @@ public class AZBlobPipesIterator extends PipesIteratorBase {
     }
 
     private void configure() throws IOException, TikaConfigException {
-        config = AZBlobPipesIteratorConfig.load(pluginConfig.jsonConfig());
+        config = AZBlobPipesIteratorConfig.load(pluginConfig.json());
         checkConfig(config);
 
         //TODO -- allow authentication via other methods

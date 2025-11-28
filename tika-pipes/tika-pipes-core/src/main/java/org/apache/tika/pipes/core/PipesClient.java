@@ -74,7 +74,7 @@ public class PipesClient implements Closeable {
     //there are a number of assumptions throughout that PipesClient is run
     //single threaded
     private final Object[] executorServiceLock = new Object[0];
-    private final PipesConfigBase pipesConfig;
+    private final PipesConfig pipesConfig;
     private final int pipesClientId;
     private volatile boolean closed = false;
     private ExecutorService executorService = Executors.newFixedThreadPool(1);
@@ -83,7 +83,7 @@ public class PipesClient implements Closeable {
     private DataInputStream input;
     private int filesProcessed = 0;
 
-    public PipesClient(PipesConfigBase pipesConfig) {
+    public PipesClient(PipesConfig pipesConfig) {
         this.pipesConfig = pipesConfig;
         this.pipesClientId = CLIENT_COUNTER.getAndIncrement();
     }
@@ -571,8 +571,7 @@ public class PipesClient implements Closeable {
         commandLine.addAll(configArgs);
         commandLine.add("org.apache.tika.pipes.core.PipesServer");
         commandLine.add(ProcessUtils.escapeCommandLine(
-                pipesConfig.getTikaConfig().toAbsolutePath().toString()));
-        commandLine.add(ProcessUtils.escapeCommandLine(pipesConfig.getPipesPluginsConfig().toAbsolutePath().toString()));
+                pipesConfig.getTikaConfigPath().toAbsolutePath().toString()));
         commandLine.add(Long.toString(pipesConfig.getMaxForEmitBatchBytes()));
         commandLine.add(Long.toString(pipesConfig.getTimeoutMillis()));
         commandLine.add(Long.toString(pipesConfig.getShutdownClientAfterMillis()));

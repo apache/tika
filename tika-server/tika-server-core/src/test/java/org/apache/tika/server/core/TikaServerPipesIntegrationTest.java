@@ -34,7 +34,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.core.Response;
-import org.apache.commons.io.FileUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -55,7 +54,6 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
     private static Path TEMP_OUTPUT_DIR;
     private static Path TIKA_CONFIG;
     private static Path TIKA_CONFIG_TIMEOUT;
-    private static Path TIKA_PIPES_CONFIG;
     private static String[] FILES = new String[]{"hello_world.xml", "heavy_hang_30000.xml", "fake_oom.xml", "system_exit.xml", "null_pointer.xml"};
 
     @BeforeAll
@@ -68,26 +66,10 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
         for (String mockFile : FILES) {
             Files.copy(TikaPipesTest.class.getResourceAsStream("/test-documents/mock/" + mockFile), inputDir.resolve(mockFile));
         }
-        TIKA_CONFIG = TEMP_WORKING_DIR.resolve("tika-config.xml");
-        TIKA_CONFIG_TIMEOUT = TEMP_WORKING_DIR.resolve("tika-config-timeout.xml");
-        TIKA_PIPES_CONFIG = TEMP_OUTPUT_DIR.resolve("tika-pipes.json");
-        //TODO -- clean this up so that port is sufficient and we don't need portString
-        String xml1 =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" + "<server>" +
-                        "<enableUnsecureFeatures>true</enableUnsecureFeatures>" +
-                        "<port>9999</port>" + "<endpoints>" + "<endpoint>pipes</endpoint>" + "<endpoint>status</endpoint>" + "</endpoints>";
-        String xml2 = "</server>" + "<pipes><tikaConfig>" + ProcessUtils.escapeCommandLine(TIKA_CONFIG
-                .toAbsolutePath()
-                .toString()) + "</tikaConfig><numClients>10</numClients><forkedJvmArgs><arg>-Xmx256m" + "</arg>" + //TODO: need to add logging config here
-                "</forkedJvmArgs><timeoutMillis>5000</timeoutMillis>" + "</pipes>" + "</properties>";
-
-        String tikaConfigXML = xml1 + xml2;
-
-        FileUtils.write(TIKA_CONFIG.toFile(), tikaConfigXML, UTF_8);
-
-        String tikaConfigTimeoutXML = xml1 + "<taskPulseMillis>100</taskPulseMillis>" + "<taskTimeoutMillis>10000</taskTimeoutMillis>" + xml2;
-        FileUtils.write(TIKA_CONFIG_TIMEOUT.toFile(), tikaConfigTimeoutXML, UTF_8);
-        CXFTestBase.createPluginsConfig(TIKA_PIPES_CONFIG, inputDir, TEMP_OUTPUT_DIR, null);
+        TIKA_CONFIG = TEMP_WORKING_DIR.resolve("tika-config.json");
+        TIKA_CONFIG_TIMEOUT = TEMP_WORKING_DIR.resolve("tika-config-timeout.json");
+        CXFTestBase.createPluginsConfig(TIKA_CONFIG, inputDir, TEMP_OUTPUT_DIR, null, 5000L);
+        CXFTestBase.createPluginsConfig(TIKA_CONFIG_TIMEOUT, inputDir, TEMP_OUTPUT_DIR, null, 500L);
 
     }
 
@@ -112,7 +94,6 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
     @Test
     public void testBasic() throws Exception {
         startProcess(new String[]{
-                "-a", ProcessUtils.escapeCommandLine(TIKA_PIPES_CONFIG.toAbsolutePath().toString()),
                 "-config", ProcessUtils.escapeCommandLine(TIKA_CONFIG
                 .toAbsolutePath()
                 .toString())});
@@ -127,7 +108,6 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
     public void testNPEDefault() throws Exception {
 
         startProcess(new String[]{
-                "-a", ProcessUtils.escapeCommandLine(TIKA_PIPES_CONFIG.toAbsolutePath().toString()),
                 "-config", ProcessUtils.escapeCommandLine(TIKA_CONFIG
                 .toAbsolutePath()
                 .toString())});
@@ -144,7 +124,6 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
     public void testNPESkip() throws Exception {
 
         startProcess(new String[]{
-                "-a", ProcessUtils.escapeCommandLine(TIKA_PIPES_CONFIG.toAbsolutePath().toString()),
                 "-config", ProcessUtils.escapeCommandLine(TIKA_CONFIG
                 .toAbsolutePath()
                 .toString())});
@@ -160,7 +139,6 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
     @Test
     public void testSystemExit() throws Exception {
         startProcess(new String[]{
-                "-a", ProcessUtils.escapeCommandLine(TIKA_PIPES_CONFIG.toAbsolutePath().toString()),
                 "-config", ProcessUtils.escapeCommandLine(TIKA_CONFIG
                 .toAbsolutePath()
                 .toString())});
@@ -178,7 +156,6 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
 
         try {
             startProcess(new String[]{
-                    "-a", ProcessUtils.escapeCommandLine(TIKA_PIPES_CONFIG.toAbsolutePath().toString()),
                     "-config", ProcessUtils.escapeCommandLine(TIKA_CONFIG
                     .toAbsolutePath()
                     .toString())});
@@ -199,7 +176,6 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
     @Test
     public void testTimeout() throws Exception {
         startProcess(new String[]{
-                "-a", ProcessUtils.escapeCommandLine(TIKA_PIPES_CONFIG.toAbsolutePath().toString()),
                 "-config", ProcessUtils.escapeCommandLine(TIKA_CONFIG_TIMEOUT
                 .toAbsolutePath()
                 .toString())});

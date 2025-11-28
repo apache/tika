@@ -35,7 +35,7 @@ import org.apache.tika.mime.MediaType;
  * This is designed to detect commonly gzipped file types such as warc.gz.
  * This is a first step.  We still need to implement tar.gz and svg.gz and ???
  */
-@TikaComponent
+@TikaComponent(name = "gzip-specialization-detector")
 public class GZipSpecializationDetector implements Detector {
     public static MediaType GZ = MediaType.application("gzip");
     public static MediaType WARC_GZ = MediaType.application("warc+gz");

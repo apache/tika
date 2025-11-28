@@ -67,11 +67,11 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
     protected InputStream getTikaConfigInputStream() throws IOException {
         return this
                 .getClass()
-                .getResourceAsStream("/config/tika-config-unpacker.xml");
+                .getResourceAsStream("/configs/tika-config-unpacker.json");
     }
 
     //Test that the PDFParser's renderer can be configured at parse time
-    //when specified in tika-config.xml
+    //when specified in tika-config.json
     @Test
     public void testPDFPerPageRenderColor() throws Exception {
 

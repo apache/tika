@@ -60,7 +60,9 @@ import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Field;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
@@ -85,6 +87,13 @@ public class CompressorParser implements Parser {
      */
     private static final long serialVersionUID = 2793565792967222459L;
 
+    /**
+     * Configuration class for JSON deserialization.
+     */
+    public static class Config {
+        public int memoryLimitInKb = 100000;
+        public boolean decompressConcatenated = false;
+    }
 
     private static Set<MediaType> SUPPORTED_TYPES;
     private static Map<String, String> MIMES_TO_NAME;
@@ -130,6 +139,29 @@ public class CompressorParser implements Parser {
 
 
     private int memoryLimitInKb = 100000;//100MB
+
+    public CompressorParser() {
+    }
+
+    /**
+     * Constructor with explicit Config object.
+     *
+     * @param config the configuration
+     */
+    public CompressorParser(Config config) {
+        this.memoryLimitInKb = config.memoryLimitInKb;
+        this.decompressConcatenated = config.decompressConcatenated;
+    }
+
+    /**
+     * Constructor for JSON configuration.
+     * Requires Jackson on the classpath.
+     *
+     * @param jsonConfig JSON configuration
+     */
+    public CompressorParser(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, Config.class));
+    }
 
     /**
      * @param stream stream

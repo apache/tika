@@ -38,6 +38,7 @@ import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.language.detect.LanguageHandler;
 import org.apache.tika.metadata.Metadata;
@@ -129,7 +130,8 @@ public class MetadataResource {
                 .build();
     }
 
-    protected Metadata parseMetadata(InputStream is, Metadata metadata, MultivaluedMap<String, String> httpHeaders, UriInfo info) throws IOException {
+    protected Metadata parseMetadata(InputStream is, Metadata metadata, MultivaluedMap<String, String> httpHeaders, UriInfo info)
+            throws IOException, TikaConfigException {
         final ParseContext context = new ParseContext();
         Parser parser = TikaResource.createParser();
         fillMetadata(parser, metadata, httpHeaders);

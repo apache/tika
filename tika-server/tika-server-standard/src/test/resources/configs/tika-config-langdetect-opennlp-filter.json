@@ -1,0 +1,27 @@
+{
+  "parsers": [
+    {
+      "default-parser": {}
+    },
+    {
+      "pdf-parser": {
+        "sortByPosition": true
+      }
+    }
+  ],
+  "metadata-filters": [
+    {
+      "open-nlp-metadata-filter": {}
+    }
+  ],
+  "auto-detect-parser-config": {
+    "spoolToDisk": 1000000,
+    "outputThreshold": 1000000,
+    "digesterFactory": {
+      "@class": "org.apache.tika.parser.digestutils.CommonsDigesterFactory",
+      "markLimit": 100000,
+      "algorithmString": "md5,sha1:32"
+    },
+    "throwOnZeroBytes": false
+  }
+}

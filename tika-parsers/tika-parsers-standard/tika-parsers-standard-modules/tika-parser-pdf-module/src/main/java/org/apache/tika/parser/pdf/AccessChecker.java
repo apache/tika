@@ -31,8 +31,8 @@ public class AccessChecker implements Serializable {
 
     private static final long serialVersionUID = 6492570218190936986L;
 
-    private final boolean needToCheck;
-    private final boolean allowExtractionForAccessibility;
+    private boolean needToCheck;
+    private boolean allowExtractionForAccessibility;
 
     /**
      * This constructs an {@link AccessChecker} that
@@ -58,8 +58,20 @@ public class AccessChecker implements Serializable {
         this.allowExtractionForAccessibility = allowExtractionForAccessibility;
     }
 
+    public boolean isNeedToCheck() {
+        return needToCheck;
+    }
+
+    public void setNeedToCheck(boolean needToCheck) {
+        this.needToCheck = needToCheck;
+    }
+
     public boolean isAllowExtractionForAccessibility() {
         return allowExtractionForAccessibility;
+    }
+
+    public void setAllowExtractionForAccessibility(boolean allowExtractionForAccessibility) {
+        this.allowExtractionForAccessibility = allowExtractionForAccessibility;
     }
 
     /**

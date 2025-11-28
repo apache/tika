@@ -29,6 +29,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -42,6 +43,7 @@ import org.apache.tika.mime.MediaType;
  *
  * @since Apache Tika 0.3
  */
+@TikaComponent(spi = false)
 public class MagicDetector implements Detector {
 
     /**
