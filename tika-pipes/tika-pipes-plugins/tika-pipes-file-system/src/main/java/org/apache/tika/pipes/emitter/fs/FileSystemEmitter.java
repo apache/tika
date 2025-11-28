@@ -159,6 +159,11 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
             Optional<String> configJson = configContainer.get(getExtensionConfig().id());
             if (configJson.isPresent()) {
                 try {
+                    config = FileSystemEmitterConfig.load(configJson.get());
+                } catch (TikaConfigException e) {
+                    throw new IOException("Failed to load config", e);
+                }
+                checkConfig(config);
                     // Check if basePath is present in runtime config - this is not allowed for security
                     if (configJson.get().contains("\"basePath\"")) {
                         throw new TikaConfigException(
