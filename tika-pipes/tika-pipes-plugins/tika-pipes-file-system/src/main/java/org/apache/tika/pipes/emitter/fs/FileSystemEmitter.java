@@ -31,13 +31,13 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.emitter.AbstractStreamEmitter;
 import org.apache.tika.plugins.ExtensionConfig;
-import org.apache.tika.plugins.ExtensionConfigs;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.utils.StringUtils;
 
@@ -154,12 +154,12 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
 
     private FileSystemEmitterConfig getConfig(ParseContext parseContext) throws IOException {
         FileSystemEmitterConfig config = fileSystemEmitterConfig;
-        ExtensionConfigs extensionConfigs = parseContext.get(ExtensionConfigs.class);
-        if (extensionConfigs != null) {
-            Optional<ExtensionConfig> pluginConfigOpt = extensionConfigs.getById(getExtensionConfig().id());
-            if (pluginConfigOpt.isPresent()) {
+        ConfigContainer configContainer = parseContext.get(ConfigContainer.class);
+        if (configContainer != null) {
+            Optional<String> configJson = configContainer.get(getExtensionConfig().id());
+            if (configJson.isPresent()) {
                 try {
-                    config = FileSystemEmitterConfig.load(pluginConfigOpt.get().jsonConfig());
+                    config = FileSystemEmitterConfig.load(configJson.get());
                 } catch (TikaConfigException e) {
                     throw new IOException("Failed to load config", e);
                 }

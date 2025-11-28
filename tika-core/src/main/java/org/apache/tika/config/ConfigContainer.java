@@ -27,6 +27,10 @@ import java.util.Set;
  * intervenes between the caller and the processor as in tika-pipes, and elsewhere.
  *
  * The goal of this is to delegate deserialization to the consumers/receivers.
+ * <p>
+ * Stores configuration as named JSON strings, allowing parsers, fetchers, emitters,
+ * and other components to look up their config by friendly name (e.g., "pdf-parser",
+ * "fs-fetcher-1") and deserialize it on-demand.
  */
 public class ConfigContainer {
 
@@ -34,12 +38,21 @@ public class ConfigContainer {
 
     public <T> void set(Class<T> key, String value) {
         if (value != null) {
-            configs.put(key.getName(), value);
+            String keyName = key.getName();
+            if (configs.containsKey(keyName)) {
+                throw new IllegalArgumentException(
+                    "Config key '" + keyName + "' already exists. Cannot overwrite existing configuration.");
+            }
+            configs.put(keyName, value);
         }
     }
 
     public void set(String name, String value) {
         if (value != null) {
+            if (configs.containsKey(name)) {
+                throw new IllegalArgumentException(
+                    "Config key '" + name + "' already exists. Cannot overwrite existing configuration.");
+            }
             configs.put(name, value);
         }
     }
