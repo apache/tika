@@ -79,12 +79,16 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
 
     @Override
     public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException {
-        LOG.warn("about to emit: {}", emitKey);
         if (metadataList == null || metadataList.isEmpty()) {
             throw new IOException("metadata list must not be null or of size 0");
         }
 
-        FileSystemEmitterConfig config = getConfig(parseContext);
+        FileSystemEmitterConfig config = null;
+        try {
+            config = getConfig(parseContext);
+        } catch (TikaConfigException e) {
+            throw new IOException(e);
+        }
 
         Path output;
 
@@ -112,9 +116,13 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
 
     @Override
     public void emit(String emitKey, InputStream inputStream, Metadata userMetadata, ParseContext parseContext) throws IOException {
-        LOG.warn("about to stream emit: {}", emitKey);
 
-        FileSystemEmitterConfig config = getConfig(parseContext);
+        FileSystemEmitterConfig config = null;
+        try {
+            config = getConfig(parseContext);
+        } catch (TikaConfigException e) {
+            throw new IOException(e);
+        }
 
         Path output;
         if (config.basePath() != null) {
@@ -128,43 +136,45 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
         }
 
         if (!Files.isDirectory(output.getParent())) {
-            LOG.warn("creating parent directory: {}", output);
             Files.createDirectories(output.getParent());
         }
-        LOG.warn("on exists: {}", config.onExists());
         if (config.onExists() == FileSystemEmitterConfig.ON_EXISTS.REPLACE) {
-            LOG.warn("copying {}", output);
             Files.copy(inputStream, output, StandardCopyOption.REPLACE_EXISTING);
         } else if (config.onExists() == FileSystemEmitterConfig.ON_EXISTS.EXCEPTION) {
-            LOG.warn("copying 2 {}", output);
             Files.copy(inputStream, output);
         } else if (config.onExists() == FileSystemEmitterConfig.ON_EXISTS.SKIP) {
             if (!Files.isRegularFile(output)) {
                 try {
-                    LOG.warn("copying 3 {}", output);
-
                     Files.copy(inputStream, output);
                 } catch (FileAlreadyExistsException e) {
                     //swallow
-                    LOG.warn("file exists");
                 }
             }
         }
     }
 
-    private FileSystemEmitterConfig getConfig(ParseContext parseContext) throws IOException {
+    private FileSystemEmitterConfig getConfig(ParseContext parseContext) throws TikaConfigException, IOException {
         FileSystemEmitterConfig config = fileSystemEmitterConfig;
         ConfigContainer configContainer = parseContext.get(ConfigContainer.class);
         if (configContainer != null) {
             Optional<String> configJson = configContainer.get(getExtensionConfig().id());
             if (configJson.isPresent()) {
-                try {
-                    config = FileSystemEmitterConfig.load(configJson.get());
-                } catch (TikaConfigException e) {
-                    throw new IOException("Failed to load config", e);
+                // Check if basePath is present in runtime config - this is not allowed for security
+                if (configJson
+                        .get()
+                        .contains("\"basePath\"")) {
+                    throw new TikaConfigException("Cannot change 'basePath' at runtime for security reasons. " + "basePath can only be set during initialization.");
                 }
+
+                // Load runtime config (excludes basePath for security)
+                FileSystemEmitterRuntimeConfig runtimeConfig = FileSystemEmitterRuntimeConfig.load(configJson.get());
+
+                // Merge runtime config into default config while preserving basePath
+                config = new FileSystemEmitterConfig(fileSystemEmitterConfig.basePath(), runtimeConfig.getFileExtension(), runtimeConfig.getOnExists(),
+                        runtimeConfig.isPrettyPrint());
                 checkConfig(config);
             }
+
         }
         return config;
     }

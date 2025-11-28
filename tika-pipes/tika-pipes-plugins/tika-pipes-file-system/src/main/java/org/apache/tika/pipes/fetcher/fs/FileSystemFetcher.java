@@ -80,8 +80,25 @@ public class FileSystemFetcher extends AbstractTikaExtension implements Fetcher 
         if (configContainer != null) {
             Optional<String> configJson = configContainer.get(getExtensionConfig().id());
             if (configJson.isPresent()) {
-                config = FileSystemFetcherConfig.load(configJson.get());
-                checkConfig(config);
+                try {
+                    // Check if basePath is present in runtime config - this is not allowed for security
+                    if (configJson.get().contains("\"basePath\"")) {
+                        throw new TikaConfigException(
+                                "Cannot change 'basePath' at runtime for security reasons. " +
+                                        "basePath can only be set during initialization.");
+                    }
+
+                    // Load runtime config (excludes basePath for security)
+                    FileSystemFetcherRuntimeConfig runtimeConfig =
+                            FileSystemFetcherRuntimeConfig.load(configJson.get());
+
+                    // Merge runtime config into default config while preserving basePath
+                    config = new FileSystemFetcherConfig()
+                            .setBasePath(defaultFileSystemFetcherConfig.getBasePath())
+                            .setExtractFileSystemMetadata(runtimeConfig.isExtractFileSystemMetadata());
+                } catch (TikaConfigException e) {
+                    throw new IOException("Failed to load runtime config", e);
+                }
             }
         }
         Path p = null;
