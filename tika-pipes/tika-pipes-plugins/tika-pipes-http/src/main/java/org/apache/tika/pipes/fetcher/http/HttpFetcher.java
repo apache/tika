@@ -62,7 +62,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.client.HttpClientFactory;
-import org.apache.tika.config.ConfigContainer;
+import org.apache.tika.config.ComponentConfigs;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
@@ -160,8 +160,8 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
     JwtGenerator jwtGenerator;
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws IOException, TikaException {
-        HttpFetcherConfig additionalHttpFetcherConfig = getAdditionalHttpFetcherConfig(parseContext);
+    public InputStream fetch(String fetchKey, Metadata metadata, ComponentConfigs componentConfigs) throws IOException, TikaException {
+        HttpFetcherConfig additionalHttpFetcherConfig = getAdditionalHttpFetcherConfig(componentConfigs);
         HttpGet get = new HttpGet(fetchKey);
         RequestConfig requestConfig = RequestConfig
                 .custom()
@@ -203,23 +203,21 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
         }
     }
 
-    private HttpFetcherConfig getAdditionalHttpFetcherConfig(ParseContext parseContext) throws JsonProcessingException {
-        HttpFetcherConfig additionalHttpFetcherConfig = null;
-        ConfigContainer configContainer = parseContext.get(ConfigContainer.class);
-        if (configContainer == null) {
+    private HttpFetcherConfig getAdditionalHttpFetcherConfig(ComponentConfigs componentConfigs) throws JsonProcessingException {
+        if (componentConfigs == null) {
             return null;
         }
-        Optional<String> jsonOpt = configContainer.get(HttpFetcher.class);
+        Optional<String> jsonOpt = componentConfigs.get(getExtensionConfig().id());
         if (jsonOpt.isPresent()) {
-            additionalHttpFetcherConfig = OM.readValue(jsonOpt.get(), HttpFetcherConfig.class);
+            return OM.readValue(jsonOpt.get(), HttpFetcherConfig.class);
         }
-        return additionalHttpFetcherConfig;
+        return null;
     }
 
     @Override
     public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata,
-                             ParseContext parseContext) throws IOException, TikaException {
-        HttpFetcherConfig additionalHttpFetcherConfig = getAdditionalHttpFetcherConfig(parseContext);
+                             ComponentConfigs componentConfigs) throws IOException, TikaException {
+        HttpFetcherConfig additionalHttpFetcherConfig = getAdditionalHttpFetcherConfig(componentConfigs);
         HttpGet get = new HttpGet(fetchKey);
         putAdditionalHeadersOnRequest(additionalHttpFetcherConfig, get);
 

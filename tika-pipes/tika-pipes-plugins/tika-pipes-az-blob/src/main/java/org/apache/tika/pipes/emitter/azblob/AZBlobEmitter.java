@@ -35,10 +35,10 @@ import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.ComponentConfigs;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.emitter.AbstractStreamEmitter;
 import org.apache.tika.pipes.api.emitter.StreamEmitter;
 import org.apache.tika.plugins.ExtensionConfig;
@@ -95,7 +95,7 @@ public class AZBlobEmitter extends AbstractStreamEmitter implements StreamEmitte
     }
 
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException {
+    public void emit(String emitKey, List<Metadata> metadataList, ComponentConfigs componentConfigs) throws IOException {
         if (metadataList == null || metadataList.isEmpty()) {
             throw new IOException("metadata list must not be null or empty");
         }
@@ -104,11 +104,11 @@ public class AZBlobEmitter extends AbstractStreamEmitter implements StreamEmitte
             JsonMetadataList.toJson(metadataList, writer);
         }
         Metadata metadata = new Metadata();
-        emit(emitKey, TikaInputStream.get(bos.toByteArray(), metadata), metadata, parseContext);
+        emit(emitKey, TikaInputStream.get(bos.toByteArray(), metadata), metadata, componentConfigs);
     }
 
     @Override
-    public void emit(String emitKey, InputStream inputStream, Metadata userMetadata, ParseContext parseContext) throws IOException {
+    public void emit(String emitKey, InputStream inputStream, Metadata userMetadata, ComponentConfigs componentConfigs) throws IOException {
         String lengthString = userMetadata.get(Metadata.CONTENT_LENGTH);
         long length = -1;
         if (lengthString != null) {

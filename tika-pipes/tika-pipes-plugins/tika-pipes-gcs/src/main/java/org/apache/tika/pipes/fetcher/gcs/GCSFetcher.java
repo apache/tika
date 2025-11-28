@@ -30,12 +30,12 @@ import com.google.cloud.storage.StorageOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.ComponentConfigs;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.fetcher.gcs.config.GCSFetcherConfig;
 import org.apache.tika.plugins.AbstractTikaExtension;
@@ -75,7 +75,7 @@ public class GCSFetcher extends AbstractTikaExtension implements Fetcher {
     }
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext)
+    public InputStream fetch(String fetchKey, Metadata metadata, ComponentConfigs componentConfigs)
             throws TikaException, IOException {
 
         LOGGER.debug("about to fetch fetchkey={} from bucket ({})", fetchKey, config.getBucket());

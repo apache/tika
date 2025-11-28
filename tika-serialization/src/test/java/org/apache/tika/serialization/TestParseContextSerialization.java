@@ -29,7 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.ConfigContainer;
+import org.apache.tika.config.ComponentConfigs;
 import org.apache.tika.extractor.EmbeddedDocumentBytesHandler;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
 import org.apache.tika.metadata.filter.DateNormalizingMetadataFilter;
@@ -45,11 +45,11 @@ public class TestParseContextSerialization {
         ParseContext pc = new ParseContext();
         pc.set(MetadataFilter.class, metadataFilter);
 
-        ConfigContainer configContainer = new ConfigContainer();
-        configContainer.set(EmbeddedDocumentBytesHandler.class, """
+        ComponentConfigs componentConfigs = new ComponentConfigs();
+        componentConfigs.set(EmbeddedDocumentBytesHandler.class.getName(), """
                 {"k1":1,"k2":"val3" }
                 """);
-        pc.set(ConfigContainer.class, configContainer);
+        pc.set(ComponentConfigs.class, componentConfigs);
         String json;
         try (Writer writer = new StringWriter()) {
             try (JsonGenerator jsonGenerator = new JsonFactory().createGenerator(writer)) {

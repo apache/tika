@@ -19,9 +19,10 @@ package org.apache.tika.pipes.core.emitter;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.tika.config.ComponentConfigs;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.emitter.AbstractEmitter;
+import org.apache.tika.pipes.api.emitter.TikaEmitterException;
 import org.apache.tika.plugins.ExtensionConfig;
 
 public class EmptyEmitter extends AbstractEmitter {
@@ -32,7 +33,7 @@ public class EmptyEmitter extends AbstractEmitter {
     }
 
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext)
+    public void emit(String emitKey, List<Metadata> metadataList, ComponentConfigs componentConfigs)
             throws IOException, TikaEmitterException {
 
     }

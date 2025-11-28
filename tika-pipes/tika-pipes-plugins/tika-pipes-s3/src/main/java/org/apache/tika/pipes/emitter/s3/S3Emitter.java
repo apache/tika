@@ -51,11 +51,11 @@ import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 
+import org.apache.tika.config.ComponentConfigs;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.emitter.AbstractStreamEmitter;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.serialization.JsonMetadataList;
@@ -154,14 +154,14 @@ public class S3Emitter extends AbstractStreamEmitter {
     }
 
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException {
+    public void emit(String emitKey, List<Metadata> metadataList, ComponentConfigs componentConfigs) throws IOException {
         if (metadataList == null || metadataList.isEmpty()) {
             throw new IOException("metadata list must not be null or of size 0");
         }
 
         boolean spoolToTemp = config.spoolToTemp();
         if (spoolToTemp) {
-            spoolToTemp = true; // default from config, but could override from parseContext
+            spoolToTemp = true; // default from config, but could override from componentConfigs
         }
 
         if (!spoolToTemp) {
@@ -171,7 +171,7 @@ public class S3Emitter extends AbstractStreamEmitter {
             }
             byte[] bytes = bos.toByteArray();
             try (InputStream is = TikaInputStream.get(bytes)) {
-                emit(emitKey, is, new Metadata(), parseContext);
+                emit(emitKey, is, new Metadata(), componentConfigs);
             }
         } else {
             try (TemporaryResources tmp = new TemporaryResources()) {
@@ -180,14 +180,14 @@ public class S3Emitter extends AbstractStreamEmitter {
                     JsonMetadataList.toJson(metadataList, writer);
                 }
                 try (InputStream is = TikaInputStream.get(tmpPath)) {
-                    emit(emitKey, is, new Metadata(), parseContext);
+                    emit(emitKey, is, new Metadata(), componentConfigs);
                 }
             }
         }
     }
 
     @Override
-    public void emit(String path, InputStream is, Metadata userMetadata, ParseContext parseContext) throws IOException {
+    public void emit(String path, InputStream is, Metadata userMetadata, ComponentConfigs componentConfigs) throws IOException {
         String prefix = config.normalizedPrefix();
         if (!StringUtils.isBlank(prefix)) {
             path = prefix + "/" + path;

@@ -26,18 +26,16 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.ComponentConfigs;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.emitter.AbstractStreamEmitter;
 import org.apache.tika.plugins.ExtensionConfig;
-import org.apache.tika.plugins.ExtensionConfigs;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.utils.StringUtils;
 
@@ -78,13 +76,13 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
     }
 
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException {
+    public void emit(String emitKey, List<Metadata> metadataList, ComponentConfigs componentConfigs) throws IOException {
         LOG.warn("about to emit: {}", emitKey);
         if (metadataList == null || metadataList.isEmpty()) {
             throw new IOException("metadata list must not be null or of size 0");
         }
 
-        FileSystemEmitterConfig config = getConfig(parseContext);
+        FileSystemEmitterConfig config = fileSystemEmitterConfig;
 
         Path output;
 
@@ -111,10 +109,10 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
     }
 
     @Override
-    public void emit(String emitKey, InputStream inputStream, Metadata userMetadata, ParseContext parseContext) throws IOException {
+    public void emit(String emitKey, InputStream inputStream, Metadata userMetadata, ComponentConfigs componentConfigs) throws IOException {
         LOG.warn("about to stream emit: {}", emitKey);
 
-        FileSystemEmitterConfig config = getConfig(parseContext);
+        FileSystemEmitterConfig config = fileSystemEmitterConfig;
 
         Path output;
         if (config.basePath() != null) {
@@ -150,22 +148,5 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
                 }
             }
         }
-    }
-
-    private FileSystemEmitterConfig getConfig(ParseContext parseContext) throws IOException {
-        FileSystemEmitterConfig config = fileSystemEmitterConfig;
-        ExtensionConfigs extensionConfigs = parseContext.get(ExtensionConfigs.class);
-        if (extensionConfigs != null) {
-            Optional<ExtensionConfig> pluginConfigOpt = extensionConfigs.getById(getExtensionConfig().id());
-            if (pluginConfigOpt.isPresent()) {
-                try {
-                    config = FileSystemEmitterConfig.load(pluginConfigOpt.get().jsonConfig());
-                } catch (TikaConfigException e) {
-                    throw new IOException("Failed to load config", e);
-                }
-                checkConfig(config);
-            }
-        }
-        return config;
     }
 }

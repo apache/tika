@@ -25,11 +25,11 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.Date;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.ComponentConfigs;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -37,11 +37,9 @@ import org.apache.tika.metadata.FileSystem;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.plugins.AbstractTikaExtension;
 import org.apache.tika.plugins.ExtensionConfig;
-import org.apache.tika.plugins.ExtensionConfigs;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -69,22 +67,13 @@ public class FileSystemFetcher extends AbstractTikaExtension implements Fetcher 
     }
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws IOException, TikaException {
+    public InputStream fetch(String fetchKey, Metadata metadata, ComponentConfigs componentConfigs) throws IOException, TikaException {
         if (fetchKey.contains("\u0000")) {
             throw new IllegalArgumentException("Path must not contain 'u0000'. " +
                     "Please review the life decisions that led you to requesting " +
                     "a file name with this character in it.");
         }
         FileSystemFetcherConfig config = defaultFileSystemFetcherConfig;
-        ExtensionConfigs pluginConfigManager = parseContext.get(ExtensionConfigs.class);
-        if (pluginConfigManager != null) {
-            Optional<ExtensionConfig> pluginConfigOpt = pluginConfigManager.getById(getExtensionConfig().id());
-            if (pluginConfigOpt.isPresent()) {
-                ExtensionConfig pluginConfig = pluginConfigOpt.get();
-                config = FileSystemFetcherConfig.load(pluginConfig.jsonConfig());
-                checkConfig(config);
-            }
-        }
         Path p = null;
         if (! StringUtils.isBlank(config.getBasePath())) {
             Path basePath = Paths.get(config.getBasePath());

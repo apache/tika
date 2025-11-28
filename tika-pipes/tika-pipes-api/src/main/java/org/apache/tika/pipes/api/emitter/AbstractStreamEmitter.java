@@ -19,6 +19,7 @@ package org.apache.tika.pipes.api.emitter;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.tika.config.ComponentConfigs;
 import org.apache.tika.plugins.AbstractTikaExtension;
 import org.apache.tika.plugins.ExtensionConfig;
 
@@ -29,9 +30,9 @@ public abstract class AbstractStreamEmitter extends AbstractTikaExtension implem
     }
 
     @Override
-    public void emit(List<? extends EmitData> emitData) throws IOException {
+    public void emit(List<? extends EmitData> emitData, ComponentConfigs componentConfigs) throws IOException {
         for (EmitData item : emitData) {
-            emit(item.getEmitKey(), item.getMetadataList(), item.getParseContext());
+            emit(item.getEmitKey(), item.getMetadataList(), componentConfigs);
         }
     }
 }

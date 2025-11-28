@@ -28,7 +28,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import org.apache.tika.config.ConfigContainer;
+import org.apache.tika.config.ComponentConfigs;
 import org.apache.tika.parser.ParseContext;
 
 public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
@@ -65,18 +65,18 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
                 }
             }
         }
-        ConfigContainer configContainer = null;
+        ComponentConfigs componentConfigs = null;
         for (Iterator<String> it = contextNode.fieldNames(); it.hasNext(); ) {
             String nodeName = it.next();
             if (! "objects".equals(nodeName)) {
-                if (configContainer == null) {
-                    configContainer = new ConfigContainer();
+                if (componentConfigs == null) {
+                    componentConfigs = new ComponentConfigs();
                 }
-                configContainer.set(nodeName, contextNode.get(nodeName).toString());
+                componentConfigs.set(nodeName, contextNode.get(nodeName).toString());
             }
         }
-        if (configContainer != null) {
-            parseContext.set(ConfigContainer.class, configContainer);
+        if (componentConfigs != null) {
+            parseContext.set(ComponentConfigs.class, componentConfigs);
         }
         return parseContext;
     }

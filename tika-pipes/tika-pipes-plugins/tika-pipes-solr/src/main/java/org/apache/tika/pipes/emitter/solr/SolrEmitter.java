@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
+import org.apache.tika.config.ComponentConfigs;
 import org.apache.tika.pipes.api.emitter.AbstractEmitter;
 import org.apache.tika.pipes.api.emitter.EmitData;
 import org.apache.tika.plugins.ExtensionConfig;
@@ -132,7 +132,7 @@ public class SolrEmitter extends AbstractEmitter {
     }
 
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException {
+    public void emit(String emitKey, List<Metadata> metadataList, ComponentConfigs componentConfigs) throws IOException {
         if (metadataList == null || metadataList.isEmpty()) {
             LOG.warn("metadataList is null or empty");
             return;
@@ -143,7 +143,7 @@ public class SolrEmitter extends AbstractEmitter {
     }
 
     @Override
-    public void emit(List<? extends EmitData> batch) throws IOException {
+    public void emit(List<? extends EmitData> batch, ComponentConfigs componentConfigs) throws IOException {
         if (batch == null || batch.isEmpty()) {
             LOG.warn("batch is null or empty");
             return;

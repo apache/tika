@@ -19,8 +19,10 @@ package org.apache.tika.pipes.api.emitter;
 import java.util.List;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
 
+/**
+ * Data to be emitted by an {@link Emitter}.
+ */
 public interface EmitData {
     String getEmitKey();
 
@@ -29,7 +31,5 @@ public interface EmitData {
     String getContainerStackTrace();
 
     long getEstimatedSizeBytes();
-
-    ParseContext getParseContext();
 
 }

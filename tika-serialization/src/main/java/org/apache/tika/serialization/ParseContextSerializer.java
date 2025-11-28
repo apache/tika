@@ -23,7 +23,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
-import org.apache.tika.config.ConfigContainer;
+import org.apache.tika.config.ComponentConfigs;
 import org.apache.tika.parser.ParseContext;
 
 public class ParseContextSerializer extends JsonSerializer<ParseContext> {
@@ -33,12 +33,12 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
     public void serialize(ParseContext parseContext, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
         jsonGenerator.writeStartObject();
         Set<String> objectKeySet = parseContext.keySet();
-        ConfigContainer p = parseContext.get(ConfigContainer.class);
+        ComponentConfigs p = parseContext.get(ComponentConfigs.class);
         if ((p != null && objectKeySet.size() > 1) || (p == null && ! objectKeySet.isEmpty())) {
             jsonGenerator.writeFieldName("objects");
             jsonGenerator.writeStartObject();
             for (String className : parseContext.keySet()) {
-                if (className.equals(ConfigContainer.class.getName())) {
+                if (className.equals(ComponentConfigs.class.getName())) {
                     continue;
                 }
                 try {
@@ -53,8 +53,8 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
             jsonGenerator.writeEndObject();
         }
         if (p != null) {
-            for (String k : p.getKeys()) {
-                jsonGenerator.writeStringField(k, p.get(k).get());
+            for (String k : p.getComponentNames()) {
+                jsonGenerator.writeStringField(k, p.get(k).orElse(null));
             }
         }
         jsonGenerator.writeEndObject();

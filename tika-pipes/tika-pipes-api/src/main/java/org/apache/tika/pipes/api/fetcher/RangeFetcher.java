@@ -19,9 +19,9 @@ package org.apache.tika.pipes.api.fetcher;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.tika.config.ComponentConfigs;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
 
 /**
  * This class extracts a range of bytes from a given fetch key.
@@ -30,10 +30,10 @@ public interface RangeFetcher extends Fetcher {
 
     default InputStream fetch(String fetchKey, long startOffset, long endOffset, Metadata metadata)
             throws TikaException, IOException {
-        return fetch(fetchKey, startOffset, endOffset, metadata, new ParseContext());
+        return fetch(fetchKey, startOffset, endOffset, metadata, ComponentConfigs.EMPTY);
     }
 
-    InputStream fetch(String fetchKey, long startOffset, long endOffset, Metadata metadata, ParseContext parseContext)
+    InputStream fetch(String fetchKey, long startOffset, long endOffset, Metadata metadata, ComponentConfigs componentConfigs)
             throws TikaException, IOException;
 
 }

@@ -33,10 +33,10 @@ import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.ComponentConfigs;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.emitter.AbstractStreamEmitter;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.serialization.JsonMetadataList;
@@ -89,7 +89,7 @@ public class GCSEmitter extends AbstractStreamEmitter {
     }
 
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException {
+    public void emit(String emitKey, List<Metadata> metadataList, ComponentConfigs componentConfigs) throws IOException {
         if (metadataList == null || metadataList.isEmpty()) {
             throw new IOException("metadata list must not be null or empty");
         }
@@ -102,7 +102,7 @@ public class GCSEmitter extends AbstractStreamEmitter {
     }
 
     @Override
-    public void emit(String emitKey, InputStream inputStream, Metadata userMetadata, ParseContext parseContext) throws IOException {
+    public void emit(String emitKey, InputStream inputStream, Metadata userMetadata, ComponentConfigs componentConfigs) throws IOException {
         if (inputStream instanceof TikaInputStream && ((TikaInputStream) inputStream).hasFile()) {
             write(emitKey, userMetadata, Files.readAllBytes(((TikaInputStream) inputStream).getPath()));
         } else {

@@ -53,11 +53,11 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import org.apache.tika.exception.FileTooLongException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.config.ComponentConfigs;
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.fetcher.RangeFetcher;
 import org.apache.tika.pipes.fetcher.s3.config.S3FetcherConfig;
@@ -155,12 +155,12 @@ public class S3Fetcher extends AbstractTikaExtension implements Fetcher, RangeFe
     }
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
-        return fetch(fetchKey, -1, -1, metadata, parseContext);
+    public InputStream fetch(String fetchKey, Metadata metadata, ComponentConfigs componentConfigs) throws TikaException, IOException {
+        return fetch(fetchKey, -1, -1, metadata, componentConfigs);
     }
 
     @Override
-    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata, ParseContext parseContext)
+    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata, ComponentConfigs componentConfigs)
             throws TikaException, IOException {
         String prefix = config.getPrefix();
         String theFetchKey = StringUtils.isBlank(prefix) ? fetchKey : prefix + fetchKey;

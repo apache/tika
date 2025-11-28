@@ -18,7 +18,6 @@ package org.apache.tika.plugins;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -31,31 +30,66 @@ import org.pf4j.ExtensionFinder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 
+/**
+ * PF4J-based plugin manager for Tika pipes components.
+ * <p>
+ * This manager loads plugins from configured plugin root directories and
+ * makes their extensions available for discovery.
+ */
 public class TikaPluginManager extends DefaultPluginManager {
-
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaPluginManager.class);
 
-    public static TikaPluginManager load(Path p) throws TikaConfigException, IOException {
-        try (InputStream is = Files.newInputStream(p)) {
-            return load(is);
-        }
+    /**
+     * Loads plugin manager from a pre-parsed TikaJsonConfig.
+     * This is the preferred method when sharing configuration across
+     * core Tika and pipes components.
+     *
+     * @param tikaJsonConfig the pre-parsed JSON configuration
+     * @return the plugin manager
+     * @throws TikaConfigException if configuration is invalid
+     * @throws IOException if plugin initialization fails
+     */
+    public static TikaPluginManager load(TikaJsonConfig tikaJsonConfig)
+            throws TikaConfigException, IOException {
+        TikaConfigs tikaConfigs = TikaConfigs.load(tikaJsonConfig);
+        return load(tikaConfigs);
     }
 
-    public static TikaPluginManager load(InputStream is) throws TikaConfigException, IOException {
-        return load(TikaConfigs.load(is));
+    /**
+     * Loads plugin manager from a configuration file.
+     * For backwards compatibility - prefer {@link #load(TikaJsonConfig)} when possible.
+     *
+     * @param configPath the path to the JSON configuration file
+     * @return the plugin manager
+     * @throws TikaConfigException if configuration is invalid
+     * @throws IOException if reading or plugin initialization fails
+     */
+    public static TikaPluginManager load(Path configPath) throws TikaConfigException, IOException {
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(configPath);
+        return load(tikaJsonConfig);
     }
 
-    public static TikaPluginManager load(TikaConfigs tikaConfigs) throws TikaConfigException, IOException {
+    /**
+     * Loads plugin manager from a TikaConfigs instance.
+     *
+     * @param tikaConfigs the pipes configuration
+     * @return the plugin manager
+     * @throws TikaConfigException if configuration is invalid
+     * @throws IOException if plugin initialization fails
+     */
+    public static TikaPluginManager load(TikaConfigs tikaConfigs)
+            throws TikaConfigException, IOException {
         JsonNode root = tikaConfigs.getRoot();
         JsonNode pluginRoots = root.get("plugin-roots");
         if (pluginRoots == null) {
             throw new TikaConfigException("plugin-roots must be specified");
         }
-        List<Path> roots = TikaConfigs.OBJECT_MAPPER.convertValue(pluginRoots, new TypeReference<List<Path>>() {
-        });
+        List<Path> roots = TikaConfigs.OBJECT_MAPPER.convertValue(pluginRoots,
+                new TypeReference<List<Path>>() {});
         if (roots.isEmpty()) {
             throw new TikaConfigException("plugin-roots must not be empty");
         }

@@ -135,6 +135,43 @@ public class TikaLoader {
     }
 
     /**
+     * Creates a TikaLoader from a pre-parsed TikaJsonConfig.
+     * This is useful when the same configuration needs to be shared across
+     * multiple systems (e.g., core Tika and tika-pipes).
+     *
+     * @param config the pre-parsed JSON configuration
+     * @return the Tika loader
+     */
+    public static TikaLoader load(TikaJsonConfig config) {
+        return load(config, Thread.currentThread().getContextClassLoader());
+    }
+
+    /**
+     * Creates a TikaLoader from a pre-parsed TikaJsonConfig with a specific class loader.
+     *
+     * @param config the pre-parsed JSON configuration
+     * @param classLoader the class loader to use for loading components
+     * @return the Tika loader
+     */
+    public static TikaLoader load(TikaJsonConfig config, ClassLoader classLoader) {
+        MediaTypeRegistry registry = MediaTypeRegistry.getDefaultRegistry();
+        return new TikaLoader(config, classLoader, registry);
+    }
+
+    /**
+     * Creates a TikaLoader from a pre-parsed TikaJsonConfig with custom settings.
+     *
+     * @param config the pre-parsed JSON configuration
+     * @param classLoader the class loader to use for loading components
+     * @param mediaTypeRegistry the media type registry to use
+     * @return the Tika loader
+     */
+    public static TikaLoader load(TikaJsonConfig config, ClassLoader classLoader,
+                                   MediaTypeRegistry mediaTypeRegistry) {
+        return new TikaLoader(config, classLoader, mediaTypeRegistry);
+    }
+
+    /**
      * Loads and returns all parsers.
      * Results are cached - subsequent calls return the same instance.
      *

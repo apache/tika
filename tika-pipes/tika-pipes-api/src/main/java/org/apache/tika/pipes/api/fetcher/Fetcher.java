@@ -21,19 +21,33 @@ import java.io.InputStream;
 
 import org.pf4j.ExtensionPoint;
 
+import org.apache.tika.config.ComponentConfigs;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.plugins.TikaExtension;
 
 /**
  * Interface for an object that will fetch an InputStream given
- * a fetch string.  This will also update the metadata object
+ * a fetch string. This will also update the metadata object
  * based on the fetch.
  * <p>
  * Implementations of Fetcher must be thread safe.
+ * <p>
+ * The {@code componentConfigs} parameter contains component-specific JSON
+ * configuration strings that can be used for runtime configuration overrides.
+ * Fetchers can extract their specific configuration using their component name.
  */
 public interface Fetcher extends TikaExtension, ExtensionPoint {
 
-    InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException;
+    /**
+     * Fetches an InputStream for the given fetch key.
+     *
+     * @param fetchKey the key identifying what to fetch
+     * @param metadata metadata object to populate with fetch-related metadata
+     * @param componentConfigs component-specific configurations for runtime overrides
+     * @return the fetched input stream
+     * @throws TikaException if there's an error during fetching
+     * @throws IOException if there's an I/O error
+     */
+    InputStream fetch(String fetchKey, Metadata metadata, ComponentConfigs componentConfigs) throws TikaException, IOException;
 }

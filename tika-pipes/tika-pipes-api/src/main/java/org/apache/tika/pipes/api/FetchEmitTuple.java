@@ -19,11 +19,20 @@ package org.apache.tika.pipes.api;
 import java.io.Serializable;
 import java.util.Objects;
 
+import org.apache.tika.config.ComponentConfigs;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 
+/**
+ * Container for fetch/emit/parse instructions.
+ * <p>
+ * The {@code componentConfigs} contains JSON configuration strings for
+ * fetchers, emitters, and other pipeline components, keyed by component name.
+ * This is separate from {@code ParseContext} which holds parser-specific
+ * configuration objects (HandlerConfig, MetadataFilter, EmbeddedDocumentBytesHandler,
+ * PassbackFilter, etc.) used during the actual parsing phase.
+ */
 public class FetchEmitTuple implements Serializable {
 
     public static final ON_PARSE_EXCEPTION DEFAULT_ON_PARSE_EXCEPTION = ON_PARSE_EXCEPTION.EMIT;
@@ -36,27 +45,28 @@ public class FetchEmitTuple implements Serializable {
     private final FetchKey fetchKey;
     private EmitKey emitKey;
     private final Metadata metadata;
-    private final ParseContext parseContext;
+    private final ComponentConfigs componentConfigs;
     private final ON_PARSE_EXCEPTION onParseException;
 
     public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey) {
         this(id, fetchKey, emitKey, new Metadata());
     }
+
     public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata) {
-        this(id, fetchKey, emitKey, metadata, new ParseContext());
+        this(id, fetchKey, emitKey, metadata, ComponentConfigs.EMPTY);
     }
 
-    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata, ParseContext parseContext) {
-        this(id, fetchKey, emitKey, metadata, parseContext, ON_PARSE_EXCEPTION.EMIT);
+    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata, ComponentConfigs componentConfigs) {
+        this(id, fetchKey, emitKey, metadata, componentConfigs, ON_PARSE_EXCEPTION.EMIT);
     }
 
-    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata, ParseContext parseContext,
+    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata, ComponentConfigs componentConfigs,
                           ON_PARSE_EXCEPTION onParseException) {
         this.id = id;
         this.fetchKey = fetchKey;
         this.emitKey = emitKey;
         this.metadata = metadata;
-        this.parseContext = parseContext;
+        this.componentConfigs = componentConfigs == null ? ComponentConfigs.EMPTY : componentConfigs;
         this.onParseException = onParseException;
     }
 
@@ -75,9 +85,10 @@ public class FetchEmitTuple implements Serializable {
         return metadata;
     }
 
-    public ParseContext getParseContext() {
-        return parseContext;
+    public ComponentConfigs getComponentConfigs() {
+        return componentConfigs;
     }
+
     public void setEmitKey(EmitKey emitKey) {
         this.emitKey = emitKey;
     }
@@ -98,7 +109,7 @@ public class FetchEmitTuple implements Serializable {
         FetchEmitTuple that = (FetchEmitTuple) o;
         return Objects.equals(id, that.id) && Objects.equals(fetchKey, that.fetchKey) && Objects.equals(emitKey, that.emitKey)
                 && Objects.equals(metadata, that.metadata) &&
-                Objects.equals(parseContext, that.parseContext) && onParseException == that.onParseException;
+                Objects.equals(componentConfigs, that.componentConfigs) && onParseException == that.onParseException;
     }
 
     @Override
@@ -107,7 +118,7 @@ public class FetchEmitTuple implements Serializable {
         result = 31 * result + Objects.hashCode(fetchKey);
         result = 31 * result + Objects.hashCode(emitKey);
         result = 31 * result + Objects.hashCode(metadata);
-        result = 31 * result + Objects.hashCode(parseContext);
+        result = 31 * result + Objects.hashCode(componentConfigs);
         result = 31 * result + Objects.hashCode(onParseException);
         return result;
     }
@@ -115,7 +126,7 @@ public class FetchEmitTuple implements Serializable {
     @Override
     public String toString() {
         return "FetchEmitTuple{" + "id='" + id + '\'' + ", fetchKey=" + fetchKey + ", emitKey=" + emitKey +
-                ", metadata=" + metadata + ", parseContext=" + parseContext +
+                ", metadata=" + metadata + ", componentConfigs=" + componentConfigs +
                 ", onParseException=" + onParseException + '}';
     }
 }

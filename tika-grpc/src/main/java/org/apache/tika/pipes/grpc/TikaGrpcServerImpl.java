@@ -66,7 +66,7 @@ import org.apache.tika.ListFetchersRequest;
 import org.apache.tika.SaveFetcherReply;
 import org.apache.tika.SaveFetcherRequest;
 import org.apache.tika.TikaGrpc;
-import org.apache.tika.config.ConfigContainer;
+import org.apache.tika.config.ComponentConfigs;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
@@ -233,9 +233,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 ExtensionConfig abstractConfig = expiringFetcherStore
                         .getFetcherConfigs()
                         .get(fetcher.getExtensionConfig().id());
-                ConfigContainer configContainer = new ConfigContainer();
-                configContainer.set(request.getFetcherId(), request.getAdditionalFetchConfigJson());
-                parseContext.set(ConfigContainer.class, configContainer);
+                ComponentConfigs componentConfigs = new ComponentConfigs();
+                componentConfigs.set(request.getFetcherId(), request.getAdditionalFetchConfigJson());
+                parseContext.set(ComponentConfigs.class, componentConfigs);
             }
             PipesResult pipesResult = pipesClient.process(new FetchEmitTuple(request.getFetchKey(),
                     new FetchKey(fetcher.getExtensionConfig()

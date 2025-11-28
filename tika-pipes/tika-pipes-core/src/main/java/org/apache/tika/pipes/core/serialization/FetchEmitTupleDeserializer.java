@@ -26,10 +26,11 @@ import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.ID;
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.METADATA_KEY;
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.ON_PARSE_EXCEPTION;
-import static org.apache.tika.serialization.ParseContextSerializer.PARSE_CONTEXT;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -37,14 +38,19 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import org.apache.tika.config.ComponentConfigs;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
-import org.apache.tika.serialization.ParseContextDeserializer;
 
 public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple> {
+
+    // Known FetchEmitTuple fields - all other top-level fields are treated as component configs
+    private static final Set<String> KNOWN_FIELDS = Set.of(
+            ID, FETCHER, FETCH_KEY, FETCH_RANGE_START, FETCH_RANGE_END,
+            EMITTER, EMIT_KEY, METADATA_KEY, ON_PARSE_EXCEPTION
+    );
 
     @Override
     public FetchEmitTuple deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JacksonException {
@@ -58,13 +64,32 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
         long fetchRangeStart = readLong(FETCH_RANGE_START, root, -1l, false);
         long fetchRangeEnd = readLong(FETCH_RANGE_END, root, -1l, false);
         Metadata metadata = readMetadata(root);
-        JsonNode parseContextNode = root.get(PARSE_CONTEXT);
-        ParseContext parseContext = parseContextNode == null ? new ParseContext() : ParseContextDeserializer.readParseContext(parseContextNode);
         FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = readOnParseException(root);
 
+        // Collect all unknown fields as component configs (matching TikaJsonConfig pattern)
+        ComponentConfigs componentConfigs = readComponentConfigs(root);
+
         return new FetchEmitTuple(id, new FetchKey(fetcherId, fetchKey, fetchRangeStart, fetchRangeEnd),
-                new EmitKey(emitterName, emitKey), metadata, parseContext,
+                new EmitKey(emitterName, emitKey), metadata, componentConfigs,
                 onParseException);
+    }
+
+    private static ComponentConfigs readComponentConfigs(JsonNode root) {
+        ComponentConfigs configs = new ComponentConfigs();
+        Iterator<String> fieldNames = root.fieldNames();
+        while (fieldNames.hasNext()) {
+            String fieldName = fieldNames.next();
+            // Skip known FetchEmitTuple fields
+            if (KNOWN_FIELDS.contains(fieldName)) {
+                continue;
+            }
+            // All other fields are component configs - store as JSON strings
+            JsonNode fieldValue = root.get(fieldName);
+            if (fieldValue != null && !fieldValue.isNull()) {
+                configs.set(fieldName, fieldValue.toString());
+            }
+        }
+        return configs;
     }
 
     private static FetchEmitTuple.ON_PARSE_EXCEPTION readOnParseException(JsonNode root) throws IOException {

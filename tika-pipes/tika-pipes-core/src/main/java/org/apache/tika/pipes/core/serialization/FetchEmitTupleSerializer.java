@@ -16,13 +16,12 @@
  */
 package org.apache.tika.pipes.core.serialization;
 
-import static org.apache.tika.serialization.ParseContextSerializer.PARSE_CONTEXT;
-
 import java.io.IOException;
 import java.util.Locale;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -37,7 +36,10 @@ public class FetchEmitTupleSerializer extends JsonSerializer<FetchEmitTuple> {
     public static final String EMITTER = "emitter";
     public static final String EMIT_KEY = "emitKey";
     public static final String METADATA_KEY = "metadata";
+    public static final String COMPONENT_CONFIGS = "componentConfigs";
     public static final String ON_PARSE_EXCEPTION = "onParseException";
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public void serialize(FetchEmitTuple t, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
 
@@ -56,10 +58,20 @@ public class FetchEmitTupleSerializer extends JsonSerializer<FetchEmitTuple> {
         if (t.getMetadata().size() > 0) {
             jsonGenerator.writeObjectField(METADATA_KEY, t.getMetadata());
         }
-        jsonGenerator.writeStringField(ON_PARSE_EXCEPTION, t.getOnParseException().name().toLowerCase(Locale.US));
-        if (!t.getParseContext().isEmpty()) {
-            jsonGenerator.writeObjectField(PARSE_CONTEXT, t.getParseContext());
+
+        // Write component configs as top-level JSON fields (matching TikaJsonConfig pattern)
+        if (!t.getComponentConfigs().isEmpty()) {
+            for (String componentName : t.getComponentConfigs().getComponentNames()) {
+                String jsonConfig = t.getComponentConfigs().get(componentName).orElse(null);
+                if (jsonConfig != null) {
+                    // Parse the JSON string and write it as a field
+                    jsonGenerator.writeFieldName(componentName);
+                    jsonGenerator.writeRawValue(jsonConfig);
+                }
+            }
         }
+
+        jsonGenerator.writeStringField(ON_PARSE_EXCEPTION, t.getOnParseException().name().toLowerCase(Locale.US));
         jsonGenerator.writeEndObject();
     }
 }

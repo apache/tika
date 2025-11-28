@@ -43,9 +43,9 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.ComponentConfigs;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.emitter.AbstractEmitter;
 import org.apache.tika.pipes.api.emitter.EmitData;
 import org.apache.tika.plugins.ExtensionConfig;
@@ -173,7 +173,7 @@ public class JDBCEmitter extends AbstractEmitter implements Closeable {
     }
 
     @Override
-    public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException {
+    public void emit(String emitKey, List<Metadata> metadataList, ComponentConfigs componentConfigs) throws IOException {
         if (metadataList == null || metadataList.isEmpty()) {
             return;
         }
@@ -181,9 +181,9 @@ public class JDBCEmitter extends AbstractEmitter implements Closeable {
     }
 
     @Override
-    public void emit(List<? extends EmitData> emitData) throws IOException {
+    public void emit(List<? extends EmitData> emitData, ComponentConfigs componentConfigs) throws IOException {
         for (EmitData d : emitData) {
-            emit(d.getEmitKey(), d.getMetadataList(), d.getParseContext());
+            emit(d.getEmitKey(), d.getMetadataList(), componentConfigs);
         }
     }
 
