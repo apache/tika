@@ -79,7 +79,6 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
 
     @Override
     public void emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext) throws IOException {
-        LOG.info("about to emit: {}", emitKey);
         if (metadataList == null || metadataList.isEmpty()) {
             throw new IOException("metadata list must not be null or of size 0");
         }
