@@ -74,9 +74,9 @@ public class TikaLoader {
     private final TikaJsonConfig config;
     private final ClassLoader classLoader;
     private final ObjectMapper objectMapper;
-    private final MediaTypeRegistry mediaTypeRegistry;
 
     // Cached instances (lazy loaded)
+    private static MediaTypeRegistry mediaTypeRegistry;
     private Parser parsers;
     private Detector detectors;
     private EncodingDetector encodingDetectors;
@@ -84,12 +84,10 @@ public class TikaLoader {
     private Renderer renderers;
     private ConfigLoader configLoader;
 
-    private TikaLoader(TikaJsonConfig config, ClassLoader classLoader,
-                       MediaTypeRegistry mediaTypeRegistry) {
+    private TikaLoader(TikaJsonConfig config, ClassLoader classLoader) {
         this.config = config;
         this.classLoader = classLoader;
         this.objectMapper = TikaJsonConfig.getObjectMapper();
-        this.mediaTypeRegistry = mediaTypeRegistry;
     }
 
     /**
@@ -114,36 +112,26 @@ public class TikaLoader {
     public static TikaLoader load(Path configPath, ClassLoader classLoader)
             throws TikaConfigException {
         TikaJsonConfig config = TikaJsonConfig.load(configPath);
-        MediaTypeRegistry registry = MediaTypeRegistry.getDefaultRegistry();
-        return new TikaLoader(config, classLoader, registry);
-    }
-
-    /**
-     * Loads a Tika configuration with custom media type registry.
-     *
-     * @param configPath the path to the JSON configuration file
-     * @param classLoader the class loader to use for loading components
-     * @param mediaTypeRegistry the media type registry to use
-     * @return the Tika loader
-     * @throws TikaConfigException if loading or parsing fails
-     */
-    public static TikaLoader load(Path configPath, ClassLoader classLoader,
-                                   MediaTypeRegistry mediaTypeRegistry)
-            throws TikaConfigException {
-        TikaJsonConfig config = TikaJsonConfig.load(configPath);
-        return new TikaLoader(config, classLoader, mediaTypeRegistry);
+        return new TikaLoader(config, classLoader);
     }
 
     /**
      * Loads and returns all parsers.
      * Results are cached - subsequent calls return the same instance.
+     * <p>
+     * Note: This method ensures EncodingDetectors are loaded first,
+     * as some parsers require them during construction (e.g., AbstractEncodingDetectorParser
+     * requires an EncodingDetector).
      *
      * @return the parser (typically a CompositeParser internally)
      * @throws TikaConfigException if loading fails
      */
     public synchronized Parser loadParsers() throws TikaConfigException {
         if (parsers == null) {
-            ParserLoader loader = new ParserLoader(classLoader, objectMapper, mediaTypeRegistry);
+            // Load EncodingDetectors first - some parsers need them during construction
+            EncodingDetector encodingDetector = loadEncodingDetectors();
+
+            ParserLoader loader = new ParserLoader(classLoader, objectMapper, encodingDetector);
             parsers = loader.load(config);
         }
         return parsers;
@@ -163,7 +151,7 @@ public class TikaLoader {
             CompositeComponentLoader<Detector> loader = new CompositeComponentLoader<>(
                     Detector.class, "detectors", "detectors", classLoader, objectMapper);
             List<Detector> detectorList = loader.loadFromArray(config);
-            detectors = new CompositeDetector(mediaTypeRegistry, detectorList);
+            detectors = new CompositeDetector(getMediaTypeRegistry(), detectorList);
         }
         return detectors;
     }
@@ -277,10 +265,15 @@ public class TikaLoader {
 
     /**
      * Gets the media type registry.
+     * Lazily loads the default registry if not already set.
+     * This is a static singleton shared across all TikaLoader instances.
      *
      * @return the media type registry
      */
-    public MediaTypeRegistry getMediaTypeRegistry() {
+    public static synchronized MediaTypeRegistry getMediaTypeRegistry() {
+        if (mediaTypeRegistry == null) {
+            mediaTypeRegistry = MediaTypeRegistry.getDefaultRegistry();
+        }
         return mediaTypeRegistry;
     }
 }

@@ -33,9 +33,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
@@ -52,7 +53,7 @@ public class ParserLoader {
 
     private final ClassLoader classLoader;
     private final ObjectMapper objectMapper;
-    private final MediaTypeRegistry mediaTypeRegistry;
+    private final EncodingDetector encodingDetector;
 
     /**
      * Holds parsed config data before decoration is applied.
@@ -71,10 +72,10 @@ public class ParserLoader {
     }
 
     public ParserLoader(ClassLoader classLoader, ObjectMapper objectMapper,
-                        MediaTypeRegistry mediaTypeRegistry) {
+                        EncodingDetector encodingDetector) {
         this.classLoader = classLoader;
         this.objectMapper = objectMapper;
-        this.mediaTypeRegistry = mediaTypeRegistry;
+        this.encodingDetector = encodingDetector;
     }
 
     /**
@@ -85,6 +86,8 @@ public class ParserLoader {
      * @throws TikaConfigException if loading fails
      */
     public CompositeParser load(TikaJsonConfig config) throws TikaConfigException {
+        //TODO -- need to handle multiparsers at some point
+        //TODO -- add special handling for external parsers?
         List<Parser> parserList = new ArrayList<>();
 
         // Load configured parsers
@@ -185,7 +188,7 @@ public class ParserLoader {
             parserList.addAll(spiParsers);
         }
 
-        return new CompositeParser(mediaTypeRegistry, parserList);
+        return new CompositeParser(TikaLoader.getMediaTypeRegistry(), parserList);
     }
 
     private ParsedParserConfig loadConfiguredParser(String name, JsonNode configNode,
@@ -213,16 +216,32 @@ public class ParserLoader {
             throws TikaConfigException {
 
         try {
+            Parser parser;
+
             // Try constructor with String parameter (JSON config)
             try {
+                //TODO -- change this from String to JsonConfig or simple wrapper class
                 Constructor<?> constructor = parserClass.getConstructor(String.class);
-                return (Parser) constructor.newInstance(configJson);
+                parser = (Parser) constructor.newInstance(configJson);
             } catch (NoSuchMethodException e) {
-                // TODO -- entrypoint for actual configuration
-                // Fall back to zero-arg constructor
-                return (Parser) ServiceLoaderUtils.newInstance(parserClass,
-                        new org.apache.tika.config.ServiceLoader(classLoader));
+                // Try constructor with EncodingDetector parameter (for AbstractEncodingDetectorParser)
+                if (AbstractEncodingDetectorParser.class.isAssignableFrom(parserClass)) {
+                    try {
+                        Constructor<?> constructor = parserClass.getConstructor(EncodingDetector.class);
+                        parser = (Parser) constructor.newInstance(encodingDetector);
+                    } catch (NoSuchMethodException ex) {
+                        // Fall back to zero-arg constructor
+                        parser = (Parser) ServiceLoaderUtils.newInstance(parserClass,
+                                new org.apache.tika.config.ServiceLoader(classLoader));
+                    }
+                } else {
+                    // Fall back to zero-arg constructor
+                    parser = (Parser) ServiceLoaderUtils.newInstance(parserClass,
+                            new org.apache.tika.config.ServiceLoader(classLoader));
+                }
             }
+
+            return parser;
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new TikaConfigException("Failed to instantiate parser: " +
                     parserClass.getName(), e);
@@ -268,7 +287,7 @@ public class ParserLoader {
             fallbackParsers.add(fallbackConfig.parser);
         }
 
-        return new FallbackParser(mediaTypeRegistry, MetadataPolicy.KEEP_ALL, fallbackParsers);
+        return new FallbackParser(TikaLoader.getMediaTypeRegistry(), MetadataPolicy.KEEP_ALL, fallbackParsers);
     }
 
     private List<Parser> loadSpiParsers(Set<Class<?>> excludeClasses) {
