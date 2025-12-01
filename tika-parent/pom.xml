@@ -292,7 +292,7 @@
     <forbiddenapis.version>3.10</forbiddenapis.version>
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.2.0</maven.antrun.version>
-    <maven.assembly.version>3.7.1</maven.assembly.version>
+    <maven.assembly.version>3.8.0</maven.assembly.version>
     <!-- can't update to 6, needs jdk17 -->
     <maven.bundle.version>5.1.9</maven.bundle.version>
     <maven.compiler.plugin.version>3.14.1</maven.compiler.plugin.version>
@@ -422,7 +422,7 @@
     <parso.version>2.0.14</parso.version>
     <pax.exam.version>4.14.0</pax.exam.version>
     <pdfbox.version>3.0.6</pdfbox.version>
-    <poi.version>5.5.0</poi.version>
+    <poi.version>5.5.1</poi.version>
     <protobuf.version>3.25.8</protobuf.version>
     <quartz.version>2.5.1</quartz.version>
     <reactor.core.version>3.8.0</reactor.core.version>
@@ -436,7 +436,7 @@
     <!-- NOTE: Spring 6 requires jdk17  -->
     <!-- remove from ossindex when bumping from 5.3.39 -->
     <spring.version>5.3.39</spring.version>
-    <sqlite.version>3.51.0.0</sqlite.version>
+    <sqlite.version>3.51.1.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>2.0.2</testcontainers.version>
     <testcontainersv1.version>1.21.3</testcontainersv1.version>
