@@ -139,6 +139,8 @@
                     <exclude>builddef.lst</exclude>
                     <!-- https://issues.apache.org/jira/browse/TIKA-3650 -->
                     <exclude>javax/**/*</exclude>
+                    <!-- from java-libpst -->
+                    <exclude>example/**</exclude>
 
                   </excludes>
                 </filter>

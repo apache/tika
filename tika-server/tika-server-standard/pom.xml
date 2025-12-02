@@ -211,6 +211,8 @@
                     <exclude>CHANGES</exclude>
                     <exclude>README</exclude>
                     <exclude>builddef.lst</exclude>
+                    <!-- from java-libpst -->
+                    <exclude>example/**</exclude>
                   </excludes>
                 </filter>
               </filters>
