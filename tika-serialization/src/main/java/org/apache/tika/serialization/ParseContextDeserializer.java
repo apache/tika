@@ -34,61 +34,73 @@ import org.apache.tika.parser.ParseContext;
 public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
 
     @Override
-    public ParseContext deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JacksonException {
-        JsonNode root = jsonParser.getCodec().readTree(jsonParser);
+    public ParseContext deserialize(JsonParser jsonParser,
+                                    DeserializationContext deserializationContext)
+            throws IOException, JacksonException {
+        JsonNode root = jsonParser.readValueAsTree();
         return readParseContext(root);
     }
 
+    /**
+     * Deserializes a ParseContext from a JsonNode.
+     * Uses a properly configured ObjectMapper with polymorphic type handling
+     * to ensure objects in the ParseContext are deserialized correctly.
+     *
+     * @param jsonNode the JSON node containing the ParseContext data
+     * @return the deserialized ParseContext
+     * @throws IOException if deserialization fails
+     */
     public static ParseContext readParseContext(JsonNode jsonNode) throws IOException {
-        //some use cases include the wrapper node, e.g. { "parseContext": {}}
-        //some include the contents only.
-        //Try to find "parseContext" to start. If that doesn't exist, assume the jsonNode is the contents.
+        // Some use cases include the wrapper node, e.g. { "parseContext": {}}
+        // Some include the contents only.
+        // Try to find "parseContext" to start. If that doesn't exist, assume jsonNode is the contents.
         JsonNode contextNode = jsonNode.get(PARSE_CONTEXT);
-
         if (contextNode == null) {
             contextNode = jsonNode;
         }
+
         ParseContext parseContext = new ParseContext();
+
+        // Handle legacy "objects" field - deserialize directly into ParseContext
         if (contextNode.has("objects")) {
-            for (Map.Entry<String, JsonNode> e : contextNode
-                    .get("objects")
-                    .properties()) {
-                String superClassName = e.getKey();
-                JsonNode obj = e.getValue();
-                String className = readVal(TikaJsonSerializer.INSTANTIATED_CLASS_KEY, obj, null, true);
+            JsonNode objectsNode = contextNode.get("objects");
+            for (Map.Entry<String, JsonNode> entry : objectsNode.properties()) {
+                String superClassName = entry.getKey();
+                JsonNode objectNode = entry.getValue();
+
                 try {
-                    Class clazz = Class.forName(className);
-                    Class superClazz = className.equals(superClassName) ? clazz : Class.forName(superClassName);
-                    parseContext.set(superClazz, TikaJsonDeserializer.deserialize(clazz, obj));
-                } catch (ReflectiveOperationException ex) {
-                    throw new IOException(ex);
+                    Class<?> superClass = Class.forName(superClassName);
+
+                    // Let Jackson handle polymorphic deserialization with type info
+                    // Security is enforced by the PolymorphicTypeValidator in the mapper
+                    Object deserializedObject = ParseContextSerializer.POLYMORPHIC_MAPPER.treeToValue(objectNode, Object.class);
+
+                    parseContext.set((Class) superClass, deserializedObject);
+                } catch (ClassNotFoundException ex) {
+                    throw new IOException("Class not found: " + superClassName, ex);
                 }
             }
         }
+
+        // Store all non-"objects" fields as named configurations in ConfigContainer
+        // This allows parsers to look up their config by friendly name (e.g., "pdf-parser")
+        // matching the same format used in tika-config.json
         ConfigContainer configContainer = null;
         for (Iterator<String> it = contextNode.fieldNames(); it.hasNext(); ) {
-            String nodeName = it.next();
-            if (! "objects".equals(nodeName)) {
+            String fieldName = it.next();
+            if (!"objects".equals(fieldName)) {
                 if (configContainer == null) {
                     configContainer = new ConfigContainer();
                 }
-                configContainer.set(nodeName, contextNode.get(nodeName).toString());
+                configContainer.set(fieldName, contextNode.get(fieldName).toString());
             }
         }
+
         if (configContainer != null) {
             parseContext.set(ConfigContainer.class, configContainer);
         }
+
         return parseContext;
     }
 
-    private static String readVal(String key, JsonNode jsonObj, String defaultRet, boolean isRequired) throws IOException {
-        JsonNode valNode = jsonObj.get(key);
-        if (valNode == null) {
-            if (isRequired) {
-                throw new IOException("Sorry, no value for key=" + key);
-            }
-            return defaultRet;
-        }
-        return valNode.asText();
-    }
 }

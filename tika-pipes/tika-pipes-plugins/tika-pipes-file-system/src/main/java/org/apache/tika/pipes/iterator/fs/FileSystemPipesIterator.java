@@ -55,7 +55,7 @@ public class FileSystemPipesIterator extends PipesIteratorBase implements TotalC
 
 
     private void configure() throws IOException, TikaConfigException {
-        config = FileSystemPipesIteratorConfig.load(pluginConfig.jsonConfig());
+        config = FileSystemPipesIteratorConfig.load(pluginConfig.json());
         checkConfig(config);
         if (config.isCountTotal()) {
             fileCountWorker = new FileCountWorker(config.getBasePath());

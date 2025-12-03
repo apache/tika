@@ -74,7 +74,7 @@ public class AZBlobEmitter extends AbstractStreamEmitter implements StreamEmitte
     private final BlobContainerClient blobContainerClient;
 
     public static AZBlobEmitter build(ExtensionConfig extensionConfig) throws TikaConfigException, IOException {
-        AZBlobEmitterConfig config = AZBlobEmitterConfig.load(extensionConfig.jsonConfig());
+        AZBlobEmitterConfig config = AZBlobEmitterConfig.load(extensionConfig.json());
         config.validate();
         BlobContainerClient containerClient = buildContainerClient(config);
         return new AZBlobEmitter(extensionConfig, config, containerClient);

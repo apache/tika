@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -45,7 +46,9 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
+import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Field;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
@@ -60,7 +63,7 @@ import org.apache.tika.parser.ParseContext;
  * and post-processes the events to produce XHTML and metadata expected by
  * Tika clients.
  */
-@TikaComponent
+@TikaComponent(name = "jsoup-parser")
 public class JSoupParser extends AbstractEncodingDetectorParser {
 
     /**
@@ -69,6 +72,13 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
     private static final long serialVersionUID = 7895315240498733128L;
 
     public static final Charset DEFAULT_CHARSET = StandardCharsets.US_ASCII;
+
+    /**
+     * Configuration class for JSON deserialization.
+     */
+    public static class Config implements Serializable {
+        public boolean extractScripts = false;
+    }
 
     private static final MediaType XHTML = MediaType.application("xhtml+xml");
     private static final MediaType WAP_XHTML = MediaType.application("vnd.wap.xhtml+xml");
@@ -106,6 +116,26 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
 
     public JSoupParser(EncodingDetector encodingDetector) {
         super(encodingDetector);
+    }
+
+    /**
+     * Constructor with explicit Config object.
+     *
+     * @param config the configuration
+     */
+    public JSoupParser(Config config) {
+        super();
+        this.extractScripts = config.extractScripts;
+    }
+
+    /**
+     * Constructor for JSON configuration.
+     * Requires Jackson on the classpath.
+     *
+     * @param jsonConfig JSON configuration
+     */
+    public JSoupParser(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, Config.class));
     }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {

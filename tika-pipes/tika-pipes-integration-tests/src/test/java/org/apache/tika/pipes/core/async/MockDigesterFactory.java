@@ -16,9 +16,11 @@
  */
 package org.apache.tika.pipes.core.async;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.digest.InputStreamDigester;
 
+@TikaComponent
 public class MockDigesterFactory implements DigestingParser.DigesterFactory {
 
     private boolean skipContainerDocument = false;

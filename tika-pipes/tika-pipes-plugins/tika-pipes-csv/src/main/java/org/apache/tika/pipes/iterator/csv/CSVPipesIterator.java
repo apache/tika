@@ -85,7 +85,7 @@ public class CSVPipesIterator extends PipesIteratorBase {
     }
 
     public static CSVPipesIterator build(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
-        CSVPipesIteratorConfig config = CSVPipesIteratorConfig.load(extensionConfig.jsonConfig());
+        CSVPipesIteratorConfig config = CSVPipesIteratorConfig.load(extensionConfig.json());
         return new CSVPipesIterator(config, extensionConfig);
     }
 

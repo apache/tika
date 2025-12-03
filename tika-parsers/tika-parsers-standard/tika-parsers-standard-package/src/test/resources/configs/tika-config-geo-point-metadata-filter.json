@@ -1,0 +1,9 @@
+{
+  "metadata-filters": [
+    {
+      "geo-point-metadata-filter" : {
+        "geoPointFieldName": "myGeoPoint"
+      }
+    }
+  ]
+}

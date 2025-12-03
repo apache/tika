@@ -29,7 +29,9 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Field;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -43,6 +45,13 @@ import org.apache.tika.utils.XMLReaderUtils;
 
 @TikaComponent
 public class FlatOpenDocumentParser implements Parser {
+
+    /**
+     * Configuration class for JSON deserialization.
+     */
+    public static class Config {
+        public boolean extractMacros = false;
+    }
 
     static final MediaType FLAT_OD =
             MediaType.application("vnd.oasis.opendocument.tika.flat.document");
@@ -59,6 +68,28 @@ public class FlatOpenDocumentParser implements Parser {
             .unmodifiableSet(new HashSet<>(Arrays.asList(FLAT_OD, FLAT_ODT, FLAT_ODP, FLAT_ODS)));
 
     private boolean extractMacros = false;
+
+    public FlatOpenDocumentParser() {
+    }
+
+    /**
+     * Constructor with explicit Config object.
+     *
+     * @param config the configuration
+     */
+    public FlatOpenDocumentParser(Config config) {
+        this.extractMacros = config.extractMacros;
+    }
+
+    /**
+     * Constructor for JSON configuration.
+     * Requires Jackson on the classpath.
+     *
+     * @param jsonConfig JSON configuration
+     */
+    public FlatOpenDocumentParser(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, Config.class));
+    }
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {

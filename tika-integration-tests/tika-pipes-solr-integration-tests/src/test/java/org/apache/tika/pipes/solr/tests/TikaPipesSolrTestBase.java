@@ -206,12 +206,11 @@ public abstract class TikaPipesSolrTestBase {
     protected void runTikaAsyncSolrPipeIteratorFileFetcherSolrEmitter(Path pipesDirectory) throws Exception {
         setupSolr(pipesDirectory);
 
-        Path tikaConfigFile = getTikaConfigFile(pipesDirectory);
-        Path pluginsConfig = getPluginsConfig(tikaConfigFile, pipesDirectory,
+        Path tikaConfigFile = getTikaConfig(pipesDirectory,
                 SolrEmitterConfig.UpdateStrategy.ADD, SolrEmitterConfig.AttachmentStrategy.PARENT_CHILD,
                 HandlerConfig.PARSE_MODE.RMETA);
 
-        TikaCLI.main(new String[]{"-a", pluginsConfig.toAbsolutePath().toString(), "-c", tikaConfigFile.toAbsolutePath().toString()});
+        TikaCLI.main(new String[]{"-a", "-c", tikaConfigFile.toAbsolutePath().toString()});
 
         try (SolrClient solrClient = new Http2SolrClient.Builder(solrEndpoint).build()) {
             solrClient.commit(collection, true, true);
@@ -240,12 +239,12 @@ public abstract class TikaPipesSolrTestBase {
         // Delete test files and recreate with new content
         FileUtils.deleteDirectory(testFileFolder.toFile());
         createTestFiles("updated");
-        pluginsConfig = getPluginsConfig(tikaConfigFile, pipesDirectory,
+        tikaConfigFile = getTikaConfig(pipesDirectory,
                 SolrEmitterConfig.UpdateStrategy.UPDATE_MUST_EXIST,
                 SolrEmitterConfig.AttachmentStrategy.PARENT_CHILD,
                 HandlerConfig.PARSE_MODE.RMETA);
 
-        TikaCLI.main(new String[]{"-a", pluginsConfig.toAbsolutePath().toString(), "-c", tikaConfigFile.toAbsolutePath().toString()});
+        TikaCLI.main(new String[]{"-a", "-c", tikaConfigFile.toAbsolutePath().toString()});
 
         try (SolrClient solrClient = new Http2SolrClient.Builder(solrEndpoint).build()) {
             solrClient.commit(collection, true, true);
@@ -258,21 +257,13 @@ public abstract class TikaPipesSolrTestBase {
         }
     }
 
-    private Path getTikaConfigFile(Path pipesDirectory) throws IOException {
-        Path tikaConfigFile = pipesDirectory.resolve("ta-solr.xml");
-        String tikaConfigTemplateXml;
-        try (InputStream is = this.getClass().getResourceAsStream("/solr/tika-config-solr.xml")) {
-            tikaConfigTemplateXml = IOUtils.toString(is, StandardCharsets.UTF_8);
-        }
-        Files.writeString(tikaConfigFile, tikaConfigTemplateXml, StandardCharsets.UTF_8);
-        return tikaConfigFile;
-    }
-
     @NotNull
-    private Path getPluginsConfig(Path tikaConfig, Path pipesDirectory,
-                                  SolrEmitterConfig.UpdateStrategy updateStrategy,
-                                  SolrEmitterConfig.AttachmentStrategy attachmentStrategy,
-                                  HandlerConfig.PARSE_MODE parseMode) throws IOException {
+    private Path getTikaConfig(Path pipesDirectory,
+                               SolrEmitterConfig.UpdateStrategy updateStrategy,
+                               SolrEmitterConfig.AttachmentStrategy attachmentStrategy,
+                               HandlerConfig.PARSE_MODE parseMode) throws IOException {
+        Path tikaConfig = pipesDirectory.resolve("plugins-config.json");
+
         String json;
         try (InputStream is = this.getClass().getResourceAsStream("/solr/plugins-template.json")) {
             json = IOUtils.toString(is, StandardCharsets.UTF_8);
@@ -296,9 +287,7 @@ public abstract class TikaPipesSolrTestBase {
                 .replace("SOLR_URLS", solrUrls)
                 .replace("SOLR_ZK_HOSTS", solrZkHosts);
 
-        if (tikaConfig != null) {
-            res = res.replace("TIKA_CONFIG", tikaConfig.toAbsolutePath().toString());
-        }
+        res = res.replace("TIKA_CONFIG", tikaConfig.toAbsolutePath().toString());
 
         Path log4jPropFile = pipesDirectory.resolve("log4j2.xml");
         try (InputStream is = this.getClass().getResourceAsStream("/pipes-fork-server-custom-log4j2.xml")) {
@@ -306,10 +295,8 @@ public abstract class TikaPipesSolrTestBase {
         }
         res = res.replace("LOG4J_PROPERTIES_FILE", log4jPropFile.toAbsolutePath().toString());
 
-        Path pluginsConfig = pipesDirectory.resolve("plugins-config.json");
-        res = res.replace("PLUGINS_CONFIG", pluginsConfig.toAbsolutePath().toString());
-        Files.writeString(pluginsConfig, res, StandardCharsets.UTF_8);
-        return pluginsConfig;
+        Files.writeString(tikaConfig, res, StandardCharsets.UTF_8);
+        return tikaConfig;
     }
 
 }

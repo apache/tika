@@ -64,7 +64,6 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.server.core.resource.PipesResource;
 import org.apache.tika.server.core.writer.JSONObjWriter;
-import org.apache.tika.utils.ProcessUtils;
 
 /**
  * This offers basic integration tests with fetchers and emitters.
@@ -79,8 +78,6 @@ public class TikaPipesTest extends CXFTestBase {
     private static Path TIKA_PIPES_LOG4j2_PATH;
     private static Path TMP_NPE_OUTPUT_FILE;
     private static Path TIKA_CONFIG_PATH;
-    private static Path TIKA_PIPES_CONFIG_PATH;
-    private static String TIKA_CONFIG_XML;
     private static FetcherManager FETCHER_MANAGER;
     private static String HELLO_WORLD = "hello_world.xml";
     private static String HELLO_WORLD_JSON = "hello_world.xml.json";
@@ -105,21 +102,11 @@ public class TikaPipesTest extends CXFTestBase {
         TIKA_PIPES_LOG4j2_PATH = Files.createTempFile(TMP_DIR, "log4j2-", ".xml");
         Files.copy(TikaPipesTest.class.getResourceAsStream("/log4j2.xml"), TIKA_PIPES_LOG4j2_PATH, StandardCopyOption.REPLACE_EXISTING);
 
-        TIKA_CONFIG_PATH = Files.createTempFile(TMP_DIR, "tika-pipes-", ".xml");
-        TIKA_CONFIG_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + "<properties>" +
-                "<pipes><tikaConfig>" + ProcessUtils.escapeCommandLine(TIKA_CONFIG_PATH
-                .toAbsolutePath()
-                .toString()) + "</tikaConfig><numClients>10</numClients>" + "<forkedJvmArgs>" + "<arg>-Xmx256m</arg>" + "<arg>-Dlog4j.configurationFile=file:" +
-                ProcessUtils.escapeCommandLine(TIKA_PIPES_LOG4j2_PATH
-                        .toAbsolutePath()
-                        .toString()) + "</arg>" + "</forkedJvmArgs>" + "</pipes>" + "</properties>";
-        Files.write(TIKA_CONFIG_PATH, TIKA_CONFIG_XML.getBytes(StandardCharsets.UTF_8));
+        TIKA_CONFIG_PATH = Files.createTempFile(TMP_DIR, "tika-pipes-config-", ".json");
 
-        TIKA_PIPES_CONFIG_PATH = Files.createTempFile(TMP_DIR, "tika-pipes-config-", ".json");
+        CXFTestBase.createPluginsConfig(TIKA_CONFIG_PATH, inputDir, TMP_OUTPUT_DIR, null, 10000L);
 
-        CXFTestBase.createPluginsConfig(TIKA_PIPES_CONFIG_PATH, inputDir, TMP_OUTPUT_DIR, null);
-
-        TikaConfigs tikaConfigs = TikaConfigs.load(TIKA_PIPES_CONFIG_PATH);
+        TikaConfigs tikaConfigs = TikaConfigs.load(TIKA_CONFIG_PATH);
         TikaPluginManager pluginManager = TikaPluginManager.load(tikaConfigs);
         FETCHER_MANAGER = FetcherManager.load(pluginManager, tikaConfigs);
     }
@@ -144,7 +131,7 @@ public class TikaPipesTest extends CXFTestBase {
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         List<ResourceProvider> rCoreProviders = new ArrayList<>();
         try {
-            rCoreProviders.add(new SingletonResourceProvider(new PipesResource(TIKA_CONFIG_PATH, TIKA_PIPES_CONFIG_PATH)));
+            rCoreProviders.add(new SingletonResourceProvider(new PipesResource(TIKA_CONFIG_PATH)));
         } catch (IOException | TikaConfigException e) {
             throw new RuntimeException(e);
         }
@@ -160,8 +147,8 @@ public class TikaPipesTest extends CXFTestBase {
     }
 
     @Override
-    protected InputStream getTikaConfigInputStream() {
-        return new ByteArrayInputStream(TIKA_CONFIG_XML.getBytes(StandardCharsets.UTF_8));
+    protected InputStream getTikaConfigInputStream() throws IOException {
+        return new ByteArrayInputStream(Files.readAllBytes(TIKA_CONFIG_PATH));
     }
 
     @Override

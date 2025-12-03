@@ -18,7 +18,6 @@ package org.apache.tika.pipes.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -27,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.config.TikaTaskTimeout;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.AttachmentCountingListFilter;
@@ -38,6 +38,7 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.core.async.AsyncConfig;
 
 public class PipesClientTest {
     String fetcherName = "fsf";
@@ -45,13 +46,10 @@ public class PipesClientTest {
 
 
     private PipesClient init(Path tmp, String testFileName) throws Exception {
-        Path tikaConfigPath = tmp.resolve("tika-config.xml");
-        Files.copy(PipesServerTest.class.getResourceAsStream("TIKA-3941.xml"), tikaConfigPath);
-
-        Path pipesConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, tmp.resolve("input"), tmp.resolve("output"), tikaConfigPath);
+        Path pipesConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, tmp.resolve("input"), tmp.resolve("output"));
         PluginsTestHelper.copyTestFilesToTmpInput(tmp, testFileName);
 
-        PipesConfig pipesConfig = PipesConfig.load(tikaConfigPath, pipesConfigPath);
+        PipesConfig pipesConfig = TikaLoader.load(pipesConfigPath).configs().load("async", AsyncConfig.class);
         return new PipesClient(pipesConfig);
     }
 

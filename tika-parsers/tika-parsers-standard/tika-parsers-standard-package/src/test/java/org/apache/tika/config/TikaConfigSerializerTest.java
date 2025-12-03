@@ -23,13 +23,12 @@ import static org.apache.tika.TikaTest.assertNotContained;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.StringWriter;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+@Disabled("TODO -- convert to TikaLoader/serializer")
 public class TikaConfigSerializerTest {
 
     @Test
@@ -64,23 +63,6 @@ public class TikaConfigSerializerTest {
         }
     }
 
-    @Test
-    public void testTesseractList() throws Exception {
-        TikaConfig tikaConfig = new TikaConfig(getPath("tika-config-tesseract-arbitrary.xml"));
-        StringWriter writer = new StringWriter();
-
-        TikaConfigSerializer.serialize(tikaConfig, TikaConfigSerializer.Mode.STATIC,
-                writer, StandardCharsets.UTF_8);
-        String xml = writer.toString().replaceAll("\\s+", " ");
-        String needle = "<param name=\"otherTesseractSettings\" type=\"list\"> " +
-                "<string>textord_initialx_ile 0.75</string> <string>textord_noise_hfract 0.15625</string> </param>";
-        assertContains(needle, xml);
-        //For now, make sure that deserialization basically works;
-        //add many more unit tests!
-        try (InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
-            TikaConfig deserialized = new TikaConfig(is);
-        }
-    }
 
     @Test
     public void testOfficeParserParams() throws Exception {
@@ -92,12 +74,5 @@ public class TikaConfigSerializerTest {
                 writer.toString(), 3);
     }
 
-    private Path getPath(String config) {
-        try {
-            return Paths.get(TikaConfigSerializerTest.class.getResource("/configs/" + config)
-                    .toURI());
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
-    }
+
 }

@@ -1,0 +1,10 @@
+{
+  "parsers": [],
+  "encoding-detectors": [
+    {
+      "override-encoding-detector": {
+        "charset": "wtf8"
+      }
+    }
+  ]
+}

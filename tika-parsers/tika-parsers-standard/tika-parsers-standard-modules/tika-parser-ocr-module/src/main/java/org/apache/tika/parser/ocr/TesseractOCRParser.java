@@ -58,10 +58,14 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.config.ConfigContainer;
+import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.Param;
+import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.exception.TikaConfigException;
@@ -133,15 +137,14 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
 
                     })));
     private static volatile boolean HAS_WARNED = false;
-    private static volatile boolean HAS_CHECKED_FOR_IMAGE_MAGICK = false;
+
+
+    private volatile boolean hasCheckedForImageMagick = false;
 
     //if a user specifies a custom tess path or tessdata path
     //load the available languages at initialization time
     private final Set<String> langs = new HashSet<>();
-    private final TesseractOCRConfig defaultConfig = new TesseractOCRConfig();
-    private String tesseractPath = "";
-    private String tessdataPath = "";
-    private String imageMagickPath = "";
+    private TesseractOCRConfig defaultConfig = new TesseractOCRConfig();
     //if set to true, this will run --list-langs
     //at initialization and then check langs
     //at parse time
@@ -149,6 +152,25 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     private boolean hasTesseract;
     private boolean hasImageMagick;
     private ImagePreprocessor imagePreprocessor;
+
+    public TesseractOCRParser() throws TikaConfigException {
+        initialize(Map.of());
+    }
+
+    public TesseractOCRParser(TesseractOCRConfig tesseractOCRConfig) throws TikaConfigException {
+        this.defaultConfig = tesseractOCRConfig;
+        initialize(Map.of());
+    }
+
+    /**
+     * Constructor for JSON configuration.
+     * Requires Jackson on the classpath.
+     *
+     * @param jsonConfig JSON configuration
+     */
+    public TesseractOCRParser(JsonConfig jsonConfig) throws TikaConfigException {
+        this(ConfigDeserializer.buildConfig(jsonConfig, TesseractOCRConfig.class));
+    }
 
     public static String getImageMagickProg() {
         return System.getProperty("os.name").startsWith("Windows") ? "magick" : "convert";
@@ -186,6 +208,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     public boolean hasTesseract() throws TikaConfigException {
         // Fetch where the config says to find Tesseract
         String tesseract = getTesseractPath() + getTesseractProg();
+        String tesseractPath = getTesseractPath();
 
         if (!StringUtils.isBlank(tesseractPath) && !Files.isDirectory(Paths.get(tesseractPath))) {
             throw new TikaConfigException("tesseractPath (" + tesseractPath + ") " +
@@ -200,10 +223,11 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     }
 
     synchronized boolean hasImageMagick() throws TikaConfigException {
-        if (HAS_CHECKED_FOR_IMAGE_MAGICK) {
+        if (hasCheckedForImageMagick) {
             return hasImageMagick;
         }
         // Fetch where the config says to find ImageMagick Program
+        String imageMagickPath = getImageMagickPath();
         String fullImageMagickPath = imageMagickPath + getImageMagickProg();
 
         //check that directory exists
@@ -220,7 +244,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
             LOG.debug("ImageMagick does not appear to be installed " + "(commandline: " +
                     fullImageMagickPath + ")");
         }
-        HAS_CHECKED_FOR_IMAGE_MAGICK = true;
+        hasCheckedForImageMagick = true;
         return hasImageMagick;
 
     }
@@ -245,21 +269,18 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext parseContext) throws IOException, SAXException, TikaException {
 
-        TesseractOCRConfig userConfig = parseContext.get(TesseractOCRConfig.class);
-        TesseractOCRConfig config = defaultConfig;
-        if (userConfig != null) {
-            config = defaultConfig.cloneAndUpdate(userConfig);
-        }
+        TesseractOCRConfig config = getConfig(parseContext);
+
         // If Tesseract is not on the path with the current config, do not try to run OCR
         // getSupportedTypes shouldn't have listed us as handling it, so this should only
         //  occur if someone directly calls this parser, not via DefaultParser or similar
-        if (!hasTesseract || (config != null && config.isSkipOcr())) {
+        if (!hasTesseract || config.isSkipOcr()) {
             return;
         }
 
         //if you haven't checked yet, and a per file config requests imagemagick
         //and if the default is not to use image processing
-        if (! HAS_CHECKED_FOR_IMAGE_MAGICK && config.isEnableImagePreprocessing()) {
+        if (!hasCheckedForImageMagick && config.isEnableImagePreprocessing()) {
             hasImageMagick = hasImageMagick();
         }
 
@@ -278,6 +299,40 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
             parse(tikaStream, tmpOCROutputFile, xhtml, metadata, parseContext, config);
             xhtml.endDocument();
         }
+    }
+
+    private TesseractOCRConfig getConfig(ParseContext parseContext) throws TikaConfigException, IOException {
+        // Check for ConfigContainer with component-specific runtime config
+        ConfigContainer configContainer =
+                parseContext.get(org.apache.tika.config.ConfigContainer.class);
+        if (configContainer != null && configContainer.get("tesseract-ocr-parser").isPresent()) {
+            // First validate that no paths are being set by deserializing into RuntimeConfig
+            // The RuntimeConfig setters will throw TikaConfigException if JSON contains path fields
+            TesseractOCRConfig.RuntimeConfig runtimeConfig = ParseContextConfig.getConfig(
+                    parseContext,
+                    "tesseract-ocr-parser",
+                    TesseractOCRConfig.RuntimeConfig.class,
+                    new TesseractOCRConfig.RuntimeConfig());
+
+            // Short-circuit if skipOcr is set
+            if (runtimeConfig.isSkipOcr()) {
+                return runtimeConfig;
+            }
+
+            // Now merge with defaultConfig using the base class
+            return ParseContextConfig.getConfig(
+                    parseContext,
+                    "tesseract-ocr-parser",
+                    TesseractOCRConfig.class,
+                    defaultConfig);
+        }
+
+        // Fall back to old-style ParseContext config for backward compatibility
+        TesseractOCRConfig userConfig = parseContext.get(TesseractOCRConfig.class);
+        if (userConfig != null) {
+            return userConfig;
+        }
+        return defaultConfig;
     }
 
     private ContentHandler getContentHandler(boolean isInlineContent,
@@ -633,7 +688,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     }
 
     public String getTesseractPath() {
-        return tesseractPath;
+        return defaultConfig.getTesseractPath();
     }
 
     /**
@@ -644,16 +699,16 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
      * </p>
      */
     @Field
-    public void setTesseractPath(String tesseractPath) {
+    public void setTesseractPath(String tesseractPath) throws TikaConfigException {
         tesseractPath = FilenameUtils.normalize(tesseractPath);
         if (!tesseractPath.isEmpty() && !tesseractPath.endsWith(File.separator)) {
             tesseractPath += File.separator;
         }
-        this.tesseractPath = tesseractPath;
+        defaultConfig.setTesseractPath(tesseractPath);
     }
 
     public String getTessdataPath() {
-        return this.tessdataPath;
+        return defaultConfig.getTessdataPath();
     }
 
     /**
@@ -665,17 +720,17 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
      * Make sure to include the 'tessdata' folder in this path: '/blah/de/blah/tessdata'
      */
     @Field
-    public void setTessdataPath(String tessdataPath) {
+    public void setTessdataPath(String tessdataPath) throws TikaConfigException {
         tessdataPath = FilenameUtils.normalize(tessdataPath);
         if (!tessdataPath.isEmpty() && !tessdataPath.endsWith(File.separator)) {
             tessdataPath += File.separator;
         }
 
-        this.tessdataPath = tessdataPath;
+        defaultConfig.setTessdataPath(tessdataPath);
     }
 
     public String getImageMagickPath() {
-        return imageMagickPath;
+        return defaultConfig.getImageMagickPath();
     }
 
     /**
@@ -684,12 +739,12 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
      * @param imageMagickPath to ImageMagick executable directory.
      */
     @Field
-    public void setImageMagickPath(String imageMagickPath) {
+    public void setImageMagickPath(String imageMagickPath) throws TikaConfigException {
         imageMagickPath = FilenameUtils.normalize(imageMagickPath);
         if (!imageMagickPath.isEmpty() && !imageMagickPath.endsWith(File.separator)) {
             imageMagickPath += File.separator;
         }
-        this.imageMagickPath = imageMagickPath;
+        defaultConfig.setImageMagickPath(imageMagickPath);
     }
 
     @Field

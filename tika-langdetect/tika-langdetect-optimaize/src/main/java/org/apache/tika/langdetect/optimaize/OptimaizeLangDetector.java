@@ -35,6 +35,7 @@ import com.optimaize.langdetect.profiles.BuiltInLanguages;
 import com.optimaize.langdetect.profiles.LanguageProfile;
 import com.optimaize.langdetect.profiles.LanguageProfileReader;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.language.detect.LanguageConfidence;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageNames;
@@ -44,6 +45,7 @@ import org.apache.tika.language.detect.LanguageResult;
  * Implementation of the LanguageDetector API that uses
  * https://github.com/optimaize/language-detector
  */
+@TikaComponent
 public class OptimaizeLangDetector extends LanguageDetector {
 
     private static final List<LanguageProfile> DEFAULT_LANGUAGE_PROFILES;

@@ -29,6 +29,7 @@ import jakarta.ws.rs.Produces;
 
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.server.core.HTMLHelper;
 
 /**
@@ -46,12 +47,12 @@ public class TikaDetectors {
 
     @GET
     @Produces("text/html")
-    public String getDectorsHTML() {
+    public String getDectorsHTML() throws TikaConfigException {
         StringBuffer h = new StringBuffer();
         html.generateHeader(h, "Detectors available to Apache Tika");
         detectorAsHTML(TikaResource
-                .getConfig()
-                .getDetector(), h, 2);
+                .getTikaLoader()
+                .loadDetectors(), h, 2);
         html.generateFooter(h);
         return h.toString();
     }
@@ -80,11 +81,11 @@ public class TikaDetectors {
 
     @GET
     @Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
-    public String getDetectorsJSON() throws IOException {
+    public String getDetectorsJSON() throws IOException, TikaConfigException {
         Map<String, Object> details = new HashMap<>();
         detectorAsMap(TikaResource
-                .getConfig()
-                .getDetector(), details);
+                .getTikaLoader()
+                .loadDetectors(), details);
         return new ObjectMapper().writeValueAsString(details);
     }
 
@@ -108,11 +109,11 @@ public class TikaDetectors {
 
     @GET
     @Produces("text/plain")
-    public String getDetectorsPlain() {
+    public String getDetectorsPlain() throws TikaConfigException {
         StringBuffer text = new StringBuffer();
         renderDetector(TikaResource
-                .getConfig()
-                .getDetector(), text, 0);
+                .getTikaLoader()
+                .loadDetectors(), text, 0);
         return text.toString();
     }
 

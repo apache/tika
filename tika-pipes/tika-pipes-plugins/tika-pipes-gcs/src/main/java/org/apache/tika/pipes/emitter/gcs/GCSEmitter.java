@@ -69,7 +69,7 @@ public class GCSEmitter extends AbstractStreamEmitter {
     private final Storage storage;
 
     public static GCSEmitter build(ExtensionConfig extensionConfig) throws TikaConfigException, IOException {
-        GCSEmitterConfig config = GCSEmitterConfig.load(extensionConfig.jsonConfig());
+        GCSEmitterConfig config = GCSEmitterConfig.load(extensionConfig.json());
         config.validate();
         Storage storage = buildStorage(config);
         return new GCSEmitter(extensionConfig, config, storage);

@@ -52,7 +52,7 @@ public class MicrosoftGraphFetcher extends AbstractTikaExtension implements Fetc
     }
 
     public static MicrosoftGraphFetcher build(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
-        MicrosoftGraphFetcherConfig config = MicrosoftGraphFetcherConfig.load(extensionConfig.jsonConfig());
+        MicrosoftGraphFetcherConfig config = MicrosoftGraphFetcherConfig.load(extensionConfig.json());
         MicrosoftGraphFetcher fetcher = new MicrosoftGraphFetcher(extensionConfig);
         fetcher.config = config;
         fetcher.initialize();

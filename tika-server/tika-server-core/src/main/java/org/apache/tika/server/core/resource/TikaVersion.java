@@ -27,7 +27,7 @@ public class TikaVersion {
     private Tika tika;
 
     public TikaVersion() {
-        this.tika = new Tika(TikaResource.getConfig());
+        this.tika = new Tika();
     }
 
     @GET

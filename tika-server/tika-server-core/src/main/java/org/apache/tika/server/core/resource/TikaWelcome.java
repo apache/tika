@@ -65,7 +65,7 @@ public class TikaWelcome {
     private List<Class<?>> endpoints = new LinkedList<>();
 
     public TikaWelcome(List<ResourceProvider> rCoreProviders) {
-        this.tika = new Tika(TikaResource.getConfig());
+        this.tika = new Tika();
         this.html = new HTMLHelper();
         for (ResourceProvider rp : rCoreProviders) {
             this.endpoints.add(rp.getResourceClass());

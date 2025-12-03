@@ -47,7 +47,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * @see <a href="https://id3.org/id3v2.4.0-structure">MP3 ID3 Version 2.4 Structure Specification</a>
  * @see <a href="https://id3.org/id3v2.4.0-frames">MP3 ID3 Version 2.4 Frames Specification</a>
  */
-@TikaComponent
+@TikaComponent(name = "mp3-parser")
 public class Mp3Parser implements Parser {
 
     /**

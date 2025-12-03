@@ -27,14 +27,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.parser.AutoDetectParser;
@@ -50,11 +49,7 @@ public class ComponentRegistryIntegrationTest {
     @Test
     public void testLoadDetectorByName() throws Exception {
         // Load config that uses "poifs-container-detector" by name
-        Path jsonConfig = Paths.get(
-                getClass().getResource("/configs/test-detectors.json").toURI());
-        assertNotNull(jsonConfig, "test-detectors.json should exist");
-
-        TikaLoader loader = TikaLoader.load(jsonConfig);
+        TikaLoader loader = TikaLoaderHelper.getLoader("test-detectors.json");
         Detector detector = loader.loadDetectors();
 
         assertNotNull(detector, "Detector should be loaded");
@@ -65,11 +60,7 @@ public class ComponentRegistryIntegrationTest {
     @Test
     public void testLoadDefaultParser() throws Exception {
         // Load config that uses "default-parser" by name
-        Path jsonConfig = Paths.get(
-                getClass().getResource("/configs/test-default-parser.json").toURI());
-        assertNotNull(jsonConfig, "test-default-parser.json should exist");
-
-        TikaLoader loader = TikaLoader.load(jsonConfig);
+        TikaLoader loader = TikaLoaderHelper.getLoader("test-default-parser.json");
         Parser parser = loader.loadAutoDetectParser();
 
         assertNotNull(parser, "Parser should be loaded");
@@ -81,12 +72,7 @@ public class ComponentRegistryIntegrationTest {
     public void testLoadDefaultParserWithExclusions() throws Exception {
         // Load config that excludes "pdf-parser" and "html-parser" by name
         // This verifies that the component names can be used in exclusion lists
-        Path jsonConfig = Paths.get(
-                getClass().getResource(
-                "/configs/test-default-with-exclusions.json").toURI());
-        assertNotNull(jsonConfig, "test-default-with-exclusions.json should exist");
-
-        TikaLoader loader = TikaLoader.load(jsonConfig);
+        TikaLoader loader = TikaLoaderHelper.getLoader("test-default-with-exclusions.json");
         Parser parser = loader.loadAutoDetectParser();
 
         assertNotNull(parser, "Parser should be loaded");
@@ -101,11 +87,8 @@ public class ComponentRegistryIntegrationTest {
     public void testLoadDcXmlParserByName() throws Exception {
         // Load config that uses "dc-xml-parser" by name
         // XMLParser has spi=false, but DcXMLParser should be available
-        Path jsonConfig = Paths.get(
-                getClass().getResource("/configs/test-dc-xml-parser.json").toURI());
-        assertNotNull(jsonConfig, "test-dc-xml-parser.json should exist");
+        TikaLoader loader = TikaLoaderHelper.getLoader("test-dc-xml-parser.json");
 
-        TikaLoader loader = TikaLoader.load(jsonConfig);
         Parser parser = loader.loadParsers();
 
         assertNotNull(parser, "Parser should be loaded");

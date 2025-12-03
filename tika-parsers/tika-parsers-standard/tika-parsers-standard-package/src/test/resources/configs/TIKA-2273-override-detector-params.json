@@ -1,0 +1,9 @@
+{
+  "encoding-detectors": [
+    {
+      "override-encoding-detector": {
+        "charset": "UTF-16LE"
+      }
+    }
+  ]
+}

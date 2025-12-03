@@ -34,7 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.Tika;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -51,9 +51,9 @@ public class TestMimeTypes {
 
     @BeforeEach
     public void setUp() throws Exception {
-        TikaConfig config = TikaConfig.getDefaultConfig();
-        repo = config.getMimeRepository();
-        tika = new Tika(config);
+        TikaLoader tikaLoader = TikaLoader.loadDefault();
+        repo = TikaLoader.getMimeTypes();
+        tika = new Tika(tikaLoader.loadDetectors(), tikaLoader.loadAutoDetectParser());
         u = new URI("http://mydomain.com/x.pdf?x=y").toURL();
     }
 

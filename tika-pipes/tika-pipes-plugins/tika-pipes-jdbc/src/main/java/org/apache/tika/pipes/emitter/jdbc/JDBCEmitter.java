@@ -99,7 +99,7 @@ public class JDBCEmitter extends AbstractEmitter implements Closeable {
     private PreparedStatement insertStatement;
 
     public static JDBCEmitter build(ExtensionConfig extensionConfig) throws TikaConfigException, IOException {
-        JDBCEmitterConfig config = JDBCEmitterConfig.load(extensionConfig.jsonConfig());
+        JDBCEmitterConfig config = JDBCEmitterConfig.load(extensionConfig.json());
         config.validate();
         return new JDBCEmitter(extensionConfig, config);
     }

@@ -21,11 +21,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import org.apache.tika.config.loader.PolymorphicObjectMapperFactory;
 import org.apache.tika.pipes.core.async.AsyncConfig;
 import org.apache.tika.utils.StringUtils;
 
@@ -62,18 +64,15 @@ public class PluginsWriter {
             AsyncConfig asyncConfig = new AsyncConfig();
 
             asyncConfig.setNumClients(simpleAsyncConfig.getNumClients() == null ? 2 : simpleAsyncConfig.getNumClients());
-            asyncConfig.setTikaConfig(Paths.get(simpleAsyncConfig.getTikaConfig()));
-            asyncConfig.setPipesPluginsConfig(
-                    StringUtils.isBlank(simpleAsyncConfig.getAsyncConfig()) ? pluginsPath :
-                            Paths.get(simpleAsyncConfig.getAsyncConfig()));
+            asyncConfig.setTikaConfig(output.toAbsolutePath().toString());
 
             if (simpleAsyncConfig.getXmx() != null) {
-                asyncConfig.setForkedJvmArgs(List.of(simpleAsyncConfig.getXmx()));
+                asyncConfig.setForkedJvmArgs(new ArrayList<>(List.of(simpleAsyncConfig.getXmx())));
             }
             if (simpleAsyncConfig.getTimeoutMs() != null) {
                 asyncConfig.setTimeoutMillis(simpleAsyncConfig.getTimeoutMs());
             }
-            ObjectMapper objectMapper = new ObjectMapper();
+            ObjectMapper objectMapper = PolymorphicObjectMapperFactory.getMapper();
             ObjectNode root = (ObjectNode) objectMapper.readTree(json.getBytes(StandardCharsets.UTF_8));
             root.set("async", objectMapper.valueToTree(asyncConfig));
 

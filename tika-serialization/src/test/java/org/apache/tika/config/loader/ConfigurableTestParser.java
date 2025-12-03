@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -47,9 +48,9 @@ public class ConfigurableTestParser implements Parser {
     /**
      * Constructor for JSON-based configuration.
      */
-    public ConfigurableTestParser(String jsonConfig) throws TikaConfigException {
+    public ConfigurableTestParser(JsonConfig jsonConfig) throws TikaConfigException {
         try {
-            this.config = OBJECT_MAPPER.readValue(jsonConfig, TestParserConfig.class);
+            this.config = OBJECT_MAPPER.readValue(jsonConfig.json(), TestParserConfig.class);
         } catch (IOException e) {
             throw new TikaConfigException("Failed to parse JSON config", e);
         }

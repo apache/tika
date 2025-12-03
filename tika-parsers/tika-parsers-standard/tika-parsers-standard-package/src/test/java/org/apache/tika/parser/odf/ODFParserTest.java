@@ -18,29 +18,25 @@ package org.apache.tika.parser.odf;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
 
+import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
 
 public class ODFParserTest extends TikaTest {
     private static Parser MACRO_PARSER;
 
     @BeforeAll
-    public static void setUp() throws IOException, TikaException, SAXException {
-        MACRO_PARSER = new AutoDetectParser(
-                new TikaConfig(ODFParserTest.class.getResourceAsStream("tika-config-macros.xml")));
+    public static void setUp() throws Exception {
+        MACRO_PARSER = TikaLoaderHelper
+                .getLoader("tika-config-macros.json").loadAutoDetectParser();
     }
 
     @Test
@@ -208,5 +204,4 @@ public class ODFParserTest extends TikaTest {
         assertEquals("test", macro.get(TikaCoreProperties.RESOURCE_NAME_KEY));
 
     }
-
 }

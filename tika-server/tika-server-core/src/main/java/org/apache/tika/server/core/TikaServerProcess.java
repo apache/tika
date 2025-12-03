@@ -56,12 +56,8 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.Tika;
 import org.apache.tika.config.ServiceLoader;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.DigestingParser;
-import org.apache.tika.parser.digestutils.BouncyCastleDigester;
-import org.apache.tika.parser.digestutils.CommonsDigester;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.plugins.TikaConfigs;
@@ -167,36 +163,21 @@ public class TikaServerProcess {
         int port = tikaServerConfig.getPort();
 
         // The Tika Configuration to use throughout
-        TikaConfig tika;
+        TikaLoader tikaLoader;
 
         if (tikaServerConfig.hasConfigFile()) {
             LOG.info("Using custom config: {}", tikaServerConfig.getConfigPath());
-            tika = new TikaConfig(tikaServerConfig.getConfigPath());
+            tikaLoader = TikaLoader.load(tikaServerConfig.getConfigPath());
         } else {
-            tika = TikaConfig.getDefaultConfig();
-        }
-
-        DigestingParser.Digester digester = null;
-        if (!StringUtils.isBlank(tikaServerConfig.getDigest())) {
-            try {
-                digester = new CommonsDigester(tikaServerConfig.getDigestMarkLimit(), tikaServerConfig.getDigest());
-            } catch (IllegalArgumentException commonsException) {
-                try {
-                    digester = new BouncyCastleDigester(tikaServerConfig.getDigestMarkLimit(), tikaServerConfig.getDigest());
-                } catch (IllegalArgumentException bcException) {
-                    throw new IllegalArgumentException(
-                            "Tried both CommonsDigester (" + commonsException.getMessage() + ") and BouncyCastleDigester (" + bcException.getMessage() + ")", bcException);
-                }
-            }
+            tikaLoader = TikaLoader.loadDefault();
         }
 
         //TODO -- clean this up -- only load as necessary
         //REALLY NEED TODO THIS
         FetcherManager fetcherManager = null;
         InputStreamFactory inputStreamFactory = null;
-        if (tikaServerConfig.isEnableUnsecureFeatures() &&
-                tikaServerConfig.getPipesConfigPath().isPresent()) {
-            TikaConfigs tikaConfigs = TikaConfigs.load(tikaServerConfig.getPipesConfigPath().get());
+        if (tikaServerConfig.isEnableUnsecureFeatures()) {
+            TikaConfigs tikaConfigs = TikaConfigs.load(tikaServerConfig.getConfigPath());
             TikaPluginManager pluginManager = TikaPluginManager.load(tikaConfigs);
             fetcherManager = FetcherManager.load(pluginManager, tikaConfigs);
             inputStreamFactory = new FetcherStreamFactory(fetcherManager);
@@ -210,7 +191,7 @@ public class TikaServerProcess {
         ServerStatus serverStatus;
 
         serverStatus = new ServerStatus();
-        TikaResource.init(tika, tikaServerConfig, digester, inputStreamFactory, serverStatus);
+        TikaResource.init(tikaLoader, tikaServerConfig, inputStreamFactory, serverStatus);
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
 
         List<ResourceProvider> resourceProviders = new ArrayList<>();
@@ -385,11 +366,7 @@ public class TikaServerProcess {
         }
 
         if (addAsyncResource) {
-            if (tikaServerConfig.getPipesConfigPath().isEmpty()) {
-                throw new TikaConfigException("Must specify a pipes config on the commandline with the -a option");
-            }
-            final AsyncResource localAsyncResource = new AsyncResource(tikaServerConfig.getConfigPath(),
-                    tikaServerConfig.getPipesConfigPath().get());
+            final AsyncResource localAsyncResource = new AsyncResource(tikaServerConfig.getConfigPath());
             Runtime
                     .getRuntime()
                     .addShutdownHook(new Thread(() -> {
@@ -402,10 +379,7 @@ public class TikaServerProcess {
             resourceProviders.add(new SingletonResourceProvider(localAsyncResource));
         }
         if (addPipesResource) {
-            if (tikaServerConfig.getPipesConfigPath().isEmpty()) {
-                throw new TikaConfigException("Must specify a pipes config on the commandline with the -a option");
-            }
-            final PipesResource localPipesResource = new PipesResource(tikaServerConfig.getConfigPath(), tikaServerConfig.getPipesConfigPath().get());
+            final PipesResource localPipesResource = new PipesResource(tikaServerConfig.getConfigPath());
             Runtime
                     .getRuntime()
                     .addShutdownHook(new Thread(() -> {

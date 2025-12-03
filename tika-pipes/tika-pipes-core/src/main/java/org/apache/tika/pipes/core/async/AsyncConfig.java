@@ -19,10 +19,10 @@ package org.apache.tika.pipes.core.async;
 import java.io.IOException;
 
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.pipes.core.PipesConfigBase;
+import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.plugins.TikaConfigs;
 
-public class AsyncConfig extends PipesConfigBase {
+public class AsyncConfig extends PipesConfig {
 
     private long emitWithinMillis = 10000;
     private long emitMaxEstimatedBytes = 100000;

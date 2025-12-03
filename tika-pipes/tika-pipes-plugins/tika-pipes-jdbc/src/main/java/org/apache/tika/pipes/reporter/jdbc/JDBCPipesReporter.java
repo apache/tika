@@ -61,7 +61,7 @@ public class JDBCPipesReporter extends PipesReporterBase {
     private static final long MAX_WAIT_MILLIS = 120000;
 
     public static JDBCPipesReporter build(ExtensionConfig pluginConfig) throws TikaConfigException, IOException {
-        JDBCPipesReporterConfig config = JDBCPipesReporterConfig.load(pluginConfig.jsonConfig());
+        JDBCPipesReporterConfig config = JDBCPipesReporterConfig.load(pluginConfig.json());
         return new JDBCPipesReporter(pluginConfig, config);
     }
 

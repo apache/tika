@@ -17,18 +17,13 @@
 package org.apache.tika.parser.pdf;
 
 import java.io.Serializable;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.HashSet;
 import java.util.Locale;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.text.PDFTextStripper;
 
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.pdf.image.ImageGraphicsEngineFactory;
 import org.apache.tika.renderer.Renderer;
 
@@ -58,7 +53,7 @@ public class PDFParserConfig implements Serializable {
     }
 
     private static final long serialVersionUID = 6492570218190936986L;
-    private final Set<String> userConfigured = new HashSet<>();
+
     // True if we let PDFBox "guess" where spaces should go:
     private boolean enableAutoSpace = true;
 
@@ -184,7 +179,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setExtractInlineImageMetadataOnly(boolean extractInlineImageMetadataOnly) {
         this.extractInlineImageMetadataOnly = extractInlineImageMetadataOnly;
-        userConfigured.add("extractInlineImageMetadataOnly");
     }
 
     public boolean isExtractMarkedContent() {
@@ -201,7 +195,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setExtractMarkedContent(boolean extractMarkedContent) {
         this.extractMarkedContent = extractMarkedContent;
-        userConfigured.add("extractMarkedContent");
     }
 
     /**
@@ -245,7 +238,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setExtractAcroFormContent(boolean extractAcroFormContent) {
         this.extractAcroFormContent = extractAcroFormContent;
-        userConfigured.add("extractAcroFormContent");
     }
 
     /**
@@ -265,7 +257,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setIfXFAExtractOnlyXFA(boolean ifXFAExtractOnlyXFA) {
         this.ifXFAExtractOnlyXFA = ifXFAExtractOnlyXFA;
-        userConfigured.add("ifXFAExtractOnlyXFA");
     }
 
     /**
@@ -284,7 +275,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setExtractBookmarksText(boolean extractBookmarksText) {
         this.extractBookmarksText = extractBookmarksText;
-        userConfigured.add("extractBookmarksText");
     }
 
     public boolean isExtractFontNames() {
@@ -298,7 +288,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setExtractFontNames(boolean extractFontNames) {
         this.extractFontNames = extractFontNames;
-        userConfigured.add("extractFontNames");
     }
 
     /**
@@ -333,7 +322,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setExtractInlineImages(boolean extractInlineImages) {
         this.extractInlineImages = extractInlineImages;
-        userConfigured.add("extractInlineImages");
     }
 
     /**
@@ -366,7 +354,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setExtractUniqueInlineImagesOnly(boolean extractUniqueInlineImagesOnly) {
         this.extractUniqueInlineImagesOnly = extractUniqueInlineImagesOnly;
-        userConfigured.add("extractUniqueInlineImagesOnly");
     }
 
     /**
@@ -384,7 +371,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setEnableAutoSpace(boolean enableAutoSpace) {
         this.enableAutoSpace = enableAutoSpace;
-        userConfigured.add("enableAutoSpace");
     }
 
     /**
@@ -405,7 +391,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setSuppressDuplicateOverlappingText(boolean suppressDuplicateOverlappingText) {
         this.suppressDuplicateOverlappingText = suppressDuplicateOverlappingText;
-        userConfigured.add("suppressDuplicateOverlappingText");
     }
 
     /**
@@ -423,7 +408,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setIgnoreContentStreamSpaceGlyphs(boolean ignoreContentStreamSpaceGlyphs) {
         this.ignoreContentStreamSpaceGlyphs = ignoreContentStreamSpaceGlyphs;
-        userConfigured.add("ignoreContentStreamSpaceGlyphs");
     }
 
     /**
@@ -439,7 +423,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setExtractAnnotationText(boolean extractAnnotationText) {
         this.extractAnnotationText = extractAnnotationText;
-        userConfigured.add("extractAnnotationText");
     }
 
     /**
@@ -459,7 +442,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setSortByPosition(boolean sortByPosition) {
         this.sortByPosition = sortByPosition;
-        userConfigured.add("sortByPosition");
     }
 
     /**
@@ -474,7 +456,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setAverageCharTolerance(Float averageCharTolerance) {
         this.averageCharTolerance = averageCharTolerance;
-        userConfigured.add("averageCharTolerance");
     }
 
     /**
@@ -489,7 +470,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setSpacingTolerance(Float spacingTolerance) {
         this.spacingTolerance = spacingTolerance;
-        userConfigured.add("spacingTolerance");
     }
 
     /**
@@ -504,7 +484,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setDropThreshold(Float dropThreshold) {
         this.dropThreshold = dropThreshold;
-        userConfigured.add("dropThreshold");
     }
 
     public AccessChecker getAccessChecker() {
@@ -513,7 +492,6 @@ public class PDFParserConfig implements Serializable {
 
     public void setAccessChecker(AccessChecker accessChecker) {
         this.accessChecker = accessChecker;
-        userConfigured.add("accessChecker");
     }
 
     /**
@@ -536,7 +514,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setCatchIntermediateIOExceptions(boolean catchIntermediateIOExceptions) {
         this.catchIntermediateIOExceptions = catchIntermediateIOExceptions;
-        userConfigured.add("catchIntermediateIOExceptions");
     }
 
     /**
@@ -560,11 +537,27 @@ public class PDFParserConfig implements Serializable {
      */
     public void setOcrStrategy(OCR_STRATEGY ocrStrategy) {
         this.ocrStrategy = ocrStrategy;
-        userConfigured.add("ocrStrategy");
     }
 
 
-    public void setOcrStrategyAuto(String ocrStrategyAuto) {
+    /**
+     * Sets the OCR strategy auto configuration from an object.
+     * Used by Jackson deserialization.
+     *
+     * @param ocrStrategyAuto the OCR strategy auto configuration
+     */
+    public void setOcrStrategyAuto(OCRStrategyAuto ocrStrategyAuto) {
+        this.ocrStrategyAuto = ocrStrategyAuto;
+    }
+
+    /**
+     * Sets the OCR strategy auto configuration from a string.
+     * Used for configuration parsing from XML/text via PDFParser's @Field annotation.
+     * Package-private to prevent Jackson from discovering it during bean introspection.
+     *
+     * @param ocrStrategyAuto string representation of OCR strategy
+     */
+    void setOcrStrategyAutoFromString(String ocrStrategyAuto) {
         final String regex = "^\\s*(faster|better)|(\\d{1,3})(%)?(?:,\\s*(\\d{1,3}))?\\s*$";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(ocrStrategyAuto);
@@ -591,7 +584,6 @@ public class PDFParserConfig implements Serializable {
                         : Integer.parseInt(matcher.group(4));
                 this.ocrStrategyAuto = new OCRStrategyAuto(unmappedUnicodeCharsPerPage, totalCharsPerPage);
             }
-            userConfigured.add("ocrStrategyAuto");
 
         } else {
             throw new IllegalArgumentException("Error parsing OCRStrategyAuto - Must be in the form 'num[%], num'");
@@ -623,7 +615,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setOcrRenderingStrategy(OCR_RENDERING_STRATEGY ocrRenderingStrategy) {
         this.ocrRenderingStrategy = ocrRenderingStrategy;
-        userConfigured.add("ocrRenderingStrategy");
     }
 
     /**
@@ -649,7 +640,6 @@ public class PDFParserConfig implements Serializable {
                             ocrImageFormatName);
         }
         this.ocrImageFormatName = ocrImageFormatName;
-        userConfigured.add("ocrImageFormatName");
     }
 
     /**
@@ -669,7 +659,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setOcrImageType(TikaImageType ocrImageType) {
         this.ocrImageType = ocrImageType;
-        userConfigured.add("ocrImageType");
     }
 
     /**
@@ -698,7 +687,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setOcrDPI(int ocrDPI) {
         this.ocrDPI = ocrDPI;
-        userConfigured.add("ocrDPI");
     }
 
     /**
@@ -717,7 +705,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setOcrImageQuality(float ocrImageQuality) {
         this.ocrImageQuality = ocrImageQuality;
-        userConfigured.add("ocrImageQuality");
     }
 
     /**
@@ -737,7 +724,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setExtractActions(boolean v) {
         extractActions = v;
-        userConfigured.add("extractActions");
     }
 
     /**
@@ -752,7 +738,6 @@ public class PDFParserConfig implements Serializable {
 
     public void setMaxMainMemoryBytes(long maxMainMemoryBytes) {
         this.maxMainMemoryBytes = maxMainMemoryBytes;
-        userConfigured.add("maxMainMemoryBytes");
     }
 
     public boolean isSetKCMS() {
@@ -779,7 +764,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setSetKCMS(boolean setKCMS) {
         this.setKCMS = setKCMS;
-        userConfigured.add("setKCMS");
     }
 
     private TikaImageType parseImageType(String ocrImageType) {
@@ -808,40 +792,10 @@ public class PDFParserConfig implements Serializable {
 
     public void setDetectAngles(boolean detectAngles) {
         this.detectAngles = detectAngles;
-        userConfigured.add("detectAngles");
-    }
-
-    public PDFParserConfig cloneAndUpdate(PDFParserConfig updates) throws TikaException {
-        PDFParserConfig updated = new PDFParserConfig();
-        for (Field field : this.getClass().getDeclaredFields()) {
-            if (Modifier.isFinal(field.getModifiers())) {
-                continue;
-            } else if (Modifier.isStatic(field.getModifiers())) {
-                continue;
-            }
-            if ("userConfigured".equals(field.getName())) {
-                continue;
-            }
-            if (updates.userConfigured.contains(field.getName())) {
-                try {
-                    field.set(updated, field.get(updates));
-                } catch (IllegalAccessException e) {
-                    throw new TikaException("can't update " + field.getName(), e);
-                }
-            } else {
-                try {
-                    field.set(updated, field.get(this));
-                } catch (IllegalAccessException e) {
-                    throw new TikaException("can't update " + field.getName(), e);
-                }
-            }
-        }
-        return updated;
     }
 
     public void setRenderer(Renderer renderer) {
         this.renderer = renderer;
-        userConfigured.add("renderer");
     }
 
     public Renderer getRenderer() {
@@ -854,7 +808,6 @@ public class PDFParserConfig implements Serializable {
 
     public void setImageStrategy(IMAGE_STRATEGY imageStrategy) {
         this.imageStrategy = imageStrategy;
-        userConfigured.add("imageStrategy");
     }
 
     /**
@@ -864,7 +817,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setImageGraphicsEngineFactory(ImageGraphicsEngineFactory imageGraphicsEngineFactory) {
         this.imageGraphicsEngineFactory = imageGraphicsEngineFactory;
-        userConfigured.add("imageGraphicsEngineFactory");
     }
 
     public ImageGraphicsEngineFactory getImageGraphicsEngineFactory() {
@@ -881,7 +833,6 @@ public class PDFParserConfig implements Serializable {
 
     public void setExtractIncrementalUpdateInfo(boolean extractIncrementalUpdateInfo) {
         this.extractIncrementalUpdateInfo = extractIncrementalUpdateInfo;
-        userConfigured.add("extractIncrementalUpdateInfo");
     }
 
     public boolean isParseIncrementalUpdates() {
@@ -890,7 +841,6 @@ public class PDFParserConfig implements Serializable {
 
     public void setParseIncrementalUpdates(boolean parseIncrementalUpdates) {
         this.parseIncrementalUpdates = parseIncrementalUpdates;
-        userConfigured.add("parseIncrementalUpdates");
     }
 
     public int getMaxIncrementalUpdates() {
@@ -905,12 +855,10 @@ public class PDFParserConfig implements Serializable {
      */
     public void setMaxIncrementalUpdates(int maxIncrementalUpdates) {
         this.maxIncrementalUpdates = maxIncrementalUpdates;
-        userConfigured.add("maxIncrementalUpdates");
     }
 
     public void setThrowOnEncryptedPayload(boolean throwOnEncryptedPayload) {
         this.throwOnEncryptedPayload = throwOnEncryptedPayload;
-        userConfigured.add("throwOnEncryptedPayload");
     }
 
     public boolean isThrowOnEncryptedPayload() {
@@ -960,8 +908,16 @@ public class PDFParserConfig implements Serializable {
      * percentage of unmappedCharactersPerPage/totalCharsPerPage
      */
     public static class OCRStrategyAuto implements Serializable {
-        private final float unmappedUnicodeCharsPerPage;
-        private final int totalCharsPerPage;
+        private float unmappedUnicodeCharsPerPage;
+        private int totalCharsPerPage;
+
+        /**
+         * No-arg constructor for Jackson deserialization.
+         * Uses default "better" strategy values.
+         */
+        public OCRStrategyAuto() {
+            this(10, 10);
+        }
 
         public OCRStrategyAuto(float unmappedUnicodeCharsPerPage, int totalCharsPerPage) {
             this.totalCharsPerPage = totalCharsPerPage;
@@ -972,8 +928,16 @@ public class PDFParserConfig implements Serializable {
             return unmappedUnicodeCharsPerPage;
         }
 
+        public void setUnmappedUnicodeCharsPerPage(float unmappedUnicodeCharsPerPage) {
+            this.unmappedUnicodeCharsPerPage = unmappedUnicodeCharsPerPage;
+        }
+
         public int getTotalCharsPerPage() {
             return totalCharsPerPage;
+        }
+
+        public void setTotalCharsPerPage(int totalCharsPerPage) {
+            this.totalCharsPerPage = totalCharsPerPage;
         }
 
         @Override

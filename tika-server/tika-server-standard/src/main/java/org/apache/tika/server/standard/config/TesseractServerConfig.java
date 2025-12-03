@@ -19,6 +19,7 @@ package org.apache.tika.server.standard.config;
 import static org.apache.tika.server.core.resource.TikaResource.processHeaderConfig;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -56,6 +57,9 @@ public class TesseractServerConfig implements ParseContextConfig {
         for (Map.Entry<String, List<String>> kvp : httpHeaders.entrySet()) {
             if (Strings.CI.startsWith(kvp.getKey(), X_TIKA_OCR_HEADER_PREFIX)) {
                 ocrConfig = (ocrConfig == null) ? new TesseractOCRConfig() : ocrConfig;
+                if (kvp.getKey().toLowerCase(Locale.ROOT).contains("path")) {
+                    throw new IllegalArgumentException("Can't change the paths at runtime.");
+                }
                 processHeaderConfig(ocrConfig, kvp.getKey(), kvp
                         .getValue()
                         .get(0)

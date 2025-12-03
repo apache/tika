@@ -1,0 +1,29 @@
+{
+  "detectors": [
+    {
+      "ogg-detector": {}
+    },
+    {
+      "bp-list-detector": {}
+    },
+    {
+      "gzip-specialization-detector": {}
+    },
+    {
+      "poifs-container-detector": {
+        "markLimit": 12000000
+      }
+    },
+    {
+      "misc-ole-detector": {}
+    },
+    {
+      "default-zip-container-detector": {
+        "markLimit": 16777216
+      }
+    },
+    {
+      "mime-types": {}
+    }
+  ]
+}

@@ -16,13 +16,15 @@
  */
 package org.apache.tika.plugins;
 
+import org.apache.tika.config.JsonConfig;
+
 /**
  * Configuration for a plugin extension.
  *
  * @param id         unique instance identifier
  * @param name       the plugin type name
- * @param jsonConfig the raw JSON configuration string for the plugin to parse
+ * @param json       the raw JSON configuration string for the plugin to parse
  */
-public record ExtensionConfig(String id, String name, String jsonConfig) {
+public record ExtensionConfig(String id, String name, String json) implements JsonConfig {
 
 }

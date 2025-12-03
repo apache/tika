@@ -32,7 +32,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeType;
@@ -66,7 +67,7 @@ public class TikaMimeTypes {
 
     @GET
     @Produces("text/html")
-    public String getMimeTypesHTML() {
+    public String getMimeTypesHTML() throws TikaConfigException {
         StringBuffer h = new StringBuffer();
         html.generateHeader(h, "Apache Tika Supported Mime Types");
 
@@ -160,7 +161,7 @@ public class TikaMimeTypes {
     @GET
     @Path("/{type}/{subtype}")
     @Produces("text/html")
-    public String getMimeTypeDetailsHTML(@PathParam("type") String typePart, @PathParam("subtype") String subtype) {
+    public String getMimeTypeDetailsHTML(@PathParam("type") String typePart, @PathParam("subtype") String subtype) throws TikaConfigException {
         MediaTypeDetails type = getMediaType(typePart, subtype);
 
         StringBuffer h = new StringBuffer();
@@ -244,7 +245,7 @@ public class TikaMimeTypes {
 
     @GET
     @Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
-    public String getMimeTypesJSON() throws IOException {
+    public String getMimeTypesJSON() throws IOException, TikaConfigException {
         Map<String, Object> details = new HashMap<>();
 
         for (MediaTypeDetails type : getMediaTypes()) {
@@ -269,7 +270,7 @@ public class TikaMimeTypes {
     @GET
     @Path("/{type}/{subtype}")
     @Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
-    public String getMimeTypeDetailsJSON(@PathParam("type") String typePart, @PathParam("subtype") String subtype) throws IOException {
+    public String getMimeTypeDetailsJSON(@PathParam("type") String typePart, @PathParam("subtype") String subtype) throws IOException, TikaConfigException {
         MediaTypeDetails type = getMediaType(typePart, subtype);
         Map<String, Object> details = new HashMap<>();
 
@@ -321,7 +322,7 @@ public class TikaMimeTypes {
 
     @GET
     @Produces("text/plain")
-    public String getMimeTypesPlain() {
+    public String getMimeTypesPlain() throws TikaConfigException {
         StringBuilder text = new StringBuilder();
 
         for (MediaTypeDetails type : getMediaTypes()) {
@@ -352,7 +353,7 @@ public class TikaMimeTypes {
         return text.toString();
     }
 
-    protected MediaTypeDetails getMediaType(String type, String subtype) throws NotFoundException {
+    protected MediaTypeDetails getMediaType(String type, String subtype) throws NotFoundException, TikaConfigException {
         MediaType mt = MediaType.parse(type + "/" + subtype);
         for (MediaTypeDetails mtd : getMediaTypes()) {
             if (mtd.type.equals(mt)) {
@@ -362,11 +363,11 @@ public class TikaMimeTypes {
         throw new NotFoundException("No Media Type registered in Tika for " + mt);
     }
 
-    protected List<MediaTypeDetails> getMediaTypes() {
-        TikaConfig config = TikaResource.getConfig();
-        MimeTypes mimeTypes = config.getMimeRepository();
-        MediaTypeRegistry registry = config.getMediaTypeRegistry();
-        Map<MediaType, Parser> parsers = ((CompositeParser) config.getParser()).getParsers();
+    protected List<MediaTypeDetails> getMediaTypes() throws TikaConfigException {
+        TikaLoader tikaLoader = TikaResource.getTikaLoader();
+        MimeTypes mimeTypes = TikaLoader.getMimeTypes();
+        MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
+        Map<MediaType, Parser> parsers = ((CompositeParser) tikaLoader.loadParsers()).getParsers();
 
         List<MediaTypeDetails> types = new ArrayList<>(registry
                 .getTypes()

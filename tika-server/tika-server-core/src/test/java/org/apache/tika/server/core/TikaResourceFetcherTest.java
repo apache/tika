@@ -72,7 +72,7 @@ public class TikaResourceFetcherTest extends CXFTestBase {
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
-        String configXML = getStringFromInputStream(TikaResourceFetcherTest.class.getResourceAsStream("/configs/tika-config-server-fetcher-template.xml"));
+        String configXML = getStringFromInputStream(TikaResourceFetcherTest.class.getResourceAsStream("/configs/tika-config-server-fetcher-template.json"));
 
         configXML = configXML.replace("{PORT}", "9998");
         return new ByteArrayInputStream(configXML.getBytes(StandardCharsets.UTF_8));

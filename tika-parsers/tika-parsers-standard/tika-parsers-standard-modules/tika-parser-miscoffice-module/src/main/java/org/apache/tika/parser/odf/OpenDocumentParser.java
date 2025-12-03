@@ -34,7 +34,9 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Field;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -60,6 +62,13 @@ public class OpenDocumentParser implements Parser {
      * Serial version UID
      */
     private static final long serialVersionUID = -6410276875438618287L;
+
+    /**
+     * Configuration class for JSON deserialization.
+     */
+    public static class Config {
+        public boolean extractMacros = false;
+    }
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList(MediaType.application("vnd.sun.xml.writer"),
@@ -103,6 +112,28 @@ public class OpenDocumentParser implements Parser {
 
     private Parser content = new OpenDocumentContentParser();
     private boolean extractMacros = false;
+
+    public OpenDocumentParser() {
+    }
+
+    /**
+     * Constructor with explicit Config object.
+     *
+     * @param config the configuration
+     */
+    public OpenDocumentParser(Config config) {
+        this.extractMacros = config.extractMacros;
+    }
+
+    /**
+     * Constructor for JSON configuration.
+     * Requires Jackson on the classpath.
+     *
+     * @param jsonConfig JSON configuration
+     */
+    public OpenDocumentParser(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, Config.class));
+    }
 
     public Parser getMetaParser() {
         return meta;

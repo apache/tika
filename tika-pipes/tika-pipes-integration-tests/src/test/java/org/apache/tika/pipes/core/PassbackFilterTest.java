@@ -19,22 +19,18 @@ package org.apache.tika.pipes.core;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -43,40 +39,29 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.core.async.AsyncConfig;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.utils.StringUtils;
 
 public class PassbackFilterTest {
 
-    private Path tmpDir;
     String fetcherId = "fsf";
     String emitterId = "fse";
     String testPdfFile = "testOverlappingText.pdf";
 
     private PipesClient pipesClient;
 
-    @BeforeEach
-    public void init() throws Exception {
-        Path tikaConfig = Paths.get("src", "test", "resources", "org", "apache", "tika", "pipes", "core", "tika-emit-config.xml");
-        tmpDir = Files.createTempDirectory("tika-pipes");
-
-        Path tikaConfigPath = Files.createTempFile(tmpDir, "tika-pipes-", ".xml");
-        Files.copy(tikaConfig, tikaConfigPath, StandardCopyOption.REPLACE_EXISTING);
-
-        Path pipesConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmpDir, tmpDir.resolve("input"), tmpDir.resolve("output"), tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaConfigPath, pipesConfigPath);
+    public void init(Path tmpDir) throws Exception {
+        Path pipesConfigPath = PluginsTestHelper.getFileSystemFetcherConfig("tika-config-passback.json", tmpDir);
+        PipesConfig pipesConfig = TikaLoader.load(pipesConfigPath).configs().load("async", AsyncConfig.class);
         PluginsTestHelper.copyTestFilesToTmpInput(tmpDir, testPdfFile);
 
         pipesClient = new PipesClient(pipesConfig);
     }
 
-    @AfterEach
-    public void tearDown() throws IOException {
-        FileUtils.deleteDirectory(tmpDir.toFile());
-    }
-
     @Test
-    public void testPassbackFilter() throws Exception {
+    public void testPassbackFilter(@TempDir Path tmpDir) throws Exception {
+        init(tmpDir);
         String emitFileBase = "blah";
         ParseContext parseContext = new ParseContext();
         parseContext.set(PassbackFilter.class, new MyPassbackFilter());
@@ -84,6 +69,8 @@ public class PassbackFilterTest {
                 new FetchEmitTuple(testPdfFile, new FetchKey(fetcherId, testPdfFile),
                         new EmitKey(emitterId, emitFileBase), new Metadata(), parseContext,
                         FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+
+
         assertEquals(PipesResult.STATUS.EMIT_SUCCESS_PASSBACK, pipesResult.status());
         Assertions.assertNotNull(pipesResult
                 .emitData()

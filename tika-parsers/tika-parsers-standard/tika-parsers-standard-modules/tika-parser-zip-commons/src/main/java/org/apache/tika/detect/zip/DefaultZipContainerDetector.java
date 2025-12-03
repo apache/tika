@@ -19,6 +19,7 @@ package org.apache.tika.detect.zip;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -36,7 +37,9 @@ import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Field;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.LoadErrorHandler;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.TikaComponent;
@@ -82,6 +85,12 @@ public class DefaultZipContainerDetector implements Detector {
         TIFF_SIGNATURES[2] = new byte[]{'M', 'M', 0x00, 0x2b};
     }
 
+    public static class Config implements Serializable {
+        //this has to be > 100,000 to handle some of the iworks files
+        //in our unit tests
+        public int markLimit = 16 * 1024 * 1024;
+    }
+
     //this has to be > 100,000 to handle some of the iworks files
     //in our unit tests
     @Field
@@ -94,6 +103,16 @@ public class DefaultZipContainerDetector implements Detector {
     public DefaultZipContainerDetector() {
         this(new ServiceLoader(DefaultZipContainerDetector.class.getClassLoader(),
                 LoadErrorHandler.WARN, false));
+    }
+
+    public DefaultZipContainerDetector(Config config) {
+        this(new ServiceLoader(DefaultZipContainerDetector.class.getClassLoader(),
+                LoadErrorHandler.WARN, false));
+        this.markLimit = config.markLimit;
+    }
+
+    public DefaultZipContainerDetector(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, Config.class));
     }
 
     public DefaultZipContainerDetector(ServiceLoader loader) {

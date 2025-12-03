@@ -57,7 +57,7 @@ public class GCSFetcher extends AbstractTikaExtension implements Fetcher {
     }
 
     public static GCSFetcher build(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
-        GCSFetcherConfig config = GCSFetcherConfig.load(extensionConfig.jsonConfig());
+        GCSFetcherConfig config = GCSFetcherConfig.load(extensionConfig.json());
         GCSFetcher fetcher = new GCSFetcher(extensionConfig);
         fetcher.config = config;
         fetcher.initialize();

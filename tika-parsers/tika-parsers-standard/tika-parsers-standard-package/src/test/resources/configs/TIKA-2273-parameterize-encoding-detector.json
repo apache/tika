@@ -1,0 +1,12 @@
+{
+  "encoding-detectors": [
+    {
+      "icu4j-encoding-detector": {
+        "stripMarkup": true
+      }
+    },
+    {
+      "override-encoding-detector": {}
+    }
+  ]
+}

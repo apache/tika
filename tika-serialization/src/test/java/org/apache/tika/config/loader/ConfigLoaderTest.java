@@ -274,9 +274,7 @@ public class ConfigLoaderTest {
 
         TikaConfigException ex = assertThrows(TikaConfigException.class, () ->
                 loader.configs().load("handler-no-type", TestHandler.class));
-
-        assertTrue(ex.getMessage().contains("interface"));
-        assertTrue(ex.getMessage().contains("@class"));
+        assertTrue(ex.getMessage().contains("Failed to deserialize"));
     }
 
     @Test

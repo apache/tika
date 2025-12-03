@@ -1,0 +1,10 @@
+{
+  "parsers": [
+    {
+      "default-parser":{}
+    },
+    {
+      "xml-profiler": {}
+    }
+  ]
+}

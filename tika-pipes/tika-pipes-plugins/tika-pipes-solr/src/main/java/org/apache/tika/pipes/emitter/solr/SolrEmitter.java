@@ -74,7 +74,7 @@ public class SolrEmitter extends AbstractEmitter {
     private final SolrEmitterConfig.UpdateStrategy updateStrategy;
 
     public static SolrEmitter build(ExtensionConfig extensionConfig) throws TikaConfigException, IOException {
-        SolrEmitterConfig config = SolrEmitterConfig.load(extensionConfig.jsonConfig());
+        SolrEmitterConfig config = SolrEmitterConfig.load(extensionConfig.json());
         config.validate();
         SolrClient solrClient = buildSolrClient(config);
         return new SolrEmitter(extensionConfig, config, solrClient);

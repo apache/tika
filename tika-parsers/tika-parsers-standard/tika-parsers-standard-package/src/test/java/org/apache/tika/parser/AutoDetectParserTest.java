@@ -40,8 +40,9 @@ import org.gagravarr.tika.VorbisParser;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
@@ -85,7 +86,6 @@ public class AutoDetectParserTest extends TikaTest {
     private static final String FLAC_NATIVE = "audio/x-flac";
     private static final String OPENOFFICE = "application/vnd.oasis.opendocument.text";
     private static final MediaType MY_MEDIA_TYPE = new MediaType("application", "x-myparser");
-    private TikaConfig tika = TikaConfig.getDefaultConfig();
 
     /**
      * This is where a single test is done.
@@ -102,7 +102,8 @@ public class AutoDetectParserTest extends TikaTest {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, tp.resourceStatedName);
             metadata.set(Metadata.CONTENT_TYPE, tp.statedType);
             ContentHandler handler = new BodyContentHandler();
-            new AutoDetectParser(tika).parse(input, handler, metadata);
+            ParseContext pc = new ParseContext();
+            TikaLoader.loadDefault().loadAutoDetectParser().parse(input, handler, metadata, pc);
 
             assertEquals(tp.realType, metadata.get(Metadata.CONTENT_TYPE),
                     "Bad content type: " + tp);
@@ -268,7 +269,7 @@ public class AutoDetectParserTest extends TikaTest {
         try (InputStream tgz = getResourceAsStream("/test-documents/TIKA-216.tgz")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler(-1);
-            new AutoDetectParser(tika).parse(tgz, handler, metadata);
+            TikaLoader.loadDefault().loadAutoDetectParser().parse(tgz, handler, metadata, new ParseContext());
             fail("Zip bomb was not detected");
         } catch (TikaException e) {
             // expected
@@ -291,9 +292,9 @@ public class AutoDetectParserTest extends TikaTest {
         }
         zos.finish();
         zos.close();
-        new AutoDetectParser(tika)
+        TikaLoader.loadDefault().loadAutoDetectParser()
                 .parse(new ByteArrayInputStream(baos.toByteArray()), new BodyContentHandler(-1),
-                        new Metadata());
+                        new Metadata(), new ParseContext());
     }
 
     /**
@@ -326,7 +327,7 @@ public class AutoDetectParserTest extends TikaTest {
                 "Parser not found for " + mediaTypes[3]);
 
         // Check we found the parser
-        CompositeParser parser = (CompositeParser) tika.getParser();
+        CompositeParser parser = (CompositeParser) TikaLoader.loadDefault().loadParsers();
         for (MediaType mt : mediaTypes) {
             assertNotNull(parser.getParsers().get(mt), "Parser not found for " + mt);
         }
@@ -340,7 +341,7 @@ public class AutoDetectParserTest extends TikaTest {
                 }
                 Metadata metadata = new Metadata();
                 ContentHandler handler = new BodyContentHandler();
-                new AutoDetectParser(tika).parse(input, handler, metadata);
+                TikaLoader.loadDefault().loadAutoDetectParser().parse(input, handler, metadata, new ParseContext());
 
                 assertEquals(mediaTypes[i].toString(), metadata.get(Metadata.CONTENT_TYPE),
                         "Incorrect content type for " + file);
@@ -567,11 +568,7 @@ public class AutoDetectParserTest extends TikaTest {
         //TIKA-4533 -- this tests both that a very large embedded OLE doc doesn't cause a zip bomb
         //exception AND that the sha for the embedded OLE doc is not the sha for a zero-byte file
         String expectedSha = "bbc2057a1ff8fe859a296d2fbb493fc0c3e5796749ba72507c0e13f7a3d81f78";
-        TikaConfig tikaConfig = null;
-        try (InputStream is = AutoDetectParserTest.class.getResourceAsStream("/configs/tika-4533.xml")) {
-            tikaConfig = new TikaConfig(is);
-        }
-        AutoDetectParser autoDetectParser = new AutoDetectParser(tikaConfig);
+        AutoDetectParser autoDetectParser = (AutoDetectParser) TikaLoaderHelper.getLoader("tika-4533.json").loadAutoDetectParser();
         //this models what happens in tika-pipes
         if (autoDetectParser.getAutoDetectParserConfig()
                     .getEmbeddedDocumentExtractorFactory() == null) {

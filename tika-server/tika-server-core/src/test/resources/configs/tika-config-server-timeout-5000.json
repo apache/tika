@@ -1,0 +1,7 @@
+{
+  "server": {
+    "port": 9999,
+    "taskTimeoutMillis": 5000,
+    "taskPulseMillis": 100
+  }
+}

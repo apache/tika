@@ -1,0 +1,100 @@
+{
+  "parsers": [
+    {
+      "default-parser": {}
+    },
+    {
+      "pdf-parser": {
+        "extractActions": true,
+        "checkExtractAccessPermissions": true
+      }
+    },
+    {
+      "ooxml-parser": {
+        "includeDeletedContent": true,
+        "includeMoveFromContent": true,
+        "extractMacros": true
+      }
+    },
+    {
+      "office-parser": {
+        "extractMacros": true
+      }
+    }
+  ],
+  "metadataFilters": [
+    {
+      "date-normalizing-filter": {}
+    },
+    {
+      "field-name-mapping-filter": {
+        "excludeUnmapped": true,
+        "mappings": {
+          "X-TIKA:content": "content_s",
+          "Content-Length": "length_i",
+          "dc:creator": "creators_ss",
+          "dc:title": "title_s",
+          "Content-Type": "mime_s",
+          "X-TIKA:EXCEPTION:container_exception": "tika_exception_s"
+        }
+      }
+    }
+  ],
+  "async": {
+    "maxForEmitBatchBytes": 10000,
+    "emitMaxEstimatedBytes": 100000,
+    "emitWithinMillis": 10,
+    "numEmitters": 1,
+    "numClients": 1,
+    "tikaConfig": "{TIKA_CONFIG}",
+    "forkedJvmArgs": [
+      "-Xmx1g",
+      "-XX:ParallelGCThreads=2",
+      "-XX:+ExitOnOutOfMemoryError",
+      "-Dlog4j.configurationFile={LOG4J_PROPERTIES_FILE}"
+    ],
+    "timeoutMillis": 60000
+  },
+  "fetchers": {
+    "file-system-fetcher": {
+      "fsf": {
+        "basePath": "{PATH_TO_DOCS}"
+      }
+    }
+  },
+  "emitters": {
+    "solr-emitter": {
+      "se": {
+        "solrUrls": "{SOLR_CONNECTION}",
+        "updateStrategy": "{UPDATE_STRATEGY}",
+        "solrCollection": "testcol",
+        "attachmentStrategy": "{ATTACHMENT_STRATEGY}",
+        "commitWithin": 1,
+        "idField": "id",
+        "connectionTimeout": 10000,
+        "socketTimeout": 60000
+      }
+    },
+    "file-system-emitter": {
+      "fse": {
+        "basePath": "/path/to/extracts"
+      }
+    }
+  },
+  "pipes-iterator": {
+    "solr-pipes-iterator": {
+      "solrCollection": "testcol",
+      "solrUrls": "{SOLR_CONNECTION}",
+      "idField": "id",
+      "parsingIdField": "parsing_id_i",
+      "failCountField": "fail_count_i",
+      "sizeFieldName": "size_i",
+      "parseMode": "{PARSE_MODE}",
+      "rows": 100,
+      "baseConfig": {
+        "fetcherId": "fsf",
+        "emitterId": "se"
+      }
+    }
+  }
+}

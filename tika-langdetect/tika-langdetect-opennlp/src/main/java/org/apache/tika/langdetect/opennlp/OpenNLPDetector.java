@@ -32,6 +32,7 @@ import opennlp.tools.util.normalizer.NumberCharSequenceNormalizer;
 import opennlp.tools.util.normalizer.ShrinkCharSequenceNormalizer;
 import opennlp.tools.util.normalizer.TwitterCharSequenceNormalizer;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.language.detect.LanguageConfidence;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
@@ -78,6 +79,7 @@ import org.apache.tika.language.detect.LanguageResult;
  * Language Resources and Evaluation Conference (LREC), p. 4003-4012,
  * May 2020, pdf, bib.
  */
+@TikaComponent
 public class OpenNLPDetector extends LanguageDetector {
 
     static LanguageDetectorModel LANG_MODEL;

@@ -22,7 +22,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 
 public class TestDetectorLoading {
 
@@ -30,7 +30,7 @@ public class TestDetectorLoading {
     @Test
     public void testBasic() throws Exception {
         //integration test
-        Detector detector = TikaConfig.getDefaultConfig().getDetector();
+        Detector detector = TikaLoader.loadDefault().loadDetectors();
         List<Detector> detectors = ((CompositeDetector) detector).getDetectors();
         assertEquals(8, detectors.size());
         assertEquals("org.gagravarr.tika.OggDetector", detectors.get(0).getClass().getName());

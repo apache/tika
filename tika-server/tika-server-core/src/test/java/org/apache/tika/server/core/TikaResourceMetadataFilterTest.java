@@ -46,7 +46,7 @@ public class TikaResourceMetadataFilterTest extends CXFTestBase {
 
     @Override
     protected InputStream getTikaConfigInputStream() {
-        return getClass().getResourceAsStream("/configs/metadata-filter-include.xml");
+        return getClass().getResourceAsStream("/configs/metadata-filter-include.json");
     }
 
     @Override

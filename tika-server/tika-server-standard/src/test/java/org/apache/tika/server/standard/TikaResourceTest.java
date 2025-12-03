@@ -89,7 +89,7 @@ public class TikaResourceTest extends CXFTestBase {
 
     @Override
     protected InputStream getTikaConfigInputStream() {
-        return getClass().getResourceAsStream("/config/tika-config-for-server-tests.xml");
+        return getClass().getResourceAsStream("/configs/tika-config-for-server-tests.json");
     }
 
     @Test
@@ -494,7 +494,7 @@ public class TikaResourceTest extends CXFTestBase {
                     .accept("text/plain")
                     .header(TesseractServerConfig.X_TIKA_OCR_HEADER_PREFIX + "tesseractPath", "bogus path")
                     .put(ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"));
-            assertEquals(400, response.getStatus());
+            assertEquals(500, response.getStatus());
         } catch (ProcessingException e) {
             //swallow
         }

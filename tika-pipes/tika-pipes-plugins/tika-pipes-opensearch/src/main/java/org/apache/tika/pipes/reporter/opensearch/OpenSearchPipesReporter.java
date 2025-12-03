@@ -48,7 +48,7 @@ public class OpenSearchPipesReporter extends PipesReporterBase {
 
 
     public static OpenSearchPipesReporter build(ExtensionConfig pluginConfig) throws TikaConfigException, IOException {
-        OpenSearchReporterConfig config = OpenSearchReporterConfig.load(pluginConfig.jsonConfig());
+        OpenSearchReporterConfig config = OpenSearchReporterConfig.load(pluginConfig.json());
         return new OpenSearchPipesReporter(pluginConfig, config);
     }
 

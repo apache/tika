@@ -27,12 +27,15 @@ import org.apache.poi.openxml4j.util.ZipSecureFile;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.ConfigDeserializer;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.AbstractOfficeParser;
+import org.apache.tika.parser.microsoft.OfficeParserConfig;
 
 /**
  * Office Open XML (OOXML) parser.
@@ -105,6 +108,17 @@ public class OOXMLParser extends AbstractOfficeParser {
         ZipSecureFile.setMinInflateRatio(-1.0d);
         //bump this to a higher value than POI's default of 1000
         ZipSecureFile.setMaxFileCount(10000);
+    }
+
+    public OOXMLParser() {
+    }
+
+    public OOXMLParser(OfficeParserConfig config) {
+        setDefaultOfficeParserConfig(config);
+    }
+
+    public OOXMLParser(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, OfficeParserConfig.class));
     }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {

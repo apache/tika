@@ -66,7 +66,6 @@
     "numEmitters": 1,
     "numClients": 3,
     "tikaConfig": "TIKA_CONFIG",
-    "pipesPluginsConfig": "PLUGINS_CONFIG",
     "forkedJvmArgs": [
       "-Xmx512m",
       "-XX:ParallelGCThreads=2",
@@ -74,5 +73,24 @@
     ],
     "timeoutMillis": 60000
   },
+  "metadata-filters": [
+    {
+      "date-normalizing-metadata-filter": {}
+    },
+    {
+      "field-name-mapping-filter": {
+        "excludeUnmapped": true,
+        "mappings": {
+          "X-TIKA:content": "content",
+          "Content-Length": "length",
+          "dc:creator": "creators",
+          "dc:title": "title",
+          "Content-Type": "mime",
+          "X-TIKA:EXCEPTION:container_exception": "tika_exception"
+        }
+      }
+    }
+  ],
+
   "plugin-roots": "target/plugins"
 }

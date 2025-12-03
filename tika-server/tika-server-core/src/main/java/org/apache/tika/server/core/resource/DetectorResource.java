@@ -30,6 +30,7 @@ import jakarta.ws.rs.core.UriInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -63,11 +64,11 @@ public class DetectorResource {
 
         try (TikaInputStream tis = TikaInputStream.get(TikaResource.getInputStream(is, met, httpHeaders, info))) {
             return TikaResource
-                    .getConfig()
-                    .getDetector()
+                    .getTikaLoader()
+                    .loadDetectors()
                     .detect(tis, met)
                     .toString();
-        } catch (IOException e) {
+        } catch (IOException | TikaConfigException e) {
             LOG.warn("Unable to detect MIME type for file. Reason: {} ({})", e.getMessage(), filename, e);
             return MediaType.OCTET_STREAM.toString();
         } catch (OutOfMemoryError e) {

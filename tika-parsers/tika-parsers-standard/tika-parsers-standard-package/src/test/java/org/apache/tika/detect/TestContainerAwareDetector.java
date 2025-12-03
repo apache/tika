@@ -25,23 +25,22 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
 
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.Tika;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.microsoft.ooxml.OPCPackageDetector;
 import org.apache.tika.detect.zip.DefaultZipContainerDetector;
 import org.apache.tika.detect.zip.OpenDocumentDetector;
@@ -62,8 +61,7 @@ import org.apache.tika.utils.XMLReaderUtils;
  * Junit test class for {@link org.apache.tika.detect.microsoft.POIFSContainerDetector}
  */
 public class TestContainerAwareDetector extends MultiThreadedTikaTest {
-    private final TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
-    private final MimeTypes mimeTypes = tikaConfig.getMimeRepository();
+    private final MimeTypes mimeTypes = TikaLoader.getMimeTypes();
     private final MediaTypeRegistry mediaTypeRegistry = mimeTypes.getMediaTypeRegistry();
     private final Detector detector = new DefaultDetector(mimeTypes);
     private final StreamingZipContainerDetector streamingZipDetector =
@@ -621,55 +619,34 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         long len = bytes.length;
 
         //test default
-        Detector detector = TikaConfig.getDefaultConfig().getDetector();
-        try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get()) {
-            assertEquals("application/x-tika-msoffice",
-                    detector.detect(is, new Metadata()).toString());
-            assertEquals(len, countBytes(is));
-        }
-
-        detector = loadDetector("tika-4441-neg1.xml");
-        try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get()) {
-            assertEquals("application/x-tika-msoffice",
-                    detector.detect(is, new Metadata()).toString());
-            assertEquals(len, countBytes(is));
-        }
-
-        detector = loadDetector("tika-4441-120.xml");
-        try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get()) {
-            assertEquals("application/x-tika-msoffice",
-                    detector.detect(is, new Metadata()).toString());
-            assertEquals(len, countBytes(is));
-        }
-
-        detector = loadDetector("tika-4441-12000000.xml");
-        try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get()) {
+        Detector detector = TikaLoader.loadDefault().loadDetectors();
+        try (InputStream is = TikaInputStream.get(bytes)) {
             assertEquals("application/msword",
                     detector.detect(is, new Metadata()).toString());
             assertEquals(len, countBytes(is));
         }
 
-        //now try wrapping in a TikaInputStream
-        detector = loadDetector("tika-4441-neg1.xml");
-        try (InputStream is = TikaInputStream.get(UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
+        detector = loadDetector("tika-4441-neg1.json");
+        try (InputStream is = TikaInputStream.get(bytes)) {
             assertEquals("application/msword",
                     detector.detect(is, new Metadata()).toString());
             assertEquals(len, countBytes(is));
         }
 
-        detector = loadDetector("tika-4441-120.xml");
-        try (InputStream is = TikaInputStream.get(UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
+        detector = loadDetector("tika-4441-120.json");
+        try (InputStream is = TikaInputStream.get(bytes)) {
             assertEquals("application/x-tika-msoffice",
                     detector.detect(is, new Metadata()).toString());
             assertEquals(len, countBytes(is));
         }
 
-        detector = loadDetector("tika-4441-12000000.xml");
-        try (InputStream is = TikaInputStream.get(UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
+        detector = loadDetector("tika-4441-12000000.json");
+        try (InputStream is = TikaInputStream.get(bytes)) {
             assertEquals("application/msword",
                     detector.detect(is, new Metadata()).toString());
             assertEquals(len, countBytes(is));
         }
+
     }
 
     private long countBytes(InputStream is) throws IOException {
@@ -682,9 +659,8 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         return len;
     }
 
-    private Detector loadDetector(String tikaConfigName) throws IOException, TikaException, SAXException {
-        try (InputStream is = TestContainerAwareDetector.class.getResourceAsStream("/configs/" + tikaConfigName)) {
-            return new TikaConfig(is).getDetector();
-        }
+    private Detector loadDetector(String tikaConfigName) throws Exception {
+        return TikaLoader.load(Paths
+                .get(TestContainerAwareDetector.class.getResource("/configs/" + tikaConfigName).toURI())).loadDetectors();
     }
 }

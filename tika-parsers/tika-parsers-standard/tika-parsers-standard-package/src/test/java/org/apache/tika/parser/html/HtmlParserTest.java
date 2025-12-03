@@ -17,19 +17,19 @@
 package org.apache.tika.parser.html;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
 
 public class HtmlParserTest extends TikaTest {
@@ -38,31 +38,41 @@ public class HtmlParserTest extends TikaTest {
     public void testDataURI() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testHTML_embedded_img.html");
         assertEquals(2, metadataList.size());
-        String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
+        String content = metadataList
+                .get(0)
+                .get(TikaCoreProperties.TIKA_CONTENT);
         assertContains("some content", content);
         //make sure that you've truncated the data: value
         assertContains("src=\"data:\"", content);
         Metadata imgMetadata = metadataList.get(1);
         assertEquals("image/jpeg", imgMetadata.get(Metadata.CONTENT_TYPE));
-        assertContains("moscow-birds",
-                Arrays.asList(imgMetadata.getValues(TikaCoreProperties.SUBJECT)));
+        assertContains("moscow-birds", Arrays.asList(imgMetadata.getValues(TikaCoreProperties.SUBJECT)));
     }
 
     @Test
     public void testDataURIInJS() throws Exception {
-        try (InputStream is = getResourceAsStream("/org/apache/tika/parser/html/tika-config.xml")) {
-            assertNotNull(is);
-            TikaConfig tikaConfig = new TikaConfig(is);
-            Parser p = new AutoDetectParser(tikaConfig);
-            List<Metadata> metadataList =
-                    getRecursiveMetadata("testHTML_embedded_img_in_js.html", p);
-            assertEquals(3, metadataList.size());
-            String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
-            assertContains("some content", content);
-            Metadata imgMetadata = metadataList.get(1);
-            assertEquals("image/jpeg", imgMetadata.get(Metadata.CONTENT_TYPE));
-            assertContains("moscow-birds",
-                    Arrays.asList(imgMetadata.getValues(TikaCoreProperties.SUBJECT)));
+
+        Parser p = TikaLoader
+                .load(getPath("tika-config-extract-scripts.json"))
+                .loadAutoDetectParser();
+        List<Metadata> metadataList = getRecursiveMetadata("testHTML_embedded_img_in_js.html", p);
+        assertEquals(3, metadataList.size());
+        String content = metadataList
+                .get(0)
+                .get(TikaCoreProperties.TIKA_CONTENT);
+        assertContains("some content", content);
+        Metadata imgMetadata = metadataList.get(1);
+        assertEquals("image/jpeg", imgMetadata.get(Metadata.CONTENT_TYPE));
+        assertContains("moscow-birds", Arrays.asList(imgMetadata.getValues(TikaCoreProperties.SUBJECT)));
+    }
+
+    private Path getPath(String config) {
+        try {
+            return Paths.get(HtmlParserTest.class
+                    .getResource("/configs/" + config)
+                    .toURI());
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
         }
     }
 }

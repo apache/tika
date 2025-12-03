@@ -17,15 +17,12 @@
 package org.apache.tika.server.core;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -35,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ConfigBase;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 
@@ -106,8 +104,7 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
     //debug or info only
     private String logLevel = "";
     private Path configPath;
-    private Path pluginsConfigPath;
-    private List<String> endpoints = new ArrayList<>();
+    private ArrayList<String> endpoints = new ArrayList<>();
 
     private boolean preventStopMethod = false;
 
@@ -125,11 +122,9 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
         TikaServerConfig config = null;
         Set<String> settings = new HashSet<>();
         Path pluginsConfig = null;
-        if (commandLine.hasOption('a')) {
-            pluginsConfig = Paths.get(commandLine.getOptionValue('a'));
-        }
+
         if (commandLine.hasOption("c")) {
-            config = load(Paths.get(commandLine.getOptionValue("c")), pluginsConfig, commandLine, settings);
+            config = load(Paths.get(commandLine.getOptionValue("c")), commandLine, settings);
         } else {
             config = new TikaServerConfig();
         }
@@ -154,24 +149,12 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
         return config;
     }
 
-    static TikaServerConfig load(Path p, Path pluginsConfigPath, CommandLine commandLine, Set<String> settings) throws IOException, TikaException {
-        try (InputStream is = Files.newInputStream(p)) {
-            TikaServerConfig config = TikaServerConfig.load(is, pluginsConfigPath, commandLine, settings);
-            if (config.getConfigPath() == null) {
-                config.setConfigPath(p
-                        .toAbsolutePath()
-                        .toString());
-            }
-            config.setPipesConfigPath(pluginsConfigPath);
-            return config;
+    static TikaServerConfig load(Path tikaConfigPath, CommandLine commandLine, Set<String> settings) throws IOException, TikaException {
+        TikaServerConfig tikaServerConfig = TikaLoader.load(tikaConfigPath).configs().load("server", TikaServerConfig.class);
+        if (tikaServerConfig == null) {
+            throw new TikaConfigException("Couldn't find 'server' element");
         }
-    }
-
-    private static TikaServerConfig load(InputStream is, Path pluginsConfigPath, CommandLine commandLine, Set<String> settings) throws IOException, TikaException {
-        TikaServerConfig tikaServerConfig = new TikaServerConfig();
-        Set<String> configSettings = tikaServerConfig.configure("server", is);
-        settings.addAll(configSettings);
-        tikaServerConfig.setPipesConfigPath(pluginsConfigPath);
+        tikaServerConfig.setConfigPath(tikaConfigPath.toAbsolutePath().toString());
         return tikaServerConfig;
     }
 
@@ -287,14 +270,6 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
         this.configPath = Paths.get(path);
     }
 
-    public void setPipesConfigPath(Path path) {
-        this.pluginsConfigPath = path;
-    }
-
-    public Optional<Path> getPipesConfigPath() {
-        return Optional.ofNullable(pluginsConfigPath);
-    }
-
     public int getDigestMarkLimit() {
         return digestMarkLimit;
     }
@@ -334,12 +309,12 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
         this.tlsConfig = tlsConfig;
     }
 
-    public List<String> getEndpoints() {
+    public ArrayList<String> getEndpoints() {
         return endpoints;
     }
 
-    public void setEndpoints(List<String> endpoints) {
-        this.endpoints = new ArrayList<>(endpoints);
+    public void setEndpoints(ArrayList<String> endpoints) {
+        this.endpoints = endpoints;
     }
 
     public String getId() {

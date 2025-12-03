@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -47,7 +48,7 @@ public abstract class ConfigBase {
 
     private static Class[] SUPPORTED_PRIMITIVES =
             new Class[]{String.class, boolean.class, long.class, int.class, double.class,
-                    float.class, Path.class};
+                    float.class, Path.class, Integer.class, Long.class, Double.class, Float.class, Boolean.class};
 
     /**
      * Use this to build a single class, where the user specifies the instance class, e.g.
@@ -253,6 +254,9 @@ public abstract class ConfigBase {
                 } else if (setterClassPair.itemClass.isAssignableFrom(List.class)) {
                     tryToSetList(object, param);
                     processed = true;
+                } else if (setterClassPair.itemClass.isAssignableFrom(Set.class)) {
+                    tryToSetSet(object, param);
+                    processed = true;
                 }
             }
             if (!processed) {
@@ -357,6 +361,33 @@ public abstract class ConfigBase {
             }
         }
         return false;
+    }
+
+    private static void tryToSetSet(Object object, Node param) throws TikaConfigException {
+        //simple hack for now -- only handle Set<String>
+        tryToSetStringSet(object, param);
+    }
+
+    private static void tryToSetStringSet(Object object, Node param) throws TikaConfigException {
+        String name = param.getLocalName();
+        Set<String> strings = new TreeSet<>();
+        NodeList nodeList = param.getChildNodes();
+        for (int i = 0; i < nodeList.getLength(); i++) {
+            Node n = nodeList.item(i);
+            if (n.getNodeType() == 1) {
+                String txt = n.getTextContent();
+                if (txt != null) {
+                    strings.add(txt);
+                }
+            }
+        }
+        String setter = "set" + name.substring(0, 1).toUpperCase(Locale.US) + name.substring(1);
+        try {
+            Method m = object.getClass().getMethod(setter, Set.class);
+            m.invoke(object, strings);
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            throw new TikaConfigException("can't set " + name, e);
+        }
     }
 
     private static void tryToSetList(Object object, Node param) throws TikaConfigException {
@@ -494,6 +525,14 @@ public abstract class ConfigBase {
             } else if (setterClassPair.itemClass == double.class) {
                 setterClassPair.setterMethod.invoke(object, Double.parseDouble(value));
             } else if (setterClassPair.itemClass == boolean.class) {
+                setterClassPair.setterMethod.invoke(object, Boolean.parseBoolean(value));
+            } else if (setterClassPair.itemClass == Long.class) {
+                setterClassPair.setterMethod.invoke(object, Long.parseLong(value));
+            } else if (setterClassPair.itemClass == Float.class) {
+                setterClassPair.setterMethod.invoke(object, Float.parseFloat(value));
+            } else if (setterClassPair.itemClass == Double.class) {
+                setterClassPair.setterMethod.invoke(object, Double.parseDouble(value));
+            } else if (setterClassPair.itemClass == Boolean.class) {
                 setterClassPair.setterMethod.invoke(object, Boolean.parseBoolean(value));
             } else if (setterClassPair.itemClass == Path.class) {
                 setterClassPair.setterMethod.invoke(object, Paths.get(value));

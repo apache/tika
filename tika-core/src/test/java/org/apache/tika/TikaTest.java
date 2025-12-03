@@ -582,7 +582,9 @@ public abstract class TikaTest {
     }
 
     public String getText(InputStream is, Parser parser, Metadata metadata) throws Exception {
-        return getText(is, parser, new ParseContext(), metadata);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(Parser.class, parser);
+        return getText(is, parser, parseContext, metadata);
     }
 
     public String getText(InputStream is, Parser parser, ParseContext context) throws Exception {
@@ -590,7 +592,7 @@ public abstract class TikaTest {
     }
 
     public String getText(InputStream is, Parser parser) throws Exception {
-        return getText(is, parser, new ParseContext(), new Metadata());
+        return getText(is, parser, new Metadata());
     }
 
     public InputStream truncate(String testFileName, int truncatedLength) throws IOException {

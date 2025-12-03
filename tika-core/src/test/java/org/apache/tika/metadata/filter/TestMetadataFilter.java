@@ -47,7 +47,7 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
         metadata.set("title", "title");
         metadata.set("author", "author");
 
-        MetadataFilter defaultFilter = new DefaultMetadataFilter();
+        MetadataFilter defaultFilter = new NoOpFilter();
         metadata = filterOne(defaultFilter, metadata);
 
         assertEquals(2, metadata.names().length);

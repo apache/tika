@@ -19,14 +19,49 @@ package org.apache.tika.metadata.filter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Field;
+import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.metadata.Metadata;
 
+@TikaComponent
 public class FieldNameMappingFilter extends MetadataFilterBase {
+
+    /**
+     * Configuration class for JSON deserialization.
+     */
+    public static class Config {
+        public Map<String, String> mappings = new LinkedHashMap<>();
+        public boolean excludeUnmapped = true;
+    }
 
     Map<String, String> mappings = new LinkedHashMap<>();
 
     boolean excludeUnmapped = true;
+
+    public FieldNameMappingFilter() {
+    }
+
+    /**
+     * Constructor with explicit Config object.
+     *
+     * @param config the configuration
+     */
+    public FieldNameMappingFilter(Config config) {
+        this.mappings = new LinkedHashMap<>(config.mappings);
+        this.excludeUnmapped = config.excludeUnmapped;
+    }
+
+    /**
+     * Constructor for JSON configuration.
+     * Requires Jackson on the classpath.
+     *
+     * @param jsonConfig JSON configuration
+     */
+    public FieldNameMappingFilter(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, Config.class));
+    }
 
     @Override
     protected void filter(Metadata metadata) {

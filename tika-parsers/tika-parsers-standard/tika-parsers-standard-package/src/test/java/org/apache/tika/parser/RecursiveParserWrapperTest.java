@@ -33,12 +33,14 @@ import org.apache.commons.io.input.ClosedInputStream;
 import org.apache.commons.io.input.ProxyInputStream;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.parser.digestutils.CommonsDigester;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -393,12 +395,9 @@ public class RecursiveParserWrapperTest extends TikaTest {
         //TIKA-3137
         ParseContext context = new ParseContext();
         Metadata metadata = new Metadata();
-        TikaConfig tikaConfig = null;
-        Parser p = null;
-        try (InputStream is = getResourceAsStream("TIKA-3137-include.xml")) {
-            tikaConfig = new TikaConfig(is);
-            p = new AutoDetectParser(tikaConfig);
-        }
+        TikaLoader tikaLoader = TikaLoaderHelper.getLoader("TIKA-3137-include.json");
+        Parser p = tikaLoader.loadAutoDetectParser();
+        MetadataFilter metadataFilter = tikaLoader.loadMetadataFilters();
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p, true);
         String path = "/test-documents/test_recursive_embedded.docx";
         ContentHandlerFactory contentHandlerFactory =
@@ -406,7 +405,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
 
         RecursiveParserWrapperHandler handler =
                 new RecursiveParserWrapperHandler(contentHandlerFactory, -1,
-                        tikaConfig.getMetadataFilter());
+                        metadataFilter);
         try (InputStream is = getResourceAsStream(path)) {
             wrapper.parse(is, handler, metadata, context);
         }

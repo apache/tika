@@ -18,9 +18,12 @@ package org.apache.tika.parser.txt;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.nio.charset.Charset;
 
+import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Field;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.metadata.Metadata;
@@ -32,7 +35,39 @@ public class UniversalEncodingDetector implements EncodingDetector {
 
     private static final int DEFAULT_MARK_LIMIT = 16 * BUFSIZE;
 
+    /**
+     * Configuration class for JSON deserialization.
+     */
+    public static class Config implements Serializable {
+        public int markLimit = DEFAULT_MARK_LIMIT;
+    }
+
     private int markLimit = DEFAULT_MARK_LIMIT;
+
+    /**
+     * Default constructor for SPI loading.
+     */
+    public UniversalEncodingDetector() {
+    }
+
+    /**
+     * Constructor with explicit Config object.
+     *
+     * @param config the configuration
+     */
+    public UniversalEncodingDetector(Config config) {
+        this.markLimit = config.markLimit;
+    }
+
+    /**
+     * Constructor for JSON configuration.
+     * Requires Jackson on the classpath.
+     *
+     * @param jsonConfig JSON configuration
+     */
+    public UniversalEncodingDetector(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, Config.class));
+    }
 
     public Charset detect(InputStream input, Metadata metadata) throws IOException {
         if (input == null) {

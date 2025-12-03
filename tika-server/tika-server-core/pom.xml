@@ -170,6 +170,10 @@
               <Automatic-Module-Name>org.apache.tika.server.core</Automatic-Module-Name>
             </manifestEntries>
           </archive>
+          <includes>
+            <include>**/*</include>
+            <include>META-INF/tika/**</include>
+          </includes>
         </configuration>
         <executions>
           <execution>

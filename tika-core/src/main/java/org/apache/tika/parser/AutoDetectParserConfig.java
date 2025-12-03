@@ -23,6 +23,7 @@ import org.w3c.dom.Element;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.config.ConfigBase;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.metadata.Metadata;
@@ -38,6 +39,7 @@ import org.apache.tika.sax.ContentHandlerDecoratorFactory;
  *     See <a href="https://cwiki.apache.org/confluence/display/TIKA/ModifyingContentWithHandlersAndMetadataFilters"/>ModifyingContentWithHandlersAndMetadataFilters</a>
  *     for documentation and examples for configuring this with a tika-config.xml file.
  */
+@TikaComponent
 public class AutoDetectParserConfig extends ConfigBase implements Serializable {
 
     private static ContentHandlerDecoratorFactory NOOP_CONTENT_HANDLER_DECORATOR_FACTORY =
@@ -122,7 +124,7 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
         return spoolToDisk;
     }
 
-    public void setSpoolToDisk(long spoolToDisk) {
+    public void setSpoolToDisk(Long spoolToDisk) {
         this.spoolToDisk = spoolToDisk;
     }
 
@@ -130,7 +132,7 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
         return outputThreshold;
     }
 
-    public void setOutputThreshold(long outputThreshold) {
+    public void setOutputThreshold(Long outputThreshold) {
         this.outputThreshold = outputThreshold;
     }
 
@@ -138,7 +140,7 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
         return maximumCompressionRatio;
     }
 
-    public void setMaximumCompressionRatio(long maximumCompressionRatio) {
+    public void setMaximumCompressionRatio(Long maximumCompressionRatio) {
         this.maximumCompressionRatio = maximumCompressionRatio;
     }
 
@@ -146,7 +148,7 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
         return maximumDepth;
     }
 
-    public void setMaximumDepth(int maximumDepth) {
+    public void setMaximumDepth(Integer maximumDepth) {
         this.maximumDepth = maximumDepth;
     }
 
@@ -154,7 +156,7 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
         return maximumPackageEntryDepth;
     }
 
-    public void setMaximumPackageEntryDepth(int maximumPackageEntryDepth) {
+    public void setMaximumPackageEntryDepth(Integer maximumPackageEntryDepth) {
         this.maximumPackageEntryDepth = maximumPackageEntryDepth;
     }
 

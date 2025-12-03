@@ -21,9 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -31,7 +31,7 @@ import java.util.List;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -136,10 +136,7 @@ public class JsonMetadataListTest {
     @Test
     public void testLargeValues() throws Exception {
         //TIKA-4154
-        TikaConfig tikaConfig = null;
-        try (InputStream is = JsonMetadata.class.getResourceAsStream("/configs/tika-config-json.xml")) {
-            tikaConfig = new TikaConfig(is);
-        }
+        TikaLoader.load(Paths.get(JsonMetadata.class.getResource("/configs/tika-config-json.json").toURI()));
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 30000000; i++) {
             sb.append("v");

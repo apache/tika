@@ -34,12 +34,12 @@ public class TikaConfigAsyncWriterTest {
 
     @Test
     public void testBasic(@TempDir Path dir) throws Exception {
-        Path p = Paths.get(TikaConfigAsyncWriter.class.getResource("/configs/TIKA-4508-parsers.xml").toURI());
+        Path p = Paths.get(TikaConfigAsyncWriter.class.getResource("/configs/TIKA-4508-parsers.json").toURI());
         SimpleAsyncConfig simpleAsyncConfig = new SimpleAsyncConfig("input", "output", 4,
                 10000L, "-Xmx1g", null,
-                p.toAbsolutePath().toString().replace("\\", "/"), null,
+                p.toAbsolutePath().toString().replace("\\", "/"),
                 BasicContentHandlerFactory.HANDLER_TYPE.TEXT, false, null);
-        System.out.println(simpleAsyncConfig);
+
         PluginsWriter pluginsWriter = new PluginsWriter(simpleAsyncConfig, null);
 
         Path tmp = Files.createTempFile(dir, "plugins-",".json");

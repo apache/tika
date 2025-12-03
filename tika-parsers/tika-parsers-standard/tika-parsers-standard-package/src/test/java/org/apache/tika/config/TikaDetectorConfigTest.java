@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.TikaLoaderHelper;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
@@ -31,6 +33,7 @@ import org.apache.tika.detect.microsoft.POIFSContainerDetector;
 import org.apache.tika.detect.zip.DefaultZipContainerDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.microsoft.pst.OutlookPSTParser;
 
 /**
@@ -42,10 +45,10 @@ public class TikaDetectorConfigTest extends AbstractTikaConfigTest {
 
     @Test
     public void testDetectorExcludeFromDefault() throws Exception {
-        TikaConfig config = getConfig("TIKA-1702-detector-exclude.xml");
-        assertNotNull(config.getParser());
-        assertNotNull(config.getDetector());
-        CompositeDetector detector = (CompositeDetector) config.getDetector();
+        TikaLoader tikaLoader = TikaLoaderHelper.getLoader("TIKA-1702-detector-exclude.json");
+        assertNotNull(tikaLoader.loadParsers());
+        assertNotNull(tikaLoader.loadDetectors());
+        CompositeDetector detector = (CompositeDetector) tikaLoader.loadDetectors();
 
         // Should be wrapping two detectors
         assertEquals(2, detector.getDetectors().size());
@@ -60,7 +63,9 @@ public class TikaDetectorConfigTest extends AbstractTikaConfigTest {
         DefaultDetector confDetector = (DefaultDetector) detector.getDetectors().get(0);
 
         // Get a fresh "default" DefaultParser
-        DefaultDetector normDetector = new DefaultDetector(config.getMimeRepository());
+        TikaLoader.getMediaTypeRegistry().getTypes();
+        MimeTypes mimeTypes = new MimeTypes();
+        DefaultDetector normDetector = new DefaultDetector(TikaLoader.getMimeTypes());
 
 
         // The default one will offer the Zip and POIFS detectors
@@ -71,6 +76,7 @@ public class TikaDetectorConfigTest extends AbstractTikaConfigTest {
         assertDetectors(confDetector, false, false);
     }
 
+
     /**
      * TIKA-1708 - If the Zip detector is disabled, either explicitly,
      * or via giving a list of detectors that it isn't part of, ensure
@@ -79,10 +85,10 @@ public class TikaDetectorConfigTest extends AbstractTikaConfigTest {
     @Test
     public void testPSTDetectionWithoutZipDetector() throws Exception {
         // Check the one with an exclude
-        TikaConfig configWX = getConfig("TIKA-1708-detector-default.xml");
-        assertNotNull(configWX.getParser());
-        assertNotNull(configWX.getDetector());
-        CompositeDetector detectorWX = (CompositeDetector) configWX.getDetector();
+        TikaLoader configWX = TikaLoaderHelper.getLoader("TIKA-1708-detector-default.json");
+        assertNotNull(configWX.loadParsers());
+        assertNotNull(configWX.loadDetectors());
+        CompositeDetector detectorWX = (CompositeDetector) configWX.loadDetectors();
 
         // Check it has the POIFS one, but not the zip one
         assertDetectors(detectorWX, true, false);
@@ -146,4 +152,5 @@ public class TikaDetectorConfigTest extends AbstractTikaConfigTest {
             assertTrue(hasZip, "Should have the ZipContainerDetector");
         }
     }
+
 }

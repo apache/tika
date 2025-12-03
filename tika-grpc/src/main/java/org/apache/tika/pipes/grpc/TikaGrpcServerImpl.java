@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -69,6 +68,7 @@ import org.apache.tika.TikaGrpc;
 import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.Param;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -101,7 +101,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
     String tikaConfigPath;
 
-    TikaGrpcServerImpl(String tikaConfigPath, String pipesPlugins)
+    TikaGrpcServerImpl(String tikaConfigPath)
             throws TikaConfigException, IOException, ParserConfigurationException,
             TransformerException, SAXException {
         File tikaConfigFile = new File(tikaConfigPath);
@@ -114,7 +114,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             tikaConfigFile = tmpTikaConfigFile;
             tikaConfigPath = tikaConfigFile.getAbsolutePath();
         }
-        pipesConfig = PipesConfig.load(tikaConfigFile.toPath(), Paths.get(pipesPlugins));
+        pipesConfig = TikaLoader.load(tikaConfigFile.toPath()).configs().load("pipes", PipesConfig.class);
         pipesClient = new PipesClient(pipesConfig);
 
         expiringFetcherStore = new ExpiringFetcherStore(pipesConfig.getStaleFetcherTimeoutSeconds(),

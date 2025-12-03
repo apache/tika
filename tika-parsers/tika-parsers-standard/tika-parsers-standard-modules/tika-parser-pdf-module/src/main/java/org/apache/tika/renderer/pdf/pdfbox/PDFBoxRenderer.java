@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -59,6 +60,7 @@ import org.apache.tika.renderer.RenderResult;
 import org.apache.tika.renderer.RenderResults;
 import org.apache.tika.renderer.RenderingTracker;
 
+@TikaComponent(name = "pdfbox-renderer")
 public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
 
     Set<MediaType> SUPPORTED_TYPES = Collections.singleton(PDFParser.MEDIA_TYPE);

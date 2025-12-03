@@ -119,7 +119,7 @@ public class S3PipesIterator extends PipesIteratorBase {
     }
 
     public static S3PipesIterator build(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
-        S3PipesIteratorConfig config = S3PipesIteratorConfig.load(extensionConfig.jsonConfig());
+        S3PipesIteratorConfig config = S3PipesIteratorConfig.load(extensionConfig.json());
         return new S3PipesIterator(config, extensionConfig);
     }
 

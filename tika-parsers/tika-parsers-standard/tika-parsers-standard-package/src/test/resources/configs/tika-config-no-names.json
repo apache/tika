@@ -1,0 +1,12 @@
+{
+  "auto-detect-parser": {
+    "spoolToDisk": 123450,
+    "outputThreshold": 678900,
+    "embeddedDocumentExtractorFactory": {
+      "runpack-extractor-factory": {
+        "writeFileNameToContent": false
+      }
+    }
+  }
+}
+

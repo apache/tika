@@ -17,12 +17,14 @@
 package org.apache.tika.langdetect.opennlp.metadatafilter;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.langdetect.opennlp.OpenNLPDetector;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.MetadataFilterBase;
 
+@TikaComponent
 public class OpenNLPMetadataFilter extends MetadataFilterBase {
 
     private int maxCharsForDetection = 10000;

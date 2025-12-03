@@ -72,35 +72,37 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                 .getResource("/ssl-keys")
                 .toURI());
 
-        String xml = IOUtils.resourceToString("/configs/tika-config-server-tls-two-way-template.xml", UTF_8);
-        xml = xml.replace("{SSL_KEYS}", TLS_KEYS
+        String json = IOUtils.resourceToString("/configs/tika-config-server-tls-two-way-template.json", UTF_8);
+        json = json.replace("{SSL_KEYS}", TLS_KEYS
+                .toAbsolutePath()
+                .toString());
+        json = json.replace("\\", "/");
+
+        TIKA_TLS_TWO_WAY_CONFIG = Files.createTempFile(TLS_CONFIG, "tika-config-tls-", ".json");
+        Files.write(TIKA_TLS_TWO_WAY_CONFIG, json.getBytes(UTF_8));
+
+        json = IOUtils.resourceToString("/configs/tika-config-server-tls-one-way-template.json", UTF_8);
+        json = json.replace("{SSL_KEYS}", TLS_KEYS
                 .toAbsolutePath()
                 .toString());
 
-        TIKA_TLS_TWO_WAY_CONFIG = Files.createTempFile(TLS_CONFIG, "tika-config-tls-", ".xml");
-        Files.write(TIKA_TLS_TWO_WAY_CONFIG, xml.getBytes(UTF_8));
-
-        xml = IOUtils.resourceToString("/configs/tika-config-server-tls-one-way-template.xml", UTF_8);
-        xml = xml.replace("{SSL_KEYS}", TLS_KEYS
-                .toAbsolutePath()
-                .toString());
-
-        TIKA_TLS_ONE_WAY_CONFIG = Files.createTempFile(TLS_CONFIG, "tika-config-tls-", ".xml");
-        Files.write(TIKA_TLS_ONE_WAY_CONFIG, xml.getBytes(UTF_8));
+        json = json.replace("\\", "/");
+        TIKA_TLS_ONE_WAY_CONFIG = Files.createTempFile(TLS_CONFIG, "tika-config-tls-", ".json");
+        Files.write(TIKA_TLS_ONE_WAY_CONFIG, json.getBytes(UTF_8));
 
     }
 
     @Test
     public void testBasic() throws Exception {
 
-        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.xml")});
+        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.json")});
         testBaseline();
     }
 
     @Test
     public void testOOM() throws Exception {
 
-        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.xml")});
+        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.json")});
 
         awaitServerStartup();
 
@@ -120,7 +122,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
     @Test
     public void testMinimumTimeoutInHeader() throws Exception {
-        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.xml")});
+        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.json")});
         awaitServerStartup();
 
         Response response = WebClient
@@ -134,7 +136,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
     @Test
     public void testTaskTimeoutHeader() throws Exception {
 
-        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.xml")});
+        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.json")});
         awaitServerStartup();
         Response response = null;
         try {
@@ -179,7 +181,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
     @Test
     public void testSystemExit() throws Exception {
-        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.xml")});
+        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.json")});
 
         awaitServerStartup();
         Response response = null;
@@ -199,7 +201,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
     @Test
     @Timeout(60000)
     public void testTimeout() throws Exception {
-        startProcess(new String[]{"-config", getConfig("tika-config-server-timeout-10000.xml")});
+        startProcess(new String[]{"-config", getConfig("tika-config-server-timeout-5000.json")});
         awaitServerStartup();
         Response response = null;
         try {
@@ -244,7 +246,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
     @Test
     public void testStdErrOutBasic() throws Exception {
-        startProcess(new String[]{"-config", getConfig("tika-config-server-timeout-10000.xml")});
+        startProcess(new String[]{"-config", getConfig("tika-config-server-timeout-5000.json")});
         awaitServerStartup();
 
         Response response = WebClient

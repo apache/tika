@@ -71,7 +71,7 @@ public class FetcherTest extends CXFTestBase {
 
     @Override
     protected InputStream getTikaConfigInputStream() {
-        return getClass().getResourceAsStream("/config/tika-config-url-fetcher.xml");
+        return getClass().getResourceAsStream("/configs/tika-config-url-fetcher.xml");
     }
 
     @Override

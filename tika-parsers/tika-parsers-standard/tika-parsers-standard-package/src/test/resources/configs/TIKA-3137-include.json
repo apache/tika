@@ -1,0 +1,21 @@
+{
+  "metadata-filters": [
+    {
+      "include-field-metadata-filter" : {
+        "include": [
+          "X-TIKA:content",
+          "extended-properties:Application",
+          "Content-Type"
+        ]
+      }
+    },
+    {
+      "clear-by-mime-metadata-filter": {
+        "mimes": [
+          "image/emf",
+          "text/plain"
+        ]
+      }
+    }
+  ]
+}

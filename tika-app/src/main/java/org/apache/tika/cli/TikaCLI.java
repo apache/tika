@@ -260,25 +260,29 @@ public class TikaCLI {
     private static void async(String[] args) throws Exception {
         args = AsyncHelper.translateArgs(args);
         String tikaConfigPath = "";
+        //TODO - runpack is a smelly. fix this.
+        boolean runpack = false;
         for (int i = 0; i < args.length - 1; i++) {
             if (args[i].equals("-c")) {
                 tikaConfigPath = args[i + 1];
-                break;
+            } else if ("-Z".equals(args[i])) {
+                runpack = true;
             }
         }
-        if (! StringUtils.isBlank(tikaConfigPath)) {
+
+        if (runpack || ! StringUtils.isBlank(tikaConfigPath)) {
             TikaAsyncCLI.main(args);
             return;
         }
-        if (args.length == 2 && args[0].endsWith(".xml") &&  args[1].endsWith(".json")) {
+        if (args.length == 1 &&  args[0].endsWith(".json")) {
             TikaAsyncCLI.main(args);
             return;
         };
         //TODO -- are there other shortcuts?
         Path tmpConfig = null;
         try {
-            tmpConfig = Files.createTempFile("tika-config-", ".xml");
-            Files.copy(TikaCLI.class.getResourceAsStream("/tika-config-default-single-file.xml"),
+            tmpConfig = Files.createTempFile("tika-config-", ".json");
+            Files.copy(TikaCLI.class.getResourceAsStream("/tika-config-default-single-file.json"),
                     tmpConfig, StandardCopyOption.REPLACE_EXISTING);
             List<String> argList = new ArrayList<>();
             argList.add("-c");
@@ -352,6 +356,7 @@ public class TikaCLI {
                 return true;
             }
         }
+
         for (String arg : args) {
             if (arg.equals("-a") || arg.equals("--async")) {
                 return true;

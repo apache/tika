@@ -21,10 +21,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.Param;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.utils.StringUtils;
@@ -52,12 +55,58 @@ import org.apache.tika.utils.StringUtils;
  * will overwrite the value in that field. Again, if there are multiple
  * values in that field, those will all be overwritten.
  */
+@TikaComponent
 public class CaptureGroupMetadataFilter extends MetadataFilterBase implements Initializable {
+
+    /**
+     * Configuration class for JSON deserialization.
+     */
+    public static class Config {
+        public String regex;
+        public String sourceField;
+        public String targetField;
+    }
 
     private String regexString;
     private Pattern regex;
     private String sourceField;
     private String targetField;
+
+    public CaptureGroupMetadataFilter() {
+    }
+
+    /**
+     * Constructor with explicit Config object.
+     *
+     * @param config the configuration
+     */
+    public CaptureGroupMetadataFilter(Config config) throws TikaConfigException {
+        this.regexString = config.regex;
+        this.sourceField = config.sourceField;
+        this.targetField = config.targetField;
+        // Validate and initialize
+        if (StringUtils.isBlank(sourceField)) {
+            throw new TikaConfigException("Must specify a 'sourceField'");
+        }
+        if (StringUtils.isBlank(targetField)) {
+            throw new TikaConfigException("Must specify a 'targetField'");
+        }
+        try {
+            this.regex = Pattern.compile(regexString);
+        } catch (PatternSyntaxException e) {
+            throw new TikaConfigException("Couldn't parse regex", e);
+        }
+    }
+
+    /**
+     * Constructor for JSON configuration.
+     * Requires Jackson on the classpath.
+     *
+     * @param jsonConfig JSON configuration
+     */
+    public CaptureGroupMetadataFilter(JsonConfig jsonConfig) throws TikaConfigException {
+        this(ConfigDeserializer.buildConfig(jsonConfig, Config.class));
+    }
 
     @Override
     protected void filter(Metadata metadata) {

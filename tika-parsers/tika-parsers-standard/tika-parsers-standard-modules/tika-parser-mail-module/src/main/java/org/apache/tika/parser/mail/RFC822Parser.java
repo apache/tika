@@ -28,7 +28,9 @@ import org.apache.james.mime4j.stream.MimeConfig;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Field;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
@@ -50,12 +52,19 @@ import org.apache.tika.sax.XHTMLContentHandler;
  *
  * @author jnioche@digitalpebble.com
  */
-@TikaComponent
+@TikaComponent(name = "rfc822-parser")
 public class RFC822Parser implements Parser {
     /**
      * Serial version UID
      */
     private static final long serialVersionUID = -5504243905998074168L;
+
+    /**
+     * Configuration class for JSON deserialization.
+     */
+    public static class Config {
+        public boolean extractAllAlternatives = false;
+    }
 
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.parse("message/rfc822"));
@@ -66,6 +75,28 @@ public class RFC822Parser implements Parser {
 
     @Field
     private boolean extractAllAlternatives = false;
+
+    public RFC822Parser() {
+    }
+
+    /**
+     * Constructor with explicit Config object.
+     *
+     * @param config the configuration
+     */
+    public RFC822Parser(Config config) {
+        this.extractAllAlternatives = config.extractAllAlternatives;
+    }
+
+    /**
+     * Constructor for JSON configuration.
+     * Requires Jackson on the classpath.
+     *
+     * @param jsonConfig JSON configuration
+     */
+    public RFC822Parser(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, Config.class));
+    }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;

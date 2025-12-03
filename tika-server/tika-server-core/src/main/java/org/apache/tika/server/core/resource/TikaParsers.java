@@ -31,6 +31,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
@@ -55,20 +56,20 @@ public class TikaParsers {
     @GET
     @Path("/details")
     @Produces("text/html")
-    public String getParserDetailsHTML() {
+    public String getParserDetailsHTML() throws TikaConfigException {
         return getParsersHTML(true);
     }
 
     @GET
     @Produces("text/html")
-    public String getParsersHTML() {
+    public String getParsersHTML() throws TikaConfigException {
         return getParsersHTML(false);
     }
 
-    protected String getParsersHTML(boolean withMimeTypes) {
+    protected String getParsersHTML(boolean withMimeTypes) throws TikaConfigException {
         ParserDetails p = new ParserDetails(TikaResource
-                .getConfig()
-                .getParser());
+                .getTikaLoader()
+                .loadParsers());
 
         StringBuffer h = new StringBuffer();
         html.generateHeader(h, "Parsers available to Apache Tika");
@@ -121,21 +122,21 @@ public class TikaParsers {
     @GET
     @Path("/details")
     @Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
-    public String getParserDetailsJSON() throws IOException {
+    public String getParserDetailsJSON() throws IOException, TikaConfigException {
         return getParsersJSON(true);
     }
 
     @GET
     @Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
-    public String getParsersJSON() throws IOException {
+    public String getParsersJSON() throws IOException, TikaConfigException {
         return getParsersJSON(false);
     }
 
-    protected String getParsersJSON(boolean withMimeTypes) throws IOException {
+    protected String getParsersJSON(boolean withMimeTypes) throws IOException, TikaConfigException {
         Map<String, Object> details = new HashMap<>();
         parserAsMap(new ParserDetails(TikaResource
-                .getConfig()
-                .getParser()), withMimeTypes, details);
+                .getTikaLoader()
+                .loadParsers()), withMimeTypes, details);
         ObjectMapper objectMapper = new ObjectMapper();
         return objectMapper
                 .writerWithDefaultPrettyPrinter()
@@ -167,21 +168,21 @@ public class TikaParsers {
     @GET
     @Path("/details")
     @Produces("text/plain")
-    public String getParserDetailssPlain() {
+    public String getParserDetailssPlain() throws TikaConfigException {
         return getParsersPlain(true);
     }
 
     @GET
     @Produces("text/plain")
-    public String getParsersPlain() {
+    public String getParsersPlain() throws TikaConfigException {
         return getParsersPlain(false);
     }
 
-    protected String getParsersPlain(boolean withMimeTypes) {
+    protected String getParsersPlain(boolean withMimeTypes) throws TikaConfigException {
         StringBuffer text = new StringBuffer();
         renderParser(new ParserDetails(TikaResource
-                .getConfig()
-                .getParser()), withMimeTypes, text, "");
+                .getTikaLoader()
+                .loadParsers()), withMimeTypes, text, "");
         return text.toString();
     }
 

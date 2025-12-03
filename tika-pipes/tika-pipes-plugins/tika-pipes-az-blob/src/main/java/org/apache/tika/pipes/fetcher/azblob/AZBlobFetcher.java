@@ -67,7 +67,7 @@ public class AZBlobFetcher extends AbstractTikaExtension implements Fetcher {
     }
 
     public static AZBlobFetcher build(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
-        AZBlobFetcherConfig config = AZBlobFetcherConfig.load(extensionConfig.jsonConfig());
+        AZBlobFetcherConfig config = AZBlobFetcherConfig.load(extensionConfig.json());
         AZBlobFetcher fetcher = new AZBlobFetcher(extensionConfig);
         fetcher.config = config;
         fetcher.initialize();

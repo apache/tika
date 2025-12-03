@@ -69,9 +69,10 @@ public class TikaComponentProcessor extends AbstractProcessor {
         SERVICE_INTERFACES.put("org.apache.tika.parser.Parser", "parsers");
         SERVICE_INTERFACES.put("org.apache.tika.detect.Detector", "detectors");
         SERVICE_INTERFACES.put("org.apache.tika.detect.EncodingDetector", "encoding-detectors");
+        SERVICE_INTERFACES.put("org.apache.tika.language.detect.LanguageDetector", "language-detectors");
         SERVICE_INTERFACES.put("org.apache.tika.language.translate.Translator", "translators");
         SERVICE_INTERFACES.put("org.apache.tika.renderer.Renderer", "renderers");
-        SERVICE_INTERFACES.put("org.apache.tika.metadata.listfilter.MetadataFilter", "metadata-filters");
+        SERVICE_INTERFACES.put("org.apache.tika.metadata.filter.MetadataFilter", "metadata-filters");
     }
 
     private Messager messager;

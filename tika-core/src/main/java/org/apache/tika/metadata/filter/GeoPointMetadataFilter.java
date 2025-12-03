@@ -16,7 +16,10 @@
  */
 package org.apache.tika.metadata.filter;
 
+import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Field;
+import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
@@ -28,9 +31,39 @@ import org.apache.tika.utils.StringUtils;
  *
  * If you need any other mappings, please open a ticket on our JIRA.
  */
+@TikaComponent
 public class GeoPointMetadataFilter extends MetadataFilterBase {
 
+    /**
+     * Configuration class for JSON deserialization.
+     */
+    public static class Config {
+        public String geoPointFieldName = "location";
+    }
+
     String geoPointFieldName = "location";
+
+    public GeoPointMetadataFilter() {
+    }
+
+    /**
+     * Constructor with explicit Config object.
+     *
+     * @param config the configuration
+     */
+    public GeoPointMetadataFilter(Config config) {
+        this.geoPointFieldName = config.geoPointFieldName;
+    }
+
+    /**
+     * Constructor for JSON configuration.
+     * Requires Jackson on the classpath.
+     *
+     * @param jsonConfig JSON configuration
+     */
+    public GeoPointMetadataFilter(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, Config.class));
+    }
 
     /**
      * Set the field for the concatenated LATITUDE,LONGITUDE string.

@@ -17,7 +17,6 @@
 package org.apache.tika.metadata.writefilter;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -60,13 +59,13 @@ public class StandardWriteFilterFactory implements MetadataWriteFilterFactory {
                 excludeFields, includeEmpty);
     }
 
-    public void setIncludeFields(List<String> includeFields) {
+    public void setIncludeFields(Set<String> includeFields) {
         Set<String> keys = ConcurrentHashMap.newKeySet(includeFields.size());
         keys.addAll(includeFields);
         this.includeFields = Collections.unmodifiableSet(keys);
     }
 
-    public void setExcludeFields(List<String> excludeFields) {
+    public void setExcludeFields(Set<String> excludeFields) {
         Set<String> keys = ConcurrentHashMap.newKeySet(excludeFields.size());
         keys.addAll(excludeFields);
         this.excludeFields = Collections.unmodifiableSet(keys);
@@ -94,6 +93,10 @@ public class StandardWriteFilterFactory implements MetadataWriteFilterFactory {
 
     public Set<String> getIncludeFields() {
         return includeFields;
+    }
+
+    public Set<String> getExcludeFields() {
+        return excludeFields;
     }
 
     public int getMaxKeySize() {

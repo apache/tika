@@ -172,6 +172,10 @@
             <Export-Package>
               org.apache.tika.*
             </Export-Package>
+            <Include-Resource>
+              {maven-resources},
+              META-INF/tika=${project.build.outputDirectory}/META-INF/tika
+            </Include-Resource>
           </instructions>
         </configuration>
       </plugin>

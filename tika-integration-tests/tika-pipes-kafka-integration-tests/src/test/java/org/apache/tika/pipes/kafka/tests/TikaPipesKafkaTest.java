@@ -122,8 +122,7 @@ public class TikaPipesKafkaTest {
         Path testFileFolderPath = pipesDirectory.resolve("test-files");
         createTestFiles(testFileFolderPath);
 
-        Path tikaConfigFile = getTikaConfigFile(pipesDirectory);
-        Path pluginsConfig = getPluginsConfig(tikaConfigFile, pipesDirectory, testFileFolderPath);
+        Path tikaConfigPath = getTikaConfig(pipesDirectory, testFileFolderPath);
 
         Properties consumerProps = new Properties();
         consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
@@ -170,7 +169,7 @@ public class TikaPipesKafkaTest {
 
         es.execute(() -> {
             try {
-                TikaCLI.main(new String[]{"-a", pluginsConfig.toAbsolutePath().toString(), "-c", tikaConfigFile.toAbsolutePath().toString()});
+                TikaCLI.main(new String[]{"-a", "-c", tikaConfigPath.toAbsolutePath().toString()});
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -206,19 +205,9 @@ public class TikaPipesKafkaTest {
         LOG.info("Done");
     }
 
-    private Path getTikaConfigFile(Path pipesDirectory) throws Exception {
-        Path tikaConfigFile = pipesDirectory.resolve("ta-kafka.xml");
-        String tikaConfigTemplateXml;
-        try (InputStream is = this.getClass().getResourceAsStream("/kafka/tika-config-kafka.xml")) {
-            assert is != null;
-            tikaConfigTemplateXml = IOUtils.toString(is, StandardCharsets.UTF_8);
-        }
-        Files.writeString(tikaConfigFile, tikaConfigTemplateXml, StandardCharsets.UTF_8);
-        return tikaConfigFile;
-    }
 
     @NotNull
-    private Path getPluginsConfig(Path tikaConfig, Path pipesDirectory, Path testFileFolderPath) throws Exception {
+    private Path getTikaConfig(Path pipesDirectory, Path testFileFolderPath) throws Exception {
         String json;
         try (InputStream is = this.getClass().getResourceAsStream("/kafka/plugins-template.json")) {
             assert is != null;
@@ -231,10 +220,9 @@ public class TikaPipesKafkaTest {
                 .replaceAll("FETCHER_BASE_PATH",
                         Matcher.quoteReplacement(testFileFolderPath.toAbsolutePath().toString()))
                 .replace("PARSE_MODE", HandlerConfig.PARSE_MODE.RMETA.name());
+        Path tikaConfig = pipesDirectory.resolve("tika-config.json");
 
-        if (tikaConfig != null) {
-            res = res.replace("TIKA_CONFIG", tikaConfig.toAbsolutePath().toString());
-        }
+        res = res.replace("TIKA_CONFIG", tikaConfig.toAbsolutePath().toString());
 
         Path log4jPropFile = pipesDirectory.resolve("log4j2.xml");
         try (InputStream is = this.getClass().getResourceAsStream("/pipes-fork-server-custom-log4j2.xml")) {
@@ -243,9 +231,7 @@ public class TikaPipesKafkaTest {
         }
         res = res.replace("LOG4J_PROPERTIES_FILE", log4jPropFile.toAbsolutePath().toString());
 
-        Path pluginsConfig = pipesDirectory.resolve("plugins-config.json");
-        res = res.replace("PLUGINS_CONFIG", pluginsConfig.toAbsolutePath().toString());
-        Files.writeString(pluginsConfig, res, StandardCharsets.UTF_8);
-        return pluginsConfig;
+        Files.writeString(tikaConfig, res, StandardCharsets.UTF_8);
+        return tikaConfig;
     }
 }

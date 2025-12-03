@@ -18,37 +18,93 @@ package org.apache.tika.parser.txt;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
+import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Field;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.utils.CharsetUtils;
 
-@TikaComponent(spi = false)
+@TikaComponent(spi = false, name = "icu4j-encoding-detector")
 public class Icu4jEncodingDetector implements EncodingDetector {
 
-    @Field
-    private boolean stripMarkup = false;
+    /**
+     * Configuration class for JSON deserialization.
+     */
+    public static class Config implements Serializable {
+        public boolean stripMarkup = false;
+        public int markLimit = CharsetDetector.DEFAULT_MARK_LIMIT;
+        public List<String> ignoreCharsets = new ArrayList<>();
 
-    @Field
-    private int markLimit = CharsetDetector.DEFAULT_MARK_LIMIT;
+        public boolean isStripMarkup() {
+            return stripMarkup;
+        }
 
-    private Set<String> ignoreCharsets = new HashSet<>();
+        public void setStripMarkup(boolean stripMarkup) {
+            this.stripMarkup = stripMarkup;
+        }
 
+        public int getMarkLimit() {
+            return markLimit;
+        }
+
+        public void setMarkLimit(int markLimit) {
+            this.markLimit = markLimit;
+        }
+
+        public List<String> getIgnoreCharsets() {
+            return ignoreCharsets;
+        }
+
+        public void setIgnoreCharsets(List<String> ignoreCharsets) {
+            this.ignoreCharsets = ignoreCharsets;
+        }
+    }
+
+    private final Config defaultConfig;
+    /**
+     * Default constructor for SPI loading.
+     */
+    public Icu4jEncodingDetector() {
+        defaultConfig = new Config();
+    }
+
+    /**
+     * Constructor with explicit Config object.
+     *
+     * @param config the configuration
+     */
+    public Icu4jEncodingDetector(Config config) {
+        defaultConfig = config;
+    }
+
+    /**
+     * Constructor for JSON configuration.
+     * Requires Jackson on the classpath.
+     *
+     * @param jsonConfig JSON configuration
+     */
+    public Icu4jEncodingDetector(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, Config.class));
+    }
+
+
+    @Override
     public Charset detect(InputStream input, Metadata metadata) throws IOException {
         if (input == null) {
             return null;
         }
+        //TODO: add runtime updates?
+        Config config = defaultConfig;
 
-        CharsetDetector detector = new CharsetDetector(markLimit);
+        CharsetDetector detector = new CharsetDetector(config.markLimit);
 
         String incomingCharset = metadata.get(Metadata.CONTENT_ENCODING);
         String incomingType = metadata.get(Metadata.CONTENT_TYPE);
@@ -78,7 +134,7 @@ public class Icu4jEncodingDetector implements EncodingDetector {
         for (CharsetMatch match : detector.detectAll()) {
             try {
                 String n = match.getNormalizedName();
-                if (ignoreCharsets.contains(n)) {
+                if (config.ignoreCharsets.contains(n)) {
                     continue;
                 }
                 return CharsetUtils.forName(match.getNormalizedName());
@@ -90,8 +146,12 @@ public class Icu4jEncodingDetector implements EncodingDetector {
         return null;
     }
 
+    public Config getDefaultConfig() {
+        return defaultConfig;
+    }
+
     public boolean isStripMarkup() {
-        return stripMarkup;
+        return getDefaultConfig().isStripMarkup();
     }
 
     /**
@@ -107,11 +167,11 @@ public class Icu4jEncodingDetector implements EncodingDetector {
      */
     @Field
     public void setStripMarkup(boolean stripMarkup) {
-        this.stripMarkup = stripMarkup;
+        this.getDefaultConfig().stripMarkup = stripMarkup;
     }
 
     public int getMarkLimit() {
-        return markLimit;
+        return this.getDefaultConfig().markLimit;
     }
 
     /**
@@ -122,21 +182,16 @@ public class Icu4jEncodingDetector implements EncodingDetector {
      */
     @Field
     public void setMarkLimit(int markLimit) {
-        this.markLimit = markLimit;
-    }
-
-    public int getMarkLimt() {
-        return this.markLimit;
+        this.getDefaultConfig().markLimit = markLimit;
     }
 
     @Field
     public void setIgnoreCharsets(List<String> charsetsToIgnore) {
-        this.ignoreCharsets.addAll(charsetsToIgnore);
+        this.getDefaultConfig().getIgnoreCharsets().clear();
+        this.getDefaultConfig().getIgnoreCharsets().addAll(charsetsToIgnore);
     }
 
     public List<String> getIgnoreCharsets() {
-        List<String> ret = new ArrayList<>(ignoreCharsets);
-        Collections.sort(ret);
-        return ret;
+        return getDefaultConfig().getIgnoreCharsets();
     }
 }

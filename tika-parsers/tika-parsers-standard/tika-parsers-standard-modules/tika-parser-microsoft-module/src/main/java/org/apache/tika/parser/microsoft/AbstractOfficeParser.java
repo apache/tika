@@ -27,7 +27,7 @@ import org.apache.tika.parser.Parser;
  */
 public abstract class AbstractOfficeParser implements Parser {
 
-    private final OfficeParserConfig defaultOfficeParserConfig = new OfficeParserConfig();
+    private OfficeParserConfig defaultOfficeParserConfig = new OfficeParserConfig();
 
     /**
      * Checks to see if the user has specified an {@link OfficeParserConfig}.
@@ -39,6 +39,15 @@ public abstract class AbstractOfficeParser implements Parser {
         OfficeParserConfig officeParserConfig =
                 parseContext.get(OfficeParserConfig.class, defaultOfficeParserConfig);
         parseContext.set(OfficeParserConfig.class, officeParserConfig);
+    }
+
+    /**
+     * Allows subclasses to set the default configuration during construction.
+     *
+     * @param config the configuration to use as default
+     */
+    protected void setDefaultOfficeParserConfig(OfficeParserConfig config) {
+        this.defaultOfficeParserConfig = config;
     }
 
     /**

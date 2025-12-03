@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -54,6 +55,7 @@ import org.apache.tika.utils.StringUtils;
  * to true.  The default behavior is to store the value as {@link FileCommandDetector#FILE_MIME}
  * but rely on other detectors for the "active" mime used by Tika.
  */
+@TikaComponent(spi = false)
 public class FileCommandDetector implements Detector {
 
     //TODO: file has some diff mimes names for some very common mimes

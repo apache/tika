@@ -1,0 +1,54 @@
+{
+  "auto-detect-parser-config": {
+    "spoolToDisk": 1000,
+    "outputThreshold": 1000,
+    "maximumCompressionRatio": 0.8,
+    "maximumDepth": 1000,
+    "maximumPackageEntryDepth": 1000,
+    "metadataWriteFilterFactory": {
+      "@class": "org.apache.tika.metadata.writefilter.StandardWriteFilterFactory",
+      "includeFields": [
+        "java.util.Collections$EmptySet",
+        []
+      ],
+      "excludeFields": [
+        "java.util.Collections$EmptySet",
+        []
+      ],
+      "maxKeySize": 1024,
+      "maxFieldSize": 102400,
+      "maxTotalEstimatedBytes": 10485760,
+      "maxValuesPerField": 10,
+      "includeEmpty": false
+    },
+    "embeddedDocumentExtractorFactory": {
+      "@class": "org.apache.tika.extractor.RUnpackExtractorFactory",
+      "writeFileNameToContent": true,
+      "embeddedBytesIncludeMimeTypes": [
+        "java.util.Collections$EmptySet",
+        []
+      ],
+      "embeddedBytesExcludeMimeTypes": [
+        "java.util.Collections$EmptySet",
+        []
+      ],
+      "embeddedBytesIncludeEmbeddedResourceTypes": [
+        "java.util.Collections$EmptySet",
+        []
+      ],
+      "embeddedBytesExcludeEmbeddedResourceTypes": [
+        "java.util.Collections$EmptySet",
+        []
+      ],
+      "maxEmbeddedBytesForExtraction": 10737418240
+    },
+    "contentHandlerDecoratorFactory": {
+      "@class": "org.apache.tika.sax.UpcasingContentHandlerDecoratorFactory"
+    },
+    "digesterFactory": {
+      "@class": "org.apache.tika.parser.digestutils.CommonsDigesterFactory",
+      "skipContainerDocument": false
+    },
+    "throwOnZeroBytes": true
+  }
+}

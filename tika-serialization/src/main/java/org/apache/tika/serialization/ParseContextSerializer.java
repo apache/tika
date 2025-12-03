@@ -17,46 +17,76 @@
 package org.apache.tika.serialization;
 
 import java.io.IOException;
-import java.util.Set;
+import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ConfigContainer;
+import org.apache.tika.config.loader.PolymorphicObjectMapperFactory;
 import org.apache.tika.parser.ParseContext;
 
 public class ParseContextSerializer extends JsonSerializer<ParseContext> {
+    private static final Logger LOG = LoggerFactory.getLogger(ParseContextSerializer.class);
+
     public static final String PARSE_CONTEXT = "parseContext";
 
+    /**
+     * Static ObjectMapper configured for polymorphic serialization/deserialization.
+     * Initialized once when the class is loaded to avoid creating a new mapper on each call.
+     * Package-private to allow ParseContextDeserializer to use the same mapper.
+     */
+    static final ObjectMapper POLYMORPHIC_MAPPER = PolymorphicObjectMapperFactory.getMapper();
+
     @Override
-    public void serialize(ParseContext parseContext, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+    public void serialize(ParseContext parseContext, JsonGenerator jsonGenerator,
+                         SerializerProvider serializerProvider) throws IOException {
         jsonGenerator.writeStartObject();
-        Set<String> objectKeySet = parseContext.keySet();
-        ConfigContainer p = parseContext.get(ConfigContainer.class);
-        if ((p != null && objectKeySet.size() > 1) || (p == null && ! objectKeySet.isEmpty())) {
+
+        Map<String, Object> contextMap = parseContext.getContextMap();
+        ConfigContainer configContainer = parseContext.get(ConfigContainer.class);
+
+        // Serialize objects stored directly in ParseContext (legacy format)
+        // These are objects set via context.set(SomeClass.class, someObject)
+        boolean hasNonConfigObjects = contextMap.size() > (configContainer != null ? 1 : 0);
+        if (hasNonConfigObjects) {
             jsonGenerator.writeFieldName("objects");
             jsonGenerator.writeStartObject();
-            for (String className : parseContext.keySet()) {
+
+            for (Map.Entry<String, Object> entry : contextMap.entrySet()) {
+                String className = entry.getKey();
                 if (className.equals(ConfigContainer.class.getName())) {
                     continue;
                 }
-                try {
-                    Class clazz = Class.forName(className);
-                    TikaJsonSerializer.serialize(className, parseContext.get(clazz), jsonGenerator);
-                } catch (TikaSerializationException e) {
-                    throw new IOException(e);
-                } catch (ClassNotFoundException e) {
-                    throw new IllegalArgumentException(e);
-                }
+
+                Object value = entry.getValue();
+
+                // Write the field name (superclass/interface name from key)
+                jsonGenerator.writeFieldName(className);
+
+                // Let Jackson handle type information and serialization
+                // Use writerFor(Object.class) to ensure polymorphic type info is added
+                POLYMORPHIC_MAPPER.writerFor(Object.class).writeValue(jsonGenerator, value);
             }
+
             jsonGenerator.writeEndObject();
         }
-        if (p != null) {
-            for (String k : p.getKeys()) {
-                jsonGenerator.writeStringField(k, p.get(k).get());
+
+        // Write ConfigContainer fields as top-level properties (new friendly-name format)
+        // Each field contains a JSON string representing a parser/component configuration
+        // using the same friendly names as tika-config.json (e.g., "pdf-parser", "html-parser")
+        if (configContainer != null) {
+            for (String key : configContainer.getKeys()) {
+                jsonGenerator.writeFieldName(key);
+                // Write the JSON string as raw JSON (not as a quoted string)
+                jsonGenerator.writeRawValue(configContainer.get(key).get().json());
             }
         }
+
         jsonGenerator.writeEndObject();
     }
 }

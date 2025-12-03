@@ -32,6 +32,8 @@ public class AsyncHelper {
                 String c = arg.substring(TIKA_CONFIG_KEY.length());
                 argList.add("-c");
                 argList.add(c);
+            } else if ("-a".equals(arg)) {
+                //do nothing
             } else {
                 argList.add(args[i]);
             }

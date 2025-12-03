@@ -21,10 +21,15 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.DefaultParser;
@@ -158,4 +163,25 @@ public class TikaParserConfigTest extends AbstractTikaConfigTest {
             }
         }
     }
+
+    @Test
+    @Disabled("TODO -- turn into actual unit test")
+    public void testTesseractList() throws Exception {
+        TikaLoader tikaLoader = TikaLoader.load(getPath("tika-config-tesseract-arbitrary.json"));
+        Parser p  = tikaLoader.loadAutoDetectParser();
+        Parser tesseract = ((CompositeParser)p).getAllComponentParsers().get(0);
+
+        System.out.println(tesseract);
+
+    }
+
+    private Path getPath(String config) {
+        try {
+            return Paths.get(TikaParserConfigTest.class.getResource("/configs/" + config)
+                                                           .toURI());
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

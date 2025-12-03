@@ -1,0 +1,17 @@
+{
+  "parsers": [
+    {
+      "default-parser":{}
+    },
+    {
+      "tesseract-ocr-parser": {
+        "pageSegMode": 3
+      }
+    }
+  ],
+  "renderers": [
+    {
+      "mupdf-renderer": {}
+    }
+  ]
+}

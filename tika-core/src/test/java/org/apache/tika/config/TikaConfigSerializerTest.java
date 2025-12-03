@@ -56,7 +56,7 @@ public class TikaConfigSerializerTest extends TikaConfigTest {
         String xml = loadAndSerialize("TIKA-1762-executors.xml", TikaConfigSerializer.Mode.STATIC);
         assertContains("<encodingDetectors> " +
                 "<encodingDetector class=\"org.apache.tika.detect" +
-                ".NonDetectingEncodingDetector\"/> " +
+                ".OverrideEncodingDetector\"/> " +
                 "</encodingDetectors>", xml);
     }
 

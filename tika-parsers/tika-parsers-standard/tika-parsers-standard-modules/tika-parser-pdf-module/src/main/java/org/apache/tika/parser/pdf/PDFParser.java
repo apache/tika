@@ -58,10 +58,14 @@ import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.ConfigContainer;
+import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.Param;
+import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaConfigException;
@@ -123,7 +127,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * If your PDFs contain marked content or tags, consider
  * {@link PDFParserConfig#setExtractMarkedContent(boolean)}
  */
-@TikaComponent
+@TikaComponent(name = "pdf-parser")
 public class PDFParser implements Parser, RenderingParser, Initializable {
 
     public static final MediaType MEDIA_TYPE = MediaType.application("pdf");
@@ -138,6 +142,28 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
     private static COSName ENCRYPTED_PAYLOAD = COSName.getPDFName("EncryptedPayload");
     private PDFParserConfig defaultConfig = new PDFParserConfig();
 
+    public PDFParser() {
+    }
+
+    /**
+     * Constructor with explicit PDFParserConfig object.
+     *
+     * @param config the configuration
+     */
+    public PDFParser(PDFParserConfig config) {
+        this.defaultConfig = config;
+    }
+
+    /**
+     * Constructor for JSON configuration.
+     * Requires Jackson on the classpath.
+     *
+     * @param jsonConfig JSON configuration
+     */
+    public PDFParser(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, PDFParserConfig.class));
+    }
+
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
@@ -145,11 +171,7 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
-        PDFParserConfig localConfig = defaultConfig;
-        PDFParserConfig userConfig = context.get(PDFParserConfig.class);
-        if (userConfig != null) {
-            localConfig = defaultConfig.cloneAndUpdate(userConfig);
-        }
+        PDFParserConfig localConfig = getConfig(context);
         if (localConfig.isSetKCMS()) {
             System.setProperty("sun.java2d.cmm", "sun.java2d.cmm.kcms.KcmsServiceProvider");
         }
@@ -247,6 +269,26 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
             }
 
         }
+    }
+
+    private PDFParserConfig getConfig(ParseContext parseContext) throws TikaException, IOException {
+        // Check for ConfigContainer with component-specific runtime config
+        ConfigContainer configContainer = parseContext.get(ConfigContainer.class);
+        if (configContainer != null && configContainer.get("pdf-parser").isPresent()) {
+            // Merge runtime config with defaultConfig via serialization
+            return ParseContextConfig.getConfig(
+                    parseContext,
+                    "pdf-parser",
+                    PDFParserConfig.class,
+                    defaultConfig);
+        }
+
+        // Fall back to old-style ParseContext config for backward compatibility
+        PDFParserConfig userConfig = parseContext.get(PDFParserConfig.class);
+        if (userConfig != null) {
+            return userConfig;
+        }
+        return defaultConfig;
     }
 
     private void checkEncryptedPayload(PDDocument pdfDocument,
@@ -817,7 +859,7 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
 
     @Field
     public void setOcrStrategyAuto(String ocrStrategyAuto) {
-        defaultConfig.setOcrStrategyAuto(ocrStrategyAuto);
+        defaultConfig.setOcrStrategyAutoFromString(ocrStrategyAuto);
     }
 
     public String getOcrStrategyAuto() {
