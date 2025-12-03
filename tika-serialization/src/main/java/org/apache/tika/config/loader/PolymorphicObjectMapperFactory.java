@@ -92,6 +92,10 @@ public class PolymorphicObjectMapperFactory {
         //Need to allow creation of classes without setters/getters -- we may want to revisit this
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
 
+        mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+
+
+
         // Build polymorphic type validator
         BasicPolymorphicTypeValidator.Builder builder = BasicPolymorphicTypeValidator.builder()
                 .allowIfSubType("org.apache.tika.")

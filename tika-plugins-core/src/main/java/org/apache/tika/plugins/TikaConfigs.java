@@ -21,9 +21,7 @@ import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.Set;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
@@ -65,9 +63,6 @@ public class TikaConfigs {
             "autoDetectParserConfig",
             "server"
     );
-
-    static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
 
     private final TikaJsonConfig tikaJsonConfig;
 
@@ -111,17 +106,6 @@ public class TikaConfigs {
      */
     public TikaJsonConfig getTikaJsonConfig() {
         return tikaJsonConfig;
-    }
-
-    /**
-     * Gets the root JSON node.
-     * Deprecated - use {@link #getTikaJsonConfig()} instead.
-     *
-     * @return the root JSON node
-     */
-    @Deprecated
-    public JsonNode getRoot() {
-        return tikaJsonConfig.getRootNode();
     }
 
     /**

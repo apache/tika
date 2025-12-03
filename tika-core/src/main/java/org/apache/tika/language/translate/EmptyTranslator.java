@@ -16,11 +16,14 @@
  */
 package org.apache.tika.language.translate;
 
+import org.apache.tika.config.TikaComponent;
+
 /**
  * Dummy translator that always declines to give any text. Useful as a
  * sentinel translator for when none others are available.
  * for unknown document types.
  */
+@TikaComponent
 public class EmptyTranslator implements Translator {
     public String translate(String text, String sourceLanguage, String targetLanguage) {
         return null;

@@ -26,6 +26,7 @@ import com.memetix.mst.translate.Translate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.translate.Translator;
 
@@ -35,6 +36,7 @@ import org.apache.tika.language.translate.Translator;
  *
  * @since Tika 1.6
  */
+@TikaComponent
 public class MicrosoftTranslator implements Translator {
 
     public static final String PROPERTIES_FILE = "translator.microsoft.properties";

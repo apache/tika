@@ -137,8 +137,8 @@ public class TikaConfigsTest {
                 """;
 
         TikaConfigs configs = loadFromString(json);
-        assertNotNull(configs.getRoot());
-        assertNotNull(configs.getRoot().get("fetchers"));
+        assertNotNull(configs.getTikaJsonConfig().getRootNode());
+        assertNotNull(configs.getTikaJsonConfig().getRootNode().get("fetchers"));
     }
 
     private TikaConfigs loadFromString(String json) throws Exception {

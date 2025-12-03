@@ -35,7 +35,6 @@ import org.apache.tika.server.core.resource.TranslateResource;
 import org.apache.tika.server.core.writer.TarWriter;
 import org.apache.tika.server.core.writer.ZipWriter;
 
-@Disabled("until we get translators working")
 public class TranslateResourceTest extends CXFTestBase {
 
     private static final String TRANSLATE_PATH = "/translate";

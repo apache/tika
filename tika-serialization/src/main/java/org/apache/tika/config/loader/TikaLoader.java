@@ -27,6 +27,7 @@ import org.apache.tika.config.GlobalSettings;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.filter.NoOpFilter;
@@ -86,6 +87,7 @@ public class TikaLoader {
     private EncodingDetector encodingDetectors;
     private MetadataFilter metadataFilter;
     private Renderer renderers;
+    private Translator translator;
     private ConfigLoader configLoader;
     private GlobalSettings globalSettings;
 
@@ -283,6 +285,23 @@ public class TikaLoader {
             renderers = new CompositeRenderer(rendererList);
         }
         return renderers;
+    }
+
+    /**
+     * Loads and returns the translator.
+     * If "translator" section exists in config, uses that translator.
+     * If section missing, uses SPI to discover translator.
+     * Results are cached - subsequent calls return the same instance.
+     *
+     * @return the translator
+     * @throws TikaConfigException if loading fails
+     */
+    public synchronized Translator loadTranslator() throws TikaConfigException {
+        if (translator == null) {
+            TranslatorLoader loader = new TranslatorLoader(classLoader, objectMapper);
+            translator = loader.load(config);
+        }
+        return translator;
     }
 
     /**

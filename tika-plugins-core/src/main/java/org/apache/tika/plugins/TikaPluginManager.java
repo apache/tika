@@ -30,6 +30,7 @@ import org.pf4j.ExtensionFinder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.loader.PolymorphicObjectMapperFactory;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 
@@ -83,12 +84,12 @@ public class TikaPluginManager extends DefaultPluginManager {
      */
     public static TikaPluginManager load(TikaConfigs tikaConfigs)
             throws TikaConfigException, IOException {
-        JsonNode root = tikaConfigs.getRoot();
+        JsonNode root = tikaConfigs.getTikaJsonConfig().getRootNode();
         JsonNode pluginRoots = root.get("plugin-roots");
         if (pluginRoots == null) {
             throw new TikaConfigException("plugin-roots must be specified");
         }
-        List<Path> roots = TikaConfigs.OBJECT_MAPPER.convertValue(pluginRoots,
+        List<Path> roots = PolymorphicObjectMapperFactory.getMapper().convertValue(pluginRoots,
                 new TypeReference<List<Path>>() {});
         if (roots.isEmpty()) {
             throw new TikaConfigException("plugin-roots must not be empty");

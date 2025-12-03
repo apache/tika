@@ -47,6 +47,7 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.utils.StringUtils;
 
@@ -57,6 +58,7 @@ import org.apache.tika.utils.StringUtils;
  *
  * @link https://marian-nmt.github.io/.
  */
+@TikaComponent
 public class MarianTranslator extends AbstractTranslator {
 
     private static final Logger LOG = LoggerFactory.getLogger(MarianTranslator.class);
