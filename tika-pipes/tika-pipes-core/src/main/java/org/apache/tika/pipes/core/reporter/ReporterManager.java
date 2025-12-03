@@ -39,7 +39,8 @@ public class ReporterManager {
 
     public static PipesReporter load(PluginManager pluginManager, TikaConfigs tikaConfigs) throws IOException, TikaConfigException {
 
-        JsonNode node = tikaConfigs.getRoot().get(CONFIG_KEY);
+        JsonNode node = tikaConfigs.getTikaJsonConfig()
+                                   .getRootNode().get(CONFIG_KEY);
 
         List<PipesReporter> reporters =  PluginComponentLoader.loadUnnamedInstances(pluginManager, PipesReporterFactory.class, node);
         if (reporters.isEmpty()) {

@@ -94,6 +94,7 @@ public class TikaResourceFetcherTest extends CXFTestBase {
     protected InputStreamFactory getInputStreamFactory(InputStream is) {
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             TikaConfigs tikaConfigs = TikaConfigs.load(tis.getPath());
+            System.out.println(tikaConfigs.getTikaJsonConfig().getRootNode().toPrettyString());
             TikaPluginManager pluginManager = TikaPluginManager.load(tikaConfigs);
             FetcherManager fetcherManager = FetcherManager.load(pluginManager, tikaConfigs);
             return new FetcherStreamFactory(fetcherManager);

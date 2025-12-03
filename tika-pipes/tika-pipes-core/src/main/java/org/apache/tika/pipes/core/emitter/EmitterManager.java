@@ -46,7 +46,8 @@ public class EmitterManager {
     private final Map<String, Emitter> emitterMap = new ConcurrentHashMap<>();
 
     public static EmitterManager load(PluginManager pluginManager, TikaConfigs tikaConfigs) throws IOException, TikaConfigException {
-        JsonNode fetchersNode = tikaConfigs.getRoot().get(CONFIG_KEY);
+        JsonNode fetchersNode = tikaConfigs.getTikaJsonConfig()
+                                           .getRootNode().get(CONFIG_KEY);
         Map<String, Emitter> fetchers =
                 PluginComponentLoader.loadInstances(pluginManager, EmitterFactory.class, fetchersNode);
         return new EmitterManager(fetchers);
