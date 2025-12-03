@@ -35,5 +35,3 @@ public record PipesIteratorBaseConfig(String fetcherId, String emitterId, Handle
     }
 
 }
-
-

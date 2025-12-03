@@ -1044,4 +1044,3 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         }
     }
 }
-

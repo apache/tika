@@ -164,4 +164,3 @@ class ICNSType {
         return hasRetinaDisplay;
     }
 }
-

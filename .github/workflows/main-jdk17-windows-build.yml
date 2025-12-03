@@ -41,4 +41,4 @@ jobs:
           java-version: ${{ matrix.java }}
       - name: Build with Maven
         working-directory: 'tika build dir'
-        run: mvn clean test install javadoc:aggregate
+        run: mvn clean test install javadoc:aggregate -Pci
