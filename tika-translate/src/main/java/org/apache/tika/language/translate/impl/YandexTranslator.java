@@ -33,6 +33,7 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.translate.Translator;
 
@@ -41,6 +42,7 @@ import org.apache.tika.language.translate.Translator;
  * You can sign up for free access online on the <a href="https://tech.yandex.com/key/form.xml?service=trnsl">API Key form</a>
  * and set your Application's User Key in the <code>translator.yandex.properties</code> file.
  */
+@TikaComponent
 public class YandexTranslator implements Translator {
 
     private static final Logger LOG = LoggerFactory.getLogger(YandexTranslator.class);

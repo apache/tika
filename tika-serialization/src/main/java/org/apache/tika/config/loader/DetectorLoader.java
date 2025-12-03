@@ -16,8 +16,6 @@
  */
 package org.apache.tika.config.loader;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,7 +34,6 @@ import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.utils.ServiceLoaderUtils;
 
 /**
  * Loader for detectors with support for SPI fallback via "default-detector" marker.
@@ -190,63 +187,10 @@ public class DetectorLoader {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private Detector instantiateDetector(Class<?> detectorClass, JsonConfig jsonConfig)
             throws TikaConfigException {
-
-        try {
-            Detector detector;
-
-            // Try constructor with JsonConfig parameter
-            try {
-                Constructor<?> constructor = detectorClass.getConstructor(JsonConfig.class);
-                detector = (Detector) constructor.newInstance(jsonConfig);
-            } catch (NoSuchMethodException e) {
-                // Check if JSON config has actual configuration
-                if (hasConfiguration(jsonConfig)) {
-                    throw new TikaConfigException(
-                            "Detector '" + detectorClass.getName() + "' has configuration in JSON, " +
-                            "but does not have a constructor that accepts JsonConfig. " +
-                            "Please add a constructor: public " + detectorClass.getSimpleName() + "(JsonConfig jsonConfig)");
-                }
-                // Fall back to zero-arg constructor if no configuration provided
-                detector = (Detector) ServiceLoaderUtils.newInstance(detectorClass,
-                        new org.apache.tika.config.ServiceLoader(classLoader));
-            }
-
-            return detector;
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new TikaConfigException("Failed to instantiate detector: " +
-                    detectorClass.getName(), e);
-        }
-    }
-
-    /**
-     * Checks if the JsonConfig contains actual configuration (non-empty JSON object with fields).
-     *
-     * @param jsonConfig the JSON configuration
-     * @return true if there's meaningful configuration, false if empty or just "{}"
-     */
-    private boolean hasConfiguration(JsonConfig jsonConfig) {
-        if (jsonConfig == null) {
-            return false;
-        }
-        String json = jsonConfig.json();
-        if (json == null || json.trim().isEmpty()) {
-            return false;
-        }
-        // Parse to check if it's an empty object or has actual fields
-        try {
-            JsonNode node = objectMapper.readTree(json);
-            // Check if it's an object and has at least one field
-            if (node.isObject() && node.size() > 0) {
-                return true;
-            }
-            return false;
-        } catch (Exception e) {
-            // If we can't parse it, assume it has configuration to be safe
-            return true;
-        }
+        return ComponentInstantiator.instantiate(detectorClass, jsonConfig, classLoader,
+                "Detector", objectMapper);
     }
 
     /**

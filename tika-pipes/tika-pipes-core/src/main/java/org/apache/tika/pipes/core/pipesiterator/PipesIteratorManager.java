@@ -39,7 +39,8 @@ public class PipesIteratorManager {
 
     public static Optional<PipesIterator> load(PluginManager pluginManager, TikaConfigs tikaConfigs) throws IOException, TikaConfigException {
 
-        JsonNode node = tikaConfigs.getRoot().get(CONFIG_KEY);
+        JsonNode node = tikaConfigs.getTikaJsonConfig()
+                                   .getRootNode().get(CONFIG_KEY);
 
         return PluginComponentLoader.loadSingleton(pluginManager, PipesIteratorFactory.class, node);
     }

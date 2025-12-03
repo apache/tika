@@ -224,7 +224,7 @@ public class ParserLoader {
                 parser = (Parser) constructor.newInstance(jsonConfig);
             } catch (NoSuchMethodException e) {
                 // Check if JSON config has actual configuration
-                if (hasConfiguration(jsonConfig)) {
+                if (ComponentInstantiator.hasConfiguration(jsonConfig, objectMapper)) {
                     throw new TikaConfigException(
                             "Parser '" + parserClass.getName() + "' has configuration in JSON, " +
                             "but does not have a constructor that accepts JsonConfig. " +
@@ -257,34 +257,6 @@ public class ParserLoader {
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new TikaConfigException("Failed to instantiate parser: " +
                     parserClass.getName(), e);
-        }
-    }
-
-    /**
-     * Checks if the JsonConfig contains actual configuration (non-empty JSON object with fields).
-     *
-     * @param jsonConfig the JSON configuration
-     * @return true if there's meaningful configuration, false if empty or just "{}"
-     */
-    private boolean hasConfiguration(JsonConfig jsonConfig) {
-        if (jsonConfig == null) {
-            return false;
-        }
-        String json = jsonConfig.json();
-        if (json == null || json.trim().isEmpty()) {
-            return false;
-        }
-        // Parse to check if it's an empty object or has actual fields
-        try {
-            JsonNode node = objectMapper.readTree(json);
-            // Check if it's an object and has at least one field
-            if (node.isObject() && node.size() > 0) {
-                return true;
-            }
-            return false;
-        } catch (Exception e) {
-            // If we can't parse it, assume it has configuration to be safe
-            return true;
         }
     }
 

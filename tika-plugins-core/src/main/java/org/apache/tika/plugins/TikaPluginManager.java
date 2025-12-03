@@ -23,7 +23,9 @@ import java.nio.file.Path;
 import java.util.List;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pf4j.DefaultExtensionFinder;
 import org.pf4j.DefaultPluginManager;
 import org.pf4j.ExtensionFinder;
@@ -42,6 +44,14 @@ import org.apache.tika.exception.TikaConfigException;
 public class TikaPluginManager extends DefaultPluginManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaPluginManager.class);
+
+    //we're only using this to convert a single path or a list of paths to a list
+    //we don't need all the functionality of the polymorphic objectmapper in tika-serialization
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    static {
+        OBJECT_MAPPER.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+    }
 
     /**
      * Loads plugin manager from a pre-parsed TikaJsonConfig.
@@ -83,12 +93,12 @@ public class TikaPluginManager extends DefaultPluginManager {
      */
     public static TikaPluginManager load(TikaConfigs tikaConfigs)
             throws TikaConfigException, IOException {
-        JsonNode root = tikaConfigs.getRoot();
+        JsonNode root = tikaConfigs.getTikaJsonConfig().getRootNode();
         JsonNode pluginRoots = root.get("plugin-roots");
         if (pluginRoots == null) {
             throw new TikaConfigException("plugin-roots must be specified");
         }
-        List<Path> roots = TikaConfigs.OBJECT_MAPPER.convertValue(pluginRoots,
+        List<Path> roots = OBJECT_MAPPER.convertValue(pluginRoots,
                 new TypeReference<List<Path>>() {});
         if (roots.isEmpty()) {
             throw new TikaConfigException("plugin-roots must not be empty");

@@ -37,6 +37,7 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 
 
@@ -70,6 +71,7 @@ import org.apache.tika.exception.TikaException;
  * RTG requires input to be pre-formatted into sentences, one per line,
  * so this translation implementation takes care of that.
  */
+@TikaComponent
 public class RTGTranslator extends AbstractTranslator {
 
     public static final String RTG_TRANSLATE_URL_BASE = "http://localhost:6060";

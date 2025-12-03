@@ -45,7 +45,8 @@ public class FetcherManager {
 
 
     public static FetcherManager load(PluginManager pluginManager, TikaConfigs tikaConfigs) throws TikaConfigException, IOException {
-        JsonNode fetchersNode = tikaConfigs.getRoot().get(CONFIG_KEY);
+        JsonNode fetchersNode = tikaConfigs.getTikaJsonConfig()
+                                           .getRootNode().get(CONFIG_KEY);
         Map<String, Fetcher> fetchers =
                 PluginComponentLoader.loadInstances(pluginManager, FetcherFactory.class, fetchersNode);
         return new FetcherManager(fetchers);

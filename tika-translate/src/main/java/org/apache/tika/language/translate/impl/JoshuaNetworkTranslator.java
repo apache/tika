@@ -40,6 +40,7 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 
 /**
@@ -62,6 +63,7 @@ import org.apache.tika.exception.TikaException;
  * Joshua requires input to be pre-formatted into sentences, one per line,
  * so this translation implementation takes care of that.
  */
+@TikaComponent
 public class JoshuaNetworkTranslator extends AbstractTranslator {
 
     private static final Logger LOG = LoggerFactory.getLogger(JoshuaNetworkTranslator.class);

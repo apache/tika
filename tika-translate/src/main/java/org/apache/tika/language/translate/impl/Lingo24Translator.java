@@ -32,6 +32,7 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 
 /**
@@ -40,6 +41,7 @@ import org.apache.tika.exception.TikaException;
  * You can sign up for an access plan online on the <a href="https://developer.lingo24.com/plans">Lingo24 Developer Portal</a>
  * and set your Application's User Key in the <code>translator.lingo24.properties</code> file.
  */
+@TikaComponent
 public class Lingo24Translator extends AbstractTranslator {
 
     private static final Logger LOG = LoggerFactory.getLogger(Lingo24Translator.class);

@@ -29,6 +29,8 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.language.translate.EmptyTranslator;
+import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -314,5 +316,46 @@ public class TikaLoaderTest {
         assertTrue(!compositeParser.getSupportedTypes(context)
                         .contains(MediaType.parse("application/test+optin")),
                 "Should NOT support application/test+optin (opt-in only, not in SPI)");
+    }
+
+    @Test
+    public void testTranslatorLoading() throws Exception {
+        URL configUrl = getClass().getResource("/configs/test-translator-config.json");
+        Path configPath = Path.of(configUrl.toURI());
+
+        TikaLoader loader = TikaLoader.load(configPath);
+        Translator translator = loader.loadTranslator();
+
+        assertNotNull(translator, "Translator should not be null");
+        assertTrue(translator instanceof EmptyTranslator, "Should be EmptyTranslator");
+        assertTrue(translator.isAvailable(), "Translator should be available");
+    }
+
+    @Test
+    public void testTranslatorLazyLoading() throws Exception {
+        URL configUrl = getClass().getResource("/configs/test-translator-config.json");
+        Path configPath = Path.of(configUrl.toURI());
+
+        TikaLoader loader = TikaLoader.load(configPath);
+
+        // Load translator
+        Translator translator1 = loader.loadTranslator();
+        assertNotNull(translator1, "First load should return translator");
+
+        // Load again - should return cached instance
+        Translator translator2 = loader.loadTranslator();
+        assertTrue(translator1 == translator2, "Should return same cached instance");
+    }
+
+    @Test
+    public void testDefaultTranslatorWhenNotConfigured() throws Exception {
+        URL configUrl = getClass().getResource("/configs/test-loader-config.json");
+        Path configPath = Path.of(configUrl.toURI());
+
+        TikaLoader loader = TikaLoader.load(configPath);
+        Translator translator = loader.loadTranslator();
+
+        assertNotNull(translator, "Translator should not be null");
+        // Should be DefaultTranslator since no translator configured in test-loader-config.json
     }
 }
