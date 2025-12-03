@@ -303,5 +303,3 @@ public class OfficeParserConfig implements Serializable {
         this.extractExtendedMsgProperties = extractExtendedMsgProperties;
     }
 }
-
-

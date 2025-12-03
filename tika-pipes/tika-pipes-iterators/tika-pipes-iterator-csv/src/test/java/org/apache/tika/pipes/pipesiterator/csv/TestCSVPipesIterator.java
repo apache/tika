@@ -35,7 +35,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.pipes.FetchEmitTuple;
-import org.apache.tika.pipes.pipesiterator.csv.CSVPipesIterator;
 
 public class TestCSVPipesIterator {
 

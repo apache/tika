@@ -66,4 +66,3 @@ public class EMFParserTest extends TikaTest {
 
 
 }
-

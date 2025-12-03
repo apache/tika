@@ -70,4 +70,3 @@ public class TableInfo {
         return colNames.contains(cols);
     }
 }
-

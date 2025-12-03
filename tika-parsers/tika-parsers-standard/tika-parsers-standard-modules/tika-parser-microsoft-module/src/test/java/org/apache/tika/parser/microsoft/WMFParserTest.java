@@ -49,4 +49,3 @@ public class WMFParserTest extends TikaTest {
     }
 
 }
-

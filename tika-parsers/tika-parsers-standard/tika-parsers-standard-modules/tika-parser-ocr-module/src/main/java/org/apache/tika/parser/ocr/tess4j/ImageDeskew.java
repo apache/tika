@@ -14,10 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-/**
- * Copied and pasted from Tess4j (https://sourceforge.net/projects/tess4j/)
- */
 package org.apache.tika.parser.ocr.tess4j;
 
 import java.awt.image.BufferedImage;

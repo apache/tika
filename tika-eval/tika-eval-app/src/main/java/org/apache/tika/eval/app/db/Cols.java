@@ -59,4 +59,3 @@ public enum Cols {
     TAGS_PARSE_EXCEPTION, //if there was a SAX|IO|TikaException while parsing the html or xhtml
 
 }
-

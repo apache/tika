@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.eval.app;
 
 import static org.apache.tika.eval.app.AbstractProfiler.NON_EXISTENT_FILE_LENGTH;

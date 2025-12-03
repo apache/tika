@@ -88,4 +88,3 @@ class HyperlinkHandler extends DefaultHandler {
     }
 
 }
-

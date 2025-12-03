@@ -171,4 +171,3 @@ public class TensorflowImageRecParser extends ExternalParser implements ObjectRe
         return objects;
     }
 }
-
