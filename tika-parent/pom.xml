@@ -1194,6 +1194,11 @@
         <artifactId>maven-enforcer-plugin</artifactId>
         <version>3.6.2</version>
       </plugin>
+        <plugin>
+          <groupId>org.apache.rat</groupId>
+          <artifactId>apache-rat-plugin</artifactId>
+          <version>${rat.version}</version> <!-- keep this when version newer than apache parent -->
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -1541,7 +1546,6 @@
           <plugin>
             <groupId>org.apache.rat</groupId>
             <artifactId>apache-rat-plugin</artifactId>
-            <version>${rat.version}</version> <!-- keep this when version newer than apache parent -->
             <configuration>
               <excludes>
                 <exclude>nb-configuration.xml</exclude> <!-- local netbeans -->

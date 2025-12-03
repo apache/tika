@@ -56,9 +56,10 @@
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
           <excludes>
-            <exclude>tika-pipes-iterators/tika-pipes-iterator-csv/src/test/resources/test-simple.csv</exclude> <!-- already checked -->
+            <exclude>tika-pipes-integration-tests/src/test/resources/test-documents/file-list.txt</exclude>
+            <exclude>tika-pipes-integration-tests/src/test/resources/test-documents/testOverlappingText.pdf</exclude>
+            <exclude>tika-pipes-plugins/tika-pipes-csv/src/test/resources/test-simple.csv</exclude>
             <exclude>tika-pipes-core/src/test/resources/test-documents/**</exclude> <!-- already checked -->
-            <exclude>tika-grpc/target/**</exclude>
           </excludes>
         </configuration>
       </plugin>

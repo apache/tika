@@ -87,6 +87,7 @@
         <configuration>
           <excludes>
             <exclude>tika-emitter-fs/target/**</exclude>
+            <exclude>tika-pipes-csv/src/test/resources/test-simple.csv</exclude>
           </excludes>
         </configuration>
       </plugin>
