@@ -1477,7 +1477,7 @@
               <exclude>**/XMPRights.java</exclude>
             </excludes>
             <licenseHeader>
-              <file>${maven.multiModuleProjectDirectory}/tika-parent/license-header.txt</file>
+              <file>${session.executionRootDirectory}/tika-parent/license-header.txt</file>
               <delimiter>package</delimiter>
             </licenseHeader>
             <indent>
@@ -1495,7 +1495,7 @@
             <goals>
               <goal>${spotless.goal}</goal>
             </goals>
-            <phase>process-sources</phase>
+            <phase>initialize</phase>
           </execution>
         </executions>
       </plugin>
