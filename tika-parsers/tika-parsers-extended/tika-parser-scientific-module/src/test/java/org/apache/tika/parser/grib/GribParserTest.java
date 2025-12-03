@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.grib;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -51,4 +50,3 @@ public class GribParserTest {
         assertTrue(content.contains("variables:"));
     }
 }
- 

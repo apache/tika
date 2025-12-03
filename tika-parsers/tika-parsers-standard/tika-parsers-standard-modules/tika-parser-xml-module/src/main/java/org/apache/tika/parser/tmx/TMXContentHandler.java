@@ -160,4 +160,3 @@ public class TMXContentHandler extends DefaultHandler {
     }
 
 }
-

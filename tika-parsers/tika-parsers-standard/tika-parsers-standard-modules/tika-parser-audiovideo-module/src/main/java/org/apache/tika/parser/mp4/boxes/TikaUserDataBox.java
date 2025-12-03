@@ -274,5 +274,3 @@ public class TikaUserDataBox {
         }
     }
 }
-
-

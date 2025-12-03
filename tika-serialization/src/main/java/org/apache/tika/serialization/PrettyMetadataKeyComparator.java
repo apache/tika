@@ -39,4 +39,3 @@ public class PrettyMetadataKeyComparator implements java.util.Comparator<String>
         return s1.compareTo(s2);
     }
 }
-

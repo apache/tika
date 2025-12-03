@@ -73,4 +73,3 @@ public class FallbackParser extends AbstractMultipleParser {
         // Have the next parser tried
     }
 }
-

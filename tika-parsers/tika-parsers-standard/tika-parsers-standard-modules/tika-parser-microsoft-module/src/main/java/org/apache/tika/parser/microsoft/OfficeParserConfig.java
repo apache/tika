@@ -292,5 +292,3 @@ public class OfficeParserConfig implements Serializable {
         this.writeSelectHeadersInBody = writeSelectHeadersInBody;
     }
 }
-
-
