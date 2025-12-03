@@ -54,4 +54,3 @@ public abstract class AbstractExternalProcessParser implements Parser {
         return PROCESS_MAP.remove(id);
     }
 }
-

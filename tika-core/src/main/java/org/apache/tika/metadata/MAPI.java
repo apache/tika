@@ -78,4 +78,3 @@ public interface MAPI {
     Property ATTACH_LANGUAGE = Property.internalText(PREFIX_MAPI_ATTACH_META + "language");
 
 }
-

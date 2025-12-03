@@ -44,7 +44,6 @@ import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
 import org.apache.tika.pipes.api.reporter.PipesReporter;
-import org.apache.tika.pipes.reporter.fs.AsyncStatus;
 import org.apache.tika.plugins.ExtensionConfig;
 
 public class TestFileSystemStatusReporter {

@@ -215,4 +215,3 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
                 ", throwOnZeroBytes=" + throwOnZeroBytes + '}';
     }
 }
-

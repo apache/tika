@@ -121,4 +121,3 @@ class OCR2XHTML extends AbstractPDF2XHTML {
     }
 
 }
-

@@ -202,4 +202,3 @@ public class PipesConfig {
         this.maxWaitForClientMillis = maxWaitForClientMillis;
     }
 }
-

@@ -371,4 +371,3 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         }
     }
 }
-

@@ -75,4 +75,3 @@ public class Lingo24TranslatorTest {
     }
 
 }
-

@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.server.core.writer;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -72,4 +71,3 @@ public class TextMessageBodyWriter implements MessageBodyWriter<Metadata> {
         writer.flush();
     }
 }
-
