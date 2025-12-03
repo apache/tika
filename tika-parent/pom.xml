@@ -307,6 +307,8 @@
     <puppycrawl.version>10.26.1</puppycrawl.version>
     <rat.version>0.17</rat.version>
     <spotless.goal>apply</spotless.goal>
+    <!-- needs to be 2.x for Java 11 -->
+    <spotless.version>2.45.0</spotless.version>
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
@@ -1425,7 +1427,7 @@
       <plugin>
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>
-        <version>3.1.0</version>
+        <version>${spotless.version}</version>
         <configuration>
           <java>
             <includes>
