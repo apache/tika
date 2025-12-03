@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.pipes.pipesiterator.csv;
 
 import static org.apache.tika.pipes.pipesiterator.PipesIterator.COMPLETED_SEMAPHORE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
