@@ -34,12 +34,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.core.pipesiterator.CallablePipesIterator;
 import org.apache.tika.pipes.core.pipesiterator.PipesIteratorManager;
-import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.plugins.TikaPluginManager;
 
 public class TikaClientCLI {
@@ -61,9 +61,9 @@ public class TikaClientCLI {
 
         ExecutorCompletionService<Long> completionService = new ExecutorCompletionService<>(executorService);
 
-        TikaConfigs tikaConfigs = TikaConfigs.load(pluginsConfigPath);
-        TikaPluginManager pluginManager = TikaPluginManager.load(tikaConfigs);
-        final PipesIterator pipesIterator = PipesIteratorManager.load(pluginManager, tikaConfigs)
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(pluginsConfigPath);
+        TikaPluginManager pluginManager = TikaPluginManager.load(tikaJsonConfig);
+        final PipesIterator pipesIterator = PipesIteratorManager.load(pluginManager, tikaJsonConfig)
                 .orElseThrow(() -> new TikaException("No pipes iterator configured"));
 
         final ArrayBlockingQueue<FetchEmitTuple> queue = new ArrayBlockingQueue<>(QUEUE_SIZE);

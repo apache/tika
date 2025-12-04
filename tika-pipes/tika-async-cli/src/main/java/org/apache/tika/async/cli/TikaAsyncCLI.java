@@ -33,6 +33,7 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -44,7 +45,6 @@ import org.apache.tika.pipes.core.async.AsyncProcessor;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.pipesiterator.PipesIteratorManager;
 import org.apache.tika.plugins.ExtensionConfig;
-import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.utils.StringUtils;
@@ -84,8 +84,8 @@ public class TikaAsyncCLI {
         if (args.length == 1) {
             if (args[0].endsWith(".json")) {
                 LOG.warn("processing args");
-                TikaConfigs tikaConfigs = TikaConfigs.load(Paths.get(args[0]));
-                Optional<PipesIterator> pipesIteratorOpt = PipesIteratorManager.load(TikaPluginManager.load(tikaConfigs), tikaConfigs);
+                TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(Paths.get(args[0]));
+                Optional<PipesIterator> pipesIteratorOpt = PipesIteratorManager.load(TikaPluginManager.load(tikaJsonConfig), tikaJsonConfig);
                 if (pipesIteratorOpt.isEmpty()) {
                     throw new IllegalArgumentException("Must specify a pipes iterator if supplying a .json file");
                 }
@@ -121,10 +121,10 @@ public class TikaAsyncCLI {
 
 
     private static PipesIterator buildPipesIterator(Path pluginsConfig, SimpleAsyncConfig simpleAsyncConfig) throws TikaConfigException, IOException {
-        TikaConfigs tikaConfigs = TikaConfigs.load(pluginsConfig);
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(pluginsConfig);
         String inputDirString = simpleAsyncConfig.getInputDir();
         if (StringUtils.isBlank(inputDirString)) {
-            Optional<PipesIterator> pipesIteratorOpt =  PipesIteratorManager.load(TikaPluginManager.load(tikaConfigs), tikaConfigs);
+            Optional<PipesIterator> pipesIteratorOpt =  PipesIteratorManager.load(TikaPluginManager.load(tikaJsonConfig), tikaJsonConfig);
             if (pipesIteratorOpt.isEmpty()) {
                 throw new TikaConfigException("something went wrong loading: pipesIterator from the tika configs");
             }
@@ -134,7 +134,7 @@ public class TikaAsyncCLI {
         if (Files.isRegularFile(p)) {
             return new SingleFilePipesIterator(p.getFileName().toString());
         }
-        Optional<PipesIterator> pipesIteratorOpt = PipesIteratorManager.load(TikaPluginManager.load(tikaConfigs), tikaConfigs);
+        Optional<PipesIterator> pipesIteratorOpt = PipesIteratorManager.load(TikaPluginManager.load(tikaJsonConfig), tikaJsonConfig);
         if (pipesIteratorOpt.isEmpty()) {
             throw new TikaConfigException("something went wrong loading: pipesIterator from the tika configs");
         }

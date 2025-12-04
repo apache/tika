@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.pipes.api.emitter.EmitData;
 import org.apache.tika.pipes.api.emitter.Emitter;
+import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.utils.ExceptionUtils;
 
@@ -46,13 +47,13 @@ public class AsyncEmitter implements Callable<Integer> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AsyncEmitter.class);
 
-    private final AsyncConfig asyncConfig;
+    private final PipesConfig asyncConfig;
     private final EmitterManager emitterManager;
     private final ArrayBlockingQueue<EmitDataPair> emitDataQueue;
 
     Instant lastEmitted = Instant.now();
 
-    public AsyncEmitter(AsyncConfig asyncConfig, ArrayBlockingQueue<EmitDataPair> emitData,
+    public AsyncEmitter(PipesConfig asyncConfig, ArrayBlockingQueue<EmitDataPair> emitData,
                         EmitterManager emitterManager) {
         this.asyncConfig = asyncConfig;
         this.emitDataQueue = emitData;

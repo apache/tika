@@ -43,6 +43,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaTaskTimeout;
+import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -79,7 +80,6 @@ import org.apache.tika.pipes.core.extractor.BasicEmbeddedDocumentBytesHandler;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.extractor.EmittingEmbeddedDocumentBytesHandler;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
-import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
@@ -162,7 +162,7 @@ public class PipesServer implements Runnable {
     public PipesServer(Path tikaConfigPath,
                        InputStream in, PrintStream out,
                        long maxForEmitBatchBytes, long serverParseTimeoutMillis,
-                       long serverWaitTimeoutMillis) throws TikaConfigException {
+                       long serverWaitTimeoutMillis) throws TikaConfigException, IOException {
         this.tikaLoader = TikaLoader.load(tikaConfigPath);
         this.defaultMetadataFilter = tikaLoader.loadMetadataFilters();
         this.input = new DataInputStream(in);
@@ -834,16 +834,15 @@ public class PipesServer implements Runnable {
 
     protected void initializeResources() throws TikaException, IOException, SAXException {
 
-        TikaPluginManager tikaPluginManager = TikaPluginManager.load(tikaLoader.getConfig());
+        TikaJsonConfig tikaJsonConfig = tikaLoader.getConfig();
+        TikaPluginManager tikaPluginManager = TikaPluginManager.load(tikaJsonConfig);
 
-        //TODO -- fix this -- get rid of TikaConfigs
-        TikaConfigs tikaConfigs = TikaConfigs.load(tikaLoader.getConfig());
         //TODO allowed named configurations in tika config
-        this.fetcherManager = FetcherManager.load(tikaPluginManager, tikaConfigs);
+        this.fetcherManager = FetcherManager.load(tikaPluginManager, tikaJsonConfig);
         //skip initialization of the emitters if emitting
         //from the pipesserver is turned off.
         if (maxForEmitBatchBytes > -1) {
-            this.emitterManager = EmitterManager.load(tikaPluginManager, tikaConfigs);
+            this.emitterManager = EmitterManager.load(tikaPluginManager, tikaJsonConfig);
         } else {
             LOG.debug("'maxForEmitBatchBytes' < 0. Not initializing emitters in PipesServer");
             this.emitterManager = null;

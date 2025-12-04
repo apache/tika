@@ -28,7 +28,7 @@
 
   <artifactId>tika-pipes-integration-tests</artifactId>
 
-  <name>Apache Tika pipes core tests</name>
+  <name>Apache Tika pipes core integration tests</name>
   <url>https://tika.apache.org/</url>
 
   <dependencies>

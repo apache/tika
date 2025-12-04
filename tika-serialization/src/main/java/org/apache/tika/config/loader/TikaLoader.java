@@ -103,7 +103,7 @@ public class TikaLoader {
      *
      * @throws TikaConfigException if loading global settings fails
      */
-    private void init() throws TikaConfigException {
+    private void init() throws TikaConfigException, IOException {
         loadGlobalSettings();
     }
 
@@ -115,7 +115,7 @@ public class TikaLoader {
      * @return the Tika loader
      * @throws TikaConfigException if loading or parsing fails
      */
-    public static TikaLoader load(Path configPath) throws TikaConfigException {
+    public static TikaLoader load(Path configPath) throws TikaConfigException, IOException {
         return load(configPath, Thread.currentThread().getContextClassLoader());
     }
 
@@ -129,7 +129,7 @@ public class TikaLoader {
      * @throws TikaConfigException if loading or parsing fails
      */
     public static TikaLoader load(Path configPath, ClassLoader classLoader)
-            throws TikaConfigException {
+            throws TikaConfigException, IOException {
         TikaJsonConfig config = TikaJsonConfig.load(configPath);
         TikaLoader loader = new TikaLoader(config, classLoader);
         loader.init();
@@ -162,7 +162,7 @@ public class TikaLoader {
         TikaLoader loader = new TikaLoader(config, classLoader);
         try {
             loader.init();
-        } catch (TikaConfigException e) {
+        } catch (IOException | TikaConfigException e) {
             // Default config should never throw, but wrap in RuntimeException if it does
             throw new RuntimeException("Failed to initialize default TikaLoader", e);
         }
@@ -314,7 +314,8 @@ public class TikaLoader {
      */
     public synchronized Parser loadAutoDetectParser() throws TikaConfigException, IOException {
         if (autoDetectParser == null) {
-            AutoDetectParserConfig adpConfig = configs().load(AutoDetectParserConfig.class);
+            // Load directly from root-level config (not via configs() which only looks in "other-configs")
+            AutoDetectParserConfig adpConfig = config.deserialize("auto-detect-parser", AutoDetectParserConfig.class);
             if (adpConfig == null) {
                 adpConfig = new AutoDetectParserConfig();
             }
@@ -410,7 +411,7 @@ public class TikaLoader {
      * @return the global settings, or an empty object if no settings are configured
      * @throws TikaConfigException if loading fails
      */
-    public synchronized GlobalSettings loadGlobalSettings() throws TikaConfigException {
+    public synchronized GlobalSettings loadGlobalSettings() throws IOException, TikaConfigException {
         if (globalSettings == null) {
             globalSettings = new GlobalSettings();
 
@@ -420,16 +421,16 @@ public class TikaLoader {
                         config.getRootNode().get("maxJsonStringFieldLength").asInt());
             }
 
-            // Load service-loader config
+            // Load service-loader config (official Tika config at root level)
             GlobalSettings.ServiceLoaderConfig serviceLoaderConfig =
-                    configs().load("service-loader", GlobalSettings.ServiceLoaderConfig.class);
+                    config.deserialize("service-loader", GlobalSettings.ServiceLoaderConfig.class);
             if (serviceLoaderConfig != null) {
                 globalSettings.setServiceLoader(serviceLoaderConfig);
             }
 
-            // Load xml-reader-utils config
+            // Load xml-reader-utils config (official Tika config at root level)
             GlobalSettings.XmlReaderUtilsConfig xmlReaderUtilsConfig =
-                    configs().load("xml-reader-utils", GlobalSettings.XmlReaderUtilsConfig.class);
+                    config.deserialize("xml-reader-utils", GlobalSettings.XmlReaderUtilsConfig.class);
             if (xmlReaderUtilsConfig != null) {
                 globalSettings.setXmlReaderUtils(xmlReaderUtilsConfig);
             }

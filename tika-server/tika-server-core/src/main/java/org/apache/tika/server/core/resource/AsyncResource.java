@@ -37,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -49,7 +50,6 @@ import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTupleList;
-import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.plugins.TikaPluginManager;
 
 @Path("/async")
@@ -63,9 +63,9 @@ public class AsyncResource {
 
     public AsyncResource(java.nio.file.Path tikaConfigPath) throws TikaException, IOException, SAXException {
         this.asyncProcessor = new AsyncProcessor(tikaConfigPath);
-        TikaConfigs tikaConfigs = TikaConfigs.load(tikaConfigPath);
-        TikaPluginManager pluginManager = TikaPluginManager.load(tikaConfigs);
-        this.emitterManager = EmitterManager.load(pluginManager, tikaConfigs);
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        TikaPluginManager pluginManager = TikaPluginManager.load(tikaJsonConfig);
+        this.emitterManager = EmitterManager.load(pluginManager, tikaJsonConfig);
     }
 
     public ArrayBlockingQueue<FetchEmitTuple> getFetchEmitQueue(int queueSize) {

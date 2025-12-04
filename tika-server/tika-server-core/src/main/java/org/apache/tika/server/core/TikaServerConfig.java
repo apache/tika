@@ -150,7 +150,7 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
     }
 
     static TikaServerConfig load(Path tikaConfigPath, CommandLine commandLine, Set<String> settings) throws IOException, TikaException {
-        TikaServerConfig tikaServerConfig = TikaLoader.load(tikaConfigPath).configs().load("server", TikaServerConfig.class);
+        TikaServerConfig tikaServerConfig = TikaLoader.load(tikaConfigPath).getConfig().deserialize("server", TikaServerConfig.class);
         if (tikaServerConfig == null) {
             throw new TikaConfigException("Couldn't find 'server' element");
         }

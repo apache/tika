@@ -22,11 +22,11 @@ import java.util.List;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.pf4j.PluginManager;
 
+import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.reporter.PipesReporter;
 import org.apache.tika.pipes.api.reporter.PipesReporterFactory;
 import org.apache.tika.plugins.PluginComponentLoader;
-import org.apache.tika.plugins.TikaConfigs;
 
 /**
  * Utility class to hold multiple fetchers.
@@ -37,10 +37,9 @@ public class ReporterManager {
 
     public static final String CONFIG_KEY = "pipes-reporters";
 
-    public static PipesReporter load(PluginManager pluginManager, TikaConfigs tikaConfigs) throws IOException, TikaConfigException {
+    public static PipesReporter load(PluginManager pluginManager, TikaJsonConfig tikaJsonConfig) throws IOException, TikaConfigException {
 
-        JsonNode node = tikaConfigs.getTikaJsonConfig()
-                                   .getRootNode().get(CONFIG_KEY);
+        JsonNode node = tikaJsonConfig.getRootNode().get(CONFIG_KEY);
 
         List<PipesReporter> reporters =  PluginComponentLoader.loadUnnamedInstances(pluginManager, PipesReporterFactory.class, node);
         if (reporters.isEmpty()) {

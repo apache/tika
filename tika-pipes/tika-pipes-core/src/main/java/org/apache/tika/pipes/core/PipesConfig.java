@@ -16,11 +16,15 @@
  */
 package org.apache.tika.pipes.core;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import org.apache.tika.config.loader.TikaJsonConfig;
+import org.apache.tika.exception.TikaConfigException;
 
 public class PipesConfig {
 
@@ -60,11 +64,47 @@ public class PipesConfig {
     public static final int DEFAULT_STALE_FETCHER_DELAY_SECONDS = 60;
     private int staleFetcherDelaySeconds = DEFAULT_STALE_FETCHER_DELAY_SECONDS;
 
+    // Async-specific fields (used by AsyncProcessor, ignored by PipesServer)
+    public static final long DEFAULT_EMIT_WITHIN_MILLIS = 10000;
+    public static final long DEFAULT_EMIT_MAX_ESTIMATED_BYTES = 100000;
+    public static final int DEFAULT_QUEUE_SIZE = 10000;
+    public static final int DEFAULT_NUM_EMITTERS = 1;
+
+    private long emitWithinMillis = DEFAULT_EMIT_WITHIN_MILLIS;
+    private long emitMaxEstimatedBytes = DEFAULT_EMIT_MAX_ESTIMATED_BYTES;
+    private int queueSize = DEFAULT_QUEUE_SIZE;
+    private int numEmitters = DEFAULT_NUM_EMITTERS;
+    private boolean emitIntermediateResults = false;
+
     private ArrayList<String> forkedJvmArgs = new ArrayList<>();
     private String javaPath = "java";
 
 
     private String tikaConfig;
+
+    /**
+     * Loads PipesConfig from the "pipes" section of the JSON configuration.
+     * <p>
+     * This configuration is used by both PipesServer (forking process) and
+     * AsyncProcessor (async processing). Some fields are specific to each:
+     * <ul>
+     *   <li>PipesServer uses: numClients, timeoutMillis, maxForEmitBatchBytes, etc.</li>
+     *   <li>AsyncProcessor uses: emitWithinMillis, queueSize, numEmitters, etc.</li>
+     * </ul>
+     * Unused fields in each context are simply ignored.
+     *
+     * @param tikaJsonConfig the JSON configuration to load from
+     * @return the loaded PipesConfig, or a new default instance if not found in config
+     * @throws IOException if deserialization fails
+     * @throws TikaConfigException if configuration is invalid
+     */
+    public static PipesConfig load(TikaJsonConfig tikaJsonConfig) throws IOException, TikaConfigException {
+        PipesConfig config = tikaJsonConfig.deserialize("pipes", PipesConfig.class);
+        if (config == null) {
+            return new PipesConfig();
+        }
+        return config;
+    }
 
     public long getTimeoutMillis() {
         return timeoutMillis;
@@ -200,5 +240,70 @@ public class PipesConfig {
 
     public void setMaxWaitForClientMillis(long maxWaitForClientMillis) {
         this.maxWaitForClientMillis = maxWaitForClientMillis;
+    }
+
+    // Async-specific getters/setters (used by AsyncProcessor, ignored by PipesServer)
+
+    public long getEmitWithinMillis() {
+        return emitWithinMillis;
+    }
+
+    /**
+     * If nothing has been emitted in this amount of time
+     * and the {@link #getEmitMaxEstimatedBytes()} has not been reached yet,
+     * emit what's in the emit queue.
+     *
+     * @param emitWithinMillis time in milliseconds
+     */
+    public void setEmitWithinMillis(long emitWithinMillis) {
+        this.emitWithinMillis = emitWithinMillis;
+    }
+
+    /**
+     * When the emit queue hits this estimated size (sum of
+     * estimated extract sizes), emit the batch.
+     *
+     * @return the maximum estimated bytes before emitting
+     */
+    public long getEmitMaxEstimatedBytes() {
+        return emitMaxEstimatedBytes;
+    }
+
+    public void setEmitMaxEstimatedBytes(long emitMaxEstimatedBytes) {
+        this.emitMaxEstimatedBytes = emitMaxEstimatedBytes;
+    }
+
+    /**
+     * FetchEmitTuple queue size
+     *
+     * @return the queue size
+     */
+    public int getQueueSize() {
+        return queueSize;
+    }
+
+    public void setQueueSize(int queueSize) {
+        this.queueSize = queueSize;
+    }
+
+    /**
+     * Number of emitters
+     *
+     * @return the number of emitters
+     */
+    public int getNumEmitters() {
+        return numEmitters;
+    }
+
+    public void setNumEmitters(int numEmitters) {
+        this.numEmitters = numEmitters;
+    }
+
+    public boolean isEmitIntermediateResults() {
+        return emitIntermediateResults;
+    }
+
+    public void setEmitIntermediateResults(boolean emitIntermediateResults) {
+        this.emitIntermediateResults = emitIntermediateResults;
     }
 }

@@ -22,11 +22,11 @@ import java.util.Optional;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.pf4j.PluginManager;
 
+import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.api.pipesiterator.PipesIteratorFactory;
 import org.apache.tika.plugins.PluginComponentLoader;
-import org.apache.tika.plugins.TikaConfigs;
 
 /**
  * Utility class to hold a single pipes iterator
@@ -37,10 +37,9 @@ public class PipesIteratorManager {
 
     public static final String CONFIG_KEY = "pipes-iterator";
 
-    public static Optional<PipesIterator> load(PluginManager pluginManager, TikaConfigs tikaConfigs) throws IOException, TikaConfigException {
+    public static Optional<PipesIterator> load(PluginManager pluginManager, TikaJsonConfig tikaJsonConfig) throws IOException, TikaConfigException {
 
-        JsonNode node = tikaConfigs.getTikaJsonConfig()
-                                   .getRootNode().get(CONFIG_KEY);
+        JsonNode node = tikaJsonConfig.getRootNode().get(CONFIG_KEY);
 
         return PluginComponentLoader.loadSingleton(pluginManager, PipesIteratorFactory.class, node);
     }

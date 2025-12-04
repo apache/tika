@@ -16,6 +16,7 @@
  */
 package org.apache.tika;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
 
@@ -29,7 +30,7 @@ public class TikaLoaderHelper {
             return TikaLoader.load(Paths.get(TikaLoaderHelper.class
                     .getResource("/configs/" + config)
                     .toURI()));
-        } catch (URISyntaxException | TikaConfigException e) {
+        } catch (URISyntaxException | TikaConfigException | IOException e) {
             throw new RuntimeException(e);
         }
     }

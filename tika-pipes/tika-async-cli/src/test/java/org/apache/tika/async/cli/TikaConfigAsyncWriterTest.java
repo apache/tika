@@ -25,8 +25,8 @@ import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.pipes.core.async.AsyncConfig;
-import org.apache.tika.plugins.TikaConfigs;
+import org.apache.tika.config.loader.TikaJsonConfig;
+import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 
 public class TikaConfigAsyncWriterTest {
@@ -44,9 +44,9 @@ public class TikaConfigAsyncWriterTest {
 
         Path tmp = Files.createTempFile(dir, "plugins-",".json");
         pluginsWriter.write(tmp);
-        TikaConfigs configs = TikaConfigs.load(tmp);
-        AsyncConfig asyncConfig = AsyncConfig.load(configs);
-        assertEquals("-Xmx1g", asyncConfig.getForkedJvmArgs().get(0));
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tmp);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+        assertEquals("-Xmx1g", pipesConfig.getForkedJvmArgs().get(0));
     }
 
 }
