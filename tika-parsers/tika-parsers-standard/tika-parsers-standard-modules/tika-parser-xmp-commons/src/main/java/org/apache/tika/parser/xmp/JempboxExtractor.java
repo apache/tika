@@ -131,8 +131,10 @@ public class JempboxExtractor {
         }
         if (mmSchema != null) {
             addMetadata(metadata, XMPMM.DOCUMENTID, mmSchema.getDocumentID());
-            //not currently supported by JempBox...
-//          metadata.set(XMPMM.INSTANCEID, mmSchema.getInstanceID());
+            // not currently supported by JempBox...
+            // but might be in 1.8.18 if ever released, see PDFBOX-6116
+            // until then use workaround (won't work if non standard prefix is used)
+            metadata.set(XMPMM.INSTANCEID, mmSchema.getTextProperty("xmpMM:InstanceID" ));
 
             ResourceRef derivedFrom = mmSchema.getDerivedFrom();
             if (derivedFrom != null) {
