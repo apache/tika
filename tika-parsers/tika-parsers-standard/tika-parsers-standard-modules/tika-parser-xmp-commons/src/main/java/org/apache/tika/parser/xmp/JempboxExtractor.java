@@ -143,6 +143,7 @@ public class JempboxExtractor {
                             derivedFrom.getDocumentID());
                 } catch (NullPointerException e) {
                     //swallow
+                    // NPE fixed in PDFBOX-5984; NPE catch can be removed if Jempbox 1.8.18 is released
                 }
 
                 try {
@@ -150,6 +151,7 @@ public class JempboxExtractor {
                             derivedFrom.getInstanceID());
                 } catch (NullPointerException e) {
                     //swallow
+                    // NPE fixed in PDFBOX-5984; NPE catch can be removed if Jempbox 1.8.18 is released
                 }
 
                 //TODO: not yet supported by XMPBox...extract OriginalDocumentID
@@ -174,6 +176,7 @@ public class JempboxExtractor {
                         //instanceid can throw npe; getWhen can throw IOException
                     } catch (NullPointerException | IOException e) {
                         //swallow
+                        // NPE fixed in PDFBOX-5984; NPE catch can be removed if Jempbox 1.8.18 is released
                     }
                     if (instanceId != null && !instanceId.isBlank()) {
                         //for absent data elements, pass in empty strings so
