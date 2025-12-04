@@ -424,6 +424,9 @@ public class TikaCLI {
         } else if (arg.equals("--dump-static-full-config")) {
             pipeMode = false;
             dumpConfig(TikaConfigSerializer.Mode.STATIC_FULL);
+        } else if (arg.startsWith("--convert-config-xml-to-json=")) {
+            pipeMode = false;
+            convertConfigXmlToJson(arg.substring("--convert-config-xml-to-json=".length()));
         } else if (arg.equals("--container-aware") || arg.equals("--container-aware-detector")) {
             // ignore, as container-aware detectors are now always used
         } else if (arg.equals("-f") || arg.equals("--fork")) {
@@ -520,6 +523,33 @@ public class TikaCLI {
         TikaConfigSerializer.serialize(localConfig, mode, new OutputStreamWriter(System.out, UTF_8), UTF_8);
     }
 
+    private void convertConfigXmlToJson(String paths) throws Exception {
+        String[] parts = paths.split(",");
+        if (parts.length != 2) {
+            System.err.println("Error: --convert-config-xml-to-json requires input and output paths separated by comma");
+            System.err.println("Usage: --convert-config-xml-to-json=<input.xml>,<output.json>");
+            return;
+        }
+
+        Path xmlPath = Paths.get(parts[0].trim());
+        Path jsonPath = Paths.get(parts[1].trim());
+
+        if (!Files.exists(xmlPath)) {
+            System.err.println("Error: Input XML file not found: " + xmlPath);
+            return;
+        }
+
+        try {
+            XmlToJsonConfigConverter.convert(xmlPath, jsonPath);
+            System.out.println("Successfully converted XML config to JSON:");
+            System.out.println("  Input:  " + xmlPath.toAbsolutePath());
+            System.out.println("  Output: " + jsonPath.toAbsolutePath());
+        } catch (Exception e) {
+            System.err.println("Error converting config: " + e.getMessage());
+            throw e;
+        }
+    }
+
     private void handleRecursiveJson(URL url, OutputStream output) throws IOException, SAXException, TikaException {
         Metadata metadata = new Metadata();
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
@@ -569,6 +599,8 @@ public class TikaCLI {
         out.println("    --dump-current-config  Print current TikaConfig");
         out.println("    --dump-static-config   Print static config");
         out.println("    --dump-static-full-config  Print static explicit config");
+        out.println("    --convert-config-xml-to-json=<input.xml>,<output.json>");
+        out.println("        Convert legacy XML config to JSON format (parsers section only)");
         out.println("");
         out.println("    -x  or --xml           Output XHTML content (default)");
         out.println("    -h  or --html          Output HTML content");

@@ -110,6 +110,15 @@ public class ParserLoader {
 
                     // Parse exclusions from default-parser config
                     JsonNode configNode = entry.getValue();
+
+                    // Check for common mistake: using "excludes" instead of "exclude"
+                    if (configNode != null && configNode.has("excludes")) {
+                        throw new TikaConfigException(
+                            "Invalid configuration for default-parser: found 'excludes' but the correct " +
+                            "field name is 'exclude' (singular). Please change 'excludes' to 'exclude' " +
+                            "in your configuration.");
+                    }
+
                     if (configNode != null && configNode.has("exclude")) {
                         JsonNode excludeNode = configNode.get("exclude");
                         if (excludeNode.isArray()) {
