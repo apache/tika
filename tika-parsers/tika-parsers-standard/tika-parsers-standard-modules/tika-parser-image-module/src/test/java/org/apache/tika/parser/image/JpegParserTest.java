@@ -276,8 +276,9 @@ public class JpegParserTest {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
 
-        //TODO: when jempbox is fixed/xmpbox is used
-        //add tests for history...currently not extracted
+        // TODO: when jempbox is fixed/xmpbox is used
+        // The bug in Jempbox is that it searches for children, not attributes. In this file it's attributes.
+        // add tests for history...currently not extracted
         assertEquals("xmp.did:49E997348D4911E1AB62EBF9B374B234", metadata.get(XMPMM.DOCUMENTID));
     }
 
