@@ -37,7 +37,7 @@
       }
     }
   },
-  "async": {
+  "pipes": {
     "emitWithinMillis": 10000,
     "emitMaxEstimatedBytes": 100000,
     "queueSize": 10000,

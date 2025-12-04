@@ -1,3 +1,5 @@
 {
-  "handler": "java.lang.String"
+  "other-configs": {
+    "handler": "java.lang.String"
+  }
 }

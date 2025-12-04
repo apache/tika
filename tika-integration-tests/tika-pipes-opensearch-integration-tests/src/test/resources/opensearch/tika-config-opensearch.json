@@ -100,7 +100,7 @@
       }
     }
   },
-  "async": {
+  "pipes": {
     "maxForEmitBatchBytes": 10000,
     "emitMaxEstimatedBytes": 100000,
     "emitWithinMillis": 60000,

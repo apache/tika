@@ -33,7 +33,7 @@ import jakarta.ws.rs.core.UriInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -42,7 +42,6 @@ import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesParser;
-import org.apache.tika.pipes.core.async.AsyncConfig;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
 
 @Path("/pipes")
@@ -54,7 +53,8 @@ public class PipesResource {
     private final PipesParser pipesParser;
 
     public PipesResource(java.nio.file.Path tikaConfig) throws TikaConfigException, IOException {
-        PipesConfig pipesConfig = TikaLoader.load(tikaConfig).configs().load("async", AsyncConfig.class);
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfig);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
         //this has to be zero. everything must be emitted through the PipesServer
         long maxEmit = pipesConfig.getMaxForEmitBatchBytes();
         if (maxEmit != 0) {

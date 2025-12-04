@@ -50,6 +50,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -62,7 +63,6 @@ import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
-import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.serialization.JsonMetadataList;
@@ -111,9 +111,9 @@ public class TikaPipesTest extends CXFTestBase {
         TIKA_CONFIG_PATH = Files.createTempFile(TMP_WORKING_DIR, "tika-pipes-config-", ".json");
         CXFTestBase.createPluginsConfig(TIKA_CONFIG_PATH, inputDir, OUTPUT_JSON_DIR, OUTPUT_BYTES_DIR, 10000L);
 
-        TikaConfigs tikaConfigs = TikaConfigs.load(TIKA_CONFIG_PATH);
-        TikaPluginManager pluginManager = TikaPluginManager.load(tikaConfigs);
-        FETCHER_MANAGER = FetcherManager.load(pluginManager, tikaConfigs);
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(TIKA_CONFIG_PATH);
+        TikaPluginManager pluginManager = TikaPluginManager.load(tikaJsonConfig);
+        FETCHER_MANAGER = FetcherManager.load(pluginManager, tikaJsonConfig);
 
     }
 

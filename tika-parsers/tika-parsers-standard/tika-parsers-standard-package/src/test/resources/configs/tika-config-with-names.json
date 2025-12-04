@@ -3,9 +3,8 @@
     "spoolToDisk": 123450,
     "outputThreshold": 678900,
     "embeddedDocumentExtractorFactory": {
-      "runpack-extractor-factory": {
-        "writeFileNameToContent": true
-      }
+      "@class": "org.apache.tika.extractor.RUnpackExtractorFactory",
+      "writeFileNameToContent": true
     }
   }
 }

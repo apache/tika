@@ -1,15 +1,17 @@
 {
-  "handler-config": {
-    "enabled": true
-  },
+  "other-configs": {
+    "handler-config": {
+      "enabled": true
+    },
 
-  "handler-config-full": {
-    "timeout": 10000,
-    "retries": 5,
-    "enabled": false
-  },
+    "handler-config-full": {
+      "timeout": 10000,
+      "retries": 5,
+      "enabled": false
+    },
 
-  "tika-task-timeout": {
-    "millis": 30000
+    "tika-task-timeout": {
+      "millis": 30000
+    }
   }
 }

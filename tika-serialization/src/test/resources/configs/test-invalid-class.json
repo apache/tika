@@ -1,3 +1,5 @@
 {
-  "handler": "com.example.NonExistentClass"
+  "other-configs": {
+    "handler": "com.example.NonExistentClass"
+  }
 }

@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.filter.MetadataFilter;
@@ -43,11 +44,11 @@ import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
 import org.apache.tika.pipes.api.pipesiterator.TotalCounter;
 import org.apache.tika.pipes.api.reporter.PipesReporter;
 import org.apache.tika.pipes.core.PipesClient;
+import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesResults;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.reporter.ReporterManager;
-import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.plugins.TikaPluginManager;
 
 /**
@@ -66,7 +67,7 @@ public class AsyncProcessor implements Closeable {
     private final ArrayBlockingQueue<EmitDataPair> emitDatumTuples;
     private final ExecutorCompletionService<Integer> executorCompletionService;
     private final ExecutorService executorService;
-    private final AsyncConfig asyncConfig;
+    private final PipesConfig asyncConfig;
     private final PipesReporter pipesReporter;
     private final AtomicLong totalProcessed = new AtomicLong(0);
     private static long MAX_OFFER_WAIT_MS = 120000;
@@ -80,11 +81,11 @@ public class AsyncProcessor implements Closeable {
     }
 
     public AsyncProcessor(Path tikaConfigPath, PipesIterator pipesIterator) throws TikaException, IOException {
-        TikaConfigs tikaConfigs = TikaConfigs.load(tikaConfigPath);
-        TikaPluginManager tikaPluginManager = TikaPluginManager.load(tikaConfigs);
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        TikaPluginManager tikaPluginManager = TikaPluginManager.load(tikaJsonConfig);
         MetadataFilter metadataFilter = TikaLoader.load(tikaConfigPath).loadMetadataFilters();
-        this.asyncConfig = AsyncConfig.load(tikaConfigs);
-        this.pipesReporter = ReporterManager.load(tikaPluginManager, tikaConfigs);
+        this.asyncConfig = PipesConfig.load(tikaJsonConfig);
+        this.pipesReporter = ReporterManager.load(tikaPluginManager, tikaJsonConfig);
         LOG.debug("loaded reporter {}", pipesReporter.getClass());
         this.fetchEmitTuples = new ArrayBlockingQueue<>(asyncConfig.getQueueSize());
         this.emitDatumTuples = new ArrayBlockingQueue<>(100);
@@ -121,7 +122,7 @@ public class AsyncProcessor implements Closeable {
                         new FetchEmitWorker(asyncConfig, fetchEmitTuples, emitDatumTuples));
             }
 
-            EmitterManager emitterManager = EmitterManager.load(tikaPluginManager, tikaConfigs);
+            EmitterManager emitterManager = EmitterManager.load(tikaPluginManager, tikaJsonConfig);
             for (int i = 0; i < asyncConfig.getNumEmitters(); i++) {
                 executorCompletionService.submit(
                         new AsyncEmitter(asyncConfig, emitDatumTuples, emitterManager));
@@ -270,11 +271,11 @@ public class AsyncProcessor implements Closeable {
 
     private class FetchEmitWorker implements Callable<Integer> {
 
-        private final AsyncConfig asyncConfig;
+        private final PipesConfig asyncConfig;
         private final ArrayBlockingQueue<FetchEmitTuple> fetchEmitTuples;
         private final ArrayBlockingQueue<EmitDataPair> emitDataTupleQueue;
 
-        private FetchEmitWorker(AsyncConfig asyncConfig,
+        private FetchEmitWorker(PipesConfig asyncConfig,
                                 ArrayBlockingQueue<FetchEmitTuple> fetchEmitTuples,
                                 ArrayBlockingQueue<EmitDataPair> emitDataTupleQueue) {
             this.asyncConfig = asyncConfig;

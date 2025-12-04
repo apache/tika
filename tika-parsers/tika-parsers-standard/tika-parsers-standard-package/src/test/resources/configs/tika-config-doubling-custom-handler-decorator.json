@@ -1,5 +1,5 @@
 {
-  "auto-detect-parser-config": {
+  "auto-detect-parser": {
     "spoolToDisk": 1000,
     "outputThreshold": 1000,
     "contentHandlerDecoratorFactory": {

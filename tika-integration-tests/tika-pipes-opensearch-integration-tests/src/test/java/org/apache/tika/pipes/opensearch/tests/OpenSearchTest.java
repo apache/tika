@@ -48,6 +48,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import org.apache.tika.cli.TikaCLI;
 import org.apache.tika.client.HttpClientFactory;
+import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -57,7 +58,6 @@ import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.emitter.opensearch.HttpClientConfig;
 import org.apache.tika.pipes.emitter.opensearch.JsonResponse;
 import org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitterConfig;
-import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.plugins.TikaPluginManager;
 
 @Testcontainers(disabledWithoutDocker = true)
@@ -364,9 +364,9 @@ public class OpenSearchTest {
                         OpenSearchEmitterConfig.UpdateStrategy.UPSERT, HandlerConfig.PARSE_MODE.RMETA,
                         endpoint, testDocDirectory);
 
-        TikaConfigs tikaConfigs = TikaConfigs.load(pluginsConfigFile);
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(pluginsConfigFile);
         Emitter emitter = EmitterManager
-                .load(TikaPluginManager.load(tikaConfigs), tikaConfigs).getEmitter();
+                .load(TikaPluginManager.load(tikaJsonConfig), tikaJsonConfig).getEmitter();
         Metadata metadata = new Metadata();
         metadata.set("mime", "mimeA");
         metadata.set("title", "titleA");

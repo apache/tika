@@ -55,11 +55,11 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.Tika;
 import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
-import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.server.core.resource.AsyncResource;
 import org.apache.tika.server.core.resource.DetectorResource;
@@ -176,9 +176,9 @@ public class TikaServerProcess {
         FetcherManager fetcherManager = null;
         InputStreamFactory inputStreamFactory = null;
         if (tikaServerConfig.isEnableUnsecureFeatures()) {
-            TikaConfigs tikaConfigs = TikaConfigs.load(tikaServerConfig.getConfigPath());
-            TikaPluginManager pluginManager = TikaPluginManager.load(tikaConfigs);
-            fetcherManager = FetcherManager.load(pluginManager, tikaConfigs);
+            TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaServerConfig.getConfigPath());
+            TikaPluginManager pluginManager = TikaPluginManager.load(tikaJsonConfig);
+            fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig);
             inputStreamFactory = new FetcherStreamFactory(fetcherManager);
         } else {
             inputStreamFactory = new DefaultInputStreamFactory();

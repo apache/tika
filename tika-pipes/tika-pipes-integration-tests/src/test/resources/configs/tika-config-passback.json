@@ -38,7 +38,7 @@
       }
     }
   },
-  "async": {
+  "pipes": {
     "tikaConfig": "TIKA_CONFIG",
     "numClients": 4,
     "timeoutMillis": 5000,
@@ -46,7 +46,7 @@
     "forkedJvmArgs": ["-Xmx512m"],
     "maxForEmitBatchBytes": 0
   },
-  "auto-detect-parser-config": {
+  "auto-detect-parser": {
     "spoolToDisk": 1000000,
     "outputThreshold": 1000000,
     "digesterFactory": {

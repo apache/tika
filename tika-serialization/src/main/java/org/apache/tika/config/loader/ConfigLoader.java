@@ -25,11 +25,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.tika.exception.TikaConfigException;
 
 /**
- * Loader for simple configuration objects from JSON.
+ * Loader for custom configuration objects from the "other-configs" section.
  * <p>
- * This class handles straightforward POJOs that can be deserialized directly from JSON.
- * For complex components like Parsers, Detectors, etc., use the specific methods on
- * {@link TikaLoader} instead (e.g., {@code loadParsers()}, {@code loadDetectors()}).
+ * This class handles custom POJOs and test configurations that are not part of
+ * Tika's official configuration schema. All configurations loaded via ConfigLoader
+ * must be placed under the "other-configs" top-level node in the JSON.
+ * <p>
+ * For official Tika components and configurations (parsers, detectors, async, server, etc.),
+ * use the specific methods on {@link TikaLoader} or load directly from {@link TikaJsonConfig}.
  *
  * <p>Usage:
  * <pre>
@@ -40,40 +43,26 @@ import org.apache.tika.exception.TikaConfigException;
  *
  * // Load by class name (auto-converts to kebab-case)
  * HandlerConfig config = loader.configs().load(HandlerConfig.class);
- *
- * // Load server configuration (tika-server-core module)
- * TikaServerConfig serverConfig = loader.configs().load("server", TikaServerConfig.class);
- *
- * // Load async configuration (tika-pipes-core module)
- * AsyncConfig asyncConfig = loader.configs().load("async", AsyncConfig.class);
- *
- * // Load pipes configuration (tika-pipes-core module)
- * PipesConfig pipesConfig = loader.configs().load("pipes", PipesConfig.class);
  * </pre>
  *
- * <p>JSON configuration examples:
+ * <p>JSON configuration example:
  * <pre>
  * {
- *   "server": {
- *     "port": 9998,
- *     "host": "localhost",
- *     "taskTimeoutMillis": 300000,
- *     "enableUnsecureFeatures": false,
- *     "endpoints": ["all"]
- *   },
- *   "async": {
- *     "emitWithinMillis": 10000,
- *     "emitMaxEstimatedBytes": 100000,
- *     "queueSize": 10000,
- *     "numEmitters": 1,
- *     "numClients": 4,
- *     "timeoutMillis": 60000
- *   },
- *   "pipes": {
- *     "numClients": 4,
- *     "timeoutMillis": 60000,
- *     "maxFilesProcessedPerProcess": 10000,
- *     "forkedJvmArgs": ["-Xmx2g", "-XX:+UseG1GC"]
+ *   // Official Tika configs at root level (NOT loaded via configs())
+ *   "parsers": [...],
+ *   "detectors": [...],
+ *   "pipes": {...},
+ *   "server": {...},
+ *
+ *   // Custom configs MUST be in "other-configs" (loaded via configs())
+ *   "other-configs": {
+ *     "handler-config": {
+ *       "timeout": 5000,
+ *       "retries": 3
+ *     },
+ *     "my-custom-config": {
+ *       "enabled": true
+ *     }
  *   }
  * }
  * </pre>
@@ -152,7 +141,7 @@ public class ConfigLoader {
         validateKey(key);
         validateClass(clazz);
 
-        JsonNode node = config.getRootNode().get(key);
+        JsonNode node = getNode(key);
         if (node == null || node.isNull()) {
             return null;
         }
@@ -246,7 +235,7 @@ public class ConfigLoader {
         validateKey(key);
         validateClass(clazz);
 
-        JsonNode node = config.getRootNode().get(key);
+        JsonNode node = getNode(key);
         if (node == null || node.isNull()) {
             return defaultValue;
         }
@@ -286,8 +275,24 @@ public class ConfigLoader {
      * @return true if the key exists and is not null
      */
     public boolean hasKey(String key) {
-        JsonNode node = config.getRootNode().get(key);
+        JsonNode node = getNode(key);
         return node != null && !node.isNull();
+    }
+
+    /**
+     * Gets a node by key from the "other-configs".
+     *
+     * @param key The JSON key to look for
+     * @return the node, or null if not found
+     */
+    private JsonNode getNode(String key) {
+
+        JsonNode otherConfigs = config.getRootNode().get("other-configs");
+        if (otherConfigs != null && otherConfigs.isObject()) {
+            return otherConfigs.get(key);
+        }
+
+        return null;
     }
 
     /**

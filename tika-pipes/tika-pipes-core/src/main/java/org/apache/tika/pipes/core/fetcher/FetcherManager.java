@@ -26,12 +26,12 @@ import org.pf4j.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.fetcher.FetcherFactory;
 import org.apache.tika.plugins.PluginComponentLoader;
-import org.apache.tika.plugins.TikaConfigs;
 
 /**
  * Utility class to hold multiple fetchers.
@@ -44,9 +44,8 @@ public class FetcherManager {
     private static final Logger LOG = LoggerFactory.getLogger(FetcherManager.class);
 
 
-    public static FetcherManager load(PluginManager pluginManager, TikaConfigs tikaConfigs) throws TikaConfigException, IOException {
-        JsonNode fetchersNode = tikaConfigs.getTikaJsonConfig()
-                                           .getRootNode().get(CONFIG_KEY);
+    public static FetcherManager load(PluginManager pluginManager, TikaJsonConfig tikaJsonConfig) throws TikaConfigException, IOException {
+        JsonNode fetchersNode = tikaJsonConfig.getRootNode().get(CONFIG_KEY);
         Map<String, Fetcher> fetchers =
                 PluginComponentLoader.loadInstances(pluginManager, FetcherFactory.class, fetchersNode);
         return new FetcherManager(fetchers);

@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.config.TikaTaskTimeout;
-import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.AttachmentCountingListFilter;
@@ -38,7 +38,6 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
-import org.apache.tika.pipes.core.async.AsyncConfig;
 
 public class PipesClientTest {
     String fetcherName = "fsf";
@@ -49,7 +48,8 @@ public class PipesClientTest {
         Path pipesConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, tmp.resolve("input"), tmp.resolve("output"));
         PluginsTestHelper.copyTestFilesToTmpInput(tmp, testFileName);
 
-        PipesConfig pipesConfig = TikaLoader.load(pipesConfigPath).configs().load("async", AsyncConfig.class);
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(pipesConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
         return new PipesClient(pipesConfig);
     }
 

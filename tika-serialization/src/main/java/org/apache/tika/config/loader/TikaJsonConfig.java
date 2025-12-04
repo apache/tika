@@ -22,9 +22,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -76,13 +78,17 @@ import org.apache.tika.exception.TikaConfigException;
  *     { "zip-container-detector": { "maxDepth": 10 } }
  *   ],
  *
- *   // Pipes components (validated by TikaConfigs)
+ *   // Pipes components (validated by validateKeys())
  *   "plugin-roots": ["/path/to/plugins"],
  *   "fetchers": [...],
  *   "emitters": [...],
  *
- *   // Custom extensions (prefix with x-)
- *   "x-my-custom-config": { ... }
+ *   // Custom configurations (for testing or extensions)
+ *   "other-configs": {
+ *     "test-config": { ... },
+ *     "my-custom-config": { ... },
+ *     "anything": { ... }
+ *   }
  * }
  * </pre>
  *
@@ -91,6 +97,34 @@ import org.apache.tika.exception.TikaConfigException;
  * Special "default-parser" entry enables SPI fallback for unlisted parsers.
  */
 public class TikaJsonConfig {
+
+    /**
+     * Known top-level configuration keys across core Tika and pipes/plugins.
+     * Only kebab-case names are allowed.
+     */
+    private static final Set<String> KNOWN_KEYS = Set.of(
+            // Globals
+            "maxJsonStringFieldLength",
+            "service-loader",
+            "xml-reader-utils",
+            // Core Tika component keys
+            "parsers",
+            "detectors",
+            "encoding-detectors",
+            "metadata-filters",
+            "renderers",
+            "translator",
+            "auto-detect-parser",
+            "server",
+
+            // Pipes/plugin keys
+            "fetchers",
+            "emitters",
+            "pipes-iterator",
+            "pipes-reporters",
+            "pipes",
+            "plugin-roots"
+    );
 
     private static final ObjectMapper OBJECT_MAPPER =
             PolymorphicObjectMapperFactory.getMapper();
@@ -130,7 +164,9 @@ public class TikaJsonConfig {
     public static TikaJsonConfig load(InputStream inputStream) throws TikaConfigException {
         try {
             JsonNode rootNode = OBJECT_MAPPER.readTree(inputStream);
-            return new TikaJsonConfig(rootNode);
+            TikaJsonConfig tikaJsonConfig = new TikaJsonConfig(rootNode);
+            tikaJsonConfig.validateKeys();
+            return tikaJsonConfig;
         } catch (IOException e) {
             throw new TikaConfigException("Failed to parse JSON configuration", e);
         }
@@ -300,6 +336,46 @@ public class TikaJsonConfig {
      */
     public boolean hasKey(String key) {
         return rootNode.has(key) && !rootNode.get(key).isNull();
+    }
+
+    /**
+     * Validates that all top-level configuration keys are known or custom extensions.
+     * <p>
+     * This catches typos like "parser" instead of "parsers" or "pipes-reporter"
+     * instead of "pipes-reporters".
+     * <p>
+     * The "other-configs" node is allowed for custom configurations.
+     *
+     * @throws TikaConfigException if unknown keys are found
+     */
+    private void validateKeys() throws TikaConfigException {
+        if (rootNode == null || !rootNode.isObject()) {
+            return;
+        }
+
+        Iterator<String> fieldNames = rootNode.fieldNames();
+        List<String> unknownKeys = new ArrayList<>();
+
+        while (fieldNames.hasNext()) {
+            String key = fieldNames.next();
+
+            // Ignore custom configs node
+            if (key.equals("other-configs")) {
+                continue;
+            }
+
+            // Must be a known key
+            if (!KNOWN_KEYS.contains(key)) {
+                unknownKeys.add(key);
+            }
+        }
+
+        if (!unknownKeys.isEmpty()) {
+            throw new TikaConfigException(
+                    "Unknown configuration key(s): " + unknownKeys + ". " +
+                    "Valid keys: " + KNOWN_KEYS + " " +
+                    "(or use 'other-configs' node for custom keys)");
+        }
     }
 
     @Override

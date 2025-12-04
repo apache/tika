@@ -26,11 +26,11 @@ import org.pf4j.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.EmitterFactory;
 import org.apache.tika.plugins.PluginComponentLoader;
-import org.apache.tika.plugins.TikaConfigs;
 
 /**
  * Utility class that will apply the appropriate emitter
@@ -45,9 +45,8 @@ public class EmitterManager {
 
     private final Map<String, Emitter> emitterMap = new ConcurrentHashMap<>();
 
-    public static EmitterManager load(PluginManager pluginManager, TikaConfigs tikaConfigs) throws IOException, TikaConfigException {
-        JsonNode fetchersNode = tikaConfigs.getTikaJsonConfig()
-                                           .getRootNode().get(CONFIG_KEY);
+    public static EmitterManager load(PluginManager pluginManager, TikaJsonConfig tikaJsonConfig) throws IOException, TikaConfigException {
+        JsonNode fetchersNode = tikaJsonConfig.getRootNode().get(CONFIG_KEY);
         Map<String, Emitter> fetchers =
                 PluginComponentLoader.loadInstances(pluginManager, EmitterFactory.class, fetchersNode);
         return new EmitterManager(fetchers);

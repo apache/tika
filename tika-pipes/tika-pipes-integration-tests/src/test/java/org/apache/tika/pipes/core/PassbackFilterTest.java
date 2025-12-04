@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -39,7 +39,6 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
-import org.apache.tika.pipes.core.async.AsyncConfig;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.utils.StringUtils;
 
@@ -53,7 +52,8 @@ public class PassbackFilterTest {
 
     public void init(Path tmpDir) throws Exception {
         Path pipesConfigPath = PluginsTestHelper.getFileSystemFetcherConfig("tika-config-passback.json", tmpDir);
-        PipesConfig pipesConfig = TikaLoader.load(pipesConfigPath).configs().load("async", AsyncConfig.class);
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(pipesConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
         PluginsTestHelper.copyTestFilesToTmpInput(tmpDir, testPdfFile);
 
         pipesClient = new PipesClient(pipesConfig);

@@ -28,7 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.apache.tika.config.loader.PolymorphicObjectMapperFactory;
-import org.apache.tika.pipes.core.async.AsyncConfig;
+import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.utils.StringUtils;
 
 public class PluginsWriter {
@@ -61,20 +61,20 @@ public class PluginsWriter {
                 pluginString = plugins.toAbsolutePath().toString();
             }
             json = json.replace("PLUGIN_ROOTS", pluginString).replace("\\", "/");
-            AsyncConfig asyncConfig = new AsyncConfig();
+            PipesConfig pipesConfig = new PipesConfig();
 
-            asyncConfig.setNumClients(simpleAsyncConfig.getNumClients() == null ? 2 : simpleAsyncConfig.getNumClients());
-            asyncConfig.setTikaConfig(output.toAbsolutePath().toString());
+            pipesConfig.setNumClients(simpleAsyncConfig.getNumClients() == null ? 2 : simpleAsyncConfig.getNumClients());
+            pipesConfig.setTikaConfig(output.toAbsolutePath().toString());
 
             if (simpleAsyncConfig.getXmx() != null) {
-                asyncConfig.setForkedJvmArgs(new ArrayList<>(List.of(simpleAsyncConfig.getXmx())));
+                pipesConfig.setForkedJvmArgs(new ArrayList<>(List.of(simpleAsyncConfig.getXmx())));
             }
             if (simpleAsyncConfig.getTimeoutMs() != null) {
-                asyncConfig.setTimeoutMillis(simpleAsyncConfig.getTimeoutMs());
+                pipesConfig.setTimeoutMillis(simpleAsyncConfig.getTimeoutMs());
             }
             ObjectMapper objectMapper = PolymorphicObjectMapperFactory.getMapper();
             ObjectNode root = (ObjectNode) objectMapper.readTree(json.getBytes(StandardCharsets.UTF_8));
-            root.set("async", objectMapper.valueToTree(asyncConfig));
+            root.set("pipes", objectMapper.valueToTree(pipesConfig));
 
             Files.writeString(output, root.toString());
         } catch (Exception e) {

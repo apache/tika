@@ -61,6 +61,7 @@ import org.mockito.Mockito;
 import org.apache.tika.TikaTest;
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.config.ConfigContainer;
+import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.Metadata;
@@ -72,7 +73,6 @@ import org.apache.tika.pipes.fetcher.http.config.HttpFetcherConfig;
 import org.apache.tika.pipes.fetcher.http.config.HttpHeaders;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtGenerator;
 import org.apache.tika.plugins.ExtensionConfig;
-import org.apache.tika.plugins.TikaConfigs;
 import org.apache.tika.plugins.TikaPluginManager;
 
 class HttpFetcherTest extends TikaTest {
@@ -281,8 +281,8 @@ class HttpFetcherTest extends TikaTest {
 
     FetcherManager getFetcherManager(String path) throws Exception {
         Path configPath = Paths.get(HttpFetcherTest.class.getResource("/configs/" + path).toURI());
-        TikaConfigs tikaConfigs = TikaConfigs.load(configPath);
-        return FetcherManager.load(TikaPluginManager.load(tikaConfigs), tikaConfigs);
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(configPath);
+        return FetcherManager.load(TikaPluginManager.load(tikaJsonConfig), tikaJsonConfig);
     }
 
     private void mockClientResponse(final HttpResponse response) throws Exception {
