@@ -16,9 +16,7 @@
  */
 package org.apache.tika.metadata.writefilter;
 
-import java.util.Collections;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashSet;
 
 /**
  * Factory class for {@link StandardWriteFilter}. See that class
@@ -32,15 +30,16 @@ public class StandardWriteFilterFactory implements MetadataWriteFilterFactory {
     public static int DEFAULT_TOTAL_ESTIMATED_BYTES = 10 * 1024 * 1024;
     public static int DEFAULT_MAX_VALUES_PER_FIELD = 10;
 
-    private Set<String> includeFields = Collections.EMPTY_SET;
-    private Set<String> excludeFields = Collections.EMPTY_SET;
+    //concrete classes here and in the setters/getters for the sake of Jackson
+    private HashSet<String> includeFields = new HashSet<>();
+    private HashSet<String> excludeFields = new HashSet<>();
     private int maxKeySize = DEFAULT_MAX_KEY_SIZE;
     private int maxFieldSize = DEFAULT_MAX_FIELD_SIZE;
     private int maxTotalEstimatedBytes = DEFAULT_TOTAL_ESTIMATED_BYTES;
     private int maxValuesPerField = DEFAULT_MAX_VALUES_PER_FIELD;
     private boolean includeEmpty = false;
 
-    public MetadataWriteFilter newInstance() {
+    public synchronized MetadataWriteFilter newInstance() {
 
         if (maxFieldSize < 0) {
             throw new IllegalArgumentException("maxFieldSize must be > 0");
@@ -59,16 +58,12 @@ public class StandardWriteFilterFactory implements MetadataWriteFilterFactory {
                 excludeFields, includeEmpty);
     }
 
-    public void setIncludeFields(Set<String> includeFields) {
-        Set<String> keys = ConcurrentHashMap.newKeySet(includeFields.size());
-        keys.addAll(includeFields);
-        this.includeFields = Collections.unmodifiableSet(keys);
+    public void setIncludeFields(HashSet<String> includeFields) {
+        this.includeFields = new HashSet<>(includeFields);
     }
 
-    public void setExcludeFields(Set<String> excludeFields) {
-        Set<String> keys = ConcurrentHashMap.newKeySet(excludeFields.size());
-        keys.addAll(excludeFields);
-        this.excludeFields = Collections.unmodifiableSet(keys);
+    public void setExcludeFields(HashSet<String> excludeFields) {
+        this.excludeFields = new HashSet<>(excludeFields);
     }
 
     public void setMaxTotalEstimatedBytes(int maxTotalEstimatedBytes) {
@@ -91,11 +86,11 @@ public class StandardWriteFilterFactory implements MetadataWriteFilterFactory {
         this.maxValuesPerField = maxValuesPerField;
     }
 
-    public Set<String> getIncludeFields() {
+    public HashSet<String> getIncludeFields() {
         return includeFields;
     }
 
-    public Set<String> getExcludeFields() {
+    public HashSet<String> getExcludeFields() {
         return excludeFields;
     }
 
