@@ -24,6 +24,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
@@ -357,5 +358,42 @@ public class TikaLoaderTest {
 
         assertNotNull(translator, "Translator should not be null");
         // Should be DefaultTranslator since no translator configured in test-loader-config.json
+    }
+
+    @Test
+    public void testExcludesInsteadOfExcludeThrowsException() throws Exception {
+        // Create a config with the common mistake: "excludes" instead of "exclude"
+        String invalidConfig = "{\n" +
+                "  \"parsers\": [\n" +
+                "    {\n" +
+                "      \"default-parser\": {\n" +
+                "        \"excludes\": [\"pdf-parser\"]\n" +
+                "      }\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}";
+
+        // Write to a temp file
+        Path tempFile = Files.createTempFile("test-invalid-excludes", ".json");
+        try {
+            Files.write(tempFile, invalidConfig.getBytes(StandardCharsets.UTF_8));
+
+            // Attempt to load should throw TikaConfigException
+            try {
+                TikaLoader loader = TikaLoader.load(tempFile);
+                loader.loadParsers();
+                throw new AssertionError("Expected TikaConfigException to be thrown");
+            } catch (org.apache.tika.exception.TikaConfigException e) {
+                // Expected - verify the error message is helpful
+                assertTrue(e.getMessage().contains("excludes"),
+                        "Error message should mention 'excludes'");
+                assertTrue(e.getMessage().contains("exclude"),
+                        "Error message should mention the correct field 'exclude'");
+                assertTrue(e.getMessage().contains("singular"),
+                        "Error message should explain it should be singular");
+            }
+        } finally {
+            Files.deleteIfExists(tempFile);
+        }
     }
 }

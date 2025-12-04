@@ -36,7 +36,7 @@ import java.util.Locale;
  *   <li>TesseractOCRParser → tesseract-ocr-parser</li>
  * </ul>
  */
-class KebabCaseConverter {
+public class KebabCaseConverter {
 
     private KebabCaseConverter() {
         // Utility class
@@ -48,7 +48,7 @@ class KebabCaseConverter {
      * @param className the simple class name (without package)
      * @return the kebab-case version of the name
      */
-    static String toKebabCase(String className) {
+    public static String toKebabCase(String className) {
         if (className == null || className.isEmpty()) {
             return className;
         }
