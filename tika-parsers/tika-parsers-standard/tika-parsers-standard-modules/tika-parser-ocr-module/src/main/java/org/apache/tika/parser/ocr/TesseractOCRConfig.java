@@ -20,7 +20,6 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -82,7 +81,7 @@ public class TesseractOCRConfig implements Serializable {
     // Maximum time (seconds) to wait for the ocring process termination
     private int timeoutSeconds = 120;
     // See addOtherTesseractConfig.
-    private Map<String, String> otherTesseractConfig = new HashMap<>();
+    private HashMap<String, String> otherTesseractConfig = new HashMap<>();
     private boolean inlineContent = false;
 
     private String tesseractPath = "";
@@ -478,7 +477,7 @@ public class TesseractOCRConfig implements Serializable {
     /**
      * @see #addOtherTesseractConfig(String, String)
      */
-    public Map<String, String> getOtherTesseractConfig() {
+    public HashMap<String, String> getOtherTesseractConfig() {
         return otherTesseractConfig;
     }
 
