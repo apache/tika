@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -248,14 +247,14 @@ public abstract class ConfigBase {
             SetterClassPair setterClassPair = findSetterClassPair(object, itemName);
             boolean processed = false;
             if (!hasClass(param)) {
-                if (setterClassPair.itemClass.isAssignableFrom(Map.class) && isMap(param)) {
+                if (Map.class.isAssignableFrom(setterClassPair.itemClass) && isMap(param)) {
                     tryToSetMap(object, param);
                     processed = true;
-                } else if (setterClassPair.itemClass.isAssignableFrom(List.class)) {
+                } else if (List.class.isAssignableFrom(setterClassPair.itemClass)) {
                     tryToSetList(object, param);
                     processed = true;
-                } else if (setterClassPair.itemClass.isAssignableFrom(Set.class)) {
-                    tryToSetSet(object, param);
+                } else if (Set.class.isAssignableFrom(setterClassPair.itemClass)) {
+                    tryToSetSet(object, param, setterClassPair.itemClass);
                     processed = true;
                 }
             }
@@ -363,14 +362,16 @@ public abstract class ConfigBase {
         return false;
     }
 
-    private static void tryToSetSet(Object object, Node param) throws TikaConfigException {
+    private static void tryToSetSet(Object object, Node param, Class clazz) throws TikaConfigException {
         //simple hack for now -- only handle Set<String>
-        tryToSetStringSet(object, param);
+        tryToSetStringSet(object, param, clazz);
     }
 
-    private static void tryToSetStringSet(Object object, Node param) throws TikaConfigException {
+    private static void tryToSetStringSet(Object object, Node param, Class clazz) throws TikaConfigException {
         String name = param.getLocalName();
-        Set<String> strings = new TreeSet<>();
+        //this is luck. 
+        HashSet<String> strings = new HashSet<>();
+
         NodeList nodeList = param.getChildNodes();
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node n = nodeList.item(i);
@@ -383,7 +384,7 @@ public abstract class ConfigBase {
         }
         String setter = "set" + name.substring(0, 1).toUpperCase(Locale.US) + name.substring(1);
         try {
-            Method m = object.getClass().getMethod(setter, Set.class);
+            Method m = object.getClass().getMethod(setter, clazz);
             m.invoke(object, strings);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
             throw new TikaConfigException("can't set " + name, e);

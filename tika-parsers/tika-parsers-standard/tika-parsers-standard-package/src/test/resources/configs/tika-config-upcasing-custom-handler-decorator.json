@@ -8,12 +8,8 @@
     "metadataWriteFilterFactory": {
       "@class": "org.apache.tika.metadata.writefilter.StandardWriteFilterFactory",
       "includeFields": [
-        "java.util.Collections$EmptySet",
-        []
       ],
       "excludeFields": [
-        "java.util.Collections$EmptySet",
-        []
       ],
       "maxKeySize": 1024,
       "maxFieldSize": 102400,
@@ -25,20 +21,15 @@
       "@class": "org.apache.tika.extractor.RUnpackExtractorFactory",
       "writeFileNameToContent": true,
       "embeddedBytesIncludeMimeTypes": [
-        "java.util.Collections$EmptySet",
-        []
+        "text/pdf"
       ],
       "embeddedBytesExcludeMimeTypes": [
-        "java.util.Collections$EmptySet",
-        []
+        "rtf/application"
       ],
       "embeddedBytesIncludeEmbeddedResourceTypes": [
-        "java.util.Collections$EmptySet",
-        []
+        "appended"
       ],
       "embeddedBytesExcludeEmbeddedResourceTypes": [
-        "java.util.Collections$EmptySet",
-        []
       ],
       "maxEmbeddedBytesForExtraction": 10737418240
     },

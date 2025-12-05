@@ -18,6 +18,7 @@ package org.apache.tika.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -75,6 +76,20 @@ public class AutoDetectParserConfigTest extends TikaTest {
         String txt = getXML("testPPT_EmbeddedPDF.pptx", p).xml;
         assertContainsCount("THE APACHE TIKA PROJECT WAS FORMALLY", txt, 2);
         assertContainsCount("15.9.2007 11:02", txt, 2);
+    }
+
+    @Test
+    public void testWriteFilter() throws Exception {
+        //test to make sure that the decorator is only applied once for
+        //legacy (e.g. not RecursiveParserWrapperHandler) parsing
+        Parser p = TikaLoaderHelper.getLoader("tika-config-write-filter.json").loadAutoDetectParser();
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", p);
+        for (Metadata metadata : metadataList) {
+            for (String k : metadata.names()) {
+                assertTrue(k.startsWith("X-TIKA:") || k.startsWith("access_permission:")
+                        || k.equals("Content-Type") || k.equals("dc:creator"));
+            }
+        }
     }
 
     @Test

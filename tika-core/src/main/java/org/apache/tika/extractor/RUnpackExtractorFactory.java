@@ -16,9 +16,7 @@
  */
 package org.apache.tika.extractor;
 
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.Set;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.config.TikaComponent;
@@ -32,10 +30,11 @@ public class RUnpackExtractorFactory implements EmbeddedDocumentByteStoreExtract
     public static long DEFAULT_MAX_EMBEDDED_BYTES_FOR_EXTRACTION = 10l * 1024l * 1024l * 1024l;
 
     private boolean writeFileNameToContent = true;
-    private Set<String> embeddedBytesIncludeMimeTypes = Collections.EMPTY_SET;
-    private Set<String> embeddedBytesExcludeMimeTypes = Collections.EMPTY_SET;
-    private Set<String> embeddedBytesIncludeEmbeddedResourceTypes = Collections.EMPTY_SET;
-    private Set<String> embeddedBytesExcludeEmbeddedResourceTypes = Collections.EMPTY_SET;
+    //concrete HashSet class for the sake of Jackson
+    private HashSet<String> embeddedBytesIncludeMimeTypes = new HashSet<>();
+    private HashSet<String> embeddedBytesExcludeMimeTypes = new HashSet<>();
+    private HashSet<String> embeddedBytesIncludeEmbeddedResourceTypes = new HashSet<>();
+    private HashSet<String> embeddedBytesExcludeEmbeddedResourceTypes = new HashSet<>();
 
     private long maxEmbeddedBytesForExtraction = DEFAULT_MAX_EMBEDDED_BYTES_FOR_EXTRACTION;
     @Field
@@ -44,30 +43,24 @@ public class RUnpackExtractorFactory implements EmbeddedDocumentByteStoreExtract
     }
 
     @Field
-    public void setEmbeddedBytesIncludeMimeTypes(Set<String> includeMimeTypes) {
-        embeddedBytesIncludeMimeTypes = new HashSet<>();
-        embeddedBytesIncludeMimeTypes.addAll(includeMimeTypes);
+    public void setEmbeddedBytesIncludeMimeTypes(HashSet<String> includeMimeTypes) {
+        embeddedBytesIncludeMimeTypes = new HashSet<>(includeMimeTypes);
     }
 
     @Field
-    public void setEmbeddedBytesExcludeMimeTypes(Set<String> excludeMimeTypes) {
-        embeddedBytesExcludeMimeTypes = new HashSet<>();
-        embeddedBytesExcludeMimeTypes.addAll(excludeMimeTypes);
-
-    }
-
-    @Field
-    public void setEmbeddedBytesIncludeEmbeddedResourceTypes(Set<String> includeAttachmentTypes) {
-        embeddedBytesIncludeEmbeddedResourceTypes = new HashSet<>();
-        embeddedBytesIncludeEmbeddedResourceTypes.addAll(includeAttachmentTypes);
+    public void setEmbeddedBytesExcludeMimeTypes(HashSet<String> excludeMimeTypes) {
+        embeddedBytesExcludeMimeTypes = new HashSet<>(excludeMimeTypes);
 
     }
 
     @Field
-    public void setEmbeddedBytesExcludeEmbeddedResourceTypes(Set<String> excludeAttachmentTypes) {
-        embeddedBytesExcludeEmbeddedResourceTypes = new HashSet<>();
-        embeddedBytesExcludeEmbeddedResourceTypes.addAll(excludeAttachmentTypes);
+    public void setEmbeddedBytesIncludeEmbeddedResourceTypes(HashSet<String> includeAttachmentTypes) {
+        embeddedBytesIncludeEmbeddedResourceTypes = new HashSet<>(includeAttachmentTypes);
+    }
 
+    @Field
+    public void setEmbeddedBytesExcludeEmbeddedResourceTypes(HashSet<String> excludeAttachmentTypes) {
+        embeddedBytesExcludeEmbeddedResourceTypes = new HashSet<>(excludeAttachmentTypes);
     }
 
     /**
@@ -91,19 +84,19 @@ public class RUnpackExtractorFactory implements EmbeddedDocumentByteStoreExtract
         return writeFileNameToContent;
     }
 
-    public Set<String> getEmbeddedBytesIncludeMimeTypes() {
+    public HashSet<String> getEmbeddedBytesIncludeMimeTypes() {
         return embeddedBytesIncludeMimeTypes;
     }
 
-    public Set<String> getEmbeddedBytesExcludeMimeTypes() {
+    public HashSet<String> getEmbeddedBytesExcludeMimeTypes() {
         return embeddedBytesExcludeMimeTypes;
     }
 
-    public Set<String> getEmbeddedBytesIncludeEmbeddedResourceTypes() {
+    public HashSet<String> getEmbeddedBytesIncludeEmbeddedResourceTypes() {
         return embeddedBytesIncludeEmbeddedResourceTypes;
     }
 
-    public Set<String> getEmbeddedBytesExcludeEmbeddedResourceTypes() {
+    public HashSet<String> getEmbeddedBytesExcludeEmbeddedResourceTypes() {
         return embeddedBytesExcludeEmbeddedResourceTypes;
     }
 
