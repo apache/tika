@@ -80,7 +80,6 @@
     <dependency>
       <groupId>com.azure</groupId>
       <artifactId>azure-identity</artifactId>
-      <version>${azure-identity.version}</version>
       <exclusions>
         <exclusion>
           <groupId>net.java.dev.jna</groupId>
