@@ -56,9 +56,9 @@ public class PipesResource {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfig);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
         //this has to be zero. everything must be emitted through the PipesServer
-        long maxEmit = pipesConfig.getMaxForEmitBatchBytes();
+        long maxEmit = pipesConfig.getEmitImmediatelyThresholdBytes();
         if (maxEmit != 0) {
-            pipesConfig.setMaxForEmitBatchBytes(0);
+            pipesConfig.setEmitImmediatelyThresholdBytes(0);
             if (maxEmit != PipesConfig.DEFAULT_MAX_FOR_EMIT_BATCH) {
                 LOG.warn("resetting max for emit batch to 0");
             }

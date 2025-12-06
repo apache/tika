@@ -39,12 +39,11 @@
     }
   },
   "pipes": {
-    "tikaConfig": "TIKA_CONFIG",
     "numClients": 4,
     "timeoutMillis": 5000,
     "emitIntermediateResults": EMIT_INTERMEDIATE_RESULTS,
     "forkedJvmArgs": ["-Xmx512m"],
-    "maxForEmitBatchBytes": 0
+    "directEmitThresholdBytes": 0
   },
   "auto-detect-parser": {
     "spoolToDisk": 1000000,

@@ -94,7 +94,7 @@ public class TestFileSystemStatusReporter {
         });
         readerThread.start();
 
-        Map<PipesResult.STATUS, Long> total = runBatch(reporter, 10, 200);
+        Map<PipesResult.RESULT_STATUS, Long> total = runBatch(reporter, 10, 200);
 
 
         readerThread.interrupt();
@@ -102,9 +102,9 @@ public class TestFileSystemStatusReporter {
         reporter.report(new TotalCountResult(30000, TotalCountResult.STATUS.COMPLETED));
         reporter.close();
         AsyncStatus asyncStatus = objectMapper.readValue(path.toFile(), AsyncStatus.class);
-        Map<PipesResult.STATUS, Long> map = asyncStatus.getStatusCounts();
+        Map<PipesResult.RESULT_STATUS, Long> map = asyncStatus.getStatusCounts();
         assertEquals(total.size(), map.size());
-        for (Map.Entry<PipesResult.STATUS, Long> e : total.entrySet()) {
+        for (Map.Entry<PipesResult.RESULT_STATUS, Long> e : total.entrySet()) {
             assertTrue(map.containsKey(e.getKey()), e.getKey().toString());
             assertEquals(e.getValue(), map.get(e.getKey()), e.getKey().toString());
         }
@@ -113,9 +113,9 @@ public class TestFileSystemStatusReporter {
         assertEquals(TotalCountResult.STATUS.COMPLETED, asyncStatus.getTotalCountResult().getStatus());
     }
 
-    private Map<PipesResult.STATUS, Long> runBatch(FileSystemStatusReporter reporter,
-                                                   int numThreads,
-                                                   int numIterations)
+    private Map<PipesResult.RESULT_STATUS, Long> runBatch(FileSystemStatusReporter reporter,
+                                                          int numThreads,
+                                                          int numIterations)
             throws ExecutionException, InterruptedException {
         ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
         ExecutorCompletionService executorCompletionService =
@@ -127,7 +127,7 @@ public class TestFileSystemStatusReporter {
             executorCompletionService.submit(reportWorker);
         }
 
-        Map<PipesResult.STATUS, Long> total = new HashMap<>();
+        Map<PipesResult.RESULT_STATUS, Long> total = new HashMap<>();
         int finished = 0;
         while (finished < numThreads) {
             Future<Integer> future = executorCompletionService.poll();
@@ -137,8 +137,8 @@ public class TestFileSystemStatusReporter {
             }
         }
         for (ReportWorker r : workerList) {
-            Map<PipesResult.STATUS, Long> local = r.getWritten();
-            for (Map.Entry<PipesResult.STATUS, Long> e : local.entrySet()) {
+            Map<PipesResult.RESULT_STATUS, Long> local = r.getWritten();
+            for (Map.Entry<PipesResult.RESULT_STATUS, Long> e : local.entrySet()) {
                 Long t = total.get(e.getKey());
                 if (t == null) {
                     t = e.getValue();
@@ -152,7 +152,7 @@ public class TestFileSystemStatusReporter {
     }
 
     private class ReportWorker implements Callable<Integer> {
-        Map<PipesResult.STATUS, Long> written = new HashMap<>();
+        Map<PipesResult.RESULT_STATUS, Long> written = new HashMap<>();
 
         private final PipesReporter reporter;
         private final int numIterations;
@@ -162,10 +162,10 @@ public class TestFileSystemStatusReporter {
         }
         @Override
         public Integer call() throws Exception {
-            PipesResult.STATUS[] statuses = PipesResult.STATUS.values();
+            PipesResult.RESULT_STATUS[] statuses = PipesResult.RESULT_STATUS.values();
             Random random = new Random();
             for (int i = 0; i < numIterations; i++) {
-                PipesResult.STATUS status = statuses[random.nextInt(statuses.length)];
+                PipesResult.RESULT_STATUS status = statuses[random.nextInt(statuses.length)];
                 PipesResult pipesResult = new PipesResult(status);
 
                 reporter.report(PipesIterator.COMPLETED_SEMAPHORE, pipesResult, 100l);
@@ -185,7 +185,7 @@ public class TestFileSystemStatusReporter {
             return 1;
         }
 
-        Map<PipesResult.STATUS, Long> getWritten() {
+        Map<PipesResult.RESULT_STATUS, Long> getWritten() {
             return written;
         }
     }

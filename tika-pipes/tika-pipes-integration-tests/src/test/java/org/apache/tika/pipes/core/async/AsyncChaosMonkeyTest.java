@@ -62,6 +62,9 @@ public class AsyncChaosMonkeyTest {
             "<write element=\"p\">main_content</write>" +
             "<system_exit/>" + "</mock>";
 
+    private final String STACK_OVERFLOW = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
+            "<throw class=\"java.lang.StackOverflowError\">stack overflow message</throw>\n</mock>";
+
     private final int totalFiles = 100;
 
     private Path inputDir;
@@ -70,7 +73,8 @@ public class AsyncChaosMonkeyTest {
     private int ok = 0;
     private int oom = 0;
     private int timeouts = 0;
-    private int crash = 0;
+    private int systemExit = 0;
+    private int stackOverflow = 0;
 
 
     public Path setUp(Path tmpDir, boolean emitIntermediateResults) throws Exception {
@@ -83,7 +87,8 @@ public class AsyncChaosMonkeyTest {
         ok = 0;
         oom = 0;
         timeouts = 0;
-        crash = 0;
+        systemExit = 0;
+        stackOverflow = 0;
 
 
         Random r = new Random();
@@ -94,14 +99,18 @@ public class AsyncChaosMonkeyTest {
                 oom++;
             } else if (f < 0.10) {
                 Files.write(inputDir.resolve(i + ".xml"), SYSTEM_EXIT.getBytes(StandardCharsets.UTF_8));
-                crash++;
+                systemExit++;
             } else if (f < 0.13) {
                 Files.write(inputDir.resolve(i + ".xml"), TIMEOUT.getBytes(StandardCharsets.UTF_8));
                 timeouts++;
+            } else if (f < 0.16) {
+                Files.write(inputDir.resolve(i + ".xml"), STACK_OVERFLOW.getBytes(StandardCharsets.UTF_8));
+                stackOverflow++;
             } else {
                 Files.write(inputDir.resolve(i + ".xml"), OK.getBytes(StandardCharsets.UTF_8));
                 ok++;
             }
+
         }
         MockReporter.RESULTS.clear();
         return PluginsTestHelper.getFileSystemFetcherConfig(configDir, inputDir, outputDir, emitIntermediateResults);
@@ -142,8 +151,15 @@ public class AsyncChaosMonkeyTest {
         for (File f : outputDir.toFile().listFiles()) {
             emitKeys.add(f.getName());
         }
+
+        // When emitIntermediateResults = false, only successful files are emitted
         assertEquals(ok, emitKeys.size());
-        //TODO -- add mock reporter back
+
+        // Verify we got the expected distribution of file types
+        int expectedCrashes = oom + timeouts + systemExit + stackOverflow;
+        assertEquals(totalFiles, ok + expectedCrashes,
+                "Total files should equal sum of ok and crashes");
+
     }
 
     @Test
@@ -164,6 +180,10 @@ public class AsyncChaosMonkeyTest {
         processor.close();
         Set<String> emitKeys = new HashSet<>();
         int observedOOM = 0;
+        int observedTimeout = 0;
+        int observedUnspecifiedCrash = 0;
+        int observedSuccess = 0;
+
         for (File f : outputDir.toFile().listFiles()) {
             emitKeys.add(f.getName());
             List<Metadata> metadataList;
@@ -175,11 +195,31 @@ public class AsyncChaosMonkeyTest {
             assertEquals("application/mock+xml",
                     metadataList.get(0).get(Metadata.CONTENT_TYPE));
             String val = metadataList.get(0).get(TikaCoreProperties.PIPES_RESULT);
-            if ("OOM".equals(val)) {
+            if (val == null) {
+                // Null means success (no crash status was set)
+                observedSuccess++;
+            } else if ("OOM".equals(val)) {
                 observedOOM++;
+            } else if ("TIMEOUT".equals(val)) {
+                observedTimeout++;
+            } else if ("UNSPECIFIED_CRASH".equals(val)) {
+                observedUnspecifiedCrash++;
             }
         }
+
+        // When emitIntermediateResults = true, all files are emitted (success and crashes)
         assertEquals(totalFiles, emitKeys.size());
-        assertEquals(oom, observedOOM);
+
+        // Verify each crash type was counted correctly
+        assertEquals(ok, observedSuccess, "Expected " + ok + " successful files but observed " + observedSuccess);
+        assertEquals(oom, observedOOM, "Expected " + oom + " OOM crashes but observed " + observedOOM);
+        assertEquals(timeouts, observedTimeout, "Expected " + timeouts + " timeout crashes but observed " + observedTimeout);
+
+        // System exit and stack overflow should both be UNSPECIFIED_CRASH
+        int expectedUnspecifiedCrash = systemExit + stackOverflow;
+        assertEquals(expectedUnspecifiedCrash, observedUnspecifiedCrash,
+                "Expected " + expectedUnspecifiedCrash + " unspecified crashes (systemExit=" +
+                systemExit + " + stackOverflow=" + stackOverflow + ") but observed " + observedUnspecifiedCrash);
+
     }
 }

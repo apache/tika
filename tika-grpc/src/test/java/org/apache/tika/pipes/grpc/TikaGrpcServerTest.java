@@ -236,7 +236,7 @@ public class TikaGrpcServerTest {
             @Override
             public void onNext(FetchAndParseReply fetchAndParseReply) {
                 LOG.debug("Fetched {} with metadata {}", fetchAndParseReply.getFetchKey(), fetchAndParseReply.getFieldsMap());
-                if (PipesResult.STATUS.FETCH_EXCEPTION.name().equals(fetchAndParseReply.getStatus())) {
+                if (PipesResult.RESULT_STATUS.FETCH_EXCEPTION.name().equals(fetchAndParseReply.getStatus())) {
                     errors.add(fetchAndParseReply);
                 } else {
                     successes.add(fetchAndParseReply);

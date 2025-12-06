@@ -163,9 +163,9 @@ public class JDBCPipesReporter extends PipesReporterBase {
 
         static IdStatusPair END_SEMAPHORE = new IdStatusPair(null, null);
         private final String id;
-        private final PipesResult.STATUS status;
+        private final PipesResult.RESULT_STATUS status;
 
-        public IdStatusPair(String id, PipesResult.STATUS status) {
+        public IdStatusPair(String id, PipesResult.RESULT_STATUS status) {
             this.id = id;
             this.status = status;
         }
