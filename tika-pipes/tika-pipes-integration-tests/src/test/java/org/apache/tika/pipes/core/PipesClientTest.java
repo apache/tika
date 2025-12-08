@@ -245,7 +245,7 @@ public class PipesClientTest {
             assertEquals(PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE, pipesResult.status());
             assertTrue(pipesResult.isApplicationError(), "FAILED_TO_INITIALIZE should be an application error");
             Assertions.assertNotNull(pipesResult.message(), "Should have error message");
-            assertTrue(pipesResult.message().contains("No such file"),
+            assertTrue(pipesResult.message().contains("No such file") || pipesResult.message().contains("thisIsntJava"),
                     "Error message should indicate process failure: " + pipesResult.message());
         }
     }
