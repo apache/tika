@@ -44,6 +44,7 @@ import org.apache.tika.pipes.api.fetcher.FetchKey;
 
 public class PipesClientTest {
     String fetcherName = "fsf";
+    String emitterName = "fse";
     String testDoc = "testOverlappingText.pdf";
 
 
@@ -339,6 +340,215 @@ public class PipesClientTest {
             // Verify it's a process crash category (socket timeout means process isn't responding)
             assertTrue(pipesResult.isProcessCrash(),
                     "Socket timeout should be categorized as process crash");
+        }
+    }
+
+    @Test
+    public void testParseSuccessWithException(@TempDir Path tmp) throws Exception {
+        // Test PARSE_SUCCESS_WITH_EXCEPTION status
+        // This occurs when parsing completes with some content but throws a non-fatal exception
+        Path inputDir = tmp.resolve("input");
+        Files.createDirectories(inputDir);
+
+        // Mock file that writes content then throws IOException
+        String mockContent = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
+                "<metadata action=\"add\" name=\"dc:creator\">Test Author</metadata>" +
+                "<write element=\"p\">Some content before exception</write>" +
+                "<throw class=\"java.io.IOException\">Non-fatal parse exception</throw>" +
+                "</mock>";
+        String testFile = "mock-parse-exception.xml";
+        Files.write(inputDir.resolve(testFile), mockContent.getBytes(StandardCharsets.UTF_8));
+
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, inputDir, tmp.resolve("output"));
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfigPath);
+
+        try (PipesClient pipesClient = new PipesClient(pipesConfig)) {
+            FetchEmitTuple tuple = new FetchEmitTuple(testFile,
+                    new FetchKey(fetcherName, testFile),
+                    new EmitKey(emitterName, ""), new Metadata(), new ParseContext(),
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+
+            PipesResult pipesResult = pipesClient.process(tuple);
+
+            // Should be PARSE_SUCCESS_WITH_EXCEPTION because content was produced despite exception
+            assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS_WITH_EXCEPTION, pipesResult.status(),
+                    "Should return PARSE_SUCCESS_WITH_EXCEPTION when parse throws but produces content");
+
+            // Verify it's still categorized as SUCCESS
+            assertTrue(pipesResult.isSuccess(), "PARSE_SUCCESS_WITH_EXCEPTION should be success category");
+
+            // Verify we got the metadata before the exception
+            Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
+            assertTrue(pipesResult.emitData().getMetadataList().size() > 0);
+            Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
+            assertEquals("Test Author", metadata.get("dc:creator"));
+        }
+    }
+
+    @Test
+    public void testFetchException(@TempDir Path tmp) throws Exception {
+        // Test FETCH_EXCEPTION status
+        // Occurs when fetcher fails to retrieve the file
+        Path inputDir = tmp.resolve("input");
+        Files.createDirectories(inputDir);
+
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, inputDir, tmp.resolve("output"));
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfigPath);
+
+        try (PipesClient pipesClient = new PipesClient(pipesConfig)) {
+            // Request a file that doesn't exist
+            String nonExistentFile = "does-not-exist.pdf";
+            FetchEmitTuple tuple = new FetchEmitTuple(nonExistentFile,
+                    new FetchKey(fetcherName, nonExistentFile),
+                    new EmitKey(), new Metadata(), new ParseContext(),
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
+
+            PipesResult pipesResult = pipesClient.process(tuple);
+
+            // Should be FETCH_EXCEPTION because file doesn't exist
+            assertEquals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION, pipesResult.status(),
+                    "Should return FETCH_EXCEPTION when file cannot be fetched");
+
+            // Verify it's categorized as APPLICATION_ERROR
+            assertTrue(pipesResult.isApplicationError(),
+                    "FETCH_EXCEPTION should be application error category");
+
+            // Verify error message contains useful information
+            Assertions.assertNotNull(pipesResult.message());
+            assertTrue(pipesResult.message().contains("does-not-exist") ||
+                            pipesResult.message().contains("NoSuchFileException") ||
+                            pipesResult.message().contains("not found"),
+                    "Error message should indicate file not found");
+        }
+    }
+
+    @Test
+    public void testEmitException(@TempDir Path tmp) throws Exception {
+        // Test EMIT_EXCEPTION status
+        // Occurs when emitter fails to write results
+        Path inputDir = tmp.resolve("input");
+        Files.createDirectories(inputDir);
+
+        // Create valid test file
+        String testFile = "test.xml";
+        String mockContent = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
+                "<metadata action=\"add\" name=\"dc:creator\">Test</metadata>" +
+                "<write element=\"p\">content</write>" +
+                "</mock>";
+        Files.write(inputDir.resolve(testFile), mockContent.getBytes(StandardCharsets.UTF_8));
+
+        // Create output directory and pre-create the output file to trigger onExists=EXCEPTION
+        Path outputDir = tmp.resolve("output");
+        Files.createDirectories(outputDir);
+        // The emitter will try to create test.xml.json, so pre-create it
+        Files.writeString(outputDir.resolve("test.xml.json"), "existing file");
+
+        // Use config with directEmitThresholdBytes=0 to force server-side emission
+        // Config has onExists=EXCEPTION which will trigger FileAlreadyExistsException
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig("tika-config-emit-all.json", tmp, inputDir, outputDir, false);
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfigPath);
+
+        try (PipesClient pipesClient = new PipesClient(pipesConfig)) {
+            FetchEmitTuple tuple = new FetchEmitTuple(testFile,
+                    new FetchKey(fetcherName, testFile),
+                    new EmitKey(emitterName, ""), new Metadata(), new ParseContext(),
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
+
+            PipesResult pipesResult = pipesClient.process(tuple);
+
+            // Should be EMIT_EXCEPTION because output file exists and onExists=EXCEPTION
+            assertEquals(PipesResult.RESULT_STATUS.EMIT_EXCEPTION, pipesResult.status(),
+                    "Should return EMIT_EXCEPTION when emitter fails to write");
+
+            // Verify it's categorized as APPLICATION_ERROR
+            assertTrue(pipesResult.isApplicationError(),
+                    "EMIT_EXCEPTION should be application error category");
+        }
+    }
+
+    @Test
+    public void testFetcherNotFound(@TempDir Path tmp) throws Exception {
+        // Test FETCHER_NOT_FOUND status
+        // Occurs when FetchKey references a fetcher that doesn't exist
+        Path inputDir = tmp.resolve("input");
+        Files.createDirectories(inputDir);
+
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, inputDir, tmp.resolve("output"));
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfigPath);
+
+        try (PipesClient pipesClient = new PipesClient(pipesConfig)) {
+            // Use invalid fetcher name
+            FetchEmitTuple tuple = new FetchEmitTuple("test.pdf",
+                    new FetchKey("non-existent-fetcher", "test.pdf"),
+                    new EmitKey(), new Metadata(), new ParseContext(),
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
+
+            PipesResult pipesResult = pipesClient.process(tuple);
+
+            // Should be FETCHER_NOT_FOUND
+            assertEquals(PipesResult.RESULT_STATUS.FETCHER_NOT_FOUND, pipesResult.status(),
+                    "Should return FETCHER_NOT_FOUND when fetcher name is invalid");
+
+            // Verify it's categorized as APPLICATION_ERROR
+            assertTrue(pipesResult.isApplicationError(),
+                    "FETCHER_NOT_FOUND should be application error category");
+
+            // Verify error message mentions the fetcher name
+            Assertions.assertNotNull(pipesResult.message());
+            assertTrue(pipesResult.message().contains("non-existent-fetcher") ||
+                            pipesResult.message().contains("not found") ||
+                            pipesResult.message().contains("fetcher"),
+                    "Error message should mention the missing fetcher");
+        }
+    }
+
+    @Test
+    public void testEmitterNotFound(@TempDir Path tmp) throws Exception {
+        // Test EMITTER_NOT_FOUND status
+        // Occurs when EmitKey references an emitter that doesn't exist
+        Path inputDir = tmp.resolve("input");
+        Files.createDirectories(inputDir);
+
+        // Create valid test file
+        String testFile = "test.xml";
+        String mockContent = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
+                "<metadata action=\"add\" name=\"dc:creator\">Test</metadata>" +
+                "<write element=\"p\">content</write>" +
+                "</mock>";
+        Files.write(inputDir.resolve(testFile), mockContent.getBytes(StandardCharsets.UTF_8));
+
+        // Use config with directEmitThresholdBytes=0 to force server-side emission
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig("tika-config-emit-all.json", tmp, inputDir, tmp.resolve("output"), false);
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfigPath);
+
+        try (PipesClient pipesClient = new PipesClient(pipesConfig)) {
+            // Use invalid emitter name
+            FetchEmitTuple tuple = new FetchEmitTuple(testFile,
+                    new FetchKey(fetcherName, testFile),
+                    new EmitKey("non-existent-emitter", ""), new Metadata(), new ParseContext(),
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
+
+            PipesResult pipesResult = pipesClient.process(tuple);
+
+            // Should be EMITTER_NOT_FOUND
+            assertEquals(PipesResult.RESULT_STATUS.EMITTER_NOT_FOUND, pipesResult.status(),
+                    "Should return EMITTER_NOT_FOUND when emitter name is invalid");
+
+            // Verify it's categorized as APPLICATION_ERROR
+            assertTrue(pipesResult.isApplicationError(),
+                    "EMITTER_NOT_FOUND should be application error category");
+
+            // Verify error message mentions the emitter name
+            Assertions.assertNotNull(pipesResult.message());
+            assertTrue(pipesResult.message().contains("non-existent-emitter") ||
+                            pipesResult.message().contains("not found") ||
+                            pipesResult.message().contains("emitter"),
+                    "Error message should mention the missing emitter");
         }
     }
 }
