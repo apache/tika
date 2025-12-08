@@ -16,33 +16,31 @@
  */
 package org.apache.tika.pipes.grpc;
 
-import static org.junit.jupiter.api.Assertions.assertNull;
-
-import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
+import org.apache.tika.pipes.api.statestore.StateStore;
+import org.apache.tika.pipes.core.FetcherStore;
+import org.apache.tika.pipes.core.statestore.StateStoreManager;
 import org.apache.tika.plugins.ExtensionConfig;
 
-class ExpiringFetcherStoreTest {
-
-    private static final ObjectMapper MAPPER = new ObjectMapper();
-
+class FetcherStoreTest {
     @Test
-    void createFetcher() throws Exception {
-        try (ExpiringFetcherStore expiringFetcherStore = new ExpiringFetcherStore(1, 5)) {
+    void createAndDeleteFetcher() throws Exception {
+        StateStore stateStore = StateStoreManager.createDefault();
+        try (FetcherStore fetcherStore = new FetcherStore(stateStore, 2000L, 1000L)) {
             Fetcher fetcher = new Fetcher() {
                 @Override
-                public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
+                public InputStream fetch(String fetchKey, Metadata metadata,
+                                         ParseContext parseContext) {
                     return null;
                 }
 
@@ -51,22 +49,12 @@ class ExpiringFetcherStoreTest {
                     return new ExtensionConfig("nick", "factory-plugin-id", "{}");
                 }
             };
-            expiringFetcherStore.createFetcher(fetcher, fetcher.getExtensionConfig());
-
-            Assertions.assertNotNull(expiringFetcherStore
-                    .getFetchers()
+            fetcherStore.createFetcher(fetcher, fetcher.getExtensionConfig());
+            Assertions.assertNotNull(fetcherStore.getFetchers()
                     .get(fetcher.getExtensionConfig().id()));
-
-            Awaitility
-                    .await()
-                    .atMost(Duration.ofSeconds(60))
-                    .until(() -> expiringFetcherStore
-                            .getFetchers()
-                            .get(fetcher.getExtensionConfig().id()) == null);
-
-            assertNull(expiringFetcherStore
-                    .getFetcherConfigs()
-                    .get(fetcher.getExtensionConfig().id()));
+            Awaitility.await().atMost(Duration.ofSeconds(10))
+                    .pollInterval(1000L, TimeUnit.MILLISECONDS)
+                    .until(() -> fetcherStore.getFetchers().get(fetcher.getExtensionConfig().id()) == null);
         }
     }
 }
