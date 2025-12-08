@@ -187,7 +187,6 @@ public class PipesClientTest {
             assertEquals(PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE, pipesResult.status());
             assertTrue(pipesResult.isApplicationError(), "FAILED_TO_INITIALIZE should be an application error");
             Assertions.assertNotNull(pipesResult.message(), "Should have error message from server");
-            System.out.println(pipesResult.message());
             assertTrue(pipesResult.message().contains("non-existent-fetcher-plugin") ||
                       pipesResult.message().contains("TikaConfigException") ||
                       pipesResult.message().contains("error") ||
