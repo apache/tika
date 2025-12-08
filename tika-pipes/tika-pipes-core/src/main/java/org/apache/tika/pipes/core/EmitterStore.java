@@ -18,72 +18,72 @@ package org.apache.tika.pipes.core;
 
 import java.util.Map;
 
-import org.apache.tika.pipes.api.fetcher.Fetcher;
+import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.statestore.StateStore;
 import org.apache.tika.plugins.ExtensionConfig;
 
 /**
- * FetcherStore manages Fetcher instances using StateStore for distributed state management.
- * Provides automatic expiration of stale fetchers based on last access time.
+ * EmitterStore manages Emitter instances using StateStore for distributed state management.
+ * Provides automatic expiration of stale emitters based on last access time.
  * <p>
  * This extends ComponentStore to leverage common distributed state management patterns,
- * eliminating code duplication while maintaining backward-compatible API.
+ * enabling dynamic emitter CRUD operations across cluster nodes.
  */
-public class FetcherStore extends ComponentStore<Fetcher> {
+public class EmitterStore extends ComponentStore<Emitter> {
 
     /**
-     * Create a FetcherStore with the given StateStore backend.
+     * Create an EmitterStore with the given StateStore backend.
      *
      * @param stateStore the state store for distributed state
-     * @param expireAfterMillis how long before fetchers expire (milliseconds)
-     * @param checkForExpiredDelayMillis how often to check for expired fetchers (milliseconds)
+     * @param expireAfterMillis how long before emitters expire (milliseconds)
+     * @param checkForExpiredDelayMillis how often to check for expired emitters (milliseconds)
      */
-    public FetcherStore(StateStore stateStore, long expireAfterMillis,
+    public EmitterStore(StateStore stateStore, long expireAfterMillis,
                         long checkForExpiredDelayMillis) {
-        super("fetcher", stateStore, expireAfterMillis, checkForExpiredDelayMillis);
+        super("emitter", stateStore, expireAfterMillis, checkForExpiredDelayMillis);
     }
 
     /**
      * Legacy constructor for backward compatibility (takes seconds).
      *
      * @param stateStore the state store
-     * @param expireAfterSeconds how long before fetchers expire (seconds)
-     * @param checkForExpiredDelaySeconds how often to check for expired fetchers (seconds)
+     * @param expireAfterSeconds how long before emitters expire (seconds)
+     * @param checkForExpiredDelaySeconds how often to check for expired emitters (seconds)
      */
-    public FetcherStore(StateStore stateStore, int expireAfterSeconds,
+    public EmitterStore(StateStore stateStore, int expireAfterSeconds,
                         int checkForExpiredDelaySeconds) {
         this(stateStore, expireAfterSeconds * 1000L, checkForExpiredDelaySeconds * 1000L);
     }
 
     @Override
-    protected String getComponentId(Fetcher component) {
+    protected String getComponentId(Emitter component) {
         return component.getExtensionConfig().id();
     }
 
     @Override
-    protected ExtensionConfig getExtensionConfig(Fetcher component) {
+    protected ExtensionConfig getExtensionConfig(Emitter component) {
         return component.getExtensionConfig();
     }
 
-    // Convenience methods with Fetcher-specific names for backward compatibility
+    // Convenience methods with Emitter-specific names
 
-    public boolean deleteFetcher(String fetcherId) {
-        return deleteComponent(fetcherId);
+    public boolean deleteEmitter(String emitterId) {
+        return deleteComponent(emitterId);
     }
 
-    public Map<String, Fetcher> getFetchers() {
+    public Map<String, Emitter> getEmitters() {
         return getComponents();
     }
 
-    public Map<String, ExtensionConfig> getFetcherConfigs() {
+    public Map<String, ExtensionConfig> getEmitterConfigs() {
         return getComponentConfigs();
     }
 
-    public <T extends Fetcher> T getFetcherAndLogAccess(String fetcherId) {
-        return (T) getComponentAndLogAccess(fetcherId);
+    public <T extends Emitter> T getEmitterAndLogAccess(String emitterId) {
+        return (T) getComponentAndLogAccess(emitterId);
     }
 
-    public <T extends Fetcher> void createFetcher(T fetcher, ExtensionConfig config) {
-        createComponent(fetcher, config);
+    public <T extends Emitter> void createEmitter(T emitter, ExtensionConfig config) {
+        createComponent(emitter, config);
     }
 }
