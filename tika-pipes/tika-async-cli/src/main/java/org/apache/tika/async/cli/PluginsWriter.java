@@ -64,7 +64,6 @@ public class PluginsWriter {
             PipesConfig pipesConfig = new PipesConfig();
 
             pipesConfig.setNumClients(simpleAsyncConfig.getNumClients() == null ? 2 : simpleAsyncConfig.getNumClients());
-            pipesConfig.setTikaConfig(output.toAbsolutePath().toString());
 
             if (simpleAsyncConfig.getXmx() != null) {
                 pipesConfig.setForkedJvmArgs(new ArrayList<>(List.of(simpleAsyncConfig.getXmx())));

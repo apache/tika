@@ -54,12 +54,12 @@ public class PipesResource {
 
     public PipesResource(java.nio.file.Path tikaConfig) throws TikaConfigException, IOException {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfig);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfig);
         //this has to be zero. everything must be emitted through the PipesServer
-        long maxEmit = pipesConfig.getEmitImmediatelyThresholdBytes();
+        long maxEmit = pipesConfig.getDirectEmitThresholdBytes();
         if (maxEmit != 0) {
-            pipesConfig.setEmitImmediatelyThresholdBytes(0);
-            if (maxEmit != PipesConfig.DEFAULT_MAX_FOR_EMIT_BATCH) {
+            pipesConfig.setDirectEmitThresholdBytes(0);
+            if (maxEmit != PipesConfig.DEFAULT_DIRECT_EMIT_THRESHOLD_BYTES) {
                 LOG.warn("resetting max for emit batch to 0");
             }
         }
@@ -96,36 +96,20 @@ public class PipesResource {
     private Map<String, String> processTuple(FetchEmitTuple fetchEmitTuple) throws InterruptedException, PipesException, IOException {
 
         PipesResult pipesResult = pipesParser.parse(fetchEmitTuple);
+        if (pipesResult.isProcessCrash()) {
+            return returnProcessCrash(pipesResult.status().toString());
+        } else if (pipesResult.isApplicationError()) {
+            return returnApplicationError(pipesResult
+                    .status()
+                    .toString());
+        }
         switch (pipesResult.status()) {
-            case CLIENT_UNAVAILABLE_WITHIN_MS:
-                throw new IllegalStateException("client not available within " + "allotted amount of time");
-            case EMIT_EXCEPTION:
-                return returnEmitException(pipesResult.message());
-            case PARSE_SUCCESS:
-            case PARSE_SUCCESS_WITH_EXCEPTION:
-                throw new IllegalArgumentException("Should have emitted in forked process?!");
-            case EMIT_SUCCESS:
-                return returnSuccess();
             case EMIT_SUCCESS_PARSE_EXCEPTION:
                 return parseException(pipesResult.message(), true);
-            case PARSE_EXCEPTION_EMIT:
-                throw new IllegalArgumentException("Should have tried to emit in forked " + "process?!");
             case PARSE_EXCEPTION_NO_EMIT:
                 return parseException(pipesResult.message(), false);
-            case TIMEOUT:
-                return returnError("timeout");
-            case OOM:
-                return returnError("oom");
-            case UNSPECIFIED_CRASH:
-                return returnError("unknown_crash");
-            case NO_EMITTER_FOUND: {
-                throw new IllegalArgumentException("Couldn't find emitter that matched: " + fetchEmitTuple
-                        .getEmitKey()
-                        .getEmitterId());
-            }
-            default:
-                throw new IllegalArgumentException("I'm sorry, I don't yet handle a status of " + "this type: " + pipesResult.status());
         }
+        return returnSuccess();
     }
 
     private Map<String, String> parseException(String msg, boolean emitted) {
@@ -136,23 +120,23 @@ public class PipesResource {
         return statusMap;
     }
 
-    private Map<String, String> returnEmitException(String msg) {
-        Map<String, String> statusMap = new HashMap<>();
-        statusMap.put("status", "emit_exception");
-        statusMap.put("message", msg);
-        return statusMap;
-    }
-
     private Map<String, String> returnSuccess() {
         Map<String, String> statusMap = new HashMap<>();
         statusMap.put("status", "ok");
         return statusMap;
     }
 
-    private Map<String, String> returnError(String type) {
+    private Map<String, String> returnProcessCrash(String type) {
         Map<String, String> statusMap = new HashMap<>();
-        statusMap.put("status", "parse_error");
-        statusMap.put("parse_error", type);
+        statusMap.put("status", "process_crash");
+        statusMap.put("type", type);
+        return statusMap;
+    }
+
+    private Map<String, String> returnApplicationError(String type) {
+        Map<String, String> statusMap = new HashMap<>();
+        statusMap.put("status", "application_error");
+        statusMap.put("type", type);
         return statusMap;
     }
 

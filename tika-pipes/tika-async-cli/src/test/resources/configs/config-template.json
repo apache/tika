@@ -37,7 +37,6 @@
     "staleFetcherTimeoutSeconds": 600,
     "staleFetcherDelaySeconds": 60,
     "forkedJvmArgs": ["-Xmx1g", "-XX:+UseG1GC"],
-    "tikaConfig": "TIKA_CONFIG",
     "javaPath": "java"
   },
   "plugin-roots": "PLUGIN_ROOTS"

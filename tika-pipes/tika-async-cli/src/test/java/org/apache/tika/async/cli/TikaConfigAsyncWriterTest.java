@@ -45,7 +45,7 @@ public class TikaConfigAsyncWriterTest {
         Path tmp = Files.createTempFile(dir, "plugins-",".json");
         pluginsWriter.write(tmp);
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tmp);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tmp);
         assertEquals("-Xmx1g", pipesConfig.getForkedJvmArgs().get(0));
     }
 

@@ -143,11 +143,11 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
                 .toAbsolutePath()
                 .toString())});
         JsonNode node = testOne("system_exit.xml", false);
-        assertEquals("parse_error", node
+        assertEquals("process_crash", node
                 .get("status")
                 .asText());
-        assertContains("unknown_crash", node
-                .get("parse_error")
+        assertContains("UNSPECIFIED_CRASH", node
+                .get("type")
                 .asText());
     }
 
@@ -160,11 +160,11 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
                     .toAbsolutePath()
                     .toString())});
             JsonNode node = testOne("fake_oom.xml", false);
-            assertEquals("parse_error", node
+            assertEquals("process_crash", node
                     .get("status")
                     .asText());
-            assertContains("oom", node
-                    .get("parse_error")
+            assertContains("OOM", node
+                    .get("type")
                     .asText());
         } catch (ProcessingException e) {
             //depending on timing, there may be a connection exception --
@@ -180,11 +180,11 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
                 .toAbsolutePath()
                 .toString())});
         JsonNode node = testOne("heavy_hang_30000.xml", false);
-        assertEquals("parse_error", node
+        assertEquals("process_crash", node
                 .get("status")
                 .asText());
-        assertContains("timeout", node
-                .get("parse_error")
+        assertContains("TIMEOUT", node
+                .get("type")
                 .asText());
     }
 
