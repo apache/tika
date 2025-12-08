@@ -99,7 +99,6 @@
     "emitWithinMillis": 10,
     "numEmitters": 1,
     "numClients": 1,
-    "tikaConfig": "TIKA_CONFIG",
     "forkedJvmArgs": [
       "-Xmx1g",
       "-XX:ParallelGCThreads=2",

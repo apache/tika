@@ -106,8 +106,6 @@
     "emitWithinMillis": 60000,
     "numEmitters": 1,
     "numClients": 3,
-    "tikaConfig": "TIKA_CONFIG",
-    "pipesPluginsConfig": "PLUGINS_CONFIG",
     "forkedJvmArgs": [
       "-Xmx512m",
       "-XX:ParallelGCThreads=2",
