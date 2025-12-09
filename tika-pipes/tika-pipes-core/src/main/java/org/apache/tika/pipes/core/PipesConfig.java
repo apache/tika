@@ -17,10 +17,7 @@
 package org.apache.tika.pipes.core;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.ArrayList;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
