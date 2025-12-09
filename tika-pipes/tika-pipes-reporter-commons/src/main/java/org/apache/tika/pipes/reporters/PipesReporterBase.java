@@ -26,7 +26,7 @@ import org.apache.tika.plugins.AbstractTikaExtension;
 import org.apache.tika.plugins.ExtensionConfig;
 
 /**
- * Base class that includes filtering by {@link PipesResult.STATUS}
+ * Base class that includes filtering by {@link PipesResult.RESULT_STATUS}
  */
 public abstract class PipesReporterBase extends AbstractTikaExtension implements PipesReporter {
 
@@ -68,36 +68,36 @@ public abstract class PipesReporterBase extends AbstractTikaExtension implements
      * @param status
      * @return
      */
-    public boolean accept(PipesResult.STATUS status) {
+    public boolean accept(PipesResult.RESULT_STATUS status) {
         return statusFilter.accept(status);
     }
 
     private abstract static class StatusFilter {
-        abstract boolean accept(PipesResult.STATUS status);
+        abstract boolean accept(PipesResult.RESULT_STATUS status);
     }
 
     private static class IncludesFilter extends StatusFilter {
-        private final Set<PipesResult.STATUS> includes;
+        private final Set<PipesResult.RESULT_STATUS> includes;
 
         private IncludesFilter(Set<String> includesStrings) {
             this.includes = convert(includesStrings);
         }
 
         @Override
-        boolean accept(PipesResult.STATUS status) {
+        boolean accept(PipesResult.RESULT_STATUS status) {
             return includes.contains(status);
         }
     }
 
     private static class ExcludesFilter extends StatusFilter {
-        private final Set<PipesResult.STATUS> excludes;
+        private final Set<PipesResult.RESULT_STATUS> excludes;
 
         ExcludesFilter(Set<String> excludes) {
             this.excludes = convert(excludes);
         }
 
         @Override
-        boolean accept(PipesResult.STATUS status) {
+        boolean accept(PipesResult.RESULT_STATUS status) {
             return !excludes.contains(status);
         }
     }
@@ -105,15 +105,15 @@ public abstract class PipesReporterBase extends AbstractTikaExtension implements
     private static class AcceptAllFilter extends StatusFilter {
 
         @Override
-        boolean accept(PipesResult.STATUS status) {
+        boolean accept(PipesResult.RESULT_STATUS status) {
             return true;
         }
     }
 
-    private static Set<PipesResult.STATUS> convert(Set<String> statusStrings) {
-        Set<PipesResult.STATUS> ret = new HashSet<>();
+    private static Set<PipesResult.RESULT_STATUS> convert(Set<String> statusStrings) {
+        Set<PipesResult.RESULT_STATUS> ret = new HashSet<>();
         for (String s : statusStrings) {
-            ret.add(PipesResult.STATUS.valueOf(s));
+            ret.add(PipesResult.RESULT_STATUS.valueOf(s));
         }
         return ret;
     }

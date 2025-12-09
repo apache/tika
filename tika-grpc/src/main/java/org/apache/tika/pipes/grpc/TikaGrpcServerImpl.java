@@ -244,7 +244,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                     FetchAndParseReply.newBuilder()
                                       .setFetchKey(request.getFetchKey())
                             .setStatus(pipesResult.status().name());
-            if (pipesResult.status().equals(PipesResult.STATUS.FETCH_EXCEPTION)) {
+            if (pipesResult.status().equals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION)) {
                 fetchReplyBuilder.setErrorMessage(pipesResult.message());
             }
             if (pipesResult.emitData() != null && pipesResult.emitData().getMetadataList() != null) {

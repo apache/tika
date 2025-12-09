@@ -53,7 +53,7 @@ public class PassbackFilterTest {
     public void init(Path tmpDir) throws Exception {
         Path pipesConfigPath = PluginsTestHelper.getFileSystemFetcherConfig("tika-config-passback.json", tmpDir);
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(pipesConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, pipesConfigPath);
         PluginsTestHelper.copyTestFilesToTmpInput(tmpDir, testPdfFile);
 
         pipesClient = new PipesClient(pipesConfig);
@@ -71,7 +71,7 @@ public class PassbackFilterTest {
                         FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
 
 
-        assertEquals(PipesResult.STATUS.EMIT_SUCCESS_PASSBACK, pipesResult.status());
+        assertEquals(PipesResult.RESULT_STATUS.EMIT_SUCCESS_PASSBACK, pipesResult.status());
         Assertions.assertNotNull(pipesResult
                 .emitData()
                 .getMetadataList());

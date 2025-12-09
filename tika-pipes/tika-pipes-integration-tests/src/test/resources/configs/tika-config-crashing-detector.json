@@ -1,0 +1,29 @@
+{
+  "fetchers": {
+    "file-system-fetcher": {
+      "fsf": {
+        "basePath": "FETCHER_BASE_PATH",
+        "extractFileSystemMetadata": false
+      }
+    }
+  },
+  "emitters": {
+    "file-system-emitter": {
+      "fse": {
+        "basePath": "EMITTER_BASE_PATH",
+        "fileExtension": "json",
+        "onExists": "EXCEPTION"
+      }
+    }
+  },
+  "pipes": {
+    "numClients": 1,
+    "timeoutMillis": 5000,
+    "forkedJvmArgs": ["-Xmx256m"],
+    "directEmitThresholdBytes": 1000000
+  },
+  "detectors": [
+    {"org.apache.tika.pipes.core.CrashingDetector": {}}
+  ],
+  "plugin-roots": "PLUGINS_PATHS"
+}

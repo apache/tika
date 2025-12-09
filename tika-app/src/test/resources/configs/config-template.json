@@ -43,7 +43,7 @@
     "queueSize": 10000,
     "numEmitters": 1,
     "emitIntermediateResults": false,
-    "maxForEmitBatchBytes": 100000,
+    "directEmitThresholdBytes": 100000,
     "timeoutMillis": 60000,
     "startupTimeoutMillis": 240000,
     "sleepOnStartupTimeoutMillis": 240000,
@@ -53,7 +53,6 @@
     "staleFetcherTimeoutSeconds": 600,
     "staleFetcherDelaySeconds": 60,
     "forkedJvmArgs": ["-Xmx1g", "-XX:+UseG1GC"],
-    "tikaConfig": "TIKA_CONFIG",
     "javaPath": "java"
   },
   "plugin-roots": "PLUGIN_ROOTS"

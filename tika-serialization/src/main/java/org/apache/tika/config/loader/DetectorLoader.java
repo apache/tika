@@ -171,8 +171,20 @@ public class DetectorLoader {
                                              ComponentRegistry registry)
             throws TikaConfigException {
         try {
-            // Get detector class
-            Class<?> detectorClass = registry.getComponentClass(name);
+            // Get detector class - try component name first, then FQCN fallback
+            Class<?> detectorClass;
+            try {
+                detectorClass = registry.getComponentClass(name);
+            } catch (TikaConfigException e) {
+                // If not found as component name, try as fully qualified class name
+                try {
+                    detectorClass = Class.forName(name, false, classLoader);
+                    LOG.debug("Loaded detector by FQCN: {}", name);
+                } catch (ClassNotFoundException ex) {
+                    throw new TikaConfigException("Unknown detector: '" + name +
+                            "'. Not found as component name or FQCN.", e);
+                }
+            }
 
             // Extract framework config
             FrameworkConfig frameworkConfig = FrameworkConfig.extract(configNode, objectMapper);
@@ -182,6 +194,8 @@ public class DetectorLoader {
 
             return detector;
 
+        } catch (TikaConfigException e) {
+            throw e;
         } catch (Exception e) {
             throw new TikaConfigException("Failed to load detector '" + name + "'", e);
         }

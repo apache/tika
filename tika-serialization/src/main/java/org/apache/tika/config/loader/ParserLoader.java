@@ -125,9 +125,25 @@ public class ParserLoader {
                             for (JsonNode excludeName : excludeNode) {
                                 if (excludeName.isTextual()) {
                                     String parserName = excludeName.asText();
-                                    Class<?> parserClass = registry.getComponentClass(parserName);
-                                    excludedParserClasses.add(parserClass);
-                                    LOG.debug("Excluding parser from SPI: {}", parserName);
+                                    try {
+                                        Class<?> parserClass;
+                                        // Try as component name first
+                                        try {
+                                            parserClass = registry.getComponentClass(parserName);
+                                        } catch (TikaConfigException e) {
+                                            // If not found as component name, try as FQCN
+                                            try {
+                                                parserClass = Class.forName(parserName, false, classLoader);
+                                            } catch (ClassNotFoundException ex) {
+                                                LOG.warn("Unknown parser in default-parser exclude list: {}", parserName);
+                                                continue;
+                                            }
+                                        }
+                                        excludedParserClasses.add(parserClass);
+                                        LOG.debug("Excluding parser from SPI: {}", parserName);
+                                    } catch (Exception e) {
+                                        LOG.warn("Failed to exclude parser '{}': {}", parserName, e.getMessage());
+                                    }
                                 }
                             }
                         }
@@ -204,8 +220,20 @@ public class ParserLoader {
                                                     ComponentRegistry registry)
             throws TikaConfigException {
         try {
-            // Get parser class
-            Class<?> parserClass = registry.getComponentClass(name);
+            // Get parser class - try component name first, then FQCN fallback
+            Class<?> parserClass;
+            try {
+                parserClass = registry.getComponentClass(name);
+            } catch (TikaConfigException e) {
+                // If not found as component name, try as fully qualified class name
+                try {
+                    parserClass = Class.forName(name, false, classLoader);
+                    LOG.debug("Loaded parser by FQCN: {}", name);
+                } catch (ClassNotFoundException ex) {
+                    throw new TikaConfigException("Unknown parser: '" + name +
+                            "'. Not found as component name or FQCN.", e);
+                }
+            }
 
             // Extract framework config
             FrameworkConfig frameworkConfig = FrameworkConfig.extract(configNode, objectMapper);
@@ -215,6 +243,8 @@ public class ParserLoader {
 
             return new ParsedParserConfig(name, parser, frameworkConfig.getDecoration());
 
+        } catch (TikaConfigException e) {
+            throw e;
         } catch (Exception e) {
             throw new TikaConfigException("Failed to load parser '" + name + "'", e);
         }

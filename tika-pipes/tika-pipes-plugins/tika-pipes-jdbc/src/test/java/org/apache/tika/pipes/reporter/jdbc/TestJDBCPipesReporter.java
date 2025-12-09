@@ -16,8 +16,8 @@
  */
 package org.apache.tika.pipes.reporter.jdbc;
 
-import static org.apache.tika.pipes.api.PipesResult.STATUS.PARSE_SUCCESS;
-import static org.apache.tika.pipes.api.PipesResult.STATUS.PARSE_SUCCESS_WITH_EXCEPTION;
+import static org.apache.tika.pipes.api.PipesResult.RESULT_STATUS.PARSE_SUCCESS;
+import static org.apache.tika.pipes.api.PipesResult.RESULT_STATUS.PARSE_SUCCESS_WITH_EXCEPTION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -92,13 +92,13 @@ public class TestJDBCPipesReporter {
                 .replace("\\", "/");
         JDBCPipesReporter reporter = JDBCPipesReporter.build(new ExtensionConfig("test-jdbc", "jdbc-reporter", json));
 
-        Map<PipesResult.STATUS, Long> expected = runBatch(reporter, numThreads, numIterations);
+        Map<PipesResult.RESULT_STATUS, Long> expected = runBatch(reporter, numThreads, numIterations);
         reporter.close();
 
-        Map<PipesResult.STATUS, Long> total = countReported(connectionString);
+        Map<PipesResult.RESULT_STATUS, Long> total = countReported(connectionString);
         assertEquals(expected.size(), total.size());
         long sum = 0;
-        for (Map.Entry<PipesResult.STATUS, Long> e : expected.entrySet()) {
+        for (Map.Entry<PipesResult.RESULT_STATUS, Long> e : expected.entrySet()) {
             assertTrue(total.containsKey(e.getKey()), e.getKey().toString());
             assertEquals(e.getValue(), total.get(e.getKey()), e.getKey().toString());
             sum += e.getValue();
@@ -119,12 +119,12 @@ public class TestJDBCPipesReporter {
         int numThreads = 10;
         int numIterations = 200;
 
-        Map<PipesResult.STATUS, Long> expected = runBatch(reporter, numThreads, numIterations);
+        Map<PipesResult.RESULT_STATUS, Long> expected = runBatch(reporter, numThreads, numIterations);
         reporter.close();
-        Map<PipesResult.STATUS, Long> total = countReported(connectionString);
+        Map<PipesResult.RESULT_STATUS, Long> total = countReported(connectionString);
         assertEquals(2, total.size());
         long sum = 0;
-        for (Map.Entry<PipesResult.STATUS, Long> e : expected.entrySet()) {
+        for (Map.Entry<PipesResult.RESULT_STATUS, Long> e : expected.entrySet()) {
             if (e.getKey() == PARSE_SUCCESS || e.getKey() == PARSE_SUCCESS_WITH_EXCEPTION) {
                 assertTrue(total.containsKey(e.getKey()), e.getKey().toString());
                 assertEquals(e.getValue(), total.get(e.getKey()), e.getKey().toString());
@@ -148,12 +148,12 @@ public class TestJDBCPipesReporter {
         int numThreads = 10;
         int numIterations = 200;
 
-        Map<PipesResult.STATUS, Long> expected = runBatch(reporter, numThreads, numIterations);
+        Map<PipesResult.RESULT_STATUS, Long> expected = runBatch(reporter, numThreads, numIterations);
         reporter.close();
-        Map<PipesResult.STATUS, Long> total = countReported(connectionString);
-        assertEquals(17, total.size());
+        Map<PipesResult.RESULT_STATUS, Long> total = countReported(connectionString);
+        assertEquals(16, total.size());
         long sum = 0;
-        for (Map.Entry<PipesResult.STATUS, Long> e : expected.entrySet()) {
+        for (Map.Entry<PipesResult.RESULT_STATUS, Long> e : expected.entrySet()) {
             if (e.getKey() != PARSE_SUCCESS && e.getKey() != PARSE_SUCCESS_WITH_EXCEPTION) {
                 assertTrue(total.containsKey(e.getKey()), e.getKey().toString());
                 assertEquals(e.getValue(), total.get(e.getKey()), e.getKey().toString());
@@ -165,9 +165,9 @@ public class TestJDBCPipesReporter {
         assertEquals(numThreads * numIterations, sum);
     }
 
-    private Map<PipesResult.STATUS, Long> countReported(String connectionString) throws
+    private Map<PipesResult.RESULT_STATUS, Long> countReported(String connectionString) throws
             SQLException {
-        Map<PipesResult.STATUS, Long> counts = new HashMap<>();
+        Map<PipesResult.RESULT_STATUS, Long> counts = new HashMap<>();
         try (Connection connection = DriverManager.getConnection(connectionString)) {
             try (Statement st = connection.createStatement()) {
                 String sql = "select * from tika_status";
@@ -175,7 +175,7 @@ public class TestJDBCPipesReporter {
                     while (rs.next()) {
                         String fetchKey = rs.getString(1);
                         String name = rs.getString(2);
-                        PipesResult.STATUS status = PipesResult.STATUS.valueOf(name);
+                        PipesResult.RESULT_STATUS status = PipesResult.RESULT_STATUS.valueOf(name);
                         Long cnt = counts.get(status);
                         if (cnt == null) {
                             cnt = 1L;
@@ -190,9 +190,9 @@ public class TestJDBCPipesReporter {
         return counts;
     }
 
-    private Map<PipesResult.STATUS, Long> runBatch(PipesReporter reporter,
-                                                   int numThreads,
-                                                   int numIterations)
+    private Map<PipesResult.RESULT_STATUS, Long> runBatch(PipesReporter reporter,
+                                                          int numThreads,
+                                                          int numIterations)
             throws ExecutionException, InterruptedException {
         ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
         ExecutorCompletionService<Integer> executorCompletionService =
@@ -204,7 +204,7 @@ public class TestJDBCPipesReporter {
             executorCompletionService.submit(reportWorker);
         }
 
-        Map<PipesResult.STATUS, Long> total = new HashMap<>();
+        Map<PipesResult.RESULT_STATUS, Long> total = new HashMap<>();
         int finished = 0;
         while (finished < numThreads) {
             Future<Integer> future = executorCompletionService.poll();
@@ -214,8 +214,8 @@ public class TestJDBCPipesReporter {
             }
         }
         for (ReportWorker r : workerList) {
-            Map<PipesResult.STATUS, Long> local = r.getWritten();
-            for (Map.Entry<PipesResult.STATUS, Long> e : local.entrySet()) {
+            Map<PipesResult.RESULT_STATUS, Long> local = r.getWritten();
+            for (Map.Entry<PipesResult.RESULT_STATUS, Long> e : local.entrySet()) {
                 Long t = total.get(e.getKey());
                 if (t == null) {
                     t = e.getValue();
@@ -229,7 +229,7 @@ public class TestJDBCPipesReporter {
     }
 
     private static class ReportWorker implements Callable<Integer> {
-        Map<PipesResult.STATUS, Long> written = new HashMap<>();
+        Map<PipesResult.RESULT_STATUS, Long> written = new HashMap<>();
         private static final AtomicInteger TOTAL_ADDED = new AtomicInteger(0);
         private final PipesReporter reporter;
         private final int numIterations;
@@ -239,10 +239,10 @@ public class TestJDBCPipesReporter {
         }
         @Override
         public Integer call() throws Exception {
-            PipesResult.STATUS[] statuses = PipesResult.STATUS.values();
+            PipesResult.RESULT_STATUS[] statuses = PipesResult.RESULT_STATUS.values();
             Random random = new Random();
             for (int i = 0; i < numIterations; i++) {
-                PipesResult.STATUS status = statuses[random.nextInt(statuses.length)];
+                PipesResult.RESULT_STATUS status = statuses[random.nextInt(statuses.length)];
                 PipesResult pipesResult = new PipesResult(status);
                 String id = "id " + TOTAL_ADDED.getAndIncrement();
                 FetchEmitTuple t = new FetchEmitTuple(id,
@@ -267,7 +267,7 @@ public class TestJDBCPipesReporter {
             return 1;
         }
 
-        Map<PipesResult.STATUS, Long> getWritten() {
+        Map<PipesResult.RESULT_STATUS, Long> getWritten() {
             return written;
         }
     }
