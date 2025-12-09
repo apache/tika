@@ -44,7 +44,6 @@
     }
   ],
   "pipes": {
-    "directEmitThresholdBytes": 10000,
     "emitMaxEstimatedBytes": 100000,
     "emitWithinMillis": 10,
     "numEmitters": 1,
@@ -55,7 +54,11 @@
       "-XX:+ExitOnOutOfMemoryError",
       "-Dlog4j.configurationFile={LOG4J_PROPERTIES_FILE}"
     ],
-    "timeoutMillis": 60000
+    "timeoutMillis": 60000,
+    "emitStrategy": {
+      "type": "DYNAMIC",
+      "thresholdBytes": 10000
+    }
   },
   "fetchers": {
     "fsf": {

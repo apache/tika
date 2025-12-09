@@ -22,7 +22,9 @@
     "forkedJvmArgs": [
       "-Xmx256m"
     ],
-    "directEmitThresholdBytes": 0
+    "emitStrategy": {
+      "type": "EMIT_ALL"
+    }
   },
   "plugin-roots": "PLUGINS_PATHS"
 }

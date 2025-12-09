@@ -91,7 +91,10 @@
     }
   },
   "pipes": {
-    "directEmitThresholdBytes": 10000,
+    "emitStrategy": {
+      "type": "DYNAMIC",
+      "thresholdBytes": 10000
+    },
     "emitMaxEstimatedBytes": 100000,
     "emitWithinMillis": 10,
     "numEmitters": 1,

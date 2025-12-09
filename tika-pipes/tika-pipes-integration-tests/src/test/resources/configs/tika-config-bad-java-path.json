@@ -13,7 +13,10 @@
     "forkedJvmArgs": [
       "-Xmx256m"
     ],
-    "directEmitThresholdBytes": 1000000
+    "emitStrategy": {
+      "type": "DYNAMIC",
+      "thresholdBytes": 1000000
+    }
   },
   "plugin-roots": "PLUGINS_PATHS"
 }

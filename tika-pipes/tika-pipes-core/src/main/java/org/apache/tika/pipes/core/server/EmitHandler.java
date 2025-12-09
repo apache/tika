@@ -36,6 +36,8 @@ import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.StreamEmitter;
+import org.apache.tika.pipes.core.EmitStrategy;
+import org.apache.tika.pipes.core.EmitStrategyOverride;
 import org.apache.tika.pipes.core.PassbackFilter;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
@@ -48,12 +50,12 @@ class EmitHandler {
     private static final Logger LOG = LoggerFactory.getLogger(EmitHandler.class);
 
     private final MetadataFilter defaultMetadataFilter;
-    private final PipesWorker.EMIT_STRATEGY emitStrategy;
+    private final EmitStrategy emitStrategy;
     private final EmitterManager emitterManager;
     private final long directEmitThresholdBytes;
 
 
-    public EmitHandler(MetadataFilter defaultMetadataFilter, PipesWorker.EMIT_STRATEGY emitStrategy, EmitterManager emitterManager, long directEmitThresholdBytes) {
+    public EmitHandler(MetadataFilter defaultMetadataFilter, EmitStrategy emitStrategy, EmitterManager emitterManager, long directEmitThresholdBytes) {
         this.defaultMetadataFilter = defaultMetadataFilter;
         this.emitStrategy = emitStrategy;
         this.emitterManager = emitterManager;
@@ -77,7 +79,7 @@ class EmitHandler {
                 t.setEmitKey(emitKey);
             }
             EmitDataImpl emitDataTuple = new EmitDataImpl(t.getEmitKey().getEmitKey(), parseData.getMetadataList(), stack);
-            if (shouldEmit(embeddedDocumentBytesConfig, parseData, emitDataTuple)) {
+            if (shouldEmit(embeddedDocumentBytesConfig, parseData, emitDataTuple, parseContext)) {
                 return emit(t.getId(), emitKey, embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes(),
                         parseData, stack, parseContext);
             } else {
@@ -153,16 +155,28 @@ class EmitHandler {
     }
 
 
-    private boolean shouldEmit(EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig, MetadataListAndEmbeddedBytes parseData, EmitDataImpl emitDataTuple) {
-        if (emitStrategy == PipesWorker.EMIT_STRATEGY.EMIT_ALL) {
+    private boolean shouldEmit(EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig, MetadataListAndEmbeddedBytes parseData,
+                               EmitDataImpl emitDataTuple, ParseContext parseContext) {
+        EmitStrategy strategy = emitStrategy;
+        long thresholdBytes = directEmitThresholdBytes;
+
+        EmitStrategyOverride overrideConfig = parseContext.get(EmitStrategyOverride.class);
+        if (overrideConfig != null) {
+            strategy = overrideConfig.getEmitStrategy();
+            if (overrideConfig.getDirectEmitThresholdBytes() != null) {
+                thresholdBytes = overrideConfig.getDirectEmitThresholdBytes();
+            }
+        }
+
+        if (strategy == EmitStrategy.EMIT_ALL) {
             return true;
         } else if (embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes() &&
                 parseData.toBePackagedForStreamEmitter()) {
             return true;
-        } else if (emitStrategy == PipesWorker.EMIT_STRATEGY.PASSBACK_ALL) {
+        } else if (strategy == EmitStrategy.PASSBACK_ALL) {
             return false;
-        } else if (emitStrategy == PipesWorker.EMIT_STRATEGY.DYNAMIC) {
-            if (emitDataTuple.getEstimatedSizeBytes() >= directEmitThresholdBytes) {
+        } else if (strategy == EmitStrategy.DYNAMIC) {
+            if (emitDataTuple.getEstimatedSizeBytes() >= thresholdBytes) {
                 return true;
             }
         }

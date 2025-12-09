@@ -29,7 +29,6 @@
     "queueSize": 10000,
     "numEmitters": 1,
     "emitIntermediateResults": false,
-    "directEmitThresholdBytes": 100000,
     "timeoutMillis": 60000,
     "startupTimeoutMillis": 240000,
     "sleepOnStartupTimeoutMillis": 240000,
@@ -42,7 +41,11 @@
       "-Xmx1g",
       "-XX:+UseG1GC"
     ],
-    "javaPath": "java"
+    "javaPath": "java",
+    "emitStrategy": {
+      "type": "DYNAMIC",
+      "thresholdBytes": 100000
+    }
   },
   "plugin-roots": "PLUGIN_ROOTS"
 }

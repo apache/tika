@@ -66,6 +66,8 @@ import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
+import org.apache.tika.pipes.core.EmitStrategy;
+import org.apache.tika.pipes.core.EmitStrategyConfig;
 import org.apache.tika.pipes.core.PipesClient;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
@@ -149,7 +151,7 @@ public class PipesServer implements AutoCloseable {
     private EmitterManager emitterManager;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final ExecutorCompletionService<PipesResult> executorCompletionService = new ExecutorCompletionService<>(executorService);
-    private final PipesWorker.EMIT_STRATEGY emitStrategy;
+    private final EmitStrategy emitStrategy;
 
     public static PipesServer load(int port, Path tikaConfigPath) throws Exception {
             String pipesClientId = System.getProperty("pipesClientId", "unknown");
@@ -226,13 +228,7 @@ public class PipesServer implements AutoCloseable {
             LOG.error(msg + " Proceeding because tika.pipes.allowInvalidHeartbeat=true");
         }
 
-        if (pipesConfig.getDirectEmitThresholdBytes() == 0) {
-            emitStrategy = PipesWorker.EMIT_STRATEGY.EMIT_ALL;
-        } else if (pipesConfig.getDirectEmitThresholdBytes() < 0) {
-            emitStrategy = PipesWorker.EMIT_STRATEGY.PASSBACK_ALL;
-        } else {
-            emitStrategy = PipesWorker.EMIT_STRATEGY.DYNAMIC;
-        }
+        emitStrategy = pipesConfig.getEmitStrategy().getType();
     }
 
 
@@ -330,7 +326,9 @@ public class PipesServer implements AutoCloseable {
     private PipesWorker getPipesWorker(ArrayBlockingQueue<Metadata> intermediateResult, FetchEmitTuple fetchEmitTuple, CountDownLatch countDownLatch) {
         FetchHandler fetchHandler = new FetchHandler(fetcherManager);
         ParseHandler parseHandler = new ParseHandler(detector, digester, intermediateResult, countDownLatch, autoDetectParser, rMetaParser);
-        EmitHandler emitHandler = new EmitHandler(defaultMetadataFilter, emitStrategy, emitterManager, pipesConfig.getDirectEmitThresholdBytes());
+        Long thresholdBytes = pipesConfig.getEmitStrategy().getThresholdBytes();
+        long threshold = (thresholdBytes != null) ? thresholdBytes : EmitStrategyConfig.DEFAULT_DIRECT_EMIT_THRESHOLD_BYTES;
+        EmitHandler emitHandler = new EmitHandler(defaultMetadataFilter, emitStrategy, emitterManager, threshold);
         PipesWorker pipesWorker = new PipesWorker(fetchEmitTuple, autoDetectParser, emitterManager, fetchHandler, parseHandler, emitHandler);
         return pipesWorker;
     }
@@ -455,14 +453,8 @@ public class PipesServer implements AutoCloseable {
 
         //TODO allowed named configurations in tika config
         this.fetcherManager = FetcherManager.load(tikaPluginManager, tikaJsonConfig);
-        //skip initialization of the emitters if emitting
-        //from the pipesserver is turned off.
-        if (pipesConfig.getDirectEmitThresholdBytes() > -1) {
-            this.emitterManager = EmitterManager.load(tikaPluginManager, tikaJsonConfig);
-        } else {
-            LOG.debug("'directEmitThresholdBytes' < 0. Not initializing emitters in PipesServer");
-            this.emitterManager = null;
-        }
+        // Always initialize emitters to support runtime overrides via ParseContext
+        this.emitterManager = EmitterManager.load(tikaPluginManager, tikaJsonConfig);
         this.autoDetectParser = (AutoDetectParser) tikaLoader.loadAutoDetectParser();
         if (autoDetectParser.getAutoDetectParserConfig()
                 .getDigesterFactory() != null) {

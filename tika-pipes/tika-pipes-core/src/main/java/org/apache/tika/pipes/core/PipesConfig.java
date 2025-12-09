@@ -24,12 +24,6 @@ import org.apache.tika.exception.TikaConfigException;
 
 public class PipesConfig {
 
-    /**
-     * Default threshold in bytes for direct emission from PipesServer.
-     * If an extract is larger than this, it will be emitted
-     * directly from the forked PipesServer rather than passed back to PipesClient.
-     */
-    public static final long DEFAULT_DIRECT_EMIT_THRESHOLD_BYTES = 100000;
 
     public static final long DEFAULT_TIMEOUT_MILLIS = 60000;
 
@@ -47,9 +41,12 @@ public class PipesConfig {
 
     public static final long DEFAULT_HEARTBEAT_INTERVAL_MS = 1000;
 
-    //if an extract is larger than this, the forked PipesServer should
-    //emit the extract directly and not send the contents back to the PipesClient
-    private long directEmitThresholdBytes = DEFAULT_DIRECT_EMIT_THRESHOLD_BYTES;
+    /**
+     * The emit strategy configuration determines how the forked PipesServer handles emitting data.
+     * See {@link EmitStrategyConfig} for details.
+     */
+    private EmitStrategyConfig emitStrategy = new EmitStrategyConfig(EmitStrategyConfig.DEFAULT_EMIT_STRATEGY);
+
     private long timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
     private long socketTimeoutMs = DEFAULT_SOCKET_TIMEOUT_MS;
     private long heartbeatIntervalMs = DEFAULT_HEARTBEAT_INTERVAL_MS;
@@ -207,22 +204,21 @@ public class PipesConfig {
     }
 
     /**
-     *  What is the maximum bytes size per extract that
-     *  will be allowed to be shipped back to the emit queue in the forking process.
-     *  If an extract is too big, skip the emit queue and forward it directly from the
-     *  forked PipesServer.
-     *  If set to <code>0</code>, this will never send an extract back for batch emitting,
-     *  but will always emit the extract directly from the forked PipeServer.
-     *  If set to <code>-1</code>, this will always send the extract back for batch emitting.
+     * Get the emit strategy configuration.
      *
-     * @return the threshold extract size at which to emit directly from the forked PipeServer
+     * @return the emit strategy configuration
      */
-    public long getDirectEmitThresholdBytes() {
-        return directEmitThresholdBytes;
+    public EmitStrategyConfig getEmitStrategy() {
+        return emitStrategy;
     }
 
-    public void setDirectEmitThresholdBytes(long directEmitThresholdBytes) {
-        this.directEmitThresholdBytes = directEmitThresholdBytes;
+    /**
+     * Set the emit strategy configuration.
+     *
+     * @param emitStrategy the emit strategy configuration
+     */
+    public void setEmitStrategy(EmitStrategyConfig emitStrategy) {
+        this.emitStrategy = emitStrategy;
     }
 
     public long getSleepOnStartupTimeoutMillis() {
