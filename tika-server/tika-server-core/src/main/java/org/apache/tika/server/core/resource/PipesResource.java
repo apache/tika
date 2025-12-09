@@ -54,7 +54,7 @@ public class PipesResource {
 
     public PipesResource(java.nio.file.Path tikaConfig) throws TikaConfigException, IOException {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfig);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfig);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
         //this has to be zero. everything must be emitted through the PipesServer
         long maxEmit = pipesConfig.getDirectEmitThresholdBytes();
         if (maxEmit != 0) {
@@ -63,7 +63,7 @@ public class PipesResource {
                 LOG.warn("resetting max for emit batch to 0");
             }
         }
-        this.pipesParser = new PipesParser(pipesConfig);
+        this.pipesParser = new PipesParser(pipesConfig, tikaConfig);
     }
 
 

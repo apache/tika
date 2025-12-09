@@ -18,6 +18,7 @@ package org.apache.tika.pipes.core;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -30,15 +31,17 @@ public class PipesParser implements Closeable {
 
 
     private final PipesConfig pipesConfig;
+    private final Path tikaConfigPath;
     private final List<PipesClient> clients = new ArrayList<>();
     private final ArrayBlockingQueue<PipesClient> clientQueue ;
 
 
-    public PipesParser(PipesConfig pipesConfig) {
+    public PipesParser(PipesConfig pipesConfig, Path tikaConfigPath) {
         this.pipesConfig = pipesConfig;
+        this.tikaConfigPath = tikaConfigPath;
         this.clientQueue = new ArrayBlockingQueue<>(pipesConfig.getNumClients());
         for (int i = 0; i < pipesConfig.getNumClients(); i++) {
-            PipesClient client = new PipesClient(pipesConfig);
+            PipesClient client = new PipesClient(pipesConfig, tikaConfigPath);
             clientQueue.offer(client);
             clients.add(client);
         }
