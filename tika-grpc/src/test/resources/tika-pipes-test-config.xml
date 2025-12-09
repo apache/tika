@@ -27,7 +27,7 @@
         <arg>-XX:ParallelGCThreads=2</arg>
       </forkedJvmArgs>
       <timeoutMillis>60000</timeoutMillis>
-      <maxForEmitBatchBytes>-1</maxForEmitBatchBytes> <!-- disable emit -->
+      <directEmitThresholdBytes>-1</directEmitThresholdBytes> <!-- disable emit -->
     </params>
   </pipes>
   <fetchers>

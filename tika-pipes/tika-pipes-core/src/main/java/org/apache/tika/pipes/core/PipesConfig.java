@@ -18,7 +18,6 @@ package org.apache.tika.pipes.core;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -29,11 +28,11 @@ import org.apache.tika.exception.TikaConfigException;
 public class PipesConfig {
 
     /**
-     * default size to send back to the PipesClient for batch
-     * emitting.  If an extract is larger than this, it will be emitted
-     * directly from the forked PipesServer.
+     * Default threshold in bytes for direct emission from PipesServer.
+     * If an extract is larger than this, it will be emitted
+     * directly from the forked PipesServer rather than passed back to PipesClient.
      */
-    public static final long DEFAULT_MAX_FOR_EMIT_BATCH = 100000;
+    public static final long DEFAULT_DIRECT_EMIT_THRESHOLD_BYTES = 100000;
 
     public static final long DEFAULT_TIMEOUT_MILLIS = 60000;
 
@@ -47,10 +46,16 @@ public class PipesConfig {
 
     public static final long DEFAULT_MAX_WAIT_FOR_CLIENT_MS = 60000;
 
+    public static final long DEFAULT_SOCKET_TIMEOUT_MS = 60000;
+
+    public static final long DEFAULT_HEARTBEAT_INTERVAL_MS = 1000;
+
     //if an extract is larger than this, the forked PipesServer should
     //emit the extract directly and not send the contents back to the PipesClient
-    private long maxForEmitBatchBytes = DEFAULT_MAX_FOR_EMIT_BATCH;
+    private long directEmitThresholdBytes = DEFAULT_DIRECT_EMIT_THRESHOLD_BYTES;
     private long timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
+    private long socketTimeoutMs = DEFAULT_SOCKET_TIMEOUT_MS;
+    private long heartbeatIntervalMs = DEFAULT_HEARTBEAT_INTERVAL_MS;
     private long startupTimeoutMillis = DEFAULT_STARTUP_TIMEOUT_MILLIS;
     private long sleepOnStartupTimeoutMillis = DEFAULT_STARTUP_TIMEOUT_MILLIS;
 
@@ -70,6 +75,9 @@ public class PipesConfig {
     public static final int DEFAULT_QUEUE_SIZE = 10000;
     public static final int DEFAULT_NUM_EMITTERS = 1;
 
+    @JsonIgnore
+    private volatile String tikaConfigPath = null;
+
     private long emitWithinMillis = DEFAULT_EMIT_WITHIN_MILLIS;
     private long emitMaxEstimatedBytes = DEFAULT_EMIT_MAX_ESTIMATED_BYTES;
     private int queueSize = DEFAULT_QUEUE_SIZE;
@@ -79,16 +87,13 @@ public class PipesConfig {
     private ArrayList<String> forkedJvmArgs = new ArrayList<>();
     private String javaPath = "java";
 
-
-    private String tikaConfig;
-
     /**
      * Loads PipesConfig from the "pipes" section of the JSON configuration.
      * <p>
      * This configuration is used by both PipesServer (forking process) and
      * AsyncProcessor (async processing). Some fields are specific to each:
      * <ul>
-     *   <li>PipesServer uses: numClients, timeoutMillis, maxForEmitBatchBytes, etc.</li>
+     *   <li>PipesServer uses: numClients, timeoutMillis, directEmitThresholdBytes, etc.</li>
      *   <li>AsyncProcessor uses: emitWithinMillis, queueSize, numEmitters, etc.</li>
      * </ul>
      * Unused fields in each context are simply ignored.
@@ -98,13 +103,24 @@ public class PipesConfig {
      * @throws IOException if deserialization fails
      * @throws TikaConfigException if configuration is invalid
      */
-    public static PipesConfig load(TikaJsonConfig tikaJsonConfig) throws IOException, TikaConfigException {
+    public static PipesConfig load(TikaJsonConfig tikaJsonConfig, Path tikaConfigPath) throws IOException, TikaConfigException {
         PipesConfig config = tikaJsonConfig.deserialize("pipes", PipesConfig.class);
         if (config == null) {
-            return new PipesConfig();
+            config = new PipesConfig();
         }
+        config.setTikaConfigPath(tikaConfigPath.toAbsolutePath().toString());
         return config;
     }
+
+    @JsonIgnore
+    public String getTikaConfigPath() {
+        return tikaConfigPath;
+    }
+
+    void setTikaConfigPath(String tikaConfigPath) {
+        this.tikaConfigPath = tikaConfigPath;
+    }
+
 
     public long getTimeoutMillis() {
         return timeoutMillis;
@@ -116,6 +132,35 @@ public class PipesConfig {
      */
     public void setTimeoutMillis(long timeoutMillis) {
         this.timeoutMillis = timeoutMillis;
+    }
+
+    public long getSocketTimeoutMs() {
+        return socketTimeoutMs;
+    }
+
+    /**
+     * Socket timeout in milliseconds for reading from the forked process.
+     * If no data is received within this time, the connection is considered timed out.
+     * This is different from timeoutMillis which is the parse/processing timeout.
+     * @param socketTimeoutMs
+     */
+    public void setSocketTimeoutMs(long socketTimeoutMs) {
+        this.socketTimeoutMs = socketTimeoutMs;
+    }
+
+    public long getHeartbeatIntervalMs() {
+        return heartbeatIntervalMs;
+    }
+
+    /**
+     * Interval in milliseconds between heartbeat messages sent from server to client.
+     * Should be significantly less than socketTimeoutMs to ensure the client doesn't timeout.
+     * WARNING: Setting this >= socketTimeoutMs will cause socket timeouts during normal processing.
+     * This only exists for testing. We encourage you never to use it.
+     * @param heartbeatIntervalMs
+     */
+    public void setHeartbeatIntervalMs(long heartbeatIntervalMs) {
+        this.heartbeatIntervalMs = heartbeatIntervalMs;
     }
 
     public long getShutdownClientAfterMillis() {
@@ -166,19 +211,6 @@ public class PipesConfig {
         this.maxFilesProcessedPerProcess = maxFilesProcessedPerProcess;
     }
 
-    @JsonIgnore
-    public Path getTikaConfigPath() {
-        return tikaConfig != null ? Paths.get(tikaConfig) : null;
-    }
-
-    public String getTikaConfig() {
-        return tikaConfig;
-    }
-
-    public void setTikaConfig(String tikaConfig) {
-        this.tikaConfig = tikaConfig;
-    }
-
     public String getJavaPath() {
         return javaPath;
     }
@@ -202,12 +234,12 @@ public class PipesConfig {
      *
      * @return the threshold extract size at which to emit directly from the forked PipeServer
      */
-    public long getMaxForEmitBatchBytes() {
-        return maxForEmitBatchBytes;
+    public long getDirectEmitThresholdBytes() {
+        return directEmitThresholdBytes;
     }
 
-    public void setMaxForEmitBatchBytes(long maxForEmitBatchBytes) {
-        this.maxForEmitBatchBytes = maxForEmitBatchBytes;
+    public void setDirectEmitThresholdBytes(long directEmitThresholdBytes) {
+        this.directEmitThresholdBytes = directEmitThresholdBytes;
     }
 
     public long getSleepOnStartupTimeoutMillis() {

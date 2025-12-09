@@ -92,15 +92,26 @@ public class EncodingDetectorLoader {
                                 if (excludeName.isTextual()) {
                                     String detectorName = excludeName.asText();
                                     try {
-                                        Class<?> detectorClass = registry.getComponentClass(detectorName);
+                                        Class<?> detectorClass;
+                                        // Try as component name first
+                                        try {
+                                            detectorClass = registry.getComponentClass(detectorName);
+                                        } catch (TikaConfigException e) {
+                                            // If not found as component name, try as FQCN
+                                            try {
+                                                detectorClass = Class.forName(detectorName, false, classLoader);
+                                            } catch (ClassNotFoundException ex) {
+                                                LOG.warn("Unknown encoding detector in default-encoding-detector exclude list: {}", detectorName);
+                                                continue;
+                                            }
+                                        }
                                         @SuppressWarnings("unchecked")
                                         Class<? extends EncodingDetector> detectorTyped =
                                                 (Class<? extends EncodingDetector>) detectorClass;
                                         excludedDetectorClasses.add(detectorTyped);
                                         LOG.debug("Excluding encoding detector from SPI: {}", detectorName);
-                                    } catch (TikaConfigException e) {
-                                        LOG.warn("Unknown encoding detector in default-encoding-detector exclude list: {}",
-                                                detectorName);
+                                    } catch (Exception e) {
+                                        LOG.warn("Failed to exclude encoding detector '{}': {}", detectorName, e.getMessage());
                                     }
                                 }
                             }
@@ -159,8 +170,20 @@ public class EncodingDetectorLoader {
                                                              ComponentRegistry registry)
             throws TikaConfigException {
         try {
-            // Get encoding detector class
-            Class<?> detectorClass = registry.getComponentClass(name);
+            // Get encoding detector class - try component name first, then FQCN fallback
+            Class<?> detectorClass;
+            try {
+                detectorClass = registry.getComponentClass(name);
+            } catch (TikaConfigException e) {
+                // If not found as component name, try as fully qualified class name
+                try {
+                    detectorClass = Class.forName(name, false, classLoader);
+                    LOG.debug("Loaded encoding detector by FQCN: {}", name);
+                } catch (ClassNotFoundException ex) {
+                    throw new TikaConfigException("Unknown encoding detector: '" + name +
+                            "'. Not found as component name or FQCN.", e);
+                }
+            }
 
             // Extract framework config
             FrameworkConfig frameworkConfig = FrameworkConfig.extract(configNode, objectMapper);
@@ -171,6 +194,8 @@ public class EncodingDetectorLoader {
 
             return detector;
 
+        } catch (TikaConfigException e) {
+            throw e;
         } catch (Exception e) {
             throw new TikaConfigException("Failed to load encoding detector '" + name + "'", e);
         }

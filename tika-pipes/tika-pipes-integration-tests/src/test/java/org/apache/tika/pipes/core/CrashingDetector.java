@@ -16,12 +16,22 @@
  */
 package org.apache.tika.pipes.core;
 
-/**
- * This should be catastrophic
- */
-public class FailedToStartClientException extends RuntimeException {
+import java.io.IOException;
+import java.io.InputStream;
 
-    public FailedToStartClientException(Throwable t) {
-        super(t);
+import org.apache.tika.detect.Detector;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+
+/**
+ * Detector that crashes with SystemExit
+ * Used for testing crash handling during pre-parse detection phase.
+ */
+public class CrashingDetector implements Detector {
+
+    @Override
+    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+        System.exit(1);
+        return null;
     }
 }

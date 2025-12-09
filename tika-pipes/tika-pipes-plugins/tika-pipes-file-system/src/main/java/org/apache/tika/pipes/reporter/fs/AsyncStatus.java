@@ -35,7 +35,7 @@ class AsyncStatus {
 
     private Instant lastUpdate;
     private TotalCountResult totalCountResult = new TotalCountResult(0, TotalCountResult.STATUS.NOT_COMPLETED);
-    private Map<PipesResult.STATUS, Long> statusCounts = new HashMap<>();
+    private Map<PipesResult.RESULT_STATUS, Long> statusCounts = new HashMap<>();
     private ASYNC_STATUS asyncStatus = ASYNC_STATUS.STARTED;
 
     private String crashMessage = StringUtils.EMPTY;
@@ -45,7 +45,7 @@ class AsyncStatus {
         lastUpdate = started;
     }
 
-    public synchronized void update(Map<PipesResult.STATUS, Long> statusCounts,
+    public synchronized void update(Map<PipesResult.RESULT_STATUS, Long> statusCounts,
                                     TotalCountResult totalCountResult, ASYNC_STATUS status) {
         this.lastUpdate = Instant.now();
         this.statusCounts = statusCounts;
@@ -69,7 +69,7 @@ class AsyncStatus {
         return totalCountResult;
     }
 
-    public Map<PipesResult.STATUS, Long> getStatusCounts() {
+    public Map<PipesResult.RESULT_STATUS, Long> getStatusCounts() {
         return statusCounts;
     }
 

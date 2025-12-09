@@ -84,7 +84,7 @@ public class AsyncProcessor implements Closeable {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         TikaPluginManager tikaPluginManager = TikaPluginManager.load(tikaJsonConfig);
         MetadataFilter metadataFilter = TikaLoader.load(tikaConfigPath).loadMetadataFilters();
-        this.asyncConfig = PipesConfig.load(tikaJsonConfig);
+        this.asyncConfig = PipesConfig.load(tikaJsonConfig, tikaConfigPath);
         this.pipesReporter = ReporterManager.load(tikaPluginManager, tikaJsonConfig);
         LOG.debug("loaded reporter {}", pipesReporter.getClass());
         this.fetchEmitTuples = new ArrayBlockingQueue<>(asyncConfig.getQueueSize());
@@ -95,11 +95,11 @@ public class AsyncProcessor implements Closeable {
         this.executorCompletionService =
                 new ExecutorCompletionService<>(executorService);
         try {
-            if (asyncConfig.getTikaConfig() != null && !tikaConfigPath.toAbsolutePath().equals(asyncConfig.getTikaConfigPath().toAbsolutePath())) {
+            if (asyncConfig.getTikaConfigPath() != null && !tikaConfigPath.toAbsolutePath().equals(asyncConfig.getTikaConfigPath())) {
                 LOG.warn("TikaConfig for AsyncProcessor ({}) is different " +
                                 "from TikaConfig for workers ({}). If this is intended," +
                                 " please ignore this warning.", tikaConfigPath.toAbsolutePath(),
-                        asyncConfig.getTikaConfigPath().toAbsolutePath());
+                        asyncConfig.getTikaConfigPath());
             }
             this.executorCompletionService.submit(() -> {
                 while (true) {
@@ -338,11 +338,11 @@ public class AsyncProcessor implements Closeable {
 
         private boolean shouldEmit(PipesResult result) {
 
-            if (result.status() == PipesResult.STATUS.PARSE_SUCCESS ||
-                    result.status() == PipesResult.STATUS.PARSE_SUCCESS_WITH_EXCEPTION) {
+            if (result.status() == PipesResult.RESULT_STATUS.PARSE_SUCCESS ||
+                    result.status() == PipesResult.RESULT_STATUS.PARSE_SUCCESS_WITH_EXCEPTION) {
                 return true;
             }
-            return result.intermediate() && asyncConfig.isEmitIntermediateResults();
+            return asyncConfig.isEmitIntermediateResults() && (result.isApplicationError() || result.isProcessCrash());
         }
     }
 }

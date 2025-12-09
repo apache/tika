@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Optional;
 
@@ -110,8 +111,24 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
         if (output.getParent() != null && !Files.isDirectory(output.getParent())) {
             Files.createDirectories(output.getParent());
         }
-        try (Writer writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8)) {
-            JsonMetadataList.toJson(metadataList, writer, config.prettyPrint());
+
+        // Check onExists configuration
+        if (config.onExists() == FileSystemEmitterConfig.ON_EXISTS.SKIP) {
+            if (Files.exists(output)) {
+                LOG.debug("Skipping existing file: {}", output);
+                return;
+            }
+        }
+        if (config.onExists() == FileSystemEmitterConfig.ON_EXISTS.EXCEPTION) {
+            try (Writer writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE_NEW)) { //CREATE_NEW forces an IOException if the file already exists
+                JsonMetadataList.toJson(metadataList, writer, config.prettyPrint());
+            }
+        } else {
+            try (Writer writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8)) {
+                JsonMetadataList.toJson(metadataList, writer, config.prettyPrint());
+            }
+
         }
     }
 

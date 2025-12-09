@@ -66,7 +66,7 @@
   </metadataFilters>
   <async>
     <params>
-      <maxForEmitBatchBytes>10000</maxForEmitBatchBytes>
+      <directEmitThresholdBytes>10000</directEmitThresholdBytes>
       <emitMaxEstimatedBytes>100000</emitMaxEstimatedBytes>
       <emitWithinMillis>10</emitWithinMillis>
       <numEmitters>1</numEmitters>

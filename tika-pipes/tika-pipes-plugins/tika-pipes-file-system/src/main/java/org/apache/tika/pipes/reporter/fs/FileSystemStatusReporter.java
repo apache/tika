@@ -71,7 +71,7 @@ public class FileSystemStatusReporter extends AbstractTikaExtension implements P
     private volatile boolean crashed = false;
 
     Thread reporterThread;
-    private ConcurrentHashMap<PipesResult.STATUS, LongAdder> counts = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<PipesResult.RESULT_STATUS, LongAdder> counts = new ConcurrentHashMap<>();
     private AsyncStatus asyncStatus = new AsyncStatus();
 
     private TotalCountResult totalCountResult = new TotalCountResult(0,
@@ -118,7 +118,7 @@ public class FileSystemStatusReporter extends AbstractTikaExtension implements P
     }
 
     private synchronized void report(AsyncStatus.ASYNC_STATUS status) {
-        Map<PipesResult.STATUS, Long> localCounts = new HashMap<>();
+        Map<PipesResult.RESULT_STATUS, Long> localCounts = new HashMap<>();
         counts.entrySet().forEach( e -> localCounts.put(e.getKey(), e.getValue().longValue()));
         asyncStatus.update(localCounts, totalCountResult, status);
         try (Writer writer = Files.newBufferedWriter(config.statusFile(), StandardCharsets.UTF_8)) {

@@ -17,11 +17,13 @@
 package org.apache.tika.pipes.core;
 
 
-import static org.apache.tika.pipes.core.PipesServer.STATUS.CALL;
-import static org.apache.tika.pipes.core.PipesServer.STATUS.PING;
-import static org.apache.tika.pipes.core.PipesServer.STATUS.READY;
-import static org.apache.tika.pipes.core.PipesServer.STATUS.lookup;
-import static org.apache.tika.pipes.core.PipesServer.TIMEOUT_EXIT_CODE;
+
+import static org.apache.tika.pipes.api.PipesResult.RESULT_STATUS.TIMEOUT;
+import static org.apache.tika.pipes.api.PipesResult.RESULT_STATUS.UNSPECIFIED_CRASH;
+import static org.apache.tika.pipes.core.PipesClient.COMMANDS.ACK;
+import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.FINISHED;
+import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.OOM;
+import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.READY;
 
 import java.io.Closeable;
 import java.io.DataInputStream;
@@ -29,19 +31,25 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.slf4j.Logger;
@@ -55,6 +63,9 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
+import org.apache.tika.pipes.core.server.IntermediateResult;
+import org.apache.tika.pipes.core.server.PipesServer;
+import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
 
@@ -66,21 +77,25 @@ import org.apache.tika.utils.StringUtils;
  */
 public class PipesClient implements Closeable {
 
+    public enum COMMANDS {
+        PING, ACK, NEW_REQUEST, SHUT_DOWN;
+
+        public byte getByte() {
+            return (byte) (ordinal() + 1);
+        }
+    }
+
+
     private static final Logger LOG = LoggerFactory.getLogger(PipesClient.class);
-    private static final int MAX_BYTES_BEFORE_READY = 20000;
-    private static AtomicInteger CLIENT_COUNTER = new AtomicInteger(0);
+    private static final AtomicInteger CLIENT_COUNTER = new AtomicInteger(0);
     private static final long WAIT_ON_DESTROY_MS = 10000;
-    //this synchronizes the creation and/or closing of the executorService
-    //there are a number of assumptions throughout that PipesClient is run
-    //single threaded
-    private final Object[] executorServiceLock = new Object[0];
+    public static final int SOCKET_CONNECT_TIMEOUT_MS = 60000;
+    public static final int SOCKET_TIMEOUT_MS = 60000;
+
+
     private final PipesConfig pipesConfig;
     private final int pipesClientId;
-    private volatile boolean closed = false;
-    private ExecutorService executorService = Executors.newFixedThreadPool(1);
-    private Process process;
-    private DataOutputStream output;
-    private DataInputStream input;
+    private ServerTuple serverTuple;
     private int filesProcessed = 0;
 
     public PipesClient(PipesConfig pipesConfig) {
@@ -93,14 +108,17 @@ public class PipesClient implements Closeable {
     }
 
     private boolean ping() {
-        if (process == null || !process.isAlive()) {
+        if (serverTuple == null) {
+            return false;
+        }
+        if (serverTuple.process == null || !serverTuple.process.isAlive()) {
             return false;
         }
         try {
-            output.write(PING.getByte());
-            output.flush();
-            int ping = input.read();
-            if (ping == PING.getByte()) {
+            serverTuple.output.write(COMMANDS.PING.getByte());
+            serverTuple.output.flush();
+            int ping = serverTuple.input.read();
+            if (ping == COMMANDS.PING.getByte()) {
                 return true;
             }
         } catch (IOException e) {
@@ -111,397 +129,384 @@ public class PipesClient implements Closeable {
 
     @Override
     public void close() throws IOException {
-        if (process != null) {
-            try {
-                destroyForcibly();
-            } catch (InterruptedException e) {
-                //swallow
-            }
+        try {
+            shutItAllDown();
+        } catch (InterruptedException e) {
+            //swallow
         }
-        synchronized (executorServiceLock) {
-            if (executorService != null) {
-                executorService.shutdownNow();
-            }
-            closed = true;
+    }
+
+    private void shutItAllDown() throws InterruptedException {
+        if (serverTuple == null) {
+            return;
+        }
+        try {
+            serverTuple.output.write(COMMANDS.SHUT_DOWN.getByte());
+            serverTuple.output.flush();
+        } catch (IOException e) {
+            //swallow
+        }
+        List<IOException> exceptions = new ArrayList<>();
+        tryToClose(serverTuple.input, exceptions);
+        tryToClose(serverTuple.output, exceptions);
+        tryToClose(serverTuple.socket, exceptions);
+        tryToClose(serverTuple.serverSocket, exceptions);
+        destroyForcibly();
+
+        deleteDir(serverTuple.tmpDir);
+        serverTuple = null;
+
+    }
+
+    private void tryToClose(Closeable closeable, List<IOException> exceptions) {
+        if (closeable == null) {
+            return;
+        }
+        try {
+            closeable.close();
+        } catch (IOException e) {
+            exceptions.add(e);
         }
     }
 
     public PipesResult process(FetchEmitTuple t) throws IOException, InterruptedException {
+        //container object to hold latest intermediate result if the parser is doing that
+        IntermediateResult intermediateResult = new IntermediateResult();
+        PipesResult result = null;
+        try {
+            maybeInit();
+        } catch (ServerInitializationException e) {
+            LOG.error("server initialization failed: {} ", t.getId(), e);
+            shutItAllDown();
+            return buildFatalResult(t.getId(), t.getEmitKey(), PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE, intermediateResult.get(), e.getMessage());
+        } catch (SecurityException e) {
+            LOG.error("security exception during initialization: {} ", t.getId());
+            shutItAllDown();
+            return buildFatalResult(t.getId(), t.getEmitKey(), PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE, intermediateResult.get());
+        }
+
+        try {
+            writeTask(t);
+            result = waitForServer(t, intermediateResult);
+            filesProcessed++;
+        } catch (InterruptedException | SecurityException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("exception waiting for server to complete task: {} ", t.getId());
+            shutItAllDown();
+            return buildFatalResult(t.getId(), t.getEmitKey(), UNSPECIFIED_CRASH, intermediateResult.get());
+        }
+        return result;
+    }
+
+    private void maybeInit() throws InterruptedException, ServerInitializationException {
         boolean restart = false;
         if (!ping()) {
             restart = true;
-        } else if (pipesConfig.getMaxFilesProcessedPerProcess() > 0 &&
-                filesProcessed >= pipesConfig.getMaxFilesProcessedPerProcess()) {
-            LOG.info("pipesClientId={}: restarting server after hitting max files: {}",
-                    pipesClientId, filesProcessed);
+        } else if (pipesConfig.getMaxFilesProcessedPerProcess() > 0 && filesProcessed >= pipesConfig.getMaxFilesProcessedPerProcess()) {
+            LOG.info("pipesClientId={}: restarting server after hitting max files: {}", pipesClientId, filesProcessed);
             restart = true;
         }
+        int maxRestartAttempts = 3;
+        int restartAttempts = 0;
         if (restart) {
-            boolean successfulRestart = false;
-            while (!successfulRestart) {
+            while (true) {
                 try {
                     restart();
-                    successfulRestart = true;
+                    return;
+                } catch (ServerInitializationException e) {
+                    // Server initialization failed - don't retry, rethrow immediately with original message
+                    throw e;
                 } catch (TimeoutException e) {
-                    LOG.warn("pipesClientId={}: couldn't restart within {} ms (startupTimeoutMillis)",
-                            pipesClientId, pipesConfig.getStartupTimeoutMillis());
-                    Thread.sleep(pipesConfig.getSleepOnStartupTimeoutMillis());
+                    LOG.warn("pipesClientId={}: couldn't restart within {} ms (startupTimeoutMillis)", pipesClientId, pipesConfig.getStartupTimeoutMillis());
+                    if (++restartAttempts >= maxRestartAttempts) {
+                        throw new ServerInitializationException("couldn't start server", e);
+                    }
+                } catch (IOException e) {
+                    LOG.warn("pipesClientId={}: couldn't restart", pipesClientId, e);
+                    if (++restartAttempts > 0) {
+                        throw new ServerInitializationException("couldn't start server", e);
+                    }
                 }
             }
         }
-        return actuallyProcess(t);
     }
 
-    private PipesResult actuallyProcess(FetchEmitTuple t) throws InterruptedException {
+    private void writeTask(FetchEmitTuple t) throws IOException {
         long start = System.currentTimeMillis();
-        final PipesResult[] intermediateResult = new PipesResult[1];
-        FutureTask<PipesResult> futureTask = new FutureTask<>(() -> {
 
-            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
-            try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
-                objectOutputStream.writeObject(t);
-            }
+        UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream
+                .builder()
+                .get();
+        try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
+            objectOutputStream.writeObject(t);
+        }
 
-            byte[] bytes = bos.toByteArray();
-            output.write(CALL.getByte());
-            output.writeInt(bytes.length);
-            output.write(bytes);
-            output.flush();
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("pipesClientId={}: timer -- write tuple: {} ms",
-                        pipesClientId,
-                        System.currentTimeMillis() - start);
-            }
-            long readStart = System.currentTimeMillis();
-            if (Thread.currentThread().isInterrupted()) {
+        byte[] bytes = bos.toByteArray();
+        serverTuple.output.write(COMMANDS.NEW_REQUEST.getByte());
+        serverTuple.output.writeInt(bytes.length);
+        serverTuple.output.write(bytes);
+        serverTuple.output.flush();
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("pipesClientId={}: timer -- write tuple: {} ms", pipesClientId, System.currentTimeMillis() - start);
+        }
+    }
+
+    private PipesResult waitForServer(FetchEmitTuple t, IntermediateResult intermediateResult) throws InterruptedException {
+        long timeoutMillis = getTimeoutMillis(pipesConfig, t.getParseContext());
+        Instant start = Instant.now();
+        //TODO - implement progress updates
+        Instant lastUpdate = start;
+        long lastProgressCounter = 0;
+        while (true) {
+            if (Thread
+                    .currentThread()
+                    .isInterrupted()) {
                 throw new InterruptedException("thread interrupt");
             }
-            PipesResult result = readResults(t, start);
-            while (result.status() == PipesResult.STATUS.INTERMEDIATE_RESULT) {
-                intermediateResult[0] = result;
-                result = readResults(t, start);
+            long totalElapsed = Duration.between(start, Instant.now()).toMillis();
+            if ( totalElapsed > timeoutMillis) {
+                LOG.warn("timeout on client side: id={} elapsed={} timeoutMillis={}", t.getId(), totalElapsed, timeoutMillis);
+                return buildFatalResult(t.getId(), t.getEmitKey(), PipesResult.RESULT_STATUS.TIMEOUT, intermediateResult.get());
             }
-            if (LOG.isDebugEnabled()) {
-                long elapsed = System.currentTimeMillis() - readStart;
-                LOG.debug("finished reading result in {} ms", elapsed);
+            try {
+                //read blocks on the socket
+                PipesServer.PROCESSING_STATUS status = readServerStatus();
+                LOG.trace("switch status id={} status={}", t.getId(), status);
+                String msg = null;
+                switch (status) {
+                    case OOM:
+                        msg = readResult(String.class);
+                        shutItAllDown();
+                        return buildFatalResult(t.getId(), t.getEmitKey(), PipesResult.RESULT_STATUS.OOM, intermediateResult.get(), msg);
+                    case TIMEOUT:
+                        msg = readResult(String.class);
+                        shutItAllDown();
+                        return buildFatalResult(t.getId(), t.getEmitKey(), TIMEOUT, intermediateResult.get(), msg);
+                    case UNSPECIFIED_CRASH:
+                        msg = readResult(String.class);
+                        shutItAllDown();
+                        return buildFatalResult(t.getId(), t.getEmitKey(), UNSPECIFIED_CRASH, intermediateResult.get(), msg);
+                    case INTERMEDIATE_RESULT:
+                        intermediateResult.set(readResult(Metadata.class));
+                        lastUpdate = Instant.now();
+                        break;
+                    case WORKING:
+                        lastProgressCounter = readProgressCounter();
+                        lastUpdate = Instant.now();
+                        break;
+                    case FINISHED:
+                        return readResult(PipesResult.class);
+                }
+            } catch (SocketTimeoutException e) {
+                LOG.warn("Socket timeout exception while waiting for server", e);
+                shutItAllDown();
+                return buildFatalResult(t.getId(), t.getEmitKey(), TIMEOUT, intermediateResult.get(), ExceptionUtils.getStackTrace(e));
+            } catch (SecurityException e) {
+                throw e;
+            } catch (Exception e) {
+                //TODO -- catch socket timeout separately
+                LOG.warn("Crash while waiting for server", e);
+                serverTuple.process.waitFor(1, TimeUnit.SECONDS);
+                PipesResult.RESULT_STATUS status = UNSPECIFIED_CRASH;
+                if (! serverTuple.process.isAlive()) {
+                    int exitValue = serverTuple.process.exitValue();
+                    if (exitValue == PipesServer.OOM_EXIT_CODE) {
+                        status = PipesResult.RESULT_STATUS.OOM;
+                    } else if (exitValue == PipesServer.TIMEOUT_EXIT_CODE) {
+                        status = PipesResult.RESULT_STATUS.TIMEOUT;
+                    }
+                    LOG.warn("exit value: {}", serverTuple.process.exitValue());
+                } else {
+                    LOG.warn("process still alive ?!");
+                }
+                shutItAllDown();
+                return buildFatalResult(t.getId(), t.getEmitKey(), status, intermediateResult.get(), ExceptionUtils.getStackTrace(e));
             }
-
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("pipesClientId={}: timer -- read result: {} ms",
-                        pipesClientId,
-                        System.currentTimeMillis() - readStart);
-            }
-            if (result.status() == PipesResult.STATUS.OOM) {
-                return buildFatalResult(result, intermediateResult);
-            }
-            return result;
-        });
-
-        try {
-            if (closed) {
-                throw new IllegalArgumentException("pipesClientId=" + pipesClientId +
-                        ": PipesClient closed");
-            }
-            executorService.execute(futureTask);
-            long timeout = TikaTaskTimeout.getTimeoutMillis(t.getParseContext(), pipesConfig.getTimeoutMillis());
-            return futureTask.get(timeout, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            destroyForcibly();
-            throw e;
-        } catch (ExecutionException e) {
-            LOG.error("pipesClientId=" + pipesClientId + ": execution exception", e);
-            long elapsed = System.currentTimeMillis() - start;
-            pauseThenDestroy();
-            if (!process.isAlive() && TIMEOUT_EXIT_CODE == process.exitValue()) {
-                LOG.warn("pipesClientId={} server timeout: {} in {} ms", pipesClientId, t.getId(),
-                        elapsed);
-                return buildFatalResult(PipesResults.TIMEOUT, intermediateResult);
-            }
-            process.waitFor(500, TimeUnit.MILLISECONDS);
-            if (process.isAlive()) {
-                LOG.warn("pipesClientId={} crash: {} in {} ms with no exit code available",
-                        pipesClientId, t.getId(), elapsed);
-            } else {
-                LOG.warn("pipesClientId={} crash: {} in {} ms with exit code {}", pipesClientId,
-                        t.getId(), elapsed, process.exitValue());
-            }
-            return buildFatalResult(PipesResults.UNSPECIFIED_CRASH, intermediateResult);
-        } catch (TimeoutException e) {
-            long elapsed = System.currentTimeMillis() - start;
-            destroyForcibly();
-            LOG.warn("pipesClientId={} client timeout: {} in {} ms", pipesClientId, t.getId(),
-                    elapsed);
-            return buildFatalResult(PipesResults.TIMEOUT, intermediateResult);
-        } finally {
-            futureTask.cancel(true);
         }
     }
 
-    private PipesResult buildFatalResult(PipesResult result,
-                                         PipesResult[] intermediateResult) {
+    private long readProgressCounter() throws IOException {
+        return serverTuple.input.readLong();
+    }
 
-        if (intermediateResult[0] == null) {
-            return result;
-        } else {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("intermediate result: {}", intermediateResult[0].emitData());
-            }
-            intermediateResult[0].emitData().getMetadataList().get(0).set(
-                    TikaCoreProperties.PIPES_RESULT, result.status().toString());
-            return new PipesResult(result.status(),
-                    intermediateResult[0].emitData(), true);
+
+    private PipesResult buildFatalResult(String id, EmitKey emitKey, PipesResult.RESULT_STATUS status, Optional<Metadata> intermediateResultOpt) {
+        return buildFatalResult(id, emitKey, status, intermediateResultOpt, null);
+    }
+
+    private PipesResult buildFatalResult(String id, EmitKey emitKey, PipesResult.RESULT_STATUS status, Optional<Metadata> intermediateResultOpt, String msg) {
+        LOG.warn("crash id={} status={}", id, status);
+        Metadata intermediateResult = intermediateResultOpt.orElse(new Metadata());
+
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("intermediate result: id={}", intermediateResult);
         }
+        intermediateResult.set(TikaCoreProperties.PIPES_RESULT, status.toString());
+        if (StringUtils.isBlank(msg)) {
+            return new PipesResult(status, new EmitDataImpl(emitKey.getEmitKey(), List.of(intermediateResult)));
+        } else {
+            return new PipesResult(status, new EmitDataImpl(emitKey.getEmitKey(), List.of(intermediateResult)), msg);
+        }
+
     }
 
     private void pauseThenDestroy() throws InterruptedException {
         //wait just a little bit to let process end to get exit value
         //if there's a timeout on the server side
         try {
-            process.waitFor(200, TimeUnit.MILLISECONDS);
+            serverTuple.process.waitFor(200, TimeUnit.MILLISECONDS);
         } finally {
             destroyForcibly();
         }
     }
 
     private void destroyForcibly() throws InterruptedException {
-        process.destroyForcibly();
-        process.waitFor(WAIT_ON_DESTROY_MS, TimeUnit.MILLISECONDS);
-        //important to close streams so that threads running in this
-        //process receive notice that they really ought to stop.
-        //TIKA-3588 showed that we can't trust that forcibly destroying
-        //the process caused the actuallyProcess thread in this process to stop.
-        try {
-            input.close();
-        } catch (IOException closeException) {
-            //swallow
-        }
-        try {
-            output.close();
-        } catch (IOException closeException) {
-            //swallow
-        }
-        if (process.isAlive()) {
+        serverTuple.process.destroyForcibly();
+        serverTuple.process.waitFor(WAIT_ON_DESTROY_MS, TimeUnit.MILLISECONDS);
+
+        if (serverTuple.process.isAlive()) {
             LOG.error("Process still alive after {}ms", WAIT_ON_DESTROY_MS);
         }
     }
 
-    private PipesResult readResults(FetchEmitTuple t, long start) throws IOException {
 
-        int statusByte = input.read();
-        long millis = System.currentTimeMillis() - start;
-        PipesServer.STATUS status = null;
+    private PipesServer.PROCESSING_STATUS readServerStatus() throws IOException {
+        int statusByte = serverTuple.input.read();
+        writeAck();
+        PipesServer.PROCESSING_STATUS status = null;
         try {
-            status = lookup(statusByte);
+            status = PipesServer.PROCESSING_STATUS.lookup(statusByte);
         } catch (IllegalArgumentException e) {
             String byteString = "-1";
             if (statusByte > -1) {
-                byteString = String.format(Locale.US, "%02x", (byte)statusByte);
+                byteString = String.format(Locale.US, "%02x", (byte) statusByte);
             }
             throw new IOException("problem reading response from server: " + byteString, e);
         }
-
-        switch (status) {
-            case OOM:
-                LOG.warn("pipesClientId={} oom: {} in {} ms", pipesClientId, t.getId(), millis);
-                return PipesResults.OOM;
-            case TIMEOUT:
-                LOG.warn("pipesClientId={} server response timeout: {} in {} ms", pipesClientId,
-                        t.getId(), millis);
-                return PipesResults.TIMEOUT;
-            case EMIT_EXCEPTION:
-                LOG.warn("pipesClientId={} emit exception: {} in {} ms", pipesClientId, t.getId(),
-                        millis);
-                return readMessage(PipesResult.STATUS.EMIT_EXCEPTION);
-            case EMITTER_NOT_FOUND:
-                LOG.warn("pipesClientId={} emitter not found: {} in {} ms", pipesClientId,
-                        t.getId(), millis);
-                return readMessage(PipesResult.STATUS.NO_EMITTER_FOUND);
-            case FETCHER_NOT_FOUND:
-                LOG.warn("pipesClientId={} fetcher not found: {} in {} ms", pipesClientId,
-                        t.getId(), millis);
-                return readMessage(PipesResult.STATUS.NO_FETCHER_FOUND);
-            case FETCHER_INITIALIZATION_EXCEPTION:
-                LOG.warn("pipesClientId={} fetcher initialization exception: {} in {} ms",
-                        pipesClientId, t.getId(), millis);
-                return readMessage(PipesResult.STATUS.FETCHER_INITIALIZATION_EXCEPTION);
-            case FETCH_EXCEPTION:
-                LOG.warn("pipesClientId={} fetch exception: {} in {} ms", pipesClientId, t.getId(),
-                        millis);
-                return readMessage(PipesResult.STATUS.FETCH_EXCEPTION);
-            case INTERMEDIATE_RESULT:
-                LOG.debug("pipesClientId={} intermediate success: {} in {} ms", pipesClientId,
-                        t.getId(), millis);
-                return deserializeIntermediateResult(t.getEmitKey(), t.getParseContext());
-            case PARSE_SUCCESS:
-                //there may have been a parse exception, but the parse didn't crash
-                LOG.debug("pipesClientId={} parse success: {} in {} ms", pipesClientId, t.getId(),
-                        millis);
-                return deserializeEmitData(PipesResult.STATUS.PARSE_SUCCESS);
-            case EMIT_SUCCESS_PASS_BACK:
-                LOG.debug("pipesClientId={} emit success with passback: {} in {} ms", pipesClientId, t.getId(),
-                        millis);
-                return deserializeEmitData(PipesResult.STATUS.EMIT_SUCCESS_PASSBACK);
-            case PARSE_EXCEPTION_NO_EMIT:
-                return readMessage(PipesResult.STATUS.PARSE_EXCEPTION_NO_EMIT);
-            case EMIT_SUCCESS:
-                LOG.debug("pipesClientId={} emit success: {} in {} ms", pipesClientId, t.getId(),
-                        millis);
-                return PipesResults.EMIT_SUCCESS;
-            case EMIT_SUCCESS_PARSE_EXCEPTION:
-                return readMessage(PipesResult.STATUS.EMIT_SUCCESS_PARSE_EXCEPTION);
-            case EMPTY_OUTPUT:
-                return PipesResults.EMPTY_OUTPUT;
-            //fall through
-            case READY:
-            case CALL:
-            case PING:
-            case FAILED_TO_START:
-                throw new IOException("Not expecting this status: " + status);
-            default:
-                throw new IOException("Need to handle procesing for: " + status);
-        }
-
+        return status;
     }
 
-    private PipesResult readMessage(PipesResult.STATUS status) throws IOException {
-        //readInt checks for EOF
-        int length = input.readInt();
-        byte[] bytes = new byte[length];
-        input.readFully(bytes);
-        String msg = new String(bytes, StandardCharsets.UTF_8);
-        return new PipesResult(status, msg);
-    }
 
-    private PipesResult deserializeEmitData(PipesResult.STATUS status) throws IOException {
-        int length = input.readInt();
-        byte[] bytes = new byte[length];
-        input.readFully(bytes);
-        try (ObjectInputStream objectInputStream = new ObjectInputStream(
-                UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
-            EmitDataImpl emitData = (EmitDataImpl) objectInputStream.readObject();
-
-            String stack = emitData.getContainerStackTrace();
-            if (StringUtils.isBlank(stack)) {
-                //stack is blank for PARSE_SUCCESS and for PASSBACK
-                return new PipesResult(status, emitData, false);
-            } else {
-                //tweak this
-                if (status == PipesResult.STATUS.PARSE_SUCCESS) {
-                    status = PipesResult.STATUS.PARSE_SUCCESS_WITH_EXCEPTION;
-                }
-                return new PipesResult(status, emitData, stack, false);
+    private PipesResult.RESULT_STATUS readResultStatus() throws IOException {
+        int statusByte = serverTuple.input.read();
+        PipesResult.RESULT_STATUS status = null;
+        try {
+            status = PipesResult.RESULT_STATUS.lookup(statusByte);
+        } catch (IllegalArgumentException e) {
+            String byteString = "-1";
+            if (statusByte > -1) {
+                byteString = String.format(Locale.US, "%02x", (byte) statusByte);
             }
+            throw new IOException("problem reading response from server: " + byteString, e);
+        }
+        return status;
+    }
+
+    private <T> T readResult(Class<? extends T> clazz) throws IOException {
+        int len = serverTuple.input.readInt();
+        byte[] bytes = new byte[len];
+        serverTuple.input.readFully(bytes);
+        writeAck();
+        try (ObjectInputStream objectInputStream = new ObjectInputStream(UnsynchronizedByteArrayInputStream
+                .builder()
+                .setByteArray(bytes)
+                .get())) {
+            return clazz.cast(objectInputStream.readObject());
         } catch (ClassNotFoundException e) {
-            LOG.error("class not found exception deserializing data", e);
-            //this should be catastrophic
-            throw new RuntimeException(e);
+            throw new IOException(e);
         }
     }
 
-
-    private PipesResult deserializeIntermediateResult(EmitKey emitKey, ParseContext parseContext) throws IOException {
-
-        int length = input.readInt();
-        byte[] bytes = new byte[length];
-        input.readFully(bytes);
-        try (ObjectInputStream objectInputStream = new ObjectInputStream(
-                UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
-            Metadata metadata = (Metadata) objectInputStream.readObject();
-            EmitDataImpl emitDataTuple = new EmitDataImpl(emitKey.getEmitKey(), Collections.singletonList(metadata));
-            return new PipesResult(PipesResult.STATUS.INTERMEDIATE_RESULT, emitDataTuple, true);
-        } catch (ClassNotFoundException e) {
-            LOG.error("class not found exception deserializing data", e);
-            //this should be catastrophic
-            throw new RuntimeException(e);
-        }
+    private void writeAck() throws IOException {
+        serverTuple.output.write(ACK.getByte());
+        serverTuple.output.flush();
     }
 
-    private void restart() throws IOException, InterruptedException, TimeoutException {
-        if (process != null) {
-            LOG.debug("process still alive; trying to destroy it");
-            destroyForcibly();
-            boolean processEnded = process.waitFor(30, TimeUnit.SECONDS);
-            if (! processEnded) {
-                LOG.warn("pipesClientId={}: process has not yet ended", pipesClientId);
-            }
-            executorService.shutdownNow();
-            boolean shutdown = executorService.awaitTermination(30, TimeUnit.SECONDS);
-            if (! shutdown) {
-                LOG.warn("pipesClientId={}: executorService has not yet shutdown", pipesClientId);
-            }
-            synchronized (executorServiceLock) {
-                if (closed) {
-                    throw new IllegalArgumentException("pipesClientId=" + pipesClientId +
-                            ": PipesClient closed");
-                }
-                executorService = Executors.newFixedThreadPool(1);
-            }
+
+    private void restart() throws InterruptedException, IOException, TimeoutException {
+        if (serverTuple != null && serverTuple.process != null) {
+            shutItAllDown();
             LOG.info("pipesClientId={}: restarting process", pipesClientId);
         } else {
             LOG.info("pipesClientId={}: starting process", pipesClientId);
         }
-        ProcessBuilder pb = new ProcessBuilder(getCommandline());
-        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-
+        ServerSocket serverSocket = new ServerSocket(0, 50, InetAddress.getLoopbackAddress());
+        int port = serverSocket.getLocalPort();
+        Path tmpDir = Files.createTempDirectory("pipes-server-" + pipesClientId + "-");
+        ProcessBuilder pb = new ProcessBuilder(getCommandline(port, tmpDir));
+        pb.inheritIO();
+        Process process = null;
         try {
             process = pb.start();
         } catch (Exception e) {
+            deleteDir(tmpDir);
             //Do we ever want this to be not fatal?!
-            LOG.error("failed to start client", e);
-            throw new FailedToStartClientException(e);
+            LOG.error("failed to start server", e);
+            String msg = "Failed to start server process";
+            if (e.getMessage() != null) {
+                msg += ": " + e.getMessage();
+            }
+            throw new ServerInitializationException(msg, e);
         }
-        input = new DataInputStream(process.getInputStream());
-        output = new DataOutputStream(process.getOutputStream());
-
-        //wait for ready signal
-        final UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
-        FutureTask<Integer> futureTask = new FutureTask<>(() -> {
-            int b = input.read();
-            int read = 1;
-            while (read < MAX_BYTES_BEFORE_READY && b != READY.getByte()) {
-
-                if (b == -1) {
-                    throw new RuntimeException(getMsg("pipesClientId=" + pipesClientId + ": " +
-                            "Couldn't start server -- read EOF before 'ready' byte.\n" +
-                            " process isAlive=" + process.isAlive(), bos));
+        // Poll for connection with periodic checks if process is still alive
+        serverSocket.setSoTimeout(1000); // 1 second timeout for each poll
+        Socket socket = null;
+        long startTime = System.currentTimeMillis();
+        while (socket == null) {
+            try {
+                socket = serverSocket.accept();
+            } catch (SocketTimeoutException e) {
+                // Check if the process died before connecting
+                if (!process.isAlive()) {
+                    int exitValue = process.exitValue();
+                    LOG.error("pipesClientId={}: Process exited with code {} before connecting to socket", pipesClientId, exitValue);
+                    deleteDir(tmpDir);
+                    throw new ServerInitializationException("Process failed to start (exit code " + exitValue + "). Check JVM arguments and classpath.");
                 }
-                bos.write(b);
-                b = input.read();
-                read++;
+                // Check if we've exceeded the overall timeout
+                long elapsed = System.currentTimeMillis() - startTime;
+                if (elapsed > SOCKET_CONNECT_TIMEOUT_MS) {
+                    LOG.error("pipesClientId={}: Timed out waiting for server to connect after {}ms", pipesClientId, elapsed);
+                    deleteDir(tmpDir);
+                    throw new ServerInitializationException("Server did not connect within " + SOCKET_CONNECT_TIMEOUT_MS + "ms");
+                }
+                // Continue polling
             }
-            if (read >= MAX_BYTES_BEFORE_READY) {
-                throw new RuntimeException(getMsg("pipesClientId=" + pipesClientId + ": " +
-                        "Couldn't start server: read too many bytes before 'ready' byte.\n" +
-                        " Make absolutely certain that your logger is not writing to " +
-                        "stdout.\n", bos));
-            }
-            if (bos.size() > 0) {
-                LOG.warn("pipesClientId={}: From forked process before start byte: {}",
-                        pipesClientId, bos.toString(StandardCharsets.UTF_8));
-            }
-            return 1;
-        });
-        long start = System.currentTimeMillis();
-        executorService.submit(futureTask);
+        }
+        socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMs());
+        serverTuple = new ServerTuple(process, serverSocket, socket, new DataInputStream(socket.getInputStream()),
+                new DataOutputStream(socket.getOutputStream()), tmpDir);
+        waitForStartup();
+    }
+
+    private void waitForStartup() throws IOException {
+        //wait for ready byte
+        int b = serverTuple.input.read();
+        writeAck();
+        if (b == READY.getByte()) {
+            LOG.debug("got ready byte");
+        } else if (b == FINISHED.getByte()) {
+            int len = serverTuple.input.readInt();
+            byte[] bytes = new byte[len];
+            serverTuple.input.readFully(bytes);
+            writeAck();
+            String msg = new String(bytes, StandardCharsets.UTF_8);
+            LOG.error("Server failed to start: {}", msg);
+            throw new ServerInitializationException(msg);
+        } else {
+            LOG.error("Unexpected first byte: " + HexFormat.of().formatHex(new byte[]{ (byte) b }));
+            throw new IOException("Unexpected first byte from server: " + HexFormat.of().formatHex(new byte[]{ (byte) b }));
+        }
+
+    }
+
+    private void deleteDir(Path tmpDir) {
         try {
-            futureTask.get(pipesConfig.getStartupTimeoutMillis(), TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            destroyForcibly();
-            throw e;
-        } catch (ExecutionException e) {
-            LOG.error("pipesClientId=" + pipesClientId + ": couldn't start server", e);
-            destroyForcibly();
-            throw new RuntimeException(e);
-        } catch (TimeoutException e) {
-            long elapsed = System.currentTimeMillis() - start;
-            LOG.error("pipesClientId={} didn't receive ready byte from server within " +
-                            "StartupTimeoutMillis {}; ms elapsed {}; did read >{}<",
-                    pipesClientId, pipesConfig.getStartupTimeoutMillis(),
-                    elapsed, bos.toString(StandardCharsets.UTF_8));
-            destroyForcibly();
-            throw e;
-        } finally {
-            futureTask.cancel(true);
+            FileUtils.deleteDirectory(tmpDir.toFile());
+        } catch (IOException e) {
+            //swallow
+            LOG.warn("couldn't delete tmp dir {}", tmpDir);
         }
     }
 
@@ -514,7 +519,7 @@ public class PipesClient implements Closeable {
         }
     }
 
-    private String[] getCommandline() {
+    private String[] getCommandline(int port, Path tmpDir) {
         List<String> configArgs = pipesConfig.getForkedJvmArgs();
         boolean hasClassPath = false;
         boolean hasHeadless = false;
@@ -529,8 +534,7 @@ public class PipesClient implements Closeable {
             if (arg.equals("-cp") || arg.equals("--classpath")) {
                 hasClassPath = true;
             }
-            if (arg.equals("-XX:+ExitOnOutOfMemoryError") ||
-                    arg.equals("-XX:+CrashOnOutOfMemoryError")) {
+            if (arg.equals("-XX:+ExitOnOutOfMemoryError") || arg.equals("-XX:+CrashOnOutOfMemoryError")) {
                 hasExitOnOOM = true;
             }
             if (arg.startsWith("-Dlog4j.configuration")) {
@@ -558,24 +562,41 @@ public class PipesClient implements Closeable {
             commandLine.add("-Djava.awt.headless=true");
         }
         if (hasExitOnOOM) {
-            LOG.warn(
-                    "I notice that you have a jdk setting to exit/crash on OOM. If you run heavy external processes " +
-                            "like tesseract, this setting may result in orphaned processes which could be disastrous" +
-                            " for performance.");
+            LOG.warn("I notice that you have a jdk setting to exit/crash on OOM. If you run heavy external processes " +
+                    "like tesseract, this setting may result in orphaned processes which could be disastrous" + " for performance.");
         }
         if (!hasLog4j) {
-            commandLine.add(
-                    "-Dlog4j.configurationFile=classpath:pipes-fork-server-default-log4j2.xml");
+            commandLine.add("-Dlog4j.configurationFile=classpath:pipes-fork-server-default-log4j2.xml");
         }
         commandLine.add("-DpipesClientId=" + pipesClientId);
         commandLine.addAll(configArgs);
-        commandLine.add("org.apache.tika.pipes.core.PipesServer");
-        commandLine.add(ProcessUtils.escapeCommandLine(
-                pipesConfig.getTikaConfigPath().toAbsolutePath().toString()));
-        commandLine.add(Long.toString(pipesConfig.getMaxForEmitBatchBytes()));
-        commandLine.add(Long.toString(pipesConfig.getTimeoutMillis()));
-        commandLine.add(Long.toString(pipesConfig.getShutdownClientAfterMillis()));
+        commandLine.add("-Djava.io.tmpdir=" + tmpDir.toAbsolutePath());
+        commandLine.add("org.apache.tika.pipes.core.server.PipesServer");
+
+        commandLine.add(Integer.toString(port));
+        commandLine.add(pipesConfig.getTikaConfigPath());
         LOG.debug("pipesClientId={}: commandline: {}", pipesClientId, commandLine);
         return commandLine.toArray(new String[0]);
     }
+
+    private record ServerTuple(Process process, ServerSocket serverSocket, Socket socket,
+                               DataInputStream input, DataOutputStream output, Path tmpDir) {
+
+    }
+
+    public static long getTimeoutMillis(PipesConfig pipesConfig, ParseContext parseContext) {
+        long defaultTimeoutMillis = pipesConfig.getTimeoutMillis();
+
+        if (parseContext == null) {
+            return defaultTimeoutMillis;
+        }
+
+        TikaTaskTimeout tikaTaskTimeout = parseContext.get(TikaTaskTimeout.class);
+        if (tikaTaskTimeout == null) {
+            return defaultTimeoutMillis;
+        }
+        LOG.debug("applying timeout from parseContext: {}ms", tikaTaskTimeout.getTimeoutMillis());
+        return tikaTaskTimeout.getTimeoutMillis();
+    }
+
 }
