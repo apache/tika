@@ -26,8 +26,9 @@ import org.apache.commons.io.FilenameUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
@@ -36,15 +37,18 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypeException;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 
 public class ExtractEmbeddedFiles {
-    private Parser parser = new AutoDetectParser();
-    private Detector detector = ((AutoDetectParser) parser).getDetector();
-    private TikaConfig config = TikaConfig.getDefaultConfig();
+
+    private TikaLoader tikaLoader = TikaLoader.loadDefault();
+    private Parser parser = tikaLoader.loadAutoDetectParser();
+    private Detector detector = tikaLoader.loadDetectors();
+
+    public ExtractEmbeddedFiles() throws TikaConfigException, IOException {
+    }
 
     public void extract(InputStream is, Path outputDir) throws SAXException, TikaException, IOException {
         Metadata m = new Metadata();
@@ -97,8 +101,8 @@ public class ExtractEmbeddedFiles {
 
             if (name.indexOf('.') == -1 && contentType != null) {
                 try {
-                    name += config
-                            .getMimeRepository()
+                    name += tikaLoader
+                            .getMimeTypes()
                             .forName(contentType.toString())
                             .getExtension();
                 } catch (MimeTypeException e) {
