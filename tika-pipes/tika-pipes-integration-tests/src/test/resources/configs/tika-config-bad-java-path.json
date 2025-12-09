@@ -1,7 +1,7 @@
 {
   "fetchers": {
-    "non-existent-fetcher-plugin": {
-      "bad-fetcher": {
+    "bad-fetcher": {
+      "non-existent-fetcher-plugin": {
         "basePath": "FETCHER_BASE_PATH"
       }
     }
@@ -10,7 +10,9 @@
     "numClients": 1,
     "timeoutMillis": 5000,
     "javaPath": "thisIsntJava",
-    "forkedJvmArgs": ["-Xmx256m"],
+    "forkedJvmArgs": [
+      "-Xmx256m"
+    ],
     "directEmitThresholdBytes": 1000000
   },
   "plugin-roots": "PLUGINS_PATHS"

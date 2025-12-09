@@ -40,15 +40,15 @@
     }
   ],
   "fetchers": {
-    "file-system-fetcher": {
-      "fsf": {
+    "fsf": {
+      "file-system-fetcher": {
         "basePath": "FETCHER_BASE_PATH"
       }
     }
   },
   "emitters": {
-    "kafka-emitter": {
-      "ke": {
+    "ke": {
+      "kafka-emitter": {
         "topic": "EMITTER_TOPIC",
         "bootstrapServers": "BOOTSTRAP_SERVERS",
         "acks": "all",

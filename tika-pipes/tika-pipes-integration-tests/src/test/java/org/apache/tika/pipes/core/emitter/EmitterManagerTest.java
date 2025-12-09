@@ -95,12 +95,14 @@ public class EmitterManagerTest {
         String configJson = String.format(Locale.ROOT, """
                 {
                   "emitters": {
-                    "file-system-emitter": {
-                      "fse1": {
+                    "fse1": {
+                      "file-system-emitter": {
                         "basePath": "%s",
                         "onExists": "REPLACE"
-                      },
-                      "fse2": {
+                      }
+                    },
+                    "fse2": {
+                      "file-system-emitter": {
                         "basePath": "%s",
                         "onExists": "REPLACE"
                       }
@@ -225,8 +227,8 @@ public class EmitterManagerTest {
         String configJson = """
                 {
                   "emitters": {
-                    "non-existent-emitter-type": {
-                      "emitter1": {
+                    "emitter1": {
+                      "non-existent-emitter-type": {
                         "someProp": "value"
                       }
                     }
@@ -255,12 +257,14 @@ public class EmitterManagerTest {
         String configJson = String.format(Locale.ROOT, """
                 {
                   "emitters": {
-                    "file-system-emitter": {
-                      "fse1": {
+                    "fse1": {
+                      "file-system-emitter": {
                         "basePath": "%s",
                         "onExists": "REPLACE"
-                      },
-                      "fse1": {
+                      }
+                    },
+                    "fse1": {
+                      "file-system-emitter": {
                         "basePath": "%s",
                         "onExists": "REPLACE"
                       }
@@ -304,12 +308,14 @@ public class EmitterManagerTest {
         String configJson = String.format(Locale.ROOT, """
                 {
                   "emitters": {
-                    "file-system-emitter": {
-                      "fse1": {
+                    "fse1": {
+                      "file-system-emitter": {
                         "basePath": "%s",
                         "onExists": "REPLACE"
-                      },
-                      "fse2": {
+                      }
+                    },
+                    "fse2": {
+                      "file-system-emitter": {
                         "basePath": "%s",
                         "onExists": "REPLACE"
                       }

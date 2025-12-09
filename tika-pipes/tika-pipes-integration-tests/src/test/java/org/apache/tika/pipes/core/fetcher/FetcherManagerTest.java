@@ -95,11 +95,13 @@ public class FetcherManagerTest {
         String configJson = String.format(Locale.ROOT, """
                 {
                   "fetchers": {
-                    "file-system-fetcher": {
-                      "fsf1": {
+                    "fsf1": {
+                      "file-system-fetcher": {
                         "basePath": "%s"
-                      },
-                      "fsf2": {
+                      }
+                    },
+                    "fsf2": {
+                      "file-system-fetcher": {
                         "basePath": "%s"
                       }
                     }
@@ -223,8 +225,8 @@ public class FetcherManagerTest {
         String configJson = """
                 {
                   "fetchers": {
-                    "non-existent-fetcher-type": {
-                      "fetcher1": {
+                    "fetcher1": {
+                      "non-existent-fetcher-type": {
                         "someProp": "value"
                       }
                     }
@@ -253,11 +255,13 @@ public class FetcherManagerTest {
         String configJson = String.format(Locale.ROOT, """
                 {
                   "fetchers": {
-                    "file-system-fetcher": {
-                      "fsf1": {
+                    "fsf1": {
+                      "file-system-fetcher": {
                         "basePath": "%s"
-                      },
-                      "fsf1": {
+                      }
+                    },
+                    "fsf1": {
+                      "file-system-fetcher": {
                         "basePath": "%s"
                       }
                     }
@@ -300,11 +304,13 @@ public class FetcherManagerTest {
         String configJson = String.format(Locale.ROOT, """
                 {
                   "fetchers": {
-                    "file-system-fetcher": {
-                      "fsf1": {
+                    "fsf1": {
+                      "file-system-fetcher": {
                         "basePath": "%s"
-                      },
-                      "fsf2": {
+                      }
+                    },
+                    "fsf2": {
+                      "file-system-fetcher": {
                         "basePath": "%s"
                       }
                     }

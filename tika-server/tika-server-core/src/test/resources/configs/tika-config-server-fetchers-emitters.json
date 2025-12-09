@@ -9,16 +9,16 @@
     ]
   },
   "fetchers": {
-    "file-system-fetcher": {
-      "fsf": {
+    "fsf": {
+      "file-system-fetcher": {
         "basePath": "BASE_PATH",
         "extractFileSystemMetadata": false
       }
     }
   },
   "emitters": {
-    "file-system-emitter": {
-      "fse-json": {
+    "fse-json": {
+      "file-system-emitter": {
         "basePath": "BASE_PATH",
         "onExists": "EXCEPTION"
       }

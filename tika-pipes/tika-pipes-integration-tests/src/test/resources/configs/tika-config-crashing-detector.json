@@ -1,15 +1,15 @@
 {
   "fetchers": {
-    "file-system-fetcher": {
-      "fsf": {
+    "fsf": {
+      "file-system-fetcher": {
         "basePath": "FETCHER_BASE_PATH",
         "extractFileSystemMetadata": false
       }
     }
   },
   "emitters": {
-    "file-system-emitter": {
-      "fse": {
+    "fse": {
+      "file-system-emitter": {
         "basePath": "EMITTER_BASE_PATH",
         "fileExtension": "json",
         "onExists": "EXCEPTION"
@@ -19,11 +19,15 @@
   "pipes": {
     "numClients": 1,
     "timeoutMillis": 5000,
-    "forkedJvmArgs": ["-Xmx256m"],
+    "forkedJvmArgs": [
+      "-Xmx256m"
+    ],
     "directEmitThresholdBytes": 1000000
   },
   "detectors": [
-    {"org.apache.tika.pipes.core.CrashingDetector": {}}
+    {
+      "org.apache.tika.pipes.core.CrashingDetector": {}
+    }
   ],
   "plugin-roots": "PLUGINS_PATHS"
 }
