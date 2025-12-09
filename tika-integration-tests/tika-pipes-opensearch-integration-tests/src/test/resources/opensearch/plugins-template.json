@@ -1,14 +1,14 @@
 {
   "fetchers": {
-    "file-system-fetcher": {
-      "fsf": {
+    "fsf": {
+      "file-system-fetcher": {
         "basePath": "FETCHER_BASE_PATH"
       }
     }
   },
   "emitters": {
-    "opensearch-emitter": {
-      "ose": {
+    "ose": {
+      "opensearch-emitter": {
         "openSearchUrl": "OPEN_SEARCH_URL",
         "updateStrategy": "UPDATE_STRATEGY",
         "attachmentStrategy": "ATTACHMENT_STRATEGY",

@@ -1,7 +1,7 @@
 {
   "fetchers": {
-    "s3-fetcher": {
-      "s3f": {
+    "s3f": {
+      "s3-fetcher": {
         "region": "{REGION}",
         "bucket": "{FETCH_BUCKET}",
         "credentialsProvider": "key_secret",
@@ -20,8 +20,8 @@
     }
   },
   "emitters": {
-    "s3-emitter": {
-      "s3e": {
+    "s3e": {
+      "s3-emitter": {
         "region": "{REGION}",
         "bucket": "{EMIT_BUCKET}",
         "credentialsProvider": "key_secret",

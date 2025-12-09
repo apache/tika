@@ -1,7 +1,7 @@
 {
   "fetchers": {
-    "non-existent-fetcher-plugin": {
-      "bad-fetcher": {
+    "bad-fetcher": {
+      "non-existent-fetcher-plugin": {
         "basePath": "FETCHER_BASE_PATH"
       }
     }

@@ -1,20 +1,22 @@
 {
   "fetchers": {
-    "file-system-fetcher": {
-      "fsf": {
+    "fsf": {
+      "file-system-fetcher": {
         "basePath": "FETCHER_BASE_PATH",
         "extractFileSystemMetadata": false
       }
     }
   },
   "emitters": {
-    "file-system-emitter": {
-      "fse-json": {
+    "fse-json": {
+      "file-system-emitter": {
         "basePath": "JSON_EMITTER_BASE_PATH",
         "fileExtension": "json",
         "onExists": "EXCEPTION"
-      },
-      "fse-bytes": {
+      }
+    },
+    "fse-bytes": {
+      "file-system-emitter": {
         "basePath": "BYTES_EMITTER_BASE_PATH",
         "fileExtension": "",
         "onExists": "EXCEPTION"

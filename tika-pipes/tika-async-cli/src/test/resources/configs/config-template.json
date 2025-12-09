@@ -1,20 +1,22 @@
 {
   "fetchers": {
-    "file-system-fetcher": {
-      "fsf": {
+    "fsf": {
+      "file-system-fetcher": {
         "basePath": "FETCHER_BASE_PATH",
         "extractFileSystemMetadata": false
       }
     }
   },
   "emitters": {
-    "file-system-emitter": {
-      "fse-json": {
+    "fse-json": {
+      "file-system-emitter": {
         "basePath": "JSON_EMITTER_BASE_PATH",
         "fileExtension": "",
         "onExists": "EXCEPTION"
-      },
-      "fse-bytes": {
+      }
+    },
+    "fse-bytes": {
+      "file-system-emitter": {
         "basePath": "BYTES_EMITTER_BASE_PATH",
         "fileExtension": "",
         "onExists": "EXCEPTION"
@@ -35,6 +37,10 @@
     "maxFilesProcessedPerProcess": 10000,
     "staleFetcherTimeoutSeconds": 600,
     "staleFetcherDelaySeconds": 60,
+    "forkedJvmArgs": [
+      "-Xmx1g",
+      "-XX:+UseG1GC"
+    ],
     "forkedJvmArgs": [
       "-Xmx1g",
       "-XX:+UseG1GC"
