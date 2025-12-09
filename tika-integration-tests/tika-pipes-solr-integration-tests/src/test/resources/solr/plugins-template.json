@@ -40,15 +40,15 @@
     }
   ],
   "fetchers": {
-    "file-system-fetcher": {
-      "fsf": {
+    "fsf": {
+      "file-system-fetcher": {
         "basePath": "FETCHER_BASE_PATH"
       }
     }
   },
   "emitters": {
-    "solr-emitter": {
-      "se": {
+    "se": {
+      "solr-emitter": {
         "solrCollection": "testcol",
         "solrUrls": SOLR_URLS,
         "solrZkHosts": SOLR_ZK_HOSTS,

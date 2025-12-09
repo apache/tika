@@ -1,15 +1,15 @@
 {
   "fetchers": {
-    "file-system-fetcher": {
-      "fsf": {
+    "fsf": {
+      "file-system-fetcher": {
         "basePath": "FETCHER_BASE_PATH",
         "extractFileSystemMetadata": false
       }
     }
   },
   "emitters": {
-    "file-system-emitter": {
-      "fse": {
+    "fse": {
+      "file-system-emitter": {
         "basePath": "EMITTER_BASE_PATH",
         "fileExtension": "json",
         "onExists": "EXCEPTION"

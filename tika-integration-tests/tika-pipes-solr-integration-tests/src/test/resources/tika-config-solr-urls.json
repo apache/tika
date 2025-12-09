@@ -55,15 +55,15 @@
     "timeoutMillis": 60000
   },
   "fetchers": {
-    "file-system-fetcher": {
-      "fsf": {
+    "fsf": {
+      "file-system-fetcher": {
         "basePath": "{PATH_TO_DOCS}"
       }
     }
   },
   "emitters": {
-    "solr-emitter": {
-      "se": {
+    "se": {
+      "solr-emitter": {
         "solrUrls": "{SOLR_CONNECTION}",
         "updateStrategy": "{UPDATE_STRATEGY}",
         "solrCollection": "testcol",
@@ -74,8 +74,8 @@
         "socketTimeout": 60000
       }
     },
-    "file-system-emitter": {
-      "fse": {
+    "fse": {
+      "file-system-emitter": {
         "basePath": "/path/to/extracts"
       }
     }

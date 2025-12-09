@@ -92,36 +92,55 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
         Map<String, ExtensionConfig> configs = new HashMap<>();
 
         if (configNode != null && !configNode.isNull()) {
-            // Outer loop: iterate over type names
-            Iterator<Map.Entry<String, JsonNode>> typeFields = configNode.fields();
-            while (typeFields.hasNext()) {
+            // Outer loop: iterate over instance IDs
+            Iterator<Map.Entry<String, JsonNode>> instanceFields = configNode.fields();
+            while (instanceFields.hasNext()) {
+                Map.Entry<String, JsonNode> instanceEntry = instanceFields.next();
+                String instanceId = instanceEntry.getKey();
+                JsonNode typeNode = instanceEntry.getValue();
+
+                // Check for duplicate IDs (should not happen due to JSON parsing, but validate)
+                if (configs.containsKey(instanceId)) {
+                    throw new TikaConfigException("Duplicate " + getComponentName() +
+                            " id: " + instanceId);
+                }
+
+                // Inner loop: extract the type name
+                // The structure should be: { "type-name": { config } }
+                // We expect exactly ONE type per instance
+                Iterator<Map.Entry<String, JsonNode>> typeFields = typeNode.fields();
+
+                if (!typeFields.hasNext()) {
+                    throw new TikaConfigException(
+                            "Invalid " + getComponentName() + " configuration for id '" + instanceId +
+                            "': missing type specification. Expected format: {\"" + instanceId +
+                            "\": {\"type-name\": {...}}}");
+                }
+
                 Map.Entry<String, JsonNode> typeEntry = typeFields.next();
                 String typeName = typeEntry.getKey();
-                JsonNode instancesNode = typeEntry.getValue();
+                JsonNode config = typeEntry.getValue();
 
-                // Validate that factory exists
+                // Validate that there's only one type per instance
+                if (typeFields.hasNext()) {
+                    Map.Entry<String, JsonNode> extraTypeEntry = typeFields.next();
+                    throw new TikaConfigException(
+                            "Invalid " + getComponentName() + " configuration for id '" + instanceId +
+                            "': multiple types specified ('" + typeName + "', '" +
+                            extraTypeEntry.getKey() + "'). Each instance can only have one type.");
+                }
+
+                // Validate that factory exists for this type
                 F factory = factories.get(typeName);
                 if (factory == null) {
                     throw new TikaConfigException(
-                            "Unknown " + getComponentName() + " type: " + typeName +
-                            ". Available: " + factories.keySet());
+                            "Unknown " + getComponentName() + " type: '" + typeName +
+                            "' for instance id '" + instanceId + "'. Available types: " +
+                            factories.keySet());
                 }
 
-                // Inner loop: iterate over instances of this type
-                Iterator<Map.Entry<String, JsonNode>> instanceFields = instancesNode.fields();
-                while (instanceFields.hasNext()) {
-                    Map.Entry<String, JsonNode> instanceEntry = instanceFields.next();
-                    String instanceId = instanceEntry.getKey();
-                    JsonNode config = instanceEntry.getValue();
-
-                    if (configs.containsKey(instanceId)) {
-                        throw new TikaConfigException("Duplicate " + getComponentName() +
-                                " id: " + instanceId);
-                    }
-
-                    configs.put(instanceId, new ExtensionConfig(instanceId, typeName,
-                            toJsonString(config)));
-                }
+                configs.put(instanceId, new ExtensionConfig(instanceId, typeName,
+                        toJsonString(config)));
             }
         }
 
