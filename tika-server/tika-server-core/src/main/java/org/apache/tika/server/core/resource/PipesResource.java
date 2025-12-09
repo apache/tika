@@ -56,12 +56,12 @@ public class PipesResource {
 
     public PipesResource(java.nio.file.Path tikaConfig) throws TikaConfigException, IOException {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfig);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfig);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
         // Everything must be emitted through the PipesServer (EMIT_ALL strategy)
         if (pipesConfig.getEmitStrategy().getType() != EmitStrategy.EMIT_ALL) {
             if (pipesConfig.getEmitStrategy().getType() != EmitStrategyConfig.DEFAULT_EMIT_STRATEGY) {
                 LOG.warn("resetting emit strategy to EMIT_ALL for pipes endpoint");
-            pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.EMIT_ALL));
+                pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.EMIT_ALL));
             }
         }
         this.pipesParser = new PipesParser(pipesConfig, tikaConfig);
