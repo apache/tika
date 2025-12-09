@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.api.emitter.EmitData;
 import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.core.PipesConfig;
@@ -119,7 +120,13 @@ public class AsyncEmitter implements Callable<Integer> {
             int emitted = 0;
             LOG.debug("about to emit {} files, {} estimated bytes", size, estimatedSize);
             for (Map.Entry<String, List<EmitData>> e : map.entrySet()) {
-                Emitter emitter = emitterManager.getEmitter(e.getKey());
+                Emitter emitter = null;
+                try {
+                    emitter = emitterManager.getEmitter(e.getKey());
+                } catch (IOException | TikaException ex) {
+                    LOG.warn("emitter id={} failed on instantiation", e.getKey(), ex);
+                    return;
+                }
                 tryToEmit(emitter, e.getValue());
                 emitted += e.getValue().size();
             }

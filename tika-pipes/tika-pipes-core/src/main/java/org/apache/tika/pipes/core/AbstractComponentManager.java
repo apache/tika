@@ -19,6 +19,7 @@ package org.apache.tika.pipes.core;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,7 +31,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.loader.PolymorphicObjectMapperFactory;
-import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.plugins.ExtensionConfig;
@@ -237,7 +237,7 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
             throw new TikaConfigException(
                     "Runtime modifications are not allowed. " + getClass().getSimpleName() +
                     " must be loaded with allowRuntimeModifications=true to use save" +
-                    getComponentName().substring(0, 1).toUpperCase() + getComponentName().substring(1) + "()");
+                    getComponentName().substring(0, 1).toUpperCase(Locale.ROOT) + getComponentName().substring(1) + "()");
         }
 
         if (config == null) {
@@ -249,7 +249,7 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
 
         // Check for duplicate ID
         if (componentConfigs.containsKey(componentId)) {
-            throw new TikaConfigException(getComponentName().substring(0, 1).toUpperCase() +
+            throw new TikaConfigException(getComponentName().substring(0, 1).toUpperCase(Locale.ROOT) +
                     getComponentName().substring(1) + " with id '" + componentId + "' already exists");
         }
 
@@ -280,12 +280,12 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
      * @return the single configured component
      */
     public T getComponent() throws IOException, TikaException {
-        if (componentConfigs.isEmpty()) {
-            throw new IllegalArgumentException(getComponentName() + "s size must == 1 for the no arg call");
-        }
-        if (componentConfigs.size() > 1) {
-            throw new IllegalArgumentException("need to specify '" + getComponentName() +
-                    "Id' if > 1 " + getComponentName() + "s are available");
+        if (componentConfigs.size() != 1) {
+            throw new IllegalArgumentException(
+                    "No-arg get" + getComponentName().substring(0, 1).toUpperCase(Locale.ROOT) +
+                    getComponentName().substring(1) + "() requires exactly 1 configured " +
+                    getComponentName() + ". Found: " + componentConfigs.size() +
+                    " (" + componentConfigs.keySet() + ")");
         }
         // Get the single component id and use getComponent(id) for lazy loading
         String componentId = componentConfigs.keySet().iterator().next();

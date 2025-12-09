@@ -22,12 +22,12 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -63,19 +63,24 @@ public class EmitterManagerTest {
     @Test
     public void testLazyInstantiation(@TempDir Path tmpDir) throws Exception {
         // Create config with multiple emitters
-        String configJson = "{\n" +
-                "  \"emitters\": {\n" +
-                "    \"file-system-emitter\": {\n" +
-                "      \"fse1\": {\n" +
-                "        \"basePath\": \"" + tmpDir.resolve("output1").toString().replace("\\", "/") + "\"\n" +
-                "      },\n" +
-                "      \"fse2\": {\n" +
-                "        \"basePath\": \"" + tmpDir.resolve("output2").toString().replace("\\", "/") + "\"\n" +
-                "      }\n" +
-                "    }\n" +
-                "  },\n" +
-                "  \"plugin-roots\": \"target/plugins\"\n" +
-                "}";
+        String configJson = String.format(Locale.ROOT, """
+                {
+                  "emitters": {
+                    "file-system-emitter": {
+                      "fse1": {
+                        "basePath": "%s",
+                        "onExists": "REPLACE"
+                      },
+                      "fse2": {
+                        "basePath": "%s",
+                        "onExists": "REPLACE"
+                      }
+                    }
+                  },
+                  "plugin-roots": "target/plugins"
+                }
+                """, PluginsTestHelper.toJsonPath(tmpDir.resolve("output1")),
+                     PluginsTestHelper.toJsonPath(tmpDir.resolve("output2")));
 
         Path configPath = tmpDir.resolve("config.json");
         Files.writeString(configPath, configJson, StandardCharsets.UTF_8);
@@ -188,16 +193,18 @@ public class EmitterManagerTest {
 
     @Test
     public void testUnknownEmitterType(@TempDir Path tmpDir) throws Exception {
-        String configJson = "{\n" +
-                "  \"emitters\": {\n" +
-                "    \"non-existent-emitter-type\": {\n" +
-                "      \"emitter1\": {\n" +
-                "        \"someProp\": \"value\"\n" +
-                "      }\n" +
-                "    }\n" +
-                "  },\n" +
-                "  \"plugin-roots\": \"target/plugins\"\n" +
-                "}";
+        String configJson = """
+                {
+                  "emitters": {
+                    "non-existent-emitter-type": {
+                      "emitter1": {
+                        "someProp": "value"
+                      }
+                    }
+                  },
+                  "plugin-roots": "target/plugins"
+                }
+                """;
 
         Path configPath = tmpDir.resolve("config.json");
         Files.writeString(configPath, configJson, StandardCharsets.UTF_8);
@@ -216,25 +223,27 @@ public class EmitterManagerTest {
 
     @Test
     public void testDuplicateEmitterId(@TempDir Path tmpDir) throws Exception {
-        String configJson = "{\n" +
-                "  \"emitters\": {\n" +
-                "    \"file-system-emitter\": {\n" +
-                "      \"fse1\": {\n" +
-                "        \"basePath\": \"" + tmpDir.resolve("output1").toString().replace("\\", "/") + "\"\n" +
-                "      },\n" +
-                "      \"fse1\": {\n" +
-                "        \"basePath\": \"" + tmpDir.resolve("output2").toString().replace("\\", "/") + "\"\n" +
-                "      }\n" +
-                "    }\n" +
-                "  },\n" +
-                "  \"plugin-roots\": \"target/plugins\"\n" +
-                "}";
+        String configJson = String.format(Locale.ROOT, """
+                {
+                  "emitters": {
+                    "file-system-emitter": {
+                      "fse1": {
+                        "basePath": "%s",
+                        "onExists": "REPLACE"
+                      },
+                      "fse1": {
+                        "basePath": "%s",
+                        "onExists": "REPLACE"
+                      }
+                    }
+                  },
+                  "plugin-roots": "target/plugins"
+                }
+                """, PluginsTestHelper.toJsonPath(tmpDir.resolve("output1")),
+                     PluginsTestHelper.toJsonPath(tmpDir.resolve("output2")));
 
         Path configPath = tmpDir.resolve("config.json");
         Files.writeString(configPath, configJson, StandardCharsets.UTF_8);
-
-        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(configPath);
-        TikaPluginManager pluginManager = TikaPluginManager.load(tikaJsonConfig);
 
         // PolymorphicObjectMapperFactory has FAIL_ON_READING_DUP_TREE_KEY enabled
         // so duplicate keys are caught during JSON parsing
@@ -242,7 +251,8 @@ public class EmitterManagerTest {
             TikaJsonConfig.load(configPath);
         });
 
-        assertTrue(exception.getMessage().contains("Failed to parse JSON") ||
+        assertTrue(exception.getMessage().contains("Failed to parse JSON") &&
+                exception.getCause() != null &&
                 exception.getCause().getMessage().contains("Duplicate field"));
     }
 
@@ -262,19 +272,24 @@ public class EmitterManagerTest {
 
     @Test
     public void testGetSingleEmitterWithMultipleConfigured(@TempDir Path tmpDir) throws Exception {
-        String configJson = "{\n" +
-                "  \"emitters\": {\n" +
-                "    \"file-system-emitter\": {\n" +
-                "      \"fse1\": {\n" +
-                "        \"basePath\": \"" + tmpDir.resolve("output1").toString().replace("\\", "/") + "\"\n" +
-                "      },\n" +
-                "      \"fse2\": {\n" +
-                "        \"basePath\": \"" + tmpDir.resolve("output2").toString().replace("\\", "/") + "\"\n" +
-                "      }\n" +
-                "    }\n" +
-                "  },\n" +
-                "  \"plugin-roots\": \"target/plugins\"\n" +
-                "}";
+        String configJson = String.format(Locale.ROOT, """
+                {
+                  "emitters": {
+                    "file-system-emitter": {
+                      "fse1": {
+                        "basePath": "%s",
+                        "onExists": "REPLACE"
+                      },
+                      "fse2": {
+                        "basePath": "%s",
+                        "onExists": "REPLACE"
+                      }
+                    }
+                  },
+                  "plugin-roots": "target/plugins"
+                }
+                """, PluginsTestHelper.toJsonPath(tmpDir.resolve("output1")),
+                     PluginsTestHelper.toJsonPath(tmpDir.resolve("output2")));
 
         Path configPath = tmpDir.resolve("config.json");
         Files.writeString(configPath, configJson, StandardCharsets.UTF_8);
@@ -289,7 +304,7 @@ public class EmitterManagerTest {
             emitterManager.getEmitter();
         });
 
-        assertTrue(exception.getMessage().contains("need to specify 'emitterId'"));
+        assertTrue(exception.getMessage().contains("exactly 1"));
     }
 
     @Test
@@ -305,7 +320,12 @@ public class EmitterManagerTest {
         assertEquals(1, emitterManager.getSupported().size());
 
         // Dynamically add a new emitter configuration
-        String newConfigJson = "{\"basePath\": \"" + tmpDir.resolve("output2").toString().replace("\\", "/") + "\"}";
+        String newConfigJson = String.format(Locale.ROOT, """
+                {
+                  "basePath": "%s",
+                  "onExists": "REPLACE"
+                }
+                """, PluginsTestHelper.toJsonPath(tmpDir.resolve("output2")));
         ExtensionConfig newConfig = new ExtensionConfig("fse2", "file-system-emitter", newConfigJson);
 
         emitterManager.saveEmitter(newConfig);
@@ -330,7 +350,12 @@ public class EmitterManagerTest {
         EmitterManager emitterManager = EmitterManager.load(pluginManager, tikaJsonConfig, true);
 
         // Try to add an emitter with the same ID as existing one
-        String newConfigJson = "{\"basePath\": \"" + tmpDir.resolve("output2").toString().replace("\\", "/") + "\"}";
+        String newConfigJson = String.format(Locale.ROOT, """
+                {
+                  "basePath": "%s",
+                  "onExists": "REPLACE"
+                }
+                """, PluginsTestHelper.toJsonPath(tmpDir.resolve("output2")));
         ExtensionConfig duplicateConfig = new ExtensionConfig("fse", "file-system-emitter", newConfigJson);
 
         TikaConfigException exception = assertThrows(TikaConfigException.class, () -> {
@@ -385,7 +410,12 @@ public class EmitterManagerTest {
 
         // Add multiple emitters
         for (int i = 2; i <= 5; i++) {
-            String configJson = "{\"basePath\": \"" + tmpDir.resolve("output" + i).toString().replace("\\", "/") + "\"}";
+            String configJson = String.format(Locale.ROOT, """
+                    {
+                      "basePath": "%s",
+                      "onExists": "REPLACE"
+                    }
+                    """, PluginsTestHelper.toJsonPath(tmpDir.resolve("output" + i)));
             ExtensionConfig config2 = new ExtensionConfig("fse" + i, "file-system-emitter", configJson);
             emitterManager.saveEmitter(config2);
         }
@@ -414,7 +444,12 @@ public class EmitterManagerTest {
         EmitterManager emitterManager = EmitterManager.load(pluginManager, tikaJsonConfig);
 
         // Try to add an emitter - should fail
-        String newConfigJson = "{\"basePath\": \"" + tmpDir.resolve("output2").toString().replace("\\", "/") + "\"}";
+        String newConfigJson = String.format(Locale.ROOT, """
+                {
+                  "basePath": "%s",
+                  "onExists": "REPLACE"
+                }
+                """, PluginsTestHelper.toJsonPath(tmpDir.resolve("output2")));
         ExtensionConfig newConfig = new ExtensionConfig("fse2", "file-system-emitter", newConfigJson);
 
         TikaConfigException exception = assertThrows(TikaConfigException.class, () -> {
@@ -435,7 +470,12 @@ public class EmitterManagerTest {
         EmitterManager emitterManager = EmitterManager.load(pluginManager, tikaJsonConfig, false);
 
         // Try to add an emitter - should fail
-        String newConfigJson = "{\"basePath\": \"" + tmpDir.resolve("output2").toString().replace("\\", "/") + "\"}";
+        String newConfigJson = String.format(Locale.ROOT, """
+                {
+                  "basePath": "%s",
+                  "onExists": "REPLACE"
+                }
+                """, PluginsTestHelper.toJsonPath(tmpDir.resolve("output2")));
         ExtensionConfig newConfig = new ExtensionConfig("fse2", "file-system-emitter", newConfigJson);
 
         TikaConfigException exception = assertThrows(TikaConfigException.class, () -> {

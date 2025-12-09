@@ -131,7 +131,14 @@ class PipesWorker implements Callable<PipesResult> {
             return new ParseDataOrPipesResult(null, tisOrResult.pipesResult());
         }
 
-        ParseContext parseContext = setupParseContext(fetchEmitTuple);
+        ParseContext parseContext = null;
+        try {
+            parseContext = setupParseContext(fetchEmitTuple);
+        } catch (IOException e) {
+            LOG.warn("fetcher initialization exception id={}", fetchEmitTuple.getId(), e);
+            return new ParseDataOrPipesResult(null,
+                    new PipesResult(PipesResult.RESULT_STATUS.FETCHER_INITIALIZATION_EXCEPTION, ExceptionUtils.getStackTrace(e)));
+        }
         try (TikaInputStream tis = tisOrResult.tis()) {
             return parseHandler.parseWithStream(fetchEmitTuple, tis, metadata, parseContext);
         } catch (SecurityException e) {
@@ -146,8 +153,7 @@ class PipesWorker implements Callable<PipesResult> {
 
 
 
-    private ParseContext setupParseContext(FetchEmitTuple fetchEmitTuple)
-            throws TikaConfigException {
+    private ParseContext setupParseContext(FetchEmitTuple fetchEmitTuple) throws TikaException, IOException {
         ParseContext parseContext = fetchEmitTuple.getParseContext();
         if (parseContext.get(HandlerConfig.class) == null) {
             parseContext.set(HandlerConfig.class, DEFAULT_HANDLER_CONFIG);

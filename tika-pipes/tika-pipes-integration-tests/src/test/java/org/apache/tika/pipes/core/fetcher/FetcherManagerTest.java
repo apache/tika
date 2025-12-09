@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,7 +32,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -287,7 +285,7 @@ public class FetcherManagerTest {
             fetcherManager.getFetcher();
         });
 
-        assertTrue(exception.getMessage().contains("need to specify 'fetcherId'"));
+        assertTrue(exception.getMessage().contains("requires exactly 1"));
     }
 
     @Test

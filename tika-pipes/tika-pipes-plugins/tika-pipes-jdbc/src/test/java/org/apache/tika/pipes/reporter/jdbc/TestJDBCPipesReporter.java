@@ -151,7 +151,7 @@ public class TestJDBCPipesReporter {
         Map<PipesResult.RESULT_STATUS, Long> expected = runBatch(reporter, numThreads, numIterations);
         reporter.close();
         Map<PipesResult.RESULT_STATUS, Long> total = countReported(connectionString);
-        assertEquals(16, total.size());
+        assertEquals(PipesResult.RESULT_STATUS.values().length - 2, total.size());
         long sum = 0;
         for (Map.Entry<PipesResult.RESULT_STATUS, Long> e : expected.entrySet()) {
             if (e.getKey() != PARSE_SUCCESS && e.getKey() != PARSE_SUCCESS_WITH_EXCEPTION) {

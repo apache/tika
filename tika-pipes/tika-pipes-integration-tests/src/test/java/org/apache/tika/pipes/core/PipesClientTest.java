@@ -490,9 +490,8 @@ public class PipesClientTest {
 
             PipesResult pipesResult = pipesClient.process(tuple);
 
-            // Should be FETCHER_NOT_FOUND
-            assertEquals(PipesResult.RESULT_STATUS.FETCHER_NOT_FOUND, pipesResult.status(),
-                    "Should return FETCHER_NOT_FOUND when fetcher name is invalid");
+            assertEquals(PipesResult.RESULT_STATUS.FETCHER_INITIALIZATION_EXCEPTION, pipesResult.status(),
+                    "Should return FETCHER_INITIALIZATION_EXCEPTION when fetcher name is invalid");
 
             // Verify it's categorized as APPLICATION_ERROR
             assertTrue(pipesResult.isApplicationError(),
