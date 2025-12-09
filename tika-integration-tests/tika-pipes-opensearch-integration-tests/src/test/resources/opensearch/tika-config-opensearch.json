@@ -6,7 +6,10 @@
     {
       "pdf-parser": {
         "extractActions": true,
-        "checkExtractAccessPermissions": true
+        "accessChecker": {
+          "needToCheck": true,
+          "allowExtractionForAccessibility": true
+        }
       }
     },
     {
