@@ -28,7 +28,12 @@
     <parser class="org.apache.tika.parser.pdf.PDFParser">
       <params>
         <param name="extractActions" type="bool">true</param>
-        <param name="checkExtractAccessPermissions" type="bool">true</param>
+        <param name="accessChecker" type="org.apache.tika.parser.pdf.AccessChecker">
+          <params>
+            <param name="needToCheck" type="bool">true</param>
+            <param name="allowExtractionForAccessibility" type="bool">true</param>
+          </params>
+        </param>
       </params>
     </parser>
     <parser class="org.apache.tika.parser.microsoft.ooxml.OOXMLParser">
