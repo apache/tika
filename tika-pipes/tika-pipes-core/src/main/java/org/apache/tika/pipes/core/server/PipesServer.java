@@ -164,7 +164,7 @@ public class PipesServer implements AutoCloseable {
         try {
             TikaLoader tikaLoader = TikaLoader.load(tikaConfigPath);
             TikaJsonConfig tikaJsonConfig = tikaLoader.getConfig();
-            PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfigPath);
+            PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
             // Set socket timeout from config after loading PipesConfig
             socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMs());

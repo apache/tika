@@ -38,7 +38,7 @@ public class PipesServerTest extends TikaTest {
         PluginsTestHelper.copyTestFilesToTmpInput(tmp, testDoc);
 
         TikaLoader tikaLoader = TikaLoader.load(tikaConfig);
-        PipesConfig pipesConfig = PipesConfig.load(tikaLoader.getConfig(), tikaConfig);
+        PipesConfig pipesConfig = PipesConfig.load(tikaLoader.getConfig());
         PipesServer pipesServer = PipesServer.load(40, tikaConfig);
 
         FetchEmitTuple fetchEmitTuple = new FetchEmitTuple("id",

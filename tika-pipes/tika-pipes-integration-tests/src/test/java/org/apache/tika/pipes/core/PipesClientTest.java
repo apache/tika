@@ -53,8 +53,8 @@ public class PipesClientTest {
         PluginsTestHelper.copyTestFilesToTmpInput(tmp, testFileName);
 
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfigPath);
-        return new PipesClient(pipesConfig);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+        return new PipesClient(pipesConfig, tikaConfigPath);
     }
 
     @Test
@@ -137,9 +137,9 @@ public class PipesClientTest {
 
         Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, inputDir, tmp.resolve("output"));
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesClient pipesClient = new PipesClient(pipesConfig)) {
+        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
             // First test: Short timeout (1 second) - should timeout
             ParseContext shortTimeoutContext = new ParseContext();
             shortTimeoutContext.set(TikaTaskTimeout.class, new TikaTaskTimeout(1000));
@@ -176,9 +176,9 @@ public class PipesClientTest {
                 "tika-config-bad-class.json", tmp);
 
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesClient pipesClient = new PipesClient(pipesConfig)) {
+        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
             FetchEmitTuple tuple = new FetchEmitTuple(testDoc,
                     new FetchKey("bad-fetcher", testDoc),
                     new EmitKey(), new Metadata(), new ParseContext(),
@@ -205,9 +205,9 @@ public class PipesClientTest {
         PluginsTestHelper.copyTestFilesToTmpInput(tmp, testDoc);
 
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesClient pipesClient = new PipesClient(pipesConfig)) {
+        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
             FetchEmitTuple tuple = new FetchEmitTuple(testDoc,
                     new FetchKey("fsf", testDoc),
                     new EmitKey(), new Metadata(), new ParseContext(),
@@ -233,9 +233,9 @@ public class PipesClientTest {
         PluginsTestHelper.copyTestFilesToTmpInput(tmp, testDoc);
 
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesClient pipesClient = new PipesClient(pipesConfig)) {
+        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
             FetchEmitTuple tuple = new FetchEmitTuple(testDoc,
                     new FetchKey("fsf", testDoc),
                     new EmitKey(), new Metadata(), new ParseContext(),
@@ -259,9 +259,9 @@ public class PipesClientTest {
         PluginsTestHelper.copyTestFilesToTmpInput(tmp, testDoc);
 
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesClient pipesClient = new PipesClient(pipesConfig)) {
+        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
             FetchEmitTuple tuple = new FetchEmitTuple(testDoc,
                     new FetchKey("fsf", testDoc),
                     new EmitKey(), new Metadata(), new ParseContext(),
@@ -309,7 +309,7 @@ public class PipesClientTest {
                 "tika-config-timeout-lt-heartbeat.json", tmp);
 
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
         // Verify the misconfiguration that triggers socket timeout
         assertEquals(3000, pipesConfig.getSocketTimeoutMs(), "Socket timeout should be 3 seconds");
@@ -319,7 +319,7 @@ public class PipesClientTest {
 
         // The config file includes -Dtika.pipes.allowInvalidHeartbeat=true in forkedJvmArgs
         // to allow this invalid configuration for testing only
-        try (PipesClient pipesClient = new PipesClient(pipesConfig)) {
+        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
             FetchEmitTuple tuple = new FetchEmitTuple(testFile,
                     new FetchKey("fsf", testFile),
                     new EmitKey(), new Metadata(), new ParseContext(),
@@ -362,9 +362,9 @@ public class PipesClientTest {
 
         Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, inputDir, tmp.resolve("output"));
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesClient pipesClient = new PipesClient(pipesConfig)) {
+        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
             FetchEmitTuple tuple = new FetchEmitTuple(testFile,
                     new FetchKey(fetcherName, testFile),
                     new EmitKey(emitterName, ""), new Metadata(), new ParseContext(),
@@ -396,9 +396,9 @@ public class PipesClientTest {
 
         Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, inputDir, tmp.resolve("output"));
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesClient pipesClient = new PipesClient(pipesConfig)) {
+        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
             // Request a file that doesn't exist
             String nonExistentFile = "does-not-exist.pdf";
             FetchEmitTuple tuple = new FetchEmitTuple(nonExistentFile,
@@ -450,9 +450,9 @@ public class PipesClientTest {
         // Config has onExists=EXCEPTION which will trigger FileAlreadyExistsException
         Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig("tika-config-emit-all.json", tmp, inputDir, outputDir, false);
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesClient pipesClient = new PipesClient(pipesConfig)) {
+        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
             FetchEmitTuple tuple = new FetchEmitTuple(testFile,
                     new FetchKey(fetcherName, testFile),
                     new EmitKey(emitterName, ""), new Metadata(), new ParseContext(),
@@ -479,9 +479,9 @@ public class PipesClientTest {
 
         Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, inputDir, tmp.resolve("output"));
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesClient pipesClient = new PipesClient(pipesConfig)) {
+        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
             // Use invalid fetcher name
             FetchEmitTuple tuple = new FetchEmitTuple("test.pdf",
                     new FetchKey("non-existent-fetcher", "test.pdf"),
@@ -524,9 +524,9 @@ public class PipesClientTest {
         // Use config with directEmitThresholdBytes=0 to force server-side emission
         Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig("tika-config-emit-all.json", tmp, inputDir, tmp.resolve("output"), false);
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesClient pipesClient = new PipesClient(pipesConfig)) {
+        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
             // Use invalid emitter name
             FetchEmitTuple tuple = new FetchEmitTuple(testFile,
                     new FetchKey(fetcherName, testFile),
@@ -583,9 +583,9 @@ public class PipesClientTest {
         Files.writeString(tikaConfigPath, configContent, StandardCharsets.UTF_8);
 
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesClient pipesClient = new PipesClient(pipesConfig)) {
+        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
             // Process file - should complete successfully despite multiple heartbeats
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
