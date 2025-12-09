@@ -15,8 +15,8 @@
         "onExists": "EXCEPTION"
       }
     },
-    "file-system-emitter": {
-      "fse-bytes": {
+    "fse-bytes": {
+      "file-system-emitter": {
         "basePath": "BYTES_EMITTER_BASE_PATH",
         "fileExtension": "",
         "onExists": "EXCEPTION"
