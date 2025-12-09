@@ -151,11 +151,15 @@ public class PipesServer implements AutoCloseable {
     private final PipesWorker.EMIT_STRATEGY emitStrategy;
 
     public static PipesServer load(int port, Path tikaConfigPath) throws Exception {
+            LOG.trace("load: connecting to client on port={}", port);
             Socket socket = new Socket();
             socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), PipesClient.SOCKET_CONNECT_TIMEOUT_MS);
+            LOG.trace("load: connected to client port={}, localAddr={}, remoteAddr={}",
+                    port, socket.getLocalSocketAddress(), socket.getRemoteSocketAddress());
 
             DataInputStream dis = new DataInputStream(socket.getInputStream());
             DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+        LOG.trace("load: streams created, loading Tika configuration from {}", tikaConfigPath);
         try {
             TikaLoader tikaLoader = TikaLoader.load(tikaConfigPath);
             TikaJsonConfig tikaJsonConfig = tikaLoader.getConfig();
@@ -165,8 +169,11 @@ public class PipesServer implements AutoCloseable {
             socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMs());
 
             MetadataFilter metadataFilter = tikaLoader.loadMetadataFilters();
+            LOG.trace("load: creating PipesServer instance");
             PipesServer pipesServer = new PipesServer(tikaLoader, pipesConfig, socket, dis, dos, metadataFilter);
+            LOG.trace("load: initializing resources");
             pipesServer.initializeResources();
+            LOG.trace("load: PipesServer successfully loaded and initialized");
             return pipesServer;
         } catch (Exception e) {
             LOG.error("Failed to start up", e);
@@ -235,8 +242,10 @@ public class PipesServer implements AutoCloseable {
         int port = Integer.parseInt(args[0]);
         Path tikaConfig = Paths.get(args[1]);
         LOG.debug("starting pipes server on port={} with tikaConfig={}", port, tikaConfig);
+        LOG.trace("main: about to call PipesServer.load()");
         try (PipesServer server = PipesServer.load(port, tikaConfig)) {
             LOG.debug("successfully started pipes server");
+            LOG.trace("main: about to enter mainLoop()");
             server.mainLoop();
         } catch (Throwable t) {
             LOG.error("crashed", t);
@@ -247,7 +256,9 @@ public class PipesServer implements AutoCloseable {
     }
 
     public void mainLoop() {
+        LOG.trace("mainLoop: about to send READY");
         write(PROCESSING_STATUS.READY.getByte());
+        LOG.trace("mainLoop: READY sent and ACK received, entering main loop");
         ArrayBlockingQueue<Metadata> intermediateResult = new ArrayBlockingQueue<>(1);
 
         LOG.trace("processing requests");
@@ -255,7 +266,9 @@ public class PipesServer implements AutoCloseable {
         try {
             long start = System.currentTimeMillis();
             while (true) {
+                LOG.trace("mainLoop: about to read command byte");
                 int request = input.read();
+                LOG.trace("mainLoop: read command byte={}", HexFormat.of().formatHex(new byte[]{(byte)request}));
                 if (request == -1) {
                     LOG.warn("received -1 from client; shutting down");
                     exit(0);
@@ -480,10 +493,14 @@ public class PipesServer implements AutoCloseable {
     }
 
     private void awaitAck() throws IOException {
+        LOG.trace("awaitAck: about to read ACK");
         int b = input.read();
+        LOG.trace("awaitAck: read byte={}", HexFormat.of().formatHex(new byte[]{ (byte) b}));
         if (b == ACK.getByte()) {
+            LOG.trace("awaitAck: successfully received ACK");
             return;
         }
+        LOG.error("awaitAck: expected ACK but got byte={}", HexFormat.of().formatHex(new byte[]{ (byte) b}));
         throw new IOException("Wasn't expecting byte=" + HexFormat.of().formatHex(new byte[]{ (byte) b}));
     }
 
@@ -499,9 +516,12 @@ public class PipesServer implements AutoCloseable {
 
     private void write(byte b) {
         try {
+            LOG.trace("write: about to write byte={}", HexFormat.of().formatHex(new byte[]{ b }));
             output.write(b);
             output.flush();
+            LOG.trace("write: byte written and flushed, awaiting ACK");
             awaitAck();
+            LOG.trace("write: ACK received");
         } catch (IOException e) {
             LOG.error("problem writing data (forking process shutdown?)", e);
             exit(1);
