@@ -94,12 +94,14 @@ public class PipesClient implements Closeable {
 
 
     private final PipesConfig pipesConfig;
+    private final Path tikaConfigPath;
     private final int pipesClientId;
     private ServerTuple serverTuple;
     private int filesProcessed = 0;
 
-    public PipesClient(PipesConfig pipesConfig) {
+    public PipesClient(PipesConfig pipesConfig, Path tikaConfigPath) {
         this.pipesConfig = pipesConfig;
+        this.tikaConfigPath = tikaConfigPath;
         this.pipesClientId = CLIENT_COUNTER.getAndIncrement();
     }
 
@@ -572,7 +574,7 @@ public class PipesClient implements Closeable {
         commandLine.add("org.apache.tika.pipes.core.server.PipesServer");
 
         commandLine.add(Integer.toString(port));
-        commandLine.add(pipesConfig.getTikaConfigPath());
+        commandLine.add(tikaConfigPath.toAbsolutePath().toString());
         LOG.debug("pipesClientId={}: commandline: {}", pipesClientId, commandLine);
         return commandLine.toArray(new String[0]);
     }

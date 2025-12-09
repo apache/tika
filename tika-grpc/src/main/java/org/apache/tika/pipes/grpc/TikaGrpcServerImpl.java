@@ -115,7 +115,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             tikaConfigPath = tikaConfigFile.getAbsolutePath();
         }
         pipesConfig = TikaLoader.load(tikaConfigFile.toPath()).configs().load("pipes", PipesConfig.class);
-        pipesClient = new PipesClient(pipesConfig);
+        pipesClient = new PipesClient(pipesConfig, tikaConfigFile.toPath());
 
         expiringFetcherStore = new ExpiringFetcherStore(pipesConfig.getStaleFetcherTimeoutSeconds(),
                 pipesConfig.getStaleFetcherDelaySeconds());

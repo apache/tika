@@ -68,6 +68,7 @@ public class AsyncProcessor implements Closeable {
     private final ExecutorCompletionService<Integer> executorCompletionService;
     private final ExecutorService executorService;
     private final PipesConfig asyncConfig;
+    private final Path tikaConfigPath;
     private final PipesReporter pipesReporter;
     private final AtomicLong totalProcessed = new AtomicLong(0);
     private static long MAX_OFFER_WAIT_MS = 120000;
@@ -84,7 +85,8 @@ public class AsyncProcessor implements Closeable {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         TikaPluginManager tikaPluginManager = TikaPluginManager.load(tikaJsonConfig);
         MetadataFilter metadataFilter = TikaLoader.load(tikaConfigPath).loadMetadataFilters();
-        this.asyncConfig = PipesConfig.load(tikaJsonConfig, tikaConfigPath);
+        this.asyncConfig = PipesConfig.load(tikaJsonConfig);
+        this.tikaConfigPath = tikaConfigPath;
         this.pipesReporter = ReporterManager.load(tikaPluginManager, tikaJsonConfig);
         LOG.debug("loaded reporter {}", pipesReporter.getClass());
         this.fetchEmitTuples = new ArrayBlockingQueue<>(asyncConfig.getQueueSize());
@@ -95,12 +97,6 @@ public class AsyncProcessor implements Closeable {
         this.executorCompletionService =
                 new ExecutorCompletionService<>(executorService);
         try {
-            if (asyncConfig.getTikaConfigPath() != null && !tikaConfigPath.toAbsolutePath().equals(asyncConfig.getTikaConfigPath())) {
-                LOG.warn("TikaConfig for AsyncProcessor ({}) is different " +
-                                "from TikaConfig for workers ({}). If this is intended," +
-                                " please ignore this warning.", tikaConfigPath.toAbsolutePath(),
-                        asyncConfig.getTikaConfigPath());
-            }
             this.executorCompletionService.submit(() -> {
                 while (true) {
                     try {
@@ -119,7 +115,7 @@ public class AsyncProcessor implements Closeable {
 
             for (int i = 0; i < asyncConfig.getNumClients(); i++) {
                 executorCompletionService.submit(
-                        new FetchEmitWorker(asyncConfig, fetchEmitTuples, emitDatumTuples));
+                        new FetchEmitWorker(asyncConfig, tikaConfigPath, fetchEmitTuples, emitDatumTuples));
             }
 
             EmitterManager emitterManager = EmitterManager.load(tikaPluginManager, tikaJsonConfig);
@@ -272,13 +268,16 @@ public class AsyncProcessor implements Closeable {
     private class FetchEmitWorker implements Callable<Integer> {
 
         private final PipesConfig asyncConfig;
+        private final Path tikaConfigPath;
         private final ArrayBlockingQueue<FetchEmitTuple> fetchEmitTuples;
         private final ArrayBlockingQueue<EmitDataPair> emitDataTupleQueue;
 
         private FetchEmitWorker(PipesConfig asyncConfig,
+                                Path tikaConfigPath,
                                 ArrayBlockingQueue<FetchEmitTuple> fetchEmitTuples,
                                 ArrayBlockingQueue<EmitDataPair> emitDataTupleQueue) {
             this.asyncConfig = asyncConfig;
+            this.tikaConfigPath = tikaConfigPath;
             this.fetchEmitTuples = fetchEmitTuples;
             this.emitDataTupleQueue = emitDataTupleQueue;
         }
@@ -286,7 +285,7 @@ public class AsyncProcessor implements Closeable {
         @Override
         public Integer call() throws Exception {
 
-            try (PipesClient pipesClient = new PipesClient(asyncConfig)) {
+            try (PipesClient pipesClient = new PipesClient(asyncConfig, tikaConfigPath)) {
                 while (true) {
                     FetchEmitTuple t = fetchEmitTuples.poll(1, TimeUnit.SECONDS);
                     if (t == null) {

@@ -75,9 +75,6 @@ public class PipesConfig {
     public static final int DEFAULT_QUEUE_SIZE = 10000;
     public static final int DEFAULT_NUM_EMITTERS = 1;
 
-    @JsonIgnore
-    private volatile String tikaConfigPath = null;
-
     private long emitWithinMillis = DEFAULT_EMIT_WITHIN_MILLIS;
     private long emitMaxEstimatedBytes = DEFAULT_EMIT_MAX_ESTIMATED_BYTES;
     private int queueSize = DEFAULT_QUEUE_SIZE;
@@ -103,24 +100,13 @@ public class PipesConfig {
      * @throws IOException if deserialization fails
      * @throws TikaConfigException if configuration is invalid
      */
-    public static PipesConfig load(TikaJsonConfig tikaJsonConfig, Path tikaConfigPath) throws IOException, TikaConfigException {
+    public static PipesConfig load(TikaJsonConfig tikaJsonConfig) throws IOException, TikaConfigException {
         PipesConfig config = tikaJsonConfig.deserialize("pipes", PipesConfig.class);
         if (config == null) {
             config = new PipesConfig();
         }
-        config.setTikaConfigPath(tikaConfigPath.toAbsolutePath().toString());
         return config;
     }
-
-    @JsonIgnore
-    public String getTikaConfigPath() {
-        return tikaConfigPath;
-    }
-
-    void setTikaConfigPath(String tikaConfigPath) {
-        this.tikaConfigPath = tikaConfigPath;
-    }
-
 
     public long getTimeoutMillis() {
         return timeoutMillis;
