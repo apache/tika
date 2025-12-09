@@ -10,8 +10,13 @@
     "numClients": 1,
     "timeoutMillis": 5000,
     "javaPath": "thisIsntJava",
-    "forkedJvmArgs": ["-Xmx256m"],
-    "directEmitThresholdBytes": 1000000
+    "forkedJvmArgs": [
+      "-Xmx256m"
+    ],
+    "emitStrategy": {
+      "type": "DYNAMIC",
+      "thresholdBytes": 1000000
+    }
   },
   "plugin-roots": "PLUGINS_PATHS"
 }

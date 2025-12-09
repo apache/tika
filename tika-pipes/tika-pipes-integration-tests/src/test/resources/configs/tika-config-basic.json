@@ -43,7 +43,10 @@
     "timeoutMillis": 5000,
     "emitIntermediateResults": EMIT_INTERMEDIATE_RESULTS,
     "forkedJvmArgs": ["-Xmx512m"],
-    "directEmitThresholdBytes": 1000000
+    "emitStrategy": {
+      "type": "DYNAMIC",
+      "thresholdBytes": 1000000
+    }
   },
   "auto-detect-parser": {
     "spoolToDisk": 1000000,

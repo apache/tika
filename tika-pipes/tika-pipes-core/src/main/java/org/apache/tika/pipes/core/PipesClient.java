@@ -22,7 +22,6 @@ import static org.apache.tika.pipes.api.PipesResult.RESULT_STATUS.TIMEOUT;
 import static org.apache.tika.pipes.api.PipesResult.RESULT_STATUS.UNSPECIFIED_CRASH;
 import static org.apache.tika.pipes.core.PipesClient.COMMANDS.ACK;
 import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.FINISHED;
-import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.OOM;
 import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.READY;
 
 import java.io.Closeable;

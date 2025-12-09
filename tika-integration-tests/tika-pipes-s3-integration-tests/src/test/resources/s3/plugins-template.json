@@ -10,7 +10,12 @@
         "endpointConfigurationService": "{ENDPOINT_CONFIGURATION_SERVICE}",
         "pathStyleAccessEnabled": true,
         "maxConnections": 50,
-        "throttleSeconds": [30, 120, 600, 1200]
+        "throttleSeconds": [
+          30,
+          120,
+          600,
+          1200
+        ]
       }
     }
   },
@@ -56,7 +61,6 @@
     }
   },
   "pipes": {
-    "directEmitThresholdBytes": 10000,
     "emitMaxEstimatedBytes": 100000,
     "emitWithinMillis": 10,
     "numEmitters": 1,
@@ -67,7 +71,11 @@
       "-XX:+ExitOnOutOfMemoryError",
       "-Dlog4j.configurationFile={LOG4J_PROPERTIES_FILE}"
     ],
-    "timeoutMillis": 60000
+    "timeoutMillis": 60000,
+    "emitStrategy": {
+      "type": "DYNAMIC",
+      "thresholdBytes": 10000
+    }
   },
   "plugin-roots": "target/plugins"
 }

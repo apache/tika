@@ -55,12 +55,6 @@ class PipesWorker implements Callable<PipesResult> {
 
     private static final Logger LOG = LoggerFactory.getLogger(PipesWorker.class);
 
-    public enum EMIT_STRATEGY {
-        EMIT_ALL,
-        PASSBACK_ALL,
-        DYNAMIC
-    }
-
     private final FetchEmitTuple fetchEmitTuple;
     private final AutoDetectParser autoDetectParser;
     private final EmitterManager emitterManager;

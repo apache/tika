@@ -40,7 +40,9 @@
     "forkedJvmArgs": [
       "-Xmx512m"
     ],
-    "directEmitThresholdBytes": 0
+    "emitStrategy": {
+      "type": "EMIT_ALL"
+    }
   },
   "auto-detect-parser": {
     "spoolToDisk": 1000000,

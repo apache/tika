@@ -19,11 +19,18 @@
   "pipes": {
     "numClients": 1,
     "timeoutMillis": 5000,
-    "forkedJvmArgs": ["-Xmx256m"],
-    "directEmitThresholdBytes": 1000000
+    "forkedJvmArgs": [
+      "-Xmx256m"
+    ],
+    "emitStrategy": {
+      "type": "DYNAMIC",
+      "thresholdBytes": 1000000
+    }
   },
   "detectors": [
-    {"org.apache.tika.pipes.core.CrashingDetector": {}}
+    {
+      "org.apache.tika.pipes.core.CrashingDetector": {}
+    }
   ],
   "plugin-roots": "PLUGINS_PATHS"
 }

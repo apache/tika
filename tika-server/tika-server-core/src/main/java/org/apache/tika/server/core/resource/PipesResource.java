@@ -39,6 +39,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
+import org.apache.tika.pipes.core.EmitStrategy;
+import org.apache.tika.pipes.core.EmitStrategyConfig;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesParser;
@@ -55,13 +57,12 @@ public class PipesResource {
     public PipesResource(java.nio.file.Path tikaConfig) throws TikaConfigException, IOException {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfig);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfig);
-        //this has to be zero. everything must be emitted through the PipesServer
-        long maxEmit = pipesConfig.getDirectEmitThresholdBytes();
-        if (maxEmit != 0) {
-            pipesConfig.setDirectEmitThresholdBytes(0);
-            if (maxEmit != PipesConfig.DEFAULT_DIRECT_EMIT_THRESHOLD_BYTES) {
-                LOG.warn("resetting max for emit batch to 0");
+        // Everything must be emitted through the PipesServer (EMIT_ALL strategy)
+        if (pipesConfig.getEmitStrategy().getType() != EmitStrategy.EMIT_ALL) {
+            if (pipesConfig.getEmitStrategy().getType() != EmitStrategyConfig.DEFAULT_EMIT_STRATEGY) {
+                LOG.warn("resetting emit strategy to EMIT_ALL for pipes endpoint");
             }
+            pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.EMIT_ALL));
         }
         this.pipesParser = new PipesParser(pipesConfig);
     }
