@@ -155,7 +155,8 @@ class EmitHandler {
     }
 
 
-    private boolean shouldEmit(EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig, MetadataListAndEmbeddedBytes parseData, EmitDataImpl emitDataTuple, ParseContext parseContext) {
+    private boolean shouldEmit(EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig, MetadataListAndEmbeddedBytes parseData,
+                               EmitDataImpl emitDataTuple, ParseContext parseContext) {
         EmitStrategy strategy = emitStrategy;
         long thresholdBytes = directEmitThresholdBytes;
 
