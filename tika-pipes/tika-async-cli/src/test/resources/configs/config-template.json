@@ -41,10 +41,6 @@
       "-Xmx1g",
       "-XX:+UseG1GC"
     ],
-    "forkedJvmArgs": [
-      "-Xmx1g",
-      "-XX:+UseG1GC"
-    ],
     "javaPath": "java",
     "emitStrategy": {
       "type": "DYNAMIC",
