@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -91,19 +92,22 @@ public class FetcherManagerTest {
     @Test
     public void testLazyInstantiation(@TempDir Path tmpDir) throws Exception {
         // Create config with multiple fetchers
-        String configJson = "{\n" +
-                "  \"fetchers\": {\n" +
-                "    \"file-system-fetcher\": {\n" +
-                "      \"fsf1\": {\n" +
-                "        \"basePath\": \"" + tmpDir.resolve("path1").toString().replace("\\", "/") + "\"\n" +
-                "      },\n" +
-                "      \"fsf2\": {\n" +
-                "        \"basePath\": \"" + tmpDir.resolve("path2").toString().replace("\\", "/") + "\"\n" +
-                "      }\n" +
-                "    }\n" +
-                "  },\n" +
-                "  \"plugin-roots\": \"target/plugins\"\n" +
-                "}";
+        String configJson = String.format(Locale.ROOT, """
+                {
+                  "fetchers": {
+                    "file-system-fetcher": {
+                      "fsf1": {
+                        "basePath": "%s"
+                      },
+                      "fsf2": {
+                        "basePath": "%s"
+                      }
+                    }
+                  },
+                  "plugin-roots": "target/plugins"
+                }
+                """, PluginsTestHelper.toJsonPath(tmpDir.resolve("path1")),
+                     PluginsTestHelper.toJsonPath(tmpDir.resolve("path2")));
 
         Path configPath = tmpDir.resolve("config.json");
         Files.writeString(configPath, configJson, StandardCharsets.UTF_8);
@@ -216,16 +220,18 @@ public class FetcherManagerTest {
 
     @Test
     public void testUnknownFetcherType(@TempDir Path tmpDir) throws Exception {
-        String configJson = "{\n" +
-                "  \"fetchers\": {\n" +
-                "    \"non-existent-fetcher-type\": {\n" +
-                "      \"fetcher1\": {\n" +
-                "        \"someProp\": \"value\"\n" +
-                "      }\n" +
-                "    }\n" +
-                "  },\n" +
-                "  \"plugin-roots\": \"target/plugins\"\n" +
-                "}";
+        String configJson = """
+                {
+                  "fetchers": {
+                    "non-existent-fetcher-type": {
+                      "fetcher1": {
+                        "someProp": "value"
+                      }
+                    }
+                  },
+                  "plugin-roots": "target/plugins"
+                }
+                """;
 
         Path configPath = tmpDir.resolve("config.json");
         Files.writeString(configPath, configJson, StandardCharsets.UTF_8);
@@ -244,19 +250,22 @@ public class FetcherManagerTest {
 
     @Test
     public void testDuplicateFetcherId(@TempDir Path tmpDir) throws Exception {
-        String configJson = "{\n" +
-                "  \"fetchers\": {\n" +
-                "    \"file-system-fetcher\": {\n" +
-                "      \"fsf1\": {\n" +
-                "        \"basePath\": \"" + tmpDir.resolve("path1").toString().replace("\\", "/") + "\"\n" +
-                "      },\n" +
-                "      \"fsf1\": {\n" +
-                "        \"basePath\": \"" + tmpDir.resolve("path2").toString().replace("\\", "/") + "\"\n" +
-                "      }\n" +
-                "    }\n" +
-                "  },\n" +
-                "  \"plugin-roots\": \"target/plugins\"\n" +
-                "}";
+        String configJson = String.format(Locale.ROOT, """
+                {
+                  "fetchers": {
+                    "file-system-fetcher": {
+                      "fsf1": {
+                        "basePath": "%s"
+                      },
+                      "fsf1": {
+                        "basePath": "%s"
+                      }
+                    }
+                  },
+                  "plugin-roots": "target/plugins"
+                }
+                """, PluginsTestHelper.toJsonPath(tmpDir.resolve("path1")),
+                     PluginsTestHelper.toJsonPath(tmpDir.resolve("path2")));
 
         Path configPath = tmpDir.resolve("config.json");
         Files.writeString(configPath, configJson, StandardCharsets.UTF_8);
@@ -267,7 +276,8 @@ public class FetcherManagerTest {
             TikaJsonConfig.load(configPath);
         });
 
-        assertTrue(exception.getMessage().contains("Failed to parse JSON") ||
+        assertTrue(exception.getMessage().contains("Failed to parse JSON") &&
+                exception.getCause() != null &&
                 exception.getCause().getMessage().contains("Duplicate field"));
     }
 
@@ -287,19 +297,22 @@ public class FetcherManagerTest {
 
     @Test
     public void testGetSingleFetcherWithMultipleConfigured(@TempDir Path tmpDir) throws Exception {
-        String configJson = "{\n" +
-                "  \"fetchers\": {\n" +
-                "    \"file-system-fetcher\": {\n" +
-                "      \"fsf1\": {\n" +
-                "        \"basePath\": \"" + tmpDir.resolve("path1").toString().replace("\\", "/") + "\"\n" +
-                "      },\n" +
-                "      \"fsf2\": {\n" +
-                "        \"basePath\": \"" + tmpDir.resolve("path2").toString().replace("\\", "/") + "\"\n" +
-                "      }\n" +
-                "    }\n" +
-                "  },\n" +
-                "  \"plugin-roots\": \"target/plugins\"\n" +
-                "}";
+        String configJson = String.format(Locale.ROOT, """
+                {
+                  "fetchers": {
+                    "file-system-fetcher": {
+                      "fsf1": {
+                        "basePath": "%s"
+                      },
+                      "fsf2": {
+                        "basePath": "%s"
+                      }
+                    }
+                  },
+                  "plugin-roots": "target/plugins"
+                }
+                """, PluginsTestHelper.toJsonPath(tmpDir.resolve("path1")),
+                     PluginsTestHelper.toJsonPath(tmpDir.resolve("path2")));
 
         Path configPath = tmpDir.resolve("config.json");
         Files.writeString(configPath, configJson, StandardCharsets.UTF_8);
@@ -330,7 +343,9 @@ public class FetcherManagerTest {
         assertEquals(1, fetcherManager.getSupported().size());
 
         // Dynamically add a new fetcher configuration
-        String newConfigJson = "{\"basePath\": \"" + tmpDir.resolve("path2").toString().replace("\\", "/") + "\"}";
+        String newConfigJson = String.format(Locale.ROOT, """
+                {"basePath": "%s"}
+                """, PluginsTestHelper.toJsonPath(tmpDir.resolve("path2")));
         ExtensionConfig newConfig = new ExtensionConfig("fsf2", "file-system-fetcher", newConfigJson);
 
         fetcherManager.saveFetcher(newConfig);
@@ -355,7 +370,9 @@ public class FetcherManagerTest {
         FetcherManager fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig, true);
 
         // Try to add a fetcher with the same ID as existing one
-        String newConfigJson = "{\"basePath\": \"" + tmpDir.resolve("path2").toString().replace("\\", "/") + "\"}";
+        String newConfigJson = String.format(Locale.ROOT, """
+                {"basePath": "%s"}
+                """, PluginsTestHelper.toJsonPath(tmpDir.resolve("path2")));
         ExtensionConfig duplicateConfig = new ExtensionConfig("fsf", "file-system-fetcher", newConfigJson);
 
         TikaConfigException exception = assertThrows(TikaConfigException.class, () -> {
@@ -410,7 +427,9 @@ public class FetcherManagerTest {
 
         // Add multiple fetchers
         for (int i = 2; i <= 5; i++) {
-            String configJson = "{\"basePath\": \"" + tmpDir.resolve("path" + i).toString().replace("\\", "/") + "\"}";
+            String configJson = String.format(Locale.ROOT, """
+                    {"basePath": "%s"}
+                    """, PluginsTestHelper.toJsonPath(tmpDir.resolve("path" + i)));
             ExtensionConfig config2 = new ExtensionConfig("fsf" + i, "file-system-fetcher", configJson);
             fetcherManager.saveFetcher(config2);
         }
@@ -439,7 +458,9 @@ public class FetcherManagerTest {
         FetcherManager fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig);
 
         // Try to add a fetcher - should fail
-        String newConfigJson = "{\"basePath\": \"" + tmpDir.resolve("path2").toString().replace("\\", "/") + "\"}";
+        String newConfigJson = String.format(Locale.ROOT, """
+                {"basePath": "%s"}
+                """, PluginsTestHelper.toJsonPath(tmpDir.resolve("path2")));
         ExtensionConfig newConfig = new ExtensionConfig("fsf2", "file-system-fetcher", newConfigJson);
 
         TikaConfigException exception = assertThrows(TikaConfigException.class, () -> {
@@ -460,7 +481,9 @@ public class FetcherManagerTest {
         FetcherManager fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig, false);
 
         // Try to add a fetcher - should fail
-        String newConfigJson = "{\"basePath\": \"" + tmpDir.resolve("path2").toString().replace("\\", "/") + "\"}";
+        String newConfigJson = String.format(Locale.ROOT, """
+                {"basePath": "%s"}
+                """, PluginsTestHelper.toJsonPath(tmpDir.resolve("path2")));
         ExtensionConfig newConfig = new ExtensionConfig("fsf2", "file-system-fetcher", newConfigJson);
 
         TikaConfigException exception = assertThrows(TikaConfigException.class, () -> {

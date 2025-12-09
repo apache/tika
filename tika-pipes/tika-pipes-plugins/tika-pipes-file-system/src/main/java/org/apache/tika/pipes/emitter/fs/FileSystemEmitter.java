@@ -73,7 +73,7 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
         checkConfig(fileSystemEmitterConfig);
     }
 
-    private void checkConfig(FileSystemEmitterConfig fileSystemEmitterConfig) throws TikaConfigException{
+    private void checkConfig(FileSystemEmitterConfig fileSystemEmitterConfig) throws TikaConfigException {
         if (fileSystemEmitterConfig.onExists() == null) {
             throw new TikaConfigException("Must configure 'onExists' as 'skip', 'exception' or 'replace'");
         }
