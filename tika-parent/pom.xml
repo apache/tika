@@ -1600,13 +1600,26 @@
         </plugins>
       </build>
     </profile>
-        <profile>
-          <id>ci</id>
-          <properties>
-            <!-- Override the Spotless goal when this profile is active -->
-            <spotless.goal>check</spotless.goal>
-          </properties>
-        </profile>
+    <profile>
+      <id>ci</id>
+      <properties>
+        <!-- Override the Spotless goal when this profile is active -->
+        <spotless.goal>check</spotless.goal>
+      </properties>
+    </profile>
+    <profile>
+      <id>fast</id>
+      <properties>
+        <!-- Skip tests for fast builds -->
+        <skipTests>true</skipTests>
+        <maven.test.skip>true</maven.test.skip>
+        <!-- Skip checkstyle -->
+        <checkstyle.skip>true</checkstyle.skip>
+        <!-- Skip spotless -->
+        <spotless.apply.skip>true</spotless.apply.skip>
+        <spotless.check.skip>true</spotless.check.skip>
+      </properties>
+    </profile>
 
   </profiles>
   <!--
