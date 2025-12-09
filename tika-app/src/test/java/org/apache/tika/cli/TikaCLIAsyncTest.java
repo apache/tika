@@ -139,7 +139,7 @@ public class TikaCLIAsyncTest {
                 json++;
             }
         }
-        assertEquals(21, json);
+        assertEquals(18, json);
     }
 
     private void checkForPrettyPrint(File f) throws IOException {

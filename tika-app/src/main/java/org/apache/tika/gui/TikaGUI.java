@@ -36,6 +36,8 @@ import java.io.Writer;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -70,7 +72,8 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.io.TikaInputStream;
@@ -78,11 +81,9 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
-import org.apache.tika.parser.digestutils.CommonsDigester;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
@@ -154,9 +155,9 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
      * File chooser.
      */
     private final JFileChooser chooser = new JFileChooser();
-    private final TikaConfig tikaConfig;
+    private final TikaLoader tikaConfig;
 
-    public TikaGUI(Parser parser, TikaConfig tikaConfig) {
+    public TikaGUI(Parser parser, TikaLoader tikaConfig) {
         super("Apache Tika");
         this.tikaConfig = tikaConfig;
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -194,21 +195,32 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
      * @throws Exception if an error occurs
      */
     public static void main(String[] args) throws Exception {
-        TikaConfig config = null;
+        TikaLoader config = null;
         if (args.length > 0) {
             File configFile = new File(args[0]);
-            config = new TikaConfig(configFile);
+            config = TikaLoader.load(configFile.toPath());
         } else {
-            try (InputStream is = TikaGUI.class.getResourceAsStream("/tika-config-default-single-file.xml")) {
-                config = new TikaConfig(is);
+            Path tempConfig = Files.createTempFile("tika-config-", ".json");
+            try {
+                try (InputStream is = TikaGUI.class.getResourceAsStream("/tika-config-default-single-file.json")) {
+                    Files.copy(is, tempConfig, StandardCopyOption.REPLACE_EXISTING);
+                }
+                config = TikaLoader.load(tempConfig);
+            } finally {
+                Files.deleteIfExists(tempConfig);
             }
         }
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        final TikaConfig finalConfig = config;
-        SwingUtilities.invokeLater(() -> new TikaGUI(
-                new DigestingParser(new AutoDetectParser(finalConfig),
-                        new CommonsDigester(MAX_MARK, CommonsDigester.DigestAlgorithm.MD5, CommonsDigester.DigestAlgorithm.SHA256),
-                        false), finalConfig).setVisible(true));
+        final TikaLoader tikaLoader = config;
+        SwingUtilities.invokeLater(() -> {
+            try {
+                new TikaGUI(tikaLoader.loadAutoDetectParser(), tikaLoader).setVisible(true);
+            } catch (TikaConfigException e) {
+                throw new RuntimeException(e);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     private void addMenuBar() {
@@ -384,7 +396,7 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
             StringWriter jsonBuffer = new StringWriter();
             JsonMetadataList.setPrettyPrinting(true);
             List<Metadata> metadataList = recursiveParserWrapperHandler.getMetadataList();
-            metadataList = tikaConfig.getMetadataFilter().filter(metadataList);
+            metadataList = tikaConfig.loadMetadataFilters().filter(metadataList);
             JsonMetadataList.toJson(metadataList, jsonBuffer);
             setText(json, jsonBuffer.toString());
         }

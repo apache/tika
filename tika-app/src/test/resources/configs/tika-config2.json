@@ -1,0 +1,26 @@
+{
+  "parsers": [
+    {
+      "default-parser": {
+        "_decorate": {
+          "mimeExclude": [
+            "image/jpeg",
+            "application/pdf"
+          ],
+          "parserExclude": [
+            "org.apache.tika.parser.executable.ExecutableParser"
+          ]
+        }
+      }
+    },
+    {
+      "empty-parser": {
+        "_decorate": {
+          "mimeInclude": [
+            "application/pdf"
+          ]
+        }
+      }
+    }
+  ]
+}
