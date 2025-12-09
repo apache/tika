@@ -86,6 +86,7 @@ public class PipesServer implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(PipesServer.class);
 
     private final long heartbeatIntervalMs;
+    private final String pipesClientId;
 
     //this has to be some number not close to 0-3
     //it looks like the server crashes with exit value 3 on uncaught OOM, for example
@@ -151,6 +152,8 @@ public class PipesServer implements AutoCloseable {
     private final PipesWorker.EMIT_STRATEGY emitStrategy;
 
     public static PipesServer load(int port, Path tikaConfigPath) throws Exception {
+            String pipesClientId = System.getProperty("pipesClientId", "unknown");
+            LOG.debug("pipesClientId={}: connecting to client on port={}", pipesClientId, port);
             Socket socket = new Socket();
             socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), PipesClient.SOCKET_CONNECT_TIMEOUT_MS);
 
@@ -165,8 +168,9 @@ public class PipesServer implements AutoCloseable {
             socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMs());
 
             MetadataFilter metadataFilter = tikaLoader.loadMetadataFilters();
-            PipesServer pipesServer = new PipesServer(tikaLoader, pipesConfig, socket, dis, dos, metadataFilter);
+            PipesServer pipesServer = new PipesServer(pipesClientId, tikaLoader, pipesConfig, socket, dis, dos, metadataFilter);
             pipesServer.initializeResources();
+            LOG.debug("pipesClientId={}: PipesServer loaded and ready", pipesClientId);
             return pipesServer;
         } catch (Exception e) {
             LOG.error("Failed to start up", e);
@@ -196,10 +200,11 @@ public class PipesServer implements AutoCloseable {
         }
     }
 
-    public PipesServer(TikaLoader tikaLoader, PipesConfig pipesConfig, Socket socket, DataInputStream in,
+    public PipesServer(String pipesClientId, TikaLoader tikaLoader, PipesConfig pipesConfig, Socket socket, DataInputStream in,
                        DataOutputStream out, MetadataFilter metadataFilter) throws TikaConfigException,
             IOException {
 
+        this.pipesClientId = pipesClientId;
         this.tikaLoader = tikaLoader;
         this.pipesConfig = pipesConfig;
         this.socket = socket;
@@ -234,32 +239,51 @@ public class PipesServer implements AutoCloseable {
     public static void main(String[] args) throws Exception {
         int port = Integer.parseInt(args[0]);
         Path tikaConfig = Paths.get(args[1]);
-        LOG.debug("starting pipes server on port={} with tikaConfig={}", port, tikaConfig);
+        String pipesClientId = System.getProperty("pipesClientId", "unknown");
+        LOG.debug("pipesClientId={}: starting pipes server on port={}", pipesClientId, port);
         try (PipesServer server = PipesServer.load(port, tikaConfig)) {
-            LOG.debug("successfully started pipes server");
             server.mainLoop();
         } catch (Throwable t) {
-            LOG.error("crashed", t);
+            LOG.error("pipesClientId={}: crashed", pipesClientId, t);
             throw t;
         } finally {
-            LOG.info("server shutting down");
+            LOG.info("pipesClientId={}: server shutting down", pipesClientId);
         }
     }
 
     public void mainLoop() {
         write(PROCESSING_STATUS.READY.getByte());
+        LOG.debug("pipesClientId={}: sent READY, entering main loop", pipesClientId);
         ArrayBlockingQueue<Metadata> intermediateResult = new ArrayBlockingQueue<>(1);
 
-        LOG.trace("processing requests");
         //main loop
         try {
             long start = System.currentTimeMillis();
             while (true) {
                 int request = input.read();
+                LOG.trace("pipesClientId={}: received command byte={}", pipesClientId, HexFormat.of().formatHex(new byte[]{(byte)request}));
                 if (request == -1) {
                     LOG.warn("received -1 from client; shutting down");
                     exit(0);
-                } else if (request == PipesClient.COMMANDS.PING.getByte()) {
+                }
+
+                // Validate that we received a command byte, not a status/ACK byte
+                if (request == PipesClient.COMMANDS.ACK.getByte()) {
+                    String msg = String.format(Locale.ROOT,
+                            "pipesClientId=%s: PROTOCOL ERROR - Received ACK (byte=0x%02x) when expecting a command. " +
+                            "This indicates a protocol synchronization issue where the server missed consuming an ACK. " +
+                            "Valid commands are: PING(0x%02x), NEW_REQUEST(0x%02x), SHUT_DOWN(0x%02x). " +
+                            "This is likely a bug in the server's message handling - check that all status messages " +
+                            "that trigger client ACKs are properly awaiting those ACKs.",
+                            pipesClientId, (byte)request,
+                            PipesClient.COMMANDS.PING.getByte(),
+                            PipesClient.COMMANDS.NEW_REQUEST.getByte(),
+                            PipesClient.COMMANDS.SHUT_DOWN.getByte());
+                    LOG.error(msg);
+                    throw new IllegalStateException(msg);
+                }
+
+                if (request == PipesClient.COMMANDS.PING.getByte()) {
                     writeNoAck(PipesClient.COMMANDS.PING.getByte());
                 } else if (request == PipesClient.COMMANDS.NEW_REQUEST.getByte()) {
                     intermediateResult.clear();
@@ -284,8 +308,16 @@ public class PipesServer implements AutoCloseable {
                     }
                     System.exit(0);
                 } else {
-                    LOG.error("Unexpected request byte={}", HexFormat.of().formatHex(new byte[]{(byte)request}));
-                    throw new IllegalStateException("Unexpected request");
+                    String msg = String.format(Locale.ROOT,
+                            "pipesClientId=%s: Unexpected byte 0x%02x in command position. " +
+                            "Expected one of: PING(0x%02x), ACK(0x%02x), NEW_REQUEST(0x%02x), SHUT_DOWN(0x%02x)",
+                            pipesClientId, (byte)request,
+                            PipesClient.COMMANDS.PING.getByte(),
+                            PipesClient.COMMANDS.ACK.getByte(),
+                            PipesClient.COMMANDS.NEW_REQUEST.getByte(),
+                            PipesClient.COMMANDS.SHUT_DOWN.getByte());
+                    LOG.error(msg);
+                    throw new IllegalStateException(msg);
                 }
                 output.flush();
             }
@@ -346,7 +378,7 @@ public class PipesServer implements AutoCloseable {
             long elapsed = System.currentTimeMillis() - start.toEpochMilli();
             if (elapsed > mockProgressCounter * heartbeatIntervalMs) {
                 LOG.debug("still processing: {}", mockProgressCounter);
-                output.write(PROCESSING_STATUS.WORKING.getByte());
+                write(PROCESSING_STATUS.WORKING.getByte());
                 output.writeLong(mockProgressCounter++);
                 output.flush();
             }
@@ -484,6 +516,7 @@ public class PipesServer implements AutoCloseable {
         if (b == ACK.getByte()) {
             return;
         }
+        LOG.error("pipesClientId={}: expected ACK but got byte={}", pipesClientId, HexFormat.of().formatHex(new byte[]{ (byte) b}));
         throw new IOException("Wasn't expecting byte=" + HexFormat.of().formatHex(new byte[]{ (byte) b}));
     }
 
@@ -503,7 +536,7 @@ public class PipesServer implements AutoCloseable {
             output.flush();
             awaitAck();
         } catch (IOException e) {
-            LOG.error("problem writing data (forking process shutdown?)", e);
+            LOG.error("pipesClientId={}: problem writing data (forking process shutdown?)", pipesClientId, e);
             exit(1);
         }
     }
