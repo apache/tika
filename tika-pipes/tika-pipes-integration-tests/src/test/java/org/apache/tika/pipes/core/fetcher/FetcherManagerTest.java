@@ -60,6 +60,35 @@ public class FetcherManagerTest {
     }
 
     @Test
+    public void testEmptyConfig(@TempDir Path tmpDir) throws Exception {
+        // Create config with no fetchers
+        String configJson = """
+                {
+                  "plugin-roots": "target/plugins"
+                }
+                """;
+
+        Path configPath = tmpDir.resolve("config.json");
+        Files.writeString(configPath, configJson, StandardCharsets.UTF_8);
+
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(configPath);
+        TikaPluginManager pluginManager = TikaPluginManager.load(tikaJsonConfig);
+
+        FetcherManager fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig);
+
+        assertNotNull(fetcherManager);
+        assertEquals(0, fetcherManager.getSupported().size());
+
+        // Try to get a fetcher when none are configured
+        FetcherNotFoundException exception = assertThrows(FetcherNotFoundException.class, () -> {
+            fetcherManager.getFetcher("any-id");
+        });
+
+        assertTrue(exception.getMessage().contains("any-id"));
+        assertTrue(exception.getMessage().contains("Available: []"));
+    }
+
+    @Test
     public void testLazyInstantiation(@TempDir Path tmpDir) throws Exception {
         // Create config with multiple fetchers
         String configJson = "{\n" +

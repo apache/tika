@@ -61,6 +61,35 @@ public class EmitterManagerTest {
     }
 
     @Test
+    public void testEmptyConfig(@TempDir Path tmpDir) throws Exception {
+        // Create config with no emitters
+        String configJson = """
+                {
+                  "plugin-roots": "target/plugins"
+                }
+                """;
+
+        Path configPath = tmpDir.resolve("config.json");
+        Files.writeString(configPath, configJson, StandardCharsets.UTF_8);
+
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(configPath);
+        TikaPluginManager pluginManager = TikaPluginManager.load(tikaJsonConfig);
+
+        EmitterManager emitterManager = EmitterManager.load(pluginManager, tikaJsonConfig);
+
+        assertNotNull(emitterManager);
+        assertEquals(0, emitterManager.getSupported().size());
+
+        // Try to get an emitter when none are configured
+        EmitterNotFoundException exception = assertThrows(EmitterNotFoundException.class, () -> {
+            emitterManager.getEmitter("any-id");
+        });
+
+        assertTrue(exception.getMessage().contains("any-id"));
+        assertTrue(exception.getMessage().contains("Available: []"));
+    }
+
+    @Test
     public void testLazyInstantiation(@TempDir Path tmpDir) throws Exception {
         // Create config with multiple emitters
         String configJson = String.format(Locale.ROOT, """
