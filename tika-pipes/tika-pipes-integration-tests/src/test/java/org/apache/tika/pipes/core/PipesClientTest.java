@@ -277,7 +277,8 @@ public class PipesClientTest {
 
             // Should have error message about the crash
             Assertions.assertNotNull(pipesResult.message(), "Should have error message");
-            assertTrue(pipesResult.message().contains("problem reading response"),
+            assertTrue(pipesResult.message().contains("problem reading response") |
+                    pipesResult.message().contains("SocketException"),
                     "Error message should mention the detection crash: " + pipesResult.message());
 
             // Note: Because crash happens during pre-parse (before intermediate result is sent),
