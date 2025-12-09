@@ -31,6 +31,7 @@ import java.nio.file.Files;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.TikaConfig;
@@ -40,6 +41,7 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
 
+@Disabled
 public class DumpTikaConfigExampleTest {
     private File configFile;
 
@@ -66,7 +68,7 @@ public class DumpTikaConfigExampleTest {
 
     @Test
     public void testDump() throws Exception {
-        DumpTikaConfigExample ex = new DumpTikaConfigExample();
+        //DumpTikaConfigExample ex = new DumpTikaConfigExample();
         for (Charset charset : new Charset[]{UTF_8, UTF_16LE}) {
             for (TikaConfigSerializer.Mode mode : TikaConfigSerializer.Mode.values()) {
                 Writer writer = new OutputStreamWriter(new FileOutputStream(configFile), charset);

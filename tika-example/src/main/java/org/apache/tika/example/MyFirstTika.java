@@ -25,7 +25,7 @@ import java.nio.file.Paths;
 import org.apache.commons.io.FileUtils;
 import org.xml.sax.ContentHandler;
 
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
@@ -50,10 +50,10 @@ import org.apache.tika.sax.BodyContentHandler;
 public class MyFirstTika {
     public static void main(String[] args) throws Exception {
         String filename = args[0];
-        TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
+        TikaLoader tikaLoader = TikaLoader.loadDefault();
 
         Metadata metadata = new Metadata();
-        String text = parseUsingComponents(filename, tikaConfig, metadata);
+        String text = parseUsingComponents(filename, tikaLoader, metadata);
         System.out.println("Parsed Metadata: ");
         System.out.println(metadata);
         System.out.println("Parsed Text: ");
@@ -62,25 +62,25 @@ public class MyFirstTika {
         System.out.println("-------------------------");
 
         metadata = new Metadata();
-        text = parseUsingAutoDetect(filename, tikaConfig, metadata);
+        text = parseUsingAutoDetect(filename, tikaLoader, metadata);
         System.out.println("Parsed Metadata: ");
         System.out.println(metadata);
         System.out.println("Parsed Text: ");
         System.out.println(text);
     }
 
-    public static String parseUsingAutoDetect(String filename, TikaConfig tikaConfig, Metadata metadata) throws Exception {
+    public static String parseUsingAutoDetect(String filename, TikaLoader tikaLoader, Metadata metadata) throws Exception {
         System.out.println("Handling using AutoDetectParser: [" + filename + "]");
 
-        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+        Parser parser = tikaLoader.loadAutoDetectParser();
         ContentHandler handler = new BodyContentHandler();
         TikaInputStream stream = TikaInputStream.get(Paths.get(filename), metadata);
         parser.parse(stream, handler, metadata, new ParseContext());
         return handler.toString();
     }
 
-    public static String parseUsingComponents(String filename, TikaConfig tikaConfig, Metadata metadata) throws Exception {
-        MimeTypes mimeRegistry = tikaConfig.getMimeRepository();
+    public static String parseUsingComponents(String filename, TikaLoader tikaLoader, Metadata metadata) throws Exception {
+        MimeTypes mimeRegistry = tikaLoader.getMimeTypes();
 
         System.out.println("Examining: [" + filename + "]");
 
@@ -91,7 +91,7 @@ public class MyFirstTika {
         System.out.println("The MIME type (based on MAGIC) is: [" + mimeRegistry.detect(stream, metadata) + "]");
 
         stream = TikaInputStream.get(Paths.get(filename));
-        Detector detector = tikaConfig.getDetector();
+        Detector detector = tikaLoader.loadDetectors();
         System.out.println("The MIME type (based on the Detector interface) is: [" + detector.detect(stream, metadata) + "]");
 
         LanguageDetector langDetector = new OptimaizeLangDetector().loadModels();
@@ -100,7 +100,7 @@ public class MyFirstTika {
         System.out.println("The language of this content is: [" + lang.getLanguage() + "]");
 
         // Get a non-detecting parser that handles all the types it can
-        Parser parser = tikaConfig.getParser();
+        Parser parser = tikaLoader.loadParsers();
         // Tell it what we think the content is
         MediaType type = detector.detect(stream, metadata);
         metadata.set(Metadata.CONTENT_TYPE, type.toString());
