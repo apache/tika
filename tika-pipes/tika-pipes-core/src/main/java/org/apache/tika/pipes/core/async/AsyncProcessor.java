@@ -303,8 +303,10 @@ public class AsyncProcessor implements Closeable {
                         long start = System.currentTimeMillis();
                         try {
                             result = pipesClient.process(t);
+                            //TODO -- drop this back to debug or even trace once we have stability in ci
+                            LOG.info("pipesClientId={}, status={}", pipesClient.getPipesClientId(), result.status());
                         } catch (IOException e) {
-                            LOG.warn("pipesClient crash", e);
+                            LOG.warn("pipesClientId={} crash", pipesClient.getPipesClientId(), e);
                             result = PipesResults.UNSPECIFIED_CRASH;
                         }
                         if (LOG.isTraceEnabled()) {

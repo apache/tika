@@ -146,12 +146,13 @@ public class OpenSearchTest {
             }
             statusCounts.put(status, cnt);
         }
-        assertEquals(numHtmlDocs, (int) statusCounts.get("PARSE_SUCCESS"));
+
+        assertEquals(numHtmlDocs, (int) statusCounts.get("PARSE_SUCCESS"), "should have had " + numHtmlDocs + " parse successes: " + statusCounts);
         //the npe is caught and counted as a "parse success with exception"
-        assertEquals(1, (int) statusCounts.get("PARSE_SUCCESS_WITH_EXCEPTION"));
+        assertEquals(1, (int) statusCounts.get("PARSE_SUCCESS_WITH_EXCEPTION"), "should have had 1 parse exception: " + statusCounts);
         //the embedded docx is emitted directly
-        assertEquals(1, (int) statusCounts.get("EMIT_SUCCESS"));
-        assertEquals(2, (int) statusCounts.get("OOM"));
+        assertEquals(1, (int) statusCounts.get("EMIT_SUCCESS"), "should have had 1 emit success: " + statusCounts);
+        assertEquals(2, (int) statusCounts.get("OOM"), "should have had 2 OOM: " + statusCounts);
 
     }
 
