@@ -552,4 +552,54 @@ public class PipesClientTest {
                     "Error message should mention the missing emitter");
         }
     }
+
+    @Test
+    public void testHeartbeatProtocol(@TempDir Path tmp) throws Exception {
+        // Test that heartbeat protocol works correctly and doesn't cause protocol errors
+        // This test exercises the WORKING status messages during long-running operations
+        // to ensure the server properly awaits ACKs after sending heartbeats
+
+        Path inputDir = tmp.resolve("input");
+        Files.createDirectories(inputDir);
+
+        // Create a mock file with 2 second delay to trigger multiple heartbeats
+        String mockContent = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
+                "<mock>" +
+                "<metadata action=\"add\" name=\"dc:creator\">Heartbeat Test</metadata>" +
+                "<write element=\"p\">Testing heartbeat protocol synchronization</write>" +
+                "<fakeload millis=\"2000\" cpu=\"1\" mb=\"10\"/>" +
+                "</mock>";
+        String testFile = "mock-heartbeat-test.xml";
+        Files.write(inputDir.resolve(testFile), mockContent.getBytes(StandardCharsets.UTF_8));
+
+        // Create config with very short heartbeat interval (100ms) to ensure heartbeats are sent
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, inputDir, tmp.resolve("output"));
+        String configContent = Files.readString(tikaConfigPath, StandardCharsets.UTF_8);
+
+        // Modify config to add very short heartbeat interval
+        configContent = configContent.replace(
+                "\"pipes\": {",
+                "\"pipes\": {\n    \"heartbeatIntervalMs\": 100,"
+        );
+        Files.writeString(tikaConfigPath, configContent, StandardCharsets.UTF_8);
+
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig, tikaConfigPath);
+
+        try (PipesClient pipesClient = new PipesClient(pipesConfig)) {
+            // Process file - should complete successfully despite multiple heartbeats
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
+                            new EmitKey(), new Metadata(), new ParseContext(),
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+
+            // Verify successful completion
+            assertTrue(pipesResult.isSuccess(),
+                    "Processing should succeed even with heartbeat messages. Got status: " + pipesResult.status());
+            Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
+            assertEquals(1, pipesResult.emitData().getMetadataList().size());
+            Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
+            assertEquals("Heartbeat Test", metadata.get("dc:creator"));
+        }
+    }
 }

@@ -138,28 +138,23 @@ public class PipesClient implements Closeable {
 
     private void shutItAllDown() throws InterruptedException {
         if (serverTuple == null) {
-            LOG.trace("shutItAllDown: serverTuple is null, nothing to shut down");
             return;
         }
-        LOG.trace("shutItAllDown: sending SHUT_DOWN command");
+        LOG.debug("pipesClientId={}: shutting down server", pipesClientId);
         try {
             serverTuple.output.write(COMMANDS.SHUT_DOWN.getByte());
             serverTuple.output.flush();
         } catch (IOException e) {
             //swallow
-            LOG.trace("shutItAllDown: IOException while sending SHUT_DOWN (process may already be dead)", e);
         }
-        LOG.trace("shutItAllDown: closing streams and sockets");
         List<IOException> exceptions = new ArrayList<>();
         tryToClose(serverTuple.input, exceptions);
         tryToClose(serverTuple.output, exceptions);
         tryToClose(serverTuple.socket, exceptions);
         tryToClose(serverTuple.serverSocket, exceptions);
-        LOG.trace("shutItAllDown: destroying process forcibly");
         destroyForcibly();
 
         deleteDir(serverTuple.tmpDir);
-        LOG.trace("shutItAllDown: setting serverTuple to null");
         serverTuple = null;
 
     }
@@ -169,18 +164,9 @@ public class PipesClient implements Closeable {
             return;
         }
         try {
-            if (closeable instanceof Socket socket) {
-                LOG.trace("tryToClose: closing Socket localAddr={}, remoteAddr={}",
-                        socket.getLocalSocketAddress(), socket.getRemoteSocketAddress());
-            } else if (closeable instanceof ServerSocket serverSocket) {
-                LOG.trace("tryToClose: closing ServerSocket on port={}", serverSocket.getLocalPort());
-            } else {
-                LOG.trace("tryToClose: closing {}", closeable.getClass().getSimpleName());
-            }
             closeable.close();
         } catch (IOException e) {
             exceptions.add(e);
-            LOG.trace("tryToClose: IOException while closing {}", closeable.getClass().getSimpleName(), e);
         }
     }
 
@@ -248,9 +234,7 @@ public class PipesClient implements Closeable {
     }
 
     private void writeTask(FetchEmitTuple t) throws IOException {
-        long start = System.currentTimeMillis();
-
-        LOG.trace("writeTask: serializing FetchEmitTuple for id={}", t.getId());
+        LOG.debug("pipesClientId={}: sending NEW_REQUEST for id={}", pipesClientId, t.getId());
         UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream
                 .builder()
                 .get();
@@ -259,15 +243,10 @@ public class PipesClient implements Closeable {
         }
 
         byte[] bytes = bos.toByteArray();
-        LOG.trace("writeTask: sending NEW_REQUEST command for id={}", t.getId());
         serverTuple.output.write(COMMANDS.NEW_REQUEST.getByte());
         serverTuple.output.writeInt(bytes.length);
         serverTuple.output.write(bytes);
         serverTuple.output.flush();
-        LOG.trace("writeTask: NEW_REQUEST sent for id={}", t.getId());
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("pipesClientId={}: timer -- write tuple: {} ms", pipesClientId, System.currentTimeMillis() - start);
-        }
     }
 
     private PipesResult waitForServer(FetchEmitTuple t, IntermediateResult intermediateResult) throws InterruptedException {
@@ -437,27 +416,21 @@ public class PipesClient implements Closeable {
     }
 
     private void writeAck() throws IOException {
-        LOG.trace("writeAck: sending ACK");
         serverTuple.output.write(ACK.getByte());
         serverTuple.output.flush();
-        LOG.trace("writeAck: ACK sent and flushed");
     }
 
 
     private void restart() throws InterruptedException, IOException, TimeoutException {
-        LOG.trace("restart: method called");
         ServerSocket serverSocket = new ServerSocket(0, 50, InetAddress.getLoopbackAddress());
         int port = serverSocket.getLocalPort();
-        LOG.trace("restart: new ServerSocket created on port={}, localAddr={}", port, serverSocket.getLocalSocketAddress());
         if (serverTuple != null && serverTuple.process != null) {
             int oldPort = serverTuple.serverSocket.getLocalPort();
-            LOG.trace("restart: shutting down old server (was on port={})", oldPort);
             shutItAllDown();
             LOG.info("pipesClientId={}: restarting process on port={} (old port was {})", pipesClientId, port, oldPort);
         } else {
             LOG.info("pipesClientId={}: starting process on port={}", pipesClientId, port);
         }
-        LOG.trace("restart: creating temp dir and starting new process");
         Path tmpDir = Files.createTempDirectory("pipes-server-" + pipesClientId + "-");
         ProcessBuilder pb = new ProcessBuilder(getCommandline(port, tmpDir));
         pb.inheritIO();
@@ -500,25 +473,17 @@ public class PipesClient implements Closeable {
             }
         }
         socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMs());
-        LOG.trace("restart: socket accepted from remoteAddr={}, localAddr={}, port={}",
-                socket.getRemoteSocketAddress(), socket.getLocalSocketAddress(), port);
         serverTuple = new ServerTuple(process, serverSocket, socket, new DataInputStream(socket.getInputStream()),
                 new DataOutputStream(socket.getOutputStream()), tmpDir);
-        LOG.trace("restart: ServerTuple created (serverSocket port={}, socket local={}, socket remote={}), waiting for startup",
-                serverSocket.getLocalPort(), socket.getLocalSocketAddress(), socket.getRemoteSocketAddress());
         waitForStartup();
-        LOG.trace("restart: startup complete");
     }
 
     private void waitForStartup() throws IOException {
         //wait for ready byte
-        LOG.trace("waitForStartup: about to read first byte from server");
         int b = serverTuple.input.read();
-        LOG.trace("waitForStartup: read byte={}, about to send ACK", HexFormat.of().formatHex(new byte[]{ (byte) b }));
         writeAck();
-        LOG.trace("waitForStartup: ACK sent");
         if (b == READY.getByte()) {
-            LOG.debug("got ready byte");
+            LOG.debug("pipesClientId={}: server ready", pipesClientId);
         } else if (b == FINISHED.getByte()) {
             int len = serverTuple.input.readInt();
             byte[] bytes = new byte[len];
@@ -570,7 +535,7 @@ public class PipesClient implements Closeable {
             if (arg.equals("-XX:+ExitOnOutOfMemoryError") || arg.equals("-XX:+CrashOnOutOfMemoryError")) {
                 hasExitOnOOM = true;
             }
-            if (arg.startsWith("-Dlog4j.configuration")) {
+            if (arg.startsWith("-Dlog4j.configuration") || arg.startsWith("-Dlog4j2.configuration")) {
                 hasLog4j = true;
             }
             if (arg.startsWith("-Xloggc:")) {
