@@ -1,0 +1,12 @@
+{
+  "detectors": [
+    {
+      "default-detector": {}
+    },
+    {
+      "magika-detector": {
+        "useMime": true
+      }
+    }
+  ]
+}

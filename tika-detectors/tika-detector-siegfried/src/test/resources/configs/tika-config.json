@@ -1,0 +1,12 @@
+{
+  "detectors": [
+    {
+      "default-detector": {}
+    },
+    {
+      "siegfried-detector": {
+        "siegfriedPath": ""
+      }
+    }
+  ]
+}
