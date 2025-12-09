@@ -84,4 +84,15 @@ public class PluginsTestHelper {
             Files.copy(PipesServerTest.class.getResourceAsStream("/test-documents/" + testDoc), inputDir.resolve(testDoc));
         }
     }
+
+    /**
+     * Converts a Path to a JSON-safe string with forward slashes.
+     * This ensures paths work correctly in JSON configs on both Windows and Unix systems.
+     *
+     * @param path the path to convert
+     * @return a string representation with forward slashes
+     */
+    public static String toJsonPath(Path path) {
+        return path.toString().replace("\\", "/");
+    }
 }

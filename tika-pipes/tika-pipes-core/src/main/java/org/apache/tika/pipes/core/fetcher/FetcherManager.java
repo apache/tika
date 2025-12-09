@@ -18,78 +18,133 @@ package org.apache.tika.pipes.core.fetcher;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.pf4j.PluginManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.fetcher.FetcherFactory;
-import org.apache.tika.plugins.PluginComponentLoader;
+import org.apache.tika.pipes.api.fetcher.FetcherNotFoundException;
+import org.apache.tika.pipes.core.AbstractComponentManager;
+import org.apache.tika.plugins.ExtensionConfig;
 
 /**
  * Utility class to hold multiple fetchers.
  * <p>
- * This forbids multiple fetchers with the same pluginId
+ * This forbids multiple fetchers with the same pluginId.
+ * Fetchers are instantiated lazily on first use.
  */
-public class FetcherManager {
+public class FetcherManager extends AbstractComponentManager<Fetcher, FetcherFactory> {
 
-    public static final String CONFIG_KEY = "fetchers";
-    private static final Logger LOG = LoggerFactory.getLogger(FetcherManager.class);
+    private static final String CONFIG_KEY = "fetchers";
 
+    /**
+     * Loads a FetcherManager without allowing runtime modifications.
+     * Use {@link #load(PluginManager, TikaJsonConfig, boolean)} to enable runtime fetcher additions.
+     *
+     * @param pluginManager the plugin manager
+     * @param tikaJsonConfig the configuration
+     * @return a FetcherManager that does not allow runtime modifications
+     */
+    public static FetcherManager load(PluginManager pluginManager, TikaJsonConfig tikaJsonConfig)
+            throws TikaConfigException, IOException {
+        return load(pluginManager, tikaJsonConfig, false);
+    }
 
-    public static FetcherManager load(PluginManager pluginManager, TikaJsonConfig tikaJsonConfig) throws TikaConfigException, IOException {
+    /**
+     * Loads a FetcherManager with optional support for runtime modifications.
+     *
+     * @param pluginManager the plugin manager
+     * @param tikaJsonConfig the configuration
+     * @param allowRuntimeModifications if true, allows calling {@link #saveFetcher(ExtensionConfig)}
+     *                                  to add fetchers at runtime
+     * @return a FetcherManager
+     */
+    public static FetcherManager load(PluginManager pluginManager, TikaJsonConfig tikaJsonConfig,
+                                     boolean allowRuntimeModifications)
+            throws TikaConfigException, IOException {
+        FetcherManager manager = new FetcherManager(pluginManager, allowRuntimeModifications);
         JsonNode fetchersNode = tikaJsonConfig.getRootNode().get(CONFIG_KEY);
-        Map<String, Fetcher> fetchers =
-                PluginComponentLoader.loadInstances(pluginManager, FetcherFactory.class, fetchersNode);
-        return new FetcherManager(fetchers);
+
+        // Validate configuration and collect fetcher configs without instantiating
+        Map<String, ExtensionConfig> configs = manager.validateAndCollectConfigs(pluginManager, fetchersNode);
+
+        return new FetcherManager(pluginManager, configs, allowRuntimeModifications);
     }
 
-    private final Map<String, Fetcher> fetcherMap = new ConcurrentHashMap<>();
-
-    private FetcherManager(Map<String, Fetcher> fetcherMap) throws TikaConfigException {
-        this.fetcherMap.putAll(fetcherMap);
+    private FetcherManager(PluginManager pluginManager, boolean allowRuntimeModifications) {
+        super(pluginManager, Map.of(), allowRuntimeModifications);
     }
 
+    private FetcherManager(PluginManager pluginManager, Map<String, ExtensionConfig> fetcherConfigs,
+                          boolean allowRuntimeModifications) {
+        super(pluginManager, fetcherConfigs, allowRuntimeModifications);
+    }
 
+    @Override
+    protected String getConfigKey() {
+        return CONFIG_KEY;
+    }
+
+    @Override
+    protected Class<FetcherFactory> getFactoryClass() {
+        return FetcherFactory.class;
+    }
+
+    @Override
+    protected String getComponentName() {
+        return "fetcher";
+    }
+
+    @Override
+    protected TikaException createNotFoundException(String message) {
+        return new FetcherNotFoundException(message);
+    }
+
+    /**
+     * Gets a fetcher by ID, lazily instantiating it if needed.
+     *
+     * @param id the fetcher ID
+     * @return the fetcher
+     * @throws FetcherNotFoundException if no fetcher with the given ID exists
+     * @throws IOException if there's an error building the fetcher
+     * @throws TikaException if there's a configuration error
+     */
     public Fetcher getFetcher(String id) throws IOException, TikaException {
-        Fetcher fetcher = fetcherMap.get(id);
-        if (fetcher == null) {
-            throw new IllegalArgumentException(
-                    "Can't find fetcher for id=" + id + ". I've loaded: " +
-                            fetcherMap.keySet());
-        }
-        return fetcher;
-    }
-
-    public Set<String> getSupported() {
-        return fetcherMap.keySet();
+        return getComponent(id);
     }
 
     /**
      * Convenience method that returns a fetcher if only one fetcher
-     * is specified in the tika-config file.  If 0 or > 1 fetchers
-     * are specified, this throws an IllegalArgumentException.
-     * @return
+     * is configured. If 0 or > 1 fetchers are configured, this throws an IllegalArgumentException.
+     *
+     * @return the single configured fetcher
+     * @throws IOException if there's an error building the fetcher
+     * @throws TikaException if there's a configuration error
      */
-    public Fetcher getFetcher() {
-        if (fetcherMap.isEmpty()) {
-            throw new IllegalArgumentException("fetchers size must == 1 for the no arg call");
-        }
-        if (fetcherMap.size() > 1) {
-            throw new IllegalArgumentException("need to specify 'fetcherId' if > 1 fetchers are" +
-                    " available");
-        }
-        for (Fetcher fetcher : fetcherMap.values()) {
-            return fetcher;
-        }
-        //this should be unreachable?!
-        throw new IllegalArgumentException("fetchers size must == 0");
+    public Fetcher getFetcher() throws IOException, TikaException {
+        return getComponent();
+    }
+
+    /**
+     * Dynamically adds a fetcher configuration at runtime.
+     * The fetcher will not be instantiated until it is first requested via {@link #getFetcher(String)}.
+     * This allows for dynamic configuration without the overhead of immediate instantiation.
+     * <p>
+     * This method is only available if the FetcherManager was loaded with
+     * {@link #load(PluginManager, TikaJsonConfig, boolean)} with allowRuntimeModifications=true.
+     * <p>
+     * Only authorized/authenticated users should be allowed to modify fetchers. BE CAREFUL.
+     *
+     * @param config the extension configuration for the fetcher
+     * @throws TikaConfigException if the fetcher type is unknown, if a fetcher with the same ID
+     *                             already exists, or if runtime modifications are not allowed
+     * @throws IOException if there is an error accessing the plugin manager
+     */
+    public void saveFetcher(ExtensionConfig config) throws TikaConfigException, IOException {
+        saveComponent(config);
     }
 }

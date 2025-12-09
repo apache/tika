@@ -99,10 +99,13 @@ class EmitHandler {
 
         try {
             emitter = emitterManager.getEmitter(emitKey.getEmitterId());
-        } catch (IllegalArgumentException e) {
+        } catch (org.apache.tika.pipes.api.emitter.EmitterNotFoundException e) {
             String noEmitterMsg = getNoEmitterMsg(taskId);
             LOG.warn(noEmitterMsg);
             return new PipesResult(PipesResult.RESULT_STATUS.EMITTER_NOT_FOUND, noEmitterMsg);
+        } catch (IOException | TikaException e) {
+            LOG.warn("Couldn't initialize emitter for task id '" + taskId + "'", e);
+            return new PipesResult(PipesResult.RESULT_STATUS.EMITTER_INITIALIZATION_EXCEPTION, ExceptionUtils.getStackTrace(e));
         }
         try {
             if (isExtractEmbeddedBytes &&
