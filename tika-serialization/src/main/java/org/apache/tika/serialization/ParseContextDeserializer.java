@@ -26,25 +26,33 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ConfigContainer;
+import org.apache.tika.config.loader.PolymorphicObjectMapperFactory;
 import org.apache.tika.parser.ParseContext;
 
 /**
  * Deserializes ParseContext from JSON using friendly names.
  * <p>
- * All fields are stored in ConfigContainer for later resolution.
- * Components are resolved at runtime via {@link ParseContextUtils#resolveAll}.
+ * Fields with friendly names are stored in ConfigContainer for later resolution.
+ * Fields with full class names (org.apache.tika.*) are deserialized directly.
  * <p>
  * Example input:
  * <pre>
  * {
  *   "pdf-parser": {"extractActions": true},
- *   "tika-task-timeout": {"timeoutMillis": 5000}
+ *   "tika-task-timeout": {"timeoutMillis": 5000},
+ *   "org.apache.tika.metadata.filter.MetadataFilter": {"@class": "...", ...}
  * }
  * </pre>
  */
 public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ParseContextDeserializer.class);
+    private static final ObjectMapper MAPPER = PolymorphicObjectMapperFactory.getMapper();
 
     @Override
     public ParseContext deserialize(JsonParser jsonParser,
@@ -57,8 +65,11 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
     /**
      * Deserializes a ParseContext from a JsonNode.
      * <p>
-     * All fields are stored as JSON in ConfigContainer. Resolution to actual
-     * objects happens later via {@link ParseContextUtils#resolveAll}.
+     * Fields with friendly names are stored as JSON in ConfigContainer for later
+     * resolution via {@link ParseContextUtils#resolveAll}.
+     * <p>
+     * Fields with full class names (org.apache.tika.*) are deserialized directly
+     * into the ParseContext for immediate use.
      *
      * @param jsonNode the JSON node containing the ParseContext data
      * @return the deserialized ParseContext with ConfigContainer populated
@@ -80,10 +91,28 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
         ConfigContainer configContainer = null;
         for (Iterator<String> it = contextNode.fieldNames(); it.hasNext(); ) {
             String fieldName = it.next();
+            JsonNode fieldValue = contextNode.get(fieldName);
+
+            // Check if fieldName is a full class name (for directly serialized Tika types)
+            if (fieldName.startsWith("org.apache.tika.")) {
+                try {
+                    Class<?> keyClass = Class.forName(fieldName);
+                    // Deserialize using the key class as the target type
+                    Object value = MAPPER.treeToValue(fieldValue, keyClass);
+                    parseContext.set((Class) keyClass, value);
+                    continue;
+                } catch (ClassNotFoundException e) {
+                    LOG.debug("Class not found for key '{}', storing in ConfigContainer", fieldName);
+                } catch (Exception e) {
+                    LOG.warn("Failed to deserialize '{}' directly, storing in ConfigContainer", fieldName, e);
+                }
+            }
+
+            // Store as config for later resolution
             if (configContainer == null) {
                 configContainer = new ConfigContainer();
             }
-            configContainer.set(fieldName, contextNode.get(fieldName).toString());
+            configContainer.set(fieldName, fieldValue.toString());
         }
 
         if (configContainer != null) {

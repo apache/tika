@@ -47,6 +47,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.renderer.Renderer;
 
 /**
  * <p>This was added in Tika 1.24 as an alpha version of a text extractor
@@ -89,9 +90,10 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
     private State state = new State();
 
     private PDFMarkedContent2XHTML(PDDocument document, ContentHandler handler,
-                                   ParseContext context, Metadata metadata, PDFParserConfig config)
+                                   ParseContext context, Metadata metadata, PDFParserConfig config,
+                                   Renderer renderer)
             throws IOException {
-        super(document, handler, context, metadata, config);
+        super(document, handler, context, metadata, config, renderer);
     }
 
     /**
@@ -100,21 +102,23 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
      *
      * @param pdDocument PDF document
      * @param handler    SAX content handler
-     * @param context
+     * @param context    parse context
      * @param metadata   PDF metadata
-     * @param config
+     * @param config     PDF parser config
+     * @param renderer   the renderer to use for rendering pages
      * @throws SAXException  if the content handler fails to process SAX events
      * @throws TikaException if there was an exception outside of per page processing
      */
     public static void process(PDDocument pdDocument, ContentHandler handler,
                                ParseContext context,
-                               Metadata metadata, PDFParserConfig config)
+                               Metadata metadata, PDFParserConfig config, Renderer renderer)
             throws SAXException, TikaException {
 
         PDFMarkedContent2XHTML pdfMarkedContent2XHTML = null;
         try {
             pdfMarkedContent2XHTML =
-                    new PDFMarkedContent2XHTML(pdDocument, handler, context, metadata, config);
+                    new PDFMarkedContent2XHTML(pdDocument, handler, context, metadata, config,
+                            renderer);
         } catch (IOException e) {
             throw new TikaException("couldn't initialize PDFMarkedContent2XHTML", e);
         }

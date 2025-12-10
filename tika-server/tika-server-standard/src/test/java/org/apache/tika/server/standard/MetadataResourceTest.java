@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,9 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.cxf.helpers.IOUtils;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.cxf.jaxrs.ext.multipart.Attachment;
+import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
+import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
 
@@ -98,47 +102,72 @@ public class MetadataResourceTest extends CXFTestBase {
 
     @Test
     public void testPasswordProtected() throws Exception {
+        // Test 1: No password - should fail
+        ContentDisposition fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"test.xls\"");
+        Attachment fileAtt = new Attachment("file",
+                ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED), fileCd);
+
         Response response = WebClient
-                .create(endPoint + META_PATH)
-                .type("application/vnd.ms-excel")
-                .accept("text/csv")
-                .put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
+                .create(endPoint + META_PATH + "/config")
+                .type("multipart/form-data")
+                .accept("application/json")
+                .post(new MultipartBody(Arrays.asList(fileAtt)));
 
-        // Won't work, no password given
+        System.out.println(IOUtils.toString((InputStream) response.getEntity(), UTF_8.name()));
+        // Won't work, no password given - EncryptedDocumentException returns 422
         assertEquals(500, response.getStatus());
 
-        // Try again, this time with the wrong password
+        // Test 2: Wrong password - should fail
+        fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"test.xls\"");
+        fileAtt = new Attachment("file",
+                ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED), fileCd);
+        String wrongConfigJson = """
+                {
+                  "simple-password-provider": {
+                    "password": "wrong password"
+                  }
+                }
+                """;
+        ContentDisposition configCd = new ContentDisposition("form-data; name=\"config\"; filename=\"config.json\"");
+        Attachment wrongConfigAtt = new Attachment("config",
+                new java.io.ByteArrayInputStream(wrongConfigJson.getBytes(UTF_8)), configCd);
+
         response = WebClient
-                .create(endPoint + META_PATH)
-                .type("application/vnd.ms-excel")
-                .accept("text/csv")
-                .header("Password", "wrong password")
-                .put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
+                .create(endPoint + META_PATH + "/config")
+                .type("multipart/form-data")
+                .accept("application/json")
+                .post(new MultipartBody(Arrays.asList(fileAtt, wrongConfigAtt)));
 
         assertEquals(500, response.getStatus());
 
-        // Try again, this time with the password
+        // Test 3: Correct password - should work
+        fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"test.xls\"");
+        fileAtt = new Attachment("file",
+                ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED), fileCd);
+        String configJson = """
+                {
+                  "simple-password-provider": {
+                    "password": "password"
+                  }
+                }
+                """;
+        configCd = new ContentDisposition("form-data; name=\"config\"; filename=\"config.json\"");
+        Attachment configAtt = new Attachment("config",
+                new java.io.ByteArrayInputStream(configJson.getBytes(UTF_8)), configCd);
+
         response = WebClient
-                .create(endPoint + META_PATH)
-                .type("application/vnd.ms-excel")
-                .accept("text/csv")
-                .header("Password", "password")
-                .put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
+                .create(endPoint + META_PATH + "/config")
+                .type("multipart/form-data")
+                .accept("application/json")
+                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
 
         // Will work
         assertEquals(200, response.getStatus());
 
         // Check results
-        Map<String, String> metadata = new HashMap<>();
-        try (Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-                CSVParser csvReader = CSVParser.builder().setReader(reader).setFormat(CSVFormat.EXCEL).get()) {
-            for (CSVRecord r : csvReader) {
-                metadata.put(r.get(0), r.get(1));
-            }
-        }
-
-        assertNotNull(metadata.get(TikaCoreProperties.CREATOR.getName()));
-        assertEquals("pavel", metadata.get(TikaCoreProperties.CREATOR.getName()));
+        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader((InputStream) response.getEntity(), UTF_8));
+        assertNotNull(metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("pavel", metadata.get(TikaCoreProperties.CREATOR));
     }
 
     @Test

@@ -57,6 +57,9 @@ public class ConfigDeserializer {
     /**
      * Retrieves and deserializes a parser configuration from the ConfigContainer in ParseContext.
      * If a default config is provided, the user config will be merged on top of it.
+     * <p>
+     * The resolved config is also set directly in the ParseContext under the configClass key,
+     * so other components (like renderers) can find it via {@code parseContext.get(configClass)}.
      *
      * @param context the parse context containing the ConfigContainer
      * @param configKey the configuration key (e.g., "pdf-parser", "html-parser")
@@ -82,7 +85,13 @@ public class ConfigDeserializer {
             return defaultConfig;
         }
 
-        return JsonMergeUtils.mergeWithDefaults(MAPPER, jsonConfig.json(), configClass, defaultConfig);
+        T config = JsonMergeUtils.mergeWithDefaults(MAPPER, jsonConfig.json(), configClass, defaultConfig);
+
+        // Also set the resolved config directly in ParseContext so other components
+        // (like renderers) can find it via parseContext.get(configClass)
+        context.set(configClass, config);
+
+        return config;
     }
 
     /**

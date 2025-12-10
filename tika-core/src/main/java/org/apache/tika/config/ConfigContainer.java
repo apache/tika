@@ -86,4 +86,14 @@ public class ConfigContainer implements Serializable {
     public boolean isEmpty() {
         return configs.isEmpty();
     }
+
+    /**
+     * Removes the configuration with the specified key.
+     *
+     * @param key the friendly name of the config to remove
+     * @return the previous value associated with the key, or null if there was no mapping
+     */
+    public String remove(String key) {
+        return configs.remove(key);
+    }
 }

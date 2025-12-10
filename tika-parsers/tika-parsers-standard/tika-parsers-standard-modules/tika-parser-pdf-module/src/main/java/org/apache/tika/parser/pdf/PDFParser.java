@@ -58,7 +58,6 @@ import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
@@ -127,7 +126,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * If your PDFs contain marked content or tags, consider
  * {@link PDFParserConfig#setExtractMarkedContent(boolean)}
  */
-@TikaComponent(name = "pdf-parser")
+@TikaComponent
 public class PDFParser implements Parser, RenderingParser, Initializable {
 
     public static final MediaType MEDIA_TYPE = MediaType.application("pdf");
@@ -141,6 +140,7 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
 
     private static COSName ENCRYPTED_PAYLOAD = COSName.getPDFName("EncryptedPayload");
     private PDFParserConfig defaultConfig = new PDFParserConfig();
+    private Renderer renderer;
 
     public PDFParser() {
     }
@@ -234,14 +234,14 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
                 } else if (localConfig.getOcrStrategy()
                         .equals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY)) {
                     OCR2XHTML.process(pdfDocument, handler, context, metadata,
-                            localConfig);
+                            localConfig, renderer);
                 } else if (hasMarkedContent && localConfig.isExtractMarkedContent()) {
                     PDFMarkedContent2XHTML
                             .process(pdfDocument, handler, context, metadata,
-                                    localConfig);
+                                    localConfig, renderer);
                 } else {
                     PDF2XHTML.process(pdfDocument, handler, context, metadata,
-                            localConfig);
+                            localConfig, renderer);
                 }
             }
         } catch (InvalidPasswordException e) {
@@ -272,23 +272,16 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
     }
 
     private PDFParserConfig getConfig(ParseContext parseContext) throws TikaException, IOException {
-        // Check for ConfigContainer with component-specific runtime config
-        ConfigContainer configContainer = parseContext.get(ConfigContainer.class);
-        if (configContainer != null && configContainer.get("pdf-parser").isPresent()) {
-            // Merge runtime config with defaultConfig via serialization
-            return ParseContextConfig.getConfig(
-                    parseContext,
-                    "pdf-parser",
-                    PDFParserConfig.class,
-                    defaultConfig);
-        }
-
-        // Fall back to old-style ParseContext config for backward compatibility
-        PDFParserConfig userConfig = parseContext.get(PDFParserConfig.class);
-        if (userConfig != null) {
-            return userConfig;
-        }
-        return defaultConfig;
+        // ParseContextConfig.getConfig() handles:
+        // 1. Check for PDFParserConfig already in ParseContext (fast path for embedded docs)
+        // 2. Check ConfigContainer for "pdf-parser" and deserialize if present
+        // 3. Set deserialized config in ParseContext for future lookups
+        // 4. Return defaultConfig if no runtime config found
+        return ParseContextConfig.getConfig(
+                parseContext,
+                "pdf-parser",
+                PDFParserConfig.class,
+                defaultConfig);
     }
 
     private void checkEncryptedPayload(PDDocument pdfDocument,
@@ -489,7 +482,7 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
             throws IOException, TikaException {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.TYPE, MEDIA_TYPE.toString());
-        return localConfig.getRenderer().render(
+        return renderer.render(
                 tstream, metadata, parseContext, PageRangeRequest.RENDER_ALL);
     }
 
@@ -849,12 +842,12 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
     }
 
     @Field
-    public void setOcrStrategy(String ocrStrategyString) {
-        defaultConfig.setOcrStrategy(ocrStrategyString);
+    public void setOcrStrategy(PDFParserConfig.OCR_STRATEGY ocrStrategy) {
+        defaultConfig.setOcrStrategy(ocrStrategy);
     }
 
-    public String getOcrStrategy() {
-        return defaultConfig.getOcrStrategy().name();
+    public PDFParserConfig.OCR_STRATEGY getOcrStrategy() {
+        return defaultConfig.getOcrStrategy();
     }
 
     @Field
@@ -867,21 +860,21 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
     }
 
     @Field
-    public void setOcrRenderingStrategy(String ocrRenderingStrategy) {
+    public void setOcrRenderingStrategy(PDFParserConfig.OCR_RENDERING_STRATEGY ocrRenderingStrategy) {
         defaultConfig.setOcrRenderingStrategy(ocrRenderingStrategy);
     }
 
-    public String getOcrRenderingStrategy() {
-        return defaultConfig.getOcrRenderingStrategy().name();
+    public PDFParserConfig.OCR_RENDERING_STRATEGY getOcrRenderingStrategy() {
+        return defaultConfig.getOcrRenderingStrategy();
     }
 
     @Field
-    public void setOcrImageType(String imageType) {
-        defaultConfig.setOcrImageType(imageType);
+    public void setOcrImageType(PDFParserConfig.TikaImageType ocrImageType) {
+        defaultConfig.setOcrImageType(ocrImageType);
     }
 
-    public String getOcrImageType() {
-        return defaultConfig.getOcrImageType().name();
+    public PDFParserConfig.TikaImageType getOcrImageType() {
+        return defaultConfig.getOcrImageType();
     }
 
     @Field
@@ -1146,9 +1139,8 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
     }
 
     private void initRenderer(PDFParserConfig config, ParseContext context) {
-
-        if (config.getRenderer() != null &&
-                config.getRenderer().getSupportedTypes(context).contains(MEDIA_TYPE)) {
+        if (this.renderer != null &&
+                this.renderer.getSupportedTypes(context).contains(MEDIA_TYPE)) {
             return;
         }
         //set a default renderer if nothing was defined
@@ -1156,17 +1148,16 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         pdfBoxRenderer.setDPI(config.getOcrDPI());
         pdfBoxRenderer.setImageType(config.getOcrImageType().getImageType());
         pdfBoxRenderer.setImageFormatName(config.getOcrImageFormatName());
-        config.setRenderer(pdfBoxRenderer);
+        this.renderer = pdfBoxRenderer;
     }
 
-    //TODO -- figure out how to deserialize this in TikaConfigSerializer
     @Override
     public void setRenderer(Renderer renderer) {
-        defaultConfig.setRenderer(renderer);
+        this.renderer = renderer;
     }
 
     public Renderer getRenderer() {
-        return defaultConfig.getRenderer();
+        return renderer;
     }
 
     @Field
@@ -1179,12 +1170,12 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
     }
 
     @Field
-    public void setImageStrategy(String imageStrategy) {
+    public void setImageStrategy(PDFParserConfig.IMAGE_STRATEGY imageStrategy) {
         defaultConfig.setImageStrategy(imageStrategy);
     }
 
-    public String getImageStrategy() {
-        return defaultConfig.getImageStrategy().name();
+    public PDFParserConfig.IMAGE_STRATEGY getImageStrategy() {
+        return defaultConfig.getImageStrategy();
     }
 
     /**

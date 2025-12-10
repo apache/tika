@@ -91,6 +91,9 @@ public class ParseContextUtils {
      *   <li>Auto-detected from {@link #KNOWN_CONTEXT_INTERFACES} (if component implements one)</li>
      *   <li>The component's own class (default)</li>
      * </ol>
+     * <p>
+     * After resolution, resolved configs are removed from the ConfigContainer. If the
+     * ConfigContainer becomes empty, it is removed from the ParseContext.
      *
      * @param context the ParseContext to populate
      * @param classLoader the ClassLoader to use for loading component classes
@@ -104,6 +107,8 @@ public class ParseContextUtils {
         if (container == null) {
             return;
         }
+
+        List<String> resolvedKeys = new ArrayList<>();
 
         try {
             // Load the "other-configs" registry which includes parse-context components
@@ -133,6 +138,7 @@ public class ParseContextUtils {
                     // Deserialize and add to ParseContext
                     Object instance = MAPPER.readValue(jsonConfig.json(), info.componentClass());
                     context.set((Class) contextKey, instance);
+                    resolvedKeys.add(friendlyName);
 
                     LOG.debug("Resolved '{}' -> {} with key {}",
                             friendlyName, info.componentClass().getName(), contextKey.getName());
@@ -146,6 +152,16 @@ public class ParseContextUtils {
             }
         } catch (TikaConfigException e) {
             LOG.warn("Failed to load other-configs registry for parse-context resolution", e);
+        }
+
+        // Remove resolved configs from the container
+        for (String key : resolvedKeys) {
+            container.remove(key);
+        }
+
+        // If the container is now empty, remove it from the ParseContext
+        if (container.isEmpty()) {
+            context.set(ConfigContainer.class, null);
         }
     }
 

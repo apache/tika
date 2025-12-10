@@ -24,9 +24,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,17 +41,22 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.PolymorphicObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.extractor.ContainerExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
+import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -600,5 +609,89 @@ public class PDFParserTest extends TikaTest {
                 "extractInlineImages should be preserved");
         assertEquals(PDFParserConfig.OCR_STRATEGY.AUTO, deserializedConfig.getOcrStrategy(),
                 "ocrStrategy should be preserved");
+    }
+
+    @Test
+    public void testRenderingBasic() throws Exception {
+        ParseContext parseContext = configureRenderingParseContext();
+        Parser p = TikaLoaderHelper.getLoader("tika-config-rendering.json").loadAutoDetectParser();
+        List<Metadata> metadataList = getRecursiveMetadata("testPDF.pdf", p, parseContext);
+        Map<Integer, byte[]> embedded =
+                ((RenderCaptureExtractor) parseContext.get(EmbeddedDocumentExtractor.class))
+                        .getEmbedded();
+        assertEquals(1, embedded.size());
+        assertTrue(embedded.containsKey(0));
+        assertTrue(embedded.get(0).length > 1000);
+
+        assertEquals(2, metadataList.size());
+        Metadata tiffMetadata = metadataList.get(1);
+        assertEquals("RENDERING", tiffMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals(1, tiffMetadata.getInt(TikaPagedText.PAGE_NUMBER));
+    }
+
+    @Test
+    public void testRenderingRotated() throws Exception {
+        ParseContext parseContext = configureRenderingParseContext();
+        Parser p = TikaLoaderHelper.getLoader("tika-config-rendering.json").loadAutoDetectParser();
+        List<Metadata> metadataList = getRecursiveMetadata("testPDF_rotated.pdf", p, parseContext);
+        Map<Integer, byte[]> embedded =
+                ((RenderCaptureExtractor) parseContext.get(EmbeddedDocumentExtractor.class))
+                        .getEmbedded();
+
+        assertEquals(1, embedded.size());
+        assertTrue(embedded.containsKey(0));
+        assertTrue(embedded.get(0).length > 1000);
+
+        assertEquals(2, metadataList.size());
+        Metadata tiffMetadata = metadataList.get(1);
+        assertEquals("RENDERING", tiffMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals(1, tiffMetadata.getInt(TikaPagedText.PAGE_NUMBER));
+        assertEquals(90.0, Double.parseDouble(tiffMetadata.get(TikaPagedText.PAGE_ROTATION)), 0.1);
+    }
+
+    @Test
+    public void testInitializationOfNonPrimitivesViaJsonConfig() throws Exception {
+        Parser p = TikaLoaderHelper.getLoader("tika-config-non-primitives.json").loadAutoDetectParser();
+        assertTrue(p instanceof org.apache.tika.parser.AutoDetectParser);
+        org.apache.tika.parser.AutoDetectParser adp = (org.apache.tika.parser.AutoDetectParser) p;
+        java.util.Map<MediaType, Parser> parsers = adp.getParsers();
+        Parser composite = parsers.get(MediaType.application("pdf"));
+        Parser pdfParser =
+                ((org.apache.tika.parser.CompositeParser) composite).getParsers()
+                        .get(MediaType.application("pdf"));
+        assertEquals("org.apache.tika.parser.pdf.PDFParser",
+                pdfParser.getClass().getName());
+        assertEquals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY,
+                ((PDFParser) pdfParser).getPDFParserConfig().getOcrStrategy());
+        assertEquals(PDFParserConfig.TikaImageType.RGB,
+                ((PDFParser) pdfParser).getPDFParserConfig().getOcrImageType());
+    }
+
+    private ParseContext configureRenderingParseContext() {
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(EmbeddedDocumentExtractor.class, new RenderCaptureExtractor(parseContext));
+        return parseContext;
+    }
+
+    private static class RenderCaptureExtractor extends ParsingEmbeddedDocumentExtractor {
+        private int count = 0;
+        Map<Integer, byte[]> embedded = new HashMap<>();
+
+        public RenderCaptureExtractor(ParseContext context) {
+            super(context);
+        }
+
+        @Override
+        public void parseEmbedded(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                                  boolean outputHtml) throws SAXException, IOException {
+
+            byte[] bytes = Files.readAllBytes(tis.getPath());
+            embedded.put(count++, bytes);
+            super.parseEmbedded(tis, handler, metadata, outputHtml);
+        }
+
+        public Map<Integer, byte[]> getEmbedded() {
+            return embedded;
+        }
     }
 }

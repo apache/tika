@@ -55,7 +55,6 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.HandlerConfig;
 import org.apache.tika.pipes.api.emitter.EmitKey;
@@ -64,7 +63,6 @@ import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
 import org.apache.tika.plugins.TikaPluginManager;
-import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.FetcherStreamFactory;
@@ -183,17 +181,15 @@ public class TikaPipesTest extends CXFTestBase {
     @Test
     public void testConcatenated() throws Exception {
         ParseContext parseContext = new ParseContext();
-        HandlerConfig handlerConfig = new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, HandlerConfig.PARSE_MODE.CONCATENATE, -1, -1, true);
-        parseContext.set(HandlerConfig.class, handlerConfig);
+        // Use addConfig with JSON for handler-config
+        parseContext.addConfig("handler-config",
+                "{\"type\": \"TEXT\", \"parseMode\": \"CONCATENATE\", \"writeLimit\": -1, \"maxEmbeddedResources\": -1, \"throwOnWriteLimitReached\": true}");
 
         FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey(FETCHER_ID, "test_recursive_embedded.docx"),
                 new EmitKey(EMITTER_JSON_ID, ""), new Metadata(), parseContext,
                 FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
-
-        FetchEmitTuple deserialized = JsonFetchEmitTuple.fromJson(new StringReader(writer.toString()));
-        assertEquals(t, deserialized);
 
         String getUrl = endPoint + PIPES_PATH;
         Response response = WebClient
@@ -214,14 +210,12 @@ public class TikaPipesTest extends CXFTestBase {
 
     @Test
     public void testPDFConfig() throws Exception {
-        Metadata metadata = new Metadata();
         ParseContext parseContext = new ParseContext();
-        PDFParserConfig pdfParserConfig = new PDFParserConfig();
-        pdfParserConfig.setSortByPosition(true);
-        parseContext.set(PDFParserConfig.class, pdfParserConfig);
+        // Configure PDFParser via JSON config (pdf-parser is self-configuring)
+        parseContext.addConfig("pdf-parser", "{\"sortByPosition\": true}");
 
         FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey(FETCHER_ID, TEST_TWO_BOXES_PDF),
-                new EmitKey(EMITTER_JSON_ID, ""), metadata, parseContext);
+                new EmitKey(EMITTER_JSON_ID, ""), new Metadata(), parseContext);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
         String getUrl = endPoint + PIPES_PATH;

@@ -61,6 +61,9 @@ public class ComponentRegistry {
         aliases.put("ogg-detector", "org.gagravarr.tika.OggDetector");
         // HandlerConfig is in tika-pipes-api which can't depend on tika-core for @TikaComponent
         aliases.put("handler-config", "org.apache.tika.pipes.api.HandlerConfig");
+        // EmbeddedDocumentBytesConfig is in tika-pipes-core which can't depend on tika-core for @TikaComponent
+        aliases.put("embedded-document-bytes-config",
+                "org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig");
         return Collections.unmodifiableMap(aliases);
     }
 

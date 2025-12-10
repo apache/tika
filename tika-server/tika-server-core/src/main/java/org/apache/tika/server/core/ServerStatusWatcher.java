@@ -67,7 +67,7 @@ public class ServerStatusWatcher implements Runnable {
                 LOG.error("Timeout task {}, millis elapsed {}; " +
                                 "consider increasing the allowable time via: " +
                                 "server config (\"taskTimeoutMillis\") or " +
-                                "per-request config (\"tika-task-timeout\" in parse-context)",
+                                "per-request config (\"tika-task-timeout\")",
                         status.task.toString(), millisElapsed);
                 shutdown();
             }

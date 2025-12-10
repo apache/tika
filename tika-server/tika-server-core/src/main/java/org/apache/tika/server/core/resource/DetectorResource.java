@@ -29,7 +29,6 @@ import jakarta.ws.rs.core.UriInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -58,7 +57,6 @@ public class DetectorResource {
         LOG.info("Detecting media type for Filename: {}", filename);
         met.add(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
         ParseContext parseContext = new ParseContext();
-        TikaResource.fillParseContext(httpHeaders.getRequestHeaders(), met, parseContext);
         long timeoutMillis = TikaResource.getTaskTimeout(parseContext);
         long taskId = serverStatus.start(ServerStatus.TASK.DETECT, filename, timeoutMillis);
 

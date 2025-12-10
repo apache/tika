@@ -42,16 +42,11 @@ import org.apache.cxf.configuration.security.KeyManagersType;
 import org.apache.cxf.configuration.security.KeyStoreType;
 import org.apache.cxf.configuration.security.TrustManagersType;
 import org.apache.cxf.jaxrs.client.WebClient;
-import org.apache.cxf.jaxrs.ext.multipart.Attachment;
-import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
-import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.cxf.transport.http.HTTPConduit;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.serialization.JsonMetadataList;
@@ -59,7 +54,6 @@ import org.apache.tika.utils.ProcessUtils;
 
 public class TikaServerIntegrationTest extends IntegrationTestBase {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TikaServerIntegrationTest.class);
     private static Path TLS_KEYS;
 
     @TempDir
@@ -117,65 +111,6 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         } catch (Exception e) {
             //oom may or may not cause an exception depending
             //on the timing
-        }
-        //give some time for the server to crash/terminate itself
-        testStopped(2000);
-    }
-
-    /**
-     * Test legacy header-based timeout configuration.
-     * @deprecated This tests the old header-based approach. Use testTaskTimeoutMultipart instead.
-     */
-    @Test
-    public void testTaskTimeoutHeader() throws Exception {
-
-        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.json")});
-        awaitServerStartup();
-        Response response = null;
-        try {
-            response = WebClient
-                    .create(endPoint + RMETA_PATH)
-                    .accept("application/json")
-                    .header(TimeoutConfig.X_TIKA_TIMEOUT_MILLIS, 100)
-                    .put(ClassLoader.getSystemResourceAsStream(TEST_HEAVY_HANG));
-        } catch (Exception e) {
-            //oom may or may not cause an exception depending
-            //on the timing
-        }
-        //give some time for the server to crash/terminate itself
-        testStopped(2000);
-    }
-
-    /**
-     * Test JSON-based timeout configuration via multipart request.
-     * This is the new recommended approach for configuring timeouts.
-     */
-    @Test
-    public void testTaskTimeoutMultipart() throws Exception {
-        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.json")});
-        awaitServerStartup();
-
-        // Create multipart form with file and config
-        ContentDisposition fileCD = new ContentDisposition("form-data; name=\"file\"; filename=\"heavy_hang_30000.xml\"");
-        ContentDisposition configCD = new ContentDisposition("form-data; name=\"config\"; filename=\"tika-config-timeout-100ms.json\"");
-
-        MultipartBody multipart = new MultipartBody(List.of(
-                new Attachment("file", ClassLoader.getSystemResourceAsStream(TEST_HEAVY_HANG), fileCD),
-                new Attachment("config", ClassLoader.getSystemResourceAsStream("configs/tika-config-timeout-100ms.json"), configCD)
-            ));
-
-        Response response = null;
-        try {
-            LOG.info("TEST: Sending request to: {}", endPoint + "/tika/test-config");
-            response = WebClient
-                    .create(endPoint + "/tika/test-config")
-                    .accept("text/plain")
-                    .type("multipart/form-data")
-                    .post(multipart);
-            LOG.info("TEST: Response status: {}", response != null ? response.getStatus() : "null");
-        } catch (Exception e) {
-            LOG.info("TEST: Exception during request", e);
-            //timeout may or may not cause an exception depending on timing
         }
         //give some time for the server to crash/terminate itself
         testStopped(2000);

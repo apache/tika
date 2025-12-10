@@ -97,27 +97,52 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
         }
 
         // Then, serialize objects from ParseContext that have registered friendly names
+        // or are stored under Tika type keys (for polymorphic custom subclasses)
         ComponentRegistry reg = getRegistry();
-        if (reg != null) {
-            Map<String, Object> contextMap = parseContext.getContextMap();
-            for (Map.Entry<String, Object> entry : contextMap.entrySet()) {
-                // Skip ConfigContainer - already handled above
-                if (entry.getKey().equals(ConfigContainer.class.getName())) {
-                    continue;
-                }
+        Map<String, Object> contextMap = parseContext.getContextMap();
+        for (Map.Entry<String, Object> entry : contextMap.entrySet()) {
+            // Skip ConfigContainer - already handled above
+            if (entry.getKey().equals(ConfigContainer.class.getName())) {
+                continue;
+            }
 
-                Object value = entry.getValue();
-                if (value == null) {
-                    continue;
-                }
+            Object value = entry.getValue();
+            if (value == null) {
+                continue;
+            }
 
-                // Look up friendly name for this object's class
-                String friendlyName = reg.getFriendlyName(value.getClass());
-                if (friendlyName != null && !writtenKeys.contains(friendlyName)) {
-                    jsonGenerator.writeFieldName(friendlyName);
+            // Try to get friendly name for this object's class
+            String friendlyName = (reg != null) ? reg.getFriendlyName(value.getClass()) : null;
+
+            String key;
+            if (friendlyName != null) {
+                // Use friendly name if available
+                key = friendlyName;
+            } else if (entry.getKey().startsWith("org.apache.tika.")) {
+                // For Tika types without friendly names (e.g., custom MetadataFilter subclasses),
+                // use the context key - polymorphic mapper will add @class for the concrete type
+                key = entry.getKey();
+            } else {
+                // Skip non-Tika types without friendly names (e.g., String, custom non-Tika classes)
+                continue;
+            }
+
+            if (!writtenKeys.contains(key)) {
+                jsonGenerator.writeFieldName(key);
+                // If using the context key (not friendly name), we need to serialize
+                // with the base type to get polymorphic @class info for custom subclasses
+                if (friendlyName == null) {
+                    try {
+                        Class<?> contextKeyClass = Class.forName(entry.getKey());
+                        MAPPER.writerFor(contextKeyClass).writeValue(jsonGenerator, value);
+                    } catch (ClassNotFoundException e) {
+                        // Fallback to default serialization
+                        MAPPER.writeValue(jsonGenerator, value);
+                    }
+                } else {
                     MAPPER.writeValue(jsonGenerator, value);
-                    writtenKeys.add(friendlyName);
                 }
+                writtenKeys.add(key);
             }
         }
 
