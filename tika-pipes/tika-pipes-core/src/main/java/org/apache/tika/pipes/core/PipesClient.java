@@ -194,7 +194,7 @@ public class PipesClient implements Closeable {
         } catch (InterruptedException | SecurityException e) {
             throw e;
         } catch (Exception e) {
-            LOG.error("exception waiting for server to complete task: {} ", t.getId());
+            LOG.error("exception waiting for server to complete task: {} ", t.getId(), e);
             shutItAllDown();
             return buildFatalResult(t.getId(), t.getEmitKey(), UNSPECIFIED_CRASH, intermediateResult.get());
         }

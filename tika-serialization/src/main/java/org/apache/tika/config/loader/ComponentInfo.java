@@ -14,24 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.server.core.config;
+package org.apache.tika.config.loader;
 
-import jakarta.ws.rs.core.MultivaluedMap;
-
-import org.apache.tika.config.TikaTaskTimeout;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.server.core.ParseContextConfig;
-
-public class TimeoutConfig implements ParseContextConfig {
-
-    public static final String X_TIKA_TIMEOUT_MILLIS = "X-Tika-Timeout-Millis";
-
-    @Override
-    public void configure(MultivaluedMap<String, String> httpHeaders, Metadata metadata, ParseContext context) {
-        if (httpHeaders.containsKey(X_TIKA_TIMEOUT_MILLIS)) {
-            long timeout = Long.parseLong(httpHeaders.getFirst(X_TIKA_TIMEOUT_MILLIS));
-            context.set(TikaTaskTimeout.class, new TikaTaskTimeout(timeout));
-        }
+/**
+ * Information about a registered Tika component.
+ *
+ * @param componentClass the component's class
+ * @param selfConfiguring whether the component implements SelfConfiguring
+ *                        (reads its own config from ConfigContainer)
+ * @param contextKey the class to use as the key when adding to ParseContext,
+ *                   or null to auto-detect based on known interfaces
+ */
+public record ComponentInfo(
+        Class<?> componentClass,
+        boolean selfConfiguring,
+        Class<?> contextKey
+) {
+    /**
+     * Creates a ComponentInfo with no explicit context key (auto-detect).
+     */
+    public ComponentInfo(Class<?> componentClass, boolean selfConfiguring) {
+        this(componentClass, selfConfiguring, null);
     }
 }

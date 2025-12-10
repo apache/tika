@@ -188,6 +188,50 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
                 .asText());
     }
 
+    @Test
+    public void testPerRequestTimeout() throws Exception {
+        // Start server with 5000ms timeout (TIKA_CONFIG)
+        // but send a request with 100ms per-request timeout
+        // This should timeout after 100ms, not 5000ms
+        startProcess(new String[]{
+                "-config", ProcessUtils.escapeCommandLine(TIKA_CONFIG
+                .toAbsolutePath()
+                .toString())});
+        JsonNode node = testOneWithPerRequestTimeout("heavy_hang_30000.xml", 100);
+        assertEquals("process_crash", node
+                .get("status")
+                .asText());
+        assertContains("TIMEOUT", node
+                .get("type")
+                .asText());
+    }
+
+    private JsonNode testOneWithPerRequestTimeout(String fileName, long timeoutMillis) throws Exception {
+        awaitServerStartup();
+        Response response = WebClient
+                .create(endPoint + "/pipes")
+                .accept("application/json")
+                .post(getJsonStringWithTimeout(fileName, timeoutMillis));
+        if (response.getStatus() == 200) {
+            Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+            return new ObjectMapper().readTree(reader);
+        }
+        return null;
+    }
+
+    private String getJsonStringWithTimeout(String fileName, long timeoutMillis) throws IOException {
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(HandlerConfig.class, DEFAULT_HANDLER_CONFIG);
+        parseContext.addConfig("tika-task-timeout", "{\"timeoutMillis\":" + timeoutMillis + "}");
+
+        FetchEmitTuple t = new FetchEmitTuple(fileName,
+                new FetchKey(CXFTestBase.FETCHER_ID, fileName),
+                new EmitKey(CXFTestBase.EMITTER_JSON_ID, ""),
+                new Metadata(),
+                parseContext,
+                FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+        return JsonFetchEmitTuple.toJson(t);
+    }
 
     private JsonNode testOne(String fileName, boolean shouldFileExist) throws Exception {
         return testOne(fileName, shouldFileExist, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);

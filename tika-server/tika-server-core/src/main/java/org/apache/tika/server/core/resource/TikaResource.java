@@ -27,11 +27,17 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.sax.SAXTransformerFactory;
@@ -56,6 +62,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.apache.cxf.attachment.ContentDisposition;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
+import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.cxf.jaxrs.impl.MetadataMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,6 +80,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.serialization.ParseContextDeserializer;
+import org.apache.tika.serialization.ParseContextUtils;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
@@ -364,27 +373,6 @@ public class TikaResource {
         }
     }
 
-    protected static long getTaskTimeout(ParseContext parseContext) {
-
-        TikaTaskTimeout tikaTaskTimeout = parseContext.get(TikaTaskTimeout.class);
-        long timeoutMillis = TIKA_SERVER_CONFIG.getTaskTimeoutMillis();
-
-        if (tikaTaskTimeout != null) {
-            if (tikaTaskTimeout.getTimeoutMillis() > TIKA_SERVER_CONFIG.getTaskTimeoutMillis()) {
-                throw new IllegalArgumentException(
-                        "Can't request a timeout ( " + tikaTaskTimeout.getTimeoutMillis() + "ms) greater than the taskTimeoutMillis set in the server config (" +
-                                TIKA_SERVER_CONFIG.getTaskTimeoutMillis() + "ms)");
-            }
-            timeoutMillis = tikaTaskTimeout.getTimeoutMillis();
-            if (timeoutMillis < TIKA_SERVER_CONFIG.getMinimumTimeoutMillis()) {
-                throw new WebApplicationException(new IllegalArgumentException(
-                        "taskTimeoutMillis must be > " + "minimumTimeoutMillis, currently set to (" + TIKA_SERVER_CONFIG.getMinimumTimeoutMillis() + "ms)"),
-                        Response.Status.BAD_REQUEST);
-            }
-        }
-        return timeoutMillis;
-    }
-
     public static void checkIsOperating() {
         //check that server is not in shutdown mode
         if (!SERVER_STATUS.isOperating()) {
@@ -415,6 +403,10 @@ public class TikaResource {
         return DEFAULT_HANDLER_CONFIG.isThrowOnWriteLimitReached();
     }
 
+    public static long getTaskTimeout(ParseContext parseContext) {
+       return TikaTaskTimeout.getTimeoutMillis(parseContext, TIKA_SERVER_CONFIG.getTaskTimeoutMillis());
+    }
+
     @GET
     @Produces("text/plain")
     public String getMessage() {
@@ -427,7 +419,51 @@ public class TikaResource {
     @Produces("text/plain")
     @Path("form")
     public StreamingOutput getTextFromMultipart(Attachment att, @Context HttpHeaders httpHeaders, @Context final UriInfo info) throws TikaConfigException, IOException {
+        LOG.info("===== getTextFromMultipart (single Attachment) CALLED =====");
         return produceText(att.getObject(InputStream.class), new Metadata(), preparePostHeaderMap(att, httpHeaders), info);
+    }
+
+    // Greenfield test endpoint for multipart with config
+    @POST
+    @Consumes("multipart/form-data")
+    @Produces("text/plain")
+    @Path("test-config")
+    public StreamingOutput testMultipartWithConfig(
+            List<Attachment> attachments,
+            @Context HttpHeaders httpHeaders,
+            @Context final UriInfo info) throws TikaConfigException, IOException {
+        LOG.info("===== testMultipartWithConfig CALLED with {} attachments =====", attachments.size());
+
+        // Find the file and config attachments
+        Attachment fileAtt = null;
+        Attachment configAtt = null;
+
+        for (Attachment att : attachments) {
+            ContentDisposition cd = att.getContentDisposition();
+            if (cd != null) {
+                String name = cd.getParameter("name");
+                LOG.info("Found attachment with name: {}", name);
+                if ("file".equals(name)) {
+                    fileAtt = att;
+                } else if ("config".equals(name)) {
+                    configAtt = att;
+                }
+            }
+        }
+
+        if (fileAtt == null) {
+            throw new IllegalArgumentException("Missing 'file' attachment");
+        }
+        if (configAtt == null) {
+            throw new IllegalArgumentException("Missing 'config' attachment");
+        }
+
+        final Metadata metadata = new Metadata();
+        MultivaluedMap<String, String> headers = preparePostHeaderMap(fileAtt, httpHeaders);
+        return produceTextWithConfig(
+            getInputStream(fileAtt.getObject(InputStream.class), metadata, httpHeaders, info),
+            configAtt.getObject(InputStream.class),
+            metadata, headers, info);
     }
 
     //this is equivalent to text-main in tika-app
@@ -471,8 +507,61 @@ public class TikaResource {
     @Consumes("*/*")
     @Produces("text/plain")
     public StreamingOutput getText(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) throws TikaConfigException, IOException {
+        LOG.info("===== getText (PUT, no @Path) CALLED =====");
         final Metadata metadata = new Metadata();
         return produceText(getInputStream(is, metadata, httpHeaders, info), metadata, httpHeaders.getRequestHeaders(), info);
+    }
+
+    /**
+     * Produces text output with per-request ParseContext configuration.
+     * Extracts only the parse-context section from the config to allow per-request
+     * configuration of ParseContext objects (e.g., timeout, handler settings).
+     * Uses the server's configured parser to preserve any parser configuration from startup.
+     */
+    private StreamingOutput produceTextWithConfig(final InputStream fileStream, InputStream configStream,
+            final Metadata metadata, MultivaluedMap<String, String> httpHeaders, final UriInfo info)
+            throws TikaConfigException, IOException {
+
+        // Use the server's configured parser (not a new one from the config)
+        final Parser parser = createParser();
+        final ParseContext context = new ParseContext();
+
+        // Read the config JSON to extract only the parse-context section
+        String configJson = new String(configStream.readAllBytes(), StandardCharsets.UTF_8);
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode rootNode = mapper.readTree(configJson);
+
+        JsonNode parseContextNode = rootNode.get("parse-context");
+        LOG.info("found parseContext: " + parseContextNode);
+        if (parseContextNode != null) {
+            // Deserialize parseContext section
+            ParseContext configuredContext = ParseContextDeserializer.readParseContext(parseContextNode);
+
+            // Resolve all friendly-named components from ConfigContainer
+            // For example: "tika-task-timeout" -> TikaTaskTimeout instance
+            ParseContextUtils.resolveAll(configuredContext, Thread.currentThread().getContextClassLoader());
+
+            // Merge configured context into our context
+            for (Map.Entry<String, Object> entry : configuredContext.getContextMap().entrySet()) {
+                try {
+                    Class<?> clazz = Class.forName(entry.getKey());
+                    context.set((Class) clazz, entry.getValue());
+                } catch (ClassNotFoundException e) {
+                    LOG.warn("Could not load class for parseContext entry: " + entry.getKey(), e);
+                }
+            }
+        }
+
+        fillMetadata(parser, metadata, httpHeaders);
+        fillParseContext(httpHeaders, metadata, context);
+
+        logRequest(LOG, "/tika (with config)", metadata);
+
+        return outputStream -> {
+            Writer writer = new OutputStreamWriter(outputStream, UTF_8);
+            BodyContentHandler body = new BodyContentHandler(new RichTextContentHandler(writer));
+            parse(parser, LOG, info.getPath(), fileStream, body, metadata, context);
+        };
     }
 
     public StreamingOutput produceText(final InputStream is, final Metadata metadata, MultivaluedMap<String, String> httpHeaders, final UriInfo info)
@@ -499,6 +588,8 @@ public class TikaResource {
     @Produces("text/html")
     @Path("form")
     public StreamingOutput getHTMLFromMultipart(Attachment att, @Context HttpHeaders httpHeaders, @Context final UriInfo info) throws TikaConfigException, IOException {
+        LOG.info("loading multipart html");
+
         return produceOutput(att.getObject(InputStream.class), new Metadata(), preparePostHeaderMap(att, httpHeaders), info, "html");
     }
 
@@ -515,6 +606,8 @@ public class TikaResource {
     @Produces("text/xml")
     @Path("form")
     public StreamingOutput getXMLFromMultipart(Attachment att, @Context HttpHeaders httpHeaders, @Context final UriInfo info) throws TikaConfigException, IOException {
+        LOG.info("loading multipart xml");
+
         return produceOutput(att.getObject(InputStream.class), new Metadata(), preparePostHeaderMap(att, httpHeaders), info, "xml");
     }
 

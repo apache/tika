@@ -22,8 +22,6 @@ import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.server.core.config.TimeoutConfig;
-
 public class ServerStatusWatcher implements Runnable {
 
 
@@ -67,9 +65,10 @@ public class ServerStatusWatcher implements Runnable {
             if (millisElapsed > status.timeoutMillis) {
                 serverStatus.setStatus(ServerStatus.STATUS.TIMEOUT);
                 LOG.error("Timeout task {}, millis elapsed {}; " +
-                                "consider increasing the allowable time with the "
-                                + "<taskTimeoutMillis/> parameter or the {} header",
-                        status.task.toString(), millisElapsed, TimeoutConfig.X_TIKA_TIMEOUT_MILLIS);
+                                "consider increasing the allowable time via: " +
+                                "server config (\"taskTimeoutMillis\") or " +
+                                "per-request config (\"tika-task-timeout\" in parse-context)",
+                        status.task.toString(), millisElapsed);
                 shutdown();
             }
         }

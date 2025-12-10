@@ -34,7 +34,10 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
@@ -125,17 +128,31 @@ public class TikaComponentProcessor extends AbstractProcessor {
         // Check if component should be included in SPI
         boolean includeSpi = annotation.spi();
 
+        // Get contextKey if specified (need to use mirror API for Class types)
+        String contextKey = getContextKeyFromAnnotation(element);
+
         messager.printMessage(Diagnostic.Kind.NOTE,
                 "Processing @TikaComponent: " + className + " -> " + componentName +
-                " (SPI: " + includeSpi + ")");
+                " (SPI: " + includeSpi + ", contextKey: " + contextKey + ")");
 
         // Find all implemented service interfaces
         List<String> serviceInterfaces = findServiceInterfaces(element);
 
+        // Build the index entry value (className or className:key=X)
+        String indexValue = className;
+        if (contextKey != null) {
+            indexValue = className + ":key=" + contextKey;
+        }
+
         if (serviceInterfaces.isEmpty()) {
-            messager.printMessage(Diagnostic.Kind.WARNING,
-                    "Class " + className + " annotated with @TikaComponent " +
-                    "but does not implement any known Tika service interface", element);
+            // No known service interface - put in other-configs.idx
+            messager.printMessage(Diagnostic.Kind.NOTE,
+                    "Class " + className + " does not implement known service interface, " +
+                    "adding to other-configs.idx", element);
+
+            Map<String, String> index = indexFiles.computeIfAbsent("other-configs",
+                    k -> new LinkedHashMap<>());
+            addToIndex(index, componentName, indexValue, className, element);
             return;
         }
 
@@ -152,20 +169,57 @@ public class TikaComponentProcessor extends AbstractProcessor {
             if (indexFileName != null) {
                 Map<String, String> index = indexFiles.computeIfAbsent(indexFileName,
                         k -> new LinkedHashMap<>());
+                addToIndex(index, componentName, indexValue, className, element);
+            }
+        }
+    }
 
-                // Check for duplicate names
-                if (index.containsKey(componentName)) {
-                    String existingClass = index.get(componentName);
-                    if (!existingClass.equals(className)) {
-                        messager.printMessage(Diagnostic.Kind.ERROR,
-                                "Duplicate component name '" + componentName + "' for classes: " +
-                                existingClass + " and " + className, element);
+    /**
+     * Adds an entry to an index, checking for duplicates.
+     */
+    private void addToIndex(Map<String, String> index, String componentName,
+                           String indexValue, String className, TypeElement element) {
+        if (index.containsKey(componentName)) {
+            String existingValue = index.get(componentName);
+            // Extract class name from value (may have :key= suffix)
+            String existingClass = existingValue.contains(":")
+                    ? existingValue.substring(0, existingValue.indexOf(":"))
+                    : existingValue;
+            if (!existingClass.equals(className)) {
+                messager.printMessage(Diagnostic.Kind.ERROR,
+                        "Duplicate component name '" + componentName + "' for classes: " +
+                        existingClass + " and " + className, element);
+            }
+        } else {
+            index.put(componentName, indexValue);
+        }
+    }
+
+    /**
+     * Gets the contextKey value from the annotation using the mirror API.
+     * Returns null if contextKey is void.class (the default).
+     */
+    private String getContextKeyFromAnnotation(TypeElement element) {
+        for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
+            DeclaredType annotationType = mirror.getAnnotationType();
+            if (annotationType.toString().equals(TikaComponent.class.getName())) {
+                for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry
+                        : mirror.getElementValues().entrySet()) {
+                    if (entry.getKey().getSimpleName().toString().equals("contextKey")) {
+                        // The value is a TypeMirror for Class types
+                        Object value = entry.getValue().getValue();
+                        if (value instanceof TypeMirror) {
+                            String typeName = value.toString();
+                            // void.class is the default, meaning "auto-detect"
+                            if (!"void".equals(typeName) && !"java.lang.Void".equals(typeName)) {
+                                return typeName;
+                            }
+                        }
                     }
-                } else {
-                    index.put(componentName, className);
                 }
             }
         }
+        return null;
     }
 
     /**
@@ -267,7 +321,7 @@ public class TikaComponentProcessor extends AbstractProcessor {
                     writeApacheLicenseHeader(writer);
                     writer.write("# Generated by TikaComponentProcessor\n");
                     writer.write("# Do not edit manually\n");
-                    writer.write("# Format: component-name=fully.qualified.ClassName\n");
+                    writer.write("# Format: component-name=fully.qualified.ClassName[:key=contextKeyClass]\n");
                     for (Map.Entry<String, String> component : components.entrySet()) {
                         writer.write(component.getKey());
                         writer.write("=");

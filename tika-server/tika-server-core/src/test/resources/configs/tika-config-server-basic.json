@@ -6,7 +6,8 @@
     "port": 9999,
     "endpoints": [
       "rmeta",
-      "status"
+      "status",
+      "tika"
     ]
   }
 }

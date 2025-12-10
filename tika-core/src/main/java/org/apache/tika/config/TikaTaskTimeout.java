@@ -20,16 +20,44 @@ import java.io.Serializable;
 
 import org.apache.tika.parser.ParseContext;
 
+/**
+ * Configuration class for specifying parse task timeout.
+ * <pre>
+ * {
+ *   "parse-context": {
+ *     "tika-task-timeout": {
+ *       "timeoutMillis": 30000
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
+@TikaComponent(spi = false)
 public class TikaTaskTimeout implements Serializable {
 
-    private final long timeoutMillis;
+    private long timeoutMillis;
 
+    /**
+     * No-arg constructor for Jackson deserialization.
+     */
+    public TikaTaskTimeout() {
+    }
+
+    /**
+     * Constructor with timeout value.
+     *
+     * @param timeoutMillis timeout in milliseconds
+     */
     public TikaTaskTimeout(long timeoutMillis) {
         this.timeoutMillis = timeoutMillis;
     }
 
     public long getTimeoutMillis() {
         return timeoutMillis;
+    }
+
+    public void setTimeoutMillis(long timeoutMillis) {
+        this.timeoutMillis = timeoutMillis;
     }
 
     public static long getTimeoutMillis(ParseContext context, long defaultTimeoutMillis) {

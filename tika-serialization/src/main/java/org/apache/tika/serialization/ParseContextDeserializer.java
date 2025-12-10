@@ -20,7 +20,6 @@ import static org.apache.tika.serialization.ParseContextSerializer.PARSE_CONTEXT
 
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.Map;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -31,6 +30,20 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.parser.ParseContext;
 
+/**
+ * Deserializes ParseContext from JSON using friendly names.
+ * <p>
+ * All fields are stored in ConfigContainer for later resolution.
+ * Components are resolved at runtime via {@link ParseContextUtils#resolveAll}.
+ * <p>
+ * Example input:
+ * <pre>
+ * {
+ *   "pdf-parser": {"extractActions": true},
+ *   "tika-task-timeout": {"timeoutMillis": 5000}
+ * }
+ * </pre>
+ */
 public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
 
     @Override
@@ -43,11 +56,12 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
 
     /**
      * Deserializes a ParseContext from a JsonNode.
-     * Uses a properly configured ObjectMapper with polymorphic type handling
-     * to ensure objects in the ParseContext are deserialized correctly.
+     * <p>
+     * All fields are stored as JSON in ConfigContainer. Resolution to actual
+     * objects happens later via {@link ParseContextUtils#resolveAll}.
      *
      * @param jsonNode the JSON node containing the ParseContext data
-     * @return the deserialized ParseContext
+     * @return the deserialized ParseContext with ConfigContainer populated
      * @throws IOException if deserialization fails
      */
     public static ParseContext readParseContext(JsonNode jsonNode) throws IOException {
@@ -61,39 +75,15 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
 
         ParseContext parseContext = new ParseContext();
 
-        // Handle legacy "objects" field - deserialize directly into ParseContext
-        if (contextNode.has("objects")) {
-            JsonNode objectsNode = contextNode.get("objects");
-            for (Map.Entry<String, JsonNode> entry : objectsNode.properties()) {
-                String superClassName = entry.getKey();
-                JsonNode objectNode = entry.getValue();
-
-                try {
-                    Class<?> superClass = Class.forName(superClassName);
-
-                    // Let Jackson handle polymorphic deserialization with type info
-                    // Security is enforced by the PolymorphicTypeValidator in the mapper
-                    Object deserializedObject = ParseContextSerializer.POLYMORPHIC_MAPPER.treeToValue(objectNode, Object.class);
-
-                    parseContext.set((Class) superClass, deserializedObject);
-                } catch (ClassNotFoundException ex) {
-                    throw new IOException("Class not found: " + superClassName, ex);
-                }
-            }
-        }
-
-        // Store all non-"objects" fields as named configurations in ConfigContainer
-        // This allows parsers to look up their config by friendly name (e.g., "pdf-parser")
-        // matching the same format used in tika-config.json
+        // Store all fields as named configurations in ConfigContainer
+        // Resolution to actual objects happens via ParseContextUtils.resolveAll()
         ConfigContainer configContainer = null;
         for (Iterator<String> it = contextNode.fieldNames(); it.hasNext(); ) {
             String fieldName = it.next();
-            if (!"objects".equals(fieldName)) {
-                if (configContainer == null) {
-                    configContainer = new ConfigContainer();
-                }
-                configContainer.set(fieldName, contextNode.get(fieldName).toString());
+            if (configContainer == null) {
+                configContainer = new ConfigContainer();
             }
+            configContainer.set(fieldName, contextNode.get(fieldName).toString());
         }
 
         if (configContainer != null) {
@@ -102,5 +92,4 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
 
         return parseContext;
     }
-
 }
