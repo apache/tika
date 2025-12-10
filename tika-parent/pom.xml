@@ -403,8 +403,8 @@
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.13</mime4j.version>
-    <mockito.version>5.20.0</mockito.version>
-    <mockito-junit-jupiter.version>5.20.0</mockito-junit-jupiter.version>
+    <mockito.version>5.21.0</mockito.version>
+    <mockito-junit-jupiter.version>5.21.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <netty.version>4.2.7.Final</netty.version>
     <oak.jackrabbit.version>1.88.0</oak.jackrabbit.version>
@@ -422,8 +422,8 @@
     <poi.version>5.5.1</poi.version>
     <protobuf.version>3.25.8</protobuf.version>
     <quartz.version>2.5.2</quartz.version>
-    <reactor.core.version>3.8.0</reactor.core.version>
-    <reactor.netty.version>1.3.0</reactor.netty.version>
+    <reactor.core.version>3.8.1</reactor.core.version>
+    <reactor.netty.version>1.3.1</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <scm.version>2.2.1</scm.version>
     <slf4j.version>2.0.17</slf4j.version>
