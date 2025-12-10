@@ -1,0 +1,12 @@
+{
+  "parsers": [
+    {
+      "_name": "default-parser",
+      "_decorate": {
+        "parserExclude": [
+          "org.apache.tika.parser.xml.XMLParser"
+        ]
+      }
+    }
+  ]
+}

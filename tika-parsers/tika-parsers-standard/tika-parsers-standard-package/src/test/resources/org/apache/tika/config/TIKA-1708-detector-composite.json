@@ -1,0 +1,16 @@
+{
+  "parsers": [],
+  "detectors": [
+    {
+      "_name": "org.apache.tika.detect.microsoft.POIFSContainerDetector"
+    },
+    {
+      "_name": "org.apache.tika.mime.MimeTypes"
+    }
+  ],
+  "translator": [
+    {
+      "_name": "org.apache.tika.language.translate.DefaultTranslator"
+    }
+  ]
+}
