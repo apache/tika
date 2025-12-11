@@ -179,11 +179,15 @@ public class OcrConfig implements Serializable {
     }
 
     /**
-     * No-op setter for Jackson deserialization compatibility.
-     * The format name is derived from {@link #setImageFormat(ImageFormat)}.
+     * Sets the image format by name (e.g., "png", "tiff", "jpeg").
+     * This is a convenience setter for JSON configuration.
+     *
+     * @param imageFormatName the format name (case-insensitive)
      */
     public void setImageFormatName(String imageFormatName) {
-        // Ignored - use setImageFormat instead
+        if (imageFormatName != null) {
+            this.imageFormat = ImageFormat.valueOf(imageFormatName.toUpperCase(Locale.ROOT));
+        }
     }
 
     public float getImageQuality() {

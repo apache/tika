@@ -568,11 +568,13 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * No-op setter for Jackson deserialization compatibility.
-     * Use {@link #setOcrImageFormat(OcrConfig.ImageFormat)} instead.
+     * Sets the OCR image format by name (e.g., "png", "tiff", "jpeg").
+     * This is a convenience setter for JSON configuration.
+     *
+     * @param ocrImageFormatName the format name (case-insensitive)
      */
     public void setOcrImageFormatName(String ocrImageFormatName) {
-        // Ignored - use setOcrImageFormat instead
+        ocr.setImageFormatName(ocrImageFormatName);
     }
 
     public OcrConfig.ImageFormat getOcrImageFormat() {
