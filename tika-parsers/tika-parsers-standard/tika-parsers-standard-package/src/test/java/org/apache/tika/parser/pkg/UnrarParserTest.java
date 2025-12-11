@@ -19,15 +19,13 @@ package org.apache.tika.parser.pkg;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import java.io.InputStream;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.external.ExternalParser;
 
@@ -49,11 +47,7 @@ public class UnrarParserTest extends AbstractPkgTest {
         String[] expectedResources = { "testHTML.html", "testEXCEL.xls", "testOpenOffice2.odt", "testPDF.pdf",
                 "testPPT.ppt", "testRTF.rtf", "testTXT.txt", "testWORD.doc", "testXML.xml"};
 
-        TikaConfig tikaConfig = null;
-        try (InputStream is = getResourceAsStream("tika-unrar-config.xml")) {
-            tikaConfig = new TikaConfig(is);
-        }
-        Parser p = new AutoDetectParser(tikaConfig);
+        Parser p = TikaLoaderHelper.getLoader("tika-unrar-config.json").loadAutoDetectParser();
         List<Metadata> metadataList = getRecursiveMetadata("test-documents.rar", p);
         assertEquals("org.apache.tika.parser.pkg.UnrarParser",
                 metadataList.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY)[1]);

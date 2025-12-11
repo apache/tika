@@ -37,13 +37,12 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.Tika;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.fork.ForkParser;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -218,10 +217,9 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
         if (! new LibPstParser().checkQuietly()) {
             return;
         }
-        TikaConfig tikaConfig = new TikaConfig(
-                ForkParserIntegrationTest.class.getResourceAsStream("/configs/tika-config-lib-pst.xml"));
+        Parser autoDetectParser = TikaLoaderHelper.getLoader("tika-config-lib-pst.json").loadAutoDetectParser();
         try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(),
-                new AutoDetectParser(tikaConfig))) {
+                autoDetectParser)) {
             ContentHandler output = new BodyContentHandler();
             InputStream stream = getResourceAsStream("/test-documents/testPST.pst");
             ParseContext context = new ParseContext();

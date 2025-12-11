@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 
@@ -40,13 +40,12 @@ public class TestZipDetector extends TikaTest {
 
     private static final String ZIP_FILE = "testTika4424.zip";
 
-    private static final Detector DETECTOR = TikaConfig
-            .getDefaultConfig()
-            .getDetector();
+    private static Detector DETECTOR;
 
     private static Path DOCX;
     @BeforeAll
     public static void setUp() throws Exception {
+        DETECTOR = TikaLoader.loadDefault().loadDetectors();
         DOCX = Files.createTempFile("test-zip-", ".docx");
         Files.copy(TestZipDetector.class.getResourceAsStream("/test-documents/testWORD.docx"),
                 DOCX, StandardCopyOption.REPLACE_EXISTING);

@@ -1,23 +1,18 @@
 {
   "parsers": [
     {
-      "_name": "default-parser",
-      "_decorate": {
-        "mimeExclude": [
-          "image/jpeg",
-          "application/pdf"
-        ],
-        "parserExclude": [
-          "org.apache.tika.parser.executable.ExecutableParser"
-        ]
+      "default-parser": {
+        "exclude": ["executable-parser"],
+        "_decorate": {
+          "mimeExclude": ["image/jpeg", "application/pdf"]
+        }
       }
     },
     {
-      "_name": "org.apache.tika.parser.EmptyParser",
-      "_decorate": {
-        "mime": [
-          "application/pdf"
-        ]
+      "empty-parser": {
+        "_decorate": {
+          "mimeInclude": ["application/pdf"]
+        }
       }
     }
   ]

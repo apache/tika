@@ -1,0 +1,12 @@
+{
+  "parsers": [
+    {
+      "default-parser": {
+        "exclude": ["rar-parser"]
+      }
+    },
+    {
+      "unrar-parser": {}
+    }
+  ]
+}

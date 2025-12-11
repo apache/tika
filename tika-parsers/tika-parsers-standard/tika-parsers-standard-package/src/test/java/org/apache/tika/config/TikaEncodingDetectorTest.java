@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.Tika;
 import org.apache.tika.TikaLoaderHelper;
+import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.CompositeEncodingDetector;
 import org.apache.tika.detect.EncodingDetector;
@@ -49,7 +50,7 @@ import org.apache.tika.parser.txt.Icu4jEncodingDetector;
 import org.apache.tika.parser.txt.TXTParser;
 import org.apache.tika.parser.txt.UniversalEncodingDetector;
 
-public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
+public class TikaEncodingDetectorTest extends TikaTest {
 
     @Test
     public void testDefault() throws TikaConfigException {

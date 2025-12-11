@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.utils.CompareUtils;
 
@@ -30,6 +31,7 @@ import org.apache.tika.utils.CompareUtils;
  *
  * @since Apache Tika 1.6
  */
+@TikaComponent
 public class DefaultTranslator implements Translator {
     private transient final ServiceLoader loader;
 

@@ -17,94 +17,87 @@
 package org.apache.tika.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Set;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.EmptyParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.executable.ExecutableParser;
 import org.apache.tika.parser.xml.XMLParser;
 
 /**
- * Junit test class for {@link TikaConfig}, which cover things
- * that {@link TikaConfigTest} can't do due to a need for the
- * full set of parsers
+ * Junit test class for parser configuration via JSON,
+ * covering things that require the full set of parsers.
  */
-public class TikaParserConfigTest extends AbstractTikaConfigTest {
+public class TikaParserConfigTest extends TikaTest {
+
+    protected static ParseContext context = new ParseContext();
+
+    private TikaLoader getLoader(String config) throws Exception {
+        Path path = Paths.get(TikaParserConfigTest.class.getResource(config).toURI());
+        return TikaLoader.load(path);
+    }
 
     @Test
     public void testMimeExcludeInclude() throws Exception {
-        TikaConfig config = getConfig("TIKA-1558-exclude.xml");
-        assertNotNull(config.getParser());
-        assertNotNull(config.getDetector());
-        Parser parser = config.getParser();
+        TikaLoader loader = getLoader("TIKA-1558-exclude.json");
+        Parser parser = loader.loadParsers();
+        assertNotNull(parser);
+        assertNotNull(loader.loadDetectors());
 
         MediaType PDF = MediaType.application("pdf");
         MediaType JPEG = MediaType.image("jpeg");
 
-
-        // Has two parsers
+        // Has two parsers: EmptyParser (decorated) and CompositeParser of SPI parsers (decorated)
         assertEquals(CompositeParser.class, parser.getClass());
         CompositeParser cParser = (CompositeParser) parser;
         assertEquals(2, cParser.getAllComponentParsers().size());
 
-        // Both are decorated
-        assertTrue(cParser.getAllComponentParsers().get(0) instanceof ParserDecorator);
-        assertTrue(cParser.getAllComponentParsers().get(1) instanceof ParserDecorator);
-        ParserDecorator p0 = (ParserDecorator) cParser.getAllComponentParsers().get(0);
-        ParserDecorator p1 = (ParserDecorator) cParser.getAllComponentParsers().get(1);
+        // First parser should be EmptyParser decorated with mimeInclude for PDF
+        Parser p0 = cParser.getAllComponentParsers().get(0);
+        assertTrue(p0 instanceof ParserDecorator, "First parser should be decorated");
+        ParserDecorator pd0 = (ParserDecorator) p0;
+        assertEquals(EmptyParser.class, pd0.getWrappedParser().getClass());
+        Set<MediaType> p0Types = pd0.getSupportedTypes(context);
+        assertContains(PDF, p0Types);
+        assertEquals(1, p0Types.size());
 
-
-        // DefaultParser will be wrapped with excludes
-        assertEquals(DefaultParser.class, p0.getWrappedParser().getClass());
-
-        assertNotContained(PDF, p0.getSupportedTypes(context));
-        assertContains(PDF, p0.getWrappedParser().getSupportedTypes(context));
-        assertNotContained(JPEG, p0.getSupportedTypes(context));
-        assertContains(JPEG, p0.getWrappedParser().getSupportedTypes(context));
-
-
-        // Will have an empty parser for PDF
-        assertEquals(EmptyParser.class, p1.getWrappedParser().getClass());
-        assertEquals(1, p1.getSupportedTypes(context).size());
-        assertContains(PDF, p1.getSupportedTypes(context));
-        assertNotContained(PDF, p1.getWrappedParser().getSupportedTypes(context));
+        // Second parser should be SPI parsers decorated with mimeExclude for PDF/JPEG
+        Parser p1 = cParser.getAllComponentParsers().get(1);
+        assertTrue(p1 instanceof ParserDecorator, "Second parser should be decorated");
+        ParserDecorator pd1 = (ParserDecorator) p1;
+        Set<MediaType> p1Types = pd1.getSupportedTypes(context);
+        assertNotContained(PDF, p1Types);
+        assertNotContained(JPEG, p1Types);
     }
 
     @Test
     public void testParserExcludeFromDefault() throws Exception {
-        TikaConfig config = getConfig("TIKA-1558-exclude.xml");
-        assertNotNull(config.getParser());
-        assertNotNull(config.getDetector());
-        CompositeParser parser = (CompositeParser) config.getParser();
+        TikaLoader loader = getLoader("TIKA-1558-exclude.json");
+        Parser parser = loader.loadParsers();
+        assertNotNull(parser);
 
         MediaType PE_EXE = MediaType.application("x-msdownload");
         MediaType ELF = MediaType.application("x-elf");
 
-
-        // Get the DefaultParser from the config
-        ParserDecorator confWrappedParser =
-                (ParserDecorator) parser.getParsers().get(MediaType.APPLICATION_XML);
-        assertNotNull(confWrappedParser);
-        DefaultParser confParser = (DefaultParser) confWrappedParser.getWrappedParser();
-
-        // Get a fresh "default" DefaultParser
-        DefaultParser normParser = new DefaultParser(config.getMediaTypeRegistry());
-
+        // Get a fresh "default" DefaultParser for comparison
+        DefaultParser normParser = new DefaultParser(TikaLoader.getMediaTypeRegistry());
 
         // The default one will offer the Executable Parser
         assertContains(PE_EXE, normParser.getSupportedTypes(context));
@@ -119,16 +112,12 @@ public class TikaParserConfigTest extends AbstractTikaConfigTest {
         }
         assertTrue(hasExec);
 
-
-        // The one from the config won't
-        assertNotContained(PE_EXE, confParser.getSupportedTypes(context));
-        assertNotContained(ELF, confParser.getSupportedTypes(context));
-
-        for (Parser p : confParser.getParsers().values()) {
-            if (p instanceof ExecutableParser) {
-                fail("Shouldn't have the Executable Parser from config");
-            }
-        }
+        // The config-loaded parser should NOT support executable types
+        // (ExecutableParser was excluded)
+        CompositeParser cParser = (CompositeParser) parser;
+        Set<MediaType> supportedTypes = cParser.getSupportedTypes(context);
+        assertNotContained(PE_EXE, supportedTypes);
+        assertNotContained(ELF, supportedTypes);
     }
 
     /**
@@ -137,10 +126,9 @@ public class TikaParserConfigTest extends AbstractTikaConfigTest {
      */
     @Test
     public void defaultParserExclude() throws Exception {
-        TikaConfig config = new TikaConfig();
-        assertNotNull(config.getParser());
-        assertNotNull(config.getDetector());
-        CompositeParser cp = (CompositeParser) config.getParser();
+        // First verify default config includes XMLParser
+        TikaLoader defaultLoader = TikaLoader.loadDefault();
+        CompositeParser cp = (CompositeParser) defaultLoader.loadParsers();
         List<Parser> parsers = cp.getAllComponentParsers();
 
         boolean hasXML = false;
@@ -152,36 +140,46 @@ public class TikaParserConfigTest extends AbstractTikaConfigTest {
         }
         assertTrue(hasXML, "Default config should include an XMLParser.");
 
-        // This custom TikaConfig should exclude XMLParser and all of its subclasses.
-        config = getConfig("TIKA-1558-excludesub.xml");
-        cp = (CompositeParser) config.getParser();
+        // This custom config should exclude XMLParser
+        TikaLoader loader = getLoader("TIKA-1558-excludesub.json");
+        cp = (CompositeParser) loader.loadParsers();
         parsers = cp.getAllComponentParsers();
 
+        // Flatten nested CompositeParser if present
         for (Parser p : parsers) {
-            if (p instanceof XMLParser) {
+            if (p instanceof CompositeParser) {
+                for (Parser inner : ((CompositeParser) p).getAllComponentParsers()) {
+                    if (inner instanceof XMLParser) {
+                        fail("Custom config should not include an XMLParser (" + inner.getClass() + ").");
+                    }
+                }
+            } else if (p instanceof ParserDecorator) {
+                Parser wrapped = ((ParserDecorator) p).getWrappedParser();
+                if (wrapped instanceof XMLParser) {
+                    fail("Custom config should not include an XMLParser (" + wrapped.getClass() + ").");
+                }
+                if (wrapped instanceof CompositeParser) {
+                    for (Parser inner : ((CompositeParser) wrapped).getAllComponentParsers()) {
+                        if (inner instanceof XMLParser) {
+                            fail("Custom config should not include an XMLParser (" + inner.getClass() + ").");
+                        }
+                    }
+                }
+            } else if (p instanceof XMLParser) {
                 fail("Custom config should not include an XMLParser (" + p.getClass() + ").");
             }
         }
     }
 
     @Test
-    @Disabled("TODO -- turn into actual unit test")
-    public void testTesseractList() throws Exception {
-        TikaLoader tikaLoader = TikaLoader.load(getPath("tika-config-tesseract-arbitrary.json"));
-        Parser p  = tikaLoader.loadAutoDetectParser();
-        Parser tesseract = ((CompositeParser)p).getAllComponentParsers().get(0);
+    public void testDefaultLoaderIncludesAllParsers() throws Exception {
+        TikaLoader loader = TikaLoader.loadDefault();
+        Parser parser = loader.loadParsers();
+        assertNotNull(parser);
+        assertTrue(parser instanceof CompositeParser);
 
-        System.out.println(tesseract);
-
+        CompositeParser cp = (CompositeParser) parser;
+        // Should have many parsers loaded from SPI
+        assertFalse(cp.getAllComponentParsers().isEmpty());
     }
-
-    private Path getPath(String config) {
-        try {
-            return Paths.get(TikaParserConfigTest.class.getResource("/configs/" + config)
-                                                           .toURI());
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
 }
