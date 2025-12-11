@@ -19,8 +19,6 @@ package org.apache.tika.parser.pdf;
 import java.io.Serializable;
 import java.util.Locale;
 
-import org.apache.pdfbox.rendering.ImageType;
-
 /**
  * Configuration for OCR processing in PDF parsing.
  * Groups all OCR-related settings together.
@@ -178,6 +176,14 @@ public class OcrConfig implements Serializable {
      */
     public String getImageFormatName() {
         return imageFormat.getFormatName();
+    }
+
+    /**
+     * No-op setter for Jackson deserialization compatibility.
+     * The format name is derived from {@link #setImageFormat(ImageFormat)}.
+     */
+    public void setImageFormatName(String imageFormatName) {
+        // Ignored - use setImageFormat instead
     }
 
     public float getImageQuality() {

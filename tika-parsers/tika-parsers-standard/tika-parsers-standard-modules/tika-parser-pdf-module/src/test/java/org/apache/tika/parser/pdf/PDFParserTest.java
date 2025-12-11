@@ -19,13 +19,12 @@ package org.apache.tika.parser.pdf;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,10 +45,9 @@ import org.xml.sax.ContentHandler;
 
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.AccessPermissionException;
 import org.apache.tika.exception.EncryptedDocumentException;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.metadata.Font;
@@ -70,7 +68,6 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
-import org.apache.tika.utils.ExceptionUtils;
 
 /**
  * Test case for parsing pdf files.
@@ -883,7 +880,7 @@ public class PDFParserTest extends TikaTest {
         PDFParserConfig config = new PDFParserConfig();
 
         //don't allow extraction, not even for accessibility
-        config.setAccessChecker(new AccessChecker(false));
+        config.setAccessCheckMode(PDFParserConfig.AccessCheckMode.IGNORE_ACCESSIBILITY_ALLOWANCE);
         ParseContext context = new ParseContext();
         context.set(PDFParserConfig.class, config);
 
@@ -894,7 +891,7 @@ public class PDFParserTest extends TikaTest {
                     AccessPermissionException.class);
         }
 
-        config.setAccessChecker(new AccessChecker(true));
+        config.setAccessCheckMode(PDFParserConfig.AccessCheckMode.ALLOW_EXTRACTION_FOR_ACCESSIBILITY);
         assertException("/test-documents/" + "testPDF_no_extract_no_accessibility_owner_empty.pdf",
                 AUTO_DETECT_PARSER, context, AccessPermissionException.class);
 
@@ -908,7 +905,7 @@ public class PDFParserTest extends TikaTest {
 
         PDFParserConfig config = new PDFParserConfig();
         //don't allow extraction, not even for accessibility
-        config.setAccessChecker(new AccessChecker(false));
+        config.setAccessCheckMode(PDFParserConfig.AccessCheckMode.IGNORE_ACCESSIBILITY_ALLOWANCE);
         PasswordProvider passwordProvider = new PasswordProvider() {
             @Override
             public String getPassword(Metadata metadata) {
@@ -927,7 +924,7 @@ public class PDFParserTest extends TikaTest {
         }
 
         //bad password is still a bad password
-        config.setAccessChecker(new AccessChecker(true));
+        config.setAccessCheckMode(PDFParserConfig.AccessCheckMode.ALLOW_EXTRACTION_FOR_ACCESSIBILITY);
         for (String path : new String[]{"testPDF_no_extract_no_accessibility_owner_empty.pdf",
                 "testPDF_no_extract_yes_accessibility_owner_empty.pdf",}) {
             assertException("/test-documents/" + path, AUTO_DETECT_PARSER, context,
@@ -941,7 +938,7 @@ public class PDFParserTest extends TikaTest {
         assertContains("Hello World",
                 getXML("testPDF_no_extract_yes_accessibility_owner_user.pdf", context).xml);
 
-        config.setAccessChecker(new AccessChecker(false));
+        config.setAccessCheckMode(PDFParserConfig.AccessCheckMode.IGNORE_ACCESSIBILITY_ALLOWANCE);
         for (String path : new String[]{"testPDF_no_extract_no_accessibility_owner_user.pdf",
                 "testPDF_no_extract_yes_accessibility_owner_user.pdf",}) {
             assertException("/test-documents/" + path, AUTO_DETECT_PARSER, context,
@@ -955,7 +952,7 @@ public class PDFParserTest extends TikaTest {
 
         PDFParserConfig config = new PDFParserConfig();
         //don't allow extraction, not even for accessibility
-        config.setAccessChecker(new AccessChecker(true));
+        config.setAccessCheckMode(PDFParserConfig.AccessCheckMode.ALLOW_EXTRACTION_FOR_ACCESSIBILITY);
         PasswordProvider passwordProvider = new PasswordProvider() {
             @Override
             public String getPassword(Metadata metadata) {
@@ -977,7 +974,7 @@ public class PDFParserTest extends TikaTest {
         }
 
         //really, with owner's password, all extraction is allowed
-        config.setAccessChecker(new AccessChecker(false));
+        config.setAccessCheckMode(PDFParserConfig.AccessCheckMode.IGNORE_ACCESSIBILITY_ALLOWANCE);
         for (String path : new String[]{"testPDF_no_extract_no_accessibility_owner_user.pdf",
                 "testPDF_no_extract_yes_accessibility_owner_user.pdf",
                 "testPDF_no_extract_no_accessibility_owner_empty.pdf",
@@ -1101,45 +1098,43 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testInitializationViaConfig() throws Exception {
-        try (InputStream is = getResourceAsStream(
-                "/org/apache/tika/parser/pdf/tika-config.xml")) {
-            assertNotNull(is);
-            TikaConfig tikaConfig = new TikaConfig(is);
-            Parser p = new AutoDetectParser(tikaConfig);
+        Path configPath = Path.of(getClass().getResource(
+                "/org/apache/tika/parser/pdf/tika-config.json").toURI());
+        TikaLoader loader = TikaLoader.load(configPath);
+        Parser p = loader.loadAutoDetectParser();
 
-            String text =
-                    getText(getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf"), p);
-            text = text.replaceAll("\\s+", " ");
+        String text =
+                getText(getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf"), p);
+        text = text.replaceAll("\\s+", " ");
 
-            // Column text is now interleaved:
-            assertContains(
-                    "Left column line 1 Right column line 1 " +
-                            "Left colu mn line 2 Right column line 2",
-                    text);
+        // Column text is now interleaved:
+        assertContains(
+                "Left column line 1 Right column line 1 " +
+                        "Left colu mn line 2 Right column line 2",
+                text);
 
-            //test overriding underlying settings with PDFParserConfig
-            ParseContext pc = new ParseContext();
-            PDFParserConfig config = new PDFParserConfig();
-            config.setSortByPosition(false);
-            pc.set(PDFParserConfig.class, config);
-            text = getText("testPDFTwoTextBoxes.pdf", p, new Metadata(), pc);
-            text = text.replaceAll("\\s+", " ");
-            // Column text is not interleaved:
-            assertContains("Left column line 1 Left column line 2 ", text);
+        //test overriding underlying settings with PDFParserConfig
+        ParseContext pc = new ParseContext();
+        PDFParserConfig config = new PDFParserConfig();
+        config.setSortByPosition(false);
+        pc.set(PDFParserConfig.class, config);
+        text = getText("testPDFTwoTextBoxes.pdf", p, new Metadata(), pc);
+        text = text.replaceAll("\\s+", " ");
+        // Column text is not interleaved:
+        assertContains("Left column line 1 Left column line 2 ", text);
 
-            //test a new PDFParserConfig and setting another value
-            //this tests that a new PDFParserConfig completely resets
-            //behavior
-            config = new PDFParserConfig();
-            config.setOcrDPI(10000);
-            config.setOcrStrategy(OcrConfig.Strategy.NO_OCR);
-            pc.set(PDFParserConfig.class, config);
-            text = getText("testPDFTwoTextBoxes.pdf", p, new Metadata(), pc);
-            text = text.replaceAll("\\s+", " ");
+        //test a new PDFParserConfig and setting another value
+        //this tests that a new PDFParserConfig completely resets
+        //behavior
+        config = new PDFParserConfig();
+        config.setOcrDPI(10000);
+        config.setOcrStrategy(OcrConfig.Strategy.NO_OCR);
+        pc.set(PDFParserConfig.class, config);
+        text = getText("testPDFTwoTextBoxes.pdf", p, new Metadata(), pc);
+        text = text.replaceAll("\\s+", " ");
 
-            // Column text is not interleaved:
-            assertContains("Left column line 1 Left column line 2 ", text);
-        }
+        // Column text is not interleaved:
+        assertContains("Left column line 1 Left column line 2 ", text);
     }
 
     // Moved to tika-parsers-standard-package PDFParserTest.testInitializationOfNonPrimitivesViaJsonConfig
@@ -1162,30 +1157,28 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testConfiguringMoreParams() throws Exception {
-        try (InputStream configIs = getResourceAsStream(
-                "/org/apache/tika/parser/pdf/tika-inline-config.xml")) {
-            assertNotNull(configIs);
-            TikaConfig tikaConfig = new TikaConfig(configIs);
-            AutoDetectParser p = new AutoDetectParser(tikaConfig);
-            //make absolutely certain the functionality works!
-            List<Metadata> metadata = getRecursiveMetadata("testOCR.pdf", p);
-            assertEquals(2, metadata.size());
-            Map<MediaType, Parser> parsers = p.getParsers();
-            Parser composite = parsers.get(MediaType.application("pdf"));
-            Parser pdfParser =
-                    ((CompositeParser) composite).getParsers().get(MediaType.application("pdf"));
-            assertTrue(pdfParser instanceof PDFParser);
-            PDFParserConfig pdfParserConfig = ((PDFParser) pdfParser).getPDFParserConfig();
-            assertEquals(new AccessChecker(true), pdfParserConfig.getAccessChecker());
-            assertEquals(true, pdfParserConfig.isExtractInlineImages());
-            assertEquals(false, pdfParserConfig.isExtractUniqueInlineImagesOnly());
-            assertEquals(314, pdfParserConfig.getOcrDPI());
-            assertEquals(2.1f, pdfParserConfig.getOcrImageQuality(), .01f);
-            assertEquals("jpeg", pdfParserConfig.getOcrImageFormatName());
-            assertEquals(524288000, pdfParserConfig.getMaxMainMemoryBytes());
-            assertEquals(false, pdfParserConfig.isCatchIntermediateIOExceptions());
-
-        }
+        Path configPath = Path.of(getClass().getResource(
+                "/org/apache/tika/parser/pdf/tika-inline-config.json").toURI());
+        TikaLoader loader = TikaLoader.load(configPath);
+        AutoDetectParser p = (AutoDetectParser) loader.loadAutoDetectParser();
+        //make absolutely certain the functionality works!
+        List<Metadata> metadata = getRecursiveMetadata("testOCR.pdf", p);
+        assertEquals(2, metadata.size());
+        Map<MediaType, Parser> parsers = p.getParsers();
+        Parser composite = parsers.get(MediaType.application("pdf"));
+        Parser pdfParser =
+                ((CompositeParser) composite).getParsers().get(MediaType.application("pdf"));
+        assertTrue(pdfParser instanceof PDFParser);
+        PDFParserConfig pdfParserConfig = ((PDFParser) pdfParser).getPDFParserConfig();
+        assertEquals(PDFParserConfig.AccessCheckMode.ALLOW_EXTRACTION_FOR_ACCESSIBILITY,
+                pdfParserConfig.getAccessCheckMode());
+        assertEquals(true, pdfParserConfig.isExtractInlineImages());
+        assertEquals(false, pdfParserConfig.isExtractUniqueInlineImagesOnly());
+        assertEquals(314, pdfParserConfig.getOcrDPI());
+        assertEquals(2.1f, pdfParserConfig.getOcrImageQuality(), .01f);
+        assertEquals("jpeg", pdfParserConfig.getOcrImageFormatName());
+        assertEquals(524288000, pdfParserConfig.getMaxMainMemoryBytes());
+        assertEquals(false, pdfParserConfig.isCatchIntermediateIOExceptions());
     }
 
     //TODO: figure out how to test jp2 embedded with OCR
@@ -1395,20 +1388,22 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testCustomGraphicsEngineFactory() throws Exception {
-        try (InputStream is =
-                     getResourceAsStream(
-                             "tika-config-custom-graphics-engine.xml")) {
-            assertNotNull(is);
-            TikaConfig tikaConfig = new TikaConfig(is);
-            Parser p = new AutoDetectParser(tikaConfig);
-            try {
-                List<Metadata> metadataList = getRecursiveMetadata("testPDF_JBIG2.pdf", p);
-                fail("should have thrown a runtime exception");
-            } catch (TikaException e) {
-                String stack = ExceptionUtils.getStackTrace(e);
-                assertContains("testing123", stack);
-            }
-        }
+        Path configPath = Path.of(getClass().getResource(
+                "tika-config-custom-graphics-engine.json").toURI());
+        TikaLoader loader = TikaLoader.load(configPath);
+        Parser p = loader.loadAutoDetectParser();
+
+        // Parse a PDF with inline images to trigger the custom graphics engine factory
+        List<Metadata> metadataList = getRecursiveMetadata("testPDF_JBIG2.pdf", p);
+
+        // Verify the custom factory was used
+        // Note: customParam uses default value since JSON config uses class name string
+        // (polymorphic config with params requires @JsonTypeInfo on base class)
+        Metadata metadata = metadataList.get(0);
+        assertEquals("true", metadata.get(MyCustomImageGraphicsEngineFactory.CUSTOM_FACTORY_USED),
+                "Custom graphics engine factory should have been used");
+        assertEquals("default", metadata.get(MyCustomImageGraphicsEngineFactory.CUSTOM_PARAM_KEY),
+                "customParam should have default value when using class name string config");
     }
 
     @Test

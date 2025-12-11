@@ -36,6 +36,30 @@ public class PDFParserConfig implements Serializable {
 
     private static final long serialVersionUID = 6492570218190936986L;
 
+    /**
+     * Mode for checking document access permissions.
+     */
+    public enum AccessCheckMode {
+        /**
+         * Don't check extraction permissions. Content will always be extracted
+         * regardless of document permissions. This is the default for backwards
+         * compatibility with Tika's legacy behavior (&lt;= v1.7).
+         */
+        DONT_CHECK,
+
+        /**
+         * Check permissions, but allow extraction for accessibility purposes if
+         * extraction for accessibility is allowed.
+         */
+        ALLOW_EXTRACTION_FOR_ACCESSIBILITY,
+
+        /**
+         * If extraction is blocked, throw an {@link org.apache.tika.exception.AccessPermissionException}
+         * even if the document allows extraction for accessibility.
+         */
+        IGNORE_ACCESSIBILITY_ALLOWANCE
+    }
+
     // True if we let PDFBox "guess" where spaces should go:
     private boolean enableAutoSpace = true;
 
@@ -99,7 +123,7 @@ public class PDFParserConfig implements Serializable {
      * Should the entire document be rendered?
      */
     private IMAGE_STRATEGY imageStrategy = IMAGE_STRATEGY.NONE;
-    private AccessChecker accessChecker = new AccessChecker();
+    private AccessCheckMode accessCheckMode = AccessCheckMode.DONT_CHECK;
 
     //The PDFParser can throw IOExceptions if there is a problem
     //with a streams.  If this is set to true, Tika's
@@ -452,12 +476,12 @@ public class PDFParserConfig implements Serializable {
         this.dropThreshold = dropThreshold;
     }
 
-    public AccessChecker getAccessChecker() {
-        return accessChecker;
+    public AccessCheckMode getAccessCheckMode() {
+        return accessCheckMode;
     }
 
-    public void setAccessChecker(AccessChecker accessChecker) {
-        this.accessChecker = accessChecker;
+    public void setAccessCheckMode(AccessCheckMode accessCheckMode) {
+        this.accessCheckMode = accessCheckMode;
     }
 
     /**
@@ -541,6 +565,14 @@ public class PDFParserConfig implements Serializable {
      */
     public String getOcrImageFormatName() {
         return ocr.getImageFormatName();
+    }
+
+    /**
+     * No-op setter for Jackson deserialization compatibility.
+     * Use {@link #setOcrImageFormat(OcrConfig.ImageFormat)} instead.
+     */
+    public void setOcrImageFormatName(String ocrImageFormatName) {
+        // Ignored - use setOcrImageFormat instead
     }
 
     public OcrConfig.ImageFormat getOcrImageFormat() {
@@ -665,6 +697,21 @@ public class PDFParserConfig implements Serializable {
      */
     public void setImageGraphicsEngineFactory(ImageGraphicsEngineFactory imageGraphicsEngineFactory) {
         this.imageGraphicsEngineFactory = imageGraphicsEngineFactory;
+    }
+
+    /**
+     * EXPERT: Customize the class that handles inline images within a PDF page.
+     * Use this setter when specifying the factory class name in JSON config.
+     *
+     * @param className fully qualified class name of an ImageGraphicsEngineFactory implementation
+     */
+    public void setImageGraphicsEngineFactoryClass(String className) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            this.imageGraphicsEngineFactory = (ImageGraphicsEngineFactory) clazz.getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to instantiate ImageGraphicsEngineFactory: " + className, e);
+        }
     }
 
     public ImageGraphicsEngineFactory getImageGraphicsEngineFactory() {

@@ -62,6 +62,9 @@ public class ConfigDeserializer {
         Method method = null;
         try {
             clazz = Class.forName("com.fasterxml.jackson.databind.ObjectMapper");
+            // Use a plain ObjectMapper for simple config deserialization.
+            // The polymorphic mapper from tika-serialization is meant for ParseContext
+            // serialization with actual polymorphic types, not for simple config classes.
             instance = clazz.getDeclaredConstructor().newInstance();
             method = clazz.getMethod("readValue", String.class, Class.class);
         } catch (Exception e) {

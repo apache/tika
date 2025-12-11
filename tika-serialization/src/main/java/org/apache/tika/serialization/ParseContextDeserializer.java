@@ -104,7 +104,7 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
                 } catch (ClassNotFoundException e) {
                     LOG.debug("Class not found for key '{}', storing in ConfigContainer", fieldName);
                 } catch (Exception e) {
-                    LOG.warn("Failed to deserialize '{}' directly, storing in ConfigContainer", fieldName, e);
+                    throw new IOException("Failed to deserialize '" + fieldName + "': " + e.getMessage(), e);
                 }
             }
 

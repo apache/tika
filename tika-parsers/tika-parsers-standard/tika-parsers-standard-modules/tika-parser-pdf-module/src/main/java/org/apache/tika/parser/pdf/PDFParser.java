@@ -66,6 +66,7 @@ import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.Param;
 import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.config.TikaComponent;
+import org.apache.tika.exception.AccessPermissionException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -225,8 +226,7 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
             extractMetadata(pdfDocument, metadata, context);
             extractSignatures(pdfDocument, metadata);
             checkIllustrator(pdfDocument, metadata);
-            AccessChecker checker = localConfig.getAccessChecker();
-            checker.check(metadata);
+            checkAccessPermissions(localConfig.getAccessCheckMode(), metadata);
             renderPagesBeforeParse(tstream, handler, metadata, context, localConfig);
             if (handler != null) {
                 if (shouldHandleXFAOnly(hasXFA, localConfig)) {
@@ -397,6 +397,25 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         metadata.set(Metadata.CONTENT_TYPE, XMPSchemaIllustrator.ILLUSTRATOR);
         //TODO -- consider parsing the metadata
         //COSStream aiMetaData = privateDict.getCOSStream(COSName.AI_META_DATA);
+    }
+
+    private void checkAccessPermissions(PDFParserConfig.AccessCheckMode mode, Metadata metadata)
+            throws AccessPermissionException {
+        if (mode == PDFParserConfig.AccessCheckMode.DONT_CHECK) {
+            return;
+        }
+
+        if ("false".equals(metadata.get(AccessPermissions.EXTRACT_CONTENT))) {
+            if (mode == PDFParserConfig.AccessCheckMode.ALLOW_EXTRACTION_FOR_ACCESSIBILITY) {
+                if ("true".equals(metadata.get(AccessPermissions.EXTRACT_FOR_ACCESSIBILITY))) {
+                    return;
+                }
+                throw new AccessPermissionException(
+                        "Content extraction for accessibility is not allowed.");
+            }
+            // IGNORE_ACCESSIBILITY_ALLOWANCE - don't extract even if accessibility is allowed
+            throw new AccessPermissionException("Content extraction is not allowed.");
+        }
     }
 
     private void extractSignatures(PDDocument pdfDocument, Metadata metadata) {
@@ -980,12 +999,12 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return defaultConfig.isIfXFAExtractOnlyXFA();
     }
     @Field
-    public void setAccessCheckMode(AccessChecker.AccessCheckMode mode) {
-        defaultConfig.getAccessChecker().setMode(mode);
+    public void setAccessCheckMode(PDFParserConfig.AccessCheckMode mode) {
+        defaultConfig.setAccessCheckMode(mode);
     }
 
-    public AccessChecker.AccessCheckMode getAccessCheckMode() {
-        return defaultConfig.getAccessChecker().getMode();
+    public PDFParserConfig.AccessCheckMode getAccessCheckMode() {
+        return defaultConfig.getAccessCheckMode();
     }
 
     @Field
