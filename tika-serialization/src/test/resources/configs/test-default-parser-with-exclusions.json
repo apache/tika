@@ -9,7 +9,7 @@
     },
     {
       "default-parser": {
-        "exclude": ["minimal-test-parser", "fallback-test-parser"]
+        "_exclude": ["minimal-test-parser", "fallback-test-parser"]
       }
     }
   ]

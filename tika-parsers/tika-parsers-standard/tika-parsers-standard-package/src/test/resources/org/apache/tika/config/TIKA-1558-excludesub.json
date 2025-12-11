@@ -1,11 +1,8 @@
 {
   "parsers": [
     {
-      "_name": "default-parser",
-      "_decorate": {
-        "parserExclude": [
-          "org.apache.tika.parser.xml.XMLParser"
-        ]
+      "default-parser": {
+        "_exclude": ["xml-parser", "dc-xml-parser", "fiction-book-parser"]
       }
     }
   ]

@@ -2,7 +2,7 @@
   "parsers": [
     {
       "default-parser": {
-        "exclude": ["pdf-parser", "jsoup-parser"]
+        "_exclude": ["pdf-parser", "jsoup-parser"]
       }
     }
   ]

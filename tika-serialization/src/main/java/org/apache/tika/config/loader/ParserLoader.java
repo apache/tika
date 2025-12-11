@@ -42,13 +42,11 @@ import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.RenderingParser;
-import org.apache.tika.parser.multiple.AbstractMultipleParser.MetadataPolicy;
-import org.apache.tika.parser.multiple.FallbackParser;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.utils.ServiceLoaderUtils;
 
 /**
- * Loader for parsers with support for decoration (mime type filtering, fallbacks).
+ * Loader for parsers with support for decoration (mime type filtering).
  */
 public class ParserLoader {
 
@@ -111,16 +109,16 @@ public class ParserLoader {
                     // Parse exclusions from default-parser config
                     JsonNode configNode = entry.getValue();
 
-                    // Check for common mistake: using "excludes" instead of "exclude"
-                    if (configNode != null && configNode.has("excludes")) {
+                    // Check for common mistake: using "_excludes" instead of "_exclude"
+                    if (configNode != null && configNode.has("_excludes")) {
                         throw new TikaConfigException(
-                            "Invalid configuration for default-parser: found 'excludes' but the correct " +
-                            "field name is 'exclude' (singular). Please change 'excludes' to 'exclude' " +
+                            "Invalid configuration for default-parser: found '_excludes' but the correct " +
+                            "field name is '_exclude' (singular). Please change '_excludes' to '_exclude' " +
                             "in your configuration.");
                     }
 
-                    if (configNode != null && configNode.has("exclude")) {
-                        JsonNode excludeNode = configNode.get("exclude");
+                    if (configNode != null && configNode.has("_exclude")) {
+                        JsonNode excludeNode = configNode.get("_exclude");
                         if (excludeNode.isArray()) {
                             for (JsonNode excludeName : excludeNode) {
                                 if (excludeName.isTextual()) {
@@ -186,11 +184,6 @@ public class ParserLoader {
                     // Apply mime type filtering
                     if (parsed.decoration.hasFiltering()) {
                         parser = applyMimeFiltering(parser, parsed.decoration);
-                    }
-
-                    // Apply fallbacks
-                    if (parsed.decoration.hasFallbacks()) {
-                        parser = applyFallbacks(parser, parsed.decoration, parsedConfigs);
                     }
                 }
 
@@ -320,25 +313,6 @@ public class ParserLoader {
         }
 
         return parser;
-    }
-
-    private Parser applyFallbacks(Parser parser, FrameworkConfig.ParserDecoration decoration,
-                                   Map<String, ParsedParserConfig> parsedConfigs)
-            throws TikaConfigException {
-
-        List<String> fallbackNames = decoration.getFallbacks();
-        List<Parser> fallbackParsers = new ArrayList<>();
-        fallbackParsers.add(parser); // Primary parser first
-
-        for (String fallbackName : fallbackNames) {
-            ParsedParserConfig fallbackConfig = parsedConfigs.get(fallbackName);
-            if (fallbackConfig == null) {
-                throw new TikaConfigException("Unknown fallback parser: " + fallbackName);
-            }
-            fallbackParsers.add(fallbackConfig.parser);
-        }
-
-        return new FallbackParser(TikaLoader.getMediaTypeRegistry(), MetadataPolicy.KEEP_ALL, fallbackParsers);
     }
 
     private List<Parser> loadSpiParsers(Set<Class<?>> excludeClasses) {

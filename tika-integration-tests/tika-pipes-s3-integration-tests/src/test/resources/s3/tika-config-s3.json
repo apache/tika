@@ -2,14 +2,12 @@
   "parsers": [
     {
       "default-parser": {
-        "_decorate": {
-          "parserExclude": [
-            "org.apache.tika.parser.ocr.TesseractOCRParser",
-            "org.apache.tika.parser.pdf.PDFParser",
-            "org.apache.tika.parser.microsoft.ooxml.OOXMLParser",
-            "org.apache.tika.parser.microsoft.OfficeParser"
-          ]
-        }
+        "_exclude": [
+          "tesseract-ocr-parser",
+          "pdf-parser",
+          "ooxml-parser",
+          "office-parser"
+        ]
       }
     },
     {

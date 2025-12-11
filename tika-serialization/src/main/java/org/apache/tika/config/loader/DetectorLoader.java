@@ -85,8 +85,8 @@ public class DetectorLoader {
 
                     // Parse exclusions from default-detector config
                     JsonNode configNode = entry.getValue();
-                    if (configNode != null && configNode.has("exclude")) {
-                        JsonNode excludeNode = configNode.get("exclude");
+                    if (configNode != null && configNode.has("_exclude")) {
+                        JsonNode excludeNode = configNode.get("_exclude");
                         if (excludeNode.isArray()) {
                             for (JsonNode excludeName : excludeNode) {
                                 if (excludeName.isTextual()) {

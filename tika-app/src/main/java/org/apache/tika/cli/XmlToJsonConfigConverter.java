@@ -118,7 +118,7 @@ import org.apache.tika.utils.XMLReaderUtils;
  *     },
  *     {
  *       "default-parser": {
- *         "exclude": ["pdf-parser"]
+ *         "_exclude": ["pdf-parser"]
  *       }
  *     }
  *   ]
@@ -257,9 +257,9 @@ public class XmlToJsonConfigConverter {
         for (Map<String, Object> parserEntry : parsersList) {
             if (parserEntry.containsKey("default-parser")) {
                 Map<?, ?> config = (Map<?, ?>) parserEntry.get("default-parser");
-                if (config.containsKey("exclude")) {
+                if (config.containsKey("_exclude")) {
                     @SuppressWarnings("unchecked")
-                    List<String> excludes = (List<String>) config.get("exclude");
+                    List<String> excludes = (List<String>) config.get("_exclude");
                     excludedParsers.addAll(excludes);
                 }
             }
@@ -364,7 +364,7 @@ public class XmlToJsonConfigConverter {
         }
 
         if (excludes != null && !excludes.isEmpty()) {
-            config.put("exclude", excludes);
+            config.put("_exclude", excludes);
         }
 
         Map<String, Object> result = new LinkedHashMap<>();

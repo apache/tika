@@ -10,10 +10,7 @@
     },
     {
       "fallback-test-parser": {
-        "_decorate": {
-          "mimeInclude": ["application/test+fallback"],
-          "fallbacks": ["minimal-test-parser"]
-        },
+        "_mime-include": ["application/test+fallback"],
         "message": "primary parser",
         "failOnPurpose": false
       }

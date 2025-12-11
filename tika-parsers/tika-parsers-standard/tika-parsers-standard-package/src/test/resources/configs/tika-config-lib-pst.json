@@ -1,16 +1,15 @@
 {
   "parsers": [
     {
-      "_name": "default-parser",
-      "_decorate": {
-        "parserExclude": [
-          "org.apache.tika.parser.microsoft.pst.OutlookPSTParser",
-          "org.apache.tika.parser.microsoft.pst.PSTMailItemParser"
+      "default-parser": {
+        "_exclude": [
+          "outlook-pst-parser",
+          "pst-mail-item-parser"
         ]
       }
     },
     {
-      "_name": "org.apache.tika.parser.microsoft.libpst.LibPstParser"
+      "lib-pst-parser": {}
     }
   ]
 }

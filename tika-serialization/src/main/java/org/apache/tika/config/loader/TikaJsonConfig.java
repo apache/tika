@@ -69,9 +69,9 @@ import org.apache.tika.exception.TikaConfigException;
  * {
  *   // Core Tika components (validated by TikaLoader)
  *   "parsers": [
- *     { "pdf-parser": { "_decorate": {...}, "ocrStrategy": "AUTO", ... } },
+ *     { "pdf-parser": { "_mime-include": ["application/pdf"], "ocrStrategy": "AUTO", ... } },
  *     { "html-parser": { ... } },
- *     { "default-parser": {} }
+ *     { "default-parser": { "_exclude": ["some-parser"] } }
  *   ],
  *   "detectors": [
  *     { "mime-magic-detector": {} },
@@ -93,7 +93,7 @@ import org.apache.tika.exception.TikaConfigException;
  * </pre>
  *
  * <p>All components use array format for explicit ordering.
- * Parsers support decoration via "_decorate" field.
+ * Parsers support decoration via "_mime-include" and "_mime-exclude" fields.
  * Special "default-parser" entry enables SPI fallback for unlisted parsers.
  */
 public class TikaJsonConfig {

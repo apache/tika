@@ -3,7 +3,7 @@
   "detectors": [
     {
       "default-detector" : {
-        "exclude": [
+        "_exclude": [
           "default-zip-container-detector"
         ]
       }

@@ -3,7 +3,7 @@
   "encoding-detectors": [
     {
       "default-encoding-detector": {
-        "exclude": [
+        "_exclude": [
           "html-encoding-detector"
         ]
       }
