@@ -61,6 +61,10 @@ public class DefaultTranslator implements Translator {
      */
     private static Translator getFirstAvailable(ServiceLoader loader) {
         for (Translator t : getDefaultTranslators(loader)) {
+            // Skip DefaultTranslator to avoid infinite recursion
+            if (t instanceof DefaultTranslator) {
+                continue;
+            }
             if (t.isAvailable()) {
                 return t;
             }

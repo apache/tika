@@ -33,7 +33,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * attempting to parse the given document stream. Useful as a sentinel parser
  * for unknown document types.
  */
-@TikaComponent
+@TikaComponent(spi = false)
 public class EmptyParser implements Parser {
     /**
      * Singleton instance of this class.
