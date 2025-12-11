@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.utils;
+package org.apache.tika.server;
 
 import org.apache.commons.io.input.NullInputStream;
 import org.apache.tika.exception.TikaException;
@@ -64,6 +64,7 @@ import java.util.logging.Logger;
  * to use the {@link OfflineContentHandler} to guard against
  * XML External Entity attacks.
  */
+//Temporarily copied from tika-core until a better solution is found
 public class XMLReaderUtils implements Serializable {
 
     /**
