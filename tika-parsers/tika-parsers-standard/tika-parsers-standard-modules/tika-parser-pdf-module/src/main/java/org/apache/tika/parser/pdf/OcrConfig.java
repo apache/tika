@@ -171,25 +171,6 @@ public class OcrConfig implements Serializable {
         this.imageFormat = imageFormat;
     }
 
-    /**
-     * @return lowercase format name for use with image writers
-     */
-    public String getImageFormatName() {
-        return imageFormat.getFormatName();
-    }
-
-    /**
-     * Sets the image format by name (e.g., "png", "tiff", "jpeg").
-     * This is a convenience setter for JSON configuration.
-     *
-     * @param imageFormatName the format name (case-insensitive)
-     */
-    public void setImageFormatName(String imageFormatName) {
-        if (imageFormatName != null) {
-            this.imageFormat = ImageFormat.valueOf(imageFormatName.toUpperCase(Locale.ROOT));
-        }
-    }
-
     public float getImageQuality() {
         return imageQuality;
     }

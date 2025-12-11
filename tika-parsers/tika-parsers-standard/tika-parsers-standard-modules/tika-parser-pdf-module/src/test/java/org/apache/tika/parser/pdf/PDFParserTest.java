@@ -1176,7 +1176,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals(false, pdfParserConfig.isExtractUniqueInlineImagesOnly());
         assertEquals(314, pdfParserConfig.getOcrDPI());
         assertEquals(2.1f, pdfParserConfig.getOcrImageQuality(), .01f);
-        assertEquals("jpeg", pdfParserConfig.getOcrImageFormatName());
+        assertEquals(OcrConfig.ImageFormat.JPEG, pdfParserConfig.getOcrImageFormat());
         assertEquals(524288000, pdfParserConfig.getMaxMainMemoryBytes());
         assertEquals(false, pdfParserConfig.isCatchIntermediateIOExceptions());
     }

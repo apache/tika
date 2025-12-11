@@ -922,10 +922,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return defaultConfig.getOcrImageFormat();
     }
 
-    public String getOcrImageFormatName() {
-        return defaultConfig.getOcrImageFormatName();
-    }
-
     @Field
     public void setExtractBookmarksText(boolean extractBookmarksText) {
         defaultConfig.setExtractBookmarksText(extractBookmarksText);
@@ -1170,7 +1166,7 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         PDFBoxRenderer pdfBoxRenderer = new PDFBoxRenderer();
         pdfBoxRenderer.setDPI(config.getOcrDPI());
         pdfBoxRenderer.setImageType(config.getOcrImageType().getPdfBoxImageType());
-        pdfBoxRenderer.setImageFormatName(config.getOcrImageFormatName());
+        pdfBoxRenderer.setImageFormatName(config.getOcrImageFormat().getFormatName());
         this.renderer = pdfBoxRenderer;
     }
 

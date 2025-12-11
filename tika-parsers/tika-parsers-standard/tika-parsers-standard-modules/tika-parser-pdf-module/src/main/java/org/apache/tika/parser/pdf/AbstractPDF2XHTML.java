@@ -541,7 +541,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         if (c != null) {
             c.increment();
         }
-        MediaType ocrImageMediaType = MediaType.image("ocr-" + config.getOcrImageFormatName());
+        MediaType ocrImageMediaType = MediaType.image("ocr-" + config.getOcrImageFormat().getFormatName());
         if (!ocrParser.getSupportedTypes(context).contains(ocrImageMediaType)) {
             if (ocrStrategy == OCR_ONLY || ocrStrategy == OCR_AND_TEXT_EXTRACTION) {
                 throw new TikaException(
@@ -679,7 +679,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             tmpFile = tmpResources.createTempFile();
             try (OutputStream os = Files.newOutputStream(tmpFile)) {
                 //TODO: get output format from TesseractConfig
-                ImageIOUtil.writeImage(image, config.getOcrImageFormatName(), os, dpi,
+                ImageIOUtil.writeImage(image, config.getOcrImageFormat().getFormatName(), os, dpi,
                         config.getOcrImageQuality());
             }
         } catch (SecurityException e) {

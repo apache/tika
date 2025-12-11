@@ -560,23 +560,6 @@ public class PDFParserConfig implements Serializable {
         ocr.setRenderingStrategy(ocrRenderingStrategy);
     }
 
-    /**
-     * @return lowercase format name (e.g., "png", "tiff", "jpeg")
-     */
-    public String getOcrImageFormatName() {
-        return ocr.getImageFormatName();
-    }
-
-    /**
-     * Sets the OCR image format by name (e.g., "png", "tiff", "jpeg").
-     * This is a convenience setter for JSON configuration.
-     *
-     * @param ocrImageFormatName the format name (case-insensitive)
-     */
-    public void setOcrImageFormatName(String ocrImageFormatName) {
-        ocr.setImageFormatName(ocrImageFormatName);
-    }
-
     public OcrConfig.ImageFormat getOcrImageFormat() {
         return ocr.getImageFormat();
     }

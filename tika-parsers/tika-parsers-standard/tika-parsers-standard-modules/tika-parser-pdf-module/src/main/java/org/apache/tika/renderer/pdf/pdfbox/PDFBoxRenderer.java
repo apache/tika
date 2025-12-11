@@ -236,6 +236,6 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
         if (pdfParserConfig == null) {
             return defaultImageFormatName;
         }
-        return pdfParserConfig.getOcrImageFormatName();
+        return pdfParserConfig.getOcrImageFormat().getFormatName();
     }
 }
