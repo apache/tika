@@ -1,7 +1,5 @@
 {
-  "translator": [
-    {
-      "_name": "org.apache.tika.language.translate.EmptyTranslator"
-    }
-  ]
+  "translator": {
+    "class": "empty-translator"
+  }
 }

@@ -1,9 +1,5 @@
 {
-  "parsers": [],
-  "detectors": [],
-  "translator": [
-    {
-      "_name": "org.apache.tika.language.translate.DefaultTranslator"
-    }
-  ]
+  "translator": {
+    "class": "default-translator"
+  }
 }

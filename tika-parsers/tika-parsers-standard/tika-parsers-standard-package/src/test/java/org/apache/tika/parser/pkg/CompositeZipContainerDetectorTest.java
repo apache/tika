@@ -33,7 +33,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.zip.DefaultZipContainerDetector;
 import org.apache.tika.detect.zip.DeprecatedStreamingZipContainerDetector;
@@ -122,9 +122,9 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
     @Disabled("for offline testing")
     @Test
     public void timeDetection() throws Exception {
-        TikaConfig config = TikaConfig.getDefaultConfig();
-        Detector detector = config.getDetector();
-        MediaTypeRegistry registry = config.getMediaTypeRegistry();
+        TikaLoader loader = TikaLoader.loadDefault();
+        Detector detector = loader.loadDetectors();
+        MediaTypeRegistry registry = TikaLoader.getMediaTypeRegistry();
         List<File> zips = getTestZipBasedFiles(detector, registry);
 
         Set<MediaType> mediaTypeSet = new HashSet<>();
@@ -164,9 +164,9 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
     @Test
     @Disabled("to be used for offline timing tests")
     public void timeParsing() throws Exception {
-        TikaConfig config = TikaConfig.getDefaultConfig();
-        Detector detector = config.getDetector();
-        MediaTypeRegistry registry = config.getMediaTypeRegistry();
+        TikaLoader loader = TikaLoader.loadDefault();
+        Detector detector = loader.loadDetectors();
+        MediaTypeRegistry registry = TikaLoader.getMediaTypeRegistry();
 
         List<File> zips = getTestZipBasedFiles(detector, registry);
         System.out.println("zips size: " + zips.size());

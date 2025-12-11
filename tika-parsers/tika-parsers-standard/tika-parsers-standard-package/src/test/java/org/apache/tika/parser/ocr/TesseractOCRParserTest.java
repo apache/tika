@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -34,14 +35,13 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.config.ParseContextConfig;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.loader.PolymorphicObjectMapperFactory;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -101,8 +101,9 @@ public class TesseractOCRParserTest extends TikaTest {
     @Disabled("this requires manually moving the default tessdata directory")
     @Test
     public void testTessdataConfig() throws Exception {
-        TikaConfig tikaConfig = new TikaConfig(getResourceAsStream("tesseract-config.xml"));
-        Parser p = new AutoDetectParser(tikaConfig);
+        TikaLoader loader = TikaLoader.load(
+                Paths.get(TesseractOCRParserTest.class.getResource("tesseract-config.json").toURI()));
+        Parser p = loader.loadAutoDetectParser();
         List<Metadata> metadataList = getRecursiveMetadata("testOCR.pdf", p);
         assertContains("Happy New Year 2003!", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
     }

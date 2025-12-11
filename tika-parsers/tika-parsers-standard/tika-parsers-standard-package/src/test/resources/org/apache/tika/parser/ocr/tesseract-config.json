@@ -1,17 +1,15 @@
 {
   "parsers": [
     {
-      "_name": "default-parser",
-      "_decorate": {
-        "parserExclude": [
-          "org.apache.tika.parser.ocr.TesseractOCRParser"
-        ]
+      "default-parser": {
+        "exclude": ["tesseract-ocr-parser"]
       }
     },
     {
-      "_name": "org.apache.tika.parser.ocr.TesseractOCRParser",
-      "tesseractPath": "C:\\Program Files\\Tesseract OCR",
-      "tessdataPath": "C:\\Program Files\\Tesseract OCR\\tessdata"
+      "tesseract-ocr-parser": {
+        "tesseractPath": "C:\\Program Files\\Tesseract OCR",
+        "tessdataPath": "C:\\Program Files\\Tesseract OCR\\tessdata"
+      }
     }
   ]
 }

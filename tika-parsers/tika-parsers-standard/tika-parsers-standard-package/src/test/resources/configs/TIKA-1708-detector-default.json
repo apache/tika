@@ -1,17 +1,14 @@
 {
-  "parsers": [],
   "detectors": [
     {
-      "default-detector" : {
+      "default-detector": {
         "exclude": [
           "default-zip-container-detector"
         ]
       }
     }
   ],
-  "translator": [
-    {
-      "default-translator": {}
-    }
-  ]
+  "translator": {
+    "class": "default-translator"
+  }
 }
