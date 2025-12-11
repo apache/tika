@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.apache.tika.config.JsonConfigHelper;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
@@ -108,8 +109,8 @@ public class FetcherManagerTest {
                   },
                   "plugin-roots": "target/plugins"
                 }
-                """, PluginsTestHelper.toJsonPath(tmpDir.resolve("path1")),
-                     PluginsTestHelper.toJsonPath(tmpDir.resolve("path2")));
+                """, JsonConfigHelper.toJsonPath(tmpDir.resolve("path1")),
+                     JsonConfigHelper.toJsonPath(tmpDir.resolve("path2")));
 
         Path configPath = tmpDir.resolve("config.json");
         Files.writeString(configPath, configJson, StandardCharsets.UTF_8);
@@ -268,8 +269,8 @@ public class FetcherManagerTest {
                   },
                   "plugin-roots": "target/plugins"
                 }
-                """, PluginsTestHelper.toJsonPath(tmpDir.resolve("path1")),
-                     PluginsTestHelper.toJsonPath(tmpDir.resolve("path2")));
+                """, JsonConfigHelper.toJsonPath(tmpDir.resolve("path1")),
+                     JsonConfigHelper.toJsonPath(tmpDir.resolve("path2")));
 
         Path configPath = tmpDir.resolve("config.json");
         Files.writeString(configPath, configJson, StandardCharsets.UTF_8);
@@ -317,8 +318,8 @@ public class FetcherManagerTest {
                   },
                   "plugin-roots": "target/plugins"
                 }
-                """, PluginsTestHelper.toJsonPath(tmpDir.resolve("path1")),
-                     PluginsTestHelper.toJsonPath(tmpDir.resolve("path2")));
+                """, JsonConfigHelper.toJsonPath(tmpDir.resolve("path1")),
+                     JsonConfigHelper.toJsonPath(tmpDir.resolve("path2")));
 
         Path configPath = tmpDir.resolve("config.json");
         Files.writeString(configPath, configJson, StandardCharsets.UTF_8);
@@ -351,7 +352,7 @@ public class FetcherManagerTest {
         // Dynamically add a new fetcher configuration
         String newConfigJson = String.format(Locale.ROOT, """
                 {"basePath": "%s"}
-                """, PluginsTestHelper.toJsonPath(tmpDir.resolve("path2")));
+                """, JsonConfigHelper.toJsonPath(tmpDir.resolve("path2")));
         ExtensionConfig newConfig = new ExtensionConfig("fsf2", "file-system-fetcher", newConfigJson);
 
         fetcherManager.saveFetcher(newConfig);
@@ -378,7 +379,7 @@ public class FetcherManagerTest {
         // Try to add a fetcher with the same ID as existing one
         String newConfigJson = String.format(Locale.ROOT, """
                 {"basePath": "%s"}
-                """, PluginsTestHelper.toJsonPath(tmpDir.resolve("path2")));
+                """, JsonConfigHelper.toJsonPath(tmpDir.resolve("path2")));
         ExtensionConfig duplicateConfig = new ExtensionConfig("fsf", "file-system-fetcher", newConfigJson);
 
         TikaConfigException exception = assertThrows(TikaConfigException.class, () -> {
@@ -435,7 +436,7 @@ public class FetcherManagerTest {
         for (int i = 2; i <= 5; i++) {
             String configJson = String.format(Locale.ROOT, """
                     {"basePath": "%s"}
-                    """, PluginsTestHelper.toJsonPath(tmpDir.resolve("path" + i)));
+                    """, JsonConfigHelper.toJsonPath(tmpDir.resolve("path" + i)));
             ExtensionConfig config2 = new ExtensionConfig("fsf" + i, "file-system-fetcher", configJson);
             fetcherManager.saveFetcher(config2);
         }
@@ -466,7 +467,7 @@ public class FetcherManagerTest {
         // Try to add a fetcher - should fail
         String newConfigJson = String.format(Locale.ROOT, """
                 {"basePath": "%s"}
-                """, PluginsTestHelper.toJsonPath(tmpDir.resolve("path2")));
+                """, JsonConfigHelper.toJsonPath(tmpDir.resolve("path2")));
         ExtensionConfig newConfig = new ExtensionConfig("fsf2", "file-system-fetcher", newConfigJson);
 
         TikaConfigException exception = assertThrows(TikaConfigException.class, () -> {
@@ -489,7 +490,7 @@ public class FetcherManagerTest {
         // Try to add a fetcher - should fail
         String newConfigJson = String.format(Locale.ROOT, """
                 {"basePath": "%s"}
-                """, PluginsTestHelper.toJsonPath(tmpDir.resolve("path2")));
+                """, JsonConfigHelper.toJsonPath(tmpDir.resolve("path2")));
         ExtensionConfig newConfig = new ExtensionConfig("fsf2", "file-system-fetcher", newConfigJson);
 
         TikaConfigException exception = assertThrows(TikaConfigException.class, () -> {
