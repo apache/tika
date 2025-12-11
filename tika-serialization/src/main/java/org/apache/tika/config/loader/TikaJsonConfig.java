@@ -69,31 +69,26 @@ import org.apache.tika.exception.TikaConfigException;
  * {
  *   // Core Tika components (validated by TikaLoader)
  *   "parsers": [
- *     { "pdf-parser": { "_decorate": {...}, "ocrStrategy": "AUTO", ... } },
- *     { "html-parser": { ... } },
- *     { "default-parser": {} }
+ *     { "pdf-parser": { "_mime-include": ["application/pdf"], "ocrStrategy": "AUTO" } },
+ *     "html-parser",                    // String shorthand for no-config components
+ *     { "default-parser": { "_exclude": ["ocr-parser"] } }
  *   ],
  *   "detectors": [
- *     { "mime-magic-detector": {} },
- *     { "zip-container-detector": { "maxDepth": 10 } }
+ *     "poifs-container-detector",       // String shorthand
+ *     { "mime-types": { "markLimit": 10000 } }
  *   ],
  *
  *   // Pipes components (validated by validateKeys())
  *   "plugin-roots": ["/path/to/plugins"],
  *   "fetchers": [...],
- *   "emitters": [...],
- *
- *   // Custom configurations (for testing or extensions)
- *   "other-configs": {
- *     "test-config": { ... },
- *     "my-custom-config": { ... },
- *     "anything": { ... }
- *   }
+ *   "emitters": [...]
  * }
  * </pre>
  *
  * <p>All components use array format for explicit ordering.
- * Parsers support decoration via "_decorate" field.
+ * Components without configuration can use string shorthand: "component-name"
+ * instead of { "component-name": {} }.
+ * Parsers support mime filtering via "_mime-include" and "_mime-exclude" fields.
  * Special "default-parser" entry enables SPI fallback for unlisted parsers.
  */
 public class TikaJsonConfig {
@@ -292,15 +287,18 @@ public class TikaJsonConfig {
             List<Map.Entry<String, JsonNode>> components = new ArrayList<>();
 
             for (JsonNode arrayItem : typeNode) {
-                if (!arrayItem.isObject()) {
-                    continue;
+                if (arrayItem.isTextual()) {
+                    // String shorthand: "component-name" -> treat as { "component-name": {} }
+                    String componentName = arrayItem.asText();
+                    components.add(Map.entry(componentName, OBJECT_MAPPER.createObjectNode()));
+                } else if (arrayItem.isObject()) {
+                    // Object syntax: { "component-name": {...config...} }
+                    for (Map.Entry<String, JsonNode> componentEntry : arrayItem.properties()) {
+                        components.add(Map.entry(componentEntry.getKey(), componentEntry.getValue()));
+                        break; // Only take the first field
+                    }
                 }
-
-                // Each array item should have exactly one field: { "component-name": {...config...} }
-                for (Map.Entry<String, JsonNode> componentEntry : arrayItem.properties()) {
-                    components.add(Map.entry(componentEntry.getKey(), componentEntry.getValue()));
-                    break; // Only take the first field
-                }
+                // Skip other types (null, numbers, arrays, etc.)
             }
 
             if (!components.isEmpty()) {
