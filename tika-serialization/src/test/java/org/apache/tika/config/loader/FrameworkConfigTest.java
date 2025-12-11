@@ -37,11 +37,8 @@ public class FrameworkConfigTest {
     public void testExtractDecoration() throws Exception {
         String json = """
             {
-              "_decorate": {
-                "mimeInclude": ["application/pdf"],
-                "mimeExclude": ["application/pdf+fdf"],
-                "fallbacks": ["backup-parser"]
-              },
+              "_mime-include": ["application/pdf"],
+              "_mime-exclude": ["application/pdf+fdf"],
               "name": "test"
             }
                 """;
@@ -53,7 +50,6 @@ public class FrameworkConfigTest {
 
         FrameworkConfig.ParserDecoration decoration = config.getDecoration();
         assertTrue(decoration.hasFiltering(), "Should have filtering");
-        assertTrue(decoration.hasFallbacks(), "Should have fallbacks");
 
         assertEquals(1, decoration.getMimeInclude().size());
         assertEquals("application/pdf", decoration.getMimeInclude().get(0));
@@ -61,11 +57,10 @@ public class FrameworkConfigTest {
         assertEquals(1, decoration.getMimeExclude().size());
         assertEquals("application/pdf+fdf", decoration.getMimeExclude().get(0));
 
-        assertEquals(1, decoration.getFallbacks().size());
-        assertEquals("backup-parser", decoration.getFallbacks().get(0));
-
-        assertFalse(config.getComponentConfigJson().json().contains("_decorate"),
-                "Component config should not contain _decorate");
+        assertFalse(config.getComponentConfigJson().json().contains("_mime-include"),
+                "Component config should not contain _mime-include");
+        assertFalse(config.getComponentConfigJson().json().contains("_mime-exclude"),
+                "Component config should not contain _mime-exclude");
     }
 
     @Test
@@ -83,10 +78,10 @@ public class FrameworkConfigTest {
     }
 
     @Test
-    public void testEmptyDecoration() throws Exception {
+    public void testMimeIncludeOnly() throws Exception {
         String json = """
             {
-              "_decorate": {},
+              "_mime-include": ["text/plain"],
               "name": "test"
             }
                 """;
@@ -94,17 +89,33 @@ public class FrameworkConfigTest {
 
         FrameworkConfig config = FrameworkConfig.extract(node, MAPPER);
 
-        // Empty decoration should return null
-        assertNull(config.getDecoration(), "Empty decoration should be null");
+        assertNotNull(config.getDecoration(), "Decoration should be present");
+        assertEquals(1, config.getDecoration().getMimeInclude().size());
+        assertTrue(config.getDecoration().getMimeExclude().isEmpty());
+    }
+
+    @Test
+    public void testMimeExcludeOnly() throws Exception {
+        String json = """
+            {
+              "_mime-exclude": ["image/jpeg"],
+              "name": "test"
+            }
+                """;
+        JsonNode node = MAPPER.readTree(json);
+
+        FrameworkConfig config = FrameworkConfig.extract(node, MAPPER);
+
+        assertNotNull(config.getDecoration(), "Decoration should be present");
+        assertTrue(config.getDecoration().getMimeInclude().isEmpty());
+        assertEquals(1, config.getDecoration().getMimeExclude().size());
     }
 
     @Test
     public void testComponentConfigJsonClean() throws Exception {
         String json = """
             {
-              "_decorate": {
-                "mimeInclude": ["text/plain"]
-              },
+              "_mime-include": ["text/plain"],
               "bufferSize": 1024,
               "enabled": true
             }
@@ -116,7 +127,7 @@ public class FrameworkConfigTest {
         String componentJson = config.getComponentConfigJson().json();
 
         // Verify framework fields are removed
-        assertFalse(componentJson.contains("_decorate"), "Should not contain _decorate");
+        assertFalse(componentJson.contains("_mime-include"), "Should not contain _mime-include");
 
         // Verify component fields remain
         assertTrue(componentJson.contains("bufferSize"), "Should contain bufferSize");

@@ -2,20 +2,15 @@
   "parsers": [
     {
       "pdf-parser": {
-        "_decorate": {
-          "mimeInclude": ["application/pdf"],
-          "mimeExclude": ["application/pdf+fdf"],
-          "fallbacks": ["empty-parser"]
-        },
+        "_mime-include": ["application/pdf"],
+        "_mime-exclude": ["application/pdf+fdf"],
         "ocrStrategy": "AUTO",
         "extractInlineImages": true
       }
     },
     {
       "html-parser": {
-        "_decorate": {
-          "mimeExclude": ["application/xhtml+xml"]
-        },
+        "_mime-exclude": ["application/xhtml+xml"],
         "encoding": "UTF-8"
       }
     },

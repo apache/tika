@@ -1,11 +1,8 @@
 {
   "detectors": [
     {
-      "_name": "default-detector",
-      "_decorate": {
-        "detectorExclude": [
-          "org.apache.tika.detect.zip.DefaultZipContainerDetector"
-        ]
+      "default-detector": {
+        "_exclude": ["default-zip-container-detector"]
       }
     }
   ]

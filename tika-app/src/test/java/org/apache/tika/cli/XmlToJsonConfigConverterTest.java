@@ -92,8 +92,8 @@ public class XmlToJsonConfigConverterTest {
         System.out.println("Generated JSON:");
         System.out.println(json);
 
-        // Verify exclude is at the correct level (not under _decorate)
-        assertTrue(json.contains("\"exclude\""), "Should have exclude array");
+        // Verify exclude is at the correct level (with underscore prefix)
+        assertTrue(json.contains("\"_exclude\""), "Should have _exclude array");
         assertFalse(json.contains("\"_decorate\""), "_decorate should not be used for parser excludes");
         assertTrue(json.contains("\"jsoup-parser\""), "Should exclude jsoup-parser");
         assertTrue(json.contains("\"pdf-parser\""), "Should exclude pdf-parser");
@@ -224,7 +224,7 @@ public class XmlToJsonConfigConverterTest {
         System.out.println(json);
 
         // Verify the JSON still contains the exclusions (we don't remove them, just inform)
-        assertTrue(json.contains("\"exclude\""), "Should still have exclude array");
+        assertTrue(json.contains("\"_exclude\""), "Should still have _exclude array");
         assertTrue(json.contains("\"pdf-parser\""), "Should have pdf-parser configured");
         assertTrue(json.contains("\"jsoup-parser\""), "Should have jsoup-parser configured");
 

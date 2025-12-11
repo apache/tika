@@ -54,21 +54,19 @@ import org.apache.tika.renderer.Renderer;
  * <p>JSON configuration format:
  * <pre>
  * {
- *   "parsers": {
- *     "pdf-parser": {
- *       "_priority": 10,
- *       "_decorate": {
- *         "mimeInclude": ["application/pdf"],
- *         "mimeExclude": ["application/pdf+fdf"],
- *         "fallbacks": ["empty-parser"]
- *       },
- *       "ocrStrategy": "AUTO",
- *       "extractInlineImages": true
+ *   "parsers": [
+ *     {
+ *       "pdf-parser": {
+ *         "_mime-include": ["application/pdf"],
+ *         "_mime-exclude": ["application/pdf+fdf"],
+ *         "ocrStrategy": "AUTO",
+ *         "extractInlineImages": true
+ *       }
  *     }
- *   },
- *   "detectors": {
- *     "mime-magic-detector": { ... }
- *   }
+ *   ],
+ *   "detectors": [
+ *     { "mime-magic-detector": { ... } }
+ *   ]
  * }
  * </pre>
  */

@@ -2,17 +2,13 @@
   "parsers": [
     {
       "default-parser": {
-        "exclude": ["executable-parser"],
-        "_decorate": {
-          "mimeExclude": ["image/jpeg", "application/pdf"]
-        }
+        "_exclude": ["executable-parser"],
+        "_mime-exclude": ["image/jpeg", "application/pdf"]
       }
     },
     {
       "empty-parser": {
-        "_decorate": {
-          "mimeInclude": ["application/pdf"]
-        }
+        "_mime-include": ["application/pdf"]
       }
     }
   ]

@@ -69,6 +69,9 @@ import org.apache.tika.exception.TikaConfigException;
  * {
  *   // Core Tika components (validated by TikaLoader)
  *   "parsers": [
+ *     { "pdf-parser": { "_mime-include": ["application/pdf"], "ocrStrategy": "AUTO", ... } },
+ *     { "html-parser": { ... } },
+ *     { "default-parser": { "_exclude": ["some-parser"] } }
  *     { "pdf-parser": { "_mime-include": ["application/pdf"], "ocrStrategy": "AUTO" } },
  *     "html-parser",                    // String shorthand for no-config components
  *     { "default-parser": { "_exclude": ["ocr-parser"] } }
@@ -86,6 +89,7 @@ import org.apache.tika.exception.TikaConfigException;
  * </pre>
  *
  * <p>All components use array format for explicit ordering.
+ * Parsers support decoration via "_mime-include" and "_mime-exclude" fields.
  * Components without configuration can use string shorthand: "component-name"
  * instead of { "component-name": {} }.
  * Parsers support mime filtering via "_mime-include" and "_mime-exclude" fields.

@@ -2,7 +2,7 @@
   "parsers": [
     {
       "default-parser": {
-        "exclude": ["xml-parser", "dc-xml-parser", "fiction-book-parser"]
+        "_exclude": ["xml-parser", "dc-xml-parser", "fiction-book-parser"]
       }
     }
   ]
