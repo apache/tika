@@ -24,10 +24,8 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaLoaderHelper;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
@@ -88,12 +86,9 @@ public class GzipParserTest extends AbstractPkgTest {
         assertEquals(2, getRecursiveMetadata("multiple.gz").size());
 
         //test config
-        TikaConfig tikaConfig = null;
-        try (InputStream is = getResourceAsStream("/configs/tika-config-multiple-gz.xml")) {
-            tikaConfig = new TikaConfig(is);
-        }
+        Parser p = TikaLoaderHelper.getLoader("tika-config-multiple-gz.json").loadAutoDetectParser();
         assertContains("<p>ab</p>",
-                getRecursiveMetadata("multiple.gz", new AutoDetectParser(tikaConfig)).get(1)
+                getRecursiveMetadata("multiple.gz", p).get(1)
                         .get(TikaCoreProperties.TIKA_CONTENT));
     }
 

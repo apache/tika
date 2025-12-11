@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaLoaderHelper;
+import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.DefaultDetector;
@@ -33,15 +34,12 @@ import org.apache.tika.detect.microsoft.POIFSContainerDetector;
 import org.apache.tika.detect.zip.DefaultZipContainerDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.microsoft.pst.OutlookPSTParser;
 
 /**
- * Junit test class for {@link TikaConfig}, which cover things
- * that {@link TikaConfigTest} can't do due to a need for the
- * full set of detectors
+ * Junit test class for detector configuration via JSON.
  */
-public class TikaDetectorConfigTest extends AbstractTikaConfigTest {
+public class TikaDetectorConfigTest extends TikaTest {
 
     @Test
     public void testDetectorExcludeFromDefault() throws Exception {
@@ -53,29 +51,22 @@ public class TikaDetectorConfigTest extends AbstractTikaConfigTest {
         // Should be wrapping two detectors
         assertEquals(2, detector.getDetectors().size());
 
-
         // First should be DefaultDetector, second Empty, that order
         assertEquals(DefaultDetector.class, detector.getDetectors().get(0).getClass());
         assertEquals(EmptyDetector.class, detector.getDetectors().get(1).getClass());
 
-
         // Get the DefaultDetector from the config
         DefaultDetector confDetector = (DefaultDetector) detector.getDetectors().get(0);
 
-        // Get a fresh "default" DefaultParser
-        TikaLoader.getMediaTypeRegistry().getTypes();
-        MimeTypes mimeTypes = new MimeTypes();
+        // Get a fresh "default" DefaultDetector
         DefaultDetector normDetector = new DefaultDetector(TikaLoader.getMimeTypes());
-
 
         // The default one will offer the Zip and POIFS detectors
         assertDetectors(normDetector, true, true);
 
-
         // The one from the config won't, as we excluded those
         assertDetectors(confDetector, false, false);
     }
-
 
     /**
      * TIKA-1708 - If the Zip detector is disabled, either explicitly,
@@ -93,30 +84,24 @@ public class TikaDetectorConfigTest extends AbstractTikaConfigTest {
         // Check it has the POIFS one, but not the zip one
         assertDetectors(detectorWX, true, false);
 
-
         // Check the one with an explicit list
-        TikaConfig configCL = getConfig("TIKA-1708-detector-composite.xml");
-        assertNotNull(configCL.getParser());
-        assertNotNull(configCL.getDetector());
-        CompositeDetector detectorCL = (CompositeDetector) configCL.getDetector();
+        TikaLoader configCL = TikaLoaderHelper.getLoader("TIKA-1708-detector-composite.json");
+        assertNotNull(configCL.loadParsers());
+        assertNotNull(configCL.loadDetectors());
+        CompositeDetector detectorCL = (CompositeDetector) configCL.loadDetectors();
         assertEquals(2, detectorCL.getDetectors().size());
 
         // Check it also has the POIFS one, but not the zip one
         assertDetectors(detectorCL, true, false);
 
-
-        // Check that both detectors have a mimetypes with entries
-        assertTrue(configWX.getMediaTypeRegistry().getTypes().size() > 100,
-                "Not enough mime types: " + configWX.getMediaTypeRegistry().getTypes().size());
-        assertTrue(configCL.getMediaTypeRegistry().getTypes().size() > 100,
-                "Not enough mime types: " + configCL.getMediaTypeRegistry().getTypes().size());
-
+        // Check that media type registry has entries
+        assertTrue(TikaLoader.getMediaTypeRegistry().getTypes().size() > 100,
+                "Not enough mime types: " + TikaLoader.getMediaTypeRegistry().getTypes().size());
 
         // Now check they detect PST files correctly
         try (TikaInputStream outer = TikaInputStream
                 .get(getResourceAsStream("/test-documents/testPST.pst"))) {
             try (TikaInputStream stream = TikaInputStream.get(outer.getPath())) {
-
                 assertEquals(OutlookPSTParser.MS_OUTLOOK_PST_MIMETYPE,
                         detectorWX.detect(stream, new Metadata()));
                 assertEquals(OutlookPSTParser.MS_OUTLOOK_PST_MIMETYPE,
@@ -152,5 +137,4 @@ public class TikaDetectorConfigTest extends AbstractTikaConfigTest {
             assertTrue(hasZip, "Should have the ZipContainerDetector");
         }
     }
-
 }

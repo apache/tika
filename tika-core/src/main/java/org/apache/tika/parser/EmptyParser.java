@@ -23,6 +23,7 @@ import java.util.Set;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -32,6 +33,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * attempting to parse the given document stream. Useful as a sentinel parser
  * for unknown document types.
  */
+@TikaComponent(spi = false)
 public class EmptyParser implements Parser {
     /**
      * Singleton instance of this class.

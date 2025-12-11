@@ -1,0 +1,14 @@
+{
+  "parsers": [
+    {
+      "default-parser": {
+        "exclude": ["compressor-parser"]
+      }
+    },
+    {
+      "compressor-parser": {
+        "decompressConcatenated": true
+      }
+    }
+  ]
+}
