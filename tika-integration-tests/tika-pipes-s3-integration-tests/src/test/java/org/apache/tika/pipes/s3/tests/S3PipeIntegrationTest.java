@@ -21,14 +21,16 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -52,6 +54,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import org.apache.tika.cli.TikaCLI;
+import org.apache.tika.config.JsonConfigHelper;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Testcontainers(disabledWithoutDocker = true)
@@ -125,38 +128,32 @@ class S3PipeIntegrationTest {
         createTestFiles();
 
         // Setup config files
-        File log4jPropFile = new File("target", "tmp-log4j2.xml");
-        File tikaConfigFile = new File("target", "plugins-config-s3.json");
+        Path log4jPropFile = Path.of("target", "tmp-log4j2.xml");
+        Path tikaConfigFile = Path.of("target", "plugins-config-s3.json");
 
         try (InputStream is = this.getClass()
                 .getResourceAsStream("/pipes-fork-server-custom-log4j2.xml")) {
             Assertions.assertNotNull(is);
-            FileUtils.copyInputStreamToFile(is, log4jPropFile);
+            FileUtils.copyInputStreamToFile(is, log4jPropFile.toFile());
         }
 
         // Create plugins config JSON
-        String pluginsTemplate;
-        try (InputStream is = this.getClass().getResourceAsStream("/s3/plugins-template.json")) {
-            assert is != null;
-            pluginsTemplate = IOUtils.toString(is, StandardCharsets.UTF_8);
-        }
+        Map<String, Object> replacements = new HashMap<>();
+        replacements.put("LOG4J_PROPERTIES_FILE", log4jPropFile);
+        replacements.put("PARSE_MODE", org.apache.tika.pipes.api.HandlerConfig.PARSE_MODE.RMETA.name());
+        replacements.put("PIPE_ITERATOR_BUCKET", FETCH_BUCKET);
+        replacements.put("EMIT_BUCKET", EMIT_BUCKET);
+        replacements.put("FETCH_BUCKET", FETCH_BUCKET);
+        replacements.put("ACCESS_KEY", ACCESS_KEY);
+        replacements.put("SECRET_KEY", SECRET_KEY);
+        replacements.put("ENDPOINT_CONFIGURATION_SERVICE", MINIO_ENDPOINT);
+        replacements.put("REGION", REGION.id());
 
-        String pluginsConfig = pluginsTemplate
-                .replace("{TIKA_CONFIG}", tikaConfigFile.getAbsolutePath())
-                .replace("{LOG4J_PROPERTIES_FILE}", log4jPropFile.getAbsolutePath())
-                .replace("{PARSE_MODE}", org.apache.tika.pipes.api.HandlerConfig.PARSE_MODE.RMETA.name())
-                .replace("{PIPE_ITERATOR_BUCKET}", FETCH_BUCKET)
-                .replace("{EMIT_BUCKET}", EMIT_BUCKET)
-                .replace("{FETCH_BUCKET}", FETCH_BUCKET)
-                .replace("{ACCESS_KEY}", ACCESS_KEY)
-                .replace("{SECRET_KEY}", SECRET_KEY)
-                .replace("{ENDPOINT_CONFIGURATION_SERVICE}", MINIO_ENDPOINT)
-                .replace("{REGION}", REGION.id());
-
-        FileUtils.writeStringToFile(tikaConfigFile, pluginsConfig, StandardCharsets.UTF_8);
+        JsonConfigHelper.writeConfigFromResource("/s3/plugins-template.json",
+                S3PipeIntegrationTest.class, replacements, tikaConfigFile);
 
         try {
-            TikaCLI.main(new String[]{"-a", "-c", tikaConfigFile.getAbsolutePath()});
+            TikaCLI.main(new String[]{"-a", "-c", tikaConfigFile.toAbsolutePath().toString()});
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

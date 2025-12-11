@@ -23,10 +23,11 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.regex.Matcher;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -46,6 +47,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.utility.DockerImageName;
 
 import org.apache.tika.cli.TikaCLI;
+import org.apache.tika.config.JsonConfigHelper;
 import org.apache.tika.pipes.api.HandlerConfig;
 import org.apache.tika.pipes.emitter.solr.SolrEmitterConfig;
 import org.apache.tika.utils.SystemUtils;
@@ -264,38 +266,33 @@ public abstract class TikaPipesSolrTestBase {
                                HandlerConfig.PARSE_MODE parseMode) throws IOException {
         Path tikaConfig = pipesDirectory.resolve("plugins-config.json");
 
-        String json;
-        try (InputStream is = this.getClass().getResourceAsStream("/solr/plugins-template.json")) {
-            json = IOUtils.toString(is, StandardCharsets.UTF_8);
-        }
-
-        String solrUrls;
-        String solrZkHosts;
-        if (useZk()) {
-            solrUrls = "[]";
-            solrZkHosts = "[\"" + solrHost + ":" + zkPort + "\"]";
-        } else {
-            solrUrls = "[\"http://" + solrHost + ":" + solrPort + "/solr\"]";
-            solrZkHosts = "[]";
-        }
-
-        String res = json.replace("UPDATE_STRATEGY", updateStrategy.toString())
-                .replace("ATTACHMENT_STRATEGY", attachmentStrategy.toString())
-                .replaceAll("FETCHER_BASE_PATH",
-                        Matcher.quoteReplacement(testFileFolder.toAbsolutePath().toString()))
-                .replace("PARSE_MODE", parseMode.name())
-                .replace("SOLR_URLS", solrUrls)
-                .replace("SOLR_ZK_HOSTS", solrZkHosts);
-
-        res = res.replace("TIKA_CONFIG", tikaConfig.toAbsolutePath().toString());
-
         Path log4jPropFile = pipesDirectory.resolve("log4j2.xml");
         try (InputStream is = this.getClass().getResourceAsStream("/pipes-fork-server-custom-log4j2.xml")) {
             Files.copy(is, log4jPropFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         }
-        res = res.replace("LOG4J_PROPERTIES_FILE", log4jPropFile.toAbsolutePath().toString());
 
-        Files.writeString(tikaConfig, res, StandardCharsets.UTF_8);
+        List<String> solrUrls;
+        List<String> solrZkHosts;
+        if (useZk()) {
+            solrUrls = List.of();
+            solrZkHosts = List.of(solrHost + ":" + zkPort);
+        } else {
+            solrUrls = List.of("http://" + solrHost + ":" + solrPort + "/solr");
+            solrZkHosts = List.of();
+        }
+
+        Map<String, Object> replacements = new HashMap<>();
+        replacements.put("UPDATE_STRATEGY", updateStrategy.toString());
+        replacements.put("ATTACHMENT_STRATEGY", attachmentStrategy.toString());
+        replacements.put("FETCHER_BASE_PATH", testFileFolder);
+        replacements.put("PARSE_MODE", parseMode.name());
+        replacements.put("SOLR_URLS", solrUrls);
+        replacements.put("SOLR_ZK_HOSTS", solrZkHosts);
+        replacements.put("LOG4J_PROPERTIES_FILE", log4jPropFile);
+
+        JsonConfigHelper.writeConfigFromResource("/solr/plugins-template.json",
+                TikaPipesSolrTestBase.class, replacements, tikaConfig);
+
         return tikaConfig;
     }
 

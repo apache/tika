@@ -26,7 +26,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,6 +35,8 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
@@ -43,7 +44,6 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.cxf.binding.BindingFactoryManager;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
@@ -55,6 +55,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.JsonConfigHelper;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.server.core.resource.TikaResource;
 import org.apache.tika.server.core.resource.UnpackerResource;
@@ -82,16 +83,8 @@ public abstract class CXFTestBase {
             }
             """;
 
-    public final static String JSON_TEMPLATE;
-
-    static {
-        try {
-            JSON_TEMPLATE = Files.readString(
-                    Paths.get(CXFTestBase.class.getResource("/configs/cxf-test-base-template.json").toURI()), UTF_8);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+    private static final String TEMPLATE_RESOURCE = "/configs/cxf-test-base-template.json";
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     protected static final String endPoint = "http://localhost:" + TikaServerConfig.DEFAULT_PORT;
     protected final static int DIGESTER_READ_LIMIT = 20 * 1024 * 1024;
@@ -101,23 +94,21 @@ public abstract class CXFTestBase {
     public static void createPluginsConfig(Path configPath, Path inputDir, Path jsonOutputDir, Path bytesOutputDir, Long timeoutMillis) throws IOException {
 
         Path pluginsDir = Paths.get("target/plugins");
-        if (! Files.isDirectory(pluginsDir)) {
+        if (!Files.isDirectory(pluginsDir)) {
             LOG.warn("CAN'T FIND PLUGINS DIR. pwd={}", Paths.get("").toAbsolutePath().toString());
         }
-        String json = CXFTestBase.JSON_TEMPLATE.replace("FETCHER_BASE_PATH", inputDir.toAbsolutePath().toString())
-                                   .replace("JSON_EMITTER_BASE_PATH", jsonOutputDir.toAbsolutePath().toString())
-                                   .replace("PLUGINS_PATHS", pluginsDir.toAbsolutePath().toString());
+
+        Map<String, Object> replacements = new HashMap<>();
+        replacements.put("FETCHER_BASE_PATH", inputDir);
+        replacements.put("JSON_EMITTER_BASE_PATH", jsonOutputDir);
+        replacements.put("PLUGINS_PATHS", pluginsDir);
         if (bytesOutputDir != null) {
-            json = json.replace("BYTES_EMITTER_BASE_PATH", bytesOutputDir.toAbsolutePath().toString());
+            replacements.put("BYTES_EMITTER_BASE_PATH", bytesOutputDir);
         }
-        json = json.replace("TIKA_CONFIG", configPath.toAbsolutePath().toString());
-        if (timeoutMillis != null) {
-            json = json.replace("TIMEOUT_MILLIS", timeoutMillis.toString());
-        } else {
-            json = json.replace("TIMEOUT_MILLIS", "10000");
-        }
-        json = json.replace("\\", "/");
-        Files.writeString(configPath, json, StandardCharsets.UTF_8);
+        replacements.put("TIMEOUT_MILLIS", timeoutMillis != null ? timeoutMillis : 10000L);
+
+        JsonConfigHelper.writeConfigFromResource(TEMPLATE_RESOURCE,
+                CXFTestBase.class, replacements, configPath);
     }
 
 
@@ -238,19 +229,16 @@ public abstract class CXFTestBase {
                     .toAbsolutePath()
                     .toString());
         }
-        String json = CXFTestBase.JSON_TEMPLATE
-                .replace("FETCHER_BASE_PATH", getPipesInputPath())
-                .replace("PLUGINS_PATHS", pluginsDir
-                        .toAbsolutePath()
-                        .toString())
-                .replace("TIMEOUT_MILLIS",  "10000");
 
-        json = json.replace("\\", "/");
-        return UnsynchronizedByteArrayInputStream
-                .builder()
-                .setByteArray(json.getBytes(UTF_8))
-                .get();
+        Map<String, Object> replacements = new HashMap<>();
+        replacements.put("FETCHER_BASE_PATH", getPipesInputPath());
+        replacements.put("PLUGINS_PATHS", pluginsDir);
+        replacements.put("TIMEOUT_MILLIS", 10000L);
 
+        JsonNode config = JsonConfigHelper.loadFromResource(TEMPLATE_RESOURCE,
+                CXFTestBase.class, replacements);
+        String json = MAPPER.writeValueAsString(config);
+        return new ByteArrayInputStream(json.getBytes(UTF_8));
     }
 
     protected String getPipesInputPath() {

@@ -36,6 +36,7 @@ import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.io.IOUtils;
+import org.apache.tika.config.JsonConfigHelper;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -453,43 +454,29 @@ public class OpenSearchTest {
                                        HandlerConfig.PARSE_MODE parseMode, String endpoint, Path testDocDirectory) throws IOException {
         Path tikaConfig = pipesDirectory.resolve("plugins-config.json");
 
-
-        String json = new String(OpenSearchTest.class.getResourceAsStream("/opensearch/plugins-template.json").readAllBytes(), StandardCharsets.UTF_8);
-        String res =
-                json.replace("ATTACHMENT_STRATEGY", attachmentStrategy.toString())
-                           .replace("UPDATE_STRATEGY", updateStrategy.toString())
-                           .replace("USER_NAME", CONTAINER.getUsername())
-                           .replace("PASSWORD", CONTAINER.getPassword())
-                           .replaceAll("FETCHER_BASE_PATH",
-                                             Matcher.quoteReplacement(testDocDirectory.toAbsolutePath().toString()))
-                           .replace("PARSE_MODE", parseMode.name());
-
-        if (attachmentStrategy == OpenSearchEmitterConfig.AttachmentStrategy.PARENT_CHILD) {
-            res = res.replace("INCLUDE_ROUTING", "true");
-        } else {
-            res = res.replace("INCLUDE_ROUTING", "false");
-        }
-        res = res.replace("OPEN_SEARCH_URL", endpoint);
-
-        res = res.replace("TIKA_CONFIG", tikaConfig
-                    .toAbsolutePath()
-                    .toString());
-
         Path log4jPropFile = pipesDirectory.resolve("log4j2.xml");
         try (InputStream is = OpenSearchTest.class
                 .getResourceAsStream("/pipes-fork-server-custom-log4j2.xml")) {
             Files.copy(is, log4jPropFile);
         }
 
-        res = res.replace("LOG4J_PROPERTIES_FILE", log4jPropFile.toAbsolutePath().toString());
-        res = res.replace("\\", "/");
-        Files.writeString(tikaConfig, res, StandardCharsets.UTF_8);
-        return tikaConfig;
-    }
+        boolean includeRouting = (attachmentStrategy == OpenSearchEmitterConfig.AttachmentStrategy.PARENT_CHILD);
 
-    private String createTikaConfigXml(Path tikaConfigFile, String xml) {
-        xml = xml.replace("TIKA_CONFIG", tikaConfigFile.toAbsolutePath().toString());
-        return xml;
+        Map<String, Object> replacements = new HashMap<>();
+        replacements.put("ATTACHMENT_STRATEGY", attachmentStrategy.toString());
+        replacements.put("UPDATE_STRATEGY", updateStrategy.toString());
+        replacements.put("USER_NAME", CONTAINER.getUsername());
+        replacements.put("PASSWORD", CONTAINER.getPassword());
+        replacements.put("FETCHER_BASE_PATH", testDocDirectory);
+        replacements.put("PARSE_MODE", parseMode.name());
+        replacements.put("INCLUDE_ROUTING", includeRouting);
+        replacements.put("OPEN_SEARCH_URL", endpoint);
+        replacements.put("LOG4J_PROPERTIES_FILE", log4jPropFile);
+
+        JsonConfigHelper.writeConfigFromResource("/opensearch/plugins-template.json",
+                OpenSearchTest.class, replacements, tikaConfig);
+
+        return tikaConfig;
     }
 
     private void createTestHtmlFiles(String bodyContent, int numHtmlDocs, Path testDocDirectory) throws Exception {
