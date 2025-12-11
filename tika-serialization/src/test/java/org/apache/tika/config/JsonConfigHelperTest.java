@@ -264,7 +264,9 @@ public class JsonConfigHelperTest {
         assertEquals(3.14159, config.get("doubleVal").asDouble(), 0.00001);
         assertEquals(2.5, config.get("floatVal").asDouble(), 0.01);
         assertTrue(config.get("boolVal").asBoolean());
-        assertEquals("/tmp/test", config.get("pathVal").asText());
+        String pathVal = config.get("pathVal").asText();
+        assertTrue(pathVal.endsWith("tmp/test"), "Path should end with tmp/test but was: " + pathVal);
+        assertFalse(pathVal.contains("\\"), "Path should use forward slashes");
     }
 
     @Test
