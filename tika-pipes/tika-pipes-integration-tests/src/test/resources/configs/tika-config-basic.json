@@ -41,7 +41,7 @@
   "pipes": {
     "numClients": 4,
     "timeoutMillis": 5000,
-    "emitIntermediateResults": EMIT_INTERMEDIATE_RESULTS,
+    "emitIntermediateResults": "EMIT_INTERMEDIATE_RESULTS",
     "forkedJvmArgs": ["-Xmx512m"],
     "emitStrategy": {
       "type": "DYNAMIC",

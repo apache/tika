@@ -17,13 +17,16 @@
 package org.apache.tika.pipes.core;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.tika.config.JsonConfigHelper;
 
 public class PluginsTestHelper {
     private static final Logger LOG = LoggerFactory.getLogger(PluginsTestHelper.class);
@@ -49,29 +52,25 @@ public class PluginsTestHelper {
     public static Path getFileSystemFetcherConfig(String templateName, Path configBase, Path fetcherBase, Path emitterBase, boolean emitIntermediateResults) throws Exception {
         Path pipesConfig = configBase.resolve("pipes-config.json");
 
-        Path tikaPluginsTemplate = Paths.get(PluginsTestHelper.class.getResource("/configs/" + templateName).toURI());
-        String json = Files.readString(tikaPluginsTemplate, StandardCharsets.UTF_8);
-
-        json = json.replace("FETCHER_BASE_PATH", fetcherBase
-                .toAbsolutePath()
-                .toString());
+        Map<String, Object> replacements = new HashMap<>();
+        replacements.put("FETCHER_BASE_PATH", fetcherBase);
 
         if (emitterBase != null) {
-            json = json.replace("EMITTER_BASE_PATH", emitterBase
-                    .toAbsolutePath()
-                    .toString());
+            replacements.put("EMITTER_BASE_PATH", emitterBase);
         }
+
         Path pwd = Paths.get("");
         Path plugins = pwd.resolve("target/plugins");
         if (Files.isDirectory(plugins)) {
-            json = json.replace("PLUGINS_PATHS", plugins.toAbsolutePath().toString());
+            replacements.put("PLUGINS_PATHS", plugins);
             LOG.info("found plugins path");
         } else {
-            LOG.warn("Couldn't find plugins from {}",  pwd.toAbsolutePath());
+            LOG.warn("Couldn't find plugins from {}", pwd.toAbsolutePath());
         }
-        json = json.replace("EMIT_INTERMEDIATE_RESULTS", String.valueOf(emitIntermediateResults));
-        json = json.replace("\\", "/");
-        Files.write(pipesConfig, json.getBytes(StandardCharsets.UTF_8));
+        replacements.put("EMIT_INTERMEDIATE_RESULTS", emitIntermediateResults);
+
+        JsonConfigHelper.writeConfigFromResource("/configs/" + templateName,
+                PluginsTestHelper.class, replacements, pipesConfig);
         return pipesConfig;
     }
 
@@ -85,14 +84,4 @@ public class PluginsTestHelper {
         }
     }
 
-    /**
-     * Converts a Path to a JSON-safe string with forward slashes.
-     * This ensures paths work correctly in JSON configs on both Windows and Unix systems.
-     *
-     * @param path the path to convert
-     * @return a string representation with forward slashes
-     */
-    public static String toJsonPath(Path path) {
-        return path.toString().replace("\\", "/");
-    }
 }

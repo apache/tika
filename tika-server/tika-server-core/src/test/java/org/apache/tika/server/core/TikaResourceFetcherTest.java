@@ -24,8 +24,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
@@ -35,6 +39,7 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.config.JsonConfigHelper;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
@@ -62,20 +67,18 @@ public class TikaResourceFetcherTest extends CXFTestBase {
         sf.setProviders(providers);
     }
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     @Override
     protected InputStream getTikaConfigInputStream() throws IOException {
-        Path inputDir = null;
-        try {
-            inputDir = Paths.get(TikaResourceFetcherTest.class
-                    .getResource("/test-documents/")
-                    .toURI());
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
-        String configXML = getStringFromInputStream(TikaResourceFetcherTest.class.getResourceAsStream("/configs/tika-config-server-fetcher-template.json"));
+        Map<String, Object> replacements = new HashMap<>();
+        replacements.put("PORT", 9998);
 
-        configXML = configXML.replace("{PORT}", "9998");
-        return new ByteArrayInputStream(configXML.getBytes(StandardCharsets.UTF_8));
+        JsonNode config = JsonConfigHelper.loadFromResource(
+                "/configs/tika-config-server-fetcher-template.json",
+                TikaResourceFetcherTest.class, replacements);
+        String json = MAPPER.writeValueAsString(config);
+        return new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
     }
 
     protected String getPipesInputPath() {

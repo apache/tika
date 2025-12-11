@@ -1,6 +1,6 @@
 {
   "server": {
-    "port": "{PORT}",
+    "port": "PORT",
     "taskTimeoutMillis": 54321,
     "enableUnsecureFeatures": true,
     "taskPulseMillis": 100,

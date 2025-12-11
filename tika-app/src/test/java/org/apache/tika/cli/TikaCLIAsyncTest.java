@@ -24,10 +24,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -37,6 +38,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.tika.config.JsonConfigHelper;
 
 public class TikaCLIAsyncTest {
 
@@ -60,21 +63,17 @@ public class TikaCLIAsyncTest {
         TIKA_CONFIG = Files.createTempFile(ASYNC_OUTPUT_DIR, "plugins-", ".json");
 
         Path pluginsDir = Paths.get("target/plugins");
-        if (! Files.isDirectory(pluginsDir)) {
+        if (!Files.isDirectory(pluginsDir)) {
             LOG.warn("CAN'T FIND PLUGINS DIR. pwd={}", Paths.get("").toAbsolutePath().toString());
         }
-        String jsonTemplate = Files.readString(Paths.get(TikaCLIAsyncTest.class.getResource("/configs/config-template.json").toURI()),
-                StandardCharsets.UTF_8);
 
-        String json = jsonTemplate.replace("FETCHER_BASE_PATH", TEST_DATA_FILE.getAbsolutePath().toString())
-                                   .replace("EMITTER_BASE_PATH", ASYNC_OUTPUT_DIR.toAbsolutePath().toString())
-                                   .replace("PLUGIN_ROOTS", pluginsDir.toAbsolutePath().toString())
-                .replace("TIKA_CONFIG", TIKA_CONFIG
-                        .toAbsolutePath().toString());
+        Map<String, Object> replacements = new HashMap<>();
+        replacements.put("FETCHER_BASE_PATH", TEST_DATA_FILE.toPath());
+        replacements.put("EMITTER_BASE_PATH", ASYNC_OUTPUT_DIR);
+        replacements.put("PLUGIN_ROOTS", pluginsDir);
 
-                ;
-        json = json.replace("\\", "/");
-        Files.writeString(TIKA_CONFIG, json, UTF_8);
+        JsonConfigHelper.writeConfigFromResource("/configs/config-template.json",
+                TikaCLIAsyncTest.class, replacements, TIKA_CONFIG);
     }
 
     /**

@@ -1,0 +1,20 @@
+{
+  "fetchers": {
+    "fs": {
+      "file-system-fetcher": {
+        "basePath": "FETCHER_BASE_PATH"
+      }
+    }
+  },
+  "emitters": {
+    "out": {
+      "file-system-emitter": {
+        "basePath": "EMITTER_BASE_PATH"
+      }
+    }
+  },
+  "pipes": {
+    "maxFilesWaitingInQueue": "MAX_FILES",
+    "emitIntermediateResults": "EMIT_INTERMEDIATE"
+  }
+}

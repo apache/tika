@@ -49,7 +49,7 @@
     "opensearch-pipes-reporter": {
       "openSearchUrl": "OPEN_SEARCH_URL",
       "keyPrefix": "my_test_",
-      "includeRouting": INCLUDE_ROUTING,
+      "includeRouting": "INCLUDE_ROUTING",
       "httpClientConfig": {
         "userName": "USER_NAME",
         "password": "PASSWORD",

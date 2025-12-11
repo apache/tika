@@ -2,12 +2,12 @@
   "fetchers": {
     "s3f": {
       "s3-fetcher": {
-        "region": "{REGION}",
-        "bucket": "{FETCH_BUCKET}",
+        "region": "REGION",
+        "bucket": "FETCH_BUCKET",
         "credentialsProvider": "key_secret",
-        "accessKey": "{ACCESS_KEY}",
-        "secretKey": "{SECRET_KEY}",
-        "endpointConfigurationService": "{ENDPOINT_CONFIGURATION_SERVICE}",
+        "accessKey": "ACCESS_KEY",
+        "secretKey": "SECRET_KEY",
+        "endpointConfigurationService": "ENDPOINT_CONFIGURATION_SERVICE",
         "pathStyleAccessEnabled": true,
         "maxConnections": 50,
         "throttleSeconds": [
@@ -22,12 +22,12 @@
   "emitters": {
     "s3e": {
       "s3-emitter": {
-        "region": "{REGION}",
-        "bucket": "{EMIT_BUCKET}",
+        "region": "REGION",
+        "bucket": "EMIT_BUCKET",
         "credentialsProvider": "key_secret",
-        "accessKey": "{ACCESS_KEY}",
-        "secretKey": "{SECRET_KEY}",
-        "endpointConfigurationService": "{ENDPOINT_CONFIGURATION_SERVICE}",
+        "accessKey": "ACCESS_KEY",
+        "secretKey": "SECRET_KEY",
+        "endpointConfigurationService": "ENDPOINT_CONFIGURATION_SERVICE",
         "pathStyleAccessEnabled": true,
         "maxConnections": 50,
         "fileExtension": "json",
@@ -37,19 +37,19 @@
   },
   "pipes-iterator": {
     "s3-pipes-iterator": {
-      "region": "{REGION}",
-      "bucket": "{PIPE_ITERATOR_BUCKET}",
+      "region": "REGION",
+      "bucket": "PIPE_ITERATOR_BUCKET",
       "credentialsProvider": "key_secret",
-      "accessKey": "{ACCESS_KEY}",
-      "secretKey": "{SECRET_KEY}",
-      "endpointConfigurationService": "{ENDPOINT_CONFIGURATION_SERVICE}",
+      "accessKey": "ACCESS_KEY",
+      "secretKey": "SECRET_KEY",
+      "endpointConfigurationService": "ENDPOINT_CONFIGURATION_SERVICE",
       "pathStyleAccessEnabled": true,
       "baseConfig": {
         "fetcherId": "s3f",
         "emitterId": "s3e",
         "handlerConfig": {
           "type": "TEXT",
-          "parseMode": "{PARSE_MODE}",
+          "parseMode": "PARSE_MODE",
           "writeLimit": -1,
           "maxEmbeddedResources": -1,
           "throwOnWriteLimitReached": true
@@ -69,7 +69,7 @@
       "-Xmx1g",
       "-XX:ParallelGCThreads=2",
       "-XX:+ExitOnOutOfMemoryError",
-      "-Dlog4j.configurationFile={LOG4J_PROPERTIES_FILE}"
+      "-Dlog4j.configurationFile=LOG4J_PROPERTIES_FILE"
     ],
     "timeoutMillis": 60000,
     "emitStrategy": {

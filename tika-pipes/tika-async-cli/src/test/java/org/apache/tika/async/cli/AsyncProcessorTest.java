@@ -22,11 +22,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.BufferedReader;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.JsonConfigHelper;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -84,20 +86,20 @@ public class AsyncProcessorTest extends TikaTest {
         Files.createDirectories(inputDir);
 
         Path pluginsDir = Paths.get("target/plugins");
-        if (! Files.isDirectory(pluginsDir)) {
+        if (!Files.isDirectory(pluginsDir)) {
             LOG.warn("CAN'T FIND PLUGINS DIR. pwd={}", Paths.get("").toAbsolutePath().toString());
         }
 
         tikaConfigPath = configDir.resolve("tika-config.json");
-        String json = Files.readString(Paths.get(AsyncProcessorTest.class.getResource("/configs/config-template.json").toURI()), StandardCharsets.UTF_8);
-        String jsonTemp = json
-                .replace("FETCHER_BASE_PATH", inputDir.toAbsolutePath().toString())
-                .replace("JSON_EMITTER_BASE_PATH", jsonOutputDir.toAbsolutePath().toString())
-                .replace("BYTES_EMITTER_BASE_PATH", bytesOutputDir.toAbsolutePath().toString())
-                .replace("PLUGIN_ROOTS", pluginsDir.toAbsolutePath().toString())
-                .replace("TIKA_CONFIG", tikaConfigPath.toAbsolutePath().toString());
-        jsonTemp = jsonTemp.replace("\\", "/");
-        Files.writeString(tikaConfigPath, jsonTemp, StandardCharsets.UTF_8);
+
+        Map<String, Object> replacements = new HashMap<>();
+        replacements.put("FETCHER_BASE_PATH", inputDir);
+        replacements.put("JSON_EMITTER_BASE_PATH", jsonOutputDir);
+        replacements.put("BYTES_EMITTER_BASE_PATH", bytesOutputDir);
+        replacements.put("PLUGIN_ROOTS", pluginsDir);
+
+        JsonConfigHelper.writeConfigFromResource("/configs/config-template.json",
+                AsyncProcessorTest.class, replacements, tikaConfigPath);
 
         Path mock = inputDir.resolve("mock.xml");
         try (OutputStream os = Files.newOutputStream(mock)) {
