@@ -17,11 +17,15 @@
 package org.apache.tika.metadata.writefilter;
 
 import java.util.HashSet;
+import java.util.Set;
+
+import org.apache.tika.config.TikaComponent;
 
 /**
  * Factory class for {@link StandardWriteFilter}. See that class
  * for how the estimated sizes are calculated on Strings.
  */
+@TikaComponent
 public class StandardWriteFilterFactory implements MetadataWriteFilterFactory {
 
 
@@ -30,9 +34,8 @@ public class StandardWriteFilterFactory implements MetadataWriteFilterFactory {
     public static int DEFAULT_TOTAL_ESTIMATED_BYTES = 10 * 1024 * 1024;
     public static int DEFAULT_MAX_VALUES_PER_FIELD = 10;
 
-    //concrete classes here and in the setters/getters for the sake of Jackson
-    private HashSet<String> includeFields = new HashSet<>();
-    private HashSet<String> excludeFields = new HashSet<>();
+    private Set<String> includeFields = new HashSet<>();
+    private Set<String> excludeFields = new HashSet<>();
     private int maxKeySize = DEFAULT_MAX_KEY_SIZE;
     private int maxFieldSize = DEFAULT_MAX_FIELD_SIZE;
     private int maxTotalEstimatedBytes = DEFAULT_TOTAL_ESTIMATED_BYTES;
@@ -58,11 +61,11 @@ public class StandardWriteFilterFactory implements MetadataWriteFilterFactory {
                 excludeFields, includeEmpty);
     }
 
-    public void setIncludeFields(HashSet<String> includeFields) {
+    public void setIncludeFields(Set<String> includeFields) {
         this.includeFields = new HashSet<>(includeFields);
     }
 
-    public void setExcludeFields(HashSet<String> excludeFields) {
+    public void setExcludeFields(Set<String> excludeFields) {
         this.excludeFields = new HashSet<>(excludeFields);
     }
 
@@ -86,11 +89,11 @@ public class StandardWriteFilterFactory implements MetadataWriteFilterFactory {
         this.maxValuesPerField = maxValuesPerField;
     }
 
-    public HashSet<String> getIncludeFields() {
+    public Set<String> getIncludeFields() {
         return includeFields;
     }
 
-    public HashSet<String> getExcludeFields() {
+    public Set<String> getExcludeFields() {
         return excludeFields;
     }
 

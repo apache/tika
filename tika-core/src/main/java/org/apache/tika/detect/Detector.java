@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 
+import org.apache.tika.config.SelfConfiguring;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -30,7 +31,7 @@ import org.apache.tika.mime.MediaType;
  *
  * @since Apache Tika 0.3
  */
-public interface Detector extends Serializable {
+public interface Detector extends Serializable, SelfConfiguring {
 
     /**
      * Detects the content type of the given input document. Returns

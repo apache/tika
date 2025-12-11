@@ -29,7 +29,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.JsonConfig;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
@@ -72,7 +71,6 @@ public class DetectorLoader {
         // Load configured detectors
         if (config.hasComponentSection("detectors")) {
             List<Detector> detectorList = new ArrayList<>();
-            ComponentRegistry registry = new ComponentRegistry("detectors", classLoader);
             List<Map.Entry<String, JsonNode>> detectors = config.getArrayComponents("detectors");
 
             // Check if "default-detector" is in the list and extract exclusions
@@ -82,41 +80,7 @@ public class DetectorLoader {
             for (Map.Entry<String, JsonNode> entry : detectors) {
                 if ("default-detector".equals(entry.getKey())) {
                     hasDefaultDetector = true;
-
-                    // Parse exclusions from default-detector config
-                    JsonNode configNode = entry.getValue();
-                    if (configNode != null && configNode.has("_exclude")) {
-                        JsonNode excludeNode = configNode.get("_exclude");
-                        if (excludeNode.isArray()) {
-                            for (JsonNode excludeName : excludeNode) {
-                                if (excludeName.isTextual()) {
-                                    String detectorName = excludeName.asText();
-                                    try {
-                                        Class<?> detectorClass;
-                                        // Try as component name first
-                                        try {
-                                            detectorClass = registry.getComponentClass(detectorName);
-                                        } catch (TikaConfigException e) {
-                                            // If not found as component name, try as FQCN
-                                            try {
-                                                detectorClass = Class.forName(detectorName, false, classLoader);
-                                            } catch (ClassNotFoundException ex) {
-                                                LOG.warn("Unknown detector in default-detector exclude list: {}", detectorName);
-                                                continue;
-                                            }
-                                        }
-                                        @SuppressWarnings("unchecked")
-                                        Class<? extends Detector> detectorTyped =
-                                                (Class<? extends Detector>) detectorClass;
-                                        excludedDetectorClasses.add(detectorTyped);
-                                        LOG.debug("Excluding detector from SPI: {}", detectorName);
-                                    } catch (Exception e) {
-                                        LOG.warn("Failed to exclude detector '{}': {}", detectorName, e.getMessage());
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    excludedDetectorClasses.addAll(parseExclusions(entry.getValue()));
                     break;
                 }
             }
@@ -133,8 +97,16 @@ public class DetectorLoader {
                     continue;
                 }
 
-                JsonNode configNode = entry.getValue();
-                Detector detector = loadConfiguredDetector(name, configNode, registry);
+                // Special case: mime-types requires the initialized registry from TikaLoader
+                if ("mime-types".equals(name)) {
+                    LOG.debug("Using TikaLoader.getMimeTypes() for mime-types detector");
+                    detectorList.add(TikaLoader.getMimeTypes());
+                    configuredDetectorClasses.add(TikaLoader.getMimeTypes().getClass());
+                    continue;
+                }
+
+                // Use Jackson with mixins to deserialize - the TypeIdResolver handles name resolution
+                Detector detector = deserializeDetector(name, entry.getValue());
                 detectorList.add(detector);
                 @SuppressWarnings("unchecked")
                 Class<? extends Detector> detectorClass =
@@ -146,13 +118,10 @@ public class DetectorLoader {
             configuredDetectorClasses.addAll(excludedDetectorClasses);
 
             // Add SPI-discovered detectors only if "default-detector" is in config
-            // If "default-detector" is present, use SPI fallback for unlisted detectors
-            // If "default-detector" is NOT present, only load explicitly configured detectors
             if (hasDefaultDetector) {
                 DefaultDetector defaultDetector = createDefaultDetector(configuredDetectorClasses);
                 LOG.debug("Loading SPI detectors because 'default-detector' is in config");
                 if (detectorList.isEmpty()) {
-                    //short-circuit return as is if no other detectors are specified
                     return defaultDetector;
                 }
                 detectorList.add(0, defaultDetector);
@@ -167,51 +136,51 @@ public class DetectorLoader {
         }
     }
 
-    private Detector loadConfiguredDetector(String name, JsonNode configNode,
-                                             ComponentRegistry registry)
-            throws TikaConfigException {
-        try {
-            // Special case: mime-types requires the initialized registry from TikaLoader
-            // The no-arg constructor creates an empty MimeTypes without the XML-loaded types
-            if ("mime-types".equals(name)) {
-                LOG.debug("Using TikaLoader.getMimeTypes() for mime-types detector");
-                return TikaLoader.getMimeTypes();
-            }
-
-            // Get detector class - try component name first, then FQCN fallback
-            Class<?> detectorClass;
-            try {
-                detectorClass = registry.getComponentClass(name);
-            } catch (TikaConfigException e) {
-                // If not found as component name, try as fully qualified class name
-                try {
-                    detectorClass = Class.forName(name, false, classLoader);
-                    LOG.debug("Loaded detector by FQCN: {}", name);
-                } catch (ClassNotFoundException ex) {
-                    throw new TikaConfigException("Unknown detector: '" + name +
-                            "'. Not found as component name or FQCN.", e);
-                }
-            }
-
-            // Extract framework config
-            FrameworkConfig frameworkConfig = FrameworkConfig.extract(configNode, objectMapper);
-
-            // Instantiate detector
-            Detector detector = instantiateDetector(detectorClass, frameworkConfig.getComponentConfigJson());
-
-            return detector;
-
-        } catch (TikaConfigException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new TikaConfigException("Failed to load detector '" + name + "'", e);
-        }
+    /**
+     * Deserializes a detector, trying JsonConfig constructor first, then Jackson bean deserialization.
+     */
+    private Detector deserializeDetector(String name, JsonNode configNode) throws TikaConfigException {
+        return ComponentInstantiator.instantiate(name, configNode, objectMapper, classLoader);
     }
 
-    private Detector instantiateDetector(Class<?> detectorClass, JsonConfig jsonConfig)
-            throws TikaConfigException {
-        return ComponentInstantiator.instantiate(detectorClass, jsonConfig, classLoader,
-                "Detector", objectMapper);
+    /**
+     * Parses exclusion list from default-detector config.
+     */
+    @SuppressWarnings("unchecked")
+    private Set<Class<? extends Detector>> parseExclusions(JsonNode configNode) {
+        Set<Class<? extends Detector>> excluded = new HashSet<>();
+        if (configNode == null || !configNode.has("_exclude")) {
+            return excluded;
+        }
+
+        JsonNode excludeNode = configNode.get("_exclude");
+        if (!excludeNode.isArray()) {
+            return excluded;
+        }
+
+        for (JsonNode excludeName : excludeNode) {
+            if (!excludeName.isTextual()) {
+                continue;
+            }
+            String detectorName = excludeName.asText();
+            try {
+                // Try to resolve via TypeIdResolver's logic (registry lookup then Class.forName)
+                Class<?> detectorClass = resolveClass(detectorName);
+                excluded.add((Class<? extends Detector>) detectorClass);
+                LOG.debug("Excluding detector from SPI: {}", detectorName);
+            } catch (Exception e) {
+                LOG.warn("Unknown detector in exclude list: {}", detectorName);
+            }
+        }
+        return excluded;
+    }
+
+    /**
+     * Resolves a name to a class, trying friendly name lookup first then FQCN.
+     */
+    private Class<?> resolveClass(String name) throws ClassNotFoundException {
+        return org.apache.tika.serialization.ComponentNameResolver
+                .resolveClass(name, classLoader);
     }
 
     /**

@@ -252,22 +252,22 @@ public class ConfigLoaderTest {
     }
 
     @Test
-    public void testLoadInterfaceWithAtClassAndProperties() throws Exception {
-        // JSON: "configured-handler": { "@class": "...", "maxSize": 100000, ... }
-        TestHandler handler = configLoader.load("configured-handler", TestHandler.class);
+    public void testLoadConcreteClassWithProperties() throws Exception {
+        // JSON: "configured-handler-impl": { "maxSize": 100000, ... }
+        // Load directly as concrete class (kebab-case matches class name)
+        ConfiguredHandlerImpl impl = configLoader.load("configured-handler-impl",
+                ConfiguredHandlerImpl.class);
 
-        assertNotNull(handler);
-        assertTrue(handler instanceof ConfiguredHandlerImpl);
-        assertEquals("configured", handler.getName());
-
-        ConfiguredHandlerImpl impl = (ConfiguredHandlerImpl) handler;
+        assertNotNull(impl);
+        assertEquals("configured", impl.getName());
         assertEquals(100000, impl.getMaxSize());
         assertEquals("test-", impl.getPrefix());
     }
 
     @Test
-    public void testLoadInterfaceWithoutTypeInfoFails() throws Exception {
-        // Create a minimal config with just properties, no @class
+    public void testLoadInterfaceWithoutClassNameFails() throws Exception {
+        // Loading an interface with properties (not a class name string) should fail
+        // because Jackson can't instantiate interfaces directly
         Path configPath = Paths.get(
                 getClass().getResource("/configs/test-interface-no-type.json").toURI());
         TikaLoader loader = TikaLoader.load(configPath);

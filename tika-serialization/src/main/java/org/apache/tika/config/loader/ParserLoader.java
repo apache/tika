@@ -16,8 +16,6 @@
  */
 package org.apache.tika.config.loader;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -33,7 +31,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.JsonConfig;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.mime.MediaType;
@@ -43,7 +40,6 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.RenderingParser;
 import org.apache.tika.renderer.Renderer;
-import org.apache.tika.utils.ServiceLoaderUtils;
 
 /**
  * Loader for parsers with support for decoration (mime type filtering).
@@ -95,7 +91,6 @@ public class ParserLoader {
 
         // Load configured parsers
         if (config.hasComponentSection("parsers")) {
-            ComponentRegistry registry = new ComponentRegistry("parsers", classLoader);
             List<Map.Entry<String, JsonNode>> parsers = config.getArrayComponents("parsers");
 
             // Check if "default-parser" is in the list and extract exclusions and decorations
@@ -125,23 +120,11 @@ public class ParserLoader {
                                 if (excludeName.isTextual()) {
                                     String parserName = excludeName.asText();
                                     try {
-                                        Class<?> parserClass;
-                                        // Try as component name first
-                                        try {
-                                            parserClass = registry.getComponentClass(parserName);
-                                        } catch (TikaConfigException e) {
-                                            // If not found as component name, try as FQCN
-                                            try {
-                                                parserClass = Class.forName(parserName, false, classLoader);
-                                            } catch (ClassNotFoundException ex) {
-                                                LOG.warn("Unknown parser in default-parser exclude list: {}", parserName);
-                                                continue;
-                                            }
-                                        }
+                                        Class<?> parserClass = resolveClass(parserName);
                                         excludedParserClasses.add(parserClass);
                                         LOG.debug("Excluding parser from SPI: {}", parserName);
                                     } catch (Exception e) {
-                                        LOG.warn("Failed to exclude parser '{}': {}", parserName, e.getMessage());
+                                        LOG.warn("Unknown parser in default-parser exclude list: {}", parserName);
                                     }
                                 }
                             }
@@ -173,7 +156,7 @@ public class ParserLoader {
                 }
 
                 JsonNode configNode = entry.getValue();
-                ParsedParserConfig parsed = loadConfiguredParser(name, configNode, registry);
+                ParsedParserConfig parsed = loadConfiguredParser(name, configNode);
                 parsedConfigs.put(name, parsed);
             }
 
@@ -229,30 +212,24 @@ public class ParserLoader {
         return new CompositeParser(TikaLoader.getMediaTypeRegistry(), parserList);
     }
 
-    private ParsedParserConfig loadConfiguredParser(String name, JsonNode configNode,
-                                                    ComponentRegistry registry)
+    private ParsedParserConfig loadConfiguredParser(String name, JsonNode configNode)
             throws TikaConfigException {
         try {
-            // Get parser class - try component name first, then FQCN fallback
-            Class<?> parserClass;
-            try {
-                parserClass = registry.getComponentClass(name);
-            } catch (TikaConfigException e) {
-                // If not found as component name, try as fully qualified class name
-                try {
-                    parserClass = Class.forName(name, false, classLoader);
-                    LOG.debug("Loaded parser by FQCN: {}", name);
-                } catch (ClassNotFoundException ex) {
-                    throw new TikaConfigException("Unknown parser: '" + name +
-                            "'. Not found as component name or FQCN.", e);
-                }
-            }
-
-            // Extract framework config
+            // Extract framework config (decorations like mimeInclude/mimeExclude)
             FrameworkConfig frameworkConfig = FrameworkConfig.extract(configNode, objectMapper);
 
-            // Instantiate parser
-            Parser parser = instantiateParser(parserClass, frameworkConfig.getComponentConfigJson());
+            // Use Jackson with mixins to deserialize - the TypeIdResolver handles name resolution
+            Parser parser = deserializeParser(name, frameworkConfig.getComponentConfigNode());
+
+            // Post-process: inject EncodingDetector for AbstractEncodingDetectorParser
+            if (parser instanceof AbstractEncodingDetectorParser) {
+                ((AbstractEncodingDetectorParser) parser).setEncodingDetector(encodingDetector);
+            }
+
+            // Post-process: inject Renderer for RenderingParser
+            if (parser instanceof RenderingParser && renderer != null) {
+                ((RenderingParser) parser).setRenderer(renderer);
+            }
 
             return new ParsedParserConfig(name, parser, frameworkConfig.getDecoration());
 
@@ -263,53 +240,19 @@ public class ParserLoader {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private Parser instantiateParser(Class<?> parserClass, JsonConfig jsonConfig)
-            throws TikaConfigException {
+    /**
+     * Deserializes a parser, trying JsonConfig constructor first, then Jackson bean deserialization.
+     */
+    private Parser deserializeParser(String name, JsonNode configNode) throws TikaConfigException {
+        return ComponentInstantiator.instantiate(name, configNode, objectMapper, classLoader);
+    }
 
-        try {
-            Parser parser;
-
-            // Try constructor with JsonConfig parameter
-            try {
-                Constructor<?> constructor = parserClass.getConstructor(JsonConfig.class);
-                parser = (Parser) constructor.newInstance(jsonConfig);
-            } catch (NoSuchMethodException e) {
-                // Check if JSON config has actual configuration
-                if (ComponentInstantiator.hasConfiguration(jsonConfig, objectMapper)) {
-                    throw new TikaConfigException(
-                            "Parser '" + parserClass.getName() + "' has configuration in JSON, " +
-                            "but does not have a constructor that accepts JsonConfig. " +
-                            "Please add a constructor: public " + parserClass.getSimpleName() + "(JsonConfig jsonConfig)");
-                }
-
-                // Try constructor with EncodingDetector parameter (for AbstractEncodingDetectorParser)
-                if (AbstractEncodingDetectorParser.class.isAssignableFrom(parserClass)) {
-                    try {
-                        Constructor<?> constructor = parserClass.getConstructor(EncodingDetector.class);
-                        parser = (Parser) constructor.newInstance(encodingDetector);
-                    } catch (NoSuchMethodException ex) {
-                        // Fall back to zero-arg constructor
-                        parser = (Parser) ServiceLoaderUtils.newInstance(parserClass,
-                                new org.apache.tika.config.ServiceLoader(classLoader));
-                    }
-                } else {
-                    // Fall back to zero-arg constructor
-                    parser = (Parser) ServiceLoaderUtils.newInstance(parserClass,
-                            new org.apache.tika.config.ServiceLoader(classLoader));
-                }
-            }
-
-            // Inject renderer for RenderingParser instances
-            if (parser instanceof RenderingParser && renderer != null) {
-                ((RenderingParser) parser).setRenderer(renderer);
-            }
-
-            return parser;
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new TikaConfigException("Failed to instantiate parser: " +
-                    parserClass.getName(), e);
-        }
+    /**
+     * Resolves a name to a class, trying friendly name lookup first then FQCN.
+     */
+    private Class<?> resolveClass(String name) throws ClassNotFoundException {
+        return org.apache.tika.serialization.ComponentNameResolver
+                .resolveClass(name, classLoader);
     }
 
     private Parser applyMimeFiltering(Parser parser, FrameworkConfig.ParserDecoration decoration) {

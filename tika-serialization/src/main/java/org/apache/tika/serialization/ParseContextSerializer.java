@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.config.loader.ComponentRegistry;
-import org.apache.tika.config.loader.PolymorphicObjectMapperFactory;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.ParseContext;
 
@@ -57,7 +57,7 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
     private static final Logger LOG = LoggerFactory.getLogger(ParseContextSerializer.class);
     public static final String PARSE_CONTEXT = "parseContext";
 
-    private static final ObjectMapper MAPPER = PolymorphicObjectMapperFactory.getMapper();
+    private static final ObjectMapper MAPPER = TikaObjectMapperFactory.getMapper();
 
     // Lazily loaded registry for looking up friendly names
     private static volatile ComponentRegistry registry;
@@ -114,13 +114,13 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
             // Try to get friendly name for this object's class
             String friendlyName = (reg != null) ? reg.getFriendlyName(value.getClass()) : null;
 
+            // Determine key: prefer friendly name, fall back to FQCN for Tika types
             String key;
             if (friendlyName != null) {
-                // Use friendly name if available
+                // Use friendly name if available (deserializer will resolve via registry)
                 key = friendlyName;
             } else if (entry.getKey().startsWith("org.apache.tika.")) {
-                // For Tika types without friendly names (e.g., custom MetadataFilter subclasses),
-                // use the context key - polymorphic mapper will add @class for the concrete type
+                // For Tika types without friendly names, use the context key (FQCN)
                 key = entry.getKey();
             } else {
                 // Skip non-Tika types without friendly names (e.g., String, custom non-Tika classes)
@@ -129,19 +129,17 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
 
             if (!writtenKeys.contains(key)) {
                 jsonGenerator.writeFieldName(key);
-                // If using the context key (not friendly name), we need to serialize
-                // with the base type to get polymorphic @class info for custom subclasses
-                if (friendlyName == null) {
-                    try {
-                        Class<?> contextKeyClass = Class.forName(entry.getKey());
-                        MAPPER.writerFor(contextKeyClass).writeValue(jsonGenerator, value);
-                    } catch (ClassNotFoundException e) {
-                        // Fallback to default serialization
-                        MAPPER.writeValue(jsonGenerator, value);
-                    }
-                } else {
-                    MAPPER.writeValue(jsonGenerator, value);
+                // Write wrapper object format with type info for polymorphic deserialization
+                // Format: {"concrete-class-name": {properties...}}
+                jsonGenerator.writeStartObject();
+                String typeName = (friendlyName != null) ? friendlyName :
+                        ComponentNameResolver.getFriendlyName(value.getClass());
+                if (typeName == null) {
+                    typeName = value.getClass().getName();
                 }
+                jsonGenerator.writeFieldName(typeName);
+                MAPPER.writeValue(jsonGenerator, value);
+                jsonGenerator.writeEndObject();
                 writtenKeys.add(key);
             }
         }

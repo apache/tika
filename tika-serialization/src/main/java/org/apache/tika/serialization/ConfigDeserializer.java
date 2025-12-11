@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.loader.JsonMergeUtils;
-import org.apache.tika.config.loader.PolymorphicObjectMapperFactory;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.parser.ParseContext;
 
 /**
@@ -52,7 +52,7 @@ import org.apache.tika.parser.ParseContext;
  */
 public class ConfigDeserializer {
 
-    private static final ObjectMapper MAPPER = PolymorphicObjectMapperFactory.getMapper();
+    private static final ObjectMapper MAPPER = TikaObjectMapperFactory.getMapper();
 
     /**
      * Retrieves and deserializes a parser configuration from the ConfigContainer in ParseContext.

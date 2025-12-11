@@ -31,7 +31,10 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.ConfigContainer;
-import org.apache.tika.config.loader.PolymorphicObjectMapperFactory;
+import org.apache.tika.config.TikaTaskTimeout;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
+import org.apache.tika.extractor.DocumentSelector;
+import org.apache.tika.extractor.SkipEmbeddedDocumentSelector;
 import org.apache.tika.parser.ParseContext;
 
 /**
@@ -44,7 +47,7 @@ public class TestParseContextSerialization {
 
     private ObjectMapper createMapper() {
         // Start with the properly configured mapper that has polymorphic type handling
-        ObjectMapper mapper = PolymorphicObjectMapperFactory.getMapper();
+        ObjectMapper mapper = TikaObjectMapperFactory.getMapper();
 
         // Register our custom serializer/deserializer on top
         SimpleModule module = new SimpleModule();
@@ -144,12 +147,12 @@ public class TestParseContextSerialization {
                 .get("timeoutMillis")
                 .asInt());
 
-        // Verify round-trip
+        // Verify round-trip - TikaTaskTimeout is NOT SelfConfiguring,
+        // so it gets resolved directly into ParseContext (not ConfigContainer)
         ParseContext deserialized = mapper.readValue(json, ParseContext.class);
-        ConfigContainer deserializedConfig = deserialized.get(ConfigContainer.class);
-        assertTrue(deserializedConfig
-                .get("tika-task-timeout")
-                .isPresent());
+        TikaTaskTimeout timeout = deserialized.get(TikaTaskTimeout.class);
+        assertNotNull(timeout, "TikaTaskTimeout should be resolved directly into ParseContext");
+        assertEquals(30000, timeout.getTimeoutMillis());
     }
 
     @Test
@@ -259,9 +262,22 @@ public class TestParseContextSerialization {
         assertTrue(root.has("my-custom-config"));
 
         // Verify round-trip
+        // After deserialization:
+        // - pdf-parser, html-parser → Parsers are SelfConfiguring → stay in ConfigContainer
+        // - my-custom-config → not in registry → stays in ConfigContainer
+        // - tika-task-timeout → TikaTaskTimeout is NOT SelfConfiguring → resolved directly
         ParseContext deserialized = mapper.readValue(json, ParseContext.class);
         ConfigContainer deserializedConfig = deserialized.get(ConfigContainer.class);
-        assertEquals(4, deserializedConfig.getKeys().size());
+        assertEquals(3, deserializedConfig.getKeys().size(),
+                "Should have 3 configs in ConfigContainer (SelfConfiguring + unknown)");
+        assertTrue(deserializedConfig.get("pdf-parser").isPresent());
+        assertTrue(deserializedConfig.get("html-parser").isPresent());
+        assertTrue(deserializedConfig.get("my-custom-config").isPresent());
+
+        // TikaTaskTimeout should be resolved directly into ParseContext
+        TikaTaskTimeout timeout = deserialized.get(TikaTaskTimeout.class);
+        assertNotNull(timeout, "TikaTaskTimeout should be resolved directly");
+        assertEquals(5000, timeout.getTimeoutMillis());
     }
 
     @Test
@@ -278,5 +294,30 @@ public class TestParseContextSerialization {
         ObjectMapper mapper = createMapper();
         JsonNode root = mapper.readTree(json);
         assertEquals(0, root.size(), "Objects without friendly names should not be serialized");
+    }
+
+    @Test
+    public void testContextKeyDeserialization() throws Exception {
+        // Test that components with @TikaComponent(contextKey=...) are stored
+        // in ParseContext with the contextKey, not the component class.
+        // SkipEmbeddedDocumentSelector has contextKey=DocumentSelector.class
+        String json = """
+                {
+                  "skip-embedded-document-selector": {}
+                }
+                """;
+
+        ObjectMapper mapper = createMapper();
+        ParseContext deserialized = mapper.readValue(json, ParseContext.class);
+
+        // Should be accessible via DocumentSelector.class (the contextKey)
+        DocumentSelector selector = deserialized.get(DocumentSelector.class);
+        assertNotNull(selector, "DocumentSelector should be found via contextKey");
+        assertTrue(selector instanceof SkipEmbeddedDocumentSelector,
+                "Should be SkipEmbeddedDocumentSelector instance");
+
+        // The selector should skip all embedded documents (return false)
+        assertFalse(selector.select(new org.apache.tika.metadata.Metadata()),
+                "SkipEmbeddedDocumentSelector should return false for all documents");
     }
 }

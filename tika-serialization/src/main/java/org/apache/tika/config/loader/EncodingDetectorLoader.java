@@ -29,7 +29,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.JsonConfig;
 import org.apache.tika.detect.CompositeEncodingDetector;
 import org.apache.tika.detect.DefaultEncodingDetector;
 import org.apache.tika.detect.EncodingDetector;
@@ -72,7 +71,6 @@ public class EncodingDetectorLoader {
         // Load configured encoding detectors
         if (config.hasComponentSection("encoding-detectors")) {
             List<EncodingDetector> detectorList = new ArrayList<>();
-            ComponentRegistry registry = new ComponentRegistry("encoding-detectors", classLoader);
             List<Map.Entry<String, JsonNode>> detectors = config.getArrayComponents("encoding-detectors");
 
             // Check if "default-encoding-detector" is in the list and extract exclusions
@@ -82,41 +80,7 @@ public class EncodingDetectorLoader {
             for (Map.Entry<String, JsonNode> entry : detectors) {
                 if ("default-encoding-detector".equals(entry.getKey())) {
                     hasDefaultEncodingDetector = true;
-
-                    // Parse exclusions from default-encoding-detector config
-                    JsonNode configNode = entry.getValue();
-                    if (configNode != null && configNode.has("_exclude")) {
-                        JsonNode excludeNode = configNode.get("_exclude");
-                        if (excludeNode.isArray()) {
-                            for (JsonNode excludeName : excludeNode) {
-                                if (excludeName.isTextual()) {
-                                    String detectorName = excludeName.asText();
-                                    try {
-                                        Class<?> detectorClass;
-                                        // Try as component name first
-                                        try {
-                                            detectorClass = registry.getComponentClass(detectorName);
-                                        } catch (TikaConfigException e) {
-                                            // If not found as component name, try as FQCN
-                                            try {
-                                                detectorClass = Class.forName(detectorName, false, classLoader);
-                                            } catch (ClassNotFoundException ex) {
-                                                LOG.warn("Unknown encoding detector in default-encoding-detector exclude list: {}", detectorName);
-                                                continue;
-                                            }
-                                        }
-                                        @SuppressWarnings("unchecked")
-                                        Class<? extends EncodingDetector> detectorTyped =
-                                                (Class<? extends EncodingDetector>) detectorClass;
-                                        excludedDetectorClasses.add(detectorTyped);
-                                        LOG.debug("Excluding encoding detector from SPI: {}", detectorName);
-                                    } catch (Exception e) {
-                                        LOG.warn("Failed to exclude encoding detector '{}': {}", detectorName, e.getMessage());
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    excludedDetectorClasses.addAll(parseExclusions(entry.getValue()));
                     break;
                 }
             }
@@ -133,8 +97,8 @@ public class EncodingDetectorLoader {
                     continue;
                 }
 
-                JsonNode configNode = entry.getValue();
-                EncodingDetector detector = loadConfiguredEncodingDetector(name, configNode, registry);
+                // Use Jackson with mixins to deserialize
+                EncodingDetector detector = deserializeEncodingDetector(name, entry.getValue());
                 detectorList.add(detector);
                 @SuppressWarnings("unchecked")
                 Class<? extends EncodingDetector> detectorClass =
@@ -146,8 +110,6 @@ public class EncodingDetectorLoader {
             configuredDetectorClasses.addAll(excludedDetectorClasses);
 
             // Add SPI-discovered detectors only if "default-encoding-detector" is in config
-            // If "default-encoding-detector" is present, use SPI fallback for unlisted detectors
-            // If "default-encoding-detector" is NOT present, only load explicitly configured detectors
             if (hasDefaultEncodingDetector) {
                 DefaultEncodingDetector defaultDetector = createDefaultEncodingDetector(configuredDetectorClasses);
                 LOG.debug("Loading SPI encoding detectors because 'default-encoding-detector' is in config");
@@ -166,45 +128,51 @@ public class EncodingDetectorLoader {
         }
     }
 
-    private EncodingDetector loadConfiguredEncodingDetector(String name, JsonNode configNode,
-                                                             ComponentRegistry registry)
+    /**
+     * Deserializes an encoding detector, trying JsonConfig constructor first, then Jackson bean deserialization.
+     */
+    private EncodingDetector deserializeEncodingDetector(String name, JsonNode configNode)
             throws TikaConfigException {
-        try {
-            // Get encoding detector class - try component name first, then FQCN fallback
-            Class<?> detectorClass;
-            try {
-                detectorClass = registry.getComponentClass(name);
-            } catch (TikaConfigException e) {
-                // If not found as component name, try as fully qualified class name
-                try {
-                    detectorClass = Class.forName(name, false, classLoader);
-                    LOG.debug("Loaded encoding detector by FQCN: {}", name);
-                } catch (ClassNotFoundException ex) {
-                    throw new TikaConfigException("Unknown encoding detector: '" + name +
-                            "'. Not found as component name or FQCN.", e);
-                }
-            }
-
-            // Extract framework config
-            FrameworkConfig frameworkConfig = FrameworkConfig.extract(configNode, objectMapper);
-
-            // Instantiate encoding detector
-            EncodingDetector detector = instantiateEncodingDetector(detectorClass,
-                    frameworkConfig.getComponentConfigJson());
-
-            return detector;
-
-        } catch (TikaConfigException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new TikaConfigException("Failed to load encoding detector '" + name + "'", e);
-        }
+        return ComponentInstantiator.instantiate(name, configNode, objectMapper, classLoader);
     }
 
-    private EncodingDetector instantiateEncodingDetector(Class<?> detectorClass, JsonConfig jsonConfig)
-            throws TikaConfigException {
-        return ComponentInstantiator.instantiate(detectorClass, jsonConfig, classLoader,
-                "EncodingDetector", objectMapper);
+    /**
+     * Parses exclusion list from default-encoding-detector config.
+     */
+    @SuppressWarnings("unchecked")
+    private Set<Class<? extends EncodingDetector>> parseExclusions(JsonNode configNode) {
+        Set<Class<? extends EncodingDetector>> excluded = new HashSet<>();
+        if (configNode == null || !configNode.has("_exclude")) {
+            return excluded;
+        }
+
+        JsonNode excludeNode = configNode.get("_exclude");
+        if (!excludeNode.isArray()) {
+            return excluded;
+        }
+
+        for (JsonNode excludeName : excludeNode) {
+            if (!excludeName.isTextual()) {
+                continue;
+            }
+            String detectorName = excludeName.asText();
+            try {
+                Class<?> detectorClass = resolveClass(detectorName);
+                excluded.add((Class<? extends EncodingDetector>) detectorClass);
+                LOG.debug("Excluding encoding detector from SPI: {}", detectorName);
+            } catch (Exception e) {
+                LOG.warn("Unknown encoding detector in exclude list: {}", detectorName);
+            }
+        }
+        return excluded;
+    }
+
+    /**
+     * Resolves a name to a class, trying friendly name lookup first then FQCN.
+     */
+    private Class<?> resolveClass(String name) throws ClassNotFoundException {
+        return org.apache.tika.serialization.ComponentNameResolver
+                .resolveClass(name, classLoader);
     }
 
     /**

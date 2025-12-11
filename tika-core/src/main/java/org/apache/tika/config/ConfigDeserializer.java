@@ -22,6 +22,10 @@ import java.lang.reflect.Method;
  * Utility for deserializing JSON configuration without compile-time dependency on Jackson.
  * <p>
  * This class uses reflection to call Jackson's ObjectMapper when available on the classpath.
+ * If tika-serialization is available, it uses the configured ObjectMapper from
+ * {@code TikaObjectMapperFactory} to ensure consistent behavior with ParseContext
+ * serialization. Otherwise, it falls back to a plain ObjectMapper.
+ * <p>
  * If Jackson is not available and JSON deserialization is attempted, it throws a clear error message.
  * <p>
  * Usage pattern in parsers, detectors, and other Tika components:
@@ -62,12 +66,19 @@ public class ConfigDeserializer {
         Method method = null;
         try {
             clazz = Class.forName("com.fasterxml.jackson.databind.ObjectMapper");
-            // Use a plain ObjectMapper for simple config deserialization.
-            // The polymorphic mapper from tika-serialization is meant for ParseContext
-            // serialization with actual polymorphic types, not for simple config classes.
-            //TODO -- we need to revisit this. We should be using the same object mapper for
-            //config files and for runtime configs
-            instance = clazz.getDeclaredConstructor().newInstance();
+
+            // Try to use TikaObjectMapperFactory from tika-serialization if available.
+            // This ensures we use the same configured ObjectMapper as ParseContext serialization.
+            try {
+                Class<?> factoryClass = Class.forName(
+                        "org.apache.tika.config.loader.TikaObjectMapperFactory");
+                Method getMapperMethod = factoryClass.getMethod("getMapper");
+                instance = getMapperMethod.invoke(null);
+            } catch (Exception e) {
+                // tika-serialization not on classpath, fall back to plain ObjectMapper
+                instance = clazz.getDeclaredConstructor().newInstance();
+            }
+
             method = clazz.getMethod("readValue", String.class, Class.class);
         } catch (Exception e) {
             // Jackson not on classpath - will fail at runtime if JSON deserialization is attempted

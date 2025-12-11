@@ -30,7 +30,7 @@ import org.pf4j.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.loader.PolymorphicObjectMapperFactory;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.plugins.ExtensionConfig;
@@ -177,7 +177,7 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
 
     private static String toJsonString(final JsonNode node) throws TikaConfigException {
         try {
-            return PolymorphicObjectMapperFactory.getMapper().writeValueAsString(node);
+            return TikaObjectMapperFactory.getMapper().writeValueAsString(node);
         } catch (JsonProcessingException e) {
             throw new TikaConfigException("Failed to serialize config to JSON string", e);
         }

@@ -44,10 +44,13 @@ public class FrameworkConfig {
 
     private final ParserDecoration decoration;
     private final JsonConfig componentConfigJson;
+    private final JsonNode componentConfigNode;
 
-    private FrameworkConfig(ParserDecoration decoration, JsonConfig componentConfigJson) {
+    private FrameworkConfig(ParserDecoration decoration, JsonConfig componentConfigJson,
+                            JsonNode componentConfigNode) {
         this.decoration = decoration;
         this.componentConfigJson = componentConfigJson;
+        this.componentConfigNode = componentConfigNode;
     }
 
     /**
@@ -63,7 +66,7 @@ public class FrameworkConfig {
         if (configNode == null || !configNode.isObject()) {
             String jsonString = objectMapper.writeValueAsString(configNode);
             JsonConfig jsonConfig = () -> jsonString;
-            return new FrameworkConfig(null, jsonConfig);
+            return new FrameworkConfig(null, jsonConfig, configNode);
         }
 
         ObjectNode objNode = (ObjectNode) configNode.deepCopy();
@@ -81,7 +84,7 @@ public class FrameworkConfig {
         String jsonString = objectMapper.writeValueAsString(objNode);
         JsonConfig componentConfigJson = () -> jsonString;
 
-        return new FrameworkConfig(decoration, componentConfigJson);
+        return new FrameworkConfig(decoration, componentConfigJson, objNode);
     }
 
     private static List<String> parseStringList(JsonNode node) {
@@ -109,6 +112,10 @@ public class FrameworkConfig {
 
     public JsonConfig getComponentConfigJson() {
         return componentConfigJson;
+    }
+
+    public JsonNode getComponentConfigNode() {
+        return componentConfigNode;
     }
 
     /**

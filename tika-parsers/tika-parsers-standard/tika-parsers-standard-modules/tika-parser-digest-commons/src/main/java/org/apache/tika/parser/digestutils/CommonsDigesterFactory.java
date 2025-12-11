@@ -17,12 +17,14 @@
 package org.apache.tika.parser.digestutils;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.parser.DigestingParser;
 
 /**
  * Simple factory for {@link CommonsDigester} with
  * default markLimit = 1000000 and md5 digester.
  */
+@TikaComponent
 public class CommonsDigesterFactory implements DigestingParser.DigesterFactory {
 
     private int markLimit = 1000000;

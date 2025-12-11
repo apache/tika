@@ -125,12 +125,14 @@ public class ConfigLoader {
     /**
      * Loads a configuration object from the specified JSON key.
      * <p>
-     * Supports three formats for interfaces:
+     * Supports two formats:
      * <ul>
-     *   <li>String value: treated as class name or component name to look up</li>
-     *   <li>Object with "@class": explicit type specification</li>
-     *   <li>Object without "@class": attempts direct deserialization (works for concrete classes)</li>
+     *   <li>String value: treated as fully qualified class name to instantiate</li>
+     *   <li>Object: deserialized directly into the target class</li>
      * </ul>
+     * <p>
+     * For tier-1 polymorphic types (Parser, Detector, MetadataFilter), use the wrapper
+     * object format with friendly names: {@code {"pdf-parser": {...}}}
      *
      * @param key The JSON key to load from
      * @param clazz The class to deserialize into (can be interface, abstract, or concrete)
@@ -148,14 +150,14 @@ public class ConfigLoader {
         }
 
         try {
-            // Strategy 1: String value - treat as class name
+            // Strategy 1: String value - treat as class name (for interfaces)
             if (node.isTextual()) {
                 return loadFromClassName(node.asText(), clazz);
             }
 
-            // Strategy 2: Let Jackson handle everything else
-            // Jackson's activateDefaultTyping will automatically handle @class fields
-            // for interfaces/abstract classes via the PolymorphicObjectMapperFactory configuration
+            // Strategy 2: Direct deserialization
+            // For tier-1 types (Parser, Detector, MetadataFilter), mixins handle polymorphism
+            // For concrete classes, Jackson deserializes directly
             return objectMapper.treeToValue(node, clazz);
         } catch (JsonProcessingException e) {
             throw new TikaConfigException(

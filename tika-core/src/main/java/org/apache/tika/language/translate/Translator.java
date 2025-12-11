@@ -18,6 +18,7 @@ package org.apache.tika.language.translate;
 
 import java.io.IOException;
 
+import org.apache.tika.config.SelfConfiguring;
 import org.apache.tika.exception.TikaException;
 
 /**
@@ -25,7 +26,7 @@ import org.apache.tika.exception.TikaException;
  *
  * @since Tika 1.6
  */
-public interface Translator {
+public interface Translator extends SelfConfiguring {
     /**
      * Translate text between given languages.
      *

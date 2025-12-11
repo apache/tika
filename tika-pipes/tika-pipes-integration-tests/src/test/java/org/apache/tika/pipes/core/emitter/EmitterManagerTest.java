@@ -279,7 +279,7 @@ public class EmitterManagerTest {
         Path configPath = tmpDir.resolve("config.json");
         Files.writeString(configPath, configJson, StandardCharsets.UTF_8);
 
-        // PolymorphicObjectMapperFactory has FAIL_ON_READING_DUP_TREE_KEY enabled
+        // TikaObjectMapperFactory has FAIL_ON_READING_DUP_TREE_KEY enabled
         // so duplicate keys are caught during JSON parsing
         TikaConfigException exception = assertThrows(TikaConfigException.class, () -> {
             TikaJsonConfig.load(configPath);

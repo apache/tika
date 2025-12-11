@@ -31,7 +31,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ConfigContainer;
-import org.apache.tika.config.loader.PolymorphicObjectMapperFactory;
+import org.apache.tika.config.SelfConfiguring;
+import org.apache.tika.config.loader.ComponentInfo;
+import org.apache.tika.config.loader.ComponentRegistry;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.ParseContext;
 
 /**
@@ -44,15 +48,33 @@ import org.apache.tika.parser.ParseContext;
  * <pre>
  * {
  *   "pdf-parser": {"extractActions": true},
- *   "tika-task-timeout": {"timeoutMillis": 5000},
- *   "org.apache.tika.metadata.filter.MetadataFilter": {"@class": "...", ...}
+ *   "tika-task-timeout": {"timeoutMillis": 5000}
  * }
  * </pre>
  */
 public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
 
     private static final Logger LOG = LoggerFactory.getLogger(ParseContextDeserializer.class);
-    private static final ObjectMapper MAPPER = PolymorphicObjectMapperFactory.getMapper();
+    private static final ObjectMapper MAPPER = TikaObjectMapperFactory.getMapper();
+
+    // Lazily loaded registry for looking up friendly names
+    private static volatile ComponentRegistry registry;
+
+    private static ComponentRegistry getRegistry() {
+        if (registry == null) {
+            synchronized (ParseContextDeserializer.class) {
+                if (registry == null) {
+                    try {
+                        registry = new ComponentRegistry("other-configs",
+                                ParseContextDeserializer.class.getClassLoader());
+                    } catch (TikaConfigException e) {
+                        LOG.warn("Failed to load component registry for deserialization", e);
+                    }
+                }
+            }
+        }
+        return registry;
+    }
 
     @Override
     public ParseContext deserialize(JsonParser jsonParser,
@@ -93,18 +115,77 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
             String fieldName = it.next();
             JsonNode fieldValue = contextNode.get(fieldName);
 
+            // Try to resolve fieldName - either as FQCN or friendly name from registry
+            Class<?> keyClass = null;
+
             // Check if fieldName is a full class name (for directly serialized Tika types)
             if (fieldName.startsWith("org.apache.tika.")) {
                 try {
-                    Class<?> keyClass = Class.forName(fieldName);
-                    // Deserialize using the key class as the target type
-                    Object value = MAPPER.treeToValue(fieldValue, keyClass);
-                    parseContext.set((Class) keyClass, value);
-                    continue;
+                    keyClass = Class.forName(fieldName);
                 } catch (ClassNotFoundException e) {
-                    LOG.debug("Class not found for key '{}', storing in ConfigContainer", fieldName);
-                } catch (Exception e) {
-                    throw new IOException("Failed to deserialize '" + fieldName + "': " + e.getMessage(), e);
+                    LOG.debug("Class not found for key '{}', will check registry", fieldName);
+                }
+            }
+
+            // If not found as FQCN, check registry for friendly name
+            boolean isSelfConfiguring = false;
+            Class<?> contextKey = null;  // The key to use when adding to ParseContext
+            if (keyClass == null) {
+                ComponentRegistry reg = getRegistry();
+                if (reg != null && reg.hasComponent(fieldName)) {
+                    try {
+                        ComponentInfo info = reg.getComponentInfo(fieldName);
+                        keyClass = info.componentClass();
+                        isSelfConfiguring = info.selfConfiguring();
+                        contextKey = info.contextKey();
+                        LOG.debug("Resolved friendly name '{}' to class {} (selfConfiguring={}, contextKey={})",
+                                fieldName, keyClass.getName(), isSelfConfiguring,
+                                contextKey != null ? contextKey.getName() : "null");
+                    } catch (TikaConfigException e) {
+                        LOG.debug("Failed to get component info for '{}': {}", fieldName, e.getMessage());
+                    }
+                }
+            } else {
+                // For FQCN resolution, check SelfConfiguring directly
+                isSelfConfiguring = SelfConfiguring.class.isAssignableFrom(keyClass);
+            }
+
+            // If we found a class, check if it's SelfConfiguring
+            if (keyClass != null) {
+                // SelfConfiguring components (Parsers, Detectors, etc.) handle their own config
+                // at runtime - keep their config in ConfigContainer for later access
+                if (isSelfConfiguring) {
+                    LOG.debug("'{}' maps to SelfConfiguring class {}, keeping in ConfigContainer",
+                            fieldName, keyClass.getName());
+                    // Fall through to ConfigContainer storage below
+                } else {
+                    // Non-SelfConfiguring - deserialize directly into ParseContext
+                    try {
+                        // Check if fieldValue is a wrapper object format: {"concrete-class": {props}}
+                        Object value;
+                        if (fieldValue.isObject() && fieldValue.size() == 1) {
+                            String typeName = fieldValue.fieldNames().next();
+                            JsonNode configNode = fieldValue.get(typeName);
+                            // Try to resolve the concrete class
+                            try {
+                                Class<?> concreteClass = ComponentNameResolver.resolveClass(typeName,
+                                        ParseContextDeserializer.class.getClassLoader());
+                                value = MAPPER.treeToValue(configNode, concreteClass);
+                            } catch (ClassNotFoundException ex) {
+                                // Fall back to key class
+                                value = MAPPER.treeToValue(configNode, keyClass);
+                            }
+                        } else {
+                            // Not wrapper format, deserialize directly
+                            value = MAPPER.treeToValue(fieldValue, keyClass);
+                        }
+                        // Use contextKey if specified, otherwise use the component class
+                        Class<?> parseContextKey = (contextKey != null) ? contextKey : keyClass;
+                        parseContext.set((Class) parseContextKey, value);
+                        continue;
+                    } catch (Exception e) {
+                        throw new IOException("Failed to deserialize '" + fieldName + "': " + e.getMessage(), e);
+                    }
                 }
             }
 

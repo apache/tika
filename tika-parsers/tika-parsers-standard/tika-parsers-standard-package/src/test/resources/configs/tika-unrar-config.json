@@ -2,7 +2,7 @@
   "parsers": [
     {
       "default-parser": {
-        "exclude": ["rar-parser"]
+        "_exclude": ["rar-parser"]
       }
     },
     {
