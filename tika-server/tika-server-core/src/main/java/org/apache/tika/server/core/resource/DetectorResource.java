@@ -57,7 +57,6 @@ public class DetectorResource {
         LOG.info("Detecting media type for Filename: {}", filename);
         met.add(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
         ParseContext parseContext = new ParseContext();
-        TikaResource.fillParseContext(httpHeaders.getRequestHeaders(), met, parseContext);
         long timeoutMillis = TikaResource.getTaskTimeout(parseContext);
         long taskId = serverStatus.start(ServerStatus.TASK.DETECT, filename, timeoutMillis);
 

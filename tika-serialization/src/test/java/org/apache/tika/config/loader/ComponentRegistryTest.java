@@ -66,7 +66,7 @@ public class ComponentRegistryTest {
         ComponentRegistry registry = new ComponentRegistry("parsers",
                 getClass().getClassLoader());
 
-        Map<String, Class<?>> all = registry.getAllComponents();
+        Map<String, ComponentInfo> all = registry.getAllComponents();
         assertNotNull(all, "All components map should not be null");
         assertTrue(all.size() >= 4, "Should have at least 4 test parsers");
     }

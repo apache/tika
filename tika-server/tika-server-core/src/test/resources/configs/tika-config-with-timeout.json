@@ -1,0 +1,14 @@
+{
+  "parsers": [
+    {
+      "pdf-parser": {
+        "extractInlineImages": true
+      }
+    }
+  ],
+  "parse-context": {
+    "tika-task-timeout": {
+      "timeoutMillis": 30000
+    }
+  }
+}

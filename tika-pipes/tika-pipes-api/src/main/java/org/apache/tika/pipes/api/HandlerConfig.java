@@ -22,7 +22,9 @@ import java.util.Objects;
 
 import org.apache.tika.sax.BasicContentHandlerFactory;
 
-//TODO -- convert this back to a record
+/**
+ * Configuration for content handler behavior during parsing.
+ */
 public class HandlerConfig implements Serializable {
 
     /**

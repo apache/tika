@@ -1,0 +1,12 @@
+{
+  "parsers": [
+    {
+      "default-parser": {}
+    }
+  ],
+  "fetchers": {
+    "url": {
+      "url-fetcher": {}
+    }
+  }
+}

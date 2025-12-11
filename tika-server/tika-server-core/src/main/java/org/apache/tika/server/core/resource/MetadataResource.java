@@ -17,10 +17,11 @@
 package org.apache.tika.server.core.resource;
 
 import static org.apache.tika.server.core.resource.TikaResource.fillMetadata;
-import static org.apache.tika.server.core.resource.TikaResource.fillParseContext;
+import static org.apache.tika.server.core.resource.TikaResource.setupMultipartConfig;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
@@ -57,6 +58,37 @@ public class MetadataResource {
         return Response
                 .ok(parseMetadata(att.getObject(InputStream.class), new Metadata(), att.getHeaders(), info))
                 .build();
+    }
+
+    /**
+     * Multipart endpoint with per-request ParseContext configuration.
+     * Accepts two parts: "file" (the document) and "config" (JSON configuration with parseContext).
+     */
+    @POST
+    @Consumes("multipart/form-data")
+    @Produces({"text/csv", "application/json"})
+    @Path("config")
+    public Response getMetadataWithConfig(
+            List<Attachment> attachments,
+            @Context HttpHeaders httpHeaders,
+            @Context UriInfo info) throws Exception {
+
+        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+        try (InputStream tis = setupMultipartConfig(attachments, metadata, context)) {
+            // No need to parse embedded docs for metadata-only extraction
+            context.set(DocumentSelector.class, metadata1 -> false);
+
+            Parser parser = TikaResource.createParser();
+            TikaResource.logRequest(LOG, "/meta/config", metadata);
+            TikaResource.parse(parser, LOG, info.getPath(), tis, new LanguageHandler() {
+                public void endDocument() {
+                    metadata.set("language", getLanguage().getLanguage());
+                }
+            }, metadata, context);
+
+            return Response.ok(metadata).build();
+        }
     }
 
     @PUT
@@ -134,7 +166,6 @@ public class MetadataResource {
         final ParseContext context = new ParseContext();
         Parser parser = TikaResource.createParser();
         fillMetadata(parser, metadata, httpHeaders);
-        fillParseContext(httpHeaders, metadata, context);
         //no need to parse embedded docs
         context.set(DocumentSelector.class, metadata1 -> false);
 

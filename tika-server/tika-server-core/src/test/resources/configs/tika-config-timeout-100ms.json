@@ -1,0 +1,11 @@
+{
+  "server": {
+    "enableUnsecureFeatures": true,
+    "enableLogFile": true
+  },
+  "parse-context": {
+    "tika-task-timeout": {
+      "timeoutMillis": 100
+    }
+  }
+}

@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
@@ -35,6 +36,7 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
+import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
 
@@ -45,7 +47,6 @@ import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.server.core.CXFTestBase;
-import org.apache.tika.server.core.config.DocumentSelectorConfig;
 import org.apache.tika.server.core.resource.RecursiveMetadataResource;
 import org.apache.tika.server.core.writer.MetadataListMessageBodyWriter;
 
@@ -179,15 +180,14 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
 
     @Test
     public void testPasswordProtected() throws Exception {
+        // Test that encrypted document without password shows error
         Response response = WebClient
                 .create(endPoint + META_PATH)
                 .type("application/vnd.ms-excel")
                 .accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
 
-        // Won't work, no password given
         assertEquals(200, response.getStatus());
-        // Check results
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
 
@@ -197,18 +197,29 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         assertContains("org.apache.tika.exception.EncryptedDocumentException", metadataList
                 .get(0)
                 .get(TikaCoreProperties.CONTAINER_EXCEPTION));
-        // Try again, this time with the password
-        response = WebClient
-                .create(endPoint + META_PATH)
-                .type("application/vnd.ms-excel")
-                .accept("application/json")
-                .header("Password", "password")
-                .put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
 
-        // Will work
+        // Test with password via JSON config
+        String configJson = """
+                {
+                  "simple-password-provider": {
+                    "password": "password"
+                  }
+                }
+                """;
+        Attachment fileAtt = new Attachment("file", "application/vnd.ms-excel",
+                ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
+
+        Attachment configAtt = new Attachment("config", "application/json",
+                new java.io.ByteArrayInputStream(configJson.getBytes(UTF_8)));
+
+        response = WebClient
+                .create(endPoint + META_PATH + "/config")
+                .type("multipart/form-data")
+                .accept("application/json")
+                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
+
         assertEquals(200, response.getStatus());
 
-        // Check results
         reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         metadataList = JsonMetadataList.fromJson(reader);
         assertNotNull(metadataList
@@ -415,27 +426,8 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         }
     }
 
-    // TIKA-3227
-    @Test
-    public void testSkipEmbedded() throws Exception {
-        Response response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .header(DocumentSelectorConfig.X_TIKA_SKIP_EMBEDDED_HEADER, "false")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(12, metadataList.size());
-
-        response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .header(DocumentSelectorConfig.X_TIKA_SKIP_EMBEDDED_HEADER, "true")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-        reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(1, metadataList.size());
-    }
+    // TIKA-3227 - TODO: re-enable once HandlerConfig is configurable via JSON
+    // Use maxEmbeddedResources=0 in handler-config to skip embedded documents
 
     @Test
     public void testWriteLimit() throws Exception {

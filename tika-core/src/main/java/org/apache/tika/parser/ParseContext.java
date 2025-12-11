@@ -21,6 +21,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.tika.config.ConfigContainer;
+
 /**
  * Parse context. Used to pass context information to Tika parsers.
  *
@@ -82,6 +84,32 @@ public class ParseContext implements Serializable {
         } else {
             return defaultValue;
         }
+    }
+
+    /**
+     * Adds a configuration by friendly name for serialization.
+     * <p>
+     * This is a convenience method for adding configs that will be serialized
+     * and resolved at runtime. The config is stored in a {@link ConfigContainer}
+     * and will be resolved to an actual object via the component registry.
+     * <p>
+     * Example:
+     * <pre>
+     * parseContext.addConfig("tika-task-timeout", "{\"timeoutMillis\": 5000}");
+     * parseContext.addConfig("handler-config", "{\"type\": \"XML\", \"parseMode\": \"RMETA\"}");
+     * </pre>
+     *
+     * @param key  the friendly name of the config (e.g., "tika-task-timeout", "handler-config")
+     * @param json the JSON configuration string
+     * @since Apache Tika 4.0
+     */
+    public void addConfig(String key, String json) {
+        ConfigContainer container = get(ConfigContainer.class);
+        if (container == null) {
+            container = new ConfigContainer();
+            set(ConfigContainer.class, container);
+        }
+        container.set(key, json);
     }
 
     public boolean isEmpty() {

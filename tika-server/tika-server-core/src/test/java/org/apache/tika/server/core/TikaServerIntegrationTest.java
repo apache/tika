@@ -47,17 +47,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.serialization.JsonMetadataList;
-import org.apache.tika.server.core.config.TimeoutConfig;
 import org.apache.tika.utils.ProcessUtils;
 
 public class TikaServerIntegrationTest extends IntegrationTestBase {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TikaServerIntegrationTest.class);
     private static Path TLS_KEYS;
 
     @TempDir
@@ -112,39 +108,6 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                     .create(endPoint + RMETA_PATH)
                     .accept("application/json")
                     .put(ClassLoader.getSystemResourceAsStream(TEST_OOM));
-        } catch (Exception e) {
-            //oom may or may not cause an exception depending
-            //on the timing
-        }
-        //give some time for the server to crash/terminate itself
-        testStopped(2000);
-    }
-
-    @Test
-    public void testMinimumTimeoutInHeader() throws Exception {
-        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.json")});
-        awaitServerStartup();
-
-        Response response = WebClient
-                .create(endPoint + RMETA_PATH)
-                .accept("application/json")
-                .header(TimeoutConfig.X_TIKA_TIMEOUT_MILLIS, 1)
-                .put(ClassLoader.getSystemResourceAsStream(TEST_HEAVY_HANG));
-        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-    }
-
-    @Test
-    public void testTaskTimeoutHeader() throws Exception {
-
-        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.json")});
-        awaitServerStartup();
-        Response response = null;
-        try {
-            response = WebClient
-                    .create(endPoint + RMETA_PATH)
-                    .accept("application/json")
-                    .header(TimeoutConfig.X_TIKA_TIMEOUT_MILLIS, 100)
-                    .put(ClassLoader.getSystemResourceAsStream(TEST_HEAVY_HANG));
         } catch (Exception e) {
             //oom may or may not cause an exception depending
             //on the timing

@@ -25,7 +25,6 @@ import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.text.PDFTextStripper;
 
 import org.apache.tika.parser.pdf.image.ImageGraphicsEngineFactory;
-import org.apache.tika.renderer.Renderer;
 
 /**
  * Config for PDFParser.
@@ -148,8 +147,6 @@ public class PDFParserConfig implements Serializable {
     private boolean setKCMS = false;
 
     private boolean detectAngles = false;
-
-    private Renderer renderer;
 
     private boolean extractIncrementalUpdateInfo = true;
 
@@ -590,21 +587,8 @@ public class PDFParserConfig implements Serializable {
         }
     }
 
-    /**
-     * Which strategy to use for OCR
-     *
-     * @param ocrStrategyString
-     */
-    public void setOcrStrategy(String ocrStrategyString) {
-        setOcrStrategy(OCR_STRATEGY.parse(ocrStrategyString));
-    }
-
     public OCR_RENDERING_STRATEGY getOcrRenderingStrategy() {
         return ocrRenderingStrategy;
-    }
-
-    public void setOcrRenderingStrategy(String ocrRenderingStrategyString) {
-        setOcrRenderingStrategy(OCR_RENDERING_STRATEGY.parse(ocrRenderingStrategyString));
     }
 
     /**
@@ -659,15 +643,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setOcrImageType(TikaImageType ocrImageType) {
         this.ocrImageType = ocrImageType;
-    }
-
-    /**
-     * Image type used to render the page image for OCR.
-     *
-     * @see #setOcrImageType(TikaImageType)
-     */
-    public void setOcrImageType(String ocrImageTypeString) {
-        setOcrImageType(parseImageType(ocrImageTypeString));
     }
 
     /**
@@ -766,44 +741,12 @@ public class PDFParserConfig implements Serializable {
         this.setKCMS = setKCMS;
     }
 
-    private TikaImageType parseImageType(String ocrImageType) {
-        for (TikaImageType t : TikaImageType.values()) {
-            if (ocrImageType.equalsIgnoreCase(t.toString())) {
-                return t;
-            }
-        }
-        StringBuilder sb = new StringBuilder();
-        sb.append("I regret that I could not parse '");
-        sb.append(ocrImageType);
-        sb.append("'. I'm only familiar with: ");
-        int i = 0;
-        for (ImageType t : ImageType.values()) {
-            if (i++ == 0) {
-                sb.append(", ");
-            }
-            sb.append(t.toString());
-        }
-        throw new IllegalArgumentException(sb.toString());
-    }
-
     public boolean isDetectAngles() {
         return detectAngles;
     }
 
     public void setDetectAngles(boolean detectAngles) {
         this.detectAngles = detectAngles;
-    }
-
-    public void setRenderer(Renderer renderer) {
-        this.renderer = renderer;
-    }
-
-    public Renderer getRenderer() {
-        return renderer;
-    }
-
-    public void setImageStrategy(String imageStrategy) {
-        setImageStrategy(PDFParserConfig.IMAGE_STRATEGY.parse(imageStrategy));
     }
 
     public void setImageStrategy(IMAGE_STRATEGY imageStrategy) {
@@ -866,33 +809,7 @@ public class PDFParserConfig implements Serializable {
     }
 
     public enum OCR_STRATEGY {
-        AUTO, NO_OCR, OCR_ONLY, OCR_AND_TEXT_EXTRACTION;
-
-        private static OCR_STRATEGY parse(String s) {
-            if (s == null) {
-                return NO_OCR;
-            } else if ("no_ocr".equals(s.toLowerCase(Locale.ROOT))) {
-                return NO_OCR;
-            } else if ("ocr_only".equals(s.toLowerCase(Locale.ROOT))) {
-                return OCR_ONLY;
-            } else if (s.toLowerCase(Locale.ROOT).contains("ocr_and_text")) {
-                return OCR_AND_TEXT_EXTRACTION;
-            } else if ("auto".equals(s.toLowerCase(Locale.ROOT))) {
-                return AUTO;
-            }
-            StringBuilder sb = new StringBuilder();
-            sb.append("I regret that I don't recognize '").append(s);
-            sb.append("' as an OCR_STRATEGY. I only recognize:");
-            int i = 0;
-            for (OCR_STRATEGY strategy : OCR_STRATEGY.values()) {
-                if (i++ > 0) {
-                    sb.append(", ");
-                }
-                sb.append(strategy.toString());
-
-            }
-            throw new IllegalArgumentException(sb.toString());
-        }
+        AUTO, NO_OCR, OCR_ONLY, OCR_AND_TEXT_EXTRACTION
     }
 
     /**
@@ -956,42 +873,11 @@ public class PDFParserConfig implements Serializable {
     }
 
     public enum OCR_RENDERING_STRATEGY {
-
         NO_TEXT, //includes vector graphics and image
         TEXT_ONLY, //renders only glyphs
         VECTOR_GRAPHICS_ONLY, //renders only vector graphics
-        ALL;
+        ALL
         //TODO: add AUTO?
-
-        private static OCR_RENDERING_STRATEGY parse(String s) {
-            if (s == null) {
-                return ALL;
-            }
-            String lc = s.toLowerCase(Locale.US);
-            switch (lc) {
-                case "vector_graphics_only":
-                    return VECTOR_GRAPHICS_ONLY;
-                case "text_only":
-                    return TEXT_ONLY;
-                case "no_text":
-                    return NO_TEXT;
-                case "all":
-                    return ALL;
-            }
-
-            StringBuilder sb = new StringBuilder();
-            sb.append("I regret that I don't recognize '").append(s);
-            sb.append("' as an OCR_STRATEGY. I only recognize:");
-            int i = 0;
-            for (OCR_RENDERING_STRATEGY strategy : OCR_RENDERING_STRATEGY.values()) {
-                if (i++ > 0) {
-                    sb.append(", ");
-                }
-                sb.append(strategy.toString());
-
-            }
-            throw new IllegalArgumentException(sb.toString());
-        }
     }
 
     public enum IMAGE_STRATEGY {
@@ -1012,35 +898,7 @@ public class PDFParserConfig implements Serializable {
          * For some rendering engines, this may be slower, but it allows the writing
          * of image metadata into the xhtml in the proper location
          */
-        RENDER_PAGES_AT_PAGE_END;
+        RENDER_PAGES_AT_PAGE_END
         //TODO: add LOGICAL_IMAGES
-
-        private static IMAGE_STRATEGY parse(String s) {
-            String lc = s.toLowerCase(Locale.US);
-            switch (lc) {
-                case "rawimages" :
-                    return RAW_IMAGES;
-                case "renderpagesbeforeparse":
-                    return RENDER_PAGES_BEFORE_PARSE;
-                case "renderpagesatpageend":
-                    return RENDER_PAGES_AT_PAGE_END;
-                case "none":
-                    return NONE;
-                default:
-                    //fall through to exception
-                    break;
-            }
-            StringBuilder sb = new StringBuilder();
-            sb.append("I regret that I don't recognize '").append(s);
-            sb.append("' as an IMAGE_STRATEGY. I only recognize:");
-            int i = 0;
-            for (IMAGE_STRATEGY strategy : IMAGE_STRATEGY.values()) {
-                if (i++ > 0) {
-                    sb.append(", ");
-                }
-                sb.append(strategy.toString());
-            }
-            throw new IllegalArgumentException(sb.toString());
-        }
     }
 }

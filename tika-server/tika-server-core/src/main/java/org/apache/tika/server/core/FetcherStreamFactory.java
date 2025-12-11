@@ -35,7 +35,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.fetcher.RangeFetcher;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
-import org.apache.tika.server.core.resource.TikaResource;
 
 /**
  * This class looks for &quot;fetcherId&quot; in the http header.  If it is not null
@@ -88,7 +87,6 @@ public class FetcherStreamFactory implements InputStreamFactory {
             fetchKey = getParam("fetchKeyLiteral", httpHeaders, params);
         }
         ParseContext parseContext = new ParseContext();
-        TikaResource.fillParseContext(httpHeaders.getRequestHeaders(), metadata, parseContext);
         long fetchRangeStart = getLong(getParam("fetchRangeStart", httpHeaders, params));
         long fetchRangeEnd = getLong(getParam("fetchRangeEnd", httpHeaders, params));
         if (StringUtils.isBlank(fetcherId) != StringUtils.isBlank(fetchKey)) {
