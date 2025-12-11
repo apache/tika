@@ -1132,7 +1132,7 @@ public class PDFParserTest extends TikaTest {
             //behavior
             config = new PDFParserConfig();
             config.setOcrDPI(10000);
-            config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.NO_OCR);
+            config.setOcrStrategy(OcrConfig.Strategy.NO_OCR);
             pc.set(PDFParserConfig.class, config);
             text = getText("testPDFTwoTextBoxes.pdf", p, new Metadata(), pc);
             text = text.replaceAll("\\s+", " ");

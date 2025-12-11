@@ -232,7 +232,7 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
                 if (shouldHandleXFAOnly(hasXFA, localConfig)) {
                     handleXFAOnly(pdfDocument, handler, metadata, context);
                 } else if (localConfig.getOcrStrategy()
-                        .equals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY)) {
+                        .equals(OcrConfig.Strategy.OCR_ONLY)) {
                     OCR2XHTML.process(pdfDocument, handler, context, metadata,
                             localConfig, renderer);
                 } else if (hasMarkedContent && localConfig.isExtractMarkedContent()) {
@@ -434,7 +434,7 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
             return true;
         }
 
-        if (localConfig.getOcrStrategy() == PDFParserConfig.OCR_STRATEGY.NO_OCR) {
+        if (localConfig.getOcrStrategy() == OcrConfig.Strategy.NO_OCR) {
             return false;
         }
         //TODO: test that this is not AUTO with no OCR parser installed
@@ -842,38 +842,38 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
     }
 
     @Field
-    public void setOcrStrategy(PDFParserConfig.OCR_STRATEGY ocrStrategy) {
+    public void setOcrStrategy(OcrConfig.Strategy ocrStrategy) {
         defaultConfig.setOcrStrategy(ocrStrategy);
     }
 
-    public PDFParserConfig.OCR_STRATEGY getOcrStrategy() {
+    public OcrConfig.Strategy getOcrStrategy() {
         return defaultConfig.getOcrStrategy();
     }
 
     @Field
-    public void setOcrStrategyAuto(String ocrStrategyAuto) {
-        defaultConfig.setOcrStrategyAutoFromString(ocrStrategyAuto);
+    public void setOcrStrategyAuto(OcrConfig.StrategyAuto ocrStrategyAuto) {
+        defaultConfig.setOcrStrategyAuto(ocrStrategyAuto);
     }
 
-    public String getOcrStrategyAuto() {
-        return defaultConfig.getOcrStrategyAuto().toString();
+    public OcrConfig.StrategyAuto getOcrStrategyAuto() {
+        return defaultConfig.getOcrStrategyAuto();
     }
 
     @Field
-    public void setOcrRenderingStrategy(PDFParserConfig.OCR_RENDERING_STRATEGY ocrRenderingStrategy) {
+    public void setOcrRenderingStrategy(OcrConfig.RenderingStrategy ocrRenderingStrategy) {
         defaultConfig.setOcrRenderingStrategy(ocrRenderingStrategy);
     }
 
-    public PDFParserConfig.OCR_RENDERING_STRATEGY getOcrRenderingStrategy() {
+    public OcrConfig.RenderingStrategy getOcrRenderingStrategy() {
         return defaultConfig.getOcrRenderingStrategy();
     }
 
     @Field
-    public void setOcrImageType(PDFParserConfig.TikaImageType ocrImageType) {
+    public void setOcrImageType(OcrConfig.ImageType ocrImageType) {
         defaultConfig.setOcrImageType(ocrImageType);
     }
 
-    public PDFParserConfig.TikaImageType getOcrImageType() {
+    public OcrConfig.ImageType getOcrImageType() {
         return defaultConfig.getOcrImageType();
     }
 
@@ -895,8 +895,12 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
     }
 
     @Field
-    public void setOcrImageFormatName(String formatName) {
-        defaultConfig.setOcrImageFormatName(formatName);
+    public void setOcrImageFormat(OcrConfig.ImageFormat imageFormat) {
+        defaultConfig.setOcrImageFormat(imageFormat);
+    }
+
+    public OcrConfig.ImageFormat getOcrImageFormat() {
+        return defaultConfig.getOcrImageFormat();
     }
 
     public String getOcrImageFormatName() {
@@ -976,12 +980,12 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return defaultConfig.isIfXFAExtractOnlyXFA();
     }
     @Field
-    public void setAllowExtractionForAccessibility(boolean allowExtractionForAccessibility) {
-        defaultConfig.setAccessChecker(new AccessChecker(allowExtractionForAccessibility));
+    public void setAccessCheckMode(AccessChecker.AccessCheckMode mode) {
+        defaultConfig.getAccessChecker().setMode(mode);
     }
 
-    public boolean isAllowExtractionForAccessibility() {
-        return defaultConfig.getAccessChecker().isAllowExtractionForAccessibility();
+    public AccessChecker.AccessCheckMode getAccessCheckMode() {
+        return defaultConfig.getAccessChecker().getMode();
     }
 
     @Field
@@ -1146,7 +1150,7 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         //set a default renderer if nothing was defined
         PDFBoxRenderer pdfBoxRenderer = new PDFBoxRenderer();
         pdfBoxRenderer.setDPI(config.getOcrDPI());
-        pdfBoxRenderer.setImageType(config.getOcrImageType().getImageType());
+        pdfBoxRenderer.setImageType(config.getOcrImageType().getPdfBoxImageType());
         pdfBoxRenderer.setImageFormatName(config.getOcrImageFormatName());
         this.renderer = pdfBoxRenderer;
     }

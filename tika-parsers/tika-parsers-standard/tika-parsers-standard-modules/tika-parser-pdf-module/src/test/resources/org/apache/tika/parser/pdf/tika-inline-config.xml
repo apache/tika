@@ -21,13 +21,13 @@
         <parser class="org.apache.tika.parser.pdf.PDFParser">
             <params>
                 <param name="extractInlineImages" type="bool">true</param>
-                <param name="allowExtractionForAccessibility" type="bool">true</param>
+                <param name="accessCheckMode" type="string">ALLOW_EXTRACTION_FOR_ACCESSIBILITY</param>
                 <param name="catchIntermediateExceptions" type="bool">false</param>
                 <param name="extractUniqueInlineImagesOnly" type="bool">false</param>
                 <param name="catchIntermediateExceptions" type="bool">false</param>
                 <param name="ocrDPI" type="int">314</param>
                 <param name="ocrImageQuality" type="float">2.1</param>
-                <param name="ocrImageFormatName" type="string">jpeg</param>
+                <param name="ocrImageFormat" type="string">JPEG</param>
                 <param name="ocrImageScale" type="float">1.3</param>
                 <param name="maxMainMemoryBytes" type="long">524288000</param>
                 <!-- we really should throw an exception for this!! -->

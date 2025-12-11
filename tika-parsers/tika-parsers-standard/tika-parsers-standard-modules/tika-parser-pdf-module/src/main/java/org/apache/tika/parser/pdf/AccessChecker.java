@@ -28,64 +28,77 @@ import org.apache.tika.metadata.Metadata;
  */
 public class AccessChecker implements Serializable {
 
-    private static final long serialVersionUID = 6492570218190936986L;
-
-    private boolean needToCheck;
-    private boolean allowExtractionForAccessibility;
+    private static final long serialVersionUID = 6492570218190936987L;
 
     /**
-     * This constructs an {@link AccessChecker} that
-     * will not perform any checking and will always return without
+     * Mode for checking document access permissions.
+     */
+    public enum AccessCheckMode {
+        /**
+         * Don't check extraction permissions. Content will always be extracted
+         * regardless of document permissions. This is the default for backwards
+         * compatibility with Tika's legacy behavior (&lt;= v1.7).
+         */
+        DONT_CHECK,
+
+        /**
+         * Check permissions, but allow extraction for accessibility purposes.
+         * If general extraction is blocked but accessibility extraction is allowed,
+         * content will be extracted.
+         */
+        ALLOW_EXTRACTION_FOR_ACCESSIBILITY,
+
+        /**
+         * Enforce document permissions strictly. If extraction is blocked,
+         * an {@link AccessPermissionException} will be thrown.
+         */
+        ENFORCE_PERMISSIONS
+    }
+
+    private AccessCheckMode mode;
+
+    /**
+     * Constructs an {@link AccessChecker} with {@link AccessCheckMode#DONT_CHECK}.
+     * This will not perform any checking and will always return without
      * throwing an exception.
      * <p/>
      * This constructor is available to allow for Tika's legacy (&lt;= v1.7) behavior.
      */
     public AccessChecker() {
-        needToCheck = false;
-        allowExtractionForAccessibility = true;
+        this.mode = AccessCheckMode.DONT_CHECK;
     }
 
     /**
-     * This constructs an {@link AccessChecker} that will check
-     * for whether or not content should be extracted from a document.
+     * Constructs an {@link AccessChecker} with the specified mode.
      *
-     * @param allowExtractionForAccessibility if general extraction is
-     *                                        not allowed, is extraction for accessibility allowed
+     * @param mode the access check mode
      */
-    public AccessChecker(boolean allowExtractionForAccessibility) {
-        needToCheck = true;
-        this.allowExtractionForAccessibility = allowExtractionForAccessibility;
+    public AccessChecker(AccessCheckMode mode) {
+        this.mode = mode;
     }
 
-    public boolean isNeedToCheck() {
-        return needToCheck;
+    public AccessCheckMode getMode() {
+        return mode;
     }
 
-    public void setNeedToCheck(boolean needToCheck) {
-        this.needToCheck = needToCheck;
-    }
-
-    public boolean isAllowExtractionForAccessibility() {
-        return allowExtractionForAccessibility;
-    }
-
-    public void setAllowExtractionForAccessibility(boolean allowExtractionForAccessibility) {
-        this.allowExtractionForAccessibility = allowExtractionForAccessibility;
+    public void setMode(AccessCheckMode mode) {
+        this.mode = mode;
     }
 
     /**
      * Checks to see if a document's content should be extracted based
-     * on metadata values and the value of {@link #allowExtractionForAccessibility} in the constructor.
+     * on metadata values and the configured {@link AccessCheckMode}.
      *
-     * @param metadata
+     * @param metadata the document metadata containing access permissions
      * @throws AccessPermissionException if access is not permitted
      */
     public void check(Metadata metadata) throws AccessPermissionException {
-        if (!needToCheck) {
+        if (mode == AccessCheckMode.DONT_CHECK) {
             return;
         }
+
         if ("false".equals(metadata.get(AccessPermissions.EXTRACT_CONTENT))) {
-            if (allowExtractionForAccessibility) {
+            if (mode == AccessCheckMode.ALLOW_EXTRACTION_FOR_ACCESSIBILITY) {
                 if ("true".equals(metadata.get(AccessPermissions.EXTRACT_FOR_ACCESSIBILITY))) {
                     return;
                 }
@@ -106,18 +119,11 @@ public class AccessChecker implements Serializable {
         }
 
         AccessChecker checker = (AccessChecker) o;
-
-        if (needToCheck != checker.needToCheck) {
-            return false;
-        }
-        return allowExtractionForAccessibility == checker.allowExtractionForAccessibility;
-
+        return mode == checker.mode;
     }
 
     @Override
     public int hashCode() {
-        int result = (needToCheck ? 1 : 0);
-        result = 31 * result + (allowExtractionForAccessibility ? 1 : 0);
-        return result;
+        return mode != null ? mode.hashCode() : 0;
     }
 }

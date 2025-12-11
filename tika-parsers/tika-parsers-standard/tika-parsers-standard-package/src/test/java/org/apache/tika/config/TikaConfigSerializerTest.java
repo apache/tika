@@ -49,8 +49,8 @@ public class TikaConfigSerializerTest {
         assertContains(detectorNeedle, xml);
 
         String parserNeedle = "<parser class=\"org.apache.tika.parser.pdf.PDFParser\">" +
-                " <params> <param name=\"allowExtractionForAccessibility\" " +
-                "type=\"bool\">true</param>";
+                " <params> <param name=\"accessCheckMode\" " +
+                "type=\"string\">DONT_CHECK</param>";
 
         assertContains(parserNeedle, xml);
         //TODO This is still to be implemented -- we do not want to show the default renderer here

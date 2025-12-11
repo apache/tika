@@ -28,8 +28,8 @@ import org.apache.tika.metadata.PropertyTypeException;
 public class AccessCheckerTest {
 
     @Test
-    public void testLegacy() throws AccessPermissionException {
-        //test that there are no thrown exceptions
+    public void testDontCheck() throws AccessPermissionException {
+        //test that there are no thrown exceptions with DONT_CHECK mode
         Metadata m = getMetadata(false, false);
         //legacy behavior; don't bother checking
         AccessChecker checker = new AccessChecker();
@@ -40,14 +40,18 @@ public class AccessCheckerTest {
 
         m = getMetadata(true, true);
         checker.check(m);
+
+        // Explicitly set DONT_CHECK mode
+        checker = new AccessChecker(AccessChecker.AccessCheckMode.DONT_CHECK);
+        m = getMetadata(false, false);
+        checker.check(m);
     }
 
     @Test
-    public void testNoExtraction() {
-
+    public void testEnforcePermissions() {
         Metadata m = null;
-        //allow nothing
-        AccessChecker checker = new AccessChecker(false);
+        // ENFORCE_PERMISSIONS - no extraction allowed if blocked
+        AccessChecker checker = new AccessChecker(AccessChecker.AccessCheckMode.ENFORCE_PERMISSIONS);
         boolean ex = false;
         try {
             m = getMetadata(false, false);
@@ -62,17 +66,17 @@ public class AccessCheckerTest {
             m = getMetadata(false, true);
             checker.check(m);
         } catch (AccessPermissionException e) {
-            //but application is not an accessibility application
+            //but ENFORCE_PERMISSIONS mode doesn't allow it
             ex = true;
         }
-        assertTrue(ex, "correct exception with no extraction, no extract for accessibility");
+        assertTrue(ex, "correct exception with no extraction, enforce permissions");
     }
 
     @Test
-    public void testExtractOnlyForAccessibility() throws AccessPermissionException {
+    public void testAllowExtractionForAccessibility() throws AccessPermissionException {
         Metadata m = getMetadata(false, true);
-        //allow accessibility
-        AccessChecker checker = new AccessChecker(true);
+        // ALLOW_EXTRACTION_FOR_ACCESSIBILITY mode
+        AccessChecker checker = new AccessChecker(AccessChecker.AccessCheckMode.ALLOW_EXTRACTION_FOR_ACCESSIBILITY);
         checker.check(m);
         assertTrue(true, "no exception");
         boolean ex = false;
@@ -88,18 +92,17 @@ public class AccessCheckerTest {
     @Test
     public void testIllogicalExtractNotForAccessibility() throws AccessPermissionException {
         Metadata m = getMetadata(true, false);
-        //allow accessibility
-        AccessChecker checker = new AccessChecker(true);
+        // ALLOW_EXTRACTION_FOR_ACCESSIBILITY mode
+        AccessChecker checker = new AccessChecker(AccessChecker.AccessCheckMode.ALLOW_EXTRACTION_FOR_ACCESSIBILITY);
         checker.check(m);
         assertTrue(true, "no exception");
 
-        //don't extract for accessibility
-        checker = new AccessChecker(false);
+        // ENFORCE_PERMISSIONS mode
+        checker = new AccessChecker(AccessChecker.AccessCheckMode.ENFORCE_PERMISSIONS);
         //if extract content is allowed, the checker shouldn't
         //check the value of extract for accessibility
         checker.check(m);
         assertTrue(true, "no exception");
-
     }
 
     @Test
