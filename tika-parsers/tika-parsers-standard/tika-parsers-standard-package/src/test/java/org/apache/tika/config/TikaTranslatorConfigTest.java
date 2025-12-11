@@ -18,56 +18,50 @@ package org.apache.tika.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.language.translate.DefaultTranslator;
 import org.apache.tika.language.translate.EmptyTranslator;
 
 /**
- * Junit test class for {@link TikaConfig}, which cover things
- * that {@link TikaConfigTest} can't do due to a need for the
- * full set of translators
+ * Junit test class for translator configuration via JSON.
  */
-public class TikaTranslatorConfigTest extends AbstractTikaConfigTest {
+public class TikaTranslatorConfigTest {
+
+    private TikaLoader getLoader(String config) throws Exception {
+        Path path = Paths.get(TikaTranslatorConfigTest.class.getResource(config).toURI());
+        return TikaLoader.load(path);
+    }
 
     @Test
     public void testDefaultBehaviour() throws Exception {
-        TikaConfig config = TikaConfig.getDefaultConfig();
-        assertNotNull(config.getTranslator());
-        assertEquals(DefaultTranslator.class, config.getTranslator().getClass());
+        TikaLoader loader = TikaLoader.loadDefault();
+        assertNotNull(loader.loadTranslator());
+        assertEquals(DefaultTranslator.class, loader.loadTranslator().getClass());
     }
 
     @Test
     public void testRequestsDefault() throws Exception {
-        TikaConfig config = getConfig("TIKA-1702-translator-default.xml");
-        assertNotNull(config.getParser());
-        assertNotNull(config.getDetector());
-        assertNotNull(config.getTranslator());
+        TikaLoader loader = getLoader("TIKA-1702-translator-default.json");
+        assertNotNull(loader.loadParsers());
+        assertNotNull(loader.loadDetectors());
+        assertNotNull(loader.loadTranslator());
 
-        assertEquals(DefaultTranslator.class, config.getTranslator().getClass());
+        assertEquals(DefaultTranslator.class, loader.loadTranslator().getClass());
     }
 
     @Test
     public void testRequestsEmpty() throws Exception {
-        TikaConfig config = getConfig("TIKA-1702-translator-empty.xml");
-        assertNotNull(config.getParser());
-        assertNotNull(config.getDetector());
-        assertNotNull(config.getTranslator());
+        TikaLoader loader = getLoader("TIKA-1702-translator-empty.json");
+        assertNotNull(loader.loadParsers());
+        assertNotNull(loader.loadDetectors());
+        assertNotNull(loader.loadTranslator());
 
-        assertEquals(EmptyTranslator.class, config.getTranslator().getClass());
-    }
-
-    /**
-     * Currently, Translators don't support Composites, so
-     * if multiple translators are given, throw a TikaConfigException
-     */
-    @Test
-    public void testRequestsMultiple() throws Exception {
-        assertThrows(TikaConfigException.class, () -> {
-            TikaConfig config = getConfig("TIKA-1702-translator-empty-default.xml");
-        });
+        assertEquals(EmptyTranslator.class, loader.loadTranslator().getClass());
     }
 }

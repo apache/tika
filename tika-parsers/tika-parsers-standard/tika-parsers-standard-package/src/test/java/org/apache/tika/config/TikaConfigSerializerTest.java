@@ -15,22 +15,11 @@
  * limitations under the License.
  */
 package org.apache.tika.config;
-
-import static org.apache.tika.TikaTest.assertContains;
-import static org.apache.tika.TikaTest.assertContainsCount;
-import static org.apache.tika.TikaTest.assertNotContained;
-
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
-
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
 
 @Disabled("TODO -- convert to TikaLoader/serializer")
 public class TikaConfigSerializerTest {
-
+/*
     @Test
     public void testBasicParams() throws Exception {
         TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
@@ -49,8 +38,8 @@ public class TikaConfigSerializerTest {
         assertContains(detectorNeedle, xml);
 
         String parserNeedle = "<parser class=\"org.apache.tika.parser.pdf.PDFParser\">" +
-                " <params> <param name=\"allowExtractionForAccessibility\" " +
-                "type=\"bool\">true</param>";
+                " <params> <param name=\"accessCheckMode\" " +
+                "type=\"string\">DONT_CHECK</param>";
 
         assertContains(parserNeedle, xml);
         //TODO This is still to be implemented -- we do not want to show the default renderer here
@@ -73,6 +62,6 @@ public class TikaConfigSerializerTest {
         assertContainsCount("<param name=\"concatenatePhoneticRuns\" type=\"bool\">true</param>",
                 writer.toString(), 3);
     }
-
+*/
 
 }

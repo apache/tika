@@ -98,9 +98,10 @@ public class ParserLoader {
             ComponentRegistry registry = new ComponentRegistry("parsers", classLoader);
             List<Map.Entry<String, JsonNode>> parsers = config.getArrayComponents("parsers");
 
-            // Check if "default-parser" is in the list and extract exclusions
+            // Check if "default-parser" is in the list and extract exclusions and decorations
             boolean hasDefaultParser = false;
             Set<Class<?>> excludedParserClasses = new HashSet<>();
+            FrameworkConfig.ParserDecoration defaultParserDecoration = null;
 
             for (Map.Entry<String, JsonNode> entry : parsers) {
                 if ("default-parser".equals(entry.getKey())) {
@@ -144,6 +145,16 @@ public class ParserLoader {
                                     }
                                 }
                             }
+                        }
+                    }
+
+                    // Extract decoration (mimeInclude/mimeExclude) for default-parser
+                    if (configNode != null) {
+                        try {
+                            FrameworkConfig frameworkConfig = FrameworkConfig.extract(configNode, objectMapper);
+                            defaultParserDecoration = frameworkConfig.getDecoration();
+                        } catch (Exception e) {
+                            LOG.warn("Failed to extract decoration from default-parser: {}", e.getMessage());
                         }
                     }
                     break;
@@ -195,7 +206,16 @@ public class ParserLoader {
             // If "default-parser" is NOT present, only load explicitly configured parsers
             if (hasDefaultParser) {
                 List<Parser> spiParsers = loadSpiParsers(configuredParserClasses);
-                parserList.addAll(spiParsers);
+
+                // Apply decoration to SPI parsers if specified on default-parser
+                if (defaultParserDecoration != null && defaultParserDecoration.hasFiltering()) {
+                    // Wrap SPI parsers in a CompositeParser and apply decoration
+                    Parser spiComposite = new CompositeParser(TikaLoader.getMediaTypeRegistry(), spiParsers);
+                    spiComposite = applyMimeFiltering(spiComposite, defaultParserDecoration);
+                    parserList.add(spiComposite);
+                } else {
+                    parserList.addAll(spiParsers);
+                }
                 LOG.debug("Loading SPI parsers because 'default-parser' is in config");
             } else {
                 LOG.debug("Skipping SPI parsers - 'default-parser' not in config");

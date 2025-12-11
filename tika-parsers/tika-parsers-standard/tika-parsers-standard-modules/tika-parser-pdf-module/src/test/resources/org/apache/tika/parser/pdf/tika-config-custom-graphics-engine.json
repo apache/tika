@@ -1,0 +1,11 @@
+{
+  "parsers": [
+    {
+      "pdf-parser": {
+        "sortByPosition": true,
+        "extractInlineImages": true,
+        "imageGraphicsEngineFactoryClass": "org.apache.tika.parser.pdf.MyCustomImageGraphicsEngineFactory"
+      }
+    }
+  ]
+}

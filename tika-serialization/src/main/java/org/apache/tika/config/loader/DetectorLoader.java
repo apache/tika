@@ -171,6 +171,13 @@ public class DetectorLoader {
                                              ComponentRegistry registry)
             throws TikaConfigException {
         try {
+            // Special case: mime-types requires the initialized registry from TikaLoader
+            // The no-arg constructor creates an empty MimeTypes without the XML-loaded types
+            if ("mime-types".equals(name)) {
+                LOG.debug("Using TikaLoader.getMimeTypes() for mime-types detector");
+                return TikaLoader.getMimeTypes();
+            }
+
             // Get detector class - try component name first, then FQCN fallback
             Class<?> detectorClass;
             try {

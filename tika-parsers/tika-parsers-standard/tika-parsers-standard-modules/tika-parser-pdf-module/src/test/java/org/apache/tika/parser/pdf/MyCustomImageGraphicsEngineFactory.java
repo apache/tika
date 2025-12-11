@@ -19,6 +19,7 @@ package org.apache.tika.parser.pdf;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.apache.pdfbox.cos.COSStream;
 import org.apache.pdfbox.pdmodel.PDPage;
 
@@ -29,7 +30,51 @@ import org.apache.tika.parser.pdf.image.ImageGraphicsEngine;
 import org.apache.tika.parser.pdf.image.ImageGraphicsEngineFactory;
 import org.apache.tika.sax.XHTMLContentHandler;
 
+/**
+ * Example custom ImageGraphicsEngineFactory demonstrating how users can create
+ * their own factory implementations with custom configuration parameters.
+ * <p>
+ * <b>JSON Config File Usage:</b> Use the class name string approach:
+ * <pre>
+ * {
+ *   "pdf-parser": {
+ *     "imageGraphicsEngineFactoryClass": "com.example.MyCustomFactory"
+ *   }
+ * }
+ * </pre>
+ * Note: This approach does not support custom parameters; the factory will use default values.
+ * <p>
+ * <b>ParseContext Serialization:</b> The {@code @JsonTypeInfo} annotation enables polymorphic
+ * serialization when using tika-serialization's polymorphic ObjectMapper (e.g., for
+ * ParseContext round-trip serialization). This requires the annotation on both the base
+ * class and subclass for full polymorphic support.
+ */
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "@class")
 public class MyCustomImageGraphicsEngineFactory extends ImageGraphicsEngineFactory {
+
+    /**
+     * Metadata key used to record that this custom factory was used during parsing.
+     */
+    public static final String CUSTOM_FACTORY_USED = "X-CustomGraphicsEngineFactory-Used";
+
+    /**
+     * Metadata key used to record the customParam value.
+     */
+    public static final String CUSTOM_PARAM_KEY = "X-CustomGraphicsEngineFactory-CustomParam";
+
+    private String customParam = "default";
+
+    public MyCustomImageGraphicsEngineFactory() {
+        // Default constructor required for Jackson deserialization
+    }
+
+    public String getCustomParam() {
+        return customParam;
+    }
+
+    public void setCustomParam(String customParam) {
+        this.customParam = customParam;
+    }
 
     @Override
     public ImageGraphicsEngine newEngine(PDPage page,
@@ -39,6 +84,12 @@ public class MyCustomImageGraphicsEngineFactory extends ImageGraphicsEngineFacto
                                          Map<COSStream, Integer> processedInlineImages,
                                          AtomicInteger imageCounter, XHTMLContentHandler xhtml,
                                          Metadata parentMetadata, ParseContext parseContext) {
-        throw new RuntimeException("testing123");
+        // Record that this custom factory was used
+        parentMetadata.set(CUSTOM_FACTORY_USED, "true");
+        parentMetadata.set(CUSTOM_PARAM_KEY, customParam);
+
+        // Delegate to the default implementation
+        return super.newEngine(page, pageNumber, embeddedDocumentExtractor, pdfParserConfig,
+                processedInlineImages, imageCounter, xhtml, parentMetadata, parseContext);
     }
 }
