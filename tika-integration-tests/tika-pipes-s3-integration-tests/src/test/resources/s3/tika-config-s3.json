@@ -15,10 +15,7 @@
     {
       "pdf-parser": {
         "extractActions": true,
-        "accessChecker": {
-          "needToCheck": true,
-          "allowExtractionForAccessibility": true
-        }
+        "accessCheckMode": "ALLOW_EXTRACTION_FOR_ACCESSIBILITY"
       }
     },
     {
