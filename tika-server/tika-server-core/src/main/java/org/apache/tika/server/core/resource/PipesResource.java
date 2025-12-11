@@ -45,6 +45,7 @@ import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesParser;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
+import org.apache.tika.serialization.ParseContextUtils;
 
 @Path("/pipes")
 public class PipesResource {
@@ -91,6 +92,8 @@ public class PipesResource {
         try (Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8)) {
             t = JsonFetchEmitTuple.fromJson(reader);
         }
+        // Resolve friendly-named configs in ParseContext to actual objects
+        ParseContextUtils.resolveAll(t.getParseContext(), getClass().getClassLoader());
         return processTuple(t);
     }
 

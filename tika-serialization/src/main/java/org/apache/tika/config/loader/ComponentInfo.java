@@ -14,27 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.server.core;
-
-import jakarta.ws.rs.core.MultivaluedMap;
-
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
+package org.apache.tika.config.loader;
 
 /**
- * Implementations must be thread-safe!
- * <p>
- * This class translates http headers into objects/configurations set
- * via the ParseContext
+ * Information about a registered Tika component.
+ *
+ * @param componentClass the component's class
+ * @param selfConfiguring whether the component implements SelfConfiguring
+ *                        (reads its own config from ConfigContainer)
+ * @param contextKey the class to use as the key when adding to ParseContext,
+ *                   or null to auto-detect based on known interfaces
  */
-public interface ParseContextConfig {
-
+public record ComponentInfo(
+        Class<?> componentClass,
+        boolean selfConfiguring,
+        Class<?> contextKey
+) {
     /**
-     * Configures the parseContext with present headers.
-     *
-     * @param headers  the headers.
-     * @param metadata the metadata.
-     * @param context  the parse context to configure.
+     * Creates a ComponentInfo with no explicit context key (auto-detect).
      */
-    void configure(MultivaluedMap<String, String> headers, Metadata metadata, ParseContext context);
+    public ComponentInfo(Class<?> componentClass, boolean selfConfiguring) {
+        this(componentClass, selfConfiguring, null);
+    }
 }

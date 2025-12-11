@@ -163,6 +163,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     final EmbeddedDocumentExtractor embeddedDocumentExtractor;
     final PDFParserConfig config;
     final Parser ocrParser;
+    final Renderer renderer;
     /**
      * Format used for signature dates
      * TODO Make this thread-safe
@@ -199,12 +200,13 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     int num3DAnnotations = 0;
 
     AbstractPDF2XHTML(PDDocument pdDocument, ContentHandler handler, ParseContext context,
-                      Metadata metadata, PDFParserConfig config) throws IOException {
+                      Metadata metadata, PDFParserConfig config, Renderer renderer) throws IOException {
         this.pdDocument = pdDocument;
         this.xhtml = new XHTMLContentHandler(handler, metadata);
         this.context = context;
         this.metadata = metadata;
         this.config = config;
+        this.renderer = renderer;
         embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         if (config.getOcrStrategy() == NO_OCR) {
             ocrParser = null;
@@ -592,7 +594,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             }
         }
         Metadata pageMetadata = getCurrentPageMetadata(pdPage);
-        Renderer thisRenderer = getPDFRenderer(config.getRenderer());
+        Renderer thisRenderer = getPDFRenderer(renderer);
         //if there's a configured renderer and if the rendering strategy is "all"
         if (thisRenderer != null &&
                 config.getOcrRenderingStrategy() == PDFParserConfig.OCR_RENDERING_STRATEGY.ALL) {

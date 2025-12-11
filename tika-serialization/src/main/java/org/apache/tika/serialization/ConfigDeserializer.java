@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.loader.JsonMergeUtils;
 import org.apache.tika.config.loader.PolymorphicObjectMapperFactory;
 import org.apache.tika.parser.ParseContext;
 
@@ -56,6 +57,9 @@ public class ConfigDeserializer {
     /**
      * Retrieves and deserializes a parser configuration from the ConfigContainer in ParseContext.
      * If a default config is provided, the user config will be merged on top of it.
+     * <p>
+     * The resolved config is also set directly in the ParseContext under the configClass key,
+     * so other components (like renderers) can find it via {@code parseContext.get(configClass)}.
      *
      * @param context the parse context containing the ConfigContainer
      * @param configKey the configuration key (e.g., "pdf-parser", "html-parser")
@@ -80,20 +84,14 @@ public class ConfigDeserializer {
         if (jsonConfig == null) {
             return defaultConfig;
         }
-        String configJson = jsonConfig.json();
 
-        // If there's a default config, merge the user config on top of it
-        if (defaultConfig != null) {
-            // IMPORTANT: Clone the default config first to preserve immutability
-            // Never modify the original defaultConfig as it may be reused across requests
-            T configCopy = MAPPER.convertValue(defaultConfig, configClass);
+        T config = JsonMergeUtils.mergeWithDefaults(MAPPER, jsonConfig.json(), configClass, defaultConfig);
 
-            // Now update the copy with user config
-            return MAPPER.readerForUpdating(configCopy).readValue(configJson);
-        } else {
-            // No default config, just deserialize the user config
-            return MAPPER.readValue(configJson, configClass);
-        }
+        // Also set the resolved config directly in ParseContext so other components
+        // (like renderers) can find it via parseContext.get(configClass)
+        context.set(configClass, config);
+
+        return config;
     }
 
     /**

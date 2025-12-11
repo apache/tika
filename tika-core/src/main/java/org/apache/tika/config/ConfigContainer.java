@@ -16,6 +16,7 @@
  */
 package org.apache.tika.config;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,7 +33,9 @@ import java.util.Set;
  * and other components to look up their config by friendly name (e.g., "pdf-parser",
  * "fs-fetcher-1") and deserialize it on-demand.
  */
-public class ConfigContainer {
+public class ConfigContainer implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private final Map<String, String> configs = new HashMap<>();
 
@@ -82,5 +85,15 @@ public class ConfigContainer {
 
     public boolean isEmpty() {
         return configs.isEmpty();
+    }
+
+    /**
+     * Removes the configuration with the specified key.
+     *
+     * @param key the friendly name of the config to remove
+     * @return the previous value associated with the key, or null if there was no mapping
+     */
+    public String remove(String key) {
+        return configs.remove(key);
     }
 }

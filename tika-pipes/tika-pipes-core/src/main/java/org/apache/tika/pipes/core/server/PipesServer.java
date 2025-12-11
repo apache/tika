@@ -73,6 +73,7 @@ import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.plugins.TikaPluginManager;
+import org.apache.tika.serialization.ParseContextUtils;
 import org.apache.tika.utils.ExceptionUtils;
 
 /**
@@ -286,6 +287,8 @@ public class PipesServer implements AutoCloseable {
                     CountDownLatch countDownLatch = new CountDownLatch(1);
 
                     FetchEmitTuple fetchEmitTuple = readFetchEmitTuple();
+                    // Resolve friendly-named configs in ParseContext to actual objects
+                    ParseContextUtils.resolveAll(fetchEmitTuple.getParseContext(), getClass().getClassLoader());
 
                     PipesWorker pipesWorker = getPipesWorker(intermediateResult, fetchEmitTuple, countDownLatch);
                     executorCompletionService.submit(pipesWorker);

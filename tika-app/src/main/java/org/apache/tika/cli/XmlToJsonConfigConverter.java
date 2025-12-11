@@ -40,6 +40,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import org.apache.tika.config.loader.ComponentInfo;
 import org.apache.tika.config.loader.ComponentRegistry;
 import org.apache.tika.config.loader.KebabCaseConverter;
 import org.apache.tika.exception.TikaConfigException;
@@ -585,8 +586,8 @@ public class XmlToJsonConfigConverter {
             Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(fullClassName);
 
             // Reverse lookup: find the component name for this class
-            for (Map.Entry<String, Class<?>> entry : registry.getAllComponents().entrySet()) {
-                if (entry.getValue().equals(clazz)) {
+            for (Map.Entry<String, ComponentInfo> entry : registry.getAllComponents().entrySet()) {
+                if (entry.getValue().componentClass().equals(clazz)) {
                     return entry.getKey();
                 }
             }

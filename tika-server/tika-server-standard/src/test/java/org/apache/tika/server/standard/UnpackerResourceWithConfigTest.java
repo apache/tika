@@ -23,7 +23,9 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import javax.imageio.ImageIO;
@@ -31,6 +33,9 @@ import javax.imageio.ImageIO;
 import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.cxf.jaxrs.ext.multipart.Attachment;
+import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
+import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
 
@@ -41,7 +46,6 @@ import org.apache.tika.server.core.TikaServerParseExceptionMapper;
 import org.apache.tika.server.core.resource.UnpackerResource;
 import org.apache.tika.server.core.writer.TarWriter;
 import org.apache.tika.server.core.writer.ZipWriter;
-import org.apache.tika.server.standard.config.PDFServerConfig;
 
 public class UnpackerResourceWithConfigTest extends CXFTestBase {
     private static final String BASE_PATH = "/unpack";
@@ -73,15 +77,27 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
     //when specified in tika-config.json
     @Test
     public void testPDFPerPageRenderColor() throws Exception {
-
         //default is gray scale png; change to rgb and tiff
+        String configJson = """
+                {
+                  "pdf-parser": {
+                    "imageStrategy": "RENDER_PAGES_AT_PAGE_END",
+                    "ocrImageType": "RGB",
+                    "ocrImageFormatName": "tiff"
+                  }
+                }
+                """;
+        ContentDisposition fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"testColorRendering.pdf\"");
+        Attachment fileAtt = new Attachment("file",
+                ClassLoader.getSystemResourceAsStream("test-documents/testColorRendering.pdf"), fileCd);
+        Attachment configAtt = new Attachment("config", "application/json",
+                new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
+
         Response response = WebClient
-                .create(CXFTestBase.endPoint + ALL_PATH)
-                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "imageStrategy", "RenderPagesAtPageEnd")
-                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ocrImageType", "rgb")
-                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ocrImageFormatName", "tiff")
+                .create(CXFTestBase.endPoint + ALL_PATH + "/config")
+                .type("multipart/form-data")
                 .accept("application/zip")
-                .put(ClassLoader.getSystemResourceAsStream("test-documents/testColorRendering.pdf"));
+                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
         Map<String, byte[]> results = readZipArchiveBytes((InputStream) response.getEntity());
         byte[] renderedImage = null;
         for (Map.Entry<String, byte[]> e : results.entrySet()) {
@@ -125,15 +141,26 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
 
     @Test
     public void testPDFPerPageRenderGray() throws Exception {
-
+        String configJson = """
+                {
+                  "pdf-parser": {
+                    "imageStrategy": "RENDER_PAGES_AT_PAGE_END",
+                    "ocrImageType": "GRAY",
+                    "ocrImageFormatName": "jpeg"
+                  }
+                }
+                """;
+        ContentDisposition fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"testColorRendering.pdf\"");
+        Attachment fileAtt = new Attachment("file",
+                ClassLoader.getSystemResourceAsStream("test-documents/testColorRendering.pdf"), fileCd);
+        Attachment configAtt = new Attachment("config", "application/json",
+                new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         Response response = WebClient
-                .create(CXFTestBase.endPoint + ALL_PATH)
-                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "imageStrategy", "RenderPagesAtPageEnd")
-                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ocrImageType", "gray")
-                .header(PDFServerConfig.X_TIKA_PDF_HEADER_PREFIX + "ocrImageFormatName", "jpeg")
+                .create(CXFTestBase.endPoint + ALL_PATH + "/config")
+                .type("multipart/form-data")
                 .accept("application/zip")
-                .put(ClassLoader.getSystemResourceAsStream("test-documents/testColorRendering.pdf"));
+                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
         Map<String, byte[]> results = readZipArchiveBytes((InputStream) response.getEntity());
         byte[] renderedImage = null;
         for (Map.Entry<String, byte[]> e : results.entrySet()) {

@@ -210,7 +210,6 @@ public class TikaPipesTest extends CXFTestBase {
                         new EmitKey(EMITTER_JSON_ID, ""), userMetadata, parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
         StringWriter writer = new StringWriter();
         JsonFetchEmitTuple.toJson(t, writer);
-
         String getUrl = endPoint + PIPES_PATH;
         Response response = WebClient
                 .create(getUrl)

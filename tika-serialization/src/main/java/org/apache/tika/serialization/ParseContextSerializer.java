@@ -17,7 +17,9 @@
 package org.apache.tika.serialization;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -27,63 +29,120 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ConfigContainer;
+import org.apache.tika.config.loader.ComponentRegistry;
 import org.apache.tika.config.loader.PolymorphicObjectMapperFactory;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.ParseContext;
 
+/**
+ * Serializes ParseContext to JSON using friendly names.
+ * <p>
+ * Serializes:
+ * <ul>
+ *   <li>ConfigContainer contents (JSON strings) - written as-is</li>
+ *   <li>Objects in ParseContext that have registered friendly names - serialized via Jackson</li>
+ * </ul>
+ * <p>
+ * Example output:
+ * <pre>
+ * {
+ *   "pdf-parser": {"extractActions": true},
+ *   "tika-task-timeout": {"timeoutMillis": 5000},
+ *   "handler-config": {"type": "XML", "parseMode": "RMETA"}
+ * }
+ * </pre>
+ */
 public class ParseContextSerializer extends JsonSerializer<ParseContext> {
-    private static final Logger LOG = LoggerFactory.getLogger(ParseContextSerializer.class);
 
+    private static final Logger LOG = LoggerFactory.getLogger(ParseContextSerializer.class);
     public static final String PARSE_CONTEXT = "parseContext";
 
-    /**
-     * Static ObjectMapper configured for polymorphic serialization/deserialization.
-     * Initialized once when the class is loaded to avoid creating a new mapper on each call.
-     * Package-private to allow ParseContextDeserializer to use the same mapper.
-     */
-    static final ObjectMapper POLYMORPHIC_MAPPER = PolymorphicObjectMapperFactory.getMapper();
+    private static final ObjectMapper MAPPER = PolymorphicObjectMapperFactory.getMapper();
+
+    // Lazily loaded registry for looking up friendly names
+    private static volatile ComponentRegistry registry;
+
+    private static ComponentRegistry getRegistry() {
+        if (registry == null) {
+            synchronized (ParseContextSerializer.class) {
+                if (registry == null) {
+                    try {
+                        registry = new ComponentRegistry("other-configs",
+                                ParseContextSerializer.class.getClassLoader());
+                    } catch (TikaConfigException e) {
+                        LOG.warn("Failed to load component registry for serialization", e);
+                        // Return null - objects without friendly names won't be serialized
+                    }
+                }
+            }
+        }
+        return registry;
+    }
 
     @Override
     public void serialize(ParseContext parseContext, JsonGenerator jsonGenerator,
                          SerializerProvider serializerProvider) throws IOException {
         jsonGenerator.writeStartObject();
 
-        Map<String, Object> contextMap = parseContext.getContextMap();
+        Set<String> writtenKeys = new HashSet<>();
         ConfigContainer configContainer = parseContext.get(ConfigContainer.class);
 
-        // Serialize objects stored directly in ParseContext (legacy format)
-        // These are objects set via context.set(SomeClass.class, someObject)
-        boolean hasNonConfigObjects = contextMap.size() > (configContainer != null ? 1 : 0);
-        if (hasNonConfigObjects) {
-            jsonGenerator.writeFieldName("objects");
-            jsonGenerator.writeStartObject();
-
-            for (Map.Entry<String, Object> entry : contextMap.entrySet()) {
-                String className = entry.getKey();
-                if (className.equals(ConfigContainer.class.getName())) {
-                    continue;
-                }
-
-                Object value = entry.getValue();
-
-                // Write the field name (superclass/interface name from key)
-                jsonGenerator.writeFieldName(className);
-
-                // Let Jackson handle type information and serialization
-                // Use writerFor(Object.class) to ensure polymorphic type info is added
-                POLYMORPHIC_MAPPER.writerFor(Object.class).writeValue(jsonGenerator, value);
-            }
-
-            jsonGenerator.writeEndObject();
-        }
-
-        // Write ConfigContainer fields as top-level properties (new friendly-name format)
-        // Each field contains a JSON string representing a parser/component configuration
-        // using the same friendly names as tika-config.json (e.g., "pdf-parser", "html-parser")
+        // First, write ConfigContainer contents (these are already JSON strings)
         if (configContainer != null) {
             for (String key : configContainer.getKeys()) {
                 jsonGenerator.writeFieldName(key);
-                // Write the JSON string as raw JSON (not as a quoted string)
                 jsonGenerator.writeRawValue(configContainer.get(key).get().json());
+                writtenKeys.add(key);
+            }
+        }
+
+        // Then, serialize objects from ParseContext that have registered friendly names
+        // or are stored under Tika type keys (for polymorphic custom subclasses)
+        ComponentRegistry reg = getRegistry();
+        Map<String, Object> contextMap = parseContext.getContextMap();
+        for (Map.Entry<String, Object> entry : contextMap.entrySet()) {
+            // Skip ConfigContainer - already handled above
+            if (entry.getKey().equals(ConfigContainer.class.getName())) {
+                continue;
+            }
+
+            Object value = entry.getValue();
+            if (value == null) {
+                continue;
+            }
+
+            // Try to get friendly name for this object's class
+            String friendlyName = (reg != null) ? reg.getFriendlyName(value.getClass()) : null;
+
+            String key;
+            if (friendlyName != null) {
+                // Use friendly name if available
+                key = friendlyName;
+            } else if (entry.getKey().startsWith("org.apache.tika.")) {
+                // For Tika types without friendly names (e.g., custom MetadataFilter subclasses),
+                // use the context key - polymorphic mapper will add @class for the concrete type
+                key = entry.getKey();
+            } else {
+                // Skip non-Tika types without friendly names (e.g., String, custom non-Tika classes)
+                continue;
+            }
+
+            if (!writtenKeys.contains(key)) {
+                jsonGenerator.writeFieldName(key);
+                // If using the context key (not friendly name), we need to serialize
+                // with the base type to get polymorphic @class info for custom subclasses
+                if (friendlyName == null) {
+                    try {
+                        Class<?> contextKeyClass = Class.forName(entry.getKey());
+                        MAPPER.writerFor(contextKeyClass).writeValue(jsonGenerator, value);
+                    } catch (ClassNotFoundException e) {
+                        // Fallback to default serialization
+                        MAPPER.writeValue(jsonGenerator, value);
+                    }
+                } else {
+                    MAPPER.writeValue(jsonGenerator, value);
+                }
+                writtenKeys.add(key);
             }
         }
 

@@ -16,6 +16,7 @@
  */
 package org.apache.tika.config.loader;
 
+import java.io.IOException;
 import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -241,14 +242,8 @@ public class ConfigLoader {
         }
 
         try {
-            // Create a deep copy of defaultValue to avoid mutating the original
-            // Using convertValue is efficient and doesn't require serializing to bytes
-            @SuppressWarnings("unchecked")
-            T copy = objectMapper.convertValue(defaultValue, (Class<T>) defaultValue.getClass());
-
-            // Merge JSON properties into the copy
-            return objectMapper.readerForUpdating(copy).readValue(node);
-        } catch (Exception e) {
+            return JsonMergeUtils.mergeWithDefaults(objectMapper, node, clazz, defaultValue);
+        } catch (IOException e) {
             throw new TikaConfigException(
                 "Failed to merge '" + key + "' into " + clazz.getName(), e);
         }

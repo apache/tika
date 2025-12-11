@@ -53,6 +53,11 @@ import java.lang.annotation.Target;
  * public class DWGReadParser extends AbstractParser {
  *     // available by name, but NOT auto-loaded by default-parser
  * }
+ *
+ * {@code @TikaComponent(contextKey = MetadataFilter.class)}
+ * public class MyFilter implements MetadataFilter, AnotherInterface {
+ *     // explicit ParseContext key when class implements multiple known interfaces
+ * }
  * </pre>
  *
  * @since 3.1.0
@@ -81,4 +86,24 @@ public @interface TikaComponent {
      * @return true to include in SPI (default), false to require explicit config
      */
     boolean spi() default true;
+
+    /**
+     * The class to use as the key when adding this component to ParseContext.
+     * <p>
+     * By default ({@code void.class}), the key is auto-detected:
+     * <ul>
+     *   <li>If the component implements a known interface (e.g., MetadataFilter),
+     *       that interface is used as the key</li>
+     *   <li>Otherwise, the component's own class is used as the key</li>
+     * </ul>
+     * <p>
+     * Use this attribute to explicitly specify the key when:
+     * <ul>
+     *   <li>The component implements multiple known interfaces (ambiguous)</li>
+     *   <li>You need a specific interface/class that isn't auto-detected</li>
+     * </ul>
+     *
+     * @return the class to use as ParseContext key, or void.class for auto-detection
+     */
+    Class<?> contextKey() default void.class;
 }

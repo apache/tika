@@ -67,12 +67,19 @@ public class ParseContextConfig {
     }
 
     /**
-     * Retrieves runtime configuration from ParseContext's ConfigContainer.
+     * Retrieves runtime configuration from ParseContext.
+     * <p>
+     * This method first checks if the config is already resolved in ParseContext
+     * (via {@code context.get(configClass)}). If found, it returns immediately without
+     * re-deserializing. This is efficient for embedded documents where the config
+     * was already deserialized for the parent document.
+     * <p>
+     * If not found, it checks ConfigContainer for the config key and deserializes
+     * the JSON. The deserialized config is also set in ParseContext for future lookups.
      * <p>
      * This method performs defensive checking: if the ConfigContainer has configuration
      * for the requested key but the ConfigDeserializer is not available on the classpath,
-     * it throws IllegalStateException. This prevents silent failures where users expect
-     * their runtime config to be used but it's silently ignored.
+     * it throws TikaConfigException to prevent silent failures.
      *
      * @param context the parse context (may be null)
      * @param configKey the configuration key (e.g., "pdf-parser", "html-parser")
@@ -88,6 +95,13 @@ public class ParseContextConfig {
             throws TikaConfigException, IOException {
         if (context == null) {
             return defaultConfig;
+        }
+
+        // First check if config is already resolved in ParseContext
+        // (may have been set by a previous call or by user code)
+        T existingConfig = context.get(configClass);
+        if (existingConfig != null) {
+            return existingConfig;
         }
 
         ConfigContainer configContainer = context.get(ConfigContainer.class);
@@ -113,6 +127,7 @@ public class ParseContextConfig {
         }
 
         // ConfigDeserializer is available - delegate to it
+        // (ConfigDeserializer.getConfig also sets the config in ParseContext for future lookups)
         try {
             @SuppressWarnings("unchecked")
             T result = (T) GET_CONFIG_METHOD.invoke(null, context, configKey, configClass, defaultConfig);
@@ -122,7 +137,7 @@ public class ParseContextConfig {
             if (cause instanceof IOException) {
                 throw (IOException) cause;
             }
-            throw new IOException("Failed to deserialize config for '" + configKey + "': " + 
+            throw new IOException("Failed to deserialize config for '" + configKey + "': " +
                 cause.getMessage(), cause);
         }
     }

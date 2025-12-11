@@ -14,29 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.server.core;
+package org.apache.tika.extractor;
 
-import java.util.List;
-
-import jakarta.ws.rs.core.MultivaluedMap;
-
-import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
 
-public class CompositeParseContextConfig implements ParseContextConfig {
-
-
-    final List<ParseContextConfig> configs;
-
-    public CompositeParseContextConfig() {
-        configs = new ServiceLoader(CompositeParseContextConfig.class.getClassLoader()).loadServiceProviders(ParseContextConfig.class);
-    }
+/**
+ * A {@link DocumentSelector} that skips all embedded documents.
+ * When this selector is set on the {@link org.apache.tika.parser.ParseContext},
+ * no embedded documents will be extracted during parsing.
+ *
+ * @since Apache Tika 4.0
+ */
+@TikaComponent(contextKey = DocumentSelector.class)
+public class SkipEmbeddedDocumentSelector implements DocumentSelector {
 
     @Override
-    public void configure(MultivaluedMap<String, String> httpHeaders, Metadata metadata, ParseContext context) {
-        for (ParseContextConfig config : configs) {
-            config.configure(httpHeaders, metadata, context);
-        }
+    public boolean select(Metadata metadata) {
+        return false;
     }
 }

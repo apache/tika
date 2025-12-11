@@ -1142,25 +1142,7 @@ public class PDFParserTest extends TikaTest {
         }
     }
 
-    @Test
-    public void testInitializationOfNonPrimitivesViaConfig() throws Exception {
-        try (InputStream is = getResourceAsStream(
-                "/org/apache/tika/parser/pdf/tika-config-non-primitives.xml")) {
-            assertNotNull(is);
-            TikaConfig tikaConfig = new TikaConfig(is);
-            AutoDetectParser p = new AutoDetectParser(tikaConfig);
-            Map<MediaType, Parser> parsers = p.getParsers();
-            Parser composite = parsers.get(MediaType.application("pdf"));
-            Parser pdfParser =
-                    ((CompositeParser) composite).getParsers().get(MediaType.application("pdf"));
-            assertEquals("org.apache.tika.parser.pdf.PDFParser",
-                    pdfParser.getClass().getName());
-            assertEquals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY,
-                    ((PDFParser) pdfParser).getPDFParserConfig().getOcrStrategy());
-            assertEquals(PDFParserConfig.TikaImageType.GRAY.RGB,
-                    ((PDFParser) pdfParser).getPDFParserConfig().getOcrImageType());
-        }
-    }
+    // Moved to tika-parsers-standard-package PDFParserTest.testInitializationOfNonPrimitivesViaJsonConfig
 
     @Test
     public void testDiffTitles() throws Exception {
