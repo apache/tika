@@ -44,6 +44,8 @@ import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.digest.DigestDef;
+import org.apache.tika.digest.Digester;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.exception.ZeroByteFileException;
@@ -563,6 +565,7 @@ public class AutoDetectParserTest extends TikaTest {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void testDigestingOpenContainers() throws Exception {
         //TIKA-4533 -- this tests both that a very large embedded OLE doc doesn't cause a zip bomb
@@ -580,7 +583,7 @@ public class AutoDetectParserTest extends TikaTest {
         assertNull(metadataList.get(2).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
         assertEquals(2049290L, Long.parseLong(metadataList.get(2).get(Metadata.CONTENT_LENGTH)));
 
-        DigestingParser.Digester digester = new CommonsDigester(10000, "SHA256");
+        Digester digester = new CommonsDigester(10000, DigestDef.Algorithm.SHA256);
 
         //now test that we get the same digest if we wrap the auto detect parser vs configuring it
         autoDetectParser = new AutoDetectParser();

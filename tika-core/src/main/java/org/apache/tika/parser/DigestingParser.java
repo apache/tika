@@ -34,17 +34,31 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
+/**
+ * A parser decorator that computes digests of the parsed content.
+ *
+ * @deprecated Since 4.x. Use {@link AutoDetectParserConfig#setDigesterFactory(org.apache.tika.digest.DigesterFactory)}
+ * to configure digesting. The AutoDetectParser now calls digesting directly in its parse method.
+ * The interfaces {@link org.apache.tika.digest.Digester},
+ * {@link org.apache.tika.digest.DigesterFactory}, and
+ * {@link org.apache.tika.digest.Encoder} have moved to the
+ * {@code org.apache.tika.digest} package.
+ */
+@Deprecated
 public class DigestingParser extends ParserDecorator {
 
     private final EmbeddedStreamTranslator embeddedStreamTranslator = new DefaultEmbeddedStreamTranslator();
-    private final Digester digester;
+    private final org.apache.tika.digest.Digester digester;
     private final boolean skipContainerDocument;
     /**
      * Creates a decorator for the given parser.
      *
      * @param parser the parser instance to be decorated
+     * @param digester the digester to use
+     * @param skipContainerDocument if true, skip digesting top-level documents
      */
-    public DigestingParser(Parser parser, Digester digester, boolean skipContainerDocument) {
+    public DigestingParser(Parser parser, org.apache.tika.digest.Digester digester,
+                           boolean skipContainerDocument) {
         super(parser);
         this.digester = digester;
         this.skipContainerDocument = skipContainerDocument;
@@ -94,45 +108,4 @@ public class DigestingParser extends ParserDecorator {
         return true;
     }
 
-    /**
-     * This is used in {@link AutoDetectParserConfig} to (optionally)
-     * wrap the parser in a digesting parser.
-     */
-    public interface DigesterFactory {
-        Digester build();
-        void setSkipContainerDocument(boolean skipContainerDocument);
-        boolean isSkipContainerDocument();
-    }
-
-        /**
-     * Interface for digester. See
-     * org.apache.parser.utils.CommonsDigester in tika-parsers for an
-     * implementation.
-     */
-    public interface Digester {
-        /**
-         * Digests an InputStream and sets the appropriate value(s) in the metadata.
-         * The Digester is also responsible for marking and resetting the stream.
-         * <p>
-         * The given stream is guaranteed to support the
-         * {@link InputStream#markSupported() mark feature} and the detector
-         * is expected to {@link InputStream#mark(int) mark} the stream before
-         * reading any bytes from it, and to {@link InputStream#reset() reset}
-         * the stream before returning. The stream must not be closed by the
-         * detector.
-         *
-         * @param is           InputStream to digest
-         * @param m            Metadata to set the values for
-         * @param parseContext ParseContext
-         * @throws IOException
-         */
-        void digest(InputStream is, Metadata m, ParseContext parseContext) throws IOException;
-    }
-
-    /**
-     * Encodes byte array from a MessageDigest to String
-     */
-    public interface Encoder {
-        String encode(byte[] bytes);
-    }
 }

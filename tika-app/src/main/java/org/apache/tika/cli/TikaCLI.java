@@ -71,6 +71,8 @@ import org.apache.tika.async.cli.TikaAsyncCLI;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.digest.DigestDef;
+import org.apache.tika.digest.Digester;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.DefaultEmbeddedStreamTranslator;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -88,7 +90,6 @@ import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
-import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.NetworkParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -201,7 +202,7 @@ public class TikaCLI {
      * Password for opening encrypted documents, or <code>null</code>.
      */
     private String password = System.getenv("TIKA_PASSWORD");
-    private DigestingParser.Digester digester = null;
+    private Digester digester = null;
     private boolean pipeMode = true;
     private boolean fork = false;
     private boolean prettyPrint;
@@ -434,7 +435,9 @@ public class TikaCLI {
         } else if (arg.startsWith("--config=")) {
             configFilePath = arg.substring("--config=".length());
         } else if (arg.startsWith("--digest=")) {
-            digester = new CommonsDigester(MAX_MARK, arg.substring("--digest=".length()));
+            String algorithmName = arg.substring("--digest=".length()).toUpperCase(Locale.ROOT);
+            DigestDef.Algorithm algorithm = DigestDef.Algorithm.valueOf(algorithmName);
+            digester = new CommonsDigester(MAX_MARK, algorithm);
         } else if (arg.startsWith("-e")) {
             encoding = arg.substring("-e".length());
         } else if (arg.startsWith("--encoding=")) {
@@ -734,8 +737,8 @@ public class TikaCLI {
             parser = new NetworkParser(networkURI);
         } else {
             parser = tikaLoader.loadAutoDetectParser();
-            if (digester != null) {
-                parser = new DigestingParser(parser, digester, false);
+            if (digester != null && parser instanceof AutoDetectParser) {
+                ((AutoDetectParser) parser).getAutoDetectParserConfig().digester(digester);
             }
         }
         detector = tikaLoader.loadDetectors();

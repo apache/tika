@@ -17,20 +17,20 @@
 package org.apache.tika.pipes.core.async;
 
 import org.apache.tika.config.TikaComponent;
-import org.apache.tika.parser.DigestingParser;
-import org.apache.tika.parser.digest.InputStreamDigester;
+import org.apache.tika.digest.Digester;
+import org.apache.tika.digest.DigesterFactory;
+import org.apache.tika.digest.Encoder;
+import org.apache.tika.digest.InputStreamDigester;
 
 @TikaComponent
-public class MockDigesterFactory implements DigestingParser.DigesterFactory {
-
-    private boolean skipContainerDocument = false;
+public class MockDigesterFactory implements DigesterFactory {
 
     @Override
-    public DigestingParser.Digester build() {
-        return new InputStreamDigester(1000000, "SHA-256", new MockEncoder());
+    public Digester build() {
+        return new InputStreamDigester(1000000, "SHA-256", "X-TIKA:digest:SHA-256", new MockEncoder());
     }
 
-    private static class MockEncoder implements DigestingParser.Encoder {
+    private static class MockEncoder implements Encoder {
 
         @Override
         public String encode(byte[] bytes) {
@@ -46,13 +46,4 @@ public class MockDigesterFactory implements DigestingParser.DigesterFactory {
         }
     }
 
-    @Override
-    public void setSkipContainerDocument(boolean skipContainerDocument) {
-        this.skipContainerDocument = skipContainerDocument;
-    }
-
-    @Override
-    public boolean isSkipContainerDocument() {
-        return skipContainerDocument;
-    }
 }

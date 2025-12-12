@@ -21,6 +21,8 @@ import java.io.Serializable;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.config.TikaComponent;
+import org.apache.tika.digest.Digester;
+import org.apache.tika.digest.DigesterFactory;
 import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.writefilter.MetadataWriteFilterFactory;
@@ -80,7 +82,16 @@ public class AutoDetectParserConfig implements Serializable {
     private ContentHandlerDecoratorFactory contentHandlerDecoratorFactory =
             NOOP_CONTENT_HANDLER_DECORATOR_FACTORY;
 
-    private DigestingParser.DigesterFactory digesterFactory = null;
+    private DigesterFactory digesterFactory = null;
+
+    // Lazily built digester from the factory
+    private transient Digester digester = null;
+
+    /**
+     * If true, skip digesting for container (top-level) documents.
+     * Only embedded documents will be digested.
+     */
+    private boolean skipContainerDocumentDigest = false;
 
     private boolean throwOnZeroBytes = true;
 
@@ -174,12 +185,69 @@ public class AutoDetectParserConfig implements Serializable {
         return contentHandlerDecoratorFactory;
     }
 
-    public void setDigesterFactory(DigestingParser.DigesterFactory digesterFactory) {
+    /**
+     * Sets the digester factory.
+     * This is the preferred method for configuring digesting via JSON serialization.
+     *
+     * @param digesterFactory the digester factory
+     */
+    public void setDigesterFactory(DigesterFactory digesterFactory) {
         this.digesterFactory = digesterFactory;
     }
 
-    public DigestingParser.DigesterFactory getDigesterFactory() {
-        return this.digesterFactory;
+    /**
+     * Gets the digester factory.
+     *
+     * @return the digester factory, or null if not configured
+     */
+    public DigesterFactory getDigesterFactory() {
+        return digesterFactory;
+    }
+
+    /**
+     * Returns the Digester, lazily building it from the factory if needed.
+     * <p>
+     * Note: This method is intentionally not named getDigester() to avoid
+     * Jackson treating it as a bean property during serialization.
+     *
+     * @return the Digester, or null if no factory is configured
+     */
+    public Digester digester() {
+        if (digester == null && digesterFactory != null) {
+            digester = digesterFactory.build();
+        }
+        return digester;
+    }
+
+    /**
+     * Sets the digester directly. This is useful for programmatic configuration
+     * (e.g., from command-line arguments) when you don't have a DigesterFactory.
+     * <p>
+     * Note: This method is intentionally not named setDigester() to avoid
+     * Jackson treating it as a bean property during deserialization.
+     *
+     * @param digester the digester to use
+     */
+    public void digester(Digester digester) {
+        this.digester = digester;
+    }
+
+    /**
+     * Returns whether to skip digesting for container (top-level) documents.
+     *
+     * @return true if container documents should be skipped, false otherwise
+     */
+    public boolean isSkipContainerDocumentDigest() {
+        return skipContainerDocumentDigest;
+    }
+
+    /**
+     * Sets whether to skip digesting for container (top-level) documents.
+     *
+     * @param skipContainerDocumentDigest if true, only embedded documents will be digested
+     */
+    public void setSkipContainerDocumentDigest(boolean skipContainerDocumentDigest) {
+        this.skipContainerDocumentDigest = skipContainerDocumentDigest;
     }
 
     public void setThrowOnZeroBytes(boolean throwOnZeroBytes) {
@@ -199,6 +267,7 @@ public class AutoDetectParserConfig implements Serializable {
                 metadataWriteFilterFactory + ", embeddedDocumentExtractorFactory=" +
                 embeddedDocumentExtractorFactory + ", contentHandlerDecoratorFactory=" +
                 contentHandlerDecoratorFactory + ", digesterFactory=" + digesterFactory +
+                ", skipContainerDocumentDigest=" + skipContainerDocumentDigest +
                 ", throwOnZeroBytes=" + throwOnZeroBytes + '}';
     }
 }

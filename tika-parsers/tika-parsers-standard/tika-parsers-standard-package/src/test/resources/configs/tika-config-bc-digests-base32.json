@@ -3,11 +3,10 @@
     "spoolToDisk": 1000000,
     "outputThreshold": 1000000,
     "digesterFactory": {
-      "commons-digester-factory": {
-        "markLimit": 100000,
+      "bouncy-castle-digester-factory": {
+        "markLimit": 1000000,
         "digests": [
-          { "algorithm": "SHA256", "encoding": "BASE32" },
-          { "algorithm": "MD5" }
+          { "algorithm": "SHA1", "encoding": "BASE32" }
         ]
       }
     },

@@ -18,9 +18,13 @@
     "spoolToDisk": 1000000,
     "outputThreshold": 1000000,
     "digesterFactory": {
-      "@class": "org.apache.tika.parser.digestutils.CommonsDigesterFactory",
-      "markLimit": 100000,
-      "algorithmString": "md5,sha1:32"
+      "commons-digester-factory": {
+        "markLimit": 100000,
+        "digests": [
+          { "algorithm": "MD5" },
+          { "algorithm": "SHA1", "encoding": "BASE32" }
+        ]
+      }
     },
     "throwOnZeroBytes": false
   }

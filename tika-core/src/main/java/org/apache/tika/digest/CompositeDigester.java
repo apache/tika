@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.digest;
+package org.apache.tika.digest;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,15 +23,14 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
 
 
-public class CompositeDigester implements DigestingParser.Digester {
+public class CompositeDigester implements Digester {
 
-    private final DigestingParser.Digester[] digesters;
+    private final Digester[] digesters;
 
-    public CompositeDigester(DigestingParser.Digester... digesters) {
+    public CompositeDigester(Digester... digesters) {
         this.digesters = digesters;
     }
 
@@ -40,7 +39,7 @@ public class CompositeDigester implements DigestingParser.Digester {
         TemporaryResources tmp = new TemporaryResources();
         TikaInputStream tis = TikaInputStream.get(is, tmp, m);
         try {
-            for (DigestingParser.Digester digester : digesters) {
+            for (Digester digester : digesters) {
                 digester.digest(tis, m, parseContext);
             }
         } finally {

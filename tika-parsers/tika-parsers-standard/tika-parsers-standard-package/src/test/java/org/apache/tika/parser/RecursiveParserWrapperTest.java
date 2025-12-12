@@ -36,6 +36,8 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.digest.DigestDef;
+import org.apache.tika.digest.Digester;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -352,7 +354,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test_recursive_embedded.docx");
         List<Metadata> list = getMetadata(metadata,
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
-                true, new CommonsDigester(100000, "md5"));
+                true, new CommonsDigester(100000, DigestDef.Algorithm.MD5));
 
         String md5Key = "X-TIKA:digest:MD5";
         assertEquals("59f626e09a8c16ab6dbc2800c685f772", list.get(0).get(md5Key));
@@ -432,10 +434,11 @@ public class RecursiveParserWrapperTest extends TikaTest {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private List<Metadata> getMetadata(Metadata metadata,
                                        ContentHandlerFactory contentHandlerFactory,
                                        boolean catchEmbeddedExceptions,
-                                       DigestingParser.Digester digester) throws Exception {
+                                       Digester digester) throws Exception {
         ParseContext context = new ParseContext();
         Parser wrapped = AUTO_DETECT_PARSER;
         if (digester != null) {
