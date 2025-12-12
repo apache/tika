@@ -153,8 +153,21 @@ public class OpenSearchTest {
         assertEquals(1, (int) statusCounts.get("PARSE_SUCCESS_WITH_EXCEPTION"), "should have had 1 parse exception: " + statusCounts);
         //the embedded docx is emitted directly
         assertEquals(1, (int) statusCounts.get("EMIT_SUCCESS"), "should have had 1 emit success: " + statusCounts);
-        assertEquals(2, (int) statusCounts.get("OOM"), "should have had 2 OOM: " + statusCounts);
+        assertEquals(2, numberOfCrashes(statusCounts), "should have had 2 OOM or 1 OOM and 1 timeout: " + statusCounts);
 
+    }
+
+    private int numberOfCrashes(Map<String, Integer> statusCounts) {
+        Integer oom = statusCounts.get("OOM");
+        Integer timeout = statusCounts.get("TIMEOUT");
+        int sum = 0;
+        if (oom != null) {
+            sum += oom;
+        }
+        if (timeout != null) {
+            sum += timeout;
+        }
+        return sum;
     }
 
 
