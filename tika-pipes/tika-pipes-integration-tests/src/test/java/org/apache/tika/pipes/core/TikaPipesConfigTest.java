@@ -16,11 +16,9 @@
  */
 package org.apache.tika.pipes.core;
 
-import org.apache.tika.config.AbstractTikaConfigTest;
-
-public class TikaPipesConfigTest extends AbstractTikaConfigTest {
-    //this handles tests for the newer pipes type configs.
+public class TikaPipesConfigTest {
 /*
+   TODO -- rework these w json
     @Test
     public void testFetchers() throws Exception {
         FetcherManager m = FetcherManager.load(getConfigFilePath("fetchers-config.xml"));

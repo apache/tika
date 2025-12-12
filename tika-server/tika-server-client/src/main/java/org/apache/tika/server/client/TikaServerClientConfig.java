@@ -23,6 +23,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.exception.TikaConfigException;
 
@@ -37,7 +39,7 @@ public class TikaServerClientConfig {
 
     public static TikaServerClientConfig build(Path configFile) throws IOException, TikaConfigException {
         try (InputStream is = Files.newInputStream(configFile)) {
-            return buildSingle("serverClientConfig", TikaServerClientConfig.class, is);
+            return new ObjectMapper().readValue(is, TikaServerClientConfig.class);
         }
     }
 

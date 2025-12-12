@@ -23,8 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.client.HttpClientFactory;
-import org.apache.tika.config.ConfigValidator;
 import org.apache.tika.client.TikaClientException;
+import org.apache.tika.config.ConfigValidator;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;

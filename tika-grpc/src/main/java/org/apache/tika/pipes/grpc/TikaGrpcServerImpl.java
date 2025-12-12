@@ -18,11 +18,8 @@ package org.apache.tika.pipes.grpc;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import javax.xml.parsers.ParserConfigurationException;
@@ -265,8 +262,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 SaveFetcherReply.newBuilder().setFetcherId(request.getFetcherId()).build();
         try {
             Map<String, Object> fetcherConfigMap = OBJECT_MAPPER.readValue(request.getFetcherConfigJson(), new TypeReference<>() {});
-            Map<String, Param> tikaParamsMap = createTikaParamMap(fetcherConfigMap);
-            saveFetcher(request.getFetcherId(), request.getFetcherClass(), fetcherConfigMap, tikaParamsMap);
+            //TODO Sorry need to update this
+//            Map<String, Param> tikaParamsMap = createTikaParamMap(fetcherConfigMap);
+  //          saveFetcher(request.getFetcherId(), request.getFetcherClass(), fetcherConfigMap, tikaParamsMap);
             updateTikaConfig();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -274,7 +272,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         responseObserver.onNext(reply);
         responseObserver.onCompleted();
     }
-
+/*
     private void saveFetcher(String name, String fetcherClassName, Map<String, Object> paramsMap, Map<String, Param> tikaParamsMap) {
         try {
             if (paramsMap == null) {
@@ -301,7 +299,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             throw new RuntimeException(e);
         }
     }
-
+*/
+    /*
     private static Map<String, Param> createTikaParamMap(Map<String, Object> fetcherConfigMap) {
         Map<String, Param> tikaParamsMap = new HashMap<>();
         for (Map.Entry<String, Object> entry : fetcherConfigMap.entrySet()) {
@@ -311,7 +310,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         }
         return tikaParamsMap;
     }
-
+*/
     static Status notFoundStatus(String fetcherId) {
         return Status.newBuilder()
                 .setCode(io.grpc.Status.Code.NOT_FOUND.value())

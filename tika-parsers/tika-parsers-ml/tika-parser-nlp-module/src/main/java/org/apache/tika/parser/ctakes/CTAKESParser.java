@@ -60,7 +60,15 @@ public class CTAKESParser extends ParserDecorator {
      * Wraps the default Parser
      */
     public CTAKESParser() {
-        this(TikaLoader.loadDefault().loadAutoDetectParser());
+        this(loadDefaultParser());
+    }
+
+    private static Parser loadDefaultParser() {
+        try {
+            return TikaLoader.loadDefault().loadAutoDetectParser();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load default parser", e);
+        }
     }
 
     /**

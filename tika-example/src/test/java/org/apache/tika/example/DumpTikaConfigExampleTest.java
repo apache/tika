@@ -16,28 +16,15 @@
  */
 package org.apache.tika.example;
 
-import static java.nio.charset.StandardCharsets.UTF_16LE;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
 
-import org.apache.tika.detect.CompositeDetector;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.CompositeParser;
-import org.apache.tika.parser.Parser;
 
 @Disabled
 public class DumpTikaConfigExampleTest {
@@ -64,7 +51,8 @@ public class DumpTikaConfigExampleTest {
         }
     }
 
-    @Test
+    //TODO -- rework with json serialization
+    /*@Test
     public void testDump() throws Exception {
         //DumpTikaConfigExample ex = new DumpTikaConfigExample();
         for (Charset charset : new Charset[]{UTF_8, UTF_16LE}) {
@@ -97,6 +85,6 @@ public class DumpTikaConfigExampleTest {
                 assertNotNull(auto);
             }
         }
-    }
+    }*/
 
 }

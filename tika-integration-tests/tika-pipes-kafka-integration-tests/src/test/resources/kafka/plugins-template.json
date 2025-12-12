@@ -102,7 +102,7 @@
       "-Xmx1g",
       "-XX:ParallelGCThreads=2",
       "-XX:+ExitOnOutOfMemoryError",
-      "-Dlog4j.configurationFile=LOG4J_PROPERTIES_FILE"
+      "LOG4J_JVM_ARG"
     ],
     "timeoutMillis": 60000,
     "emitStrategy": {

@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Test;
@@ -69,7 +70,7 @@ public class SentimentAnalysisParserTest extends TikaTest {
         assertEquals("angry", sentiment);
     }
 
-    private Parser getParser(String configJson) throws TikaException, IOException {
+    private Parser getParser(String configJson) throws TikaException, IOException, URISyntaxException {
         try {
             return TikaLoader.load(
                             getConfigPath(SentimentAnalysisParserTest.class, configJson))

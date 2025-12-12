@@ -411,7 +411,8 @@ public class TikaCLI {
         } else if (arg.startsWith("--compare-file-magic=")) {
             pipeMode = false;
             compareFileMagic(arg.substring("--compare-file-magic=".length()));
-        } else if (arg.equals("--dump-minimal-config")) {
+        //TODO -- rework with json serialization
+        /*} else if (arg.equals("--dump-minimal-config")) {
             pipeMode = false;
             dumpConfig(TikaConfigSerializer.Mode.MINIMAL);
         } else if (arg.equals("--dump-current-config")) {
@@ -422,7 +423,7 @@ public class TikaCLI {
             dumpConfig(TikaConfigSerializer.Mode.STATIC);
         } else if (arg.equals("--dump-static-full-config")) {
             pipeMode = false;
-            dumpConfig(TikaConfigSerializer.Mode.STATIC_FULL);
+            dumpConfig(TikaConfigSerializer.Mode.STATIC_FULL);*/
         } else if (arg.startsWith("--convert-config-xml-to-json=")) {
             pipeMode = false;
             convertConfigXmlToJson(arg.substring("--convert-config-xml-to-json=".length()));
@@ -515,12 +516,13 @@ public class TikaCLI {
         }
     }
 
-    private void dumpConfig(TikaConfigSerializer.Mode mode) throws Exception {
+    //TODO -- rework with json serialization
+    /*private void dumpConfig(TikaConfigSerializer.Mode mode) throws Exception {
         configure();
         TikaLoader localConfig = (tikaLoader == null) ? TikaLoader.loadDefault() : tikaLoader;
         //TODO -- implement mode
         System.out.println(localConfig.getConfig().toString());
-    }
+    }*/
 
     private void convertConfigXmlToJson(String paths) throws Exception {
         String[] parts = paths.split(",");

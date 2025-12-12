@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -111,7 +112,7 @@ public class TestOCR extends TikaTest {
         return p.getClass();
     }
 
-    private Parser loadParser() throws IOException, TikaException {
+    private Parser loadParser() throws IOException, TikaException, URISyntaxException {
         return TikaLoader.load(
                         getConfigPath(TestOCR.class, "tika-config-restricted-gdal.json"))
                 .loadAutoDetectParser();
