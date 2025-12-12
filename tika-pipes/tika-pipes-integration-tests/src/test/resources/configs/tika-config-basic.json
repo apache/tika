@@ -51,9 +51,9 @@
   "auto-detect-parser": {
     "spoolToDisk": 1000000,
     "outputThreshold": 1000000,
+    "skipContainerDocumentDigest": false,
     "digesterFactory": {
-      "@class": "org.apache.tika.pipes.core.async.MockDigesterFactory",
-      "skipContainerDocument": false
+      "mock-digester-factory": {}
     },
     "throwOnZeroBytes": false
   },

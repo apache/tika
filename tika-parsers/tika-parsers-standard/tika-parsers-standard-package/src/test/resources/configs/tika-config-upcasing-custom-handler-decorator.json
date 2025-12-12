@@ -36,9 +36,9 @@
     "contentHandlerDecoratorFactory": {
       "@class": "org.apache.tika.sax.UpcasingContentHandlerDecoratorFactory"
     },
+    "skipContainerDocumentDigest": false,
     "digesterFactory": {
-      "@class": "org.apache.tika.parser.digestutils.CommonsDigesterFactory",
-      "skipContainerDocument": false
+      "commons-digester-factory": {}
     },
     "throwOnZeroBytes": true
   }

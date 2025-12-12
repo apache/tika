@@ -74,9 +74,12 @@ public abstract class CXFTestBase {
                 "spoolToDisk": 1000000,
                 "outputThreshold": 1000000,
                 "digesterFactory": {
-                  "@class": "org.apache.tika.parser.digestutils.CommonsDigesterFactory",
-                  "markLimit": 100000,
-                  "algorithmString": "md5"
+                  "commons-digester-factory": {
+                    "markLimit": 100000,
+                    "digests": [
+                      { "algorithm": "MD5" }
+                    ]
+                  }
                 },
                 "throwOnZeroBytes": false
               }

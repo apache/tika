@@ -56,13 +56,13 @@ import org.xml.sax.SAXException;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.digest.Digester;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.RUnpackExtractorFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
@@ -129,7 +129,7 @@ public class PipesServer implements AutoCloseable {
             return (byte) (ordinal() + 1);
         }
     }
-    private DigestingParser.Digester digester;
+    private Digester digester;
 
     private Detector detector;
 
@@ -460,15 +460,22 @@ public class PipesServer implements AutoCloseable {
         this.emitterManager = EmitterManager.load(tikaPluginManager, tikaJsonConfig);
         this.autoDetectParser = (AutoDetectParser) tikaLoader.loadAutoDetectParser();
         // Get the digester for pre-parse digesting of container documents.
-        // The AutoDetectParser now handles digesting internally via DigestHelper,
-        // but PipesServer does its own pre-parse digesting for container documents.
-        // Setting skipContainerDocument(true) ensures AutoDetectParser only digests embedded docs.
-        this.digester = autoDetectParser.getAutoDetectParserConfig().digester();
-        if (digester != null) {
-            //override this value because we'll be digesting before parse
-            autoDetectParser.getAutoDetectParserConfig().getDigesterFactory()
-                    .setSkipContainerDocument(true);
-            //if the user hasn't configured an embedded document extractor, set up the
+        // If user configured skipContainerDocumentDigest=false (the default), PipesServer
+        // digests the container document before parsing to ensure we have the digest even
+        // if parsing times out. The SkipContainerDocumentDigest marker is then added to
+        // ParseContext to prevent AutoDetectParser from re-digesting the container.
+        // If user configured skipContainerDocumentDigest=true, we don't digest containers at all.
+        boolean skipContainerDigest = autoDetectParser.getAutoDetectParserConfig()
+                .isSkipContainerDocumentDigest();
+        if (!skipContainerDigest) {
+            // User wants container documents digested - we'll do it in ParseHandler before parse
+            this.digester = autoDetectParser.getAutoDetectParserConfig().digester();
+        } else {
+            // User doesn't want container documents digested
+            this.digester = null;
+        }
+        if (this.digester != null) {
+            // If the user hasn't configured an embedded document extractor, set up the
             // RUnpackExtractorFactory
             if (autoDetectParser.getAutoDetectParserConfig()
                     .getEmbeddedDocumentExtractorFactory() == null) {

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.digest;
+package org.apache.tika.digest;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,38 +29,31 @@ import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.StringUtils;
 
-public class InputStreamDigester implements DigestingParser.Digester {
+public class InputStreamDigester implements Digester {
 
     private final String algorithm;
-    private final String algorithmKeyName;
-    private final DigestingParser.Encoder encoder;
+    private final String metadataKey;
+    private final Encoder encoder;
     private final int markLimit;
 
-    public InputStreamDigester(int markLimit, String algorithm, DigestingParser.Encoder encoder) {
-        this(markLimit, algorithm, algorithm, encoder);
-    }
-
     /**
-     * @param markLimit        limit in bytes to allow for mark/reset.  If the inputstream is longer
-     *                         than this limit, the stream will be reset and then spooled to a
-     *                         temporary file.
-     *                         Throws IllegalArgumentException if < 0.
-     * @param algorithm        name of the digest algorithm to retrieve from the Provider
-     * @param algorithmKeyName name of the algorithm to store
-     *                         as part of the key in the metadata
-     *                         when {@link #digest(InputStream, Metadata, ParseContext)} is called
-     * @param encoder          encoder to convert the byte array returned from the digester to a
-     *                         string
+     * @param markLimit   limit in bytes to allow for mark/reset.  If the inputstream is longer
+     *                    than this limit, the stream will be reset and then spooled to a
+     *                    temporary file.
+     *                    Throws IllegalArgumentException if < 0.
+     * @param algorithm   name of the digest algorithm to retrieve from the Provider
+     * @param metadataKey the full metadata key to use when storing the digest
+     *                    (e.g., "X-TIKA:digest:MD5" or "X-TIKA:digest:SHA256:BASE32")
+     * @param encoder     encoder to convert the byte array returned from the digester to a
+     *                    string
      */
-    public InputStreamDigester(int markLimit, String algorithm, String algorithmKeyName,
-                               DigestingParser.Encoder encoder) {
+    public InputStreamDigester(int markLimit, String algorithm, String metadataKey,
+                               Encoder encoder) {
         this.algorithm = algorithm;
-        this.algorithmKeyName = algorithmKeyName;
+        this.metadataKey = metadataKey;
         this.encoder = encoder;
         this.markLimit = markLimit;
 
@@ -72,8 +65,8 @@ public class InputStreamDigester implements DigestingParser.Digester {
     /**
      * Copied from commons-codec
      */
-    private static MessageDigest updateDigest(MessageDigest digest, InputStream data, Metadata metadata)
-            throws IOException {
+    private static MessageDigest updateDigest(MessageDigest digest, InputStream data,
+                                              Metadata metadata) throws IOException {
         byte[] buffer = new byte[1024];
         long total = 0;
         for (int read = data.read(buffer, 0, 1024); read > -1; read = data.read(buffer, 0, 1024)) {
@@ -172,11 +165,6 @@ public class InputStreamDigester implements DigestingParser.Digester {
         }
     }
 
-    private String getMetadataKey() {
-        return TikaCoreProperties.TIKA_META_PREFIX + "digest" +
-                TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + algorithmKeyName;
-    }
-
     private void digestFile(File f, long sz, Metadata m) throws IOException {
         //only add it if it hasn't been populated already
         if (StringUtils.isBlank(m.get(Metadata.CONTENT_LENGTH))) {
@@ -208,7 +196,7 @@ public class InputStreamDigester implements DigestingParser.Digester {
                 return false;
             }
         }
-        metadata.set(getMetadataKey(), encoder.encode(digestBytes));
+        metadata.set(metadataKey, encoder.encode(digestBytes));
         return true;
     }
 

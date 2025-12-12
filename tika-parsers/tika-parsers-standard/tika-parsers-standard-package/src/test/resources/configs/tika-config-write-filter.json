@@ -2,11 +2,15 @@
   "auto-detect-parser": {
     "spoolToDisk": 1000000,
     "outputThreshold": 1000000,
+    "skipContainerDocumentDigest": true,
     "digesterFactory": {
-      "@class": "org.apache.tika.parser.digestutils.CommonsDigesterFactory",
-      "markLimit": 100000,
-      "algorithmString": "sha256:32,md5",
-      "skipContainerDocument": true
+      "commons-digester-factory": {
+        "markLimit": 100000,
+        "digests": [
+          { "algorithm": "SHA256", "encoding": "BASE32" },
+          { "algorithm": "MD5" }
+        ]
+      }
     },
     "metadataWriteFilterFactory": {
       "@class": "org.apache.tika.metadata.writefilter.StandardWriteFilterFactory",

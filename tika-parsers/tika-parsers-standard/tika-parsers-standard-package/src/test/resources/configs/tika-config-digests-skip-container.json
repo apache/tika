@@ -2,11 +2,14 @@
   "auto-detect-parser": {
     "spoolToDisk": 1000000,
     "outputThreshold": 1000000,
+    "skipContainerDocumentDigest": true,
     "digesterFactory": {
       "commons-digester-factory": {
         "markLimit": 100000,
-        "algorithmString": "sha256:32,md5",
-        "skipContainerDocument": true
+        "digests": [
+          { "algorithm": "SHA256", "encoding": "BASE32" },
+          { "algorithm": "MD5" }
+        ]
       }
     },
     "throwOnZeroBytes": false

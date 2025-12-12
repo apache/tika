@@ -31,6 +31,8 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.detect.Detector;
+import org.apache.tika.digest.Digester;
+import org.apache.tika.digest.SkipContainerDocumentDigest;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.extractor.DocumentSelector;
@@ -41,7 +43,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -57,14 +58,14 @@ class ParseHandler {
     private static final Logger LOG = LoggerFactory.getLogger(ParseHandler.class);
 
     private final Detector detector;
-    private final DigestingParser.Digester digester;
+    private final Digester digester;
     private final ArrayBlockingQueue<Metadata> intermediateResult;
     private final CountDownLatch countDownLatch;
     private final AutoDetectParser autoDetectParser;
     private final RecursiveParserWrapper recursiveParserWrapper;
 
 
-    ParseHandler(Detector detector, DigestingParser.Digester digester, ArrayBlockingQueue<Metadata> intermediateResult,
+    ParseHandler(Detector detector, Digester digester, ArrayBlockingQueue<Metadata> intermediateResult,
                  CountDownLatch countDownLatch, AutoDetectParser autoDetectParser,
                  RecursiveParserWrapper recursiveParserWrapper) {
         this.detector = detector;
@@ -100,6 +101,10 @@ class ParseHandler {
         if (digester != null) {
             try {
                 digester.digest(tis, metadata, parseContext);
+                // Mark that we've already digested the container document so AutoDetectParser
+                // won't re-digest it during parsing
+                parseContext.set(SkipContainerDocumentDigest.class,
+                        SkipContainerDocumentDigest.INSTANCE);
             } catch (IOException e) {
                 LOG.warn("problem digesting: " + t.getId(), e);
             }

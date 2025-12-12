@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.digest;
+package org.apache.tika.digest;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -27,7 +27,6 @@ import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
 
 /**
@@ -43,31 +42,32 @@ public class DigestHelper {
      * Computes digests on the stream if configured.
      * This is called directly from AutoDetectParser.parse() before type detection.
      *
-     * @param tis                   the TikaInputStream to digest
-     * @param digester              the digester to use (may be null)
-     * @param skipContainerDocument if true, skip digesting for top-level documents (depth 0)
-     * @param metadata              metadata to read embedded depth from and write digests to
-     * @param context               parse context
-     * @param tmp                   temporary resources for creating temp files if needed
+     * @param tis                          the TikaInputStream to digest
+     * @param digester                     the digester to use (may be null)
+     * @param skipContainerDocumentDigest  if true, skip digesting for top-level documents (depth 0)
+     * @param metadata                     metadata to read embedded depth from and write digests to
+     * @param context                      parse context (may contain SkipContainerDocumentDigest marker)
+     * @param tmp                          temporary resources for creating temp files if needed
      * @throws IOException if an I/O error occurs
      */
     public static void maybeDigest(TikaInputStream tis,
-                                   DigestingParser.Digester digester,
-                                   boolean skipContainerDocument,
+                                   Digester digester,
+                                   boolean skipContainerDocumentDigest,
                                    Metadata metadata,
                                    ParseContext context,
                                    TemporaryResources tmp) throws IOException {
         if (digester == null) {
             return;
         }
-        if (skipContainerDocument) {
+        // Check both the config setting and the ParseContext marker
+        if (skipContainerDocumentDigest || SkipContainerDocumentDigest.shouldSkip(context)) {
             Integer depth = metadata.getInt(TikaCoreProperties.EMBEDDED_DEPTH);
             if (depth == null || depth == 0) {
                 return;
             }
         }
 
-        // Handle embedded stream translation if needed (e.g., for UUEncoded content)
+        // Handle embedded stream translation if needed (e.g., for OLE2 objects in TikaInputStream's open container)
         if (EMBEDDED_STREAM_TRANSLATOR.shouldTranslate(tis, metadata)) {
             Path tmpBytes = tmp.createTempFile();
             try (OutputStream os = Files.newOutputStream(tmpBytes)) {

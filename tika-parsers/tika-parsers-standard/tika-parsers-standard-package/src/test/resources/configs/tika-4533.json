@@ -7,7 +7,9 @@
     "digesterFactory": {
       "commons-digester-factory": {
         "markLimit": 100000,
-        "algorithmString": "sha256"
+        "digests": [
+          { "algorithm": "SHA256" }
+        ]
       }
     }
   }

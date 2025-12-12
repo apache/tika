@@ -24,6 +24,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.digest.DigestHelper;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -36,7 +37,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
-import org.apache.tika.parser.digest.DigestHelper;
 import org.apache.tika.sax.SecureContentHandler;
 
 public class AutoDetectParser extends CompositeParser {
@@ -162,7 +162,7 @@ public class AutoDetectParser extends CompositeParser {
             // Compute digests before type detection if configured
             DigestHelper.maybeDigest(tis,
                     autoDetectParserConfig.digester(),
-                    autoDetectParserConfig.isSkipContainerDocument(),
+                    autoDetectParserConfig.isSkipContainerDocumentDigest(),
                     metadata, context, tmp);
 
             // Automatically detect the MIME type of the document
