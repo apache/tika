@@ -203,7 +203,7 @@ public class TikaResourceTest extends CXFTestBase {
         String responseMsg = getStringFromInputStream((InputStream) response.getEntity());
         assertTrue(responseMsg.contains("test"));
         assertContains("<meta name=\"X-TIKA:digest:MD5\" content=\"f8be45c34e8919eedba48cc8d207fbf0\"/>", responseMsg);
-        assertContains("<meta name=\"X-TIKA:digest:SHA1\" content=\"N4EBCE7EGTIGZWETEJ6WD3W4KN32TLPG\"/>", responseMsg);
+        assertContains("<meta name=\"X-TIKA:digest:SHA1:BASE32\" content=\"N4EBCE7EGTIGZWETEJ6WD3W4KN32TLPG\"/>", responseMsg);
     }
 
     @Test

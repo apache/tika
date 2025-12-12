@@ -1,0 +1,19 @@
+{
+  "auto-detect-parser": {
+    "spoolToDisk": 1000000,
+    "outputThreshold": 1000000,
+    "digesterFactory": {
+      "bouncy-castle-digester-factory": {
+        "markLimit": 1000000,
+        "digests": [
+          { "algorithm": "MD5" },
+          { "algorithm": "SHA256" },
+          { "algorithm": "SHA384" },
+          { "algorithm": "SHA512" },
+          { "algorithm": "SHA3_512" }
+        ]
+      }
+    },
+    "throwOnZeroBytes": false
+  }
+}
