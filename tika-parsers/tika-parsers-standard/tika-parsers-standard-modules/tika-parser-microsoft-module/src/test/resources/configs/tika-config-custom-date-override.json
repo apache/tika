@@ -1,0 +1,15 @@
+{
+  "parsers": [
+    "default-parser",
+    {
+      "ooxml-parser": {
+        "dateOverrideFormat": "yyyy-mm-dd"
+      }
+    },
+    {
+      "office-parser": {
+        "dateOverrideFormat": "yyyy-mm-dd"
+      }
+    }
+  ]
+}

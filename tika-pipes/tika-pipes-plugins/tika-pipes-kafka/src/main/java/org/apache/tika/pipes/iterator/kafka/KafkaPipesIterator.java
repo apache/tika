@@ -30,7 +30,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.ConfigValidator;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -78,8 +78,8 @@ public class KafkaPipesIterator extends PipesIteratorBase {
     }
 
     private void checkConfig(KafkaPipesIteratorConfig config) throws TikaConfigException {
-        TikaConfig.mustNotBeEmpty("bootstrapServers", config.getBootstrapServers());
-        TikaConfig.mustNotBeEmpty("topic", config.getTopic());
+        ConfigValidator.mustNotBeEmpty("bootstrapServers", config.getBootstrapServers());
+        ConfigValidator.mustNotBeEmpty("topic", config.getTopic());
     }
 
     private void safePut(Properties props, String key, Object val) {

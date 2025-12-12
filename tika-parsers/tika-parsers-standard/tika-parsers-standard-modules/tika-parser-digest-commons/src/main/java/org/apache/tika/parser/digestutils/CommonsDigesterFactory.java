@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.digestutils;
 
-import org.apache.tika.config.Field;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.parser.DigestingParser;
 
@@ -37,17 +36,14 @@ public class CommonsDigesterFactory implements DigestingParser.DigesterFactory {
         return new CommonsDigester(markLimit, algorithmString);
     }
 
-    @Field
     public void setMarkLimit(int markLimit) {
         this.markLimit = markLimit;
     }
 
-    @Field
     public void setAlgorithmString(String algorithmString) {
         this.algorithmString = algorithmString;
     }
 
-    @Field
     @Override
     public void setSkipContainerDocument(boolean skipContainerDocument) {
         this.skipContainerDocument = skipContainerDocument;

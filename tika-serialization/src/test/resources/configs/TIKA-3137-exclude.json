@@ -1,0 +1,9 @@
+{
+  "metadata-filters": [
+    {
+      "exclude-field-metadata-filter": {
+        "exclude": ["title", "author"]
+      }
+    }
+  ]
+}

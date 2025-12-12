@@ -288,7 +288,7 @@ public abstract class TikaPipesSolrTestBase {
         replacements.put("PARSE_MODE", parseMode.name());
         replacements.put("SOLR_URLS", solrUrls);
         replacements.put("SOLR_ZK_HOSTS", solrZkHosts);
-        replacements.put("LOG4J_PROPERTIES_FILE", log4jPropFile);
+        replacements.put("LOG4J_JVM_ARG", "-Dlog4j.configurationFile=" + log4jPropFile.toAbsolutePath());
 
         JsonConfigHelper.writeConfigFromResource("/solr/plugins-template.json",
                 TikaPipesSolrTestBase.class, replacements, tikaConfig);

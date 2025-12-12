@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -32,23 +31,20 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.TikaConfigTest;
+import org.apache.tika.TikaTest;
 import org.apache.tika.utils.ProcessUtils;
 
-public class TikaServerConfigTest {
+public class TikaServerConfigTest extends TikaTest {
 
     @Test
     public void testBasic() throws Exception {
         Set<String> settings = new HashSet<>();
         CommandLineParser parser = new DefaultParser();
         CommandLine emptyCommandLine = parser.parse(new Options(), new String[]{});
-        Path path = Paths.get(TikaConfigTest.class
-                .getResource("/configs/tika-config-server.json")
-                .toURI());
+        Path path = getConfigPath(getClass(), "tika-config-server.json");
         TikaServerConfig config = TikaServerConfig.load(path, emptyCommandLine, settings);
         assertEquals(54321, config.getTaskTimeoutMillis());
         assertEquals(true, config.isEnableUnsecureFeatures());
-
     }
 
     @Test
@@ -56,21 +52,16 @@ public class TikaServerConfigTest {
         Set<String> settings = new HashSet<>();
         CommandLineParser parser = new DefaultParser();
         CommandLine emptyCommandLine = parser.parse(new Options(), new String[]{});
-        Path path = Paths.get(TikaConfigTest.class
-                .getResource("/configs/tika-config-server-fetchers-emitters.json")
-                .toURI());
+        Path path = getConfigPath(getClass(), "tika-config-server-fetchers-emitters.json");
         TikaServerConfig config = TikaServerConfig.load(path, emptyCommandLine, settings);
         assertEquals(54321, config.getTaskTimeoutMillis());
         assertEquals(true, config.isEnableUnsecureFeatures());
-
     }
 
     @Test
     public void testPorts() throws Exception {
         CommandLineParser parser = new DefaultParser();
-        Path path = Paths.get(TikaConfigTest.class
-                .getResource("/configs/tika-config-server.json")
-                .toURI());
+        Path path = getConfigPath(getClass(), "tika-config-server.json");
         CommandLine commandLine = parser.parse(new Options()
                 .addOption(Option
                         .builder("p")
@@ -92,10 +83,7 @@ public class TikaServerConfigTest {
         Set<String> settings = new HashSet<>();
         CommandLineParser parser = new DefaultParser();
         CommandLine emptyCommandLine = parser.parse(new Options(), new String[]{});
-                //.getResource("/configs/tika-config-server-tls.xml")
-        Path path = Paths.get(TikaConfigTest.class
-                .getResource("/configs/tika-config-server-tls.json")
-                .toURI());
+        Path path = getConfigPath(getClass(), "tika-config-server-tls.json");
 
         TikaServerConfig config = TikaServerConfig.load(path, emptyCommandLine, settings);
         TlsConfig tlsConfig = config.getTlsConfig();

@@ -20,17 +20,12 @@ package org.apache.tika.parser.sqlite3;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
 import org.apache.tika.config.TikaComponent;
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -55,7 +50,7 @@ import org.apache.tika.parser.Parser;
  * that has to be created.
  */
 @TikaComponent
-public class SQLite3Parser implements Parser, Initializable {
+public class SQLite3Parser implements Parser {
 
     public static final String SQLITE3_PREFIX = "sqlite3:";
 
@@ -105,19 +100,4 @@ public class SQLite3Parser implements Parser, Initializable {
         p.parse(stream, handler, metadata, context);
     }
 
-    /**
-     * No-op
-     *
-     * @param params params to use for initialization
-     * @throws TikaConfigException
-     */
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
-
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
-    }
 }

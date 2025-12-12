@@ -20,7 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.tika.config.ConfigDeserializer;
-import org.apache.tika.config.Field;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.metadata.Metadata;
@@ -98,12 +97,10 @@ public class FieldNameMappingFilter extends MetadataFilterBase {
      *
      * @param excludeUnmapped
      */
-    @Field
     public void setExcludeUnmapped(boolean excludeUnmapped) {
         this.excludeUnmapped = excludeUnmapped;
     }
 
-    @Field
     public void setMappings(Map<String, String> mappings) {
         for (Map.Entry<String, String> e : mappings.entrySet()) {
             this.mappings.put(e.getKey(), e.getValue());

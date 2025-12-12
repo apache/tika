@@ -55,7 +55,7 @@ import org.apache.tika.config.TikaComponent;
  * </ul>
  *
  * <p>The processor maintains an inclusion list of known Tika service interfaces
- * to avoid generating SPI files for utility interfaces like Serializable, Initializable, etc.
+ * to avoid generating SPI files for utility interfaces like Serializable, etc.
  */
 @SupportedAnnotationTypes("org.apache.tika.config.TikaComponent")
 @SupportedSourceVersion(SourceVersion.RELEASE_17)

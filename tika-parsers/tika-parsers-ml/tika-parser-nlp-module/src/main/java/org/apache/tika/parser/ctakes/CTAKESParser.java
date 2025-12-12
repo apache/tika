@@ -22,7 +22,7 @@ import java.io.InputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
@@ -60,14 +60,15 @@ public class CTAKESParser extends ParserDecorator {
      * Wraps the default Parser
      */
     public CTAKESParser() {
-        this(TikaConfig.getDefaultConfig());
+        this(loadDefaultParser());
     }
 
-    /**
-     * Wraps the default Parser for this Config
-     */
-    public CTAKESParser(TikaConfig config) {
-        this(config.getParser());
+    private static Parser loadDefaultParser() {
+        try {
+            return TikaLoader.loadDefault().loadAutoDetectParser();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load default parser", e);
+        }
     }
 
     /**

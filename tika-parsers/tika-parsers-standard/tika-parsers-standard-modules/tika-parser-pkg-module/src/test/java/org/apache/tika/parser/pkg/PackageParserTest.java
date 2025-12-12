@@ -28,7 +28,7 @@ import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.zip.PackageConstants;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
@@ -62,9 +62,8 @@ public class PackageParserTest extends TikaTest {
     @Test
     public void testSpecializations() throws Exception {
         //Test that our manually constructed list of children of zip and tar
-        //in PackageParser is current with TikaConfig's defaultConfig.
-        TikaConfig config = TikaConfig.getDefaultConfig();
-        MediaTypeRegistry mediaTypeRegistry = config.getMimeRepository().getMediaTypeRegistry();
+        //in PackageParser is current with TikaLoader's media type registry.
+        MediaTypeRegistry mediaTypeRegistry = TikaLoader.getMediaTypeRegistry();
         Set<MediaType> currentSpecializations = new HashSet<>();
         MediaType tar = MediaType.parse("application/x-tar");
         for (MediaType type : mediaTypeRegistry.getTypes()) {

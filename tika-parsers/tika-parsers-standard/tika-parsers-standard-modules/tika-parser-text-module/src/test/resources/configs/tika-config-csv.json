@@ -1,0 +1,10 @@
+{
+  "parsers": [
+    "default-parser",
+    {
+      "text-and-csv-parser": {
+        "minConfidence": 0.2
+      }
+    }
+  ]
+}

@@ -16,37 +16,13 @@
  */
 package org.apache.tika.metadata.filter;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 
-import org.w3c.dom.Element;
-
-import org.apache.tika.config.ConfigBase;
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 
-public abstract class MetadataFilter extends ConfigBase implements Serializable {
-    /**
-     * Loads the metadata list filter from the config file if it exists, otherwise returns NoOpFilter
-     * @param root
-     * @return
-     * @throws TikaConfigException
-     * @throws IOException
-     */
-    public static MetadataFilter load(Element root, boolean allowMissing) throws TikaConfigException,
-            IOException {
-        try {
-            return buildComposite("metadataFilters", CompositeMetadataFilter.class,
-                    "metadataFilter", MetadataFilter.class, root);
-        } catch (TikaConfigException e) {
-            if (allowMissing && e.getMessage().contains("could not find metadataFilters")) {
-                return new NoOpFilter();
-            }
-            throw e;
-        }
-    }
+public abstract class MetadataFilter implements Serializable {
 
     /**
      * For efficiency's sake, the original metadata list and data therein may be modified.

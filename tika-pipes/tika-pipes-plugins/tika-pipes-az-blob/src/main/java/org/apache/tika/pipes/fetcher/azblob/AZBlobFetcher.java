@@ -16,8 +16,6 @@
  */
 package org.apache.tika.pipes.fetcher.azblob;
 
-import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -32,6 +30,7 @@ import com.azure.storage.blob.models.BlobProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.ConfigValidator;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
@@ -79,9 +78,9 @@ public class AZBlobFetcher extends AbstractTikaExtension implements Fetcher {
         if (!StringUtils.isBlank(config.getSasToken())
                 || !StringUtils.isBlank(config.getEndpoint())
                 || !StringUtils.isBlank(config.getContainer())) {
-            mustNotBeEmpty("sasToken", config.getSasToken());
-            mustNotBeEmpty("endpoint", config.getEndpoint());
-            mustNotBeEmpty("container", config.getContainer());
+            ConfigValidator.mustNotBeEmpty("sasToken", config.getSasToken());
+            ConfigValidator.mustNotBeEmpty("endpoint", config.getEndpoint());
+            ConfigValidator.mustNotBeEmpty("container", config.getContainer());
         }
 
         if (!StringUtils.isBlank(config.getSasToken())) {

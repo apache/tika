@@ -59,7 +59,6 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
-import org.apache.tika.config.Field;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -557,7 +556,6 @@ public class PackageParser extends AbstractEncodingDetectorParser {
      *
      * @param detectCharsetsInEntryNames
      */
-    @Field
     public void setDetectCharsetsInEntryNames(boolean detectCharsetsInEntryNames) {
         this.detectCharsetsInEntryNames = detectCharsetsInEntryNames;
     }

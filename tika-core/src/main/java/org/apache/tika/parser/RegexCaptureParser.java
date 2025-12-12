@@ -32,33 +32,19 @@ import java.util.regex.Pattern;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
-import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
-public class RegexCaptureParser implements Parser, Initializable {
+@TikaComponent(spi = false)
+public class RegexCaptureParser implements Parser {
 
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.TEXT_PLAIN);
 
     private Map<String, Pattern> captureMap = new HashMap<>();
     private Map<String, Pattern> matchMap = new HashMap<>();
-
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
-
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
-
-    }
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -115,7 +101,6 @@ public class RegexCaptureParser implements Parser, Initializable {
         }
     }
 
-    @Field
     public void setCaptureMap(Map<String, String> map) {
         for (Map.Entry<String, String> e : map.entrySet()) {
             String field = e.getKey();
@@ -124,7 +109,6 @@ public class RegexCaptureParser implements Parser, Initializable {
         }
     }
 
-    @Field
     public void setMatchMap(Map<String, String> map) {
         for (Map.Entry<String, String> e : map.entrySet()) {
             String field = e.getKey();
@@ -133,7 +117,6 @@ public class RegexCaptureParser implements Parser, Initializable {
         }
     }
 
-    @Field
     public void setWriteContent(boolean writeContent) {
         this.writeContent = writeContent;
     }

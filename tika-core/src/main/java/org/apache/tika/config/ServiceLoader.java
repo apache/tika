@@ -59,36 +59,20 @@ public class ServiceLoader {
      */
     private static volatile ClassLoader CONTEXT_CLASS_LOADER = null;
     private final ClassLoader loader;
-    private final LoadErrorHandler handler;
-    private final InitializableProblemHandler initializableProblemHandler;
     private final boolean dynamic;
 
-    public ServiceLoader(ClassLoader loader, LoadErrorHandler handler,
-                         InitializableProblemHandler initializableProblemHandler, boolean dynamic) {
+    public ServiceLoader(ClassLoader loader, boolean dynamic) {
         this.loader = loader;
-        this.handler = handler;
-        this.initializableProblemHandler = initializableProblemHandler;
         this.dynamic = dynamic;
 
     }
-    public ServiceLoader(ClassLoader loader, LoadErrorHandler handler, boolean dynamic) {
-        this(loader, handler, InitializableProblemHandler.WARN, dynamic);
-    }
-
-    public ServiceLoader(ClassLoader loader, LoadErrorHandler handler) {
-        this(loader, handler, false);
-    }
 
     public ServiceLoader(ClassLoader loader) {
-        this(loader,
-                Boolean.getBoolean("org.apache.tika.service.error.warn") ? LoadErrorHandler.WARN :
-                        LoadErrorHandler.IGNORE);
+        this(loader, true);
     }
 
     public ServiceLoader() {
-        this(getContextClassLoader(),
-                Boolean.getBoolean("org.apache.tika.service.error.warn") ? LoadErrorHandler.WARN :
-                        LoadErrorHandler.IGNORE, true);
+        this(getContextClassLoader(), true);
     }
 
     /**
@@ -146,26 +130,6 @@ public class ServiceLoader {
     }
 
     /**
-     * Returns the load error handler used by this loader.
-     *
-     * @return load error handler
-     * @since Apache Tika 1.3
-     */
-    public LoadErrorHandler getLoadErrorHandler() {
-        return handler;
-    }
-
-    /**
-     * Returns the handler for problems with initializables
-     *
-     * @return handler for problems with initializables
-     * @since Apache Tika 1.15.1
-     */
-    public InitializableProblemHandler getInitializableProblemHandler() {
-        return initializableProblemHandler;
-    }
-
-    /**
      * Returns an input stream for reading the specified resource from the
      * configured class loader.
      *
@@ -195,9 +159,6 @@ public class ServiceLoader {
      * Loads and returns the named service class that's expected to implement
      * the given interface.
      * <p>
-     * Note that this class does not use the {@link LoadErrorHandler}, a
-     * {@link ClassNotFoundException} is always returned for unknown
-     * classes or classes of the wrong type
      *
      * @param iface service interface
      * @param name  service class name
@@ -313,7 +274,7 @@ public class ServiceLoader {
                 try {
                     collectServiceClassNames(resource, names);
                 } catch (IOException e) {
-                    handler.handleLoadError(serviceName, e);
+                    //TODO -- swallow log? or don't catch?
                 }
             }
         }
@@ -356,11 +317,6 @@ public class ServiceLoader {
                         }
                         if (!shouldExclude) {
                             T instance = ServiceLoaderUtils.newInstance(klass, this);
-                            if (instance instanceof Initializable) {
-                                ((Initializable) instance).initialize(Collections.EMPTY_MAP);
-                                ((Initializable) instance)
-                                        .checkInitialization(initializableProblemHandler);
-                            }
                             providers.add(instance);
                         }
                     } else {
@@ -368,7 +324,7 @@ public class ServiceLoader {
                                 "Class " + name + " is not of type: " + iface);
                     }
                 } catch (Throwable t) {
-                    handler.handleLoadError(name, t);
+                    //TODO: swallow, log, throw?
                 }
             }
         }

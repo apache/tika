@@ -30,7 +30,6 @@ import java.io.InputStream;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -249,7 +248,7 @@ public class MagicDetectorTest {
 
     @Test
     public void testBZ2Detection() throws Exception {
-        Detector detector = new TikaConfig().getDetector();
+        Detector detector = new DefaultDetector();
         for (String bz2 : new String[]{"bzip2-8-file.txt.bz2",
                 "empty-file.txt.bz2", "lbzip2-8-file.txt.bz2",
                 "small-file.txt.bz2", "test-file-1.csv.bz2",

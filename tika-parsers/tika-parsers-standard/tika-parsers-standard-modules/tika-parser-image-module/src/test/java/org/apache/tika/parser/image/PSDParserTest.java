@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.XMPMM;
@@ -79,11 +79,13 @@ public class PSDParserTest extends TikaTest {
 
     @Test
     public void testMaxLength() throws Exception {
-        TikaConfig config = new TikaConfig(getResourceAsStream("tika-config-TIKA-3243.xml"));
+        Parser p = TikaLoader.load(
+                        getConfigPath(PSDParserTest.class, "tika-config-TIKA-3243.json"))
+                .loadParsers();
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/x-psd");
         assertThrows(TikaException.class, () -> {
-            getXML("testPSD_xmp.psd", config.getParser(), metadata);
+            getXML("testPSD_xmp.psd", p, metadata);
         });
     }
 }

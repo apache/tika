@@ -1,0 +1,10 @@
+{
+  "parsers": [
+    "default-parser",
+    {
+      "psd-parser": {
+        "maxDataLengthBytes": 100
+      }
+    }
+  ]
+}

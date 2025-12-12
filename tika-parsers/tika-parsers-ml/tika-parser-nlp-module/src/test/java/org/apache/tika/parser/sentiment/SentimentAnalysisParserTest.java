@@ -21,28 +21,27 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
 
-import org.apache.tika.Tika;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.TikaTest;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.Parser;
 
 /**
  * Test case for {@link SentimentAnalysisParser}
  */
-public class SentimentAnalysisParserTest {
+public class SentimentAnalysisParserTest extends TikaTest {
 
     @Test
     public void endToEndTest() throws Exception {
-
-        Tika tika = getTika("tika-config-sentiment-opennlp.xml");
-        if (tika == null) {
+        Parser parser = getParser("tika-config-sentiment-opennlp.json");
+        if (parser == null) {
             return;
         }
 
@@ -50,36 +49,32 @@ public class SentimentAnalysisParserTest {
                 " some of the best days of our lives haven't happened yet.";
         ByteArrayInputStream stream =
                 new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
-        Metadata md = new Metadata();
-        tika.parse(stream, md);
+        Metadata md = getXML(stream, parser, new Metadata()).metadata;
         String sentiment = md.get("Sentiment");
         assertNotNull(sentiment);
         assertEquals("positive", sentiment);
-
     }
 
     @Test
     public void testCategorical() throws Exception {
-        Tika tika = getTika("tika-config-sentiment-opennlp-cat.xml");
-        if (tika == null) {
+        Parser parser = getParser("tika-config-sentiment-opennlp-cat.json");
+        if (parser == null) {
             return;
         }
         String text = "Whatever, I need some cooling off time!";
         ByteArrayInputStream stream =
                 new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
-        Metadata md = new Metadata();
-        tika.parse(stream, md);
+        Metadata md = getXML(stream, parser, new Metadata()).metadata;
         String sentiment = md.get("Sentiment");
         assertNotNull(sentiment);
         assertEquals("angry", sentiment);
     }
 
-    private Tika getTika(String configXml) throws TikaException, SAXException, IOException {
-
-        try (InputStream confStream = getClass().getResourceAsStream(configXml)) {
-            assert confStream != null;
-            TikaConfig config = new TikaConfig(confStream);
-            return new Tika(config);
+    private Parser getParser(String configJson) throws TikaException, IOException, URISyntaxException {
+        try {
+            return TikaLoader.load(
+                            getConfigPath(SentimentAnalysisParserTest.class, configJson))
+                    .loadAutoDetectParser();
         } catch (TikaConfigException e) {
             //if can't connect to pull sentiment model...ignore test
             if (e.getCause() instanceof IOException) {

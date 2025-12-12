@@ -25,7 +25,6 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
@@ -56,12 +55,7 @@ public class ParserContainerExtractor implements ContainerExtractor {
     private final Detector detector;
 
     public ParserContainerExtractor() {
-        this(TikaConfig.getDefaultConfig());
-    }
-
-    public ParserContainerExtractor(TikaConfig config) {
-        this(new AutoDetectParser(config),
-                new DefaultDetector(config.getMimeRepository()));
+        this(new AutoDetectParser(), new DefaultDetector());
     }
 
     public ParserContainerExtractor(Parser parser, Detector detector) {

@@ -1,0 +1,10 @@
+{
+  "parsers": [
+    "default-parser",
+    {
+      "jsoup-parser": {
+        "extractScripts": true
+      }
+    }
+  ]
+}

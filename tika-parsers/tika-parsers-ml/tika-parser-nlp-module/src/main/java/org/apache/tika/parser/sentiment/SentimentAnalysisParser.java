@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 
 import opennlp.tools.sentiment.SentimentME;
@@ -32,10 +31,7 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -74,11 +70,10 @@ public class SentimentAnalysisParser implements Parser, Initializable {
      * Note: on conflict: the model from local file system gets the priority
      * over classpath
      */
-    @Field
     private String modelPath = DEF_MODEL;
 
     @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
+    public void initialize() throws TikaConfigException {
         LOG.debug("Initializing...");
         if (modelPath == null) {
             throw new TikaConfigException("Parameter 'modelPath' is required but it is not set");
@@ -107,12 +102,6 @@ public class SentimentAnalysisParser implements Parser, Initializable {
             LOG.warn("Failed to load sentiment model from {}" + modelPath);
             throw new TikaConfigException(e.getMessage(), e);
         }
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler handler)
-            throws TikaConfigException {
-        //TODO -- what do we want to check?
     }
 
     /**

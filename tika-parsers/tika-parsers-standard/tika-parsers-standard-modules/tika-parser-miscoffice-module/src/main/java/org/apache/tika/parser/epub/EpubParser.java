@@ -46,7 +46,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
-import org.apache.tika.config.Field;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -86,7 +85,6 @@ public class EpubParser implements Parser {
                     MediaType.application("x-ibooks+zip"))));
 
     private static final String META_INF_ENCRYPTION = "META-INF/encryption.xml";
-    @Field
     boolean streaming = false;
     private Parser meta = new DcXMLParser();
 
@@ -109,7 +107,6 @@ public class EpubParser implements Parser {
         this.content = content;
     }
 
-    @Field
     public void setStreaming(boolean streaming) {
         this.streaming = streaming;
     }

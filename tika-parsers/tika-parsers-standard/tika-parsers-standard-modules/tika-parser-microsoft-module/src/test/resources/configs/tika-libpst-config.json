@@ -1,0 +1,13 @@
+{
+  "parsers": [
+    {
+      "default-parser": {
+        "_exclude": [
+          "outlook-pst-parser",
+          "pst-mail-item-parser"
+        ]
+      }
+    },
+    "lib-pst-parser"
+  ]
+}

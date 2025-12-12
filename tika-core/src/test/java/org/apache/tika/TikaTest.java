@@ -44,7 +44,6 @@ import org.apache.commons.io.IOUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedResourceHandler;
 import org.apache.tika.io.FilenameUtils;
@@ -67,16 +66,7 @@ import org.apache.tika.sax.ToXMLContentHandler;
  */
 public abstract class TikaTest {
 
-    protected static TikaConfig DEFAULT_TIKA_CONFIG;
     protected static Parser AUTO_DETECT_PARSER = new AutoDetectParser();
-
-    static {
-        try {
-            DEFAULT_TIKA_CONFIG = new TikaConfig();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
     public static void assertContainsCount(String needle, String haystack, int targetCount) {
         int i = haystack.indexOf(needle);
         int count = 0;
@@ -265,6 +255,23 @@ public abstract class TikaTest {
             fail("Unable to find requested resource " + name);
         }
         return stream;
+    }
+
+    /**
+     * Gets the path to a config file resource from the configs/ directory.
+     *
+     * @param callingClass The class from which to resolve the resource path
+     * @param name The name of the config resource (without the configs/ prefix)
+     * @return A {@link Path} to the resource
+     * @throws URISyntaxException if the URL cannot be converted to a URI
+     */
+    public static Path getConfigPath(Class<?> callingClass, String name) throws URISyntaxException {
+        String resourcePath = "/configs/" + name;
+        URL url = callingClass.getResource(resourcePath);
+        if (url == null) {
+            fail("Unable to find requested config resource " + resourcePath);
+        }
+        return Path.of(url.toURI());
     }
 
     protected XMLResult getXML(String filePath, Parser parser, ParseContext context)

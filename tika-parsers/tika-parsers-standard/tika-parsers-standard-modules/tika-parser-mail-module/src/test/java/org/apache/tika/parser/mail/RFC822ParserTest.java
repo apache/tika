@@ -42,7 +42,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
@@ -62,7 +62,6 @@ public class RFC822ParserTest extends TikaTest {
 
     //legacy RFC822 behavior...extract every alternative part
     private static Parser EXTRACT_ALL_ALTERNATIVES_PARSER;
-    private static TikaConfig TIKA_CONFIG;
 
     private static InputStream getStream(String name) {
         InputStream stream =
@@ -73,12 +72,10 @@ public class RFC822ParserTest extends TikaTest {
 
     @BeforeAll
     public static void setUp() throws Exception {
-
-        try (InputStream is = getStream(
-                "org/apache/tika/parser/mail/tika-config-extract-all-alternatives.xml")) {
-            TIKA_CONFIG = new TikaConfig(is);
-        }
-        EXTRACT_ALL_ALTERNATIVES_PARSER = new AutoDetectParser(TIKA_CONFIG);
+        EXTRACT_ALL_ALTERNATIVES_PARSER = TikaLoader.load(
+                        getConfigPath(RFC822ParserTest.class,
+                                "tika-config-extract-all-alternatives.json"))
+                .loadAutoDetectParser();
     }
 
     @Test
@@ -330,7 +327,8 @@ public class RFC822ParserTest extends TikaTest {
     @Test
     public void testGetAttachmentsAsEmbeddedResources() throws Exception {
         TrackingHandler tracker = new TrackingHandler();
-        ContainerExtractor ex = new ParserContainerExtractor(TIKA_CONFIG);
+        ContainerExtractor ex = new ParserContainerExtractor(
+                EXTRACT_ALL_ALTERNATIVES_PARSER, ((AutoDetectParser)EXTRACT_ALL_ALTERNATIVES_PARSER).getDetector());
         try (TikaInputStream tis = TikaInputStream
                 .get(getStream("test-documents/testRFC822-multipart"))) {
             assertEquals(true, ex.isSupported(tis));

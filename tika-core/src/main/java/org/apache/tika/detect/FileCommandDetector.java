@@ -26,7 +26,6 @@ import java.nio.file.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.Field;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TemporaryResources;
@@ -149,7 +148,6 @@ public class FileCommandDetector implements Detector {
         return MediaType.OCTET_STREAM;
     }
 
-    @Field
     public void setFilePath(String fileCommandPath) {
         //this opens up a potential command vulnerability.
         //Don't ever let an untrusted user set this.
@@ -157,7 +155,6 @@ public class FileCommandDetector implements Detector {
         checkHasFile(this.fileCommandPath);
     }
 
-    @Field
     public void setUseMime(boolean useMime) {
         this.useMime = useMime;
     }
@@ -172,12 +169,10 @@ public class FileCommandDetector implements Detector {
      *
      * @param maxBytes
      */
-    @Field
     public void setMaxBytes(int maxBytes) {
         this.maxBytes = maxBytes;
     }
 
-    @Field
     public void setTimeoutMs(long timeoutMs) {
         this.timeoutMs = timeoutMs;
     }

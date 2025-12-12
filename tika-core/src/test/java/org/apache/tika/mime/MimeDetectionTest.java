@@ -33,7 +33,6 @@ import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -48,7 +47,7 @@ public class MimeDetectionTest {
      */
     @BeforeAll
     public static void setUp() {
-        MIME_TYPES = TikaConfig.getDefaultConfig().getMimeRepository();
+        MIME_TYPES = MimeTypes.getDefaultMimeTypes();
         REGISTRY = MIME_TYPES.getMediaTypeRegistry();
     }
 

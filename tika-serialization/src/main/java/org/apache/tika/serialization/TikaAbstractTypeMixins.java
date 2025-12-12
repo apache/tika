@@ -156,7 +156,7 @@ public final class TikaAbstractTypeMixins {
                 // Create config node without @class
                 com.fasterxml.jackson.databind.node.ObjectNode configObj =
                         mapper.createObjectNode();
-                node.fields().forEachRemaining(entry -> {
+                node.properties().forEach(entry -> {
                     if (!"@class".equals(entry.getKey())) {
                         configObj.set(entry.getKey(), entry.getValue());
                     }

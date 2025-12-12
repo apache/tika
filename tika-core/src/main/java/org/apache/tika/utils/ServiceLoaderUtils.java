@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.tika.config.ServiceLoader;
 
+
 /**
  * Service Loading and Ordering related utils
  */
@@ -32,34 +33,6 @@ public class ServiceLoaderUtils {
      */
     public static <T> void sortLoadedClasses(List<T> loaded) {
         loaded.sort(CompareUtils::compareClassName);
-    }
-
-    /**
-     * Loads a class and instantiates it
-     *
-     * @param className service class name
-     * @param <T>       service type
-     * @return instance of service
-     */
-    public static <T> T newInstance(String className) {
-        return newInstance(className, ServiceLoader.class.getClassLoader());
-    }
-
-    /**
-     * Loads a class and instantiates it
-     *
-     * @param className service class name
-     * @param loader    class loader
-     * @param <T>       service type
-     * @return instance of service
-     */
-    public static <T> T newInstance(String className, ClassLoader loader) {
-        try {
-            return ((Class<T>) Class.forName(className, true, loader)).getDeclaredConstructor().newInstance();
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
-                 NoSuchMethodException | InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     /**

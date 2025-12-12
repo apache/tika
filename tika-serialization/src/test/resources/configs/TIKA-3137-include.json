@@ -1,0 +1,9 @@
+{
+  "metadata-filters": [
+    {
+      "include-field-metadata-filter": {
+        "include": ["title", "author"]
+      }
+    }
+  ]
+}

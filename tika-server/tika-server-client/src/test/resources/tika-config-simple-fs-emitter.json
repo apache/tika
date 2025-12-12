@@ -1,0 +1,11 @@
+{
+  "httpClientFactory": {
+    "maxConnections": 5
+  },
+  "mode": "pipes",
+  "numThreads": 6,
+  "maxWaitMillis": 600000,
+  "tikaEndpoints": [
+    "http://localhost:9998"
+  ]
+}

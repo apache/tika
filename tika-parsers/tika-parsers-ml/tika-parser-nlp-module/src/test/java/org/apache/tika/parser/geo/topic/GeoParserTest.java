@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -103,9 +103,9 @@ public class GeoParserTest extends TikaTest {
 
     @Test
     public void testConfig() throws Exception {
-        TikaConfig config = new TikaConfig(
-                getResourceAsStream("/org/apache/tika/config/TIKA-3078-geo.topic.GeoParser.xml"));
-        Parser p = config.getParser();
+        Parser p = TikaLoader.load(
+                        getConfigPath(GeoParserTest.class, "TIKA-3078-geo.topic.GeoParser.json"))
+                .loadParsers();
         GeoParser geoParser = (GeoParser) findParser(p, GeoParser.class);
         assertNotNull(geoParser);
         assertEquals("http://localhost/gazetteerRestEndpoint",

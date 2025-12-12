@@ -23,7 +23,6 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.pdfbox.Loader;
@@ -35,11 +34,7 @@ import org.apache.pdfbox.tools.imageio.ImageIOUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
 import org.apache.tika.config.TikaComponent;
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
@@ -61,7 +56,7 @@ import org.apache.tika.renderer.RenderResults;
 import org.apache.tika.renderer.RenderingTracker;
 
 @TikaComponent(name = "pdfbox-renderer")
-public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
+public class PDFBoxRenderer implements PDDocumentRenderer {
 
     Set<MediaType> SUPPORTED_TYPES = Collections.singleton(PDFParser.MEDIA_TYPE);
 
@@ -190,17 +185,6 @@ public class PDFBoxRenderer implements PDDocumentRenderer, Initializable {
             throw new IOException(e);
         }
         return new RenderResult(RenderResult.STATUS.SUCCESS, id, tmpFile, metadata);
-    }
-
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
-        //check file format names
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
-
     }
 
     public void setDPI(int dpi) {

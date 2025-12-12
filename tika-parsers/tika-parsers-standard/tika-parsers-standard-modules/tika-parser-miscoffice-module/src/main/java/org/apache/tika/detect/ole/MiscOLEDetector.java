@@ -30,7 +30,6 @@ import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 
-import org.apache.tika.config.Field;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
@@ -66,7 +65,6 @@ public class MiscOLEDetector implements Detector {
     public static final MediaType QUATTROPRO = application("x-quattro-pro");
 
 
-    @Field
     private int markLimit = 16 * 1024 * 1024;
 
     /**

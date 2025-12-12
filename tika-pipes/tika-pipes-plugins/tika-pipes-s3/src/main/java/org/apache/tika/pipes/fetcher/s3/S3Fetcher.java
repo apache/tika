@@ -16,8 +16,6 @@
  */
 package org.apache.tika.pipes.fetcher.s3;
 
-import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -50,6 +48,7 @@ import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
+import org.apache.tika.config.ConfigValidator;
 import org.apache.tika.exception.FileTooLongException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -104,8 +103,8 @@ public class S3Fetcher extends AbstractTikaExtension implements Fetcher, RangeFe
     }
 
     private void initialize() throws TikaConfigException {
-        mustNotBeEmpty("bucket", config.getBucket());
-        mustNotBeEmpty("region", config.getRegion());
+        ConfigValidator.mustNotBeEmpty("bucket", config.getBucket());
+        ConfigValidator.mustNotBeEmpty("region", config.getRegion());
 
         AwsCredentialsProvider provider;
         String credentialsProvider = config.getCredentialsProvider();

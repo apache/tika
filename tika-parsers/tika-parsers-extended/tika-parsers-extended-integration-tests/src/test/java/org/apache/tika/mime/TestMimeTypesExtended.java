@@ -25,7 +25,7 @@ import java.io.InputStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 
@@ -35,8 +35,7 @@ public class TestMimeTypesExtended {
 
     @BeforeEach
     public void setUp() throws Exception {
-        TikaConfig config = TikaConfig.getDefaultConfig();
-        repo = config.getMimeRepository();
+        repo = TikaLoader.getMimeTypes();
     }
 
     @Test

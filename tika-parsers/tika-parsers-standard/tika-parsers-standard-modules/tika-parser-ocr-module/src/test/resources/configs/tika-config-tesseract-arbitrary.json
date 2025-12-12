@@ -1,0 +1,12 @@
+{
+  "parsers": [
+    {
+      "tesseract-ocr-parser": {
+        "otherTesseractConfig": {
+          "textord_initialx_ile": "0.75",
+          "textord_noise_hfract": "0.15625"
+        }
+      }
+    }
+  ]
+}

@@ -30,7 +30,6 @@ import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.Field;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
@@ -162,7 +161,6 @@ public class PSDParser implements Parser {
         xhtml.endDocument();
     }
 
-    @Field
     public void setMaxDataLengthBytes(int maxDataLengthBytes) {
         this.maxDataLengthBytes = maxDataLengthBytes;
     }

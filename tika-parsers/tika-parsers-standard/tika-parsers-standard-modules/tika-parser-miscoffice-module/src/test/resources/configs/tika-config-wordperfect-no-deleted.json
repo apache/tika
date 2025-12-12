@@ -1,0 +1,10 @@
+{
+  "parsers": [
+    "default-parser",
+    {
+      "word-perfect-parser": {
+        "includeDeletedContent": false
+      }
+    }
+  ]
+}

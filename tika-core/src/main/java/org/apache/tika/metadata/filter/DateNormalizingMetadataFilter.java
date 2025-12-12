@@ -27,7 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ConfigDeserializer;
-import org.apache.tika.config.Field;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.metadata.Metadata;
@@ -114,7 +113,6 @@ public class DateNormalizingMetadataFilter extends MetadataFilterBase {
         }
     }
 
-    @Field
     public void setDefaultTimeZone(String timeZoneId) {
         this.defaultTimeZone = TimeZone.getTimeZone(ZoneId.of(timeZoneId));
     }

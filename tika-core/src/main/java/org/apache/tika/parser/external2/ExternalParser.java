@@ -25,7 +25,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,10 +34,7 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -63,7 +59,8 @@ import org.apache.tika.utils.ProcessUtils;
  * Further, users can specify a parser to handle the output
  * of the external process.
  */
-public class ExternalParser implements Parser, Initializable {
+@TikaComponent
+public class ExternalParser implements Parser {
 
     public static final long DEFAULT_TIMEOUT_MS = 60000;
 
@@ -200,7 +197,6 @@ public class ExternalParser implements Parser, Initializable {
      *
      * @param supportedTypes
      */
-    @Field
     public void setSupportedTypes(List<String> supportedTypes) {
         if (this.supportedTypes.size() > 0) {
             throw new IllegalStateException("can't set supportedTypes after initialization");
@@ -210,17 +206,14 @@ public class ExternalParser implements Parser, Initializable {
         }
     }
 
-    @Field
     public void setTimeoutMs(long timeoutMs) {
         this.timeoutMs = timeoutMs;
     }
 
-    @Field
     public void setMaxStdErr(int maxStdErr) {
         this.maxStdErr = maxStdErr;
     }
 
-    @Field
     public void setMaxStdOut(int maxStdOut) {
         this.maxStdOut = maxStdOut;
     }
@@ -233,7 +226,6 @@ public class ExternalParser implements Parser, Initializable {
      *
      * @param commandLine
      */
-    @Field
     public void setCommandLine(List<String> commandLine) {
         this.commandLine = commandLine;
     }
@@ -247,7 +239,6 @@ public class ExternalParser implements Parser, Initializable {
      *
      * @param returnStdout
      */
-    @Field
     public void setReturnStdout(boolean returnStdout) {
         this.returnStdout = returnStdout;
     }
@@ -258,7 +249,6 @@ public class ExternalParser implements Parser, Initializable {
      * Default is <code>true</code>
      * @param returnStderr
      */
-    @Field
     public void setReturnStderr(boolean returnStderr) {
         this.returnStderr = returnStderr;
     }
@@ -270,7 +260,6 @@ public class ExternalParser implements Parser, Initializable {
      * otherwise it will parse the UTF-8 encoded bytes from the process' STD_OUT.
      * @param parser
      */
-    @Field
     public void setOutputParser(Parser parser) {
         this.outputParser = parser;
     }
@@ -279,13 +268,7 @@ public class ExternalParser implements Parser, Initializable {
         return outputParser;
     }
 
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
-        //no-op
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
+    public void checkInitialization()
             throws TikaConfigException {
         if (supportedTypes.size() == 0) {
             throw new TikaConfigException("supportedTypes size must be > 0");

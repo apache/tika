@@ -17,7 +17,6 @@
 package org.apache.tika.metadata.filter;
 
 import org.apache.tika.config.ConfigDeserializer;
-import org.apache.tika.config.Field;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.metadata.Metadata;
@@ -71,7 +70,6 @@ public class GeoPointMetadataFilter extends MetadataFilterBase {
      *
      * @param geoPointFieldName field name to use for the geopoint field
      */
-    @Field
     public void setGeoPointFieldName(String geoPointFieldName) {
         this.geoPointFieldName = geoPointFieldName;
     }

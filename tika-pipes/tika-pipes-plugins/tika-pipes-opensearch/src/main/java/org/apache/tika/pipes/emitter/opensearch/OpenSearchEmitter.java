@@ -16,8 +16,6 @@
  */
 package org.apache.tika.pipes.emitter.opensearch;
 
-import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
-
 import java.io.IOException;
 import java.util.List;
 
@@ -26,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.client.TikaClientException;
+import org.apache.tika.config.ConfigValidator;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -93,8 +92,8 @@ public class OpenSearchEmitter extends AbstractEmitter {
 
 
     private void configure() throws TikaConfigException {
-        mustNotBeEmpty("openSearchUrl", config.openSearchUrl());
-        mustNotBeEmpty("idField", config.idField());
+        ConfigValidator.mustNotBeEmpty("openSearchUrl", config.openSearchUrl());
+        ConfigValidator.mustNotBeEmpty("idField", config.idField());
         HttpClientConfig http = config.httpClientConfig();
         httpClientFactory.setUserName(http.userName());
         httpClientFactory.setPassword(http.password());

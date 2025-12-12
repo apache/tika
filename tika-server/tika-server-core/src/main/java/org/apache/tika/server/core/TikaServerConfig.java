@@ -31,12 +31,11 @@ import org.apache.commons.cli.CommandLine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.ConfigBase;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 
-public class TikaServerConfig extends ConfigBase {
+public class TikaServerConfig {
 
     public static final int DEFAULT_PORT = 9998;
     public static final String DEFAULT_HOST = "localhost";

@@ -18,12 +18,11 @@ package org.apache.tika.utils;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.concurrent.SimpleThreadPoolExecutor;
 import org.apache.tika.parser.ParseContext;
 
 public class ConcurrentUtilsTest {
@@ -41,9 +40,8 @@ public class ConcurrentUtilsTest {
 
     @Test
     public void testExecuteExecutor() throws Exception {
-        TikaConfig config = TikaConfig.getDefaultConfig();
         ParseContext context = new ParseContext();
-        context.set(ExecutorService.class, config.getExecutorService());
+        context.set(SimpleThreadPoolExecutor.class, new SimpleThreadPoolExecutor());
         Future result = ConcurrentUtils.execute(context, () ->
         {
             //Do nothing

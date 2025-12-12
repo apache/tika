@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.Field;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -161,7 +160,6 @@ public class GeoParser implements Parser {
         return defaultConfig.getGazetteerRestEndpoint();
     }
 
-    @Field
     public void setGazetteerRestEndpoint(String gazetteerRestEndpoint) {
         defaultConfig.setGazetteerRestEndpoint(gazetteerRestEndpoint);
     }
@@ -174,7 +172,6 @@ public class GeoParser implements Parser {
      * @param nerModelUrl url for the NER model
      * @throws IllegalArgumentException for a malformed URL
      */
-    @Field
     public void setNerModelUrl(String nerModelUrl) {
         try {
             defaultConfig.setNerModelUrl(new URL(nerModelUrl));

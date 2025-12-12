@@ -1,0 +1,13 @@
+{
+  "parsers": [
+    "default-parser",
+    {
+      "text-and-csv-parser": {
+        "nameToDelimiterMap": {
+          "comma": ",",
+          "colon": ":"
+        }
+      }
+    }
+  ]
+}

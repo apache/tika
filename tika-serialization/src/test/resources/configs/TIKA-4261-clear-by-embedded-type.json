@@ -1,0 +1,9 @@
+{
+  "metadata-filters": [
+    {
+      "clear-by-attachment-type-metadata-filter": {
+        "types": ["INLINE", "ATTACHMENT"]
+      }
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "parsers": [
+    {
+      "external-parser": {
+        "_mime-include": ["application/something"],
+        "commandLine": ["file", "-b", "--mime-type", "${INPUT_FILE}"]
+      }
+    }
+  ]
+}

@@ -36,14 +36,13 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
@@ -301,10 +300,9 @@ public class WordParserTest extends TikaTest {
         assertNotContained("This is the header text.", xml);
         assertNotContained("This is the footer text.", xml);
 
-        Parser configuredParser = null;
-        try (InputStream is = getResourceAsStream("tika-config-headers-footers.xml")) {
-            configuredParser = new AutoDetectParser(new TikaConfig(is));
-        }
+        Parser configuredParser = TikaLoader.load(
+                getConfigPath(WordParserTest.class, "tika-config-headers-footers.json"))
+                .loadAutoDetectParser();
         xml = getXML("testWORD_various.doc", configuredParser).xml;
         assertNotContained("This is the header text.", xml);
         assertNotContained("This is the footer text.", xml);
@@ -613,13 +611,11 @@ public class WordParserTest extends TikaTest {
         assertContainsAtLeast(minExpected, metadataList);
 
         //test configuring via config file
-        try (InputStream is = getResourceAsStream("tika-config-macros.xml")) {
-            TikaConfig tikaConfig = new TikaConfig(is);
-            AutoDetectParser parser = new AutoDetectParser(tikaConfig);
-
-            metadataList = getRecursiveMetadata("testWORD_macros.doc", parser);
-            assertContainsAtLeast(minExpected, metadataList);
-        }
+        Parser parser = TikaLoader.load(
+                getConfigPath(WordParserTest.class, "tika-config-macros.json"))
+                .loadAutoDetectParser();
+        metadataList = getRecursiveMetadata("testWORD_macros.doc", parser);
+        assertContainsAtLeast(minExpected, metadataList);
     }
 
     @Test

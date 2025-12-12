@@ -139,7 +139,7 @@ class S3PipeIntegrationTest {
 
         // Create plugins config JSON
         Map<String, Object> replacements = new HashMap<>();
-        replacements.put("LOG4J_PROPERTIES_FILE", log4jPropFile);
+        replacements.put("LOG4J_JVM_ARG", "-Dlog4j.configurationFile=" + log4jPropFile.toAbsolutePath());
         replacements.put("PARSE_MODE", org.apache.tika.pipes.api.HandlerConfig.PARSE_MODE.RMETA.name());
         replacements.put("PIPE_ITERATOR_BUCKET", FETCH_BUCKET);
         replacements.put("EMIT_BUCKET", EMIT_BUCKET);

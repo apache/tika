@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.ConfigValidator;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -94,7 +94,7 @@ public class FileSystemPipesIterator extends PipesIteratorBase implements TotalC
     public void checkConfig(FileSystemPipesIteratorConfig config)
             throws TikaConfigException {
         //these should all be fatal
-        TikaConfig.mustNotBeEmpty("basePath", config.getBasePath());
+        ConfigValidator.mustNotBeEmpty("basePath", config.getBasePath());
     }
 
 

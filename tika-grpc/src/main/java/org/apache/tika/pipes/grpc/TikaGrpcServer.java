@@ -19,9 +19,6 @@ package org.apache.tika.pipes.grpc;
 import static io.grpc.health.v1.HealthCheckResponse.ServingStatus;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.concurrent.TimeUnit;
 
 import com.beust.jcommander.JCommander;
@@ -35,9 +32,6 @@ import io.grpc.protobuf.services.HealthStatusManager;
 import io.grpc.protobuf.services.ProtoReflectionServiceV1;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.config.TikaConfigSerializer;
 
 /**
  * Server that manages startup/shutdown of the GRPC Tika server.
@@ -95,10 +89,10 @@ public class TikaGrpcServer {
         //TODO -- this has to be converted to json
         if (tikaConfigXml == null) {
             // Create a default tika config
-            tikaConfigXml = Files.createTempFile("tika-config", ".xml").toFile();
+            /*tikaConfigXml = Files.createTempFile("tika-config", ".xml").toFile();
             try (FileWriter fw = new FileWriter(tikaConfigXml, StandardCharsets.UTF_8)) {
                 TikaConfigSerializer.serialize(new TikaConfig(), TikaConfigSerializer.Mode.STATIC_FULL, fw, StandardCharsets.UTF_8);
-            }
+            }*/
         }
         File tikaConfigFile = new File(tikaConfigXml.getAbsolutePath());
         healthStatusManager.setStatus(TikaGrpcServer.class.getSimpleName(), ServingStatus.SERVING);

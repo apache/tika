@@ -47,7 +47,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.config.ConfigDeserializer;
-import org.apache.tika.config.Field;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
@@ -107,7 +106,6 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
         }
     }
 
-    @Field
     private boolean extractScripts = false;
 
     public JSoupParser() {
@@ -152,7 +150,6 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
      *
      * @param extractScripts
      */
-    @Field
     public void setExtractScripts(boolean extractScripts) {
         this.extractScripts = extractScripts;
     }

@@ -1,0 +1,9 @@
+{
+  "parsers": [
+    {
+      "dwg-parser": {
+        "dwgReadExecutable": "g:/libredwg-0.12.5-win64/dwgread.exe"
+      }
+    }
+  ]
+}

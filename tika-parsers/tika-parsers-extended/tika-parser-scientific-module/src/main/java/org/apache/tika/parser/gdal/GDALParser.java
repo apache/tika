@@ -39,7 +39,6 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.Field;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.exception.TikaException;
@@ -335,17 +334,14 @@ public class GDALParser implements Parser {
 
     }
 
-    @Field
     public void setTimeoutMs(long timeoutMs) {
         this.timeoutMs = timeoutMs;
     }
 
-    @Field
     public void setMaxStdErr(int maxStdErr) {
         this.maxStdErr = maxStdErr;
     }
 
-    @Field
     public void setMaxStdOut(int maxStdOut) {
         this.maxStdOut = maxStdOut;
     }

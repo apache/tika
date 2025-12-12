@@ -27,11 +27,12 @@ import java.util.Properties;
 
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.language.translate.DefaultTranslator;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -86,7 +87,7 @@ public class Tika {
     public Tika(Detector detector, Parser parser) {
         this.detector = detector;
         this.parser = parser;
-        this.translator = TikaConfig.getDefaultConfig().getTranslator();
+        this.translator = new DefaultTranslator();
     }
 
     /**
@@ -104,19 +105,10 @@ public class Tika {
     }
 
     /**
-     * Creates a Tika facade using the given configuration.
-     *
-     * @param config Tika configuration
-     */
-    public Tika(TikaConfig config) {
-        this(config.getDetector(), new AutoDetectParser(config), config.getTranslator());
-    }
-
-    /**
      * Creates a Tika facade using the default configuration.
      */
     public Tika() {
-        this(TikaConfig.getDefaultConfig());
+        this(new DefaultDetector(), new AutoDetectParser());
     }
 
     /**

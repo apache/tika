@@ -35,7 +35,6 @@ import org.apache.poi.util.IOUtils;
 import org.apache.poi.util.StringUtil;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.zip.DefaultZipContainerDetector;
 import org.apache.tika.exception.TikaException;
@@ -74,11 +73,6 @@ abstract class AbstractPOIFSExtractor {
         this.officeParserConfig = context.get(OfficeParserConfig.class, new OfficeParserConfig());
         this.parentMetadata = parentMetadata;
         this.context = context;
-    }
-
-    // Note - these cache, but avoid creating the default TikaConfig if not needed
-    protected TikaConfig getTikaConfig() {
-        return embeddedDocumentUtil.getTikaConfig();
     }
 
     protected Detector getDetector() {

@@ -1,0 +1,9 @@
+{
+  "parsers": [
+    {
+      "rtf-parser": {
+        "ignoreListMarkup": true
+      }
+    }
+  ]
+}

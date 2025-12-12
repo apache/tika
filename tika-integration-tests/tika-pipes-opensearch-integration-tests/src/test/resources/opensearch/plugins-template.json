@@ -71,7 +71,7 @@
     "forkedJvmArgs": [
       "-Xmx512m",
       "-XX:ParallelGCThreads=2",
-      "-Dlog4j.configurationFile=LOG4J_PROPERTIES_FILE"
+      "LOG4J_JVM_ARG"
     ],
     "timeoutMillis": 60000
   },

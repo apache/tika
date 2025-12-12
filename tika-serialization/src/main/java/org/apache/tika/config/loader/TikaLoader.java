@@ -302,6 +302,17 @@ public class TikaLoader {
     }
 
     /**
+     * Loads and returns the AutoDetectParserConfig from the "auto-detect-parser" section.
+     * Returns null if the section is not present in the config.
+     *
+     * @return the AutoDetectParserConfig, or null if not configured
+     * @throws IOException if loading fails
+     */
+    private AutoDetectParserConfig loadAutoDetectParserConfig() throws IOException {
+        return config.deserialize("auto-detect-parser", AutoDetectParserConfig.class);
+    }
+
+    /**
      * Loads and returns an AutoDetectParser configured with this loader's parsers and detectors.
      * Results are cached - subsequent calls return the same instance.
      *
@@ -312,7 +323,7 @@ public class TikaLoader {
     public synchronized Parser loadAutoDetectParser() throws TikaConfigException, IOException {
         if (autoDetectParser == null) {
             // Load directly from root-level config (not via configs() which only looks in "other-configs")
-            AutoDetectParserConfig adpConfig = config.deserialize("auto-detect-parser", AutoDetectParserConfig.class);
+            AutoDetectParserConfig adpConfig = loadAutoDetectParserConfig();
             if (adpConfig == null) {
                 adpConfig = new AutoDetectParserConfig();
             }
