@@ -27,7 +27,7 @@ import java.util.List;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import org.apache.tika.config.loader.PolymorphicObjectMapperFactory;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.utils.StringUtils;
 
@@ -71,7 +71,7 @@ public class PluginsWriter {
             if (simpleAsyncConfig.getTimeoutMs() != null) {
                 pipesConfig.setTimeoutMillis(simpleAsyncConfig.getTimeoutMs());
             }
-            ObjectMapper objectMapper = PolymorphicObjectMapperFactory.getMapper();
+            ObjectMapper objectMapper = TikaObjectMapperFactory.getMapper();
             ObjectNode root = (ObjectNode) objectMapper.readTree(json.getBytes(StandardCharsets.UTF_8));
             root.set("pipes", objectMapper.valueToTree(pipesConfig));
 

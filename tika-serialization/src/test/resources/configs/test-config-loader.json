@@ -12,8 +12,7 @@
 
     "simple-handler": "org.apache.tika.config.loader.ConfigLoaderTest$SimpleHandlerImpl",
 
-    "configured-handler": {
-      "@class": "org.apache.tika.config.loader.ConfigLoaderTest$ConfiguredHandlerImpl",
+    "configured-handler-impl": {
       "maxSize": 100000,
       "prefix": "test-"
     },

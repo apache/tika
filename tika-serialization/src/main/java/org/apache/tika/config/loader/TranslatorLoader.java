@@ -16,13 +16,14 @@
  */
 package org.apache.tika.config.loader;
 
+import java.util.Iterator;
+import java.util.Map;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.language.translate.DefaultTranslator;
 import org.apache.tika.language.translate.Translator;
@@ -30,6 +31,17 @@ import org.apache.tika.language.translate.Translator;
 /**
  * Loader for translators.
  * Only one translator is supported at a time.
+ * <p>
+ * JSON format uses wrapper object style:
+ * <pre>
+ * {
+ *   "translator": {
+ *     "google-translator": {
+ *       "apiKey": "..."
+ *     }
+ *   }
+ * }
+ * </pre>
  */
 public class TranslatorLoader {
 
@@ -66,35 +78,32 @@ public class TranslatorLoader {
 
     private Translator loadConfiguredTranslator(JsonNode translatorNode)
             throws TikaConfigException {
-        try {
-            // The translator node should be an object with a "class" field
-            if (!translatorNode.has("class")) {
-                throw new TikaConfigException("Translator configuration must have a 'class' field");
-            }
-
-            String className = translatorNode.get("class").asText();
-            ComponentRegistry registry = new ComponentRegistry("translators", classLoader);
-            Class<?> translatorClass = registry.getComponentClass(className);
-
-            // Remove "class" field from config before extraction
-            ObjectNode configCopy = ((ObjectNode) translatorNode).deepCopy();
-            configCopy.remove("class");
-
-            // Extract framework config (e.g., _decorate if present)
-            FrameworkConfig frameworkConfig = FrameworkConfig.extract(configCopy, objectMapper);
-
-            // Instantiate translator
-            return instantiateTranslator(translatorClass, frameworkConfig.getComponentConfigJson());
-
-        } catch (Exception e) {
-            throw new TikaConfigException("Failed to load translator", e);
+        if (!translatorNode.isObject() || translatorNode.isEmpty()) {
+            throw new TikaConfigException(
+                    "Translator configuration must be an object with translator type as key");
         }
+
+        // Get the single field name (translator type) and its config
+        Iterator<Map.Entry<String, JsonNode>> fields = translatorNode.fields();
+        Map.Entry<String, JsonNode> entry = fields.next();
+
+        if (fields.hasNext()) {
+            throw new TikaConfigException(
+                    "Translator configuration must have exactly one translator type");
+        }
+
+        String typeName = entry.getKey();
+        JsonNode configNode = entry.getValue();
+
+        return deserializeTranslator(typeName, configNode);
     }
 
-    private Translator instantiateTranslator(Class<?> translatorClass, JsonConfig jsonConfig)
+    /**
+     * Deserializes a translator, trying JsonConfig constructor first, then Jackson bean deserialization.
+     */
+    private Translator deserializeTranslator(String name, JsonNode configNode)
             throws TikaConfigException {
-        return ComponentInstantiator.instantiate(translatorClass, jsonConfig, classLoader,
-                "Translator", objectMapper);
+        return ComponentInstantiator.instantiate(name, configNode, objectMapper, classLoader);
     }
 
     /**

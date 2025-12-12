@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 
+import org.apache.tika.config.SelfConfiguring;
 import org.apache.tika.metadata.Metadata;
 
 /**
@@ -30,7 +31,7 @@ import org.apache.tika.metadata.Metadata;
  *
  * @since Apache Tika 0.4
  */
-public interface EncodingDetector extends Serializable {
+public interface EncodingDetector extends Serializable, SelfConfiguring {
 
     /**
      * Detects the character encoding of the given text document, or

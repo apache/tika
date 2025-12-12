@@ -92,7 +92,7 @@ public class TikaLoader {
     private TikaLoader(TikaJsonConfig config, ClassLoader classLoader) {
         this.config = config;
         this.classLoader = classLoader;
-        this.objectMapper = PolymorphicObjectMapperFactory.getMapper();
+        this.objectMapper = TikaObjectMapperFactory.getMapper();
     }
 
     /**
@@ -250,8 +250,7 @@ public class TikaLoader {
             if (config.hasComponentSection("metadata-filters")) {
                 // Load explicitly configured filters (no SPI fallback)
                 CompositeComponentLoader<MetadataFilter> loader = new CompositeComponentLoader<>(
-                        MetadataFilter.class, "metadata-filters", "metadata-filters",
-                        classLoader, objectMapper);
+                        MetadataFilter.class, "metadata-filters", classLoader, objectMapper);
                 filterList = loader.loadFromArray(config);
             } else {
                 // No config section - metadata filters are opt-in only, don't load from SPI
@@ -278,7 +277,7 @@ public class TikaLoader {
     public synchronized Renderer loadRenderers() throws TikaConfigException {
         if (renderers == null) {
             CompositeComponentLoader<Renderer> loader = new CompositeComponentLoader<>(
-                    Renderer.class, "renderers", "renderers", classLoader, objectMapper);
+                    Renderer.class, "renderers", classLoader, objectMapper);
             List<Renderer> rendererList = loader.loadFromArray(config);
             renderers = new CompositeRenderer(rendererList);
         }

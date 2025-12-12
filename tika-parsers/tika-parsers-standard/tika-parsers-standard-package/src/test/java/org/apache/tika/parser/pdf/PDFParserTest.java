@@ -46,7 +46,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.loader.PolymorphicObjectMapperFactory;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -589,7 +589,7 @@ public class PDFParserTest extends TikaTest {
         parseContext.set(PDFParserConfig.class, config);
 
         // Serialize using ParseContextSerializer
-        com.fasterxml.jackson.databind.ObjectMapper mapper = PolymorphicObjectMapperFactory.getMapper();
+        com.fasterxml.jackson.databind.ObjectMapper mapper = TikaObjectMapperFactory.getMapper();
         com.fasterxml.jackson.databind.module.SimpleModule module = new com.fasterxml.jackson.databind.module.SimpleModule();
         module.addSerializer(ParseContext.class, new org.apache.tika.serialization.ParseContextSerializer());
         module.addDeserializer(ParseContext.class, new org.apache.tika.serialization.ParseContextDeserializer());

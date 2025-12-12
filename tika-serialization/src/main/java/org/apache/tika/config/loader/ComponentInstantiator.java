@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.serialization.ComponentNameResolver;
 import org.apache.tika.utils.ServiceLoaderUtils;
 
 /**
@@ -82,6 +83,78 @@ public class ComponentInstantiator {
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new TikaConfigException("Failed to instantiate " + componentTypeName + ": " +
                     componentClass.getName(), e);
+        }
+    }
+
+    /**
+     * Instantiates a component from a JsonNode configuration.
+     * <p>
+     * Instantiation strategy:
+     * <ol>
+     *   <li>Try constructor with JsonConfig parameter</li>
+     *   <li>Fall back to Jackson bean deserialization if config is provided</li>
+     *   <li>Fall back to zero-arg constructor if no config</li>
+     * </ol>
+     *
+     * @param componentClass the component class to instantiate
+     * @param configNode the JSON configuration node (may be null or empty)
+     * @param objectMapper the Jackson ObjectMapper for deserialization
+     * @param <T> the component type
+     * @return the instantiated component
+     * @throws TikaConfigException if instantiation fails
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T instantiate(Class<?> componentClass,
+                                     JsonNode configNode,
+                                     ObjectMapper objectMapper)
+            throws TikaConfigException {
+        try {
+            // Try JsonConfig constructor first
+            try {
+                Constructor<?> constructor = componentClass.getConstructor(JsonConfig.class);
+                String jsonString = configNode != null ? configNode.toString() : "{}";
+                JsonConfig jsonConfig = () -> jsonString;
+                return (T) constructor.newInstance(jsonConfig);
+            } catch (NoSuchMethodException e) {
+                // No JsonConfig constructor, fall back to other methods
+            }
+
+            // Fall back to Jackson bean deserialization or zero-arg constructor
+            if (configNode == null || configNode.isEmpty()) {
+                return (T) componentClass.getDeclaredConstructor().newInstance();
+            }
+
+            return (T) objectMapper.treeToValue(configNode, componentClass);
+
+        } catch (Exception e) {
+            throw new TikaConfigException(
+                    "Failed to instantiate component '" + componentClass.getName() + "': " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Instantiates a component by resolving a friendly name or FQCN to a class.
+     * <p>
+     * This is a convenience method that combines name resolution with instantiation.
+     *
+     * @param typeName the component type name (friendly name like "pdf-parser" or FQCN)
+     * @param configNode the JSON configuration node (may be null or empty)
+     * @param objectMapper the Jackson ObjectMapper for deserialization
+     * @param classLoader the class loader for name resolution
+     * @param <T> the component type
+     * @return the instantiated component
+     * @throws TikaConfigException if instantiation fails or type name is unknown
+     */
+    public static <T> T instantiate(String typeName,
+                                     JsonNode configNode,
+                                     ObjectMapper objectMapper,
+                                     ClassLoader classLoader)
+            throws TikaConfigException {
+        try {
+            Class<?> componentClass = ComponentNameResolver.resolveClass(typeName, classLoader);
+            return instantiate(componentClass, configNode, objectMapper);
+        } catch (ClassNotFoundException e) {
+            throw new TikaConfigException("Unknown component type: '" + typeName + "'", e);
         }
     }
 

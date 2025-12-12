@@ -28,7 +28,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 
 /**
@@ -47,7 +46,6 @@ public class CompositeComponentLoader<T> {
 
     private final Class<T> componentInterface;
     private final String componentTypeName;
-    private final String indexFileName;
     private final ClassLoader classLoader;
     private final ObjectMapper objectMapper;
 
@@ -56,16 +54,13 @@ public class CompositeComponentLoader<T> {
      *
      * @param componentInterface the component interface (e.g., Detector.class)
      * @param componentTypeName the JSON config key (e.g., "detectors")
-     * @param indexFileName the index file name (e.g., "detectors")
      * @param classLoader the class loader
      * @param objectMapper the Jackson ObjectMapper
      */
     public CompositeComponentLoader(Class<T> componentInterface, String componentTypeName,
-                                     String indexFileName, ClassLoader classLoader,
-                                     ObjectMapper objectMapper) {
+                                     ClassLoader classLoader, ObjectMapper objectMapper) {
         this.componentInterface = componentInterface;
         this.componentTypeName = componentTypeName;
-        this.indexFileName = indexFileName;
         this.classLoader = classLoader;
         this.objectMapper = objectMapper;
     }
@@ -103,14 +98,13 @@ public class CompositeComponentLoader<T> {
             return Collections.emptyList();
         }
 
-        ComponentRegistry registry = new ComponentRegistry(indexFileName, classLoader);
         List<T> instances = new ArrayList<>();
 
         for (Map.Entry<String, JsonNode> entry : arrayComponents) {
             String name = entry.getKey();
             JsonNode configNode = entry.getValue();
 
-            T instance = loadComponent(name, configNode, registry);
+            T instance = deserializeComponent(name, configNode);
             instances.add(instance);
         }
 
@@ -129,87 +123,29 @@ public class CompositeComponentLoader<T> {
 
         // Load configured components
         if (config.hasComponents(componentTypeName)) {
-            ComponentRegistry registry = new ComponentRegistry(indexFileName, classLoader);
             Map<String, JsonNode> components = config.getComponents(componentTypeName);
 
             for (Map.Entry<String, JsonNode> entry : components.entrySet()) {
                 String name = entry.getKey();
                 JsonNode configNode = entry.getValue();
 
-                T instance = loadConfiguredComponent(name, configNode, registry);
+                T instance = deserializeComponent(name, configNode);
                 instances.add(instance);
             }
         }
 
         // Add SPI-discovered components
-        List<T> spiComponents = loadSpiComponents();
+        List<T> spiComponents = loadAllFromSpi();
         instances.addAll(spiComponents);
 
         return instances;
     }
 
-    private T loadConfiguredComponent(String name, JsonNode configNode,
-                                       ComponentRegistry registry)
-            throws TikaConfigException {
-        try {
-            // Get component class
-            Class<?> componentClass = registry.getComponentClass(name);
-
-            // Extract framework config
-            FrameworkConfig frameworkConfig = FrameworkConfig.extract(configNode, objectMapper);
-
-            // Instantiate component
-            T instance = instantiateComponent(componentClass, frameworkConfig.getComponentConfigJson());
-
-            return instance;
-
-        } catch (Exception e) {
-            throw new TikaConfigException("Failed to load component '" + name + "' of type " +
-                    componentTypeName, e);
-        }
-    }
-
-    private T instantiateComponent(Class<?> componentClass, JsonConfig configJson)
-            throws TikaConfigException {
-        return ComponentInstantiator.instantiate(componentClass, configJson, classLoader,
-                componentTypeName, objectMapper);
-    }
-
-    private List<T> loadSpiComponents() {
-        List<T> result = new ArrayList<>();
-        ServiceLoader<T> serviceLoader = ServiceLoader.load(componentInterface, classLoader);
-
-        Iterator<T> iterator = serviceLoader.iterator();
-        while (iterator.hasNext()) {
-            try {
-                T instance = iterator.next();
-                result.add(instance);
-            } catch (Exception e) {
-                // Log and skip problematic SPI providers
-                LOG.warn("Failed to load SPI component of type {}: {}", componentTypeName, e.getMessage(), e);
-            }
-        }
-
-        return result;
-    }
-
-    private T loadComponent(String name, JsonNode configNode, ComponentRegistry registry)
-            throws TikaConfigException {
-        try {
-            // Get component class
-            Class<?> componentClass = registry.getComponentClass(name);
-
-            // Wrap JSON string in JsonConfig
-            String jsonString = objectMapper.writeValueAsString(configNode);
-            JsonConfig jsonConfig = () -> jsonString;
-
-            // Instantiate component
-            return instantiateComponent(componentClass, jsonConfig);
-
-        } catch (Exception e) {
-            throw new TikaConfigException("Failed to load component '" + name + "' of type " +
-                    componentTypeName, e);
-        }
+    /**
+     * Deserializes a component, trying JsonConfig constructor first, then Jackson bean deserialization.
+     */
+    private T deserializeComponent(String name, JsonNode configNode) throws TikaConfigException {
+        return ComponentInstantiator.instantiate(name, configNode, objectMapper, classLoader);
     }
 
     private List<T> loadAllFromSpi() {

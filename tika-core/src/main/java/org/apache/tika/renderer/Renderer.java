@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.util.Set;
 
+import org.apache.tika.config.SelfConfiguring;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -31,7 +32,7 @@ import org.apache.tika.parser.ParseContext;
  * but also on portions of PDF pages as well as on other document types.
  *
  */
-public interface Renderer extends Serializable {
+public interface Renderer extends Serializable, SelfConfiguring {
 
 
 

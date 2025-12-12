@@ -17,6 +17,7 @@
 package org.apache.tika.extractor;
 
 import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.config.TikaComponent;
@@ -30,11 +31,10 @@ public class RUnpackExtractorFactory implements EmbeddedDocumentByteStoreExtract
     public static long DEFAULT_MAX_EMBEDDED_BYTES_FOR_EXTRACTION = 10l * 1024l * 1024l * 1024l;
 
     private boolean writeFileNameToContent = true;
-    //concrete HashSet class for the sake of Jackson
-    private HashSet<String> embeddedBytesIncludeMimeTypes = new HashSet<>();
-    private HashSet<String> embeddedBytesExcludeMimeTypes = new HashSet<>();
-    private HashSet<String> embeddedBytesIncludeEmbeddedResourceTypes = new HashSet<>();
-    private HashSet<String> embeddedBytesExcludeEmbeddedResourceTypes = new HashSet<>();
+    private Set<String> embeddedBytesIncludeMimeTypes = new HashSet<>();
+    private Set<String> embeddedBytesExcludeMimeTypes = new HashSet<>();
+    private Set<String> embeddedBytesIncludeEmbeddedResourceTypes = new HashSet<>();
+    private Set<String> embeddedBytesExcludeEmbeddedResourceTypes = new HashSet<>();
 
     private long maxEmbeddedBytesForExtraction = DEFAULT_MAX_EMBEDDED_BYTES_FOR_EXTRACTION;
     @Field
@@ -43,23 +43,22 @@ public class RUnpackExtractorFactory implements EmbeddedDocumentByteStoreExtract
     }
 
     @Field
-    public void setEmbeddedBytesIncludeMimeTypes(HashSet<String> includeMimeTypes) {
+    public void setEmbeddedBytesIncludeMimeTypes(Set<String> includeMimeTypes) {
         embeddedBytesIncludeMimeTypes = new HashSet<>(includeMimeTypes);
     }
 
     @Field
-    public void setEmbeddedBytesExcludeMimeTypes(HashSet<String> excludeMimeTypes) {
+    public void setEmbeddedBytesExcludeMimeTypes(Set<String> excludeMimeTypes) {
         embeddedBytesExcludeMimeTypes = new HashSet<>(excludeMimeTypes);
-
     }
 
     @Field
-    public void setEmbeddedBytesIncludeEmbeddedResourceTypes(HashSet<String> includeAttachmentTypes) {
+    public void setEmbeddedBytesIncludeEmbeddedResourceTypes(Set<String> includeAttachmentTypes) {
         embeddedBytesIncludeEmbeddedResourceTypes = new HashSet<>(includeAttachmentTypes);
     }
 
     @Field
-    public void setEmbeddedBytesExcludeEmbeddedResourceTypes(HashSet<String> excludeAttachmentTypes) {
+    public void setEmbeddedBytesExcludeEmbeddedResourceTypes(Set<String> excludeAttachmentTypes) {
         embeddedBytesExcludeEmbeddedResourceTypes = new HashSet<>(excludeAttachmentTypes);
     }
 
@@ -84,19 +83,19 @@ public class RUnpackExtractorFactory implements EmbeddedDocumentByteStoreExtract
         return writeFileNameToContent;
     }
 
-    public HashSet<String> getEmbeddedBytesIncludeMimeTypes() {
+    public Set<String> getEmbeddedBytesIncludeMimeTypes() {
         return embeddedBytesIncludeMimeTypes;
     }
 
-    public HashSet<String> getEmbeddedBytesExcludeMimeTypes() {
+    public Set<String> getEmbeddedBytesExcludeMimeTypes() {
         return embeddedBytesExcludeMimeTypes;
     }
 
-    public HashSet<String> getEmbeddedBytesIncludeEmbeddedResourceTypes() {
+    public Set<String> getEmbeddedBytesIncludeEmbeddedResourceTypes() {
         return embeddedBytesIncludeEmbeddedResourceTypes;
     }
 
-    public HashSet<String> getEmbeddedBytesExcludeEmbeddedResourceTypes() {
+    public Set<String> getEmbeddedBytesExcludeEmbeddedResourceTypes() {
         return embeddedBytesExcludeEmbeddedResourceTypes;
     }
 

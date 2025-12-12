@@ -35,8 +35,8 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.config.ParseContextConfig;
-import org.apache.tika.config.loader.PolymorphicObjectMapperFactory;
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
@@ -280,7 +280,7 @@ public class TesseractOCRParserTest extends TikaTest {
 
     @Test
     public void testUpdatingConfigs() throws Exception {
-        ObjectMapper mapper = PolymorphicObjectMapperFactory.getMapper();
+        ObjectMapper mapper = TikaObjectMapperFactory.getMapper();
 
         // Create default config (simulating parser initialization)
         TesseractOCRConfig defaultConfig = new TesseractOCRConfig();

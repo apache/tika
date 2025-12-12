@@ -126,7 +126,7 @@ public class TikaJsonConfig {
     );
 
     private static final ObjectMapper OBJECT_MAPPER =
-            PolymorphicObjectMapperFactory.getMapper();
+            TikaObjectMapperFactory.getMapper();
 
     private final JsonNode rootNode;
     private final Map<String, Map<String, JsonNode>> componentsByType;

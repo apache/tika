@@ -28,7 +28,7 @@ import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.loader.ComponentInfo;
 import org.apache.tika.config.loader.ComponentRegistry;
-import org.apache.tika.config.loader.PolymorphicObjectMapperFactory;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.parser.ParseContext;
@@ -36,22 +36,14 @@ import org.apache.tika.parser.ParseContext;
 /**
  * Utility methods for working with ParseContext objects in JSON-based configurations.
  * <p>
- * Supports both legacy verbose format and new friendly-name format:
+ * Uses friendly-name format for configuration:
  * <pre>
- * // Legacy format:
- * "parse-context": {
- *   "objects": {
- *     "org.apache.tika.config.TikaTaskTimeout": {
- *       "@class": "org.apache.tika.config.TikaTaskTimeout",
- *       "timeoutMillis": 30000
- *     }
- *   }
- * }
- *
- * // New friendly-name format:
  * "parse-context": {
  *   "tika-task-timeout": {
  *     "timeoutMillis": 30000
+ *   },
+ *   "pdf-parser": {
+ *     "extractInlineImages": true
  *   }
  * }
  * </pre>
@@ -62,7 +54,7 @@ import org.apache.tika.parser.ParseContext;
 public class ParseContextUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(ParseContextUtils.class);
-    private static final ObjectMapper MAPPER = PolymorphicObjectMapperFactory.getMapper();
+    private static final ObjectMapper MAPPER = TikaObjectMapperFactory.getMapper();
 
     /**
      * Known interfaces that should be used as ParseContext keys.

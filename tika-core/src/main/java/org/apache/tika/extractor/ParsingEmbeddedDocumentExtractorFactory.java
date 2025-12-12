@@ -17,9 +17,11 @@
 package org.apache.tika.extractor;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
+@TikaComponent
 public class ParsingEmbeddedDocumentExtractorFactory
         implements EmbeddedDocumentExtractorFactory {
 

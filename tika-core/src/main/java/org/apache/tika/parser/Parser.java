@@ -24,6 +24,7 @@ import java.util.Set;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.SelfConfiguring;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -31,7 +32,7 @@ import org.apache.tika.mime.MediaType;
 /**
  * Tika parser interface.
  */
-public interface Parser extends Serializable {
+public interface Parser extends Serializable, SelfConfiguring {
 
     /**
      * Returns the set of media types supported by this parser when used

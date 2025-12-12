@@ -29,7 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.loader.PolymorphicObjectMapperFactory;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.parser.ParseContext;
@@ -104,7 +104,7 @@ public class CustomClassSerializationTest {
     }
 
     private ObjectMapper createMapper() {
-        ObjectMapper mapper = PolymorphicObjectMapperFactory.getMapper();
+        ObjectMapper mapper = TikaObjectMapperFactory.getMapper();
         SimpleModule module = new SimpleModule();
         module.addDeserializer(ParseContext.class, new ParseContextDeserializer());
         module.addSerializer(ParseContext.class, new ParseContextSerializer());
