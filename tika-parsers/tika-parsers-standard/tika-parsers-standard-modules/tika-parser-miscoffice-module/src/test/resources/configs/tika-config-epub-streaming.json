@@ -1,0 +1,10 @@
+{
+  "parsers": [
+    "default-parser",
+    {
+      "epub-parser": {
+        "streaming": true
+      }
+    }
+  ]
+}

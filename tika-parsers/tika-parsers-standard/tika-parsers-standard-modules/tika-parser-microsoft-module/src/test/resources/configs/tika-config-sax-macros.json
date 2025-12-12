@@ -1,0 +1,17 @@
+{
+  "parsers": [
+    "default-parser",
+    {
+      "ooxml-parser": {
+        "extractMacros": true,
+        "useSAXDocxExtractor": true,
+        "useSAXPptxExtractor": true
+      }
+    },
+    {
+      "office-parser": {
+        "extractMacros": true
+      }
+    }
+  ]
+}

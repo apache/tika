@@ -1,0 +1,15 @@
+{
+  "parsers": [
+    "default-parser",
+    {
+      "office-parser": {
+        "includeHeadersAndFooters": false
+      }
+    },
+    {
+      "ooxml-parser": {
+        "includeHeadersAndFooters": false
+      }
+    }
+  ]
+}
