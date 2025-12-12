@@ -27,7 +27,7 @@ public class MockDigesterFactory implements DigesterFactory {
 
     @Override
     public Digester build() {
-        return new InputStreamDigester(1000000, "SHA-256", new MockEncoder());
+        return new InputStreamDigester(1000000, "SHA-256", "X-TIKA:digest:SHA-256", new MockEncoder());
     }
 
     private static class MockEncoder implements Encoder {
@@ -45,4 +45,5 @@ public class MockDigesterFactory implements DigesterFactory {
             return hexString.toString();
         }
     }
+
 }
