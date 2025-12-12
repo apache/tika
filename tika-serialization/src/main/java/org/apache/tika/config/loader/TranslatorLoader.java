@@ -84,10 +84,10 @@ public class TranslatorLoader {
         }
 
         // Get the single field name (translator type) and its config
-        Iterator<Map.Entry<String, JsonNode>> fields = translatorNode.fields();
-        Map.Entry<String, JsonNode> entry = fields.next();
+        Iterator<Map.Entry<String, JsonNode>> properties = translatorNode.properties().iterator();
+        Map.Entry<String, JsonNode> entry = properties.next();
 
-        if (fields.hasNext()) {
+        if (properties.hasNext()) {
             throw new TikaConfigException(
                     "Translator configuration must have exactly one translator type");
         }

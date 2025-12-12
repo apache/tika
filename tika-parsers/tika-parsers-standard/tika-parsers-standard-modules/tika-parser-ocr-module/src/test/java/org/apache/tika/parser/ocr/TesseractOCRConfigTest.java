@@ -21,14 +21,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.CompositeParser;
 
@@ -52,11 +51,10 @@ public class TesseractOCRConfigTest extends TikaTest {
 
     @Test
     public void testPartialConfig() throws Exception {
-
-        InputStream stream = getResourceAsStream("/test-configs/tika-config-tesseract-partial.xml");
-
+        TikaLoader loader = TikaLoader.load(
+                getConfigPath(TesseractOCRConfigTest.class, "tika-config-tesseract-partial.json"));
         TesseractOCRParser parser =
-                (TesseractOCRParser) ((CompositeParser) new TikaConfig(stream).getParser())
+                (TesseractOCRParser) ((CompositeParser) loader.loadParsers())
                         .getAllComponentParsers().get(0);
         TesseractOCRConfig config = parser.getDefaultConfig();
         assertEquals("fra+deu", config.getLanguage(), "Invalid overridden language value");
@@ -73,11 +71,10 @@ public class TesseractOCRConfigTest extends TikaTest {
 
     @Test
     public void testFullConfig() throws Exception {
-
-        InputStream stream = getResourceAsStream("/test-configs/tika-config-tesseract-full.xml");
-
+        TikaLoader loader = TikaLoader.load(
+                getConfigPath(TesseractOCRConfigTest.class, "tika-config-tesseract-full.json"));
         TesseractOCRParser parser =
-                (TesseractOCRParser) ((CompositeParser) new TikaConfig(stream).getParser())
+                (TesseractOCRParser) ((CompositeParser) loader.loadParsers())
                         .getAllComponentParsers().get(0);
         TesseractOCRConfig config = parser.getDefaultConfig();
         assertEquals("ceb", config.getLanguage(), "Invalid overridden language value");

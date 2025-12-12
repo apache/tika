@@ -1,0 +1,15 @@
+{
+  "parsers": [
+    "default-parser",
+    {
+      "ooxml-parser": {
+        "concatenatePhoneticRuns": false
+      }
+    },
+    {
+      "office-parser": {
+        "concatenatePhoneticRuns": false
+      }
+    }
+  ]
+}

@@ -16,17 +16,13 @@
  */
 package org.apache.tika.metadata.filter;
 
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import org.apache.tika.config.ConfigDeserializer;
-import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.JsonConfig;
-import org.apache.tika.config.Param;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
@@ -120,17 +116,14 @@ public class CaptureGroupMetadataFilter extends MetadataFilterBase implements In
         }
     }
 
-    @Field
     public void setRegex(String regex) {
         this.regexString = regex;
     }
 
-    @Field
     public void setSourceField(String sourceField) {
         this.sourceField = sourceField;
     }
 
-    @Field
     public void setTargetField(String targetField) {
         this.targetField = targetField;
     }
@@ -148,18 +141,12 @@ public class CaptureGroupMetadataFilter extends MetadataFilterBase implements In
     }
 
     @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
+    public void initialize() throws TikaConfigException {
         try {
             regex = Pattern.compile(regexString);
         } catch (PatternSyntaxException e) {
             throw new TikaConfigException("Couldn't parse regex", e);
         }
-
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
         if (StringUtils.isBlank(sourceField)) {
             throw new TikaConfigException("Must specify a 'sourceField'");
         }

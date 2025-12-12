@@ -292,7 +292,8 @@ public class StandardWriteFilter implements MetadataWriteFilter, Serializable {
         Integer fieldSizeInteger = fieldSizes.get(filterKey.string);
         int fieldSize = fieldSizeInteger == null ? 0 : fieldSizeInteger;
         int maxAllowed = maxAllowedToAdd(filterKey);
-        if (maxAllowed <= 0) {
+        // if == 1, then only one byte of two would be allowed, which lands us in "", so needs to be <=
+        if (maxAllowed <= 1) {
             setTruncated(data);
             return;
         }

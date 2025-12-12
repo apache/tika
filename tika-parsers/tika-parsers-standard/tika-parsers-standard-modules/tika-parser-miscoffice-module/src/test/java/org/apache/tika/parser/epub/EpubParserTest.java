@@ -17,7 +17,6 @@
 package org.apache.tika.parser.epub;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
@@ -30,12 +29,11 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.metadata.Epub;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
 
 public class EpubParserTest extends TikaTest {
@@ -86,18 +84,17 @@ public class EpubParserTest extends TikaTest {
         assert (tocIndex < ch2);
         assert (ch1 < ch2);
 
-        try (InputStream is = getResourceAsStream("/org/apache/tika/parser/epub/tika-config.xml")) {
-            assertNotNull(is);
-            Parser p = new AutoDetectParser(new TikaConfig(is));
-            xml = getXML("testEPUB.epub", p).xml;
-            tocIndex = xml.indexOf("h3 class=\"toc_heading\">Table of Contents<");
-            ch1 = xml.indexOf("<h1>Chapter 1");
-            ch2 = xml.indexOf("<h1>Chapter 2");
-            assert (tocIndex > -1 && ch1 > -1 && ch2 > -1);
-            assert (tocIndex > ch1);
-            assert (tocIndex > ch2);
-            assert (ch1 < ch2);
-        }
+        Parser p = TikaLoader.load(
+                        getConfigPath(EpubParserTest.class, "tika-config-epub-streaming.json"))
+                .loadAutoDetectParser();
+        xml = getXML("testEPUB.epub", p).xml;
+        tocIndex = xml.indexOf("h3 class=\"toc_heading\">Table of Contents<");
+        ch1 = xml.indexOf("<h1>Chapter 1");
+        ch2 = xml.indexOf("<h1>Chapter 2");
+        assert (tocIndex > -1 && ch1 > -1 && ch2 > -1);
+        assert (tocIndex > ch1);
+        assert (tocIndex > ch2);
+        assert (ch1 < ch2);
     }
 
 

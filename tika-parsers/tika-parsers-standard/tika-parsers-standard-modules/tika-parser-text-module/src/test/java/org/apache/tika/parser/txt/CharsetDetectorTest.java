@@ -29,7 +29,7 @@ import java.nio.file.Files;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
@@ -133,10 +133,9 @@ public class CharsetDetectorTest extends TikaTest {
     @Test
     public void testIgnoreCharset() throws Exception {
         //TIKA-3516, TIKA-3525, TIKA-1236
-        TikaConfig tikaConfig = new TikaConfig(
-                getResourceAsStream("/test-configs/tika-config-ignore-charset.xml"));
-
-        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+        AutoDetectParser parser = (AutoDetectParser) TikaLoader.load(
+                        getConfigPath(CharsetDetectorTest.class, "tika-config-ignore-charset.json"))
+                .loadAutoDetectParser();
 
         Metadata m = new Metadata();
         m.set(TikaCoreProperties.RESOURCE_NAME_KEY, "texty-text.txt");

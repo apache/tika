@@ -31,7 +31,7 @@ public class TestBasic {
     @Test
     public void testConfig() throws Exception {
         Path p = Paths.get(TestBasic.class
-                .getResource("/tika-config-simple-fs-emitter.xml")
+                .getResource("/tika-config-simple-fs-emitter.json")
                 .toURI());
         assertTrue(Files.isRegularFile(p));
 
@@ -46,7 +46,7 @@ public class TestBasic {
     @Disabled("turn this into an actual test in tika-integration-tests?")
     public void testBasic() throws Exception {
         Path p = Paths.get(TestBasic.class
-                .getResource("/tika-config-simple-fs-emitter.xml")
+                .getResource("/tika-config-simple-fs-emitter.json")
                 .toURI());
         assertTrue(Files.isRegularFile(p));
         String[] args = new String[]{p.toAbsolutePath().toString()};

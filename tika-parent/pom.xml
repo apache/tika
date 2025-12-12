@@ -1615,7 +1615,6 @@
       <properties>
         <!-- Skip tests for fast builds -->
         <skipTests>true</skipTests>
-        <maven.test.skip>true</maven.test.skip>
         <!-- Skip checkstyle -->
         <checkstyle.skip>true</checkstyle.skip>
         <!-- Skip spotless -->

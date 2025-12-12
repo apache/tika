@@ -19,11 +19,9 @@ package org.apache.tika.parser.multiple;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import org.xml.sax.ContentHandler;
 
-import org.apache.tika.config.Param;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.ParseContext;
@@ -52,12 +50,6 @@ public class SupplementingParser extends AbstractMultipleParser {
      * Serial version UID.
      */
     private static final long serialVersionUID = 313179254565350994L;
-
-    @SuppressWarnings("rawtypes")
-    public SupplementingParser(MediaTypeRegistry registry, Collection<? extends Parser> parsers,
-                               Map<String, Param> params) {
-        super(registry, parsers, params);
-    }
 
     public SupplementingParser(MediaTypeRegistry registry, MetadataPolicy policy,
                                Parser... parsers) {

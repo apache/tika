@@ -30,7 +30,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.config.ConfigDeserializer;
-import org.apache.tika.config.Field;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
@@ -117,7 +116,6 @@ public class FlatOpenDocumentParser implements Parser {
         }
     }
 
-    @Field
     public void setExtractMacros(boolean extractMacros) {
         this.extractMacros = extractMacros;
     }

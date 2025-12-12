@@ -26,7 +26,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import javax.xml.stream.XMLStreamException;
 
@@ -59,16 +58,11 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.ConfigDeserializer;
-import org.apache.tika.config.Field;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.JsonConfig;
-import org.apache.tika.config.Param;
 import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.AccessPermissionException;
 import org.apache.tika.exception.EncryptedDocumentException;
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -128,7 +122,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * {@link PDFParserConfig#setExtractMarkedContent(boolean)}
  */
 @TikaComponent
-public class PDFParser implements Parser, RenderingParser, Initializable {
+public class PDFParser implements Parser, RenderingParser {
 
     public static final MediaType MEDIA_TYPE = MediaType.application("pdf");
     /**
@@ -779,7 +773,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
      * many PDFs this is necessary as they do not include
      * explicit whitespace characters.
      */
-    @Field
     public void setEnableAutoSpace(boolean v) {
         defaultConfig.setEnableAutoSpace(v);
     }
@@ -796,7 +789,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
      * If true (the default), text in annotations will be
      * extracted.
      */
-    @Field
     public void setExtractAnnotationText(boolean v) {
         defaultConfig.setExtractAnnotationText(v);
     }
@@ -814,7 +806,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
      * results where the content stream is sorted by position and has text overlapping spaces, but
      * could cause some word breaks to not be added to the output. By default this is disabled.
      */
-    @Field
     public void setIgnoreContentStreamSpaceGlyphs(boolean v) {
         defaultConfig.setIgnoreContentStreamSpaceGlyphs(v);
     }
@@ -835,7 +826,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
      * sometimes remove characters that were not in fact
      * duplicated (PDFBOX-1155).  By default this is disabled.
      */
-    @Field
     public void setSuppressDuplicateOverlappingText(boolean v) {
         defaultConfig.setSuppressDuplicateOverlappingText(v);
     }
@@ -855,12 +845,10 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
      * wrong result (for example if there are 2 columns,
      * the text will be interleaved).  Default is false.
      */
-    @Field
     public void setSortByPosition(boolean v) {
         defaultConfig.setSortByPosition(v);
     }
 
-    @Field
     public void setOcrStrategy(OcrConfig.Strategy ocrStrategy) {
         defaultConfig.setOcrStrategy(ocrStrategy);
     }
@@ -869,7 +857,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return defaultConfig.getOcrStrategy();
     }
 
-    @Field
     public void setOcrStrategyAuto(OcrConfig.StrategyAuto ocrStrategyAuto) {
         defaultConfig.setOcrStrategyAuto(ocrStrategyAuto);
     }
@@ -878,7 +865,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return defaultConfig.getOcrStrategyAuto();
     }
 
-    @Field
     public void setOcrRenderingStrategy(OcrConfig.RenderingStrategy ocrRenderingStrategy) {
         defaultConfig.setOcrRenderingStrategy(ocrRenderingStrategy);
     }
@@ -887,7 +873,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return defaultConfig.getOcrRenderingStrategy();
     }
 
-    @Field
     public void setOcrImageType(OcrConfig.ImageType ocrImageType) {
         defaultConfig.setOcrImageType(ocrImageType);
     }
@@ -896,7 +881,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return defaultConfig.getOcrImageType();
     }
 
-    @Field
     public void setOcrDPI(int dpi) {
         defaultConfig.setOcrDPI(dpi);
     }
@@ -904,7 +888,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
     public int getOcrDPI() {
         return defaultConfig.getOcrDPI();
     }
-    @Field
     public void setOcrImageQuality(float imageQuality) {
         defaultConfig.setOcrImageQuality(imageQuality);
     }
@@ -913,7 +896,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return defaultConfig.getOcrImageQuality();
     }
 
-    @Field
     public void setOcrImageFormat(OcrConfig.ImageFormat imageFormat) {
         defaultConfig.setOcrImageFormat(imageFormat);
     }
@@ -922,7 +904,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return defaultConfig.getOcrImageFormat();
     }
 
-    @Field
     public void setExtractBookmarksText(boolean extractBookmarksText) {
         defaultConfig.setExtractBookmarksText(extractBookmarksText);
     }
@@ -931,7 +912,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return defaultConfig.isExtractBookmarksText();
     }
 
-    @Field
     public void setExtractInlineImages(boolean extractInlineImages) {
         defaultConfig.setExtractInlineImages(extractInlineImages);
     }
@@ -940,7 +920,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return defaultConfig.isExtractInlineImages();
     }
 
-    @Field
     public void setExtractInlineImageMetadataOnly(boolean extractInlineImageMetadataOnly) {
         defaultConfig.setExtractInlineImageMetadataOnly(extractInlineImageMetadataOnly);
     }
@@ -949,7 +928,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return defaultConfig.isExtractInlineImageMetadataOnly();
     }
 
-    @Field
     public void setAverageCharTolerance(float averageCharTolerance) {
         defaultConfig.setAverageCharTolerance(averageCharTolerance);
     }
@@ -958,7 +936,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return defaultConfig.getAverageCharTolerance();
     }
 
-    @Field
     public void setSpacingTolerance(float spacingTolerance) {
         defaultConfig.setSpacingTolerance(spacingTolerance);
     }
@@ -968,7 +945,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
     }
 
 
-    @Field
     public void setCatchIntermediateExceptions(boolean catchIntermediateExceptions) {
         defaultConfig.setCatchIntermediateIOExceptions(catchIntermediateExceptions);
     }
@@ -977,7 +953,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return defaultConfig.isCatchIntermediateIOExceptions();
     }
 
-    @Field
     public void setExtractAcroFormContent(boolean extractAcroFormContent) {
         defaultConfig.setExtractAcroFormContent(extractAcroFormContent);
     }
@@ -986,7 +961,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return defaultConfig.isExtractAcroFormContent();
     };
 
-    @Field
     public void setIfXFAExtractOnlyXFA(boolean ifXFAExtractOnlyXFA) {
         defaultConfig.setIfXFAExtractOnlyXFA(ifXFAExtractOnlyXFA);
     }
@@ -994,7 +968,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
     public boolean isIfXFAExtractOnlyXFA() {
         return defaultConfig.isIfXFAExtractOnlyXFA();
     }
-    @Field
     public void setAccessCheckMode(PDFParserConfig.AccessCheckMode mode) {
         defaultConfig.setAccessCheckMode(mode);
     }
@@ -1003,7 +976,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return defaultConfig.getAccessCheckMode();
     }
 
-    @Field
     public void setExtractUniqueInlineImagesOnly(boolean extractUniqueInlineImagesOnly) {
         defaultConfig.setExtractUniqueInlineImagesOnly(extractUniqueInlineImagesOnly);
     }
@@ -1012,7 +984,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return defaultConfig.isExtractUniqueInlineImagesOnly();
     }
 
-    @Field
     public void setExtractActions(boolean extractActions) {
         defaultConfig.setExtractActions(extractActions);
     }
@@ -1021,7 +992,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return defaultConfig.isExtractActions();
     }
 
-    @Field
     public void setExtractFontNames(boolean extractFontNames) {
         defaultConfig.setExtractFontNames(extractFontNames);
     }
@@ -1030,7 +1000,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return defaultConfig.isExtractFontNames();
     }
 
-    @Field
     public void setSetKCMS(boolean setKCMS) {
         defaultConfig.setSetKCMS(setKCMS);
     }
@@ -1038,7 +1007,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
     public boolean isSetKCMS() {
         return defaultConfig.isSetKCMS();
     }
-    @Field
     public void setDetectAngles(boolean detectAngles) {
         defaultConfig.setDetectAngles(detectAngles);
     }
@@ -1046,7 +1014,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
     public boolean isDetectAngles() {
         return defaultConfig.isDetectAngles();
     }
-    @Field
     public void setExtractMarkedContent(boolean extractMarkedContent) {
         defaultConfig.setExtractMarkedContent(extractMarkedContent);
     }
@@ -1055,7 +1022,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return defaultConfig.isExtractMarkedContent();
     }
 
-    @Field
     public void setDropThreshold(float dropThreshold) {
         defaultConfig.setDropThreshold(dropThreshold);
     }
@@ -1064,7 +1030,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return defaultConfig.getDropThreshold();
     }
 
-    @Field
     public void setMaxMainMemoryBytes(long maxMainMemoryBytes) {
         defaultConfig.setMaxMainMemoryBytes(maxMainMemoryBytes);
     }
@@ -1073,7 +1038,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
      * Whether or not to scan a PDF for incremental updates.
      * @param setExtractIncrementalUpdateInfo
      */
-    @Field
     public void setExtractIncrementalUpdateInfo(boolean setExtractIncrementalUpdateInfo) {
         defaultConfig.setExtractIncrementalUpdateInfo(setExtractIncrementalUpdateInfo);
     }
@@ -1093,7 +1057,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
      *
      * @param parseIncrementalUpdates
      */
-    @Field
     public void setParseIncrementalUpdates(boolean parseIncrementalUpdates) {
         defaultConfig.setParseIncrementalUpdates(parseIncrementalUpdates);
     }
@@ -1106,7 +1069,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
      * Set the maximum number of incremental updates to parse
      * @param maxIncrementalUpdates
      */
-    @Field
     public void setMaxIncrementalUpdates(int maxIncrementalUpdates) {
         defaultConfig.setMaxIncrementalUpdates(maxIncrementalUpdates);
     }
@@ -1131,7 +1093,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
      *
      * @param throwOnEncryptedPayload
      */
-    @Field
     public void setThrowOnEncryptedPayload(boolean throwOnEncryptedPayload) {
         defaultConfig.setThrowOnEncryptedPayload(throwOnEncryptedPayload);
     }
@@ -1139,24 +1100,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
     public boolean isThrowOnEncryptedPayload() {
         return defaultConfig.isThrowOnEncryptedPayload();
     }
-    /**
-     * This is a no-op.  There is no need to initialize multiple fields.
-     * The regular field loading should happen without this.
-     *
-     * @param params params to use for initialization
-     * @throws TikaConfigException
-     */
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
-        //no-op
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler handler)
-            throws TikaConfigException {
-        //no-op
-    }
-
     private void initRenderer(PDFParserConfig config, ParseContext context) {
         if (this.renderer != null &&
                 this.renderer.getSupportedTypes(context).contains(MEDIA_TYPE)) {
@@ -1179,7 +1122,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return renderer;
     }
 
-    @Field
     public void setImageGraphicsEngineFactory(ImageGraphicsEngineFactory imageGraphicsEngineFactory) {
         defaultConfig.setImageGraphicsEngineFactory(imageGraphicsEngineFactory);
     }
@@ -1188,7 +1130,6 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
         return defaultConfig.getImageGraphicsEngineFactory();
     }
 
-    @Field
     public void setImageStrategy(PDFParserConfig.IMAGE_STRATEGY imageStrategy) {
         defaultConfig.setImageStrategy(imageStrategy);
     }

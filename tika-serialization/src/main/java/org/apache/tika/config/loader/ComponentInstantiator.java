@@ -22,6 +22,7 @@ import java.lang.reflect.InvocationTargetException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.apache.tika.config.Initializable;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.serialization.ComponentNameResolver;
@@ -79,6 +80,9 @@ public class ComponentInstantiator {
                         new org.apache.tika.config.ServiceLoader(classLoader));
             }
 
+            // Call initialize() on Initializable components
+            initializeIfNeeded(component);
+
             return component;
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new TikaConfigException("Failed to instantiate " + componentTypeName + ": " +
@@ -120,12 +124,20 @@ public class ComponentInstantiator {
             }
 
             // Fall back to Jackson bean deserialization or zero-arg constructor
+            T component;
             if (configNode == null || configNode.isEmpty()) {
-                return (T) componentClass.getDeclaredConstructor().newInstance();
+                component = (T) componentClass.getDeclaredConstructor().newInstance();
+            } else {
+                component = (T) objectMapper.treeToValue(configNode, componentClass);
             }
 
-            return (T) objectMapper.treeToValue(configNode, componentClass);
+            // Call initialize() on Initializable components
+            initializeIfNeeded(component);
 
+            return component;
+
+        } catch (TikaConfigException e) {
+            throw e;
         } catch (Exception e) {
             throw new TikaConfigException(
                     "Failed to instantiate component '" + componentClass.getName() + "': " + e.getMessage(), e);
@@ -184,6 +196,19 @@ public class ComponentInstantiator {
         } catch (Exception e) {
             // If we can't parse it, assume it has configuration to be safe
             return true;
+        }
+    }
+
+    /**
+     * Calls initialize() on the component if it implements Initializable.
+     *
+     * @param component the component to initialize
+     * @param <T> the component type
+     * @throws TikaConfigException if initialization fails
+     */
+    private static <T> void initializeIfNeeded(T component) throws TikaConfigException {
+        if (component instanceof Initializable) {
+            ((Initializable) component).initialize();
         }
     }
 }

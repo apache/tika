@@ -1,0 +1,10 @@
+{
+  "parsers": [
+    {
+      "strings-parser": {
+        "encoding": "BIGENDIAN_16_BIT",
+        "timeoutSeconds": 60
+      }
+    }
+  ]
+}

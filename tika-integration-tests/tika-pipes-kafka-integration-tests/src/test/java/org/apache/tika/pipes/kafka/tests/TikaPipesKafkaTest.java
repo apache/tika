@@ -221,7 +221,7 @@ public class TikaPipesKafkaTest {
         replacements.put("BOOTSTRAP_SERVERS", kafka.getBootstrapServers());
         replacements.put("FETCHER_BASE_PATH", testFileFolderPath);
         replacements.put("PARSE_MODE", HandlerConfig.PARSE_MODE.RMETA.name());
-        replacements.put("LOG4J_PROPERTIES_FILE", log4jPropFile);
+        replacements.put("LOG4J_JVM_ARG", "-Dlog4j.configurationFile=" + log4jPropFile.toAbsolutePath());
 
         JsonConfigHelper.writeConfigFromResource("/kafka/plugins-template.json",
                 TikaPipesKafkaTest.class, replacements, tikaConfig);

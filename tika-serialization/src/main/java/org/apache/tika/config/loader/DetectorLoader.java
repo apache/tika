@@ -118,13 +118,10 @@ public class DetectorLoader {
             configuredDetectorClasses.addAll(excludedDetectorClasses);
 
             // Add SPI-discovered detectors only if "default-detector" is in config
-            // If "default-detector" is present, use SPI fallback for unlisted detectors
-            // If "default-detector" is NOT present, only load explicitly configured detectors
             if (hasDefaultDetector) {
                 DefaultDetector defaultDetector = createDefaultDetector(configuredDetectorClasses);
                 LOG.debug("Loading SPI detectors because 'default-detector' is in config");
                 if (detectorList.isEmpty()) {
-                    //short-circuit return as is if no other detectors are specified
                     return defaultDetector;
                 }
                 detectorList.add(0, defaultDetector);

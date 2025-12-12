@@ -1,0 +1,11 @@
+{
+  "metadata-filters": [
+    {
+      "capture-group-metadata-filter": {
+        "sourceField": "Content-Type",
+        "targetField": "Content-Type",
+        "regex": "\\A([^;]+)"
+      }
+    }
+  ]
+}

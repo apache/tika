@@ -23,7 +23,6 @@ import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 
-import org.apache.tika.config.LoadErrorHandler;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -44,8 +43,7 @@ public class StreamingZipContainerDetector extends DefaultZipContainerDetector {
 
 
     public StreamingZipContainerDetector() {
-        this(new ServiceLoader(StreamingZipContainerDetector.class.getClassLoader(),
-                LoadErrorHandler.WARN, false));
+        this(new ServiceLoader(StreamingZipContainerDetector.class.getClassLoader(), false));
     }
 
     public StreamingZipContainerDetector(ServiceLoader loader) {

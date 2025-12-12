@@ -1,0 +1,10 @@
+{
+  "parsers": [
+    "default-parser",
+    {
+      "office-parser": {
+        "extractAllAlternativesFromMSG": true
+      }
+    }
+  ]
+}

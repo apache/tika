@@ -16,15 +16,10 @@
  */
 package org.apache.tika.server.core;
 
-import java.util.Map;
-
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.utils.StringUtils;
 
-public class TlsConfig implements Initializable {
+public class TlsConfig {
 
     //TODO make this configurable
     private final boolean passwordsAESEncrypted = false;
@@ -100,13 +95,7 @@ public class TlsConfig implements Initializable {
         this.trustStoreFile = trustStoreFile;
     }
 
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
-
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+    public void checkInitialization() throws TikaConfigException {
         if (active) {
             if (StringUtils.isBlank(keyStoreType)) {
                 throw new TikaConfigException("must initialize keyStoreType");

@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -40,7 +40,6 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
@@ -436,10 +435,9 @@ public class ExcelParserTest extends TikaTest {
         assertNotContained("Footer - Author: John Smith", content);
 
         //now test configuration via tika-config
-        Parser configuredParser = null;
-        try (InputStream is = getResourceAsStream("tika-config-headers-footers.xml")) {
-            configuredParser = new AutoDetectParser(new TikaConfig(is));
-        }
+        Parser configuredParser = TikaLoader.load(
+                getConfigPath(ExcelParserTest.class, "tika-config-headers-footers.json"))
+                .loadAutoDetectParser();
         content = getXML("testEXCEL_headers_footers.xls", configuredParser).xml;
         assertContains("John Smith1", content);
         assertContains("John Smith50", content);
@@ -507,11 +505,10 @@ public class ExcelParserTest extends TikaTest {
         assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xls", context));
 
         //test configuring via config file
-        try (InputStream is = getResourceAsStream("tika-config-macros.xml")) {
-            TikaConfig tikaConfig = new TikaConfig(is);
-            AutoDetectParser parser = new AutoDetectParser(tikaConfig);
-            assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xls", parser));
-        }
+        Parser parser = TikaLoader.load(
+                getConfigPath(ExcelParserTest.class, "tika-config-macros.json"))
+                .loadAutoDetectParser();
+        assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xls", parser));
     }
 
     @Test
@@ -548,9 +545,9 @@ public class ExcelParserTest extends TikaTest {
                 getXML("testEXCEL_phonetic.xls", pc).xml);
 
         //test configuring via config file
-        TikaConfig tikaConfig =
-                new TikaConfig(getResourceAsStream("tika-config-exclude-phonetic.xml"));
-        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+        Parser parser = TikaLoader.load(
+                getConfigPath(ExcelParserTest.class, "tika-config-exclude-phonetic.json"))
+                .loadAutoDetectParser();
         assertNotContained("\u65E5\u672C\u30AA\u30E9\u30AF\u30EB \u30CB\u30DB\u30F3",
                 getXML("testEXCEL_phonetic.xls", parser).xml);
 
@@ -570,13 +567,12 @@ public class ExcelParserTest extends TikaTest {
 
     @Test
     public void testDateFormat() throws Exception {
-        try (InputStream is = getResourceAsStream("tika-config-custom-date-override.xml")) {
-            TikaConfig tikaConfig = new TikaConfig(is);
-            Parser p = new AutoDetectParser(tikaConfig);
-            String xml = getXML("testEXCEL_dateFormats.xls", p).xml;
-            assertContains("2018-09-20", xml);
-            assertContains("1996-08-10", xml);
-        }
+        Parser p = TikaLoader.load(
+                getConfigPath(ExcelParserTest.class, "tika-config-custom-date-override.json"))
+                .loadAutoDetectParser();
+        String xml = getXML("testEXCEL_dateFormats.xls", p).xml;
+        assertContains("2018-09-20", xml);
+        assertContains("1996-08-10", xml);
     }
 
     @Test

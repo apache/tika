@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,11 +30,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
 
 public class TextAndCSVParserTest extends TikaTest {
@@ -68,11 +66,9 @@ public class TextAndCSVParserTest extends TikaTest {
 
     @BeforeAll
     public static void setUp() throws Exception {
-
-        try (InputStream is = Thread.currentThread().getContextClassLoader()
-                .getResourceAsStream("org/apache/tika/parser/csv/tika-config.xml")) {
-            PARSER = new AutoDetectParser(new TikaConfig(is));
-        }
+        PARSER = TikaLoader.load(
+                        getConfigPath(TextAndCSVParserTest.class, "tika-config-csv.json"))
+                .loadAutoDetectParser();
     }
 
     private static void assertMediaTypeEquals(String csv, String charset, String delimiter,
@@ -242,11 +238,9 @@ public class TextAndCSVParserTest extends TikaTest {
 
     @Test
     public void testCustomizingDelimiter() throws Exception {
-        TikaConfig tikaConfig = null;
-        try (InputStream is = TextAndCSVParserTest.class.getResourceAsStream("/test-configs/tika-config-colon-delimiter.xml")) {
-            tikaConfig = new TikaConfig(is);
-        }
-        Parser p = new AutoDetectParser(tikaConfig);
+        Parser p = TikaLoader.load(
+                        getConfigPath(TextAndCSVParserTest.class, "tika-config-colon-delimiter.json"))
+                .loadAutoDetectParser();
         XMLResult r = getXML("testColonDelimited.txt", p);
         assertEquals("colon", r.metadata.get(TextAndCSVParser.DELIMITER_PROPERTY));
         assertContains("colon", r.metadata.get(Metadata.CONTENT_TYPE));

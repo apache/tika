@@ -1,0 +1,14 @@
+{
+  "parsers": [
+    {
+      "default-parser": {
+        "_exclude": ["gdal-parser"]
+      }
+    },
+    {
+      "gdal-parser": {
+        "_mime-exclude": ["image/jpeg", "image/png", "image/jp2", "image/gif"]
+      }
+    }
+  ]
+}

@@ -17,23 +17,13 @@
 package org.apache.tika.pipes.grpc;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -48,8 +38,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.DeleteFetcherReply;
@@ -66,8 +54,6 @@ import org.apache.tika.SaveFetcherReply;
 import org.apache.tika.SaveFetcherRequest;
 import org.apache.tika.TikaGrpc;
 import org.apache.tika.config.ConfigContainer;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.Param;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -81,7 +67,6 @@ import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.core.PipesClient;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.plugins.ExtensionConfig;
-import org.apache.tika.utils.XMLReaderUtils;
 
 class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     private static final Logger LOG = LoggerFactory.getLogger(TikaGrpcServerImpl.class);
@@ -128,6 +113,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     }
 
     private void updateTikaConfig() throws ParserConfigurationException, IOException, SAXException, TransformerException, TikaException {
+        /* TODO -- update this with json stuff if necessary any more at all?
         Document tikaConfigDoc =
                 DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(tikaConfigPath);
 
@@ -160,8 +146,11 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         TransformerFactory transformerFactory = XMLReaderUtils.getTransformerFactory();
         Transformer transformer = transformerFactory.newTransformer();
         transformer.transform(source, result);
+
+         */
     }
 
+    /*
     private void populateFetcherConfigs(Map<String, Object> fetcherConfigParams,
                                         Document tikaConfigDoc, Element fetcher) {
         for (var configParam : fetcherConfigParams.entrySet()) {
@@ -179,7 +168,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 configElm.setTextContent(Objects.toString(configParam.getValue()));
             }
         }
-    }
+    }*/
 
     @Override
     public void fetchAndParseServerSideStreaming(FetchAndParseRequest request,
@@ -273,8 +262,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 SaveFetcherReply.newBuilder().setFetcherId(request.getFetcherId()).build();
         try {
             Map<String, Object> fetcherConfigMap = OBJECT_MAPPER.readValue(request.getFetcherConfigJson(), new TypeReference<>() {});
-            Map<String, Param> tikaParamsMap = createTikaParamMap(fetcherConfigMap);
-            saveFetcher(request.getFetcherId(), request.getFetcherClass(), fetcherConfigMap, tikaParamsMap);
+            //TODO Sorry need to update this
+//            Map<String, Param> tikaParamsMap = createTikaParamMap(fetcherConfigMap);
+  //          saveFetcher(request.getFetcherId(), request.getFetcherClass(), fetcherConfigMap, tikaParamsMap);
             updateTikaConfig();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -282,7 +272,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         responseObserver.onNext(reply);
         responseObserver.onCompleted();
     }
-
+/*
     private void saveFetcher(String name, String fetcherClassName, Map<String, Object> paramsMap, Map<String, Param> tikaParamsMap) {
         try {
             if (paramsMap == null) {
@@ -298,10 +288,6 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             Fetcher abstractFetcher =
                     fetcherClass.getDeclaredConstructor(configObject.getClass()).newInstance(configObject);
 
-            if (Initializable.class.isAssignableFrom(fetcherClass)) {
-                Initializable initializable = (Initializable) abstractFetcher;
-                initializable.initialize(tikaParamsMap);
-            }
             if (expiringFetcherStore.deleteFetcher(name)) {
                 LOG.info("Updating fetcher {}", name);
             } else {
@@ -313,7 +299,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             throw new RuntimeException(e);
         }
     }
-
+*/
+    /*
     private static Map<String, Param> createTikaParamMap(Map<String, Object> fetcherConfigMap) {
         Map<String, Param> tikaParamsMap = new HashMap<>();
         for (Map.Entry<String, Object> entry : fetcherConfigMap.entrySet()) {
@@ -323,7 +310,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         }
         return tikaParamsMap;
     }
-
+*/
     static Status notFoundStatus(String fetcherId) {
         return Status.newBuilder()
                 .setCode(io.grpc.Status.Code.NOT_FOUND.value())

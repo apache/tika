@@ -28,13 +28,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.Metadata;
@@ -83,12 +81,6 @@ public abstract class AbstractMultipleParser implements Parser {
      */
     private MediaTypeRegistry registry;
 
-    @SuppressWarnings("rawtypes")
-    public AbstractMultipleParser(MediaTypeRegistry registry, Collection<? extends Parser> parsers,
-                                  Map<String, Param> params) {
-        this(registry, getMetadataPolicy(params), parsers);
-    }
-
     public AbstractMultipleParser(MediaTypeRegistry registry, MetadataPolicy policy,
                                   Parser... parsers) {
         this(registry, policy, Arrays.asList(parsers));
@@ -106,15 +98,6 @@ public abstract class AbstractMultipleParser implements Parser {
         for (Parser parser : parsers) {
             offeredTypes.addAll(parser.getSupportedTypes(new ParseContext()));
         }
-    }
-
-    @SuppressWarnings("rawtypes")
-    protected static MetadataPolicy getMetadataPolicy(Map<String, Param> params) {
-        if (params.containsKey(METADATA_POLICY_CONFIG_KEY)) {
-            return (MetadataPolicy) params.get(METADATA_POLICY_CONFIG_KEY).getValue();
-        }
-        throw new IllegalArgumentException(
-                "Required parameter '" + METADATA_POLICY_CONFIG_KEY + "' not supplied");
     }
 
     protected static Metadata mergeMetadata(Metadata newMetadata, Metadata lastMetadata,

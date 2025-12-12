@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -367,7 +368,7 @@ public class TesseractOCRConfig implements Serializable {
 
     /**
      * @param colorspace the colorspace to set
-     *                   Deafult value is gray.
+     *                   Default value is gray.
      */
     public void setColorspace(String colorspace) {
         if (colorspace == null) {
@@ -477,8 +478,23 @@ public class TesseractOCRConfig implements Serializable {
     /**
      * @see #addOtherTesseractConfig(String, String)
      */
-    public HashMap<String, String> getOtherTesseractConfig() {
+    public Map<String, String> getOtherTesseractConfig() {
         return otherTesseractConfig;
+    }
+
+    /**
+     * Set the map of other Tesseract config parameters.
+     * Each key-value pair is passed to Tesseract using its -c command line option.
+     * To see the possible options, run tesseract --print-parameters.
+     *
+     * @param otherTesseractConfig map of key-value pairs
+     */
+    public void setOtherTesseractConfig(Map<String, String> otherTesseractConfig) {
+        if (otherTesseractConfig != null) {
+            for (Map.Entry<String, String> entry : otherTesseractConfig.entrySet()) {
+                addOtherTesseractConfig(entry.getKey(), entry.getValue());
+            }
+        }
     }
 
     /**

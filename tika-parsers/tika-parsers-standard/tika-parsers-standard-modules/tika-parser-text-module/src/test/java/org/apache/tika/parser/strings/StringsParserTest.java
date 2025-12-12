@@ -22,15 +22,12 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.InputStream;
 import java.util.Arrays;
-import java.util.Collections;
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
-import org.apache.tika.config.Initializable;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.BodyContentHandler;
 
@@ -52,8 +49,8 @@ public class StringsParserTest {
 
         StringsConfig stringsConfig = new StringsConfig();
 
-        Parser parser = new StringsParser();
-        ((Initializable) parser).initialize(Collections.emptyMap());
+        StringsParser parser = new StringsParser();
+        parser.initialize();
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 

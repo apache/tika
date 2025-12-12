@@ -24,12 +24,11 @@ import java.nio.charset.StandardCharsets;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 
 public class RFC822DetectionTest {
 
-    private static final MimeTypes MIME_TYPES = TikaConfig.getDefaultConfig().getMimeRepository();
+    private static final MimeTypes MIME_TYPES = MimeTypes.getDefaultMimeTypes();
 
     @Test
     public void testBasic() throws Exception {

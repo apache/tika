@@ -37,7 +37,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -75,7 +74,7 @@ public class MimeTypesReaderTest {
     @BeforeEach
     public void setUp() throws NoSuchFieldException, SecurityException, IllegalArgumentException,
             IllegalAccessException {
-        this.mimeTypes = TikaConfig.getDefaultConfig().getMimeRepository();
+        this.mimeTypes = MimeTypes.getDefaultMimeTypes();
 
         Field magicsField = mimeTypes.getClass().getDeclaredField("magics");
         magicsField.setAccessible(true);

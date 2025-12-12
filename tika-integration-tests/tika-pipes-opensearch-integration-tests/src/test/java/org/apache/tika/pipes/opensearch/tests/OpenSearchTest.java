@@ -471,7 +471,7 @@ public class OpenSearchTest {
         replacements.put("PARSE_MODE", parseMode.name());
         replacements.put("INCLUDE_ROUTING", includeRouting);
         replacements.put("OPEN_SEARCH_URL", endpoint);
-        replacements.put("LOG4J_PROPERTIES_FILE", log4jPropFile);
+        replacements.put("LOG4J_JVM_ARG", "-Dlog4j.configurationFile=" + log4jPropFile.toAbsolutePath());
 
         JsonConfigHelper.writeConfigFromResource("/opensearch/plugins-template.json",
                 OpenSearchTest.class, replacements, tikaConfig);

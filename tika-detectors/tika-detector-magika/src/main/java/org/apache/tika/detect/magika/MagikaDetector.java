@@ -32,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ConfigDeserializer;
-import org.apache.tika.config.Field;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.Detector;
@@ -200,7 +199,6 @@ public class MagikaDetector implements Detector {
      *
      * @param useMime
      */
-    @Field
     public void setUseMime(boolean useMime) {
         this.config.useMime = useMime;
     }
@@ -355,7 +353,6 @@ public class MagikaDetector implements Detector {
         }
     }
 
-    @Field
     public void setMagikaPath(String fileCommandPath) {
         //this opens up a potential command vulnerability.
         //Don't ever let an untrusted user set this.
@@ -370,12 +367,10 @@ public class MagikaDetector implements Detector {
      *
      * @param maxBytes
      */
-    @Field
     public void setMaxBytes(int maxBytes) {
         this.config.maxBytes = maxBytes;
     }
 
-    @Field
     public void setTimeoutMs(long timeoutMs) {
         this.config.timeoutMs = timeoutMs;
     }

@@ -38,9 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ConfigDeserializer;
-import org.apache.tika.config.Field;
 import org.apache.tika.config.JsonConfig;
-import org.apache.tika.config.LoadErrorHandler;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.Detector;
@@ -93,7 +91,6 @@ public class DefaultZipContainerDetector implements Detector {
 
     //this has to be > 100,000 to handle some of the iworks files
     //in our unit tests
-    @Field
     int markLimit = 16 * 1024 * 1024;
 
     private transient ServiceLoader loader;
@@ -101,13 +98,11 @@ public class DefaultZipContainerDetector implements Detector {
     private List<ZipContainerDetector> staticZipDetectors;
 
     public DefaultZipContainerDetector() {
-        this(new ServiceLoader(DefaultZipContainerDetector.class.getClassLoader(),
-                LoadErrorHandler.WARN, false));
+        this(new ServiceLoader(DefaultZipContainerDetector.class.getClassLoader(), false));
     }
 
     public DefaultZipContainerDetector(Config config) {
-        this(new ServiceLoader(DefaultZipContainerDetector.class.getClassLoader(),
-                LoadErrorHandler.WARN, false));
+        this(new ServiceLoader(DefaultZipContainerDetector.class.getClassLoader(), false));
         this.markLimit = config.markLimit;
     }
 
@@ -187,7 +182,6 @@ public class DefaultZipContainerDetector implements Detector {
      *
      * @param markLimit mark limit for streaming detection
      */
-    @Field
     public void setMarkLimit(int markLimit) {
         this.markLimit = markLimit;
     }

@@ -21,7 +21,6 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -62,10 +61,7 @@ import software.amazon.awssdk.services.transcribe.model.StartTranscriptionJobReq
 import software.amazon.awssdk.services.transcribe.model.TranscriptionJob;
 import software.amazon.awssdk.services.transcribe.model.TranscriptionJobStatus;
 
-import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -182,7 +178,6 @@ public class AmazonTranscribe implements Parser, Initializable {
      *
      * @param id The ID to set.
      */
-    @Field
     public void setClientId(String id) {
         this.clientId = id;
         this.isAvailable = checkAvailable();
@@ -193,7 +188,6 @@ public class AmazonTranscribe implements Parser, Initializable {
      *
      * @param secret The secret to set.
      */
-    @Field
     public void setClientSecret(String secret) {
         this.clientSecret = secret;
         this.isAvailable = checkAvailable();
@@ -204,13 +198,11 @@ public class AmazonTranscribe implements Parser, Initializable {
      *
      * @param bucket The bucket to set.
      */
-    @Field
     public void setBucket(String bucket) {
         this.bucketName = bucket;
         this.isAvailable = checkAvailable();
     }
 
-    @Field
     public void setRegion(String region) {
         this.region = region;
         this.isAvailable = checkAvailable();
@@ -329,7 +321,7 @@ public class AmazonTranscribe implements Parser, Initializable {
     }
 
     @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
+    public void initialize() throws TikaConfigException {
         if (!checkAvailable()) {
             return;
         }
@@ -370,13 +362,6 @@ public class AmazonTranscribe implements Parser, Initializable {
             isAvailable = false;
         }
 
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
-        //TODO alert user if they've gotten 1 or 2 out of three?
-        this.isAvailable = checkAvailable();
     }
     
     // Thanks, ChatGPT

@@ -60,11 +60,8 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.config.ConfigDeserializer;
-import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.JsonConfig;
-import org.apache.tika.config.Param;
 import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.config.TikaTaskTimeout;
@@ -154,12 +151,12 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     private ImagePreprocessor imagePreprocessor;
 
     public TesseractOCRParser() throws TikaConfigException {
-        initialize(Map.of());
+        initialize();
     }
 
     public TesseractOCRParser(TesseractOCRConfig tesseractOCRConfig) throws TikaConfigException {
         this.defaultConfig = tesseractOCRConfig;
-        initialize(Map.of());
+        initialize();
     }
 
     /**
@@ -618,7 +615,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     }
 
     @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
+    public void initialize() throws TikaConfigException {
         hasTesseract = hasTesseract();
         if (isEnableImagePreprocessing()) {
             hasImageMagick = hasImageMagick();
@@ -651,8 +648,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         }
     }
 
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
+    public void checkInitialization()
             throws TikaConfigException {
 
         if (langs.size() > 0 && !StringUtils.isBlank(defaultConfig.getLanguage())) {
@@ -698,7 +694,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
      * set the path to (and including) the 'tessdata' folder using {@link #setTessdataPath}.
      * </p>
      */
-    @Field
     public void setTesseractPath(String tesseractPath) throws TikaConfigException {
         tesseractPath = FilenameUtils.normalize(tesseractPath);
         if (!tesseractPath.isEmpty() && !tesseractPath.endsWith(File.separator)) {
@@ -719,7 +714,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
      * <p/>
      * Make sure to include the 'tessdata' folder in this path: '/blah/de/blah/tessdata'
      */
-    @Field
     public void setTessdataPath(String tessdataPath) throws TikaConfigException {
         tessdataPath = FilenameUtils.normalize(tessdataPath);
         if (!tessdataPath.isEmpty() && !tessdataPath.endsWith(File.separator)) {
@@ -738,7 +732,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
      *
      * @param imageMagickPath to ImageMagick executable directory.
      */
-    @Field
     public void setImageMagickPath(String imageMagickPath) throws TikaConfigException {
         imageMagickPath = FilenameUtils.normalize(imageMagickPath);
         if (!imageMagickPath.isEmpty() && !imageMagickPath.endsWith(File.separator)) {
@@ -747,7 +740,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         defaultConfig.setImageMagickPath(imageMagickPath);
     }
 
-    @Field
     public void setOtherTesseractSettings(List<String> settings) throws TikaConfigException {
         for (String s : settings) {
             String[] bits = s.trim().split("\\s+");
@@ -769,7 +761,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         return settings;
     }
 
-    @Field
     public void setSkipOCR(boolean skipOCR) {
         defaultConfig.setSkipOcr(skipOCR);
     }
@@ -778,7 +769,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         return defaultConfig.isSkipOcr();
     }
 
-    @Field
     public void setLanguage(String language) {
         defaultConfig.setLanguage(language);
     }
@@ -787,7 +777,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         return defaultConfig.getLanguage();
     }
 
-    @Field
     public void setPageSegMode(String pageSegMode) {
         defaultConfig.setPageSegMode(pageSegMode);
     }
@@ -795,7 +784,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     public String getPageSegMode() {
         return defaultConfig.getPageSegMode();
     }
-    @Field
     public void setMaxFileSizeToOcr(long maxFileSizeToOcr) {
         defaultConfig.setMaxFileSizeToOcr(maxFileSizeToOcr);
     }
@@ -804,7 +792,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         return defaultConfig.getMaxFileSizeToOcr();
     }
 
-    @Field
     public void setMinFileSizeToOcr(long minFileSizeToOcr) {
         defaultConfig.setMinFileSizeToOcr(minFileSizeToOcr);
     }
@@ -820,7 +807,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
      *
      * @param timeout
      */
-    @Field
     public void setTimeout(int timeout) {
         defaultConfig.setTimeoutSeconds(timeout);
     }
@@ -829,7 +815,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         return defaultConfig.getTimeoutSeconds();
     }
 
-    @Field
     public void setOutputType(String outputType) {
         defaultConfig.setOutputType(outputType);
     }
@@ -838,7 +823,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         return defaultConfig.getOutputType().name();
     }
 
-    @Field
     public void setPreserveInterwordSpacing(boolean preserveInterwordSpacing) {
         defaultConfig.setPreserveInterwordSpacing(preserveInterwordSpacing);
     }
@@ -847,7 +831,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         return defaultConfig.isPreserveInterwordSpacing();
     }
 
-    @Field
     public void setEnableImagePreprocessing(boolean enableImagePreprocessing) {
         defaultConfig.setEnableImagePreprocessing(enableImagePreprocessing);
     }
@@ -855,7 +838,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     public boolean isEnableImagePreprocessing() {
         return defaultConfig.isEnableImagePreprocessing();
     }
-    @Field
     public void setDensity(int density) {
         defaultConfig.setDensity(density);
     }
@@ -864,7 +846,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         return defaultConfig.getDensity();
     }
 
-    @Field
     public void setDepth(int depth) {
         defaultConfig.setDepth(depth);
     }
@@ -872,7 +853,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     public int getDepth() {
         return defaultConfig.getDepth();
     }
-    @Field
     public void setColorspace(String colorspace) {
         defaultConfig.setColorspace(colorspace);
     }
@@ -880,7 +860,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     public String getColorspace() {
         return defaultConfig.getColorspace();
     }
-    @Field
     public void setFilter(String filter) {
         defaultConfig.setFilter(filter);
     }
@@ -889,7 +868,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         return defaultConfig.getFilter();
     }
 
-    @Field
     public void setResize(int resize) {
         defaultConfig.setResize(resize);
     }
@@ -898,7 +876,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         return defaultConfig.getResize();
     }
 
-    @Field
     public void setApplyRotation(boolean applyRotation) {
         defaultConfig.setApplyRotation(applyRotation);
     }
@@ -907,7 +884,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         return defaultConfig.isApplyRotation();
     }
 
-    @Field
     public void setInlineContent(boolean inlineContent) {
         defaultConfig.setInlineContent(inlineContent);
     }
@@ -928,7 +904,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
      *
      * @param preloadLangs
      */
-    @Field
     public void setPreloadLangs(boolean preloadLangs) {
         this.preloadLangs = preloadLangs;
     }

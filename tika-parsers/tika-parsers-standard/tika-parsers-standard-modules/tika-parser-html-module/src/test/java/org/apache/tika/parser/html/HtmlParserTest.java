@@ -65,7 +65,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.ServiceLoader;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
@@ -75,7 +75,6 @@ import org.apache.tika.metadata.HTML;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -1119,17 +1118,15 @@ public class HtmlParserTest extends TikaTest {
 
     @Test
     public void testConfigExtractScript() throws Exception {
-        try (InputStream is = getResourceAsStream("/org/apache/tika/parser/html/tika-config.xml")) {
-            assertNotNull(is);
-            TikaConfig tikaConfig = new TikaConfig(is);
-            Parser p = new AutoDetectParser(tikaConfig);
-            List<Metadata> metadataList = getRecursiveMetadata("testHTMLGoodScript.html", p);
-            assertEquals(2, metadataList.size());
-            assertEquals("MACRO",
-                    metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
-            assertContains("cool", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
-            assertNotContained("cool", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
-        }
+        Parser p = TikaLoader.load(
+                        getConfigPath(HtmlParserTest.class, "tika-config-html-extract-scripts.json"))
+                .loadAutoDetectParser();
+        List<Metadata> metadataList = getRecursiveMetadata("testHTMLGoodScript.html", p);
+        assertEquals(2, metadataList.size());
+        assertEquals("MACRO",
+                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertContains("cool", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+        assertNotContained("cool", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
 
@@ -1207,15 +1204,13 @@ public class HtmlParserTest extends TikaTest {
                 metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
 
         //make sure to include it if a user wants scripts to be extracted
-        try (InputStream is = getResourceAsStream("/org/apache/tika/parser/html/tika-config.xml")) {
-            assertNotNull(is);
-            TikaConfig tikaConfig = new TikaConfig(is);
-            Parser p = new AutoDetectParser(tikaConfig);
-            metadataList = getRecursiveMetadata("testHTML_embedded_data_uri_js.html", p);
-            assertEquals(2, metadataList.size());
-            assertContains("alert( 'Hello, world!' );",
-                    metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
-        }
+        Parser p = TikaLoader.load(
+                        getConfigPath(HtmlParserTest.class, "tika-config-html-extract-scripts.json"))
+                .loadAutoDetectParser();
+        metadataList = getRecursiveMetadata("testHTML_embedded_data_uri_js.html", p);
+        assertEquals(2, metadataList.size());
+        assertContains("alert( 'Hello, world!' );",
+                metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Test

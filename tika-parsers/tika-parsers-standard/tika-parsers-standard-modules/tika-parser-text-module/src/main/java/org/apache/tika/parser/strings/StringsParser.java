@@ -25,7 +25,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -35,10 +34,7 @@ import org.apache.commons.io.IOUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.FileCommandDetector;
 import org.apache.tika.exception.TikaConfigException;
@@ -243,7 +239,6 @@ public class StringsParser implements Parser, Initializable {
      *
      * @param path the "strings" installation folder.
      */
-    @Field
     public void setStringsPath(String path) {
         if (!path.isEmpty() && !path.endsWith(File.separator)) {
             path += File.separatorChar;
@@ -251,7 +246,6 @@ public class StringsParser implements Parser, Initializable {
         this.stringsPath = path;
     }
 
-    @Field
     public void setEncoding(String encoding) {
         defaultStringsConfig.setEncoding(StringsEncoding.valueOf(encoding));
     }
@@ -260,7 +254,6 @@ public class StringsParser implements Parser, Initializable {
         return defaultStringsConfig.getMinLength();
     }
 
-    @Field
     public void setMinLength(int minLength) {
         defaultStringsConfig.setMinLength(minLength);
     }
@@ -269,7 +262,6 @@ public class StringsParser implements Parser, Initializable {
         return defaultStringsConfig.getTimeoutSeconds();
     }
 
-    @Field
     public void setTimeoutSeconds(int timeoutSeconds) {
         defaultStringsConfig.setTimeoutSeconds(timeoutSeconds);
     }
@@ -279,15 +271,10 @@ public class StringsParser implements Parser, Initializable {
     }
 
     @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
+    public void initialize() throws TikaConfigException {
         checkForStrings();
         fileCommandDetector = new FileCommandDetector();
         fileCommandDetector.setFilePath(filePath);
         fileCommandDetector.setTimeoutMs(defaultStringsConfig.getTimeoutSeconds() * 1000);
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
     }
 }

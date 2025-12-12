@@ -24,7 +24,6 @@ import java.nio.charset.Charset;
 
 import org.apache.commons.io.input.BoundedInputStream;
 
-import org.apache.tika.config.Field;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.metadata.Metadata;
@@ -56,7 +55,6 @@ import org.apache.tika.mime.MediaType;
 public final class StandardHtmlEncodingDetector implements EncodingDetector {
     private static final int META_TAG_BUFFER_SIZE = 8192;
 
-    @Field
     private int markLimit = META_TAG_BUFFER_SIZE;
 
     /**
@@ -107,7 +105,6 @@ public final class StandardHtmlEncodingDetector implements EncodingDetector {
      * How far into the stream to read for charset detection.
      * Default is 8192.
      */
-    @Field
     public void setMarkLimit(int markLimit) {
         this.markLimit = markLimit;
     }

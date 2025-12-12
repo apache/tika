@@ -16,9 +16,9 @@
  */
 package org.apache.tika.pipes.core;
 
-import org.apache.tika.config.AbstractTikaConfigTest;
+import org.apache.tika.TikaTest;
 
-public class TikaPipesConfigTest extends AbstractTikaConfigTest {
+public class TikaPipesConfigTest extends TikaTest {
     //this handles tests for the newer pipes type configs.
 /*
     TODO -- reimplent these with json

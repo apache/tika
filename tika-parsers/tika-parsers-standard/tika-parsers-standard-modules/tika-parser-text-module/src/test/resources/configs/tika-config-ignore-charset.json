@@ -1,0 +1,13 @@
+{
+  "parsers": [
+    "default-parser"
+  ],
+  "encoding-detectors": [
+    {
+      "icu4j-encoding-detector": {
+        "ignoreCharsets": ["IBM420", "IBM424"]
+      }
+    },
+    "universal-encoding-detector"
+  ]
+}

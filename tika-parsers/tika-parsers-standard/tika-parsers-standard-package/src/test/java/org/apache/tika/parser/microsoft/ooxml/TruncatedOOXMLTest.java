@@ -25,6 +25,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -65,7 +66,7 @@ public class TruncatedOOXMLTest extends TikaTest {
 
     @Test
     public void testTruncatedStreamDetection() throws Exception {
-        Detector detector = DEFAULT_TIKA_CONFIG.getDetector();
+        Detector detector = new DefaultDetector();
         Metadata metadata = new Metadata();
         try (InputStream is = new BufferedInputStream(TruncatedOOXMLTest.class.getResourceAsStream(
                 "/test-documents/testWORD_truncated.docx"))) {
@@ -77,7 +78,7 @@ public class TruncatedOOXMLTest extends TikaTest {
 
     @Test
     public void testTruncatedPathDetection() throws Exception {
-        Detector detector = DEFAULT_TIKA_CONFIG.getDetector();
+        Detector detector = new DefaultDetector();
         Metadata metadata = new Metadata();
         try (TikaInputStream tis = TikaInputStream.get(TruncatedOOXMLTest.class.getResourceAsStream(
                 "/test-documents/testWORD_truncated.docx"))) {

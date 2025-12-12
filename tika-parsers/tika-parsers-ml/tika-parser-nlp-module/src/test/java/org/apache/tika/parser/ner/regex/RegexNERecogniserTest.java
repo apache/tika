@@ -26,12 +26,13 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.Tika;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.TikaTest;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ner.NamedEntityParser;
 
-public class RegexNERecogniserTest {
+public class RegexNERecogniserTest extends TikaTest {
 
     @Test
     public void testGetEntityTypes() throws Exception {
@@ -39,17 +40,17 @@ public class RegexNERecogniserTest {
         String text = "Hey, Lets meet on this Sunday or MONDAY because i am busy on Saturday";
         System.setProperty(NamedEntityParser.SYS_PROP_NER_IMPL, RegexNERecogniser.class.getName());
 
-        Tika tika = new Tika(
-                new TikaConfig(NamedEntityParser.class.getResourceAsStream("tika-config.xml")));
-        Metadata md = new Metadata();
-        tika.parse(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)), md);
+        Parser parser = TikaLoader.load(
+                        getConfigPath(RegexNERecogniserTest.class, "tika-config.json"))
+                .loadAutoDetectParser();
+        Metadata md = getXML(
+                new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)),
+                parser, new Metadata()).metadata;
 
         Set<String> days = new HashSet<>(Arrays.asList(md.getValues("NER_WEEK_DAY")));
         assertTrue(days.contains("Sunday"));
         assertTrue(days.contains("MONDAY"));
         assertTrue(days.contains("Saturday"));
         assertTrue(days.size() == 3); //and nothing else
-
-
     }
 }
