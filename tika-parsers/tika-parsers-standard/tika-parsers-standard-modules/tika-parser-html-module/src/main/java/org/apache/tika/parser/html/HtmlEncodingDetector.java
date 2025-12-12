@@ -32,7 +32,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.tika.config.ConfigDeserializer;
-import org.apache.tika.config.Field;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
@@ -108,7 +107,6 @@ public class HtmlEncodingDetector implements EncodingDetector {
         CHARSETS_UNSUPPORTED_BY_IANA = Collections.unmodifiableSet(unsupported);
     }
 
-    @Field
     private int markLimit = DEFAULT_MARK_LIMIT;
 
     /**
@@ -210,7 +208,6 @@ public class HtmlEncodingDetector implements EncodingDetector {
      *
      * @param markLimit
      */
-    @Field
     public void setMarkLimit(int markLimit) {
         this.markLimit = markLimit;
     }

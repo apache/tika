@@ -1,0 +1,10 @@
+{
+  "parsers": [
+    "default-parser",
+    {
+      "tesseract-ocr-parser": {
+        "timeoutSeconds": 360
+      }
+    }
+  ]
+}

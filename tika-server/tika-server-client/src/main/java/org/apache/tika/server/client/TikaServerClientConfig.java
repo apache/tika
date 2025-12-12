@@ -22,16 +22,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.tika.client.HttpClientFactory;
-import org.apache.tika.config.ConfigBase;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 
-public class TikaServerClientConfig extends ConfigBase implements Initializable {
+public class TikaServerClientConfig {
 
 
     private HttpClientFactory httpClientFactory;
@@ -97,13 +92,7 @@ public class TikaServerClientConfig extends ConfigBase implements Initializable 
         this.tikaEndpoints = tikaEndpoints;
     }
 
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
-
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+    public void checkInitialization() throws TikaConfigException {
         if (tikaEndpoints.size() == 0) {
             throw new TikaConfigException("tikaEndpoints must not be empty");
         }

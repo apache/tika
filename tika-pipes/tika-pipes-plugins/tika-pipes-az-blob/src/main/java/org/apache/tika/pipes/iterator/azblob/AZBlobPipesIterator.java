@@ -16,8 +16,6 @@
  */
 package org.apache.tika.pipes.iterator.azblob;
 
-import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
-
 import java.io.IOException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -33,6 +31,7 @@ import com.azure.storage.blob.models.ListBlobsOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.ConfigValidator;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -75,9 +74,9 @@ public class AZBlobPipesIterator extends PipesIteratorBase {
     }
 
     private void checkConfig(AZBlobPipesIteratorConfig config) throws TikaConfigException {
-        mustNotBeEmpty("sasToken", config.getSasToken());
-        mustNotBeEmpty("endpoint", config.getEndpoint());
-        mustNotBeEmpty("container", config.getContainer());
+        ConfigValidator.mustNotBeEmpty("sasToken", config.getSasToken());
+        ConfigValidator.mustNotBeEmpty("endpoint", config.getEndpoint());
+        ConfigValidator.mustNotBeEmpty("container", config.getContainer());
     }
 
     @Override

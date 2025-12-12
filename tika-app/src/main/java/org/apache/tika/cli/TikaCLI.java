@@ -68,7 +68,6 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.Tika;
 import org.apache.tika.async.cli.TikaAsyncCLI;
-import org.apache.tika.config.TikaConfigSerializer;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.Detector;

@@ -1,0 +1,10 @@
+{
+  "parsers": [
+    "default-parser",
+    {
+      "rfc822-parser": {
+        "extractAllAlternatives": true
+      }
+    }
+  ]
+}

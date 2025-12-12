@@ -26,7 +26,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -45,7 +44,6 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AutoDetectParserFactory;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.ToXMLContentHandler;
 
@@ -127,35 +125,10 @@ public class ForkParserTikaBinTest extends TikaTest {
     @Test
     public void testVowelParserAsDefault() throws Exception {
         ParserFactoryFactory pff =
-                new ParserFactoryFactory("org.apache.tika.parser.AutoDetectParserFactory",
+                new ParserFactoryFactory("org.apache.tika.parser.mock.AutoDetectParserFactory",
                         EMPTY_MAP);
         XMLResult xmlResult = getXML(pff);
         assertContains("eooeuiooueoeeao", xmlResult.xml);
-        assertEquals("Nikolai Lobachevsky", xmlResult.metadata.get(TikaCoreProperties.CREATOR));
-    }
-
-    @Test
-    public void testVowelParserInClassPath() throws Exception {
-        Map<String, String> args = new HashMap<>();
-        args.put(AutoDetectParserFactory.TIKA_CONFIG_PATH, "TIKA-2653-vowel-parser-ae.xml");
-        ParserFactoryFactory pff = new ParserFactoryFactory(
-                "org.apache.tika.parser.AutoDetectParserFactory",
-                args);
-        XMLResult xmlResult = getXML(pff);
-        assertContains("eeeeea", xmlResult.xml);
-        assertEquals("Nikolai Lobachevsky",
-                xmlResult.metadata.get(TikaCoreProperties.CREATOR));
-    }
-
-    @Test
-    public void testVowelParserFromDirectory() throws Exception {
-        Map<String, String> args = new HashMap<>();
-        args.put(AutoDetectParserFactory.TIKA_CONFIG_PATH,
-                JAR_DIR.resolve("TIKA_2653-iou.xml").toAbsolutePath().toString());
-        ParserFactoryFactory pff =
-                new ParserFactoryFactory("org.apache.tika.parser.AutoDetectParserFactory", args);
-        XMLResult xmlResult = getXML(pff);
-        assertContains("oouioouoo", xmlResult.xml);
         assertEquals("Nikolai Lobachevsky", xmlResult.metadata.get(TikaCoreProperties.CREATOR));
     }
 
@@ -165,7 +138,7 @@ public class ForkParserTikaBinTest extends TikaTest {
         //this tests that the content handler was loaded from the parent process.
 
         ParserFactoryFactory pff =
-                new ParserFactoryFactory("org.apache.tika.parser.AutoDetectParserFactory",
+                new ParserFactoryFactory("org.apache.tika.parser.mock.AutoDetectParserFactory",
                         EMPTY_MAP);
         XMLResult xmlResult =
                 getXML(pff, this.getClass().getClassLoader(), new UpperCasingContentHandler());

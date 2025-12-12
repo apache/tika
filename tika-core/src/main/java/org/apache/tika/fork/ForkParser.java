@@ -31,7 +31,6 @@ import java.util.Set;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -65,19 +64,14 @@ public class ForkParser implements Parser, Closeable {
     /**
      * Process pool size
      */
-    @Field
     private int poolSize = 5;
     private int currentlyInUse = 0;
-    @Field
     private long serverPulseMillis = 1000;
 
-    @Field
     private long serverParseTimeoutMillis = 60000;
 
-    @Field
     private long serverWaitTimeoutMillis = 60000;
 
-    @Field
     private int maxFilesProcessedPerClient = -1;
 
     /**

@@ -26,7 +26,6 @@ import java.util.Set;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.Field;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -56,7 +55,6 @@ public class WordPerfectParser implements Parser {
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.unmodifiableSet(new HashSet<>(Arrays.asList(WP_5_0, WP_5_1, WP_6_x)));
 
-    @Field
     private boolean includeDeletedContent = true;
 
     @Override
@@ -149,7 +147,6 @@ public class WordPerfectParser implements Parser {
      *
      * @param includeDeletedContent
      */
-    @Field
     public void setIncludeDeletedContent(boolean includeDeletedContent) {
         this.includeDeletedContent = includeDeletedContent;
     }

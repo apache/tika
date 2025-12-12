@@ -1,0 +1,20 @@
+{
+  "parsers": [
+    {
+      "external-parser": {
+        "_mime-include": ["application/octet-stream"],
+        "commandLine": ["exiftool", "${INPUT_FILE}"],
+        "checkExitValues": [0],
+        "outputParser": {
+          "regex-capture-parser": {
+            "matchMap": {
+              "mime": "^MIME Type\\s+: ([^\\r\\n]+)",
+              "pages": "^Page Count\\s+: ([^\\r\\n]+)",
+              "pdf:version": "^PDF Version\\s+: ([^\\r\\n]+)"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

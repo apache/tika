@@ -1,0 +1,12 @@
+{
+  "metadata-filters": [
+    {
+      "clear-by-mime-metadata-filter": {
+        "mimes": ["image/jpeg", "application/pdf"]
+      }
+    },
+    {
+      "mock-upper-case-filter": {}
+    }
+  ]
+}

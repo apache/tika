@@ -1,0 +1,12 @@
+{
+  "metadata-filters": [
+    {
+      "include-field-metadata-filter": {
+        "include": ["title", "author"]
+      }
+    },
+    {
+      "mock-upper-case-filter": {}
+    }
+  ]
+}

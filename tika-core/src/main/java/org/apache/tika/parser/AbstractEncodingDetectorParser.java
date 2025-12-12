@@ -16,14 +16,13 @@
  */
 package org.apache.tika.parser;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultEncodingDetector;
 import org.apache.tika.detect.EncodingDetector;
 
 
 /**
  * Abstract base class for parsers that use the AutoDetectReader and need
- * to use the {@link EncodingDetector} configured by {@link TikaConfig}
+ * to use an {@link EncodingDetector}.
  */
 public abstract class AbstractEncodingDetectorParser implements Parser {
 

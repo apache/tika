@@ -16,8 +16,6 @@
  */
 package org.apache.tika.pipes.fetcher.gcs;
 
-import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -30,6 +28,7 @@ import com.google.cloud.storage.StorageOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.ConfigValidator;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
@@ -65,8 +64,8 @@ public class GCSFetcher extends AbstractTikaExtension implements Fetcher {
     }
 
     private void initialize() throws TikaConfigException {
-        mustNotBeEmpty("bucket", config.getBucket());
-        mustNotBeEmpty("projectId", config.getProjectId());
+        ConfigValidator.mustNotBeEmpty("bucket", config.getBucket());
+        ConfigValidator.mustNotBeEmpty("projectId", config.getProjectId());
 
         storage = StorageOptions.newBuilder()
                 .setProjectId(config.getProjectId())

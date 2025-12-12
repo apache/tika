@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -543,13 +543,12 @@ public class SXSLFExtractorTest extends TikaTest {
         assertContainsAtLeast(parsedBy, metadataList);
 
         //test configuring via config file
-        try (InputStream is = getResourceAsStream("tika-config-sax-macros.xml")) {
-            TikaConfig tikaConfig = new TikaConfig(is);
-            AutoDetectParser parser = new AutoDetectParser(tikaConfig);
-            metadataList = getRecursiveMetadata("testPPT_macros.pptm", parser);
-            assertContainsAtLeast(minExpected, metadataList);
-            assertContainsAtLeast(parsedBy, metadataList);
-        }
+        AutoDetectParser parser = (AutoDetectParser) TikaLoader.load(
+                getConfigPath(SXSLFExtractorTest.class, "tika-config-sax-macros.json"))
+                .loadAutoDetectParser();
+        metadataList = getRecursiveMetadata("testPPT_macros.pptm", parser);
+        assertContainsAtLeast(minExpected, metadataList);
+        assertContainsAtLeast(parsedBy, metadataList);
     }
 
     @Test

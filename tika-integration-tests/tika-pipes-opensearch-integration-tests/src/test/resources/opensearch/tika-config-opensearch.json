@@ -22,7 +22,7 @@
       }
     }
   ],
-  "metadataFilters": [
+  "metadata-filters": [
     {
       "date-normalizing-filter": {}
     },

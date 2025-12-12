@@ -22,7 +22,6 @@ import java.io.InputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
@@ -64,12 +63,11 @@ public class AutoDetectParser extends CompositeParser {
      * configuration.
      */
     public AutoDetectParser() {
-        this(TikaConfig.getDefaultConfig());
+        this(new DefaultDetector(), new DefaultParser());
     }
 
     public AutoDetectParser(Detector detector) {
-        this(TikaConfig.getDefaultConfig());
-        setDetector(detector);
+        this(detector, new DefaultParser());
     }
 
     /**
@@ -99,13 +97,6 @@ public class AutoDetectParser extends CompositeParser {
 
     public static Parser build(CompositeParser parser, Detector detector, AutoDetectParserConfig autoDetectParserConfig) {
         return new AutoDetectParser(parser.getMediaTypeRegistry(), getParser(parser, autoDetectParserConfig.getDigesterFactory()), detector, autoDetectParserConfig);
-    }
-
-    public AutoDetectParser(TikaConfig config) {
-        super(config.getMediaTypeRegistry(), getParser(config.getParser(), config.getAutoDetectParserConfig().getDigesterFactory()));
-        setFallback(buildFallbackParser(config.getParser(), config.getAutoDetectParserConfig().getDigesterFactory()));
-        setDetector(config.getDetector());
-        setAutoDetectParserConfig(config.getAutoDetectParserConfig());
     }
 
     private static Parser buildFallbackParser(Parser defaultParser, DigestingParser.DigesterFactory digesterFactory) {
@@ -268,11 +259,17 @@ public class AutoDetectParser extends CompositeParser {
         if (context.get(EmbeddedDocumentExtractor.class) != null) {
             return;
         }
-        //pass self to handle embedded documents if
-        //the caller hasn't specified one.
+        // pass in self for embedded documents unless
+        // the caller has specified a parser
         Parser p = context.get(Parser.class);
         if (p == null) {
             context.set(Parser.class, this);
+        }
+        // pass in own detector for embedded documents unless
+        // the caller has specified one
+        Detector d = context.get(Detector.class);
+        if (d == null) {
+            context.set(Detector.class, getDetector());
         }
         EmbeddedDocumentExtractorFactory edxf =
                 autoDetectParserConfig.getEmbeddedDocumentExtractorFactory();

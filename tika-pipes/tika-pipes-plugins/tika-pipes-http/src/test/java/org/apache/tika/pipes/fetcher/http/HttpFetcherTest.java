@@ -226,7 +226,7 @@ class HttpFetcherTest extends TikaTest {
         Assertions.assertEquals(2, fromFetchRequestHeader2s.size());
         Assertions.assertEquals("fromFetchRequestValue2", fromFetchRequestHeader2s.get(0));
         Assertions.assertEquals("fromFetchRequestValue3", fromFetchRequestHeader2s.get(1));
-        // also make sure the headers from the fetcher config level are specified - see src/test/resources/tika-config-http.xml
+        // also make sure the headers from the fetcher config level are specified - see src/test/resources/configs/tika-config-http.json
         Assertions.assertEquals("fromFetchConfigValue1", httpGet.getHeaders("fromFetchConfig1")[0].getValue());
         List<String> fromFetchConfig2s = Arrays.stream(httpGet.getHeaders("fromFetchConfig2"))
                                     .map(Header::getValue)
@@ -241,7 +241,7 @@ class HttpFetcherTest extends TikaTest {
         httpGet = httpGetArgumentCaptor.getValue();
         Assertions.assertEquals("val1", httpGet.getHeaders("nick1")[0].getValue());
         Assertions.assertEquals("val2", httpGet.getHeaders("nick2")[0].getValue());
-        // also make sure the headers from the fetcher config level are specified - see src/test/resources/tika-config-http.xml
+        // also make sure the headers from the fetcher config level are specified - see src/test/resources/configs/tika-config-http.json
 
         //TODO -- this isn't working atm because the tests are overwriting the baseline config with setConfig -- fix this
         // Assertions.assertEquals("headerValueFromFetcherConfig", httpGet.getHeaders("headerNameFromFetcherConfig")[0].getValue());

@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.tika.config.ConfigDeserializer;
-import org.apache.tika.config.Field;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
@@ -165,7 +164,6 @@ public class Icu4jEncodingDetector implements EncodingDetector {
      * @param stripMarkup whether or not to attempt to strip markup before
      *                    sending the stream to the underlying detector
      */
-    @Field
     public void setStripMarkup(boolean stripMarkup) {
         this.getDefaultConfig().stripMarkup = stripMarkup;
     }
@@ -180,12 +178,10 @@ public class Icu4jEncodingDetector implements EncodingDetector {
      *
      * @param markLimit
      */
-    @Field
     public void setMarkLimit(int markLimit) {
         this.getDefaultConfig().markLimit = markLimit;
     }
 
-    @Field
     public void setIgnoreCharsets(List<String> charsetsToIgnore) {
         this.getDefaultConfig().getIgnoreCharsets().clear();
         this.getDefaultConfig().getIgnoreCharsets().addAll(charsetsToIgnore);

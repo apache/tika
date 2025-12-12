@@ -35,13 +35,12 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.metadata.MAPI;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -379,26 +378,25 @@ public class OutlookParserTest extends TikaTest {
         //now try extracting all bodies
         //they should each appear as standalone attachments
         //with no content in the body of the msg level
-        try (InputStream is = getResourceAsStream("tika-config-extract-all-alternatives-msg.xml")) {
-            TikaConfig tikaConfig = new TikaConfig(is);
-            Parser p = new AutoDetectParser(tikaConfig);
+        Parser p = TikaLoader.load(
+                getConfigPath(OutlookParserTest.class, "tika-config-extract-all-alternatives-msg.json"))
+                .loadAutoDetectParser();
 
-            metadataList = getRecursiveMetadata("testMSG.msg", p);
-            assertEquals(3, metadataList.size());
+        metadataList = getRecursiveMetadata("testMSG.msg", p);
+        assertEquals(3, metadataList.size());
 
-            assertNotContained("breaking your application",
-                    metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
-            assertEquals("application/vnd.ms-outlook",
-                    metadataList.get(0).get(Metadata.CONTENT_TYPE));
+        assertNotContained("breaking your application",
+                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals("application/vnd.ms-outlook",
+                metadataList.get(0).get(Metadata.CONTENT_TYPE));
 
-            assertContains("breaking your application",
-                    metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
-            assertEquals("application/rtf", metadataList.get(1).get(Metadata.CONTENT_TYPE));
+        assertContains("breaking your application",
+                metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals("application/rtf", metadataList.get(1).get(Metadata.CONTENT_TYPE));
 
-            assertContains("breaking your application",
-                    metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
-            assertTrue(metadataList.get(2).get(Metadata.CONTENT_TYPE).startsWith("text/plain"));
-        }
+        assertContains("breaking your application",
+                metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
+        assertTrue(metadataList.get(2).get(Metadata.CONTENT_TYPE).startsWith("text/plain"));
 
     }
 

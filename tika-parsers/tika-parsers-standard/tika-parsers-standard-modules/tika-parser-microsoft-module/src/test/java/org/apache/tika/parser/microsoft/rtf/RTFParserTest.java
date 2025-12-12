@@ -18,7 +18,6 @@ package org.apache.tika.parser.microsoft.rtf;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
@@ -32,7 +31,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
@@ -41,7 +40,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
 
 /**
@@ -344,16 +342,13 @@ public class RTFParserTest extends TikaTest {
 
     @Test
     public void testTurningOffList() throws Exception {
-        try (InputStream is = getResourceAsStream(
-                "/org/apache/tika/parser/microsoft/rtf/ignoreListMarkup-tika-config.xml")) {
-            assertNotNull(is);
-            TikaConfig tikaConfig = new TikaConfig(is);
-            Parser p = new AutoDetectParser(tikaConfig);
-            String content = getXML("testRTFListMicrosoftWord.rtf", p).xml;
-            assertNotContained("<ol>", content);
-            assertNotContained("<ul>", content);
-            assertNotContained("<li>", content);
-        }
+        Parser p = TikaLoader.load(
+                getConfigPath(RTFParserTest.class, "ignoreListMarkup-tika-config.json"))
+                .loadAutoDetectParser();
+        String content = getXML("testRTFListMicrosoftWord.rtf", p).xml;
+        assertNotContained("<ol>", content);
+        assertNotContained("<ul>", content);
+        assertNotContained("<li>", content);
     }
 
     @Test
@@ -451,16 +446,13 @@ public class RTFParserTest extends TikaTest {
         //test that memory allocation of the bin element is limited
         //via the config file.  Unfortunately, this test file's bin embedding contains 10 bytes
         //so we had to set the config to 0.
-        try (InputStream is = getResourceAsStream(
-                "/org/apache/tika/parser/microsoft/rtf/tika-config.xml")) {
-            assertNotNull(is);
-            TikaConfig tikaConfig = new TikaConfig(is);
-            Parser p = new AutoDetectParser(tikaConfig);
-            List<Metadata> metadataList = getRecursiveMetadata("testBinControlWord.rtf", p);
-            assertEquals(1, metadataList.size());
-            assertContains("TikaMemoryLimitException", metadataList.get(0)
-                    .get(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
-        }
+        Parser p = TikaLoader.load(
+                getConfigPath(RTFParserTest.class, "tika-config.json"))
+                .loadAutoDetectParser();
+        List<Metadata> metadataList = getRecursiveMetadata("testBinControlWord.rtf", p);
+        assertEquals(1, metadataList.size());
+        assertContains("TikaMemoryLimitException", metadataList.get(0)
+                .get(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
     }
 
     @Test

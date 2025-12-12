@@ -1,0 +1,11 @@
+{
+  "parsers": [
+    "default-parser",
+    {
+      "geo-parser": {
+        "gazetteerRestEndpoint": "http://localhost/gazetteerRestEndpoint",
+        "nerModelUrl": "file:/ner/model/url"
+      }
+    }
+  ]
+}

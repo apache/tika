@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,7 +33,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
@@ -735,13 +734,12 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContainsAtLeast(parsedBy, metadataList);
 
         //test configuring via config file
-        try (InputStream is = getResourceAsStream("tika-config-sax-macros.xml")) {
-            TikaConfig tikaConfig = new TikaConfig(is);
-            AutoDetectParser parser = new AutoDetectParser(tikaConfig);
-            metadataList = getRecursiveMetadata("testWORD_macros.docm", parser);
-            assertContainsAtLeast(minExpected, metadataList);
-            assertContainsAtLeast(parsedBy, metadataList);
-        }
+        AutoDetectParser parser = (AutoDetectParser) TikaLoader.load(
+                getConfigPath(SXWPFExtractorTest.class, "tika-config-sax-macros.json"))
+                .loadAutoDetectParser();
+        metadataList = getRecursiveMetadata("testWORD_macros.docm", parser);
+        assertContainsAtLeast(minExpected, metadataList);
+        assertContainsAtLeast(parsedBy, metadataList);
     }
 
     @Test

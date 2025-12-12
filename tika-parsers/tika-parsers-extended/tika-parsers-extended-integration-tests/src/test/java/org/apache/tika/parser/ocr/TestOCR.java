@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -29,10 +28,9 @@ import java.util.Set;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -113,12 +111,10 @@ public class TestOCR extends TikaTest {
         return p.getClass();
     }
 
-    private Parser loadParser() throws IOException, TikaException, SAXException {
-        try (InputStream is = TestOCR.class.getResourceAsStream(
-                "/config/tika-config-restricted-gdal.xml")) {
-            TikaConfig tikaConfig = new TikaConfig(is);
-            return new AutoDetectParser(tikaConfig);
-        }
+    private Parser loadParser() throws IOException, TikaException {
+        return TikaLoader.load(
+                        getConfigPath(TestOCR.class, "tika-config-restricted-gdal.json"))
+                .loadAutoDetectParser();
     }
 
 }

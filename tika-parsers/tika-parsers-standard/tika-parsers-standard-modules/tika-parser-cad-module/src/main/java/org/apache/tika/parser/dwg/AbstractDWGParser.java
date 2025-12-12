@@ -17,7 +17,6 @@
 package org.apache.tika.parser.dwg;
 
 
-import org.apache.tika.config.Field;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 
@@ -41,7 +40,6 @@ public abstract class AbstractDWGParser implements Parser {
         return defaultDwgParserConfig.getDwgReadExecutable();
     }
     
-    @Field
     public void setDwgReadExecutable(String dwgReadExecutable) {
         defaultDwgParserConfig.setDwgReadExecutable(dwgReadExecutable);
     }
@@ -50,7 +48,6 @@ public abstract class AbstractDWGParser implements Parser {
         return defaultDwgParserConfig.isCleanDwgReadOutput();
     }
     
-    @Field
     public void setCleanDwgReadOutput(boolean cleanDwgReadOutput) {
         defaultDwgParserConfig.setCleanDwgReadOutput(cleanDwgReadOutput);
     }
@@ -59,7 +56,6 @@ public abstract class AbstractDWGParser implements Parser {
         return defaultDwgParserConfig.getCleanDwgReadOutputBatchSize();
     }
     
-    @Field
     public void setCleanDwgReadOutputBatchSize(int cleanDwgReadOutputBatchSize) {
         defaultDwgParserConfig.setCleanDwgReadOutputBatchSize(cleanDwgReadOutputBatchSize);
     }
@@ -67,7 +63,6 @@ public abstract class AbstractDWGParser implements Parser {
         return defaultDwgParserConfig.getCleanDwgReadRegexToReplace();
     }
     
-    @Field
     public void setCleanDwgReadRegexToReplace(String cleanDwgReadRegexToReplace) {
         defaultDwgParserConfig.setCleanDwgReadRegexToReplace(cleanDwgReadRegexToReplace);
     }
@@ -75,7 +70,6 @@ public abstract class AbstractDWGParser implements Parser {
         return defaultDwgParserConfig.getCleanDwgReadReplaceWith();
     }
     
-    @Field
     public void setCleanDwgReadReplaceWith(String cleanDwgReadReplaceWith) {
         defaultDwgParserConfig.setCleanDwgReadReplaceWith(cleanDwgReadReplaceWith);
     }
@@ -83,7 +77,6 @@ public abstract class AbstractDWGParser implements Parser {
         return defaultDwgParserConfig.getDwgReadTimeout();
     }
 
-    @Field
     public void setDwgReadTimeout(long dwgReadTimeout) {
         defaultDwgParserConfig.setDwgReadtimeout(dwgReadTimeout);
     }

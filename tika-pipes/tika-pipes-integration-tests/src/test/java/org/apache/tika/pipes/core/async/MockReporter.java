@@ -19,7 +19,6 @@ package org.apache.tika.pipes.core.async;
 import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import org.apache.tika.config.Field;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
@@ -58,7 +57,6 @@ public final class MockReporter implements PipesReporter {
 
     }
 
-    @Field
     public void setEndpoint(String endpoint) {
         this.endpoint = endpoint;
     }

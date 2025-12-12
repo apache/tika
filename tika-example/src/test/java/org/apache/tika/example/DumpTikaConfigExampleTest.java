@@ -34,8 +34,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.config.TikaConfigSerializer;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;

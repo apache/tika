@@ -1,0 +1,18 @@
+{
+  "parsers": [
+    {
+      "tesseract-ocr-parser": {
+        "timeoutSeconds": 240,
+        "density": 200,
+        "depth": 8,
+        "resize": 300,
+        "minFileSizeToOcr": 1,
+        "outputType": "hocr",
+        "filter": "box",
+        "applyRotation": false,
+        "enableImagePreprocessing": false,
+        "language": "fra+deu"
+      }
+    }
+  ]
+}

@@ -19,7 +19,6 @@ package org.apache.tika.parser.microsoft.ooxml;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -53,7 +52,7 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.MultiThreadedTikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -65,7 +64,6 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -618,12 +616,9 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertNotContained("This is the footer text.", xml);
 
         //now test configuration via tika-config
-        Parser configuredParser;
-        try (InputStream is =
-                     OfficeParserTest.class.getResourceAsStream(
-                             "tika-config-headers-footers.xml")) {
-            configuredParser = new AutoDetectParser(new TikaConfig(is));
-        }
+        Parser configuredParser = TikaLoader.load(
+                getConfigPath(OfficeParserTest.class, "tika-config-headers-footers.json"))
+                .loadAutoDetectParser();
         xml = getXML("testWORD_various.docx", configuredParser).xml;
         assertNotContained("This is the header text.", xml);
         assertNotContained("This is the footer text.", xml);
@@ -1218,10 +1213,9 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertNotContained("Footer - Author: John Smith", content);
 
         //now test configuration via tika-config
-        Parser configuredParser;
-        try (InputStream is = OfficeParserTest.class.getResourceAsStream("tika-config-headers-footers.xml")) {
-            configuredParser = new AutoDetectParser(new TikaConfig(is));
-        }
+        Parser configuredParser = TikaLoader.load(
+                getConfigPath(OfficeParserTest.class, "tika-config-headers-footers.json"))
+                .loadAutoDetectParser();
         content = getXML("testEXCEL_headers_footers.xlsx", configuredParser).xml;
         assertContains("John Smith1", content);
         assertContains("John Smith50", content);
@@ -1349,12 +1343,11 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertContainsAtLeast(minExpected, getRecursiveMetadata("testWORD_macros.docm", context));
 
         //test configuring via config file
-        try (InputStream is = getResourceAsStream("tika-config-dom-macros.xml")) {
-            TikaConfig tikaConfig = new TikaConfig(is);
-            AutoDetectParser parser = new AutoDetectParser(tikaConfig);
-            assertContainsAtLeast(minExpected,
-                    getRecursiveMetadata("testWORD_macros.docm", parser));
-        }
+        Parser parser = TikaLoader.load(
+                getConfigPath(OOXMLParserTest.class, "tika-config-dom-macros.json"))
+                .loadAutoDetectParser();
+        assertContainsAtLeast(minExpected,
+                getRecursiveMetadata("testWORD_macros.docm", parser));
     }
 
     @Test
@@ -1383,11 +1376,10 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertContainsAtLeast(minExpected, getRecursiveMetadata("testPPT_macros.pptm", context));
 
         //test configuring via config file
-        try (InputStream is = getResourceAsStream("tika-config-dom-macros.xml")) {
-            TikaConfig tikaConfig = new TikaConfig(is);
-            AutoDetectParser parser = new AutoDetectParser(tikaConfig);
-            assertContainsAtLeast(minExpected, getRecursiveMetadata("testPPT_macros.pptm", parser));
-        }
+        Parser parser = TikaLoader.load(
+                getConfigPath(OOXMLParserTest.class, "tika-config-dom-macros.json"))
+                .loadAutoDetectParser();
+        assertContainsAtLeast(minExpected, getRecursiveMetadata("testPPT_macros.pptm", parser));
     }
 
     @Test
@@ -1418,12 +1410,11 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xlsm", context));
 
         //test configuring via config file
-        try (InputStream is = getResourceAsStream("tika-config-dom-macros.xml")) {
-            TikaConfig tikaConfig = new TikaConfig(is);
-            AutoDetectParser parser = new AutoDetectParser(tikaConfig);
-            assertContainsAtLeast(minExpected,
-                    getRecursiveMetadata("testEXCEL_macro.xlsm", parser));
-        }
+        Parser parser = TikaLoader.load(
+                getConfigPath(OOXMLParserTest.class, "tika-config-dom-macros.json"))
+                .loadAutoDetectParser();
+        assertContainsAtLeast(minExpected,
+                getRecursiveMetadata("testEXCEL_macro.xlsm", parser));
     }
 
     //@Test //use this for lightweight benchmarking to compare xwpf options
@@ -1458,14 +1449,11 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         //NOTE: this test relies on a bug in the DOM extractor that
         //is passing over the title information.
         //once we fix that, this test will no longer be meaningful!
-        try (InputStream is = getResourceAsStream(
-                "/org/apache/tika/parser/microsoft/tika-config-sax-docx.xml")) {
-            assertNotNull(is);
-            TikaConfig tikaConfig = new TikaConfig(is);
-            AutoDetectParser p = new AutoDetectParser(tikaConfig);
-            XMLResult xml = getXML("testWORD_2006ml.docx", p, new Metadata());
-            assertContains("engaging title", xml.xml);
-        }
+        Parser p = TikaLoader.load(
+                getConfigPath(OfficeParserTest.class, "tika-config-sax-docx.json"))
+                .loadAutoDetectParser();
+        XMLResult xml = getXML("testWORD_2006ml.docx", p, new Metadata());
+        assertContains("engaging title", xml.xml);
     }
 
     @Test
@@ -1685,9 +1673,9 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
 
 
         //test configuring via config file
-        TikaConfig tikaConfig = new TikaConfig(
-                OfficeParser.class.getResourceAsStream("tika-config-exclude-phonetic.xml"));
-        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+        Parser parser = TikaLoader.load(
+                getConfigPath(OfficeParserTest.class, "tika-config-exclude-phonetic.json"))
+                .loadAutoDetectParser();
         assertNotContained("\u65E5\u672C\u30AA\u30E9\u30AF\u30EB \u30CB\u30DB\u30F3",
                 getXML("testEXCEL_phonetic.xlsx", parser).xml);
 
@@ -1757,13 +1745,12 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
 
     @Test
     public void testDateFormat() throws Exception {
-        try (InputStream is = getResourceAsStream("tika-config-custom-date-override.xml")) {
-            TikaConfig tikaConfig = new TikaConfig(is);
-            Parser p = new AutoDetectParser(tikaConfig);
-            String xml = getXML("testEXCEL_dateFormats.xlsx", p).xml;
-            assertContains("2018-09-20", xml);
-            assertContains("1996-08-10", xml);
-        }
+        Parser p = TikaLoader.load(
+                getConfigPath(OOXMLParserTest.class, "tika-config-custom-date-override.json"))
+                .loadAutoDetectParser();
+        String xml = getXML("testEXCEL_dateFormats.xlsx", p).xml;
+        assertContains("2018-09-20", xml);
+        assertContains("1996-08-10", xml);
     }
 
     @Test

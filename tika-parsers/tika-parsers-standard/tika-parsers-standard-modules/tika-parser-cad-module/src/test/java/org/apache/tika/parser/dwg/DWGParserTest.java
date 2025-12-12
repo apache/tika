@@ -24,7 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -32,10 +31,9 @@ import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -217,10 +215,10 @@ public class DWGParserTest extends TikaTest {
     }
     @Test
     public void testDWGReadexe() throws Exception {
-
-        InputStream stream = getResourceAsStream("/test-configs/tika-config-dwgRead.xml");
         DWGParser parser =
-                (DWGParser) ((CompositeParser) new TikaConfig(stream).getParser())
+                (DWGParser) ((CompositeParser) TikaLoader.load(
+                                getConfigPath(DWGParserTest.class, "tika-config-dwgRead.json"))
+                        .loadParsers())
                         .getAllComponentParsers().get(0);
         assumeTrue(canRun(parser), "Can't run DWGRead.exe");
         String output = getText("architectural_-_annotation_scaling_and_multileaders.dwg", parser);
@@ -228,11 +226,11 @@ public class DWGParserTest extends TikaTest {
     }
 
     @Test
-    public void testDWGReadtimeout() throws TikaException, IOException, SAXException {
-
-        InputStream stream = getResourceAsStream("/test-configs/tika-config-dwgRead-Timeout.xml");
-        DWGParser parser = (DWGParser) ((CompositeParser) new TikaConfig(stream).getParser())
-                    .getAllComponentParsers().get(0);
+    public void testDWGReadtimeout() throws Exception {
+        DWGParser parser = (DWGParser) ((CompositeParser) TikaLoader.load(
+                        getConfigPath(DWGParserTest.class, "tika-config-dwgRead-Timeout.json"))
+                .loadParsers())
+                .getAllComponentParsers().get(0);
         assumeTrue(canRun(parser), "Can't run DWGRead.exe");
         TikaException thrown = assertThrows(
                 TikaException.class,

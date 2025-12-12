@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.tika.config.ConfigDeserializer;
-import org.apache.tika.config.Field;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.metadata.Metadata;
@@ -92,7 +91,6 @@ public class ClearByMimeMetadataFilter extends MetadataFilterBase {
     /**
      * @param mimes list of mimes that will trigger complete removal of metadata
      */
-    @Field
     public void setMimes(List<String> mimes) {
         this.mimes.addAll(mimes);
     }

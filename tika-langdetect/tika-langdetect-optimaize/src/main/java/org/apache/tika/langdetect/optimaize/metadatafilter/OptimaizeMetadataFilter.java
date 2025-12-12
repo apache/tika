@@ -16,7 +16,6 @@
  */
 package org.apache.tika.langdetect.optimaize.metadatafilter;
 
-import org.apache.tika.config.Field;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
 import org.apache.tika.language.detect.LanguageResult;
@@ -29,7 +28,6 @@ public class OptimaizeMetadataFilter extends MetadataFilterBase {
 
     private int maxCharsForDetection = OptimaizeLangDetector.DEFAULT_MAX_CHARS_FOR_DETECTION;
 
-    @Field
     public void setMaxCharsForDetection(int maxCharsForDetection) {
         this.maxCharsForDetection = maxCharsForDetection;
     }

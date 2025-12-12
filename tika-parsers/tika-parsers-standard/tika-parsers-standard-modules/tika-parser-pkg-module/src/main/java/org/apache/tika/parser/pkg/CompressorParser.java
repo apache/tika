@@ -61,7 +61,6 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.ConfigDeserializer;
-import org.apache.tika.config.Field;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
@@ -288,7 +287,6 @@ public class CompressorParser implements Parser {
         return MIMES_TO_NAME.get(mimeString);
     }
 
-    @Field
     public void setMemoryLimitInKb(int memoryLimitInKb) {
         this.memoryLimitInKb = memoryLimitInKb;
     }
@@ -297,7 +295,6 @@ public class CompressorParser implements Parser {
         return this.memoryLimitInKb;
     }
 
-    @Field
     public void setDecompressConcatenated(boolean decompressConcatenated) {
         this.decompressConcatenated = decompressConcatenated;
     }

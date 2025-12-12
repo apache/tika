@@ -17,14 +17,11 @@
 package org.apache.tika.parser.wordperfect;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
-import java.io.InputStream;
 
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 
@@ -69,15 +66,11 @@ public class WordPerfectTest extends TikaTest {
         assertContains("this was deleted.", xml);
 
 
-        try (InputStream is = getResourceAsStream(
-                "/org/apache/tika/parser/wordperfect/tika-config.xml")) {
-            assertNotNull(is);
-            TikaConfig tikaConfig = new TikaConfig(is);
+        Parser p = TikaLoader.load(
+                        getConfigPath(WordPerfectTest.class, "tika-config-wordperfect-no-deleted.json"))
+                .loadParsers();
 
-            Parser p = tikaConfig.getParser();
-
-            xml = getXML("testWordPerfect.wpd", p).xml;
-            assertNotContained("this was deleted", xml);
-        }
+        xml = getXML("testWordPerfect.wpd", p).xml;
+        assertNotContained("this was deleted", xml);
     }
 }

@@ -19,7 +19,6 @@ package org.apache.tika.pipes.core.reporter;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.tika.config.Field;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
@@ -73,7 +72,6 @@ public class CompositePipesReporter implements PipesReporter {
         }
     }
 
-    @Field
     public void addPipesReporter(PipesReporter pipesReporter) {
         this.pipesReporters.add(pipesReporter);
     }

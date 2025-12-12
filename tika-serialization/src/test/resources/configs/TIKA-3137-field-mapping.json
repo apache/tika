@@ -1,0 +1,15 @@
+{
+  "metadata-filters": [
+    {
+      "field-name-mapping-filter": {
+        "excludeUnmapped": true,
+        "mappings": {
+          "X-TIKA:content": "content",
+          "a": "b",
+          "b": "c",
+          "c": "d"
+        }
+      }
+    }
+  ]
+}

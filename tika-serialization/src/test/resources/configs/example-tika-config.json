@@ -31,7 +31,7 @@
       "type-detector": {}
     }
   ],
-  "encodingDetectors": [
+  "encoding-detectors": [
     {
       "icu4j-detector": {}
     },
@@ -39,7 +39,7 @@
       "html-encoding-detector": {}
     }
   ],
-  "metadataFilters": [
+  "metadata-filters": [
     {
       "field-name-mapping-filter": {
         "mappings": {

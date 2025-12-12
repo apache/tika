@@ -34,7 +34,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.Tika;
-import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -98,8 +98,8 @@ public class NamedEntityParser implements Parser {
             }
         }
         try {
-            TikaConfig config = new TikaConfig();
-            this.secondaryParser = new Tika(config);
+            TikaLoader loader = TikaLoader.loadDefault();
+            this.secondaryParser = new Tika(loader.loadDetectors(), loader.loadAutoDetectParser());
             this.available = !nerChain.isEmpty();
             LOG.info("Number of NERecognisers in chain {}", nerChain.size());
         } catch (Exception e) {

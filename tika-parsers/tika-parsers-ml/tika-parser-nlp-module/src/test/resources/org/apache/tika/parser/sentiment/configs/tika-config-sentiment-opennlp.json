@@ -1,0 +1,10 @@
+{
+  "parsers": [
+    {
+      "sentiment-analysis-parser": {
+        "_mime-include": ["text/plain", "application/sentiment"],
+        "modelPath": "https://raw.githubusercontent.com/USCDataScience/SentimentAnalysisParser/master/sentiment-models/src/main/resources/edu/usc/irds/sentiment/en-netflix-sentiment.bin"
+      }
+    }
+  ]
+}

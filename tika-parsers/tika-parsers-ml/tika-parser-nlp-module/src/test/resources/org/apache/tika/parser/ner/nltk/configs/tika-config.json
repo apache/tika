@@ -1,0 +1,9 @@
+{
+  "parsers": [
+    {
+      "named-entity-parser": {
+        "_mime-include": ["text/plain", "text/html", "application/xhtml+xml"]
+      }
+    }
+  ]
+}

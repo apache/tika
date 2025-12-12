@@ -1,0 +1,17 @@
+{
+  "parsers": [
+    {
+      "external-parser": {
+        "_mime-include": ["application/xml"],
+        "commandLine": ["file", "-b", "--mime-type", "${INPUT_FILE}"],
+        "outputParser": {
+          "regex-capture-parser": {
+            "captureMap": {
+              "title": "^Title: ([^\\r\\n]+)"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

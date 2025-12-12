@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.tika.config.ConfigDeserializer;
-import org.apache.tika.config.Field;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaConfigException;
@@ -95,7 +94,6 @@ public class ClearByAttachmentTypeMetadataFilter extends MetadataFilterBase {
      * @param types attachment types that should be deleted.
      * @throws TikaConfigException
      */
-    @Field
     public void setTypes(List<String> types) throws TikaConfigException {
         for (String t : types) {
             try {

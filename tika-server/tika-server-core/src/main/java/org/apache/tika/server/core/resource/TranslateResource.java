@@ -32,7 +32,6 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.LoadErrorHandler;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
@@ -49,7 +48,7 @@ public class TranslateResource {
     private ServiceLoader loader;
 
     public TranslateResource(ServerStatus serverStatus, long timeoutMillis) {
-        this.loader = new ServiceLoader(ServiceLoader.class.getClassLoader(), LoadErrorHandler.WARN);
+        this.loader = new ServiceLoader(ServiceLoader.class.getClassLoader());
         //TODO -- implement translators
         //this.defaultTranslator = TikaResource
           //      .getTikaLoader()

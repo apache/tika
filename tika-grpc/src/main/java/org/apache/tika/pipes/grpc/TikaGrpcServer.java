@@ -36,9 +36,6 @@ import io.grpc.protobuf.services.ProtoReflectionServiceV1;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.config.TikaConfigSerializer;
-
 /**
  * Server that manages startup/shutdown of the GRPC Tika server.
  */

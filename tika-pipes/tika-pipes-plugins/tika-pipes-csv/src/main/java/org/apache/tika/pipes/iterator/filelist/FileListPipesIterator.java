@@ -24,66 +24,7 @@ package org.apache.tika.pipes.iterator.filelist;
  *
  * Skips empty lines and lines starting with '#'
  *
- *
+ * TODO: implement this class
  */
-public class FileListPipesIterator {}
-//TODO -- this next
-/*extends PipesIteratorBase {
-
-    @Field
-    private String fileList;
-
-    @Field
-    private boolean hasHeader = false;
-
-    private Path fileListPath;
-
-    @Override
-    protected void enqueue() throws IOException, TimeoutException, InterruptedException {
-        try (BufferedReader reader = Files.newBufferedReader(fileListPath, StandardCharsets.UTF_8)) {
-            if (hasHeader) {
-                reader.readLine();
-            }
-            String line = reader.readLine();
-            while (line != null) {
-                if (! line.startsWith("#") && !StringUtils.isBlank(line)) {
-                    FetchKey fetchKey = new FetchKey(getFetcherId(), line);
-                    EmitKey emitKey = new EmitKey(getEmitterId(), line);
-                    ParseContext parseContext = new ParseContext();
-                    parseContext.set(HandlerConfig.class, getHandlerConfig());
-                    tryToAdd(new FetchEmitTuple(line, fetchKey, emitKey,
-                            new Metadata(), parseContext, getOnParseException()));
-                }
-                line = reader.readLine();
-            }
-        }
-    }
-
-
-    @Field
-    public void setFileList(String path) {
-        this.fileList = path;
-    }
-
-    @Field
-    public void setHasHeader(boolean hasHeader) {
-        this.hasHeader = hasHeader;
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
-        //these should all be fatal
-        TikaConfig.mustNotBeEmpty("fileList", fileList);
-        TikaConfig.mustNotBeEmpty("fetcherId", getFetcherId());
-        TikaConfig.mustNotBeEmpty("emitterId", getEmitterId());
-
-        fileListPath = Paths.get(fileList);
-        if (!Files.isRegularFile(fileListPath)) {
-            throw new TikaConfigException("file list " + fileList + " does not exist. " +
-                    "Must specify an existing file");
-        }
-    }
+public class FileListPipesIterator {
 }
-
- */

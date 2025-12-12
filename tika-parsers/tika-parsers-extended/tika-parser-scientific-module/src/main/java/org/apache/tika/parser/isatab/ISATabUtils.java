@@ -31,7 +31,6 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.DefaultEncodingDetector;
 import org.apache.tika.detect.EncodingDetector;
@@ -118,9 +117,9 @@ public class ISATabUtils {
     }
 
     private static EncodingDetector getEncodingDetector(ParseContext context) {
-        TikaConfig tikaConfig = context.get(TikaConfig.class);
-        if (tikaConfig != null) {
-            return tikaConfig.getEncodingDetector();
+        EncodingDetector encodingDetector = context.get(EncodingDetector.class);
+        if (encodingDetector != null) {
+            return encodingDetector;
         }
         return new DefaultEncodingDetector();
     }

@@ -19,7 +19,6 @@ package org.apache.tika.extractor;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.tika.config.Field;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
@@ -37,27 +36,22 @@ public class RUnpackExtractorFactory implements EmbeddedDocumentByteStoreExtract
     private Set<String> embeddedBytesExcludeEmbeddedResourceTypes = new HashSet<>();
 
     private long maxEmbeddedBytesForExtraction = DEFAULT_MAX_EMBEDDED_BYTES_FOR_EXTRACTION;
-    @Field
     public void setWriteFileNameToContent(boolean writeFileNameToContent) {
         this.writeFileNameToContent = writeFileNameToContent;
     }
 
-    @Field
     public void setEmbeddedBytesIncludeMimeTypes(Set<String> includeMimeTypes) {
         embeddedBytesIncludeMimeTypes = new HashSet<>(includeMimeTypes);
     }
 
-    @Field
     public void setEmbeddedBytesExcludeMimeTypes(Set<String> excludeMimeTypes) {
         embeddedBytesExcludeMimeTypes = new HashSet<>(excludeMimeTypes);
     }
 
-    @Field
     public void setEmbeddedBytesIncludeEmbeddedResourceTypes(Set<String> includeAttachmentTypes) {
         embeddedBytesIncludeEmbeddedResourceTypes = new HashSet<>(includeAttachmentTypes);
     }
 
-    @Field
     public void setEmbeddedBytesExcludeEmbeddedResourceTypes(Set<String> excludeAttachmentTypes) {
         embeddedBytesExcludeEmbeddedResourceTypes = new HashSet<>(excludeAttachmentTypes);
     }
@@ -71,7 +65,6 @@ public class RUnpackExtractorFactory implements EmbeddedDocumentByteStoreExtract
      *
      * @param maxEmbeddedBytesForExtraction
      */
-    @Field
     public void setMaxEmbeddedBytesForExtraction(long maxEmbeddedBytesForExtraction) throws TikaConfigException {
         if (maxEmbeddedBytesForExtraction < 0) {
             throw new TikaConfigException("maxEmbeddedBytesForExtraction must be >= 0");

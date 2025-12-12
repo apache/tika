@@ -22,17 +22,12 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.Field;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
 import org.apache.tika.config.TikaComponent;
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -106,24 +101,8 @@ public class GeoPkgParser extends SQLite3Parser {
         p.parse(stream, handler, metadata, context);
     }
 
-    @Field
     public void setIgnoreBlobColumns(List<String> ignoreBlobColumns) {
         this.ignoreBlobColumns.clear();
         this.ignoreBlobColumns.addAll(ignoreBlobColumns);
-    }
-    /**
-     * No-op
-     *
-     * @param params params to use for initialization
-     * @throws TikaConfigException
-     */
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
-
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
     }
 }

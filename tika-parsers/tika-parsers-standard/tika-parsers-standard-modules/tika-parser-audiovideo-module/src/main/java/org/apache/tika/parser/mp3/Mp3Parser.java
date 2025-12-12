@@ -26,7 +26,6 @@ import java.util.Set;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.Field;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TailStream;
@@ -251,7 +250,6 @@ public class Mp3Parser implements Parser {
      *
      * @param maxRecordSize
      */
-    @Field
     public void setMaxRecordSize(int maxRecordSize) {
         ID3v2Frame.setMaxRecordSize(maxRecordSize);
     }

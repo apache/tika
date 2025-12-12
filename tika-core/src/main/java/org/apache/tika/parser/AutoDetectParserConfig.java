@@ -16,15 +16,11 @@
  */
 package org.apache.tika.parser;
 
-import java.io.IOException;
 import java.io.Serializable;
 
-import org.w3c.dom.Element;
 import org.xml.sax.ContentHandler;
 
-import org.apache.tika.config.ConfigBase;
 import org.apache.tika.config.TikaComponent;
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.writefilter.MetadataWriteFilterFactory;
@@ -35,12 +31,9 @@ import org.apache.tika.sax.ContentHandlerDecoratorFactory;
  * when parsing data that is extremely compressible and resembles a ZIP
  * bomb. Null values will be ignored and will not affect the default values
  * in SecureContentHandler.
- * <p>
- *     See <a href="https://cwiki.apache.org/confluence/display/TIKA/ModifyingContentWithHandlersAndMetadataFilters"/>ModifyingContentWithHandlersAndMetadataFilters</a>
- *     for documentation and examples for configuring this with a tika-config.xml file.
  */
 @TikaComponent
-public class AutoDetectParserConfig extends ConfigBase implements Serializable {
+public class AutoDetectParserConfig implements Serializable {
 
     private static ContentHandlerDecoratorFactory NOOP_CONTENT_HANDLER_DECORATOR_FACTORY =
             new ContentHandlerDecoratorFactory() {
@@ -52,12 +45,6 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
             };
 
     public static AutoDetectParserConfig DEFAULT = new AutoDetectParserConfig();
-
-    public static AutoDetectParserConfig load(Element element)
-            throws TikaConfigException, IOException {
-        return AutoDetectParserConfig.buildSingle("autoDetectParserConfig",
-                AutoDetectParserConfig.class, element, AutoDetectParserConfig.DEFAULT);
-    }
 
     /**
      * If this is not null and greater than -1, the AutoDetectParser

@@ -1,0 +1,13 @@
+{
+  "parsers": [
+    "default-parser",
+    {
+      "amazon-transcribe": {
+        "bucket": "bucket",
+        "clientId": "clientId",
+        "clientSecret": "clientSecret",
+        "region": "us-east-1"
+      }
+    }
+  ]
+}

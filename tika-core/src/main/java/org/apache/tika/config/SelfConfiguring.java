@@ -18,7 +18,7 @@ package org.apache.tika.config;
 
 /**
  * Marker interface indicating that a component reads its own configuration
- * from {@link ConfigContainer} at runtime.
+ * from {@link ConfigContainer} inside the {@link org.apache.tika.parser.ParseContext} at runtime.
  * <p>
  * Components implementing this interface will NOT be automatically resolved
  * by ParseContextUtils. Instead, the JSON configuration will remain in

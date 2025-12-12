@@ -44,7 +44,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ConfigDeserializer;
-import org.apache.tika.config.Field;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.Detector;
@@ -266,7 +265,6 @@ public class POIFSContainerDetector implements Detector {
     private static final Logger LOG = LoggerFactory.getLogger(POIFSContainerDetector.class);
 
 
-    @Field
     private int markLimit = -1;
 
     /**

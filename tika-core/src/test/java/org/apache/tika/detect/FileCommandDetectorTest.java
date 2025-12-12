@@ -19,53 +19,59 @@ package org.apache.tika.detect;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.io.BufferedInputStream;
 import java.io.InputStream;
+import java.util.Arrays;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MimeTypes;
 
 public class FileCommandDetectorTest {
 
-    private static Detector DETECTOR;
-
-    @BeforeAll
-    public static void setUp() throws Exception {
-        try (InputStream is = TikaConfig.class.getResourceAsStream("FileCommandDetector.xml")) {
-            DETECTOR = new TikaConfig(is).getDetector();
-        }
-    }
+    // Use undeclared_entity.xml instead of basic_embedded.xml because
+    // basic_embedded.xml has <mock> root which triggers custom mime type
+    private static final String TEST_FILE = "/test-documents/undeclared_entity.xml";
 
     @Test
     public void testBasic() throws Exception {
         assumeTrue(FileCommandDetector.checkHasFile());
 
-        try (InputStream is = getClass()
-                .getResourceAsStream("/test-documents/basic_embedded.xml")) {
+        // Create a composite detector that includes FileCommandDetector
+        FileCommandDetector fileDetector = new FileCommandDetector();
+        Detector defaultDetector = new DefaultDetector();
+        Detector detector = new CompositeDetector(
+                MimeTypes.getDefaultMimeTypes().getMediaTypeRegistry(),
+                Arrays.asList(fileDetector, defaultDetector));
+
+        try (InputStream is = new BufferedInputStream(getClass()
+                .getResourceAsStream(TEST_FILE))) {
             //run more than once to ensure that the input stream is reset
             for (int i = 0; i < 2; i++) {
                 Metadata metadata = new Metadata();
-                MediaType answer = DETECTOR.detect(is, metadata);
+                MediaType answer = detector.detect(is, metadata);
                 String fileMime = metadata.get(FileCommandDetector.FILE_MIME);
                 assertTrue(MediaType.text("xml").equals(answer) ||
-                        MediaType.application("xml").equals(answer));
+                        MediaType.application("xml").equals(answer),
+                        "Expected text/xml or application/xml but got: " + answer);
                 assertTrue("application/xml".equals(fileMime) ||
-                        "text/xml".equals(fileMime));
+                        "text/xml".equals(fileMime),
+                        "Expected application/xml or text/xml but got: " + fileMime);
             }
         }
 
         //now try with TikaInputStream
         try (InputStream is = TikaInputStream
-                .get(getClass().getResourceAsStream("/test-documents/basic_embedded.xml"))) {
+                .get(getClass().getResourceAsStream(TEST_FILE))) {
             //run more than once to ensure that the input stream is reset
             for (int i = 0; i < 2; i++) {
-                MediaType answer = DETECTOR.detect(is, new Metadata());
+                MediaType answer = detector.detect(is, new Metadata());
                 assertTrue(MediaType.text("xml").equals(answer) ||
-                        MediaType.application("xml").equals(answer));
+                        MediaType.application("xml").equals(answer),
+                        "Expected text/xml or application/xml but got: " + answer);
             }
         }
     }
