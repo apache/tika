@@ -733,8 +733,8 @@ public class TikaCLI {
             parser = new NetworkParser(networkURI);
         } else {
             parser = tikaLoader.loadAutoDetectParser();
-            if (digester != null) {
-                parser = new DigestingParser(parser, digester, false);
+            if (digester != null && parser instanceof AutoDetectParser) {
+                ((AutoDetectParser) parser).getAutoDetectParserConfig().digester(digester);
             }
         }
         detector = tikaLoader.loadDetectors();

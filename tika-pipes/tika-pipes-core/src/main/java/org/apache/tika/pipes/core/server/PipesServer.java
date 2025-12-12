@@ -459,10 +459,12 @@ public class PipesServer implements AutoCloseable {
         // Always initialize emitters to support runtime overrides via ParseContext
         this.emitterManager = EmitterManager.load(tikaPluginManager, tikaJsonConfig);
         this.autoDetectParser = (AutoDetectParser) tikaLoader.loadAutoDetectParser();
-        if (autoDetectParser.getAutoDetectParserConfig()
-                .getDigesterFactory() != null) {
-            this.digester = autoDetectParser.getAutoDetectParserConfig()
-                    .getDigesterFactory().build();
+        // Get the digester for pre-parse digesting of container documents.
+        // The AutoDetectParser now handles digesting internally via DigestHelper,
+        // but PipesServer does its own pre-parse digesting for container documents.
+        // Setting skipContainerDocument(true) ensures AutoDetectParser only digests embedded docs.
+        this.digester = autoDetectParser.getAutoDetectParserConfig().digester();
+        if (digester != null) {
             //override this value because we'll be digesting before parse
             autoDetectParser.getAutoDetectParserConfig().getDigesterFactory()
                     .setSkipContainerDocument(true);

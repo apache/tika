@@ -65,7 +65,6 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MimeTypeException;
-import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
@@ -144,10 +143,6 @@ public class UnpackerResource {
         long unpackMaxBytes = DEFAULT_MAX_ATTACHMENT_BYTES;
 
         Parser parser = TikaResource.createParser();
-        if (parser instanceof DigestingParser) {
-            //no need to digest for unwrapping
-            parser = ((DigestingParser) parser).getWrappedParser();
-        }
 
         TikaResource.logRequest(LOG, "/unpack/config", metadata);
         //even though we aren't currently parsing embedded documents,
@@ -205,10 +200,6 @@ public class UnpackerResource {
             }
         }
         Parser parser = TikaResource.createParser();
-        if (parser instanceof DigestingParser) {
-            //no need to digest for unwrapping
-            parser = ((DigestingParser) parser).getWrappedParser();
-        }
         fillMetadata(parser, metadata, httpHeaders.getRequestHeaders());
 
         TikaResource.logRequest(LOG, "/unpack", metadata);

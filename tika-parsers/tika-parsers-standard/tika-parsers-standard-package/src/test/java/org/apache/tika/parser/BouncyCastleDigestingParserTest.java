@@ -44,6 +44,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.digestutils.BouncyCastleDigester;
 
 
+@SuppressWarnings("deprecation")
 public class BouncyCastleDigestingParserTest extends TikaTest {
 
     private final static String P = TikaCoreProperties.TIKA_META_PREFIX + "digest" +

@@ -37,6 +37,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.parser.digest.DigestHelper;
 import org.apache.tika.sax.SecureContentHandler;
 
 public class AutoDetectParser extends CompositeParser {
@@ -90,46 +91,32 @@ public class AutoDetectParser extends CompositeParser {
         setAutoDetectParserConfig(AutoDetectParserConfig.DEFAULT);
     }
 
-    public AutoDetectParser(MediaTypeRegistry mediaTypeRegistry, Parser parser, Detector detector, AutoDetectParserConfig autoDetectParserConfig) {
+    public AutoDetectParser(MediaTypeRegistry mediaTypeRegistry, Parser parser, Detector detector,
+                             AutoDetectParserConfig autoDetectParserConfig) {
         super(mediaTypeRegistry, parser);
-        setFallback(buildFallbackParser(parser, autoDetectParserConfig.getDigesterFactory()));
+        setFallback(getFallbackFrom(parser));
         setDetector(detector);
         setAutoDetectParserConfig(autoDetectParserConfig);
     }
 
-    public static Parser build(CompositeParser parser, Detector detector, AutoDetectParserConfig autoDetectParserConfig) {
-        return new AutoDetectParser(parser.getMediaTypeRegistry(), getParser(parser, autoDetectParserConfig.getDigesterFactory()), detector, autoDetectParserConfig);
+    public static Parser build(CompositeParser parser, Detector detector,
+                               AutoDetectParserConfig autoDetectParserConfig) {
+        return new AutoDetectParser(parser.getMediaTypeRegistry(), parser, detector,
+                autoDetectParserConfig);
     }
 
     public AutoDetectParser(TikaConfig config) {
-        super(config.getMediaTypeRegistry(), getParser(config.getParser(), config.getAutoDetectParserConfig().getDigesterFactory()));
-        setFallback(buildFallbackParser(config.getParser(), config.getAutoDetectParserConfig().getDigesterFactory()));
+        super(config.getMediaTypeRegistry(), config.getParser());
+        setFallback(getFallbackFrom(config.getParser()));
         setDetector(config.getDetector());
         setAutoDetectParserConfig(config.getAutoDetectParserConfig());
     }
 
-    private static Parser buildFallbackParser(Parser defaultParser, DigestingParser.DigesterFactory digesterFactory) {
-        Parser fallback = null;
-        Parser p = defaultParser;
-        if (p instanceof DefaultParser) {
-            fallback = ((DefaultParser)p).getFallback();
-        } else {
-            fallback = new EmptyParser();
+    private static Parser getFallbackFrom(Parser defaultParser) {
+        if (defaultParser instanceof DefaultParser) {
+            return ((DefaultParser) defaultParser).getFallback();
         }
-
-        if (digesterFactory == null) {
-            return fallback;
-        } else {
-            return new DigestingParser(fallback, digesterFactory.build(), digesterFactory.isSkipContainerDocument());
-        }
-
-    }
-
-    private static Parser getParser(Parser defaultParser, DigestingParser.DigesterFactory digesterFactory) {
-        if (digesterFactory == null) {
-            return defaultParser;
-        }
-        return new DigestingParser(defaultParser,digesterFactory.build(), digesterFactory.isSkipContainerDocument());
+        return new EmptyParser();
     }
 
     /**
@@ -180,6 +167,12 @@ public class AutoDetectParser extends CompositeParser {
             TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
             //figure out if we should spool to disk
             maybeSpool(tis, autoDetectParserConfig, metadata);
+
+            // Compute digests before type detection if configured
+            DigestHelper.maybeDigest(tis,
+                    autoDetectParserConfig.digester(),
+                    autoDetectParserConfig.isSkipContainerDocument(),
+                    metadata, context, tmp);
 
             // Automatically detect the MIME type of the document
             MediaType type = detector.detect(tis, metadata);

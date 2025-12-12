@@ -432,6 +432,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private List<Metadata> getMetadata(Metadata metadata,
                                        ContentHandlerFactory contentHandlerFactory,
                                        boolean catchEmbeddedExceptions,

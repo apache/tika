@@ -45,6 +45,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.digestutils.CommonsDigester;
 
 
+@SuppressWarnings("deprecation")
 public class DigestingParserTest extends TikaTest {
 
     private final static String P = TikaCoreProperties.TIKA_META_PREFIX + "digest" +

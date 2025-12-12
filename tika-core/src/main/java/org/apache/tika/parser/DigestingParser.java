@@ -34,6 +34,14 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
+/**
+ * A parser decorator that computes digests of the parsed content.
+ *
+ * @deprecated Since 3.x. Use {@link AutoDetectParserConfig#setDigesterFactory(DigesterFactory)}
+ * to configure digesting. The AutoDetectParser now calls digesting directly in its parse method.
+ * The interfaces {@link Digester}, {@link DigesterFactory}, and {@link Encoder} are still in use.
+ */
+@Deprecated
 public class DigestingParser extends ParserDecorator {
 
     private final EmbeddedStreamTranslator embeddedStreamTranslator = new DefaultEmbeddedStreamTranslator();

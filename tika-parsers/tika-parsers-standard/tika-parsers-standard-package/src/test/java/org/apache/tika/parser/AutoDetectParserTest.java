@@ -563,6 +563,7 @@ public class AutoDetectParserTest extends TikaTest {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void testDigestingOpenContainers() throws Exception {
         //TIKA-4533 -- this tests both that a very large embedded OLE doc doesn't cause a zip bomb

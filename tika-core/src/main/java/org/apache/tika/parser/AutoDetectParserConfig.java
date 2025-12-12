@@ -95,6 +95,9 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
 
     private DigestingParser.DigesterFactory digesterFactory = null;
 
+    // Lazily built digester from the factory
+    private transient DigestingParser.Digester digester = null;
+
     private boolean throwOnZeroBytes = true;
 
     /**
@@ -193,6 +196,43 @@ public class AutoDetectParserConfig extends ConfigBase implements Serializable {
 
     public DigestingParser.DigesterFactory getDigesterFactory() {
         return this.digesterFactory;
+    }
+
+    /**
+     * Returns the Digester, lazily building it from the factory if needed.
+     * <p>
+     * Note: This method is intentionally not named getDigester() to avoid
+     * Jackson treating it as a bean property during serialization.
+     *
+     * @return the Digester, or null if no factory is configured
+     */
+    public DigestingParser.Digester digester() {
+        if (digester == null && digesterFactory != null) {
+            digester = digesterFactory.build();
+        }
+        return digester;
+    }
+
+    /**
+     * Sets the digester directly. This is useful for programmatic configuration
+     * (e.g., from command-line arguments) when you don't have a DigesterFactory.
+     * <p>
+     * Note: This method is intentionally not named setDigester() to avoid
+     * Jackson treating it as a bean property during deserialization.
+     *
+     * @param digester the digester to use
+     */
+    public void digester(DigestingParser.Digester digester) {
+        this.digester = digester;
+    }
+
+    /**
+     * Returns whether to skip digesting for container (top-level) documents.
+     *
+     * @return true if container documents should be skipped, false otherwise
+     */
+    public boolean isSkipContainerDocument() {
+        return digesterFactory != null && digesterFactory.isSkipContainerDocument();
     }
 
     public void setThrowOnZeroBytes(boolean throwOnZeroBytes) {
