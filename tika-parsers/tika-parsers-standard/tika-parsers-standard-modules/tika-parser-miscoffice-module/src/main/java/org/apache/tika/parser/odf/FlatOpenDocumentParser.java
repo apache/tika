@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -101,9 +100,10 @@ public class FlatOpenDocumentParser implements Parser {
         final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
 
         xhtml.startDocument();
+        tis.setCloseShield();
         try {
             ContentHandler fodHandler = getContentHandler(xhtml, metadata, context);
-            XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(tis),
+            XMLReaderUtils.parseSAX(tis,
                     new EmbeddedContentHandler(fodHandler), context);
             //can only detect subtype (text/pres/sheet) during parse.
             //update it here.
@@ -112,6 +112,7 @@ public class FlatOpenDocumentParser implements Parser {
                 metadata.set(Metadata.CONTENT_TYPE, detected.toString());
             }
         } finally {
+            tis.removeCloseShield();
             xhtml.endDocument();
         }
     }

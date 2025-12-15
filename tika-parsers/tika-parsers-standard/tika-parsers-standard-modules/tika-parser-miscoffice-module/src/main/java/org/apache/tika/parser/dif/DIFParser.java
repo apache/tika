@@ -61,6 +61,7 @@ public class DIFParser implements Parser {
         xhtml.startDocument();
         xhtml.startElement("p");
         TaggedContentHandler tagged = new TaggedContentHandler(handler);
+        tis.setCloseShield();
         try {
             XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(tis),
                             new EmbeddedContentHandler(
@@ -70,6 +71,7 @@ public class DIFParser implements Parser {
             tagged.throwIfCauseOf(e);
             throw new TikaException("XML parse error", e);
         } finally {
+            tis.removeCloseShield();
             xhtml.endElement("p");
             xhtml.endDocument();
         }

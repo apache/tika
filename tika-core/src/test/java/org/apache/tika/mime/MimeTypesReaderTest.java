@@ -66,9 +66,9 @@ public class MimeTypesReaderTest {
 
     private static String getTypeAsString(MimeTypes mimeTypes, String text, Metadata metadata)
             throws IOException {
-        return mimeTypes
-                .detect(TikaInputStream.get(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8))), metadata, new ParseContext())
-                .toString();
+        try (TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)))) {
+            return mimeTypes.detect(tis, metadata, new ParseContext()).toString();
+        }
 
     }
 
@@ -253,8 +253,9 @@ public class MimeTypesReaderTest {
 
             // By contents - picks the x one as that sorts later
             m = new Metadata();
-            TikaInputStream s = TikaInputStream.get("Hello, World!".getBytes(US_ASCII));
-            assertEquals(hxw.toString(), this.mimeTypes.detect(s, m, new ParseContext()).toString());
+            try (TikaInputStream tis = TikaInputStream.get("Hello, World!".getBytes(US_ASCII))) {
+                assertEquals(hxw.toString(), this.mimeTypes.detect(tis, m, new ParseContext()).toString());
+            }
         } catch (Exception e) {
             fail(e.getMessage());
         }

@@ -17,7 +17,6 @@
 package org.apache.tika.pipes.fetcher.s3;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -180,10 +179,10 @@ public class S3Fetcher extends AbstractTikaExtension implements Fetcher, RangeFe
         do {
             try {
                 long start = System.currentTimeMillis();
-                InputStream is = _fetch(theFetchKey, metadata, startRange, endRange);
+                TikaInputStream tis = _fetch(theFetchKey, metadata, startRange, endRange);
                 long elapsed = System.currentTimeMillis() - start;
                 LOGGER.debug("total to fetch {}", elapsed);
-                return TikaInputStream.get(is);
+                return tis;
             } catch (AwsServiceException e) {
                 if (e.awsErrorDetails() != null) {
                     String errorCode = e.awsErrorDetails().errorCode();

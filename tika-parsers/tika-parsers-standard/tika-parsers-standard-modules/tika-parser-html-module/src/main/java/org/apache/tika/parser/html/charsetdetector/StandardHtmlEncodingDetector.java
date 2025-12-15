@@ -76,7 +76,7 @@ public final class StandardHtmlEncodingDetector implements EncodingDetector {
     }
 
     @Override
-    public Charset detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) throws IOException {
+    public Charset detect(TikaInputStream tis, Metadata metadata, ParseContext context) throws IOException {
         int limit = getMarkLimit();
         tis.mark(limit);
         // Never read more than the first META_TAG_BUFFER_SIZE bytes

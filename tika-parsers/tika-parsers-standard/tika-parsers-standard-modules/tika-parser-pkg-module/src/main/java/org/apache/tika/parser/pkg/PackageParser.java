@@ -51,7 +51,6 @@ import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
 import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException.Feature;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -254,7 +253,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         try {
             _parse(tis, handler, metadata, context, tmp);
         } finally {
-            tmp.close();
+            tis.removeCloseShield();
         }
     }
 
@@ -276,14 +275,13 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 // At the end we want to close the archive stream to release
                 // any associated resources, but the underlying document stream
                 // should not be closed
-            ais = factory.createArchiveInputStream(CloseShieldInputStream.wrap(tis));
+            ais = factory.createArchiveInputStream(tis);
 
         } catch (StreamingNotSupportedException sne) {
             // Most archive formats work on streams, but a few need files
             if (sne.getFormat().equals(ArchiveStreamFactory.SEVEN_Z)) {
                 // Rework as a file, and wrap
                 tis.reset();
-                TikaInputStream tstream = TikaInputStream.get(tis, tmp, metadata);
 
                 // Seven Zip suports passwords, was one given?
                 String password = null;
@@ -294,7 +292,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
 
                 SevenZFile sevenz;
                 try {
-                    SevenZFile.Builder builder = new SevenZFile.Builder().setFile(tstream.getFile());
+                    SevenZFile.Builder builder = new SevenZFile.Builder().setFile(tis.getFile());
                     if (password == null) {
                         sevenz = builder.get();
                     } else {
@@ -307,11 +305,9 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 // Pending a fix for COMPRESS-269 / TIKA-1525, this bit is a little nasty
                 ais = new SevenZWrapper(sevenz);
             } else {
-                tmp.close();
                 throw new TikaException("Unknown non-streaming format " + sne.getFormat(), sne);
             }
         } catch (ArchiveException e) {
-            tmp .close();
             throw new TikaException("Unable to unpack document stream", e);
         }
 
@@ -337,13 +333,11 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 ais.close();
                 // An exception would be thrown if MARK_LIMIT is not big enough
                 tis.reset();
-                ais = new ZipArchiveInputStream(CloseShieldInputStream.wrap(tis), encoding, true,
-                        true);
+                ais = new ZipArchiveInputStream(tis, encoding, true, true);
                 parseEntries(ais, metadata, extractor, xhtml, true, entryCnt, context);
             }
         } finally {
             ais.close();
-            tmp.close();
             xhtml.endDocument();
         }
     }
@@ -453,12 +447,11 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 }
             }
 
-            Charset candidate =
-                    getEncodingDetector().detect(
-                            TikaInputStream.get(UnsynchronizedByteArrayInputStream.builder().setByteArray(extendedEntryName).get()),
-                            parentMetadata, context);
-            if (candidate != null) {
-                name = new String(((ZipArchiveEntry) entry).getRawName(), candidate);
+            try (TikaInputStream tis = TikaInputStream.get(extendedEntryName)) {
+                Charset candidate = getEncodingDetector().detect(tis, parentMetadata, context);
+                if (candidate != null) {
+                    name = new String(((ZipArchiveEntry) entry).getRawName(), candidate);
+                }
             }
         }
         

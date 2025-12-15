@@ -26,7 +26,6 @@ import java.util.Map;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.ooxml.POIXMLDocument;
 import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.opc.PackagePart;
@@ -149,7 +148,7 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
     private void handleDocuments(PackageRelationship packageRelationship, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
         try (InputStream stream = pkg.getPart(packageRelationship).getInputStream()) {
-            XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
+            XMLReaderUtils.parseSAX(stream,
                     new EmbeddedContentHandler(new FixedDocSeqHandler(xhtml)), context);
         }
     }
@@ -198,7 +197,7 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
             String zipPath = (docRef.startsWith("/") ? docRef.substring(1) : docRef);
             if (pkg instanceof ZipPackage) {
                 try (InputStream stream = getZipStream(zipPath, pkg)) {
-                    XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
+                    XMLReaderUtils.parseSAX(stream,
                             new EmbeddedContentHandler(
                                     new PageContentPartHandler(relativeRoot, xhtml)), context);
 
@@ -246,7 +245,7 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
                         pagePath = pagePath.substring(1);
                     }
                     try (InputStream stream = getZipStream(pagePath, pkg)) {
-                        XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
+                        XMLReaderUtils.parseSAX(stream,
                                         new XPSPageContentHandler(xhtml, embeddedImages), context);
                     } catch (TikaException | IOException e) {
                         throw new SAXException(e);

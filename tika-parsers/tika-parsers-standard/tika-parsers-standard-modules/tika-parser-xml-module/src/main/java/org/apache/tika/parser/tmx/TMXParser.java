@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -67,7 +66,12 @@ public class TMXParser implements Parser {
         metadata.set(Metadata.CONTENT_TYPE, TMX_CONTENT_TYPE.toString());
 
         final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(tis), new TMXContentHandler(xhtml, metadata), context);
+        tis.setCloseShield();
+        try {
+            XMLReaderUtils.parseSAX(tis, new TMXContentHandler(xhtml, metadata), context);
+        } finally {
+            tis.removeCloseShield();
+        }
 
     }
 

@@ -21,17 +21,17 @@ import static org.apache.tika.TikaTest.assertContains;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 
-public class WriteProtectedParserTest {
+public class WriteProtectedParserTest extends TikaTest {
 
     @Test
     public void testWriteProtected() throws Exception {
-        TikaInputStream tis =
-                TikaInputStream.get(ExcelParserTest.class.getResourceAsStream("/test-documents/protect.xlsx"));
+        TikaInputStream tis = getResourceAsStream("/test-documents/protect.xlsx");
 
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();

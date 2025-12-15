@@ -380,9 +380,9 @@ public class AutoDetectParserTest extends TikaTest {
     public void testSpecificParserList() throws Exception {
         AutoDetectParser parser = new AutoDetectParser(new MyDetector(), new MyParser());
 
-        TikaInputStream is = TikaInputStream.get("test".getBytes(UTF_8));
+        TikaInputStream tis = TikaInputStream.get("test".getBytes(UTF_8));
         Metadata metadata = new Metadata();
-        parser.parse(is, new BodyContentHandler(), metadata, new ParseContext());
+        parser.parse(tis, new BodyContentHandler(), metadata, new ParseContext());
 
         assertEquals("value", metadata.get("MyParser"));
     }

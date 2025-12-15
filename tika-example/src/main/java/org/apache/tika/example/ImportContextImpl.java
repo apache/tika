@@ -85,9 +85,10 @@ public class ImportContextImpl implements ImportContext {
         if (stream != null && !stream.markSupported()) {
             stream = new BufferedInputStream(stream);
         }
-        type = detector.detect(TikaInputStream.get(stream), metadata, new ParseContext());
-
-        this.inputFile = IOUtil.getTempFile(stream);
+        try (TikaInputStream tis = TikaInputStream.get(stream)) {
+            type = detector.detect(tis, metadata, new ParseContext());
+            this.inputFile = IOUtil.getTempFile(tis);
+        }
     }
 
     /**

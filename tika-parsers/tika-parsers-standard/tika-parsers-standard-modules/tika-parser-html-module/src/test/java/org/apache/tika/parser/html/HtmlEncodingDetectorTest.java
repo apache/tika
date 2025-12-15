@@ -132,7 +132,8 @@ public class HtmlEncodingDetectorTest {
 
     private Charset detectCharset(String test) throws IOException {
         Metadata metadata = new Metadata();
-        TikaInputStream inStream = TikaInputStream.get(test.getBytes(StandardCharsets.UTF_8));
-        return new HtmlEncodingDetector().detect(inStream, metadata, new ParseContext());
+        try (TikaInputStream tis = TikaInputStream.get(test.getBytes(StandardCharsets.UTF_8))) {
+            return new HtmlEncodingDetector().detect(tis, metadata, new ParseContext());
+        }
     }
 }

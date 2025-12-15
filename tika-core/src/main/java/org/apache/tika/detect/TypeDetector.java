@@ -39,10 +39,11 @@ public class TypeDetector implements Detector {
      *
      * @param tis      ignored
      * @param metadata input metadata, possibly with a CONTENT_TYPE value
-     * @param parseContext the parse context
+     * @param context the parse context
      * @return detected media type, or <code>application/octet-stream</code>
      */
-    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) {
+    @Override
+    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext context) {
         // Look for a type hint in the input metadata
         String hint = metadata.get(Metadata.CONTENT_TYPE);
         if (hint != null) {

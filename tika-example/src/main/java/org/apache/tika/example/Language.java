@@ -52,7 +52,9 @@ public class Language {
 
     public static void languageDetectionWithHandler() throws Exception {
         LanguageHandler handler = new LanguageHandler();
-        new AutoDetectParser().parse(TikaInputStream.get(System.in), handler, new Metadata(), new ParseContext());
+        try (TikaInputStream tis = TikaInputStream.get(System.in)) {
+            new AutoDetectParser().parse(tis, handler, new Metadata(), new ParseContext());
+        }
 
         LanguageResult result = handler.getLanguage();
         System.out.println(result.getLanguage());

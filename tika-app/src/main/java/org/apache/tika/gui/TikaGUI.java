@@ -336,16 +336,14 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
 
         context.set(DocumentSelector.class, new ImageDocumentSelector());
 
-        if (tis.markSupported()) {
-            int mark = -1;
-            if (tis.hasFile()) {
-                mark = (int) tis.getLength();
-            }
-            if (mark == -1) {
-                mark = MAX_MARK;
-            }
-            tis.mark(mark);
+        int mark = -1;
+        if (tis.hasFile()) {
+            mark = (int) tis.getLength();
         }
+        if (mark == -1) {
+            mark = MAX_MARK;
+        }
+        tis.mark(mark);
         parser.parse(tis, handler, md, context);
 
         String[] names = md.names();
@@ -371,11 +369,7 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
         setText(text, textBuffer.toString());
         setText(textMain, textMainBuffer.toString());
         setText(html, htmlBuffer.toString());
-        if (!tis.markSupported()) {
-            setText(json, "InputStream does not support mark/reset for Recursive Parsing");
-            layout.show(cards, "metadata");
-            return;
-        }
+
         boolean isReset = false;
         try {
             tis.reset();

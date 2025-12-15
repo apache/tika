@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -31,7 +32,7 @@ import org.apache.tika.sax.BodyContentHandler;
 /**
  * Test suite for the {@link HDFParser}.
  */
-public class HDFParserTest {
+public class HDFParserTest extends TikaTest {
 
     @Test
     public void testParseGlobalMetadata() throws Exception {
@@ -49,6 +50,8 @@ public class HDFParserTest {
          * ftp://acdisc.gsfc.nasa.gov/data/s4pa///Aura_MLS_Level2/ML2O3.002//2009
          * /MLS-Aura_L2GP-O3_v02-23-c01_2009d122.he5
          */
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/test.he5")) {
+            parser.parse(tis, handler, metadata, new ParseContext());
         try (TikaInputStream tis = TikaInputStream.get(HDFParser.class.getResourceAsStream("/test-documents/test.he5"))) {
             parser.parse(tis, handler, metadata, new ParseContext());
         }
@@ -71,7 +74,7 @@ public class HDFParserTest {
          *
          * http://www.hdfgroup.org/training/hdf4_chunking/Chunkit/bin/input54kmdata.hdf
          */
-        try (TikaInputStream tis = TikaInputStream.get(HDFParser.class.getResourceAsStream("/test-documents/test.hdf"))) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/test.hdf")) {
             parser.parse(tis, handler, metadata, new ParseContext());
         }
 

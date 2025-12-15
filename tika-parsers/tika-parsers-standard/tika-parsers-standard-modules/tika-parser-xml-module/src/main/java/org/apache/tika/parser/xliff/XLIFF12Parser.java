@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -68,8 +67,12 @@ public class XLIFF12Parser implements Parser {
 
         final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
 
-        XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(tis),
-                new XLIFF12ContentHandler(xhtml, metadata), context);
+        tis.setCloseShield();
+        try {
+            XMLReaderUtils.parseSAX(tis, new XLIFF12ContentHandler(xhtml, metadata), context);
+        } finally {
+            tis.removeCloseShield();
+        }
 
     }
 

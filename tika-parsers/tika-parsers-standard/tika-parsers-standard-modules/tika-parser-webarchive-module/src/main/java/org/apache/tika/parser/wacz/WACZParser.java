@@ -30,7 +30,6 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.utils.IOUtils;
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -81,10 +80,10 @@ public class WACZParser implements Parser {
         xhtml.endDocument();
     }
 
-    private void processStream(InputStream tis, XHTMLContentHandler xhtml, Metadata metadata,
+    private void processStream(TikaInputStream tis, XHTMLContentHandler xhtml, Metadata metadata,
                                EmbeddedDocumentExtractor ex) throws SAXException, IOException {
-        try (ZipArchiveInputStream zais = new ZipArchiveInputStream(
-                CloseShieldInputStream.wrap(tis))) {
+        tis.setCloseShield();
+        try (ZipArchiveInputStream zais = new ZipArchiveInputStream(tis)) {
             ZipArchiveEntry zae = zais.getNextEntry();
             while (zae != null) {
                 String name = zae.getName();
@@ -99,6 +98,8 @@ public class WACZParser implements Parser {
 
                 zae = zais.getNextEntry();
             }
+        } finally {
+            tis.removeCloseShield();
         }
     }
 

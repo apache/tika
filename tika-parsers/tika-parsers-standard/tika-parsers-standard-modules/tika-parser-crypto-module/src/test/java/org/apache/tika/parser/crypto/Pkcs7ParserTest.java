@@ -30,10 +30,10 @@ import org.apache.tika.sax.BodyContentHandler;
 
 public class Pkcs7ParserTest extends TikaTest {
     public void testDetachedSignature() throws Exception {
-        try (TikaInputStream input = getResourceAsStream("/test-documents/testDetached.p7s")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testDetached.p7s")) {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
-            new Pkcs7Parser().parse(input, handler, metadata, new ParseContext());
+            new Pkcs7Parser().parse(tis, handler, metadata, new ParseContext());
         } catch (NullPointerException npe) {
             fail("should not get NPE");
         } catch (TikaException te) {

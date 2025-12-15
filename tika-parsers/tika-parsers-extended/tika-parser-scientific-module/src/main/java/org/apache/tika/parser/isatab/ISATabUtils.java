@@ -81,7 +81,8 @@ public class ISATabUtils {
         TikaInputStream tis = TikaInputStream.get(stream);
         // Automatically detect the character encoding
         EncodingDetector encodingDetector = getEncodingDetector(context);
-        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(tis),
+        tis.setCloseShield();
+        try (AutoDetectReader reader = new AutoDetectReader(tis,
                 metadata, encodingDetector);
                 CSVParser csvParser = CSVParser.builder().setReader(reader).setFormat(CSVFormat.TDF).get()) {
             Iterator<CSVRecord> iterator = csvParser.iterator();
@@ -113,6 +114,8 @@ public class ISATabUtils {
             xhtml.endElement("tbody");
 
             xhtml.endElement("table");
+        } finally {
+            tis.removeCloseShield();
         }
     }
 
@@ -131,7 +134,8 @@ public class ISATabUtils {
 
         // Automatically detect the character encoding
         EncodingDetector encodingDetector = getEncodingDetector(context);
-        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(tis),
+        tis.setCloseShield();
+        try (AutoDetectReader reader = new AutoDetectReader(tis,
                 metadata, encodingDetector);
                 CSVParser csvParser = CSVParser.builder().setReader(reader).setFormat(CSVFormat.TDF).get()) {
             xhtml.startElement("table");
@@ -163,6 +167,8 @@ public class ISATabUtils {
             xhtml.endElement("tbody");
 
             xhtml.endElement("table");
+        } finally {
+            tis.removeCloseShield();
         }
     }
 

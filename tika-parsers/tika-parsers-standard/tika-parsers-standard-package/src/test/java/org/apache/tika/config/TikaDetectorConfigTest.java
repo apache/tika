@@ -102,11 +102,11 @@ public class TikaDetectorConfigTest extends TikaTest {
         // Now check they detect PST files correctly
         try (TikaInputStream outer = TikaInputStream
                 .get(getResourceAsStream("/test-documents/testPST.pst"))) {
-            try (TikaInputStream stream = TikaInputStream.get(outer.getPath())) {
+            try (TikaInputStream tis = TikaInputStream.get(outer.getPath())) {
                 assertEquals(OutlookPSTParser.MS_OUTLOOK_PST_MIMETYPE,
-                        detectorWX.detect(stream, new Metadata(), new ParseContext()));
+                        detectorWX.detect(tis, new Metadata(), new ParseContext()));
                 assertEquals(OutlookPSTParser.MS_OUTLOOK_PST_MIMETYPE,
-                        detectorCL.detect(stream, new Metadata(), new ParseContext()));
+                        detectorCL.detect(tis, new Metadata(), new ParseContext()));
             }
         }
     }

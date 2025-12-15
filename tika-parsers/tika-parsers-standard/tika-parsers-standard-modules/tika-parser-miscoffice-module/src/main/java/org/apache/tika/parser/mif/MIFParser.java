@@ -24,7 +24,6 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -64,7 +63,8 @@ public class MIFParser extends AbstractEncodingDetectorParser {
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
-        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(tis),
+        tis.setCloseShield();
+        try (AutoDetectReader reader = new AutoDetectReader(tis,
                 metadata, getEncodingDetector(context))) {
 
             Charset charset = reader.getCharset();
@@ -82,6 +82,8 @@ public class MIFParser extends AbstractEncodingDetectorParser {
             if (parseHandler.isEndDocumentWasCalled()) {
                 parseHandler.reallyEndDocument();
             }
+        } finally {
+            tis.removeCloseShield();
         }
     }
 

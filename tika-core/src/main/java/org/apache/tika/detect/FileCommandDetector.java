@@ -85,8 +85,7 @@ public class FileCommandDetector implements Detector {
      * @throws IOException
      */
     @Override
-    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
-            throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) throws IOException {
         if (hasFileCommand == null) {
             hasFileCommand = checkHasFile(this.fileCommandPath);
         }

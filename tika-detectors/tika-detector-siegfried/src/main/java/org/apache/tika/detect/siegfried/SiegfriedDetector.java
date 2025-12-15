@@ -130,7 +130,7 @@ public class SiegfriedDetector implements Detector {
      * @throws IOException
      */
     @Override
-    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
         if (hasSiegfriedCommand == null) {
             hasSiegfriedCommand = checkHasSiegfried(this.config.siegfriedPath);
         }

@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipException;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackagePart;
@@ -160,7 +159,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 continue;
             }
             try (InputStream stream = commentAuthorsPart.getInputStream()) {
-                XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
+                XMLReaderUtils.parseSAX(stream,
                         new XSLFCommentAuthorHandler(), context);
 
             } catch (TikaException | SAXException | IOException e) {
@@ -181,7 +180,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         try (InputStream stream = slidePart.getInputStream()) {
             OOXMLWordAndPowerPointTextHandler wordAndPPTHandler = new OOXMLWordAndPowerPointTextHandler(
                     new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships);
-            XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
+            XMLReaderUtils.parseSAX(stream,
                     new EmbeddedContentHandler(wordAndPPTHandler), context);
             if (wordAndPPTHandler.isHiddenSlide()) {
                 metadata.set(Office.HAS_HIDDEN_SLIDES, true);

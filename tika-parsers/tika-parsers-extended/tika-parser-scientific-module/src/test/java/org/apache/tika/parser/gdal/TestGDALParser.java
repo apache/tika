@@ -148,7 +148,7 @@ public class TestGDALParser extends TikaTest {
         String expectedCalibDef = "1466";
 
         GDALParser parser = new GDALParser();
-        TikaInputStream tis = TikaInputStream.get(TestGDALParser.class.getResourceAsStream(fitsFilename));
+        TikaInputStream tis = getResourceAsStream(fitsFilename);
         Metadata met = new Metadata();
         BodyContentHandler handler = new BodyContentHandler();
         try {

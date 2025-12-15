@@ -583,15 +583,12 @@ public class POIFSContainerDetector implements Detector {
     }
 
     /**
-     * If a TikaInputStream is passed in to {@link #detect(InputStream, Metadata)},
+     * If a TikaInputStream is passed in to {@link #detect(InputStream, Metadata, ParseContext)},
      * and there is not an underlying file, this detector will spool up to {@link #markLimit}
      * to disk.  If the stream was read in entirety (e.g. the spooled file is not truncated),
      * this detector will open the file with POI and perform detection.
      * If the spooled file is truncated, the detector will return {@link #OLE} (or
      * {@link MediaType#OCTET_STREAM} if there's no OLE header).
-     * <p>
-     * As of Tika 1.21, this detector respects the legacy behavior of not performing detection
-     * on a non-TikaInputStream.
      *
      * @param markLimit
      */

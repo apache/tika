@@ -97,14 +97,18 @@ public class UnpackerResource {
     @PUT
     @Produces({"application/zip", "application/x-tar"})
     public Map<String, byte[]> unpack(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-        return process(TikaResource.getInputStream(is, new Metadata(), httpHeaders, info), httpHeaders, info, false);
+        try (TikaInputStream tis = TikaResource.getInputStream(is, new Metadata(), httpHeaders, info)) {
+            return process(tis, httpHeaders, info, false);
+        }
     }
 
     @Path("/all{id:(/.*)?}")
     @PUT
     @Produces({"application/zip", "application/x-tar"})
     public Map<String, byte[]> unpackAll(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-        return process(TikaResource.getInputStream(is, new Metadata(), httpHeaders, info), httpHeaders, info, true);
+        try (TikaInputStream tis = TikaResource.getInputStream(is, new Metadata(), httpHeaders, info)) {
+            return process(tis, httpHeaders, info, true);
+        }
     }
 
     /**
@@ -287,7 +291,8 @@ public class UnpackerResource {
 
             if (!name.contains(".") && contentType != null) {
                 try {
-                    String ext = TikaLoader.getMimeTypes()
+                    String ext = TikaLoader
+                            .getMimeTypes()
                             .forName(contentType)
                             .getExtension();
 

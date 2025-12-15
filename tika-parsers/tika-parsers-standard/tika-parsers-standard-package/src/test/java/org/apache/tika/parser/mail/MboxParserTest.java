@@ -58,8 +58,8 @@ public class MboxParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
 
-        try (InputStream stream = getResourceAsStream("/test-documents/single_mail.mbox")) {
-            mboxParser.parse(TikaInputStream.get(stream), handler, metadata, context);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/single_mail.mbox")) {
+            mboxParser.parse(tis, handler, metadata, context);
         }
 
         Metadata firstMail = mboxParser.getTrackingMetadata().get(0);

@@ -27,8 +27,7 @@ import org.apache.tika.parser.ParseContext;
  * Detector to identify zero length files as application/x-zerovalue
  */
 public class ZeroSizeFileDetector implements Detector {
-    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
-            throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
         if (tis != null) {
             try {
                 tis.mark(1);

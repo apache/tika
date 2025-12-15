@@ -77,10 +77,10 @@ public class OutlookPSTParser implements Parser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
-        TikaInputStream inner = TikaInputStream.get(tis);
         PSTFile pstFile = null;
         try {
-            pstFile = new PSTFile(inner.getFile().getPath());
+            tis.setCloseShield();
+            pstFile = new PSTFile(tis.getFile());
             metadata.set(Metadata.CONTENT_LENGTH, valueOf(pstFile.getFileHandle().length()));
             boolean isValid = pstFile.getFileHandle().getFD().valid();
             metadata.set(PST.IS_VALID, isValid);
@@ -103,6 +103,7 @@ public class OutlookPSTParser implements Parser {
                     //swallow closing exception
                 }
             }
+            tis.removeCloseShield();
         }
 
         xhtml.endDocument();

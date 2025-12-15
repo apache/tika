@@ -56,9 +56,11 @@ public class MetadataResource {
     @Produces({"text/csv", "application/json"})
     @Path("form")
     public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info) throws Exception {
-        return Response
-                .ok(parseMetadata(TikaInputStream.get(att.getObject(InputStream.class)), new Metadata(), att.getHeaders(), info))
-                .build();
+        try (TikaInputStream tis = TikaInputStream.get(att.getObject(InputStream.class))) {
+            return Response
+                    .ok(parseMetadata(tis, new Metadata(), att.getHeaders(), info))
+                    .build();
+        }
     }
 
     /**
@@ -96,9 +98,11 @@ public class MetadataResource {
     @Produces({"text/csv", "application/json"})
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
         Metadata metadata = new Metadata();
-        return Response
-                .ok(parseMetadata(TikaResource.getInputStream(is, metadata, httpHeaders, info), metadata, httpHeaders.getRequestHeaders(), info))
-                .build();
+        try (TikaInputStream tis = TikaResource.getInputStream(is, metadata, httpHeaders, info)) {
+            return Response
+                    .ok(parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(), info))
+                    .build();
+        }
     }
 
     /**
@@ -134,8 +138,8 @@ public class MetadataResource {
         Response.Status defaultErrorResponse = Response.Status.BAD_REQUEST;
         Metadata metadata = new Metadata();
         boolean success = false;
-        try {
-            parseMetadata(TikaResource.getInputStream(is, metadata, httpHeaders, info), metadata, httpHeaders.getRequestHeaders(), info);
+        try (TikaInputStream tis = TikaResource.getInputStream(is, metadata, httpHeaders, info)) {
+            parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(), info);
             // once we've parsed the document successfully, we should use NOT_FOUND
             // if we did not see the field
             defaultErrorResponse = Response.Status.NOT_FOUND;

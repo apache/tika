@@ -325,11 +325,13 @@ public class UnpackerResourceTest extends CXFTestBase {
                 break;
             }
         }
-        assertEquals("image/png", TikaLoader
-                .loadDefault()
-                .loadDetectors()
-                .detect(TikaInputStream.get(renderedImage), new Metadata(), new ParseContext())
-                .toString());
+        try (TikaInputStream tis = TikaInputStream.get(renderedImage)) {
+            assertEquals("image/png", TikaLoader
+                    .loadDefault()
+                    .loadDetectors()
+                    .detect(tis, new Metadata(), new ParseContext())
+                    .toString());
+        }
 
         try (InputStream is = new ByteArrayInputStream(renderedImage)) {
             BufferedImage image = ImageIO.read(is);

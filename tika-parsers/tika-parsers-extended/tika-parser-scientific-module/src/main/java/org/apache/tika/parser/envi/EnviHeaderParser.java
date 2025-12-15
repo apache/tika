@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
@@ -75,7 +74,8 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
 
         // The following code was taken from the TXTParser
         // Automatically detect the character encoding
-        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(tis),
+        tis.setCloseShield();
+        try (AutoDetectReader reader = new AutoDetectReader(tis,
                 metadata, getEncodingDetector(context))) {
             Charset charset = reader.getCharset();
             // deprecated, see TIKA-431
@@ -86,6 +86,8 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
             xhtml.endDocument();
         } catch (IOException | TikaException e) {
             LOG.error("Error reading input data tis.", e);
+        } finally {
+            tis.removeCloseShield();
         }
 
     }

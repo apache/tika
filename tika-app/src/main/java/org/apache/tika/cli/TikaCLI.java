@@ -193,7 +193,7 @@ public class TikaCLI {
         public void process(TikaInputStream tis, OutputStream output, Metadata metadata) throws Exception {
             PrintWriter writer = new PrintWriter(getOutputWriter(output, encoding));
             writer.println(detector
-                    .detect(tis, metadata, new ParseContext())
+                    .detect(tis, metadata, context)
                     .toString());
             writer.flush();
         }

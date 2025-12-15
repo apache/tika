@@ -23,13 +23,14 @@ import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.ParseContext;
 
-public class FileCommandDetectorTest {
+public class FileCommandDetectorTest extends TikaTest {
 
     // Use undeclared_entity.xml instead of basic_embedded.xml because
     // basic_embedded.xml has <mock> root which triggers custom mime type

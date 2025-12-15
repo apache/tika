@@ -120,8 +120,8 @@ public class ParserContainerExtractor implements ContainerExtractor {
                 File file = stream.getFile();
 
                 // Let the handler process the embedded resource
-                try (TikaInputStream input = TikaInputStream.get(file.toPath())) {
-                    handler.handle(filename, type, input, parseContext);
+                try (TikaInputStream tis = TikaInputStream.get(file.toPath())) {
+                    handler.handle(filename, type, tis);
                 }
 
                 // Recurse

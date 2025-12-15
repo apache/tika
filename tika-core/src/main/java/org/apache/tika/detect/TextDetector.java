@@ -108,12 +108,11 @@ public class TextDetector implements Detector {
      *
      * @param tis      document input stream, or <code>null</code>
      * @param metadata ignored
-     * @param parseContext the parse context
+     * @param context the parse context
      * @return "text/plain" if the input stream suggest a text document,
      * "application/octet-stream" otherwise
      */
-    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
-            throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext context) throws IOException {
         if (tis == null) {
             return MediaType.OCTET_STREAM;
         }

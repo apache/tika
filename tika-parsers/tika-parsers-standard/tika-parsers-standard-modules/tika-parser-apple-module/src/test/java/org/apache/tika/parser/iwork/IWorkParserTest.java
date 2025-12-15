@@ -61,11 +61,15 @@ public class IWorkParserTest extends TikaTest {
      */
     @Test
     public void testStreamNotClosed() throws Exception {
-        InputStream input = getResourceAsStream("/test-documents/testKeynote.key");
-        Metadata metadata = new Metadata();
-        ContentHandler handler = new BodyContentHandler();
-        iWorkParser.parse(TikaInputStream.get(input), handler, metadata, new ParseContext());
-        input.read();   // Will throw an Exception if the stream was already closed.
+        TikaInputStream tis = getResourceAsStream("/test-documents/testKeynote.key");
+        try {
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            iWorkParser.parse(tis, handler, metadata, new ParseContext());
+            tis.read();   // Will throw an Exception if the stream was already closed.
+        } finally {
+            tis.close();
+        }
     }
 
     @Test
@@ -424,8 +428,9 @@ public class IWorkParserTest extends TikaTest {
         zips.add(new IWorkDetector());
         Detector d = new CompositeDetector(new DefaultZipContainerDetector(zips));
         try (InputStream is = this.getClass()
-                .getResourceAsStream("/test-documents/testIWorksNPEDetector.zip")) {
-            MediaType mt = d.detect(TikaInputStream.get(is), new Metadata(), new ParseContext());
+                .getResourceAsStream("/test-documents/testIWorksNPEDetector.zip");
+             TikaInputStream tis = TikaInputStream.get(is)) {
+            MediaType mt = d.detect(tis, new Metadata(), new ParseContext());
             assertEquals(MediaType.application("zip"), mt);
         }
     }

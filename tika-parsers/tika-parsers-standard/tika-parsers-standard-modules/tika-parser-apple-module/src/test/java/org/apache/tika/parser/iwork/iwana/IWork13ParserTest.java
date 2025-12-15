@@ -18,7 +18,6 @@ package org.apache.tika.parser.iwork.iwana;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.InputStream;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -51,10 +50,11 @@ public class IWork13ParserTest extends TikaTest {
 
     @Test
     public void testParseKeynote13() throws Exception {
-        InputStream input = getResourceAsStream("/test-documents/testKeynote2013.key");
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
-        iWorkParser.parse(TikaInputStream.get(input), handler, metadata, parseContext);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testKeynote2013.key")) {
+            iWorkParser.parse(tis, handler, metadata, parseContext);
+        }
 
         assertEquals(9, metadata.size());
         assertEquals(IWork13PackageParser.IWork13DocumentType.KEYNOTE13.getType().toString(),
@@ -63,10 +63,12 @@ public class IWork13ParserTest extends TikaTest {
 
     @Test
     public void testParseNumbers13() throws Exception {
-        InputStream input = getResourceAsStream("/test-documents/testNumbers2013.numbers");
+        ;
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
-        iWorkParser.parse(TikaInputStream.get(input), handler, metadata, parseContext);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testNumbers2013.numbers")) {
+            iWorkParser.parse(tis, handler, metadata, parseContext);
+        }
 
         // Currently parsing is a no-op, and we can't get the type without
         //  decoding the Snappy stream
@@ -79,10 +81,11 @@ public class IWork13ParserTest extends TikaTest {
 
     @Test
     public void testParsePages13() throws Exception {
-        InputStream input = getResourceAsStream("/test-documents/testPages2013.pages");
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
-        iWorkParser.parse(TikaInputStream.get(input), handler, metadata, parseContext);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testPages2013.pages")) {
+            iWorkParser.parse(tis, handler, metadata, parseContext);
+        }
 
         // Currently parsing is a no-op, and we can't get the type without
         //  decoding the Snappy stream

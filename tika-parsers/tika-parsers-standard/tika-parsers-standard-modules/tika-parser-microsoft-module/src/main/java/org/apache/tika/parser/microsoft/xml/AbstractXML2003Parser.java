@@ -18,7 +18,6 @@ package org.apache.tika.parser.microsoft.xml;
 
 import java.io.IOException;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -90,17 +89,19 @@ public abstract class AbstractXML2003Parser implements Parser {
         xhtml.startDocument();
 
         TaggedContentHandler tagged = new TaggedContentHandler(xhtml);
+        tis.setCloseShield();
         try {
             //need to get new SAXParser because
             //an attachment might require another SAXParser
             //mid-parse
-            XMLReaderUtils.getSAXParser().parse(CloseShieldInputStream.wrap(tis),
+            XMLReaderUtils.getSAXParser().parse(tis,
                     new EmbeddedContentHandler(
                             getContentHandler(tagged, metadata, context)));
         } catch (SAXException e) {
             WriteLimitReachedException.throwIfWriteLimitReached(e);
             throw new TikaException("XML parse error", e);
         } finally {
+            tis.removeCloseShield();
             xhtml.endDocument();
         }
     }

@@ -109,7 +109,7 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
                     MediaType mediaType = streamingZipDetector.detect(input, new Metadata(), new ParseContext());
                     assertEquals(ZipContainerDetectorBase.XPS, mediaType);
                 }
-                try (TikaInputStream input = TikaInputStream.get(
+                try (TikaInputStream tis = TikaInputStream.get(
                 Paths.get(ODFParserTest.class.getResource(
                         "/test-documents/" + file).toURI()))) {
                     MediaType mediaType = zipContainerDetector.detect(input, new Metadata(), new ParseContext());

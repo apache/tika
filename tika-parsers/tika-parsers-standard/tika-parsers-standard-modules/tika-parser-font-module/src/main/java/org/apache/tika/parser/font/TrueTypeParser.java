@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.fontbox.ttf.NameRecord;
 import org.apache.fontbox.ttf.NamingTable;
 import org.apache.fontbox.ttf.TTFParser;
@@ -67,14 +66,16 @@ public class TrueTypeParser implements Parser {
         TrueTypeFont font = null;
         try {
             TTFParser parser = new TTFParser();
-            if (tis != null && tis.hasFile()) {
+            if (tis.hasFile()) {
                 try (RandomAccessRead rar = new RandomAccessReadBufferedFile(tis.getFile())) {
                     font = parser.parse(rar);
                 }
             } else {
-                try (RandomAccessRead rar =
-                             new RandomAccessReadBuffer(CloseShieldInputStream.wrap(tis))) {
+                tis.setCloseShield();
+                try (RandomAccessRead rar = new RandomAccessReadBuffer(tis)) {
                     font = parser.parse(rar);
+                } finally {
+                    tis.removeCloseShield();
                 }
             }
 

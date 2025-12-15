@@ -35,14 +35,13 @@ public class FictionBookParserTest {
         try (InputStream input = FictionBookParserTest.class
                 .getResourceAsStream("/test-documents/test.fb2")) {
             ContainerExtractor extractor = new ParserContainerExtractor();
-            TikaInputStream stream = TikaInputStream.get(input);
-            ParseContext context = new ParseContext();
-
-            assertEquals(true, extractor.isSupported(stream, context));
+            TikaInputStream tis = TikaInputStream.get(input);
+            ParseContext parseContext = new ParseContext();
+            assertEquals(true, extractor.isSupported(tis, parseContext));
 
             // Process it
             TikaTest.TrackingHandler handler = new TikaTest.TrackingHandler();
-            extractor.extract(stream, null, handler, context);
+            extractor.extract(tis, null, handler, parseContext);
 
             assertEquals(2, handler.filenames.size());
         }

@@ -614,8 +614,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         // Have we already output this one?
         // (Only expose each individual image once)
         if (!pictures.hasOutput(picture)) {
-            TikaInputStream stream = TikaInputStream.get(picture.getContent());
-            handleEmbeddedResource(stream, filename, null, mimeType, xhtml, false);
+            TikaInputStream tis = TikaInputStream.get(picture.getContent());
+            handleEmbeddedResource(tis, filename, null, mimeType, xhtml, false);
             pictures.recordOutput(picture);
         }
     }

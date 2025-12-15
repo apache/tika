@@ -59,8 +59,7 @@ public class StreamingZipContainerDetector extends DefaultZipContainerDetector {
 
 
     @Override
-    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
-            throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) throws IOException {
         // Check if we have access to the document
         if (tis == null) {
             return MediaType.OCTET_STREAM;

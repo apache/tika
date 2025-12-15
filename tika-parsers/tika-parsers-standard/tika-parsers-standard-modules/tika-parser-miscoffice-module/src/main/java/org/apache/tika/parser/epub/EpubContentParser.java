@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -46,9 +45,12 @@ public class EpubContentParser implements Parser {
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
-        XMLReaderUtils
-                .parseSAX(CloseShieldInputStream.wrap(tis), handler,
-                        context);
+        tis.setCloseShield();
+        try {
+            XMLReaderUtils.parseSAX(tis, handler, context);
+        } finally {
+            tis.removeCloseShield();
+        }
     }
 
 }

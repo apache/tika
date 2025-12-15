@@ -82,13 +82,16 @@ public class ProbabilisticMimeDetectionTest {
 
     @Test
     public void testByteOrderMark() throws Exception {
-        assertEquals(MediaType.TEXT_PLAIN, proDetector
-                .detect(TikaInputStream.get("\ufefftest".getBytes(UTF_16LE)), new Metadata(), new ParseContext()));
-        assertEquals(MediaType.TEXT_PLAIN, proDetector
-                .detect(TikaInputStream.get("\ufefftest".getBytes(UTF_16BE)), new Metadata(), new ParseContext()));
+        try (TikaInputStream tis = TikaInputStream.get("\ufefftest".getBytes(UTF_16LE))) {
+            assertEquals(MediaType.TEXT_PLAIN, proDetector.detect(tis, new Metadata(), new ParseContext())));
+        }
+        try (TikaInputStream tis = TikaInputStream.get("\ufefftest".getBytes(UTF_16BE))) {
+            assertEquals(MediaType.TEXT_PLAIN, proDetector.detect(tis, new Metadata(), new ParseContext())));
+        }
 
-        assertEquals(MediaType.TEXT_PLAIN, proDetector
-                .detect(TikaInputStream.get("\ufefftest".getBytes(UTF_8)), new Metadata(), new ParseContext()));
+        try (TikaInputStream tis = TikaInputStream.get("\ufefftest".getBytes(UTF_8))) {
+            assertEquals(MediaType.TEXT_PLAIN, proDetector.detect(tis, new Metadata(), new ParseContext())));
+        }
     }
 
     @Test
@@ -139,7 +142,7 @@ public class ProbabilisticMimeDetectionTest {
             throws IOException {
         assertNotNull(in, "Test stream: [" + urlOrFileName + "] is null!");
         try (TikaInputStream tis = TikaInputStream.get(in)) {
-            Metadata metadata = new Metadata();
+            Metadata metadata = new Metadata(), new ParseContext());
             String mime = this.proDetector.detect(tis, metadata, new ParseContext()).toString();
             assertEquals(expected, mime,
                     urlOrFileName + " is not properly detected: detected.");
@@ -160,18 +163,24 @@ public class ProbabilisticMimeDetectionTest {
      */
     @Test
     public void testEmptyDocument() throws IOException {
-        assertEquals(MediaType.OCTET_STREAM,
-                proDetector.detect(TikaInputStream.get(new byte[0]), new Metadata(), new ParseContext()));
+        try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
+            assertEquals(MediaType.OCTET_STREAM,
+                    proDetector.detect(tis, new Metadata(), new ParseContext()));
+        }
 
-        Metadata namehint = new Metadata();
+        Metadata namehint = new Metadata(), new ParseContext());
         namehint.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.txt");
-        assertEquals(MediaType.TEXT_PLAIN,
-                proDetector.detect(TikaInputStream.get(new byte[0]), namehint, new ParseContext()));
+        try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
+            assertEquals(MediaType.TEXT_PLAIN,
+                    proDetector.detect(tis, namehint, new ParseContext()));
+        }
 
         Metadata typehint = new Metadata();
         typehint.set(Metadata.CONTENT_TYPE, "text/plain");
-        assertEquals(MediaType.TEXT_PLAIN,
-                proDetector.detect(TikaInputStream.get(new byte[0]), typehint, new ParseContext()));
+        try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
+            assertEquals(MediaType.TEXT_PLAIN,
+                    proDetector.detect(tis, typehint, new ParseContext()));
+        }
 
     }
 
@@ -184,8 +193,9 @@ public class ProbabilisticMimeDetectionTest {
      */
     @Test
     public void testNotXML() throws IOException {
-        assertEquals(MediaType.TEXT_PLAIN, proDetector
-                .detect(TikaInputStream.get("<!-- test -->".getBytes(UTF_8)), new Metadata(), new ParseContext()));
+        try (TikaInputStream tis = TikaInputStream.get("<!-- test -->".getBytes(UTF_8))) {
+            assertEquals(MediaType.TEXT_PLAIN, proDetector.detect(tis, new Metadata(), new ParseContext())));
+        }
     }
 
     /**
@@ -213,25 +223,29 @@ public class ProbabilisticMimeDetectionTest {
         Metadata metadata;
 
         // With a filename, picks the right one
-        metadata = new Metadata();
+        metadata = new Metadata(), new ParseContext());
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.hello.world");
-        assertEquals(helloType, proDetector.detect(TikaInputStream.get(helloWorld), metadata, new ParseContext()));
+        try (TikaInputStream tis = TikaInputStream.get(helloWorld)) {
+            assertEquals(helloType, proDetector.detect(tis, metadata, new ParseContext()));
+        }
 
-        metadata = new Metadata();
+        metadata = new Metadata(), new ParseContext());
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.x-hello-world");
-        assertEquals(helloXType,
-                proDetector.detect(TikaInputStream.get(helloWorld), metadata, new ParseContext()));
+        try (TikaInputStream tis = TikaInputStream.get(helloWorld)) {
+            assertEquals(helloXType, proDetector.detect(tis, metadata, new ParseContext()));
+        }
 
         // Without, goes for the one that sorts last
-        metadata = new Metadata();
+        metadata = new Metadata(), new ParseContext());
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "testingTESTINGtesting");
-        assertEquals(helloXType,
-                proDetector.detect(TikaInputStream.get(helloWorld), metadata, new ParseContext()));
+        try (TikaInputStream tis = TikaInputStream.get(helloWorld)) {
+            assertEquals(helloXType, proDetector.detect(tis, metadata, new ParseContext()));
+        }
     }
 
     @Test
     public void testTIKA2237() throws IOException {
-        Metadata metadata = new Metadata();
+        Metadata metadata = new Metadata(), new ParseContext());
         metadata.add(Metadata.CONTENT_TYPE, MediaType.text("javascript").toString());
         TikaInputStream tis = TikaInputStream.get(
                 ("function() {};\n" + "try {\n" + "    window.location = 'index.html';\n" +

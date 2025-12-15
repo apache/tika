@@ -27,7 +27,6 @@ import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.FeedException;
 import com.rometools.rome.io.SyndFeedInput;
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -86,11 +85,12 @@ public class FeedParser implements Parser {
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         // set the encoding?
+        tis.setCloseShield();
         try {
             SyndFeedInput input = new SyndFeedInput();
             input.setAllowDoctypes(false);
             SyndFeed feed =
-                    input.build(new InputSource(CloseShieldInputStream.wrap(tis)));
+                    input.build(new InputSource(tis));
 
             String title = stripTags(feed.getTitleEx());
             String description = stripTags(feed.getDescriptionEx());
@@ -127,6 +127,8 @@ public class FeedParser implements Parser {
             xhtml.endDocument();
         } catch (FeedException e) {
             throw new TikaException("RSS parse error", e);
+        } finally {
+            tis.removeCloseShield();
         }
 
     }

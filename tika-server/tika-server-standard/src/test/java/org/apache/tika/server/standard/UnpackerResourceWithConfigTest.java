@@ -110,11 +110,13 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
                 break;
             }
         }
-        assertEquals("image/tiff", TikaLoader
-                .loadDefault()
-                .loadDetectors()
-                .detect(TikaInputStream.get(renderedImage), new Metadata(), new ParseContext())
-                .toString());
+        try (TikaInputStream tis = TikaInputStream.get(renderedImage)) {
+            assertEquals("image/tiff", TikaLoader
+                    .loadDefault()
+                    .loadDetectors()
+                    .detect(tis, new Metadata(), new ParseContext())
+                    .toString());
+        }
 
         try (InputStream is = new ByteArrayInputStream(renderedImage)) {
             BufferedImage image = ImageIO.read(is);
@@ -173,11 +175,13 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
                 break;
             }
         }
-        assertEquals("image/jpeg", TikaLoader
-                .loadDefault()
-                .loadDetectors()
-                .detect(TikaInputStream.get(renderedImage), new Metadata(), new ParseContext())
-                .toString());
+        try (TikaInputStream tis = TikaInputStream.get(renderedImage)) {
+            assertEquals("image/jpeg", TikaLoader
+                    .loadDefault()
+                    .loadDetectors()
+                    .detect(tis, new Metadata(), new ParseContext())
+                    .toString());
+        }
 
         try (InputStream is = new ByteArrayInputStream(renderedImage)) {
             BufferedImage image = ImageIO.read(is);

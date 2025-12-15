@@ -46,9 +46,9 @@ public class FontParsersTest extends TikaTest {
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
 
-        try (TikaInputStream stream = TikaInputStream
+        try (TikaInputStream tis = TikaInputStream
                 .get(getResourceAsUrl("/test-documents/testAFM.afm"))) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, context);
+            AUTO_DETECT_PARSER.parse(tis, handler, metadata, context);
         }
 
         assertEquals("application/x-font-adobe-metric", metadata.get(Metadata.CONTENT_TYPE));
@@ -79,9 +79,9 @@ public class FontParsersTest extends TikaTest {
         //http://www.google.com/fonts/specimen/Open+Sans
         //...despite the copyright in the file's metadata.
 
-        try (TikaInputStream stream = TikaInputStream
+        try (TikaInputStream tis = TikaInputStream
                 .get(getResourceAsUrl("/test-documents/testTrueType3.ttf"))) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, context);
+            AUTO_DETECT_PARSER.parse(tis, handler, metadata, context);
         }
 
         assertEquals("application/x-font-ttf", metadata.get(Metadata.CONTENT_TYPE));

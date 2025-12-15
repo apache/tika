@@ -23,7 +23,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.common.usermodel.Hyperlink;
 import org.apache.poi.hslf.exceptions.EncryptedPowerPointFileException;
 import org.apache.poi.hslf.model.HeadersFooters;
@@ -618,28 +617,25 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
     private void handleDataStream(InputStream dataStream, String objID, String progId,
                                   XHTMLContentHandler xhtml) {
         //TODO -- inject progId into the metadata of the embedded file
-        try (TikaInputStream stream = TikaInputStream.get(dataStream)) {
+        try (TikaInputStream tis = TikaInputStream.get(dataStream)) {
             String mediaType = null;
             if ("Excel.Chart.8".equals(progId)) {
                 mediaType = "application/vnd.ms-excel";
             } else {
-                MediaType mt = getDetector().detect(stream, new Metadata(), context);
+                MediaType mt = getDetector().detect(tis, new Metadata(), context);
                 mediaType = mt.toString();
             }
             if (mediaType
                     .equals("application/x-tika-msoffice-embedded; format=comp_obj") ||
                     mediaType.equals("application/x-tika-msoffice")) {
-                POIFSFileSystem poifs = new POIFSFileSystem(CloseShieldInputStream.wrap(stream));
-
-                try {
+                tis.setCloseShield();
+                try (POIFSFileSystem poifs = new POIFSFileSystem(tis)) {
                     handleEmbeddedOfficeDoc(poifs.getRoot(), objID, xhtml, false);
                 } finally {
-                    if (poifs != null) {
-                        poifs.close();
-                    }
+                    tis.removeCloseShield();
                 }
             } else {
-                handleEmbeddedResource(stream, objID, objID, mediaType, xhtml, false);
+                handleEmbeddedResource(tis, objID, objID, mediaType, xhtml, false);
             }
         } catch (SecurityException e) {
             throw e;

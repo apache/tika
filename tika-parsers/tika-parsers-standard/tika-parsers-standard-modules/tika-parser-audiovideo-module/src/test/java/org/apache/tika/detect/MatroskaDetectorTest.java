@@ -23,12 +23,13 @@ import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 
-public class MatroskaDetectorTest {
+public class MatroskaDetectorTest extends TikaTest {
 
     private final MatroskaDetector detector = new MatroskaDetector();
 
@@ -62,12 +63,16 @@ public class MatroskaDetectorTest {
                 detector.detect(null, new Metadata(), new ParseContext()));
 
         byte[] bytes = new byte[10];
-        assertEquals(MediaType.OCTET_STREAM,
-                detector.detect(TikaInputStream.get(bytes), new Metadata(), new ParseContext()));
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            assertEquals(MediaType.OCTET_STREAM,
+                    detector.detect(tis, new Metadata(), new ParseContext()));
+        }
 
         bytes = new byte[0];
-        assertEquals(MediaType.OCTET_STREAM,
-                detector.detect(TikaInputStream.get(bytes), new Metadata(), new ParseContext()));
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            assertEquals(MediaType.OCTET_STREAM,
+                    detector.detect(tis, new Metadata(), new ParseContext()));
+        }
 
     }
 }

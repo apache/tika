@@ -34,7 +34,6 @@ import static org.apache.tika.detect.zip.CompressorConstants.ZSTD;
 import static org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -55,7 +54,6 @@ import org.apache.commons.compress.compressors.snappy.FramedSnappyCompressorInpu
 import org.apache.commons.compress.compressors.snappy.SnappyCompressorInputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
 import org.apache.commons.compress.compressors.z.ZCompressorInputStream;
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -205,7 +203,7 @@ public class CompressorParser implements Parser {
         // any associated resources, but the underlying document stream
         // should not be closed
         // TikaInputStream always supports mark
-        InputStream wrappedStream = CloseShieldInputStream.wrap(tis);
+        tis.setCloseShield();
 
         CompressorInputStream cis;
         try {
@@ -219,15 +217,16 @@ public class CompressorParser implements Parser {
             //to avoid calling CompressorStreamFactory.detect() twice
             String name = getStreamName(metadata);
             if (name != null) {
-                cis = factory.createCompressorInputStream(name, wrappedStream);
+                cis = factory.createCompressorInputStream(name, tis);
             } else {
-                cis = factory.createCompressorInputStream(wrappedStream);
+                cis = factory.createCompressorInputStream(tis);
                 MediaType type = getMediaType(cis);
                 if (!type.equals(MediaType.OCTET_STREAM)) {
                     metadata.set(CONTENT_TYPE, type.toString());
                 }
             }
         } catch (CompressorException e) {
+            tis.removeCloseShield();
             if (e.getCause() instanceof MemoryLimitException) {
                 throw new TikaMemoryLimitException(e.getMessage());
             }
@@ -263,6 +262,7 @@ public class CompressorParser implements Parser {
             }
         } finally {
             cis.close();
+            tis.removeCloseShield();
         }
 
         xhtml.endDocument();

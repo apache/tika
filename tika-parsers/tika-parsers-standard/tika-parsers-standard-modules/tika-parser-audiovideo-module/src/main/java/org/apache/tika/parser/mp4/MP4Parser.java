@@ -17,8 +17,6 @@
 package org.apache.tika.parser.mp4;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
@@ -98,34 +96,33 @@ public class MP4Parser implements Parser {
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
-        try (InputStream is = Files.newInputStream(tis.getPath())) {
 
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-            xhtml.startDocument();
-            com.drew.metadata.Metadata mp4Metadata = new com.drew.metadata.Metadata();
-            Mp4BoxHandler boxHandler = new TikaMp4BoxHandler(mp4Metadata, metadata, xhtml);
-            try {
-                Mp4Reader.extract(is, boxHandler);
-            } catch (RuntimeSAXException e) {
-                throw (SAXException) e.getCause();
-            }
-            //TODO -- figure out how to get IOExceptions out of boxhandler. Mp4Reader
-            //currently swallows IOExceptions.
-            final Collection<Mp4Directory> mp4Directories =
-                    mp4Metadata.getDirectoriesOfType(Mp4Directory.class);
-            final Set<String> errorMessages = processMp4Directories(mp4Directories, metadata);
-
-            // Despite the brand, if we ONLY have audio streams with no video
-            if (isAudioOnly(mp4Directories)) {
-                // Mark this as audio/mp4
-                metadata.set(Metadata.CONTENT_TYPE, AUDIO_MP4.toString());
-            }
-
-            for (String m : errorMessages) {
-                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, m);
-            }
-            xhtml.endDocument();
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
+        com.drew.metadata.Metadata mp4Metadata = new com.drew.metadata.Metadata();
+        Mp4BoxHandler boxHandler = new TikaMp4BoxHandler(mp4Metadata, metadata, xhtml);
+        //we used to spool to disk and then read from that with sannies parser.
+        //we think that drewnoakes' parser streams the data so we don't need to spool
+        try {
+            Mp4Reader.extract(tis, boxHandler);
+        } catch (RuntimeSAXException e) {
+            throw (SAXException) e.getCause();
         }
+        //TODO -- figure out how to get IOExceptions out of boxhandler. Mp4Reader
+        //currently swallows IOExceptions.
+        final Collection<Mp4Directory> mp4Directories = mp4Metadata.getDirectoriesOfType(Mp4Directory.class);
+        final Set<String> errorMessages = processMp4Directories(mp4Directories, metadata);
+
+        // Despite the brand, if we ONLY have audio streams with no video
+        if (isAudioOnly(mp4Directories)) {
+            // Mark this as audio/mp4
+            metadata.set(Metadata.CONTENT_TYPE, AUDIO_MP4.toString());
+        }
+
+        for (String m : errorMessages) {
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, m);
+        }
+        xhtml.endDocument();
     }
 
     private Set<String> processMp4Directories(Collection<Mp4Directory> mp4Directories,

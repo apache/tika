@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Epub;
 import org.apache.tika.metadata.Metadata;
@@ -83,18 +82,7 @@ public class EpubParserTest extends TikaTest {
         assert (tocIndex < ch1);
         assert (tocIndex < ch2);
         assert (ch1 < ch2);
-
-        Parser p = TikaLoader.load(
-                        getConfigPath(EpubParserTest.class, "tika-config-epub-streaming.json"))
-                .loadAutoDetectParser();
-        xml = getXML("testEPUB.epub", p).xml;
-        tocIndex = xml.indexOf("h3 class=\"toc_heading\">Table of Contents<");
-        ch1 = xml.indexOf("<h1>Chapter 1");
-        ch2 = xml.indexOf("<h1>Chapter 2");
-        assert (tocIndex > -1 && ch1 > -1 && ch2 > -1);
-        assert (tocIndex > ch1);
-        assert (tocIndex > ch2);
-        assert (ch1 < ch2);
+        //remove streaming test
     }
 
 

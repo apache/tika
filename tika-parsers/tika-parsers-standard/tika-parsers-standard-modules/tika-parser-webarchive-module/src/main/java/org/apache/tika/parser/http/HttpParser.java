@@ -24,7 +24,6 @@ import java.nio.channels.ReadableByteChannel;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.netpreserve.jwarc.LengthedBody;
 import org.netpreserve.jwarc.MessageBody;
 import org.netpreserve.jwarc.MessageHeaders;
@@ -62,8 +61,8 @@ public class HttpParser implements Parser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
-        try (ReadableByteChannel channel =
-                     Channels.newChannel(CloseShieldInputStream.wrap(tis))) {
+        tis.setCloseShield();
+        try (ReadableByteChannel channel = Channels.newChannel(tis)) {
 
             int len = channel.read(buffer);
             buffer.flip();
@@ -86,6 +85,7 @@ public class HttpParser implements Parser {
                 }
             }
         } finally {
+            tis.removeCloseShield();
             xhtml.endDocument();
         }
     }
