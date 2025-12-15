@@ -103,6 +103,22 @@ public class TikaGrpcServerTest {
         LOG.info("Setting javaPath to: {}", javaPath);
         LOG.info("java.home is: {}", javaHome);
 
+        // Update basePath in fetchers to use current working directory
+        @SuppressWarnings("unchecked")
+        Map<String, Object> fetchersSection = (Map<String, Object>) configMap.get("fetchers");
+        if (fetchersSection != null) {
+            String targetPath = new File("target").getAbsolutePath();
+            for (Map.Entry<String, Object> fetcherEntry : fetchersSection.entrySet()) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> fetcherConfig = (Map<String, Object>) fetcherEntry.getValue();
+                if (fetcherConfig.containsKey("file-system-fetcher")) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> fsConfig = (Map<String, Object>) fetcherConfig.get("file-system-fetcher");
+                    fsConfig.put("basePath", targetPath);
+                }
+            }
+        }
+
         // Write the modified config
         String modifiedConfig = OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(configMap);
         FileUtils.writeStringToFile(tikaConfig, modifiedConfig, StandardCharsets.UTF_8);
