@@ -21,11 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -67,10 +64,10 @@ public class ODFParserTest extends TikaTest {
     @Test
     public void testOO3() throws Exception {
         for (Parser parser : getParsers()) {
-            try (InputStream input = getResourceAsStream("/test-documents/testODFwithOOo3.odt")) {
+            try (TikaInputStream tis = getResourceAsStream("/test-documents/testODFwithOOo3.odt")) {
                 Metadata metadata = new Metadata();
                 ContentHandler handler = new BodyContentHandler();
-                parser.parse(input, handler, metadata, new ParseContext());
+                parser.parse(tis, handler, metadata, new ParseContext());
 
                 assertEquals("application/vnd.oasis.opendocument.text",
                         metadata.get(Metadata.CONTENT_TYPE));
@@ -88,10 +85,10 @@ public class ODFParserTest extends TikaTest {
     @Test
     public void testOO2() throws Exception {
         for (Parser parser : getParsers()) {
-            try (InputStream input = getResourceAsStream("/test-documents/testOpenOffice2.odt")) {
+            try (TikaInputStream tis = getResourceAsStream("/test-documents/testOpenOffice2.odt")) {
                 Metadata metadata = new Metadata();
                 ContentHandler handler = new BodyContentHandler();
-                parser.parse(input, handler, metadata, new ParseContext());
+                parser.parse(tis, handler, metadata, new ParseContext());
 
                 assertEquals("application/vnd.oasis.opendocument.text",
                         metadata.get(Metadata.CONTENT_TYPE));
@@ -134,10 +131,10 @@ public class ODFParserTest extends TikaTest {
      */
     @Test
     public void testOO2Metadata() throws Exception {
-        try (InputStream input = getResourceAsStream("/test-documents/testOpenOffice2.odf")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testOpenOffice2.odf")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new OpenDocumentParser().parse(input, handler, metadata, new ParseContext());
+            new OpenDocumentParser().parse(tis, handler, metadata, new ParseContext());
 
             assertEquals("application/vnd.oasis.opendocument.formula",
                     metadata.get(Metadata.CONTENT_TYPE));
@@ -190,10 +187,10 @@ public class ODFParserTest extends TikaTest {
      */
     @Test
     public void testOO3Metadata() throws Exception {
-        try (InputStream input = getResourceAsStream("/test-documents/testODFwithOOo3.odt")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testODFwithOOo3.odt")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new OpenDocumentParser().parse(input, handler, metadata, new ParseContext());
+            new OpenDocumentParser().parse(tis, handler, metadata, new ParseContext());
 
             assertEquals("application/vnd.oasis.opendocument.text",
                     metadata.get(Metadata.CONTENT_TYPE));
@@ -235,10 +232,10 @@ public class ODFParserTest extends TikaTest {
 
     @Test
     public void testODPMasterFooter() throws Exception {
-        try (InputStream input = getResourceAsStream("/test-documents/testMasterFooter.odp")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testMasterFooter.odp")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            AUTO_DETECT_PARSER.parse(input, handler, metadata, new ParseContext());
+            AUTO_DETECT_PARSER.parse(tis, handler, metadata, new ParseContext());
 
             String content = handler.toString();
             assertContains("Master footer is here", content);
@@ -247,10 +244,10 @@ public class ODFParserTest extends TikaTest {
 
     @Test
     public void testODTFooter() throws Exception {
-        try (InputStream input = getResourceAsStream("/test-documents/testFooter.odt")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testFooter.odt")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            AUTO_DETECT_PARSER.parse(input, handler, metadata, new ParseContext());
+            AUTO_DETECT_PARSER.parse(tis, handler, metadata, new ParseContext());
 
             String content = handler.toString();
             assertContains("Here is some text...", content);
@@ -261,10 +258,10 @@ public class ODFParserTest extends TikaTest {
 
     @Test
     public void testODSFooter() throws Exception {
-        try (InputStream input = getResourceAsStream("/test-documents/testFooter.ods")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testFooter.ods")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            AUTO_DETECT_PARSER.parse(input, handler, metadata, new ParseContext());
+            AUTO_DETECT_PARSER.parse(tis, handler, metadata, new ParseContext());
 
             String content = handler.toString();
             assertContains("Here is a footer in the center area", content);
@@ -323,10 +320,10 @@ public class ODFParserTest extends TikaTest {
     @Test
     public void testNullStylesInODTFooter() throws Exception {
         Parser parser = new OpenDocumentParser();
-        try (InputStream input = getResourceAsStream("/test-documents/testODT-TIKA-6000.odt")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testODT-TIKA-6000.odt")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            parser.parse(input, handler, metadata, getNonRecursingParseContext());
+            parser.parse(tis, handler, metadata, getNonRecursingParseContext());
 
             assertEquals("application/vnd.oasis.opendocument.text",
                     metadata.get(Metadata.CONTENT_TYPE));
@@ -381,26 +378,25 @@ public class ODFParserTest extends TikaTest {
 
     @Test
     public void testInvalidFromStream() throws Exception {
-        try (InputStream is = getResourceAsUrl("/test-documents/testODTnotaZipFile.odt")
-                .openStream()) {
+        try (TikaInputStream tis = TikaInputStream.get(getResourceAsUrl("/test-documents/testODTnotaZipFile.odt"))) {
             OpenDocumentParser parser = new OpenDocumentParser();
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             assertThrows(IOException.class, () -> {
-                parser.parse(is, handler, metadata, new ParseContext());
+                parser.parse(tis, handler, metadata, new ParseContext());
             });
         }
     }
 
     @Test
     public void testInvalidFromFile() throws Exception {
-        try (TikaInputStream is = TikaInputStream
+        try (TikaInputStream tis = TikaInputStream
                 .get(getResourceAsUrl("/test-documents/testODTnotaZipFile.odt"))) {
             OpenDocumentParser parser = new OpenDocumentParser();
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             assertThrows(IOException.class, () -> {
-                parser.parse(is, handler, metadata, new ParseContext());
+                parser.parse(tis, handler, metadata, new ParseContext());
             });
         }
     }
@@ -417,8 +413,8 @@ public class ODFParserTest extends TikaTest {
         });
 
         assertThrows(EncryptedDocumentException.class, () -> {
-            try (InputStream is = Files.newInputStream(p)) {
-                getRecursiveMetadata(is, false);
+            try (TikaInputStream tis = TikaInputStream.get(p)) {
+                getRecursiveMetadata(tis, false);
             }
         });
 
@@ -432,10 +428,10 @@ public class ODFParserTest extends TikaTest {
     //https://issues.apache.org/jira/browse/ODFTOOLKIT-402
     @Test
     public void testEncryptedODTStream() throws Exception {
-        try (InputStream is = ODFParserTest.class.getResourceAsStream(
-                "/test-documents/testODTEncrypted.odt")) {
+        try (TikaInputStream tis = TikaInputStream.get(
+                ODFParserTest.class.getResourceAsStream("/test-documents/testODTEncrypted.odt"))) {
             assertThrows(TikaException.class, () -> {
-                getRecursiveMetadata(is, false);
+                getRecursiveMetadata(tis, false);
             });
         }
     }
@@ -488,14 +484,14 @@ public class ODFParserTest extends TikaTest {
                     fileName.endsWith(".ods")) {
 
                 XMLResult xmlResult = null;
-                try (InputStream is = TikaInputStream.get(p)) {
-                    xmlResult = getXML(is, AUTO_DETECT_PARSER, new Metadata());
+                try (TikaInputStream tis = TikaInputStream.get(p)) {
+                    xmlResult = getXML(tis, AUTO_DETECT_PARSER, new Metadata());
                 } catch (Exception e) {
                     continue;
                 }
                 try {
                     //just make sure this doesn't throw any exceptions
-                    XMLReaderUtils.parseSAX(new ByteArrayInputStream(xmlResult.xml.getBytes(StandardCharsets.UTF_8)),
+                    XMLReaderUtils.parseSAX(TikaInputStream.get(xmlResult.xml.getBytes(StandardCharsets.UTF_8)),
                             new DefaultHandler(), new ParseContext());
                     filesTested++;
                 } catch (Exception e) {

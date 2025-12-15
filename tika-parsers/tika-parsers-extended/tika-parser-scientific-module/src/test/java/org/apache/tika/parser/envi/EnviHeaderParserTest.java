@@ -20,7 +20,6 @@ import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.IOUtils;
@@ -28,6 +27,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -59,10 +59,10 @@ public class EnviHeaderParserTest {
     @Test
     public void testParseGlobalMetadata() throws Exception {
 
-        try (InputStream stream = EnviHeaderParser.class
-                .getResourceAsStream("/test-documents/envi_test_header.hdr")) {
-            assertNotNull(stream, "Test ENVI file 'envi_test_header.hdr' not found");
-            parser.parse(stream, handler, metadata, new ParseContext());
+        try (TikaInputStream tis = TikaInputStream.get(EnviHeaderParser.class
+                .getResourceAsStream("/test-documents/envi_test_header.hdr"))) {
+            assertNotNull(tis, "Test ENVI file 'envi_test_header.hdr' not found");
+            parser.parse(tis, handler, metadata, new ParseContext());
         }
 
         // Check content of test file
@@ -90,10 +90,10 @@ public class EnviHeaderParserTest {
         ToXMLContentHandler handler = new ToXMLContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = EnviHeaderParser.class
-                .getResourceAsStream("/test-documents/ang20150420t182050_corr_v1e_img.hdr")) {
-            assertNotNull(stream, "Test ENVI file 'ang20150420t182050_corr_v1e_img.hdr' not found");
-            parser.parse(stream, handler, metadata, new ParseContext());
+        try (TikaInputStream tis = TikaInputStream.get(EnviHeaderParser.class
+                .getResourceAsStream("/test-documents/ang20150420t182050_corr_v1e_img.hdr"))) {
+            assertNotNull(tis, "Test ENVI file 'ang20150420t182050_corr_v1e_img.hdr' not found");
+            parser.parse(tis, handler, metadata, new ParseContext());
         }
 
         // Check content of test file

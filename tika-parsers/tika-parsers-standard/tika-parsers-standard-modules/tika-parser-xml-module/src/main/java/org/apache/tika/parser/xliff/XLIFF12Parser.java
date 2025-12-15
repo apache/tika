@@ -17,16 +17,15 @@
 package org.apache.tika.parser.xliff;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -61,15 +60,19 @@ public class XLIFF12Parser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         metadata.set(Metadata.CONTENT_TYPE, XLF_CONTENT_TYPE.toString());
 
         final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
 
-        XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
-                new XLIFF12ContentHandler(xhtml, metadata), context);
+        tis.setCloseShield();
+        try {
+            XMLReaderUtils.parseSAX(tis, new XLIFF12ContentHandler(xhtml, metadata), context);
+        } finally {
+            tis.removeCloseShield();
+        }
 
     }
 

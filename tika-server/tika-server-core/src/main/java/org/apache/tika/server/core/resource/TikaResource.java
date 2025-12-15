@@ -23,11 +23,13 @@ import static org.apache.tika.server.core.resource.RecursiveMetadataResource.HAN
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.TransformerConfigurationException;
@@ -158,7 +160,7 @@ public class TikaResource {
         }
     }
 
-    public static InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders headers, UriInfo uriInfo) {
+    public static TikaInputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders headers, UriInfo uriInfo) {
         try {
             return INPUTSTREAM_FACTORY.getInputStream(is, metadata, headers, uriInfo);
         } catch (IOException e) {
@@ -271,19 +273,19 @@ public class TikaResource {
 
     /**
      * Use this to call a parser and unify exception handling.
-     * NOTE: This call to parse closes the InputStream. DO NOT surround
+     * NOTE: This call to parse closes the TikaInputStream. DO NOT surround
      * the call in an auto-close block.
      *
      * @param parser       parser to use
      * @param logger       logger to use
      * @param path         file path
-     * @param inputStream  inputStream (which is closed by this call!)
+     * @param inputStream  TikaInputStream (which is closed by this call!)
      * @param handler      handler to use
      * @param metadata     metadata
      * @param parseContext parse context
      * @throws IOException wrapper for all exceptions
      */
-    public static void parse(Parser parser, Logger logger, String path, InputStream inputStream, ContentHandler handler, Metadata metadata, ParseContext parseContext)
+    public static void parse(Parser parser, Logger logger, String path, TikaInputStream inputStream, ContentHandler handler, Metadata metadata, ParseContext parseContext)
             throws IOException {
 
         checkIsOperating();
@@ -358,7 +360,7 @@ public class TikaResource {
     @Produces("text/plain")
     @Path("form")
     public StreamingOutput getTextFromMultipart(Attachment att, @Context HttpHeaders httpHeaders, @Context final UriInfo info) throws TikaConfigException, IOException {
-        return produceText(att.getObject(InputStream.class), new Metadata(), preparePostHeaderMap(att, httpHeaders), info);
+        return produceText(TikaInputStream.get(att.getObject(InputStream.class)), new Metadata(), preparePostHeaderMap(att, httpHeaders), info);
     }
 
     /**
@@ -389,11 +391,8 @@ public class TikaResource {
         final Parser parser = createParser();
         logRequest(LOG, "/tika/config", metadata);
 
-        return outputStream -> {
-            Writer writer = new OutputStreamWriter(outputStream, UTF_8);
-            BodyContentHandler body = new BodyContentHandler(new RichTextContentHandler(writer));
-            parse(parser, LOG, info.getPath(), tis, body, metadata, context);
-        };
+        return new ParseStreamingOutput(tis, parser, LOG, info.getPath(), metadata, context,
+                os -> new BodyContentHandler(new RichTextContentHandler(new OutputStreamWriter(os, UTF_8))));
     }
 
     //this is equivalent to text-main in tika-app
@@ -402,7 +401,7 @@ public class TikaResource {
     @Produces("text/plain")
     @Path("main")
     public StreamingOutput getTextMain(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) throws TikaConfigException, IOException {
-        return produceTextMain(is, httpHeaders.getRequestHeaders(), info);
+        return produceTextMain(TikaInputStream.get(is), httpHeaders.getRequestHeaders(), info);
     }
 
     //this is equivalent to text-main (Boilerpipe handler) in tika-app
@@ -411,10 +410,10 @@ public class TikaResource {
     @Produces("text/plain")
     @Path("form/main")
     public StreamingOutput getTextMainFromMultipart(final Attachment att, @Context HttpHeaders httpHeaders, @Context final UriInfo info) throws TikaConfigException, IOException {
-        return produceTextMain(att.getObject(InputStream.class), preparePostHeaderMap(att, httpHeaders), info);
+        return produceTextMain(TikaInputStream.get(att.getObject(InputStream.class)), preparePostHeaderMap(att, httpHeaders), info);
     }
 
-    public StreamingOutput produceTextMain(final InputStream is, MultivaluedMap<String, String> httpHeaders, final UriInfo info) throws TikaConfigException, IOException {
+    public StreamingOutput produceTextMain(final TikaInputStream tis, MultivaluedMap<String, String> httpHeaders, final UriInfo info) throws TikaConfigException, IOException {
         final Parser parser = createParser();
         final Metadata metadata = new Metadata();
         final ParseContext context = new ParseContext();
@@ -423,13 +422,8 @@ public class TikaResource {
 
         logRequest(LOG, "/tika", metadata);
 
-        return outputStream -> {
-            Writer writer = new OutputStreamWriter(outputStream, UTF_8);
-
-            ContentHandler handler = new BoilerpipeContentHandler(writer);
-
-            parse(parser, LOG, info.getPath(), is, handler, metadata, context);
-        };
+        return new ParseStreamingOutput(tis, parser, LOG, info.getPath(), metadata, context,
+                os -> new BoilerpipeContentHandler(new OutputStreamWriter(os, UTF_8)));
     }
 
     @PUT
@@ -440,7 +434,7 @@ public class TikaResource {
         return produceText(getInputStream(is, metadata, httpHeaders, info), metadata, httpHeaders.getRequestHeaders(), info);
     }
 
-    public StreamingOutput produceText(final InputStream is, final Metadata metadata, MultivaluedMap<String, String> httpHeaders, final UriInfo info)
+    public StreamingOutput produceText(final TikaInputStream tis, final Metadata metadata, MultivaluedMap<String, String> httpHeaders, final UriInfo info)
             throws TikaConfigException, IOException {
         final Parser parser = createParser();
         final ParseContext context = new ParseContext();
@@ -449,13 +443,8 @@ public class TikaResource {
 
         logRequest(LOG, "/tika", metadata);
 
-        return outputStream -> {
-            Writer writer = new OutputStreamWriter(outputStream, UTF_8);
-
-            BodyContentHandler body = new BodyContentHandler(new RichTextContentHandler(writer));
-
-            parse(parser, LOG, info.getPath(), is, body, metadata, context);
-        };
+        return new ParseStreamingOutput(tis, parser, LOG, info.getPath(), metadata, context,
+                os -> new BodyContentHandler(new RichTextContentHandler(new OutputStreamWriter(os, UTF_8))));
     }
 
     @POST
@@ -465,7 +454,7 @@ public class TikaResource {
     public StreamingOutput getHTMLFromMultipart(Attachment att, @Context HttpHeaders httpHeaders, @Context final UriInfo info) throws TikaConfigException, IOException {
         LOG.info("loading multipart html");
 
-        return produceOutput(att.getObject(InputStream.class), new Metadata(), preparePostHeaderMap(att, httpHeaders), info, "html");
+        return produceOutput(TikaInputStream.get(att.getObject(InputStream.class)), new Metadata(), preparePostHeaderMap(att, httpHeaders), info, "html");
     }
 
     @PUT
@@ -483,7 +472,7 @@ public class TikaResource {
     public StreamingOutput getXMLFromMultipart(Attachment att, @Context HttpHeaders httpHeaders, @Context final UriInfo info) throws TikaConfigException, IOException {
         LOG.info("loading multipart xml");
 
-        return produceOutput(att.getObject(InputStream.class), new Metadata(), preparePostHeaderMap(att, httpHeaders), info, "xml");
+        return produceOutput(TikaInputStream.get(att.getObject(InputStream.class)), new Metadata(), preparePostHeaderMap(att, httpHeaders), info, "xml");
     }
 
     @PUT
@@ -529,7 +518,7 @@ public class TikaResource {
         return metadata;
     }
 
-    private void parseToMetadata(InputStream inputStream, Metadata metadata, MultivaluedMap<String, String> httpHeaders, UriInfo info, String handlerTypeName)
+    private void parseToMetadata(TikaInputStream tis, Metadata metadata, MultivaluedMap<String, String> httpHeaders, UriInfo info, String handlerTypeName)
             throws IOException, TikaConfigException {
         final Parser parser = createParser();
         final ParseContext context = new ParseContext();
@@ -548,7 +537,7 @@ public class TikaResource {
         ContentHandler contentHandler = fact.getNewContentHandler();
 
         try {
-            parse(parser, LOG, info.getPath(), inputStream, contentHandler, metadata, context);
+            parse(parser, LOG, info.getPath(), tis, contentHandler, metadata, context);
         } catch (TikaServerParseException e) {
             Throwable cause = e.getCause();
             boolean writeLimitReached = false;
@@ -573,10 +562,11 @@ public class TikaResource {
             }
         } finally {
             metadata.add(TikaCoreProperties.TIKA_CONTENT, contentHandler.toString());
+            tis.close();
         }
     }
 
-    private StreamingOutput produceOutput(final InputStream is, Metadata metadata, final MultivaluedMap<String, String> httpHeaders, final UriInfo info, final String format)
+    private StreamingOutput produceOutput(final TikaInputStream tis, Metadata metadata, final MultivaluedMap<String, String> httpHeaders, final UriInfo info, final String format)
             throws TikaConfigException, IOException {
         final Parser parser = createParser();
         final ParseContext context = new ParseContext();
@@ -610,7 +600,12 @@ public class TikaResource {
                 throw new WebApplicationException(e);
             }
 
-            parse(parser, LOG, info.getPath(), is, content, metadata, context);
+            try {
+                parse(parser, LOG, info.getPath(), tis, content, metadata, context);
+                outputStream.flush();
+            } finally {
+                tis.close();
+            }
         };
     }
 
@@ -652,4 +647,41 @@ public class TikaResource {
         }
         return finalHeaders;
     }
+
+    //enables streaming output AND closing of the TikaInputStream after the parse.
+    public class ParseStreamingOutput implements StreamingOutput {
+
+        private final TikaInputStream tis;
+        private final Parser parser;
+        private final Logger logger;
+        private final String path;
+        private final Metadata metadata;
+        private final ParseContext parseContext;
+        private final Function<OutputStream, ContentHandler> handlerBuilder;
+
+        public ParseStreamingOutput(TikaInputStream tis, Parser parser, Logger logger,
+                                    String path, Metadata metadata, ParseContext parseContext,
+                                    Function<OutputStream, ContentHandler> handlerBuilder) {
+            this.tis = tis;
+            this.parser = parser;
+            this.logger = logger;
+            this.path = path;
+            this.metadata = metadata;
+            this.parseContext = parseContext;
+            this.handlerBuilder = handlerBuilder;
+        }
+
+        @Override
+        public void write(OutputStream outputStream) throws IOException, WebApplicationException {
+            ContentHandler contentHandler = handlerBuilder.apply(outputStream);
+            try {
+                parse(parser, logger, path, tis, contentHandler, metadata, parseContext);
+                outputStream.flush();
+            } finally {
+                tis.close();
+            }
+        }
+
+    }
+
 }

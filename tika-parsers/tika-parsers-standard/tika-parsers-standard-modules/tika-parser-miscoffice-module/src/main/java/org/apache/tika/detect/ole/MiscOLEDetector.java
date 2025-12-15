@@ -19,7 +19,6 @@ package org.apache.tika.detect.ole;
 import static org.apache.tika.mime.MediaType.application;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashSet;
@@ -164,50 +163,46 @@ public class MiscOLEDetector implements Detector {
     }
 
     @Override
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
         // Check if we have access to the document
-        if (input == null) {
+        if (tis == null) {
             return MediaType.OCTET_STREAM;
         }
 
         // If this is a TikaInputStream wrapping an already
         // parsed NPOIFileSystem/DirectoryNode, just get the
         // names from the root:
-        TikaInputStream tis = TikaInputStream.cast(input);
         Set<String> names = null;
-        if (tis != null) {
-            Object container = tis.getOpenContainer();
-            if (container instanceof POIFSFileSystem) {
-                names = getTopLevelNames(((POIFSFileSystem) container).getRoot());
-            } else if (container instanceof DirectoryNode) {
-                names = getTopLevelNames((DirectoryNode) container);
-            }
+        Object container = tis.getOpenContainer();
+        if (container instanceof POIFSFileSystem) {
+            names = getTopLevelNames(((POIFSFileSystem) container).getRoot());
+        } else if (container instanceof DirectoryNode) {
+            names = getTopLevelNames((DirectoryNode) container);
         }
 
         if (names == null) {
             // Check if the document starts with the OLE header
-            input.mark(8);
+            tis.mark(8);
             try {
-                if (input.read() != 0xd0 || input.read() != 0xcf || input.read() != 0x11 ||
-                        input.read() != 0xe0 || input.read() != 0xa1 || input.read() != 0xb1 ||
-                        input.read() != 0x1a || input.read() != 0xe1) {
+                if (tis.read() != 0xd0 || tis.read() != 0xcf || tis.read() != 0x11 ||
+                        tis.read() != 0xe0 || tis.read() != 0xa1 || tis.read() != 0xb1 ||
+                        tis.read() != 0x1a || tis.read() != 0xe1) {
                     return MediaType.OCTET_STREAM;
                 }
             } catch (IOException e) {
                 return MediaType.OCTET_STREAM;
             } finally {
-                input.reset();
+                tis.reset();
             }
         }
 
-        // We can only detect the exact type when given a TikaInputStream
-        if (names == null && tis != null) {
-            // Look for known top level entry names to detect the document type
+        // Look for known top level entry names to detect the document type
+        if (names == null) {
             names = getTopLevelNames(tis);
         }
 
         // Detect based on the names (as available)
-        if (tis != null && tis.getOpenContainer() != null &&
+        if (tis.getOpenContainer() != null &&
                 tis.getOpenContainer() instanceof POIFSFileSystem) {
             return detect(names, ((POIFSFileSystem) tis.getOpenContainer()).getRoot());
         } else {

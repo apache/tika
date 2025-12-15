@@ -22,11 +22,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.external.ExternalParser;
@@ -55,12 +54,12 @@ public class TestGDALParser extends TikaTest {
         final String expectedSize = "512, 512";
 
         GDALParser parser = new GDALParser();
-        InputStream stream = TestGDALParser.class
-                .getResourceAsStream("/test-documents/sresa1b_ncar_ccsm3_0_run1_200001.nc");
+        TikaInputStream tis = TikaInputStream.get(TestGDALParser.class
+                .getResourceAsStream("/test-documents/sresa1b_ncar_ccsm3_0_run1_200001.nc"));
         Metadata met = new Metadata();
         BodyContentHandler handler = new BodyContentHandler();
         try {
-            parser.parse(stream, handler, met, new ParseContext());
+            parser.parse(tis, handler, met, new ParseContext());
         } catch (Exception e) {
             e.printStackTrace();
             fail(e.getMessage());
@@ -101,12 +100,12 @@ public class TestGDALParser extends TikaTest {
         final String expectedSub8Desc = "[1x17x128x256] eastward_wind (32-bit floating-point)";
 
         GDALParser parser = new GDALParser();
-        InputStream stream = TestGDALParser.class
-                .getResourceAsStream("/test-documents/sresa1b_ncar_ccsm3_0_run1_200001.nc");
+        TikaInputStream tis = TikaInputStream.get(TestGDALParser.class
+                .getResourceAsStream("/test-documents/sresa1b_ncar_ccsm3_0_run1_200001.nc"));
         Metadata met = new Metadata();
         BodyContentHandler handler = new BodyContentHandler();
         try {
-            parser.parse(stream, handler, met, new ParseContext());
+            parser.parse(tis, handler, met, new ParseContext());
             assertNotNull(met);
             assertNotNull(met.get("NC_GLOBAL#institution"));
             assertEquals(expectedNcInst, met.get("NC_GLOBAL#institution"));
@@ -149,11 +148,11 @@ public class TestGDALParser extends TikaTest {
         String expectedCalibDef = "1466";
 
         GDALParser parser = new GDALParser();
-        InputStream stream = TestGDALParser.class.getResourceAsStream(fitsFilename);
+        TikaInputStream tis = getResourceAsStream(fitsFilename);
         Metadata met = new Metadata();
         BodyContentHandler handler = new BodyContentHandler();
         try {
-            parser.parse(stream, handler, met, new ParseContext());
+            parser.parse(tis, handler, met, new ParseContext());
             assertNotNull(met);
             assertNotNull(met.get("ALLG-MIN"));
             assertEquals(expectedAllgMin, met.get("ALLG-MIN"));

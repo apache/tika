@@ -17,7 +17,6 @@
 package org.apache.tika.parser;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -32,7 +31,6 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -281,17 +279,15 @@ public class CompositeParser implements Parser {
      * handler are automatically wrapped into {@link TikaException}s to better
      * honor the {@link Parser} contract.
      */
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         Parser parser = getParser(metadata, context);
-        TemporaryResources tmp = new TemporaryResources();
         ParseRecord parserRecord = context.get(ParseRecord.class);
         if (parserRecord == null) {
             parserRecord = new ParseRecord();
             context.set(ParseRecord.class, parserRecord);
         }
         try {
-            TikaInputStream taggedStream = TikaInputStream.get(stream, tmp, metadata);
             TaggedContentHandler taggedHandler =
                     handler != null ? new TaggedContentHandler(handler) : null;
             String parserClassname = ParserUtils.getParserClassname(parser);
@@ -299,12 +295,12 @@ public class CompositeParser implements Parser {
             ParserUtils.recordParserDetails(parserClassname, metadata);
             parserRecord.beforeParse();
             try {
-                parser.parse(taggedStream, taggedHandler, metadata, context);
+                parser.parse(tis, taggedHandler, metadata, context);
             } catch (SecurityException e) {
                 //rethrow security exceptions
                 throw e;
             } catch (IOException e) {
-                taggedStream.throwIfCauseOf(e);
+                tis.throwIfCauseOf(e);
                 throw new TikaException("TIKA-198: Illegal IOException from " + parser, e);
             } catch (SAXException e) {
                 WriteLimitReachedException.throwIfWriteLimitReached(e);
@@ -316,7 +312,6 @@ public class CompositeParser implements Parser {
                 throw new TikaException("Unexpected RuntimeException from " + parser, e);
             }
         } finally {
-            tmp.dispose();
             parserRecord.afterParse();
             if (parserRecord.getDepth() == 0) {
                 metadata.set(TikaCoreProperties.TIKA_PARSED_BY_FULL_SET, parserRecord.getParsers());

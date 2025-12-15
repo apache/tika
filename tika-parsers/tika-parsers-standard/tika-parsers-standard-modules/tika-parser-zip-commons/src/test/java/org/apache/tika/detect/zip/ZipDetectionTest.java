@@ -57,24 +57,24 @@ public class ZipDetectionTest extends TikaTest {
     public void testStreaming() throws Exception {
         String expectedDigest = digest("testJAR.jar");
         DefaultZipContainerDetector detector = new DefaultZipContainerDetector();
-        try (InputStream is = TikaInputStream.get(getStream("testJAR.jar"))) {
-            assertExpected(detector, is, "application/java-archive", expectedDigest);
+        try (TikaInputStream tis = TikaInputStream.get(getStream("testJAR.jar"))) {
+            assertExpected(detector, tis, "application/java-archive", expectedDigest);
         }
 
         for (int markLimit : new int[]{-1,0,10,100,1000}) {
             detector = new DefaultZipContainerDetector();
             //mark limit is ignored for a TikaInputStream
-            try (InputStream is = TikaInputStream.get(getStream("testJAR.jar"))) {
+            try (TikaInputStream tis = TikaInputStream.get(getStream("testJAR.jar"))) {
                 detector.setMarkLimit(markLimit);
-                assertExpected(detector, is, "application/java-archive", expectedDigest);
+                assertExpected(detector, tis, "application/java-archive", expectedDigest);
             }
         }
 
         detector = new DefaultZipContainerDetector();
         //mark limit is ignored for a TikaInputStream
-        try (InputStream is = TikaInputStream.get(getStream("testJAR.jar"))) {
+        try (TikaInputStream tis = TikaInputStream.get(getStream("testJAR.jar"))) {
             detector.setMarkLimit(-1);
-            assertExpected(detector, is, "application/java-archive", expectedDigest);
+            assertExpected(detector, tis, "application/java-archive", expectedDigest);
         }
 
         detector = new DefaultZipContainerDetector();
@@ -88,16 +88,18 @@ public class ZipDetectionTest extends TikaTest {
             assertExpected(detector, is, "application/java-archive", expectedDigest);
         }
 
+        // With TikaInputStream, even small markLimits allow full detection
+        // because TikaInputStream can spool to disk when needed
         detector = new DefaultZipContainerDetector();
         detector.setMarkLimit(100);
         try (InputStream is = ZipDetectionTest.class.getResourceAsStream("/test-documents/testJAR.jar")) {
-            assertExpected(detector, is, "application/zip", expectedDigest);
+            assertExpected(detector, is, "application/java-archive", expectedDigest);
         }
 
         detector = new DefaultZipContainerDetector();
         detector.setMarkLimit(0);
         try (InputStream is = ZipDetectionTest.class.getResourceAsStream("/test-documents/testJAR.jar")) {
-            assertExpected(detector, is, "application/zip", expectedDigest);
+            assertExpected(detector, is, "application/java-archive", expectedDigest);
         }
 
         detector = new DefaultZipContainerDetector();
@@ -112,9 +114,10 @@ public class ZipDetectionTest extends TikaTest {
     }
 
     private void assertExpected(Detector detector, InputStream is, String expectedMime, String expectedDigest) throws IOException {
-        MediaType mt = detector.detect(is, new Metadata());
+        TikaInputStream tis = TikaInputStream.get(is);
+        MediaType mt = detector.detect(tis, new Metadata());
         assertEquals(expectedMime, mt.toString());
-        assertEquals(expectedDigest, digest(is));
+        assertEquals(expectedDigest, digest(tis));
 
     }
 

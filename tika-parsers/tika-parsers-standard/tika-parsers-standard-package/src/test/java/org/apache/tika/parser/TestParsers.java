@@ -20,8 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -52,8 +50,8 @@ public class TestParsers extends MultiThreadedTikaTest {
         Metadata metadata = new Metadata();
         try (TikaInputStream tis = TikaInputStream
                 .get(getResourceAsStream("/test-documents/testWORD.doc"))) {
-            try (InputStream stream = new FileInputStream(tis.getFile())) {
-                parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+            try (TikaInputStream inner = TikaInputStream.get(tis.getPath())) {
+                parser.parse(inner, new DefaultHandler(), metadata, new ParseContext());
             }
         }
         assertEquals("Sample Word Document", metadata.get(TikaCoreProperties.TITLE));
@@ -69,8 +67,8 @@ public class TestParsers extends MultiThreadedTikaTest {
             String s1 = TIKA.parseToString(file);
             assertTrue(s1.contains(expected), "Text does not contain '" + expected + "'");
             Parser parser = TIKA.getParser();
-            try (InputStream stream = new FileInputStream(file)) {
-                parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+            try (TikaInputStream inner = TikaInputStream.get(file.toPath())) {
+                parser.parse(inner, new DefaultHandler(), metadata, new ParseContext());
             }
         }
         assertEquals("Simple Excel document", metadata.get(TikaCoreProperties.TITLE));

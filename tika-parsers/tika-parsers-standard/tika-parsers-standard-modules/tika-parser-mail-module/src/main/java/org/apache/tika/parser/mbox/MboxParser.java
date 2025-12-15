@@ -20,7 +20,6 @@ import static org.apache.tika.parser.mailcommons.MailDateParser.parseDateLenient
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.Date;
@@ -83,7 +82,7 @@ public class MboxParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, TikaException, SAXException {
 
         EmbeddedDocumentExtractor extractor =
@@ -97,7 +96,7 @@ public class MboxParser implements Parser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
-        InputStreamReader isr = new InputStreamReader(stream, charsetName);
+        InputStreamReader isr = new InputStreamReader(tis, charsetName);
         try (BufferedReader reader = new BufferedReader(isr)) {
             String curLine = reader.readLine();
             int mailItem = 0;

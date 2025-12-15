@@ -17,9 +17,9 @@
 package org.apache.tika.pipes.api.fetcher;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
@@ -28,12 +28,12 @@ import org.apache.tika.parser.ParseContext;
  */
 public interface RangeFetcher extends Fetcher {
 
-    default InputStream fetch(String fetchKey, long startOffset, long endOffset, Metadata metadata)
+    default TikaInputStream fetch(String fetchKey, long startOffset, long endOffset, Metadata metadata)
             throws TikaException, IOException {
         return fetch(fetchKey, startOffset, endOffset, metadata, new ParseContext());
     }
 
-    InputStream fetch(String fetchKey, long startOffset, long endOffset, Metadata metadata, ParseContext parseContext)
+    TikaInputStream fetch(String fetchKey, long startOffset, long endOffset, Metadata metadata, ParseContext parseContext)
             throws TikaException, IOException;
 
 }

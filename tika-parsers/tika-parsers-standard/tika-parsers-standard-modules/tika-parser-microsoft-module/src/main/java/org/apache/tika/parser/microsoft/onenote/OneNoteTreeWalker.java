@@ -341,7 +341,7 @@ class OneNoteTreeWalker {
     }
 
     private void handleEmbedded(int length) throws TikaException, IOException, SAXException {
-        TikaInputStream stream = null;
+        TikaInputStream tis = null;
         ByteBuffer buf;
         try {
             buf = ByteBuffer.allocate(length);
@@ -357,11 +357,11 @@ class OneNoteTreeWalker {
             attributes.addAttribute("", "class", "class", "CDATA", "embedded");
             xhtml.startElement("div", attributes);
             xhtml.endElement("div");
-            stream = TikaInputStream.get(buf.array());
-            embeddedDocumentExtractor.parseEmbedded(stream, new EmbeddedContentHandler(xhtml),
+            tis = TikaInputStream.get(buf.array());
+            embeddedDocumentExtractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),
                     embeddedMetadata, false);
         } finally {
-            IOUtils.closeQuietly(stream);
+            IOUtils.closeQuietly(tis);
         }
 
     }

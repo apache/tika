@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
 
 import org.apache.commons.io.ByteOrderMark;
@@ -32,6 +31,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 
 public class BOMDetectorTest extends TikaTest {
@@ -50,14 +50,13 @@ public class BOMDetectorTest extends TikaTest {
                                  ByteOrderMark.UTF_16BE, ByteOrderMark.UTF_16LE).get()) {
                 assertEquals(bom, bomInputStream.getBOM());
             }
-            try (UnsynchronizedByteArrayInputStream is =
-                         UnsynchronizedByteArrayInputStream.builder().setByteArray(bos.toByteArray()).get()) {
-                assertEquals(Charset.forName(bom.getCharsetName()), detector.detect(is, new Metadata()));
+            try (TikaInputStream tis = TikaInputStream.get(bos.toByteArray())) {
+                assertEquals(Charset.forName(bom.getCharsetName()), detector.detect(tis, new Metadata()));
                 int cnt = 0;
-                int c = is.read();
+                int c = tis.read();
                 while (c > -1) {
                     cnt++;
-                    c = is.read();
+                    c = tis.read();
                 }
                 assertEquals(100 + bom.getBytes().length, cnt);
             }
@@ -75,8 +74,8 @@ public class BOMDetectorTest extends TikaTest {
             System.arraycopy(bom.getBytes(), 0, bytes, 0, 1);
             bytes[1] = (byte)32;
             bytes[2] = (byte)32;
-            try (InputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get()) {
-                assertNull(detector.detect(is, new Metadata()));
+            try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+                assertNull(detector.detect(tis, new Metadata()));
             }
         }
     }

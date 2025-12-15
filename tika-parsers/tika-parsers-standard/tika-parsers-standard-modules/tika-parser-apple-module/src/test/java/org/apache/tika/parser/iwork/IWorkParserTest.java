@@ -34,6 +34,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.apple.IWorkDetector;
 import org.apache.tika.detect.zip.DefaultZipContainerDetector;
 import org.apache.tika.detect.zip.ZipContainerDetector;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -60,11 +61,15 @@ public class IWorkParserTest extends TikaTest {
      */
     @Test
     public void testStreamNotClosed() throws Exception {
-        InputStream input = getResourceAsStream("/test-documents/testKeynote.key");
-        Metadata metadata = new Metadata();
-        ContentHandler handler = new BodyContentHandler();
-        iWorkParser.parse(input, handler, metadata, new ParseContext());
-        input.read();   // Will throw an Exception if the stream was already closed.
+        TikaInputStream tis = getResourceAsStream("/test-documents/testKeynote.key");
+        try {
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            iWorkParser.parse(tis, handler, metadata, new ParseContext());
+            tis.read();   // Will throw an Exception if the stream was already closed.
+        } finally {
+            tis.close();
+        }
     }
 
     @Test
@@ -423,8 +428,9 @@ public class IWorkParserTest extends TikaTest {
         zips.add(new IWorkDetector());
         Detector d = new CompositeDetector(new DefaultZipContainerDetector(zips));
         try (InputStream is = this.getClass()
-                .getResourceAsStream("/test-documents/testIWorksNPEDetector.zip")) {
-            MediaType mt = d.detect(is, new Metadata());
+                .getResourceAsStream("/test-documents/testIWorksNPEDetector.zip");
+             TikaInputStream tis = TikaInputStream.get(is)) {
+            MediaType mt = d.detect(tis, new Metadata());
             assertEquals(MediaType.application("zip"), mt);
         }
     }

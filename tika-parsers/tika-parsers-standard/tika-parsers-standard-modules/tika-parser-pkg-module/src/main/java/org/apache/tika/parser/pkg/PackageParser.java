@@ -26,9 +26,7 @@ import static org.apache.tika.detect.zip.PackageConstants.SEVENZ;
 import static org.apache.tika.detect.zip.PackageConstants.TAR;
 import static org.apache.tika.detect.zip.PackageConstants.ZIP;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Date;
@@ -53,7 +51,6 @@ import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
 import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException.Feature;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -247,24 +244,20 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
 
-        // Ensure that the stream supports the mark feature
-        if (!stream.markSupported()) {
-            stream = new BufferedInputStream(stream);
-        }
-
-        TemporaryResources tmp = new TemporaryResources();
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                ParseContext context)
+            throws TikaException, IOException, SAXException {
+        tis.setCloseShield();
         try {
-            _parse(stream, handler, metadata, context, tmp);
+            _parseInternal(tis, handler, metadata, context);
         } finally {
-            tmp.close();
+            tis.removeCloseShield();
         }
     }
 
-    private void _parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                ParseContext context, TemporaryResources tmp)
+    private void _parseInternal(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                ParseContext context)
             throws TikaException, IOException, SAXException {
         ArchiveInputStream ais = null;
         String encoding = null;
@@ -281,14 +274,13 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 // At the end we want to close the archive stream to release
                 // any associated resources, but the underlying document stream
                 // should not be closed
-            ais = factory.createArchiveInputStream(CloseShieldInputStream.wrap(stream));
+            ais = factory.createArchiveInputStream(tis);
 
         } catch (StreamingNotSupportedException sne) {
             // Most archive formats work on streams, but a few need files
             if (sne.getFormat().equals(ArchiveStreamFactory.SEVEN_Z)) {
                 // Rework as a file, and wrap
-                stream.reset();
-                TikaInputStream tstream = TikaInputStream.get(stream, tmp, metadata);
+                tis.reset();
 
                 // Seven Zip suports passwords, was one given?
                 String password = null;
@@ -299,7 +291,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
 
                 SevenZFile sevenz;
                 try {
-                    SevenZFile.Builder builder = new SevenZFile.Builder().setFile(tstream.getFile());
+                    SevenZFile.Builder builder = new SevenZFile.Builder().setFile(tis.getFile());
                     if (password == null) {
                         sevenz = builder.get();
                     } else {
@@ -312,11 +304,9 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 // Pending a fix for COMPRESS-269 / TIKA-1525, this bit is a little nasty
                 ais = new SevenZWrapper(sevenz);
             } else {
-                tmp.close();
                 throw new TikaException("Unknown non-streaming format " + sne.getFormat(), sne);
             }
         } catch (ArchiveException e) {
-            tmp .close();
             throw new TikaException("Unable to unpack document stream", e);
         }
 
@@ -329,7 +319,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         xhtml.startDocument();
 
         // mark before we start parsing entries for potential reset
-        stream.mark(MARK_LIMIT);
+        tis.mark(MARK_LIMIT);
         //needed for mutable int by ref, not for thread safety.
         //this keeps track of how many entries were processed.
         AtomicInteger entryCnt = new AtomicInteger();
@@ -341,14 +331,13 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 // Close archive input stream and create a new one that could handle data descriptor
                 ais.close();
                 // An exception would be thrown if MARK_LIMIT is not big enough
-                stream.reset();
-                ais = new ZipArchiveInputStream(CloseShieldInputStream.wrap(stream), encoding, true,
+                tis.reset();
+                ais = new ZipArchiveInputStream(tis, encoding, true,
                         true);
                 parseEntries(ais, metadata, extractor, xhtml, true, entryCnt);
             }
         } finally {
             ais.close();
-            tmp.close();
             xhtml.endDocument();
         }
     }
@@ -459,7 +448,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
 
             Charset candidate =
                     getEncodingDetector().detect(
-                            UnsynchronizedByteArrayInputStream.builder().setByteArray(extendedEntryName).get(),
+                            TikaInputStream.get(UnsynchronizedByteArrayInputStream.builder().setByteArray(extendedEntryName).get()),
                             parentMetadata);
             if (candidate != null) {
                 name = new String(((ZipArchiveEntry) entry).getRawName(), candidate);

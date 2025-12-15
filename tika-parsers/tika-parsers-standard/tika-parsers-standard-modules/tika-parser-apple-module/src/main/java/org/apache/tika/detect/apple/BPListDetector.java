@@ -17,7 +17,6 @@
 package org.apache.tika.detect.apple;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
@@ -91,28 +90,28 @@ public class BPListDetector implements Detector {
     }
 
     /**
-     * @param input    input stream must support reset
+     * @param tis      input stream must support reset
      * @param metadata input metadata for the document
      * @return
      * @throws IOException
      */
     @Override
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
-        if (input == null) {
+    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
+        if (tis == null) {
             return MediaType.OCTET_STREAM;
         }
-        input.mark(8);
+        tis.mark(8);
         byte[] bytes = new byte[8];
 
         try {
-            int read = IOUtils.read(input, bytes);
+            int read = IOUtils.read(tis, bytes);
             if (read < 6) {
                 return MediaType.OCTET_STREAM;
             }
         } catch (IOException e) {
             return MediaType.OCTET_STREAM;
         } finally {
-            input.reset();
+            tis.reset();
         }
 
         int i = 0;
@@ -123,14 +122,12 @@ public class BPListDetector implements Detector {
         //TODO: extract the version with the next two bytes if they were read
         NSObject rootObj = null;
         try {
-            if (input instanceof TikaInputStream && ((TikaInputStream) input).hasFile()) {
-                rootObj = PropertyListParser.parse(((TikaInputStream) input).getFile());
+            if (tis.hasFile()) {
+                rootObj = PropertyListParser.parse(tis.getFile());
             } else {
-                rootObj = PropertyListParser.parse(input);
+                rootObj = PropertyListParser.parse(tis);
             }
-            if (input instanceof TikaInputStream) {
-                ((TikaInputStream) input).setOpenContainer(rootObj);
-            }
+            tis.setOpenContainer(rootObj);
         } catch (PropertyListFormatException | ParseException |
                 ParserConfigurationException | SAXException e) {
             throw new IOException("problem parsing root", e);

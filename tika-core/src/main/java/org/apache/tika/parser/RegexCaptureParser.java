@@ -18,7 +18,6 @@ package org.apache.tika.parser;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -34,6 +33,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -54,9 +54,9 @@ public class RegexCaptureParser implements Parser {
     private boolean writeContent = false;
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream,
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(tis,
                 StandardCharsets.UTF_8))) {
             String line = reader.readLine();
             Map<String, Matcher> localCaptureMap = new HashMap();

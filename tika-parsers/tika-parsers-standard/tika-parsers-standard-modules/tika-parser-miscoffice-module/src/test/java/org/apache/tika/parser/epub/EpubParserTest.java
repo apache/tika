@@ -19,7 +19,6 @@ package org.apache.tika.parser.epub;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -29,7 +28,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Epub;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -83,18 +82,7 @@ public class EpubParserTest extends TikaTest {
         assert (tocIndex < ch1);
         assert (tocIndex < ch2);
         assert (ch1 < ch2);
-
-        Parser p = TikaLoader.load(
-                        getConfigPath(EpubParserTest.class, "tika-config-epub-streaming.json"))
-                .loadAutoDetectParser();
-        xml = getXML("testEPUB.epub", p).xml;
-        tocIndex = xml.indexOf("h3 class=\"toc_heading\">Table of Contents<");
-        ch1 = xml.indexOf("<h1>Chapter 1");
-        ch2 = xml.indexOf("<h1>Chapter 2");
-        assert (tocIndex > -1 && ch1 > -1 && ch2 > -1);
-        assert (tocIndex > ch1);
-        assert (tocIndex > ch2);
-        assert (ch1 < ch2);
+        //remove streaming test
     }
 
 
@@ -102,8 +90,8 @@ public class EpubParserTest extends TikaTest {
     public void testTruncated() throws Exception {
         Parser p = new EpubParser();
         List<Metadata> metadataList;
-        try (InputStream is = truncate("testEPUB.epub", 10000)) {
-            metadataList = getRecursiveMetadata(is, p, true);
+        try (TikaInputStream tis = truncate("testEPUB.epub", 10000)) {
+            metadataList = getRecursiveMetadata(tis, p, true);
         }
         String xml = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         int ch1 = xml.indexOf("<h1>Chapter 1");

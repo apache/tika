@@ -14,24 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser;
-
+package org.apache.tika.fork;
 
 import java.io.IOException;
-import java.util.Map;
+import java.io.InputStream;
 
+import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
-public abstract class ParserFactory {
+//temporary workaround to handle requiring parsers take TikaInputStreams
+public interface ParserShim {
 
-    final Map<String, String> args;
-
-    public ParserFactory(Map<String, String> args) {
-        this.args = args;
-    }
-
-    public abstract Parser build() throws IOException, SAXException, TikaException;
-
+    void parseStream(InputStream is, ContentHandler recursiveParserWrapperHandler,
+                     Metadata metadata, ParseContext context) throws IOException, TikaException, SAXException;
 }

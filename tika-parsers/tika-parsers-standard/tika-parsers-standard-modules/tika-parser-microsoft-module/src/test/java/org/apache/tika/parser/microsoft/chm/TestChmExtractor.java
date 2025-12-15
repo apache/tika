@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.ByteArrayInputStream;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -29,13 +28,14 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 
 public class TestChmExtractor extends TikaTest {
     private ChmExtractor chmExtractor = null;
 
     @BeforeEach
     public void setUp() throws Exception {
-        chmExtractor = new ChmExtractor(new ByteArrayInputStream(TestParameters.chmData));
+        chmExtractor = new ChmExtractor(TikaInputStream.get(TestParameters.chmData));
     }
 
     @Test

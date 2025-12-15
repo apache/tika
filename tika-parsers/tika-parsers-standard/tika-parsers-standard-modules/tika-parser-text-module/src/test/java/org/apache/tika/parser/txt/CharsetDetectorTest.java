@@ -19,10 +19,8 @@ package org.apache.tika.parser.txt;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Reader;
 import java.nio.file.Files;
 
@@ -30,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
@@ -38,10 +37,10 @@ public class CharsetDetectorTest extends TikaTest {
 
     @Test
     public void testTagDropper() throws IOException {
-        try (InputStream in = getResourceAsStream("/test-documents/resume.html")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/resume.html")) {
             CharsetDetector detector = new CharsetDetector();
             detector.enableInputFilter(true);
-            detector.setText(in);
+            detector.setText(tis);
             CharsetMatch[] matches = detector.detectAll();
             CharsetMatch mm = null;
             for (CharsetMatch m : matches) {
@@ -61,12 +60,12 @@ public class CharsetDetectorTest extends TikaTest {
 
     @Test
     public void testEmptyOrNullDeclaredCharset() throws IOException {
-        try (InputStream in = getResourceAsStream("/test-documents/resume.html")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/resume.html")) {
             CharsetDetector detector = new CharsetDetector();
-            Reader reader = detector.getReader(in, null);
+            Reader reader = detector.getReader(tis, null);
             assertTrue(reader.ready());
 
-            reader = detector.getReader(in, "");
+            reader = detector.getReader(tis, "");
             assertTrue(reader.ready());
         }
     }
@@ -75,8 +74,8 @@ public class CharsetDetectorTest extends TikaTest {
     public void testWin125XHeuristics() throws Exception {
         //TIKA-2219
         CharsetDetector detector = new CharsetDetector();
-        try (InputStream is = getResourceAsStream("/test-documents/testTXT_win-1252.txt")) {
-            detector.setText(is);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testTXT_win-1252.txt")) {
+            detector.setText(tis);
         }
         CharsetMatch charset = detector.detect();
         assertEquals("windows-1252", charset.getName());
@@ -87,7 +86,7 @@ public class CharsetDetectorTest extends TikaTest {
         //TIKA-2475
         File file = getResourceAsFile("/test-documents/multi-language.txt");
         byte[] fileBytes = Files.readAllBytes(file.toPath());
-        InputStream fileStream = new ByteArrayInputStream(fileBytes);
+        TikaInputStream fileStream = TikaInputStream.get(fileBytes);
 
         CharsetDetector fromBytesDetector = new CharsetDetector();
         fromBytesDetector.setText(fileBytes);

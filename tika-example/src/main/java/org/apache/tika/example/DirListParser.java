@@ -19,7 +19,6 @@ package org.apache.tika.example;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -50,7 +49,9 @@ public class DirListParser implements Parser {
     public static void main(String[] args) throws IOException, SAXException, TikaException {
         DirListParser parser = new DirListParser();
         Metadata met = new Metadata();
-        parser.parse(System.in, new BodyContentHandler(), met);
+        try (TikaInputStream tis = TikaInputStream.get(System.in)) {
+            parser.parse(tis, new BodyContentHandler(), met);
+        }
 
         System.out.println("Num files: " + met.getValues("Filename").length);
         System.out.println("Num executables: " + met.get("NumExecutables"));
@@ -72,8 +73,8 @@ public class DirListParser implements Parser {
      * @see org.apache.tika.parser.Parser#parse(java.io.InputStream,
      * org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata)
      */
-    public void parse(InputStream is, ContentHandler handler, Metadata metadata) throws IOException, SAXException, TikaException {
-        this.parse(is, handler, metadata, new ParseContext());
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata) throws IOException, SAXException, TikaException {
+        this.parse(tis, handler, metadata, new ParseContext());
     }
 
     /*
@@ -83,11 +84,9 @@ public class DirListParser implements Parser {
      * org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata,
      * org.apache.tika.parser.ParseContext)
      */
-    public void parse(InputStream is, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
 
-        List<String> lines = FileUtils.readLines(TikaInputStream
-                .get(is)
-                .getFile(), UTF_8);
+        List<String> lines = FileUtils.readLines(tis.getFile(), UTF_8);
         for (String line : lines) {
             String[] fileToks = line.split("\\s+");
             if (fileToks.length < 8) {

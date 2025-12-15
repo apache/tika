@@ -18,7 +18,6 @@ package org.apache.tika.parser.sentiment;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Set;
@@ -35,6 +34,7 @@ import org.apache.tika.config.Initializable;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -124,13 +124,13 @@ public class SentimentAnalysisParser implements Parser, Initializable {
      * @param context  the context for the parser
      */
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         if (classifier == null) {
             LOG.warn(getClass().getSimpleName() + " is not configured properly.");
             return;
         }
-        String inputString = IOUtils.toString(stream, "UTF-8");
+        String inputString = IOUtils.toString(tis, "UTF-8");
         String sentiment = classifier.predict(inputString);
         metadata.add("Sentiment", sentiment);
     }

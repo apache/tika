@@ -17,9 +17,9 @@
 package org.apache.tika.detect;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -105,27 +105,27 @@ public class TextDetector implements Detector {
      * Looks at the beginning of the document input stream to determine
      * whether the document is text or not.
      *
-     * @param input    document input stream, or <code>null</code>
+     * @param tis      document input stream, or <code>null</code>
      * @param metadata ignored
      * @return "text/plain" if the input stream suggest a text document,
      * "application/octet-stream" otherwise
      */
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
-        if (input == null) {
+    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
+        if (tis == null) {
             return MediaType.OCTET_STREAM;
         }
 
-        input.mark(bytesToTest);
+        tis.mark(bytesToTest);
         try {
             TextStatistics stats = new TextStatistics();
 
             byte[] buffer = new byte[1024];
             int n = 0;
-            int m = input.read(buffer, 0, Math.min(bytesToTest, buffer.length));
+            int m = tis.read(buffer, 0, Math.min(bytesToTest, buffer.length));
             while (m != -1 && n < bytesToTest) {
                 stats.addData(buffer, 0, m);
                 n += m;
-                m = input.read(buffer, 0, Math.min(bytesToTest - n, buffer.length));
+                m = tis.read(buffer, 0, Math.min(bytesToTest - n, buffer.length));
             }
 
             if (stats.isMostlyAscii() || stats.looksLikeUTF8()) {
@@ -134,7 +134,7 @@ public class TextDetector implements Detector {
                 return MediaType.OCTET_STREAM;
             }
         } finally {
-            input.reset();
+            tis.reset();
         }
     }
 

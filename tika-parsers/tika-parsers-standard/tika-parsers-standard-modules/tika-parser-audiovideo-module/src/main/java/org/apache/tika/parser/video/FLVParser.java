@@ -20,7 +20,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -35,6 +34,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -166,9 +166,9 @@ public class FLVParser implements Parser {
         return fis.read() == 'F' && fis.read() == 'L' && fis.read() == 'V';
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        DataInputStream datainput = new DataInputStream(stream);
+        DataInputStream datainput = new DataInputStream(tis);
         if (!checkSignature(datainput)) {
             throw new TikaException("FLV signature not detected");
         }
@@ -217,7 +217,7 @@ public class FLVParser implements Parser {
                 // found metadata Tag, read content to buffer
                 byte[] metaBytes = new byte[datalen];
                 for (int readCount = 0; readCount < datalen; ) {
-                    int r = stream.read(metaBytes, readCount, datalen - readCount);
+                    int r = tis.read(metaBytes, readCount, datalen - readCount);
                     if (r != -1) {
                         readCount += r;
 

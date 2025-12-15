@@ -19,12 +19,11 @@ package org.apache.tika.parser.pkg;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.external.ExternalParser;
@@ -44,13 +43,13 @@ public class UnrarParserTest extends AbstractPkgTest {
         assumeTrue(ExternalParser.check("unrar"));
         Parser parser = new UnrarParser();
 
-        try (InputStream input = getResourceAsStream("/test-documents/test-documents-enc.rar")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/test-documents-enc.rar")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
 
             // Note - we don't currently support encrypted RAR
             // files so we can't check the contents
-            parser.parse(input, handler, metadata, trackingContext);
+            parser.parse(tis, handler, metadata, trackingContext);
             fail("No support yet for Encrypted RAR files");
         } catch (EncryptedDocumentException e) {
             // Good, as expected right now

@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
@@ -81,7 +82,7 @@ public class MicrosoftGraphFetcher extends AbstractTikaExtension implements Fetc
     }
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
+    public TikaInputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
         long[] throttleSeconds = config.getThrottleSeconds();
         int tries = 0;
         Exception ex;
@@ -96,7 +97,7 @@ public class MicrosoftGraphFetcher extends AbstractTikaExtension implements Fetc
 
                 long elapsed = System.currentTimeMillis() - start;
                 LOGGER.debug("Total to fetch {}", elapsed);
-                return is;
+                return TikaInputStream.get(is);
             } catch (Exception e) {
                 LOGGER.warn("Exception fetching on retry=" + tries, e);
                 ex = e;

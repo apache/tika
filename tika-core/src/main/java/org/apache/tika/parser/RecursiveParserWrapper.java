@@ -17,11 +17,9 @@
 package org.apache.tika.parser;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -33,7 +31,6 @@ import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.extractor.ParentContentHandler;
 import org.apache.tika.io.FilenameUtils;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -128,7 +125,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
      * @throws IllegalStateException if the handler is not a {@link RecursiveParserWrapperHandler}
      */
     @Override
-    public void parse(InputStream stream, ContentHandler recursiveParserWrapperHandler,
+    public void parse(TikaInputStream tis, ContentHandler recursiveParserWrapperHandler,
                       Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         //this tracks the state of the parent parser, per call to #parse
@@ -147,7 +144,6 @@ public class RecursiveParserWrapper extends ParserDecorator {
                 parserState.recursiveParserWrapperHandler.getNewContentHandler();
         long started = System.currentTimeMillis();
         parserState.recursiveParserWrapperHandler.startDocument();
-        TemporaryResources tmp = new TemporaryResources();
         int writeLimit = -1;
         boolean throwOnWriteLimitReached = true;
 
@@ -160,7 +156,6 @@ public class RecursiveParserWrapper extends ParserDecorator {
             }
         }
         try {
-            TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
             RecursivelySecureContentHandler secureContentHandler =
                     new RecursivelySecureContentHandler(localHandler, tis, new SecureHandlerCounter(writeLimit),
                             throwOnWriteLimitReached, context);
@@ -178,7 +173,6 @@ public class RecursiveParserWrapper extends ParserDecorator {
                 throw e;
             }
         } finally {
-            tmp.dispose();
             long elapsedMillis = System.currentTimeMillis() - started;
             metadata.set(TikaCoreProperties.PARSE_TIME_MILLIS, Long.toString(elapsedMillis));
             parserState.recursiveParserWrapperHandler.endDocument(localHandler, metadata);
@@ -226,7 +220,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
         }
 
         @Override
-        public void parse(InputStream stream, ContentHandler ignore, Metadata metadata,
+        public void parse(TikaInputStream tis, ContentHandler ignore, Metadata metadata,
                           ParseContext context) throws IOException, SAXException, TikaException {
 
             //Test to see if we should avoid parsing
@@ -261,12 +255,6 @@ public class RecursiveParserWrapper extends ParserDecorator {
 
             ParentContentHandler preParseParentHandler = context.get(ParentContentHandler.class);
             context.set(ParentContentHandler.class, new ParentContentHandler(preParseHandler));
-            TemporaryResources tmp = null;
-            TikaInputStream tis = TikaInputStream.cast(stream);
-            if (tis == null) {
-                tmp = new TemporaryResources();
-                tis = TikaInputStream.get(CloseShieldInputStream.wrap(stream), tmp, metadata);
-            }
             ContentHandler secureContentHandler =
                     new RecursivelySecureContentHandler(localHandler, tis, preParseHandler.handlerCounter,
                     preParseHandler.throwOnWriteLimitReached, context);
@@ -308,9 +296,6 @@ public class RecursiveParserWrapper extends ParserDecorator {
                 metadata.set(TikaCoreProperties.PARSE_TIME_MILLIS, Long.toString(elapsedMillis));
                 parserState.recursiveParserWrapperHandler
                         .endEmbeddedDocument(localHandler, metadata);
-                if (tmp != null) {
-                    tis.close();
-                }
             }
         }
     }

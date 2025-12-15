@@ -37,6 +37,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -64,9 +65,9 @@ public class MimeTypesReaderTest {
 
     private static String getTypeAsString(MimeTypes mimeTypes, String text, Metadata metadata)
             throws IOException {
-        return mimeTypes
-                .detect(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)), metadata)
-                .toString();
+        try (TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)))) {
+            return mimeTypes.detect(tis, metadata).toString();
+        }
 
     }
 
@@ -251,7 +252,7 @@ public class MimeTypesReaderTest {
 
             // By contents - picks the x one as that sorts later
             m = new Metadata();
-            ByteArrayInputStream s = new ByteArrayInputStream("Hello, World!".getBytes(US_ASCII));
+            TikaInputStream s = TikaInputStream.get("Hello, World!".getBytes(US_ASCII));
             assertEquals(hxw.toString(), this.mimeTypes.detect(s, m).toString());
         } catch (Exception e) {
             fail(e.getMessage());

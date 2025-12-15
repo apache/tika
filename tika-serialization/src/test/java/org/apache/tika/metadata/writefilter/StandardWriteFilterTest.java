@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +30,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.Property;
@@ -62,7 +62,7 @@ public class StandardWriteFilterTest extends TikaTest {
         mock += "</mock>";
         Metadata metadata = new Metadata();
         List<Metadata> metadataList =
-                getRecursiveMetadata(new ByteArrayInputStream(mock.getBytes(StandardCharsets.UTF_8)),
+                getRecursiveMetadata(TikaInputStream.get(mock.getBytes(StandardCharsets.UTF_8)),
                         parser, metadata, new ParseContext(), true);
         assertEquals(1, metadataList.size());
         metadata = metadataList.get(0);
@@ -96,7 +96,7 @@ public class StandardWriteFilterTest extends TikaTest {
         metadata.add("dc:creator", "abcdefghijabcdefghij");
         metadata.add("not-allowed", "not-allowed");
         List<Metadata> metadataList =
-                getRecursiveMetadata(new ByteArrayInputStream(mock.getBytes(StandardCharsets.UTF_8)),
+                getRecursiveMetadata(TikaInputStream.get(mock.getBytes(StandardCharsets.UTF_8)),
                         parser, metadata, new ParseContext(), true);
         assertEquals(1, metadataList.size());
         metadata = metadataList.get(0);
@@ -287,7 +287,7 @@ public class StandardWriteFilterTest extends TikaTest {
         mock += "</mock>";
         Metadata metadata = new Metadata();
         List<Metadata> metadataList =
-                getRecursiveMetadata(new ByteArrayInputStream(mock.getBytes(StandardCharsets.UTF_8)),
+                getRecursiveMetadata(TikaInputStream.get(mock.getBytes(StandardCharsets.UTF_8)),
                         parser, metadata, new ParseContext(), true);
         assertEquals(1, metadataList.size());
         metadata = metadataList.get(0);

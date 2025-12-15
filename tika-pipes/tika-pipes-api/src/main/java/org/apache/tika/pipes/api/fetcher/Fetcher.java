@@ -17,17 +17,17 @@
 package org.apache.tika.pipes.api.fetcher;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 import org.pf4j.ExtensionPoint;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.plugins.TikaExtension;
 
 /**
- * Interface for an object that will fetch an InputStream given
+ * Interface for an object that will fetch a TikaInputStream given
  * a fetch string.  This will also update the metadata object
  * based on the fetch.
  * <p>
@@ -35,5 +35,5 @@ import org.apache.tika.plugins.TikaExtension;
  */
 public interface Fetcher extends TikaExtension, ExtensionPoint {
 
-    InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException;
+    TikaInputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException;
 }

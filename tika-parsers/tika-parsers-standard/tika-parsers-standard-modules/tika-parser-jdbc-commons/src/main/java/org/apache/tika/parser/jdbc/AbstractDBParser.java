@@ -17,7 +17,6 @@
 package org.apache.tika.parser.jdbc;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -30,6 +29,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Database;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -52,9 +52,9 @@ public abstract class AbstractDBParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        connection = getConnection(stream, metadata, context);
+        connection = getConnection(tis, metadata, context);
         XHTMLContentHandler xHandler = null;
         List<String> tableNames = null;
         EmbeddedDocumentUtil embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
@@ -149,9 +149,9 @@ public abstract class AbstractDBParser implements Parser {
      * @throws java.io.IOException
      * @throws org.apache.tika.exception.TikaException
      */
-    protected Connection getConnection(InputStream stream, Metadata metadata, ParseContext context)
+    protected Connection getConnection(TikaInputStream tis, Metadata metadata, ParseContext context)
             throws IOException, TikaException {
-        String connectionString = getConnectionString(stream, metadata, context);
+        String connectionString = getConnectionString(tis, metadata, context);
 
         Connection connection = null;
         try {
@@ -179,7 +179,7 @@ public abstract class AbstractDBParser implements Parser {
      * @return connection string to be used by {@link #getConnection}.
      * @throws java.io.IOException
      */
-    abstract protected String getConnectionString(InputStream stream, Metadata metadata,
+    abstract protected String getConnectionString(TikaInputStream tis, Metadata metadata,
                                                   ParseContext parseContext) throws IOException;
 
     /**

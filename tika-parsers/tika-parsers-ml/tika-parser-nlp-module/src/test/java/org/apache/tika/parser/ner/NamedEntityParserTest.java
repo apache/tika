@@ -19,16 +19,15 @@ package org.apache.tika.parser.ner;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
 
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.Parser;
@@ -52,7 +51,7 @@ public class NamedEntityParserTest extends TikaTest {
                 " located in Los Angeles . USC's football team is called by name Trojans." +
                 " Mr. John McKay was a head coach of the team from 1960 - 1975";
         Metadata md = getXML(
-                new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)),
+                TikaInputStream.get(text.getBytes(StandardCharsets.UTF_8)),
                 parser, new Metadata()).metadata;
 
         HashSet<String> set = new HashSet<>(
@@ -87,7 +86,7 @@ public class NamedEntityParserTest extends TikaTest {
         String text = "University of Southern California (USC), is located in Los Angeles ." +
                 " Campus is busy from monday to saturday";
         Metadata md = getXML(
-                UnsynchronizedByteArrayInputStream.builder().setByteArray(text.getBytes(StandardCharsets.UTF_8)).get(),
+                TikaInputStream.get(text.getBytes(StandardCharsets.UTF_8)),
                 parser, new Metadata()).metadata;
         HashSet<String> keys = new HashSet<>(Arrays.asList(md.names()));
         assertTrue(keys.contains("NER_WEEK_DAY"));

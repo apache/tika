@@ -16,10 +16,8 @@
  */
 package org.apache.tika.parser.dbf;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Calendar;
@@ -67,9 +65,9 @@ public class DBFParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        DBFReader reader = DBFReader.open(stream);
+        DBFReader reader = DBFReader.open(tis);
         DBFFileHeader header = reader.getHeader();
         metadata.set(Metadata.CONTENT_TYPE, header.getVersion().getFullMimeString());
 
@@ -139,8 +137,9 @@ public class DBFParser implements Parser {
         byte[] bytes = bos.toByteArray();
         if (bytes.length > 20) {
             EncodingDetector detector = new Icu4jEncodingDetector();
-            detector.detect(TikaInputStream.get(bytes), new Metadata());
-            charset = detector.detect(new ByteArrayInputStream(bytes), new Metadata());
+            try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+                charset = detector.detect(tis, new Metadata());
+            }
         }
         return charset;
     }

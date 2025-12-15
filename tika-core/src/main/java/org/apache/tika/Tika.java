@@ -16,7 +16,6 @@
  */
 package org.apache.tika;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -146,10 +145,11 @@ public class Tika {
      * @throws IOException if the stream can not be read
      */
     public String detect(InputStream stream, Metadata metadata) throws IOException {
-        if (stream == null || stream.markSupported()) {
-            return detector.detect(stream, metadata).toString();
-        } else {
-            return detector.detect(new BufferedInputStream(stream), metadata).toString();
+        if (stream == null) {
+            return detector.detect(null, metadata).toString();
+        }
+        try (TikaInputStream tis = TikaInputStream.get(stream)) {
+            return detector.detect(tis, metadata).toString();
         }
     }
 
@@ -513,8 +513,8 @@ public class Tika {
         WriteOutContentHandler handler = new WriteOutContentHandler(maxLength);
         ParseContext context = new ParseContext();
         context.set(Parser.class, parser);
-        try (stream) {
-            parser.parse(stream, new BodyContentHandler(handler), metadata, context);
+        try (TikaInputStream tis = TikaInputStream.get(stream)) {
+            parser.parse(tis, new BodyContentHandler(handler), metadata, context);
         } catch (SAXException e) {
             if (!WriteLimitReachedException.isWriteLimitReached(e)) {
                 // This should never happen with BodyContentHandler...

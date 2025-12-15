@@ -191,19 +191,19 @@ public class DefaultZipContainerDetector implements Detector {
     }
 
     @Override
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
         // Check if we have access to the document
-        if (input == null) {
+        if (tis == null) {
             return MediaType.OCTET_STREAM;
         }
 
         byte[] prefix = new byte[1024]; // enough for all known archive formats
-        input.mark(1024);
+        tis.mark(1024);
         int length = -1;
         try {
-            length = IOUtils.read(input, prefix, 0, 1024);
+            length = IOUtils.read(tis, prefix, 0, 1024);
         } finally {
-            input.reset();
+            tis.reset();
         }
 
         MediaType type = detectArchiveFormat(prefix, length);
@@ -211,18 +211,10 @@ public class DefaultZipContainerDetector implements Detector {
         if (type == TIFF) {
             return TIFF;
         } else if (isZipArchive(type)) {
-
-            if (TikaInputStream.isTikaInputStream(input)) {
-                TikaInputStream tis = TikaInputStream.cast(input);
-                if (markLimit < 1 || tis.hasFile()) {
-                    return detectZipFormatOnFile(tis, metadata);
-                } else {
-                    return tryStreamingOnTikaInputStream(tis, metadata);
-                }
+            if (markLimit < 1 || tis.hasFile()) {
+                return detectZipFormatOnFile(tis, metadata);
             } else {
-                LOG.warn("Applying streaming detection in DefaultZipContainerDetector. " +
-                            "This can lead to imprecise detection. Please consider using a TikaInputStream");
-                return detectStreaming(input, metadata);
+                return tryStreamingOnTikaInputStream(tis, metadata);
             }
         } else if (!type.equals(MediaType.OCTET_STREAM)) {
             return type;

@@ -17,7 +17,6 @@
 package org.apache.tika.detect;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.Collection;
@@ -25,6 +24,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -55,15 +55,15 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
     }
 
     /**
-     * @param input    text document input stream, or <code>null</code>
+     * @param tis      text document input stream, or <code>null</code>
      * @param metadata input metadata for the document
      * @return the detected Charset or null if no charset could be detected
      * @throws IOException
      */
     @Override
-    public Charset detect(InputStream input, Metadata metadata) throws IOException {
+    public Charset detect(TikaInputStream tis, Metadata metadata) throws IOException {
         for (EncodingDetector detector : getDetectors()) {
-            Charset detected = detector.detect(input, metadata);
+            Charset detected = detector.detect(tis, metadata);
             if (detected != null) {
                 metadata.set(TikaCoreProperties.DETECTED_ENCODING, detected.name());
                 //if this has been set by a leaf detector, do not overwrite

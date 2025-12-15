@@ -29,6 +29,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -89,7 +90,7 @@ public class DWGParser extends AbstractDWGParser {
         return Collections.singleton(TYPE);
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata, ParseContext context)
             throws IOException, TikaException, SAXException {
 
         configure(context);
@@ -97,11 +98,11 @@ public class DWGParser extends AbstractDWGParser {
 
         if (!dwgc.getDwgReadExecutable().isEmpty()) {
             DWGReadParser dwr = new DWGReadParser();
-            dwr.parse(stream, handler, metadata, context);
+            dwr.parse(tis, handler, metadata, context);
         } else {
             // First up, which version of the format are we handling?
             byte[] header = new byte[128];
-            IOUtils.readFully(stream, header);
+            IOUtils.readFully(tis, header);
             String version = new String(header, 0, 6, "US-ASCII");
 
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
@@ -110,14 +111,14 @@ public class DWGParser extends AbstractDWGParser {
             switch (version) {
                 case "AC1015":
                     metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
-                    if (skipTo2000PropertyInfoSection(stream, header)) {
-                        get2000Props(stream, metadata, xhtml);
+                    if (skipTo2000PropertyInfoSection(tis, header)) {
+                        get2000Props(tis, metadata, xhtml);
                     }
                     break;
                 case "AC1018":
                     metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
-                    if (skipToPropertyInfoSection(stream, header)) {
-                        get2004Props(stream, metadata, xhtml);
+                    if (skipToPropertyInfoSection(tis, header)) {
+                        get2004Props(tis, metadata, xhtml);
                     }
                     break;
                 case "AC1027":
@@ -125,8 +126,8 @@ public class DWGParser extends AbstractDWGParser {
                 case "AC1021":
                 case "AC1024":
                     metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
-                    if (skipToPropertyInfoSection(stream, header)) {
-                        get2007and2010Props(stream, metadata, xhtml);
+                    if (skipToPropertyInfoSection(tis, header)) {
+                        get2007and2010Props(tis, metadata, xhtml);
                     }
                     break;
                 default:
@@ -140,30 +141,30 @@ public class DWGParser extends AbstractDWGParser {
     /**
      * Stored as US-ASCII
      */
-    private void get2004Props(InputStream stream, Metadata metadata, XHTMLContentHandler xhtml)
+    private void get2004Props(InputStream tis, Metadata metadata, XHTMLContentHandler xhtml)
             throws IOException, TikaException, SAXException {
         // Standard properties
         for (int i = 0; i < HEADER_PROPERTIES_ENTRIES.length; i++) {
-            String headerValue = read2004String(stream);
+            String headerValue = read2004String(tis);
             handleHeader(i, headerValue, metadata, xhtml);
         }
 
         // Custom properties
-        int customCount = skipToCustomProperties(stream);
+        int customCount = skipToCustomProperties(tis);
         for (int i = 0; i < customCount; i++) {
-            String propName = read2004String(stream);
-            String propValue = read2004String(stream);
+            String propName = read2004String(tis);
+            String propValue = read2004String(tis);
             if (propName.length() > 0 && propValue.length() > 0) {
                 metadata.add(DWG_CUSTOM_META_PREFIX + propName, propValue);
             }
         }
     }
 
-    private String read2004String(InputStream stream) throws IOException, TikaException {
-        int stringLen = EndianUtils.readUShortLE(stream);
+    private String read2004String(InputStream tis) throws IOException, TikaException {
+        int stringLen = EndianUtils.readUShortLE(tis);
 
         byte[] stringData = new byte[stringLen];
-        IOUtils.readFully(stream, stringData);
+        IOUtils.readFully(tis, stringData);
 
         // Often but not always null terminated
         if (stringData[stringLen - 1] == 0) {
@@ -175,30 +176,30 @@ public class DWGParser extends AbstractDWGParser {
     /**
      * Stored as UCS2, so 16 bit "unicode"
      */
-    private void get2007and2010Props(InputStream stream, Metadata metadata, XHTMLContentHandler xhtml)
+    private void get2007and2010Props(InputStream tis, Metadata metadata, XHTMLContentHandler xhtml)
             throws IOException, TikaException, SAXException {
         // Standard properties
         for (int i = 0; i < HEADER_PROPERTIES_ENTRIES.length; i++) {
-            String headerValue = read2007and2010String(stream);
+            String headerValue = read2007and2010String(tis);
             handleHeader(i, headerValue, metadata, xhtml);
         }
 
         // Custom properties
-        int customCount = skipToCustomProperties(stream);
+        int customCount = skipToCustomProperties(tis);
         for (int i = 0; i < customCount; i++) {
-            String propName = read2007and2010String(stream);
-            String propValue = read2007and2010String(stream);
+            String propName = read2007and2010String(tis);
+            String propValue = read2007and2010String(tis);
             if (propName.length() > 0 && propValue.length() > 0) {
                 metadata.add(DWG_CUSTOM_META_PREFIX + propName, propValue);
             }
         }
     }
 
-    private String read2007and2010String(InputStream stream) throws IOException, TikaException {
-        int stringLen = EndianUtils.readUShortLE(stream);
+    private String read2007and2010String(InputStream tis) throws IOException, TikaException {
+        int stringLen = EndianUtils.readUShortLE(tis);
 
         byte[] stringData = new byte[stringLen * 2];
-        IOUtils.readFully(stream, stringData);
+        IOUtils.readFully(tis, stringData);
         String value = StringUtil.getFromUnicodeLE(stringData);
 
         // Some strings are null terminated
@@ -209,13 +210,13 @@ public class DWGParser extends AbstractDWGParser {
         return value;
     }
 
-    private void get2000Props(InputStream stream, Metadata metadata, XHTMLContentHandler xhtml)
+    private void get2000Props(InputStream tis, Metadata metadata, XHTMLContentHandler xhtml)
             throws IOException, TikaException, SAXException {
         int propCount = 0;
         while (propCount < 30) {
-            int propIdx = EndianUtils.readUShortLE(stream);
-            int length = EndianUtils.readUShortLE(stream);
-            int valueType = stream.read();
+            int propIdx = EndianUtils.readUShortLE(tis);
+            int length = EndianUtils.readUShortLE(tis);
+            int valueType = tis.read();
 
             if (propIdx == 0x28) {
                 // This one seems not to follow the pattern
@@ -226,7 +227,7 @@ public class DWGParser extends AbstractDWGParser {
             }
 
             byte[] value = new byte[length];
-            IOUtils.readFully(stream, value);
+            IOUtils.readFully(tis, value);
             if (valueType == 0x1e) {
                 // Normal string, good
                 String val = StringUtil.getFromCompressedUnicode(value, 0, length);
@@ -268,7 +269,7 @@ public class DWGParser extends AbstractDWGParser {
     /**
      * Grab the offset, then skip there
      */
-    private boolean skipToPropertyInfoSection(InputStream stream, byte[] header) throws IOException, TikaException {
+    private boolean skipToPropertyInfoSection(InputStream tis, byte[] header) throws IOException, TikaException {
         // The offset is stored in the header from 0x20 onwards
         long offsetToSection = EndianUtils.getLongLE(header, 0x20);
 
@@ -285,7 +286,7 @@ public class DWGParser extends AbstractDWGParser {
         if (offsetToSection == 0) {
             return false;
         }
-        IOUtils.skipFully(stream, toSkip);
+        IOUtils.skipFully(tis, toSkip);
 
         return true;
     }
@@ -293,14 +294,14 @@ public class DWGParser extends AbstractDWGParser {
     /**
      * We think it can be anywhere...
      */
-    private boolean skipTo2000PropertyInfoSection(InputStream stream, byte[] header) throws IOException {
+    private boolean skipTo2000PropertyInfoSection(InputStream tis, byte[] header) throws IOException {
         int val = 0;
         while (val != -1) {
-            val = stream.read();
+            val = tis.read();
             if (val == HEADER_2000_PROPERTIES_MARKER[0]) {
                 boolean going = true;
                 for (int i = 1; i < HEADER_2000_PROPERTIES_MARKER.length && going; i++) {
-                    val = stream.read();
+                    val = tis.read();
                     if (val != HEADER_2000_PROPERTIES_MARKER[i]) {
                         going = false;
                     }
@@ -314,10 +315,10 @@ public class DWGParser extends AbstractDWGParser {
         return false;
     }
 
-    private int skipToCustomProperties(InputStream stream) throws IOException, TikaException {
+    private int skipToCustomProperties(InputStream tis) throws IOException, TikaException {
         // There should be 4 zero bytes or CUSTOM_PROPERTIES_ALT_PADDING_VALUES next
         byte[] padding = new byte[4];
-        IOUtils.readFully(stream, padding);
+        IOUtils.readFully(tis, padding);
         if ((padding[0] == 0 && padding[1] == 0 && padding[2] == 0 && padding[3] == 0)
                 || (padding[0] == CUSTOM_PROPERTIES_ALT_PADDING_VALUES[0]
                         && padding[1] == CUSTOM_PROPERTIES_ALT_PADDING_VALUES[1]
@@ -326,10 +327,10 @@ public class DWGParser extends AbstractDWGParser {
 
             // Looks hopeful, skip on
             padding = new byte[CUSTOM_PROPERTIES_SKIP];
-            IOUtils.readFully(stream, padding);
+            IOUtils.readFully(tis, padding);
 
             // We should now have the count
-            int count = EndianUtils.readUShortLE(stream);
+            int count = EndianUtils.readUShortLE(tis);
 
             // Plausibilitu check it
             if (count > 0 && count < 0x7f) {

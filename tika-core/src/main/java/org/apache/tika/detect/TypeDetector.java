@@ -16,8 +16,7 @@
  */
 package org.apache.tika.detect;
 
-import java.io.InputStream;
-
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -37,11 +36,11 @@ public class TypeDetector implements Detector {
      * If that attribute exists and contains a valid type name, then that
      * type is returned.
      *
-     * @param input    ignored
+     * @param tis      ignored
      * @param metadata input metadata, possibly with a CONTENT_TYPE value
      * @return detected media type, or <code>application/octet-stream</code>
      */
-    public MediaType detect(InputStream input, Metadata metadata) {
+    public MediaType detect(TikaInputStream tis, Metadata metadata) {
         // Look for a type hint in the input metadata
         String hint = metadata.get(Metadata.CONTENT_TYPE);
         if (hint != null) {

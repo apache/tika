@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,6 +29,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -83,7 +83,7 @@ public class MultipleParserTest {
 
         metadata = new Metadata();
         handler = new BodyContentHandler();
-        p.parse(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
+        p.parse(TikaInputStream.get(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
         assertEquals("Fell back!", handler.toString());
 
         usedParsers = metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY);
@@ -96,7 +96,7 @@ public class MultipleParserTest {
 
         metadata = new Metadata();
         handler = new BodyContentHandler();
-        p.parse(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
+        p.parse(TikaInputStream.get(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
         assertEquals("Fell back!", handler.toString());
 
         usedParsers = metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY);
@@ -115,7 +115,7 @@ public class MultipleParserTest {
 
         metadata = new Metadata();
         handler = new BodyContentHandler();
-        p.parse(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
+        p.parse(TikaInputStream.get(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
         assertEquals("Fell back!", handler.toString());
 
         usedParsers = metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY);
@@ -170,7 +170,7 @@ public class MultipleParserTest {
 
         metadata = new Metadata();
         handler = new BodyContentHandler();
-        p.parse(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
+        p.parse(TikaInputStream.get(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
         assertEquals("Fell back 1!", handler.toString());
 
         assertEquals("Test1", metadata.get("T1"));
@@ -188,7 +188,7 @@ public class MultipleParserTest {
 
         metadata = new Metadata();
         handler = new BodyContentHandler();
-        p.parse(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
+        p.parse(TikaInputStream.get(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
         assertEquals("Fell back 1!Fell back 2!", handler.toString());
 
         assertEquals("Test1", metadata.get("T1"));
@@ -208,7 +208,7 @@ public class MultipleParserTest {
 
         metadata = new Metadata();
         handler = new BodyContentHandler();
-        p.parse(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
+        p.parse(TikaInputStream.get(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
         assertEquals("Fell back 1!Fell back 2!", handler.toString());
 
         assertEquals("Test1", metadata.get("T1"));
@@ -228,7 +228,7 @@ public class MultipleParserTest {
 
         metadata = new Metadata();
         handler = new BodyContentHandler();
-        p.parse(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
+        p.parse(TikaInputStream.get(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
         assertEquals("Fell back 1!Fell back 2!", handler.toString());
 
         assertEquals("Test1", metadata.get("T1"));

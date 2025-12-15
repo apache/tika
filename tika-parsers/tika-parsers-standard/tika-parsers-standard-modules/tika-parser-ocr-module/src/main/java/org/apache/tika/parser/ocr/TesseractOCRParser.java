@@ -263,7 +263,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext parseContext) throws IOException, SAXException, TikaException {
 
         TesseractOCRConfig config = getConfig(parseContext);
@@ -282,7 +282,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         }
 
         try (TemporaryResources tmp = new TemporaryResources()) {
-            TikaInputStream tikaStream = TikaInputStream.get(stream, tmp, metadata);
+            TikaInputStream tikaStream = TikaInputStream.get(tis, tmp, metadata);
 
             //trigger the spooling to a tmp file if the stream wasn't
             //already a TikaInputStream that contained a file
@@ -558,13 +558,13 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
      * @throws SAXException if the XHTML SAX events could not be handled
      * @throws IOException  if an input error occurred
      */
-    private void extractOutput(InputStream stream, ContentHandler xhtml)
+    private void extractOutput(InputStream tis, ContentHandler xhtml)
             throws SAXException, IOException {
         //        <div class="ocr"
         AttributesImpl attrs = new AttributesImpl();
         attrs.addAttribute("", "class", "class", "CDATA", "ocr");
         xhtml.startElement(XHTML, "div", "div", attrs);
-        try (Reader reader = new InputStreamReader(stream, UTF_8)) {
+        try (Reader reader = new InputStreamReader(tis, UTF_8)) {
             char[] buffer = new char[1024];
             for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
                 if (n > 0) {
@@ -596,9 +596,9 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
      * stream of the given process to not block the process. The stream is closed
      * once fully processed.
      */
-    private Thread logStream(final InputStream stream, final StringBuilder out) {
+    private Thread logStream(final InputStream tis, final StringBuilder out) {
         return new Thread(() -> {
-            Reader reader = new InputStreamReader(stream, UTF_8);
+            Reader reader = new InputStreamReader(tis, UTF_8);
             char[] buffer = new char[1024];
             try {
                 for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
@@ -607,7 +607,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
             } catch (IOException e) {
                 //swallow
             } finally {
-                IOUtils.closeQuietly(stream);
+                IOUtils.closeQuietly(tis);
             }
 
             LOG.debug("{}", out);

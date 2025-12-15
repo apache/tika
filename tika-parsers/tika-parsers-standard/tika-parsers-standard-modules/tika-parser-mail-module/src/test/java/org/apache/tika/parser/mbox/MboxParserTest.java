@@ -19,7 +19,6 @@ package org.apache.tika.parser.mbox;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -29,6 +28,7 @@ import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.TypeDetector;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
@@ -59,8 +59,8 @@ public class MboxParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = getResourceAsStream("/test-documents/simple.mbox")) {
-            mboxParser.parse(stream, handler, metadata, recursingContext);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/simple.mbox")) {
+            mboxParser.parse(tis, handler, metadata, recursingContext);
         }
 
         String content = handler.toString();
@@ -87,8 +87,8 @@ public class MboxParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = getResourceAsStream("/test-documents/headers.mbox")) {
-            mboxParser.parse(stream, handler, metadata, recursingContext);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/headers.mbox")) {
+            mboxParser.parse(tis, handler, metadata, recursingContext);
         }
 
         assertContains("Test content", handler.toString());
@@ -109,8 +109,8 @@ public class MboxParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = getResourceAsStream("/test-documents/multiline.mbox")) {
-            mboxParser.parse(stream, handler, metadata, recursingContext);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/multiline.mbox")) {
+            mboxParser.parse(tis, handler, metadata, recursingContext);
         }
 
         assertEquals(1, mboxParser.getTrackingMetadata().size(), "Nb. Of mails");
@@ -134,8 +134,8 @@ public class MboxParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = getResourceAsStream("/test-documents/quoted.mbox")) {
-            mboxParser.parse(stream, handler, metadata, recursingContext);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/quoted.mbox")) {
+            mboxParser.parse(tis, handler, metadata, recursingContext);
         }
 
         assertContains("Test content", handler.toString());
@@ -147,8 +147,8 @@ public class MboxParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = getResourceAsStream("/test-documents/complex.mbox")) {
-            mboxParser.parse(stream, handler, metadata, recursingContext);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/complex.mbox")) {
+            mboxParser.parse(tis, handler, metadata, recursingContext);
         }
 
         assertEquals(3, mboxParser.getTrackingMetadata().size(), "Nb. Of mails");

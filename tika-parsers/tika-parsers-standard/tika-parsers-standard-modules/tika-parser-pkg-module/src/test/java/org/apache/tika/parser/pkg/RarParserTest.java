@@ -22,12 +22,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -48,8 +47,8 @@ public class RarParserTest extends AbstractPkgTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = getResourceAsStream("/test-documents/test-documents.rar")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/test-documents.rar")) {
+            AUTO_DETECT_PARSER.parse(tis, handler, metadata, trackingContext);
         }
 
         // Should have found all 9 documents, but not the directory
@@ -101,7 +100,7 @@ public class RarParserTest extends AbstractPkgTest {
     public void testEncryptedRar() throws Exception {
         Parser parser = new RarParser();
 
-        try (InputStream input = getResourceAsStream("/test-documents/test-documents-enc.rar")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/test-documents-enc.rar")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             ParseContext context = new ParseContext();
@@ -114,7 +113,7 @@ public class RarParserTest extends AbstractPkgTest {
 
             // Note - we don't currently support encrypted RAR
             // files so we can't check the contents
-            parser.parse(input, handler, metadata, trackingContext);
+            parser.parse(tis, handler, metadata, trackingContext);
             fail("No support yet for Encrypted RAR files");
         } catch (EncryptedDocumentException e) {
             // Good, as expected right now

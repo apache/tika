@@ -42,6 +42,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -76,7 +77,7 @@ public class ForkParserTikaBinTest extends TikaTest {
             try (InputStream input = ForkParserTikaBinTest.class
                     .getResourceAsStream("/org/apache/tika/config/TIKA-2653-vowel-parser-ae.xml")) {
                 jarOs.putNextEntry(
-                        new JarEntry("org/apache/tika/parser/TIKA-2653-vowel-parser-ae.xml"));
+                        new JarEntry("org/apache/tika/fork/TIKA-2653-vowel-parser-ae.xml"));
                 IOUtils.copy(input, jarOs);
             }
             try (InputStream input = ForkParserTikaBinTest.class
@@ -125,7 +126,7 @@ public class ForkParserTikaBinTest extends TikaTest {
     @Test
     public void testVowelParserAsDefault() throws Exception {
         ParserFactoryFactory pff =
-                new ParserFactoryFactory("org.apache.tika.parser.mock.AutoDetectParserFactory",
+                new ParserFactoryFactory("org.apache.tika.fork.AutoDetectParserFactory",
                         EMPTY_MAP);
         XMLResult xmlResult = getXML(pff);
         assertContains("eooeuiooueoeeao", xmlResult.xml);
@@ -138,7 +139,7 @@ public class ForkParserTikaBinTest extends TikaTest {
         //this tests that the content handler was loaded from the parent process.
 
         ParserFactoryFactory pff =
-                new ParserFactoryFactory("org.apache.tika.parser.mock.AutoDetectParserFactory",
+                new ParserFactoryFactory("org.apache.tika.fork.AutoDetectParserFactory",
                         EMPTY_MAP);
         XMLResult xmlResult =
                 getXML(pff, this.getClass().getClassLoader(), new UpperCasingContentHandler());
@@ -171,8 +172,8 @@ public class ForkParserTikaBinTest extends TikaTest {
         ContentHandler handler =
                 (contentHandler == null) ? new ToXMLContentHandler() : contentHandler;
         Metadata m = new Metadata();
-        try (InputStream is = getResourceAsStream("/test-documents/example.xml")) {
-            parser.parse(is, handler, m, new ParseContext());
+        try (TikaInputStream tis = TikaInputStream.get(getResourceAsStream("/test-documents/example.xml"))) {
+            parser.parse(tis, handler, m, new ParseContext());
         } finally {
             parser.close();
         }

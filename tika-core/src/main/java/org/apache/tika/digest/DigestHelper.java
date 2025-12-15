@@ -47,15 +47,13 @@ public class DigestHelper {
      * @param skipContainerDocumentDigest  if true, skip digesting for top-level documents (depth 0)
      * @param metadata                     metadata to read embedded depth from and write digests to
      * @param context                      parse context (may contain SkipContainerDocumentDigest marker)
-     * @param tmp                          temporary resources for creating temp files if needed
      * @throws IOException if an I/O error occurs
      */
     public static void maybeDigest(TikaInputStream tis,
                                    Digester digester,
                                    boolean skipContainerDocumentDigest,
                                    Metadata metadata,
-                                   ParseContext context,
-                                   TemporaryResources tmp) throws IOException {
+                                   ParseContext context) throws IOException {
         if (digester == null) {
             return;
         }
@@ -69,12 +67,14 @@ public class DigestHelper {
 
         // Handle embedded stream translation if needed (e.g., for OLE2 objects in TikaInputStream's open container)
         if (EMBEDDED_STREAM_TRANSLATOR.shouldTranslate(tis, metadata)) {
-            Path tmpBytes = tmp.createTempFile();
-            try (OutputStream os = Files.newOutputStream(tmpBytes)) {
-                EMBEDDED_STREAM_TRANSLATOR.translate(tis, metadata, os);
-            }
-            try (TikaInputStream translated = TikaInputStream.get(tmpBytes)) {
-                digester.digest(translated, metadata, context);
+            try (TemporaryResources tmp = new TemporaryResources()) {
+                Path tmpBytes = tmp.createTempFile();
+                try (OutputStream os = Files.newOutputStream(tmpBytes)) {
+                    EMBEDDED_STREAM_TRANSLATOR.translate(tis, metadata, os);
+                }
+                try (TikaInputStream translated = TikaInputStream.get(tmpBytes)) {
+                    digester.digest(translated, metadata, context);
+                }
             }
         } else {
             digester.digest(tis, metadata, context);

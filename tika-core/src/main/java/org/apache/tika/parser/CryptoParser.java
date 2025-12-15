@@ -17,7 +17,6 @@
 package org.apache.tika.parser;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.Key;
@@ -32,6 +31,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -69,7 +69,7 @@ public abstract class CryptoParser extends DelegatingParser {
         return types;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         try {
             Cipher cipher;
@@ -96,7 +96,10 @@ public abstract class CryptoParser extends DelegatingParser {
                 cipher.init(Cipher.DECRYPT_MODE, key);
             }
 
-            super.parse(new CipherInputStream(stream, cipher), handler, metadata, context);
+            try (TikaInputStream decrypted = TikaInputStream.get(
+                    new CipherInputStream(tis, cipher))) {
+                super.parse(decrypted, handler, metadata, context);
+            }
         } catch (GeneralSecurityException e) {
             throw new TikaException("Unable to decrypt document stream", e);
         }

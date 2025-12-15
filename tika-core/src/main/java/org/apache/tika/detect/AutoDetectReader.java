@@ -16,7 +16,6 @@
  */
 package org.apache.tika.detect;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,6 +26,7 @@ import org.xml.sax.InputSource;
 
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -65,12 +65,12 @@ public class AutoDetectReader extends BufferedReader {
 
     public AutoDetectReader(InputStream stream, Metadata metadata,
                             EncodingDetector encodingDetector) throws IOException, TikaException {
-        this(getBuffered(stream), detect(getBuffered(stream), metadata, encodingDetector));
+        this(getTikaInputStream(stream), detect(getTikaInputStream(stream), metadata, encodingDetector));
     }
 
     public AutoDetectReader(InputStream stream, Metadata metadata, ServiceLoader loader)
             throws IOException, TikaException {
-        this(getBuffered(stream), metadata,
+        this(getTikaInputStream(stream), metadata,
                 new CompositeEncodingDetector(loader.loadServiceProviders(EncodingDetector.class)));
     }
 
@@ -83,11 +83,11 @@ public class AutoDetectReader extends BufferedReader {
         this(stream, new Metadata());
     }
 
-    private static Charset detect(InputStream input, Metadata metadata,
+    private static Charset detect(TikaInputStream tis, Metadata metadata,
                                   EncodingDetector detector)
             throws IOException, TikaException {
         // Ask all given detectors for the character encoding
-        Charset charset = detector.detect(input, metadata);
+        Charset charset = detector.detect(tis, metadata);
         if (charset != null) {
             return charset;
         }
@@ -112,11 +112,11 @@ public class AutoDetectReader extends BufferedReader {
         throw new TikaException("Failed to detect the character encoding of a document");
     }
 
-    private static InputStream getBuffered(InputStream stream) {
-        if (stream.markSupported()) {
-            return stream;
+    private static TikaInputStream getTikaInputStream(InputStream stream) {
+        if (stream instanceof TikaInputStream) {
+            return (TikaInputStream) stream;
         }
-        return new BufferedInputStream(stream);
+        return TikaInputStream.get(stream);
     }
 
 

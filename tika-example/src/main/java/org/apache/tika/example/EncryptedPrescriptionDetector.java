@@ -27,17 +27,18 @@ import javax.xml.namespace.QName;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.XmlRootExtractor;
 import org.apache.tika.io.LookaheadInputStream;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
 public class EncryptedPrescriptionDetector implements Detector {
     private static final long serialVersionUID = -1709652690773421147L;
 
-    public MediaType detect(InputStream stream, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
         Key key = Pharmacy.getKey();
         MediaType type = MediaType.OCTET_STREAM;
 
-        try (InputStream lookahead = new LookaheadInputStream(stream, 1024)) {
+        try (InputStream lookahead = new LookaheadInputStream(tis, 1024)) {
             Cipher cipher = Cipher.getInstance("RSA");
 
             cipher.init(Cipher.DECRYPT_MODE, key);

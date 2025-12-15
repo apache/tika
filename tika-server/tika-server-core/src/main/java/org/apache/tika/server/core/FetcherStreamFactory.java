@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
@@ -78,7 +79,7 @@ public class FetcherStreamFactory implements InputStreamFactory {
     }
 
     @Override
-    public InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders, UriInfo uriInfo) throws IOException {
+    public TikaInputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders httpHeaders, UriInfo uriInfo) throws IOException {
         MultivaluedMap params = (uriInfo == null) ? null : uriInfo.getQueryParameters();
         String fetcherId = getParam("fetcherId", httpHeaders, params);
         String fetchKey = getParam("fetchKey", httpHeaders, params);
@@ -114,7 +115,7 @@ public class FetcherStreamFactory implements InputStreamFactory {
                 throw new IOException(e);
             }
         }
-        return is;
+        return TikaInputStream.get(is);
     }
 
     private String urlDecode(String fetchKey) {

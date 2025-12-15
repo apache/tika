@@ -18,7 +18,6 @@ package org.apache.tika.parser.microsoft.ooxml.xps;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,6 +27,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -110,7 +110,7 @@ public class XPSParserTest extends TikaTest {
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         Files.copy(path, bos);
-        metadataList = getRecursiveMetadata(new ByteArrayInputStream(bos.toByteArray()), false);
+        metadataList = getRecursiveMetadata(TikaInputStream.get(bos.toByteArray()), false);
         assertEquals(2, metadataList.size());
         assertContains("This is my XPS document test",
                 metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
@@ -131,7 +131,7 @@ public class XPSParserTest extends TikaTest {
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         Files.copy(path, bos);
-        metadataList = getRecursiveMetadata(new ByteArrayInputStream(bos.toByteArray()), false);
+        metadataList = getRecursiveMetadata(TikaInputStream.get(bos.toByteArray()), false);
         assertEquals(2, metadataList.size());
         assertContains("How was I supposed to know",
                 metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));

@@ -21,13 +21,12 @@ import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -62,8 +61,8 @@ public class Latin1StringsParserTest {
         Parser parser = new Latin1StringsParser();
         ContentHandler handler = new BodyContentHandler();
 
-        try (InputStream stream = new ByteArrayInputStream(baos.toByteArray())) {
-            parser.parse(stream, handler, new Metadata(), new ParseContext());
+        try (TikaInputStream tis = TikaInputStream.get(baos.toByteArray())) {
+            parser.parse(tis, handler, new Metadata(), new ParseContext());
         }
 
         String result = handler.toString();

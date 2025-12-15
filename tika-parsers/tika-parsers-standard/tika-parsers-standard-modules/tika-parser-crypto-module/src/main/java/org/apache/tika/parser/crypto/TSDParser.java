@@ -91,11 +91,11 @@ public class TSDParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         //Try to parse TSD file
-        try (RereadableInputStream ris = new RereadableInputStream(stream, 2048, true)) {
+        try (RereadableInputStream ris = new RereadableInputStream(tis, 2048, true)) {
             Metadata TSDAndEmbeddedMetadata = new Metadata();
 
             List<TSDMetas> tsdMetasList = this.extractMetas(ris);
@@ -112,11 +112,11 @@ public class TSDParser implements Parser {
         }
     }
 
-    private List<TSDMetas> extractMetas(InputStream stream) throws SAXException {
+    private List<TSDMetas> extractMetas(InputStream tis) throws SAXException {
         List<TSDMetas> tsdMetasList = new ArrayList<>();
 
         try {
-            CMSTimeStampedData cmsTimeStampedData = new CMSTimeStampedData(stream);
+            CMSTimeStampedData cmsTimeStampedData = new CMSTimeStampedData(tis);
 
             TimeStampToken[] tokens = cmsTimeStampedData.getTimeStampTokens();
 
@@ -173,8 +173,8 @@ public class TSDParser implements Parser {
             try {
                 cmsTimeStampedDataParser = new CMSTimeStampedDataParser(stream);
 
-                try (TikaInputStream tis = TikaInputStream.get(cmsTimeStampedDataParser.getContent())) {
-                    edx.parseEmbedded(tis, handler, metadata, true);
+                try (TikaInputStream inner = TikaInputStream.get(cmsTimeStampedDataParser.getContent())) {
+                    edx.parseEmbedded(inner, handler, metadata, true);
                 }
 
             } catch (SecurityException e) {

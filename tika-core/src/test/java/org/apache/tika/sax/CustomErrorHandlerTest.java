@@ -33,6 +33,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -80,9 +81,9 @@ public class CustomErrorHandlerTest extends TikaTest {
 
     private String extractTestData(String name)
             throws IOException, SAXException, TikaException, ParserConfigurationException {
-        try (InputStream is = getResourceAsStream("/test-documents/" + name)) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/" + name)) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            extractXml(is, out);
+            extractXml(tis, out);
             return out.toString(StandardCharsets.UTF_8);
         }
     }

@@ -32,7 +32,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.hssf.model.InternalWorkbook;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
@@ -47,7 +46,6 @@ import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.Detector;
-import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -633,51 +631,13 @@ public class POIFSContainerDetector implements Detector {
         }
     }
 
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
         // Check if we have access to the document
-        if (input == null) {
+        if (tis == null) {
             return MediaType.OCTET_STREAM;
         }
 
-        TikaInputStream tis = TikaInputStream.cast(input);
-        if (tis != null) {
-            return handleTikaStream(tis, metadata);
-        }
-        if (isOleHeader(input)) {
-            if (markLimit < 0) {
-                return OLE;
-            }
-            return handleInputStream(input, metadata);
-        }
-        return MediaType.OCTET_STREAM;
-    }
-
-    private MediaType handleInputStream(InputStream input, Metadata metadata) throws IOException {
-        if (markLimit < 0) {
-            return OLE;
-        }
-        BoundedInputStream bis = null;
-        try {
-            bis = new BoundedInputStream(markLimit, CloseShieldInputStream.wrap(input));
-            bis.mark(markLimit);
-            try (POIFSFileSystem poifs = new POIFSFileSystem(CloseShieldInputStream.wrap(bis))) {
-                if (bis.hasHitBound()) {
-                    return OLE;
-                }
-                Set<String> names = getTopLevelNames(poifs.getRoot());
-                return detect(names, poifs.getRoot());
-            } catch (SecurityException e) {
-                throw e;
-            } catch (IOException | RuntimeException e) {
-                //swallow
-                return OLE;
-            }
-        } finally {
-            if (bis != null) {
-                bis.reset();
-                bis.close();
-            }
-        }
+        return handleTikaStream(tis, metadata);
     }
 
     private MediaType handleTikaStream(TikaInputStream tis, Metadata metadata) throws IOException {
@@ -715,12 +675,10 @@ public class POIFSContainerDetector implements Detector {
     }
 
 
-    public static Set<String> tryOpenContainerOnTikaInputStream(InputStream input, Metadata metadata) {
+    public static Set<String> tryOpenContainerOnTikaInputStream(TikaInputStream tis, Metadata metadata) {
         // If this is a TikaInputStream wrapping an already
         // parsed NPOIFileSystem/DirectoryNode, just get the
         // names from the root:
-        TikaInputStream tis = TikaInputStream.cast(input);
-        Set<String> names = null;
         if (tis != null) {
             Object container = tis.getOpenContainer();
             if (container instanceof POIFSFileSystem) {

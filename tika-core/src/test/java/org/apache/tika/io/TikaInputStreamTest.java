@@ -45,20 +45,20 @@ public class TikaInputStreamTest {
     @Test
     public void testFileBased() throws IOException {
         Path path = createTempFile("Hello, World!");
-        TikaInputStream stream = TikaInputStream.get(path);
-        assertTrue(stream.hasFile());
-        assertNull(stream.getOpenContainer());
-        assertNull(stream.getInputStreamFactory());
+        TikaInputStream tis = TikaInputStream.get(path);
+        assertTrue(tis.hasFile());
+        assertNull(tis.getOpenContainer());
+        assertNull(tis.getInputStreamFactory());
 
-        assertEquals(path, TikaInputStream.get(stream).getPath(),
+        assertEquals(path, TikaInputStream.get(tis).getPath(),
                 "The file returned by the getFile() method should" +
                                 " be the file used to instantiate a TikaInputStream");
 
-        assertEquals("Hello, World!", readStream(stream),
+        assertEquals("Hello, World!", readStream(tis),
                 "The contents of the TikaInputStream should equal the" +
                         " contents of the underlying file");
 
-        stream.close();
+        tis.close();
         assertTrue(Files.exists(path),
                 "The close() method must not remove the file used to" +
                 " instantiate a TikaInputStream");
@@ -68,41 +68,41 @@ public class TikaInputStreamTest {
     @Test
     public void testStreamBased() throws IOException {
         InputStream input = IOUtils.toInputStream("Hello, World!", UTF_8);
-        TikaInputStream stream = TikaInputStream.get(input);
-        assertFalse(stream.hasFile());
-        assertNull(stream.getOpenContainer());
-        assertNull(stream.getInputStreamFactory());
+        TikaInputStream tis = TikaInputStream.get(input);
+        assertFalse(tis.hasFile());
+        assertNull(tis.getOpenContainer());
+        assertNull(tis.getInputStreamFactory());
 
-        Path file = TikaInputStream.get(stream).getPath();
+        Path file = TikaInputStream.get(tis).getPath();
         assertTrue(file != null && Files.isRegularFile(file));
-        assertTrue(stream.hasFile());
-        assertNull(stream.getOpenContainer());
-        assertNull(stream.getInputStreamFactory());
+        assertTrue(tis.hasFile());
+        assertNull(tis.getOpenContainer());
+        assertNull(tis.getInputStreamFactory());
 
         assertEquals("Hello, World!", readFile(file),
                 "The contents of the file returned by the getFile method" +
                         " should equal the contents of the TikaInputStream");
 
-        assertEquals("Hello, World!", readStream(stream),
+        assertEquals("Hello, World!", readStream(tis),
                 "The contents of the TikaInputStream should not get modified" +
                         " by reading the file first");
 
-        stream.close();
+        tis.close();
         assertFalse(Files.exists(file),
                 "The close() method must remove the temporary file created by a TikaInputStream");
     }
 
     @Test
     public void testInputStreamFactoryBased() throws IOException {
-        TikaInputStream stream = TikaInputStream.get(() -> IOUtils.toInputStream("Hello, World!", UTF_8));
-        assertFalse(stream.hasFile());
-        assertNull(stream.getOpenContainer());
-        assertNotNull(stream.getInputStreamFactory());
+        TikaInputStream tis = TikaInputStream.get(() -> IOUtils.toInputStream("Hello, World!", UTF_8));
+        assertFalse(tis.hasFile());
+        assertNull(tis.getOpenContainer());
+        assertNotNull(tis.getInputStreamFactory());
 
-        assertEquals("Hello, World!", readStream(stream),
+        assertEquals("Hello, World!", readStream(tis),
                 "The contents of the TikaInputStream should not get modified" +
                         " by reading the file first");
-        stream.close();
+        tis.close();
     }
 
     private Path createTempFile(String data) throws IOException {

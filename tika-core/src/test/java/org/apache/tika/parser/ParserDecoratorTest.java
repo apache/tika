@@ -19,7 +19,6 @@ package org.apache.tika.parser;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,6 +27,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.BodyContentHandler;
@@ -109,7 +109,7 @@ public class ParserDecoratorTest {
         // Parsing will make it to the second one
         metadata = new Metadata();
         handler = new BodyContentHandler();
-        p.parse(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
+        p.parse(TikaInputStream.get(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
         assertEquals("Fell back!", handler.toString());
 
 
@@ -117,7 +117,7 @@ public class ParserDecoratorTest {
         p = ParserDecorator.withFallbacks(Arrays.asList(pNothing, pWork), octAndText);
         metadata = new Metadata();
         handler = new BodyContentHandler();
-        p.parse(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
+        p.parse(TikaInputStream.get(new byte[]{0, 1, 2, 3, 4}), handler, metadata, context);
         assertEquals("", handler.toString());
     }
 }

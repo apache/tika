@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.StringWriter;
 
 import org.junit.jupiter.api.Test;
@@ -29,6 +28,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
@@ -37,12 +37,12 @@ public class TextAndAttributeXMLParserTest extends TikaTest {
 
     @Test
     public void testParseTextAndAttributes() throws IOException, TikaException, SAXException {
-        try (InputStream input = getResourceAsStream("/test-documents/testXML2.xml")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testXML2.xml")) {
             Metadata metadata = new Metadata();
             ParseContext context = new ParseContext();
             StringWriter writer = new StringWriter();
             ContentHandler handler = new BodyContentHandler(writer);
-            new TextAndAttributeXMLParser().parse(input, handler, metadata, context);
+            new TextAndAttributeXMLParser().parse(tis, handler, metadata, context);
             String output = writer.toString();
 
             assertEquals("application/xml", metadata.get(Metadata.CONTENT_TYPE));

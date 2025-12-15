@@ -17,7 +17,6 @@
 package org.apache.tika.parser.txt;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -27,6 +26,7 @@ import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.utils.CharsetUtils;
@@ -96,8 +96,8 @@ public class Icu4jEncodingDetector implements EncodingDetector {
 
 
     @Override
-    public Charset detect(InputStream input, Metadata metadata) throws IOException {
-        if (input == null) {
+    public Charset detect(TikaInputStream tis, Metadata metadata) throws IOException {
+        if (tis == null) {
             return null;
         }
         //TODO: add runtime updates?
@@ -128,7 +128,7 @@ public class Icu4jEncodingDetector implements EncodingDetector {
         // short HTML tests don't work well
         detector.enableInputFilter(true);
 
-        detector.setText(input);
+        detector.setText(tis);
 
         for (CharsetMatch match : detector.detectAll()) {
             try {

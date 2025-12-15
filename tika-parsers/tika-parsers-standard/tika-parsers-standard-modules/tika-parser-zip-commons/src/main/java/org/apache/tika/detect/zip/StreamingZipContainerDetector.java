@@ -18,13 +18,13 @@ package org.apache.tika.detect.zip;
 
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.io.BoundedInputStream;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -58,19 +58,19 @@ public class StreamingZipContainerDetector extends DefaultZipContainerDetector {
 
 
     @Override
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
         // Check if we have access to the document
-        if (input == null) {
+        if (tis == null) {
             return MediaType.OCTET_STREAM;
         }
 
         byte[] prefix = new byte[1024]; // enough for all known archive formats
-        input.mark(1024);
+        tis.mark(1024);
         int length = -1;
         try {
-            length = IOUtils.read(input, prefix, 0, 1024);
+            length = IOUtils.read(tis, prefix, 0, 1024);
         } finally {
-            input.reset();
+            tis.reset();
         }
 
         MediaType type = detectArchiveFormat(prefix, length);
@@ -78,11 +78,11 @@ public class StreamingZipContainerDetector extends DefaultZipContainerDetector {
         if (type == TIFF) {
             return TIFF;
         } else if (isZipArchive(type)) {
-            input.mark(markLimit);
-            try (BoundedInputStream lookahead = new BoundedInputStream(markLimit, input)) {
+            tis.mark(markLimit);
+            try (BoundedInputStream lookahead = new BoundedInputStream(markLimit, tis)) {
                 return detectStreaming(lookahead, metadata);
             } finally {
-                input.reset();
+                tis.reset();
             }
         } else if (!type.equals(MediaType.OCTET_STREAM)) {
             return type;

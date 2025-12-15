@@ -18,7 +18,6 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Locale;
 
@@ -85,7 +84,7 @@ public class OOXMLExtractorFactory {
         ExtractorFactory.setAllThreadsPreferEventExtractors(true);
     }
 
-    public static void parse(InputStream stream, ContentHandler baseHandler, Metadata metadata,
+    public static void parse(TikaInputStream tis, ContentHandler baseHandler, Metadata metadata,
                              ParseContext context) throws IOException, SAXException, TikaException {
         Locale locale = context.get(Locale.class, LocaleUtil.getUserLocale());
 
@@ -94,14 +93,10 @@ public class OOXMLExtractorFactory {
         File tmpRepairedCopy = null;
 
         OPCPackage pkg = null;
-        //if the pkg is in the opencontainer of a TikaInputStream, it will get closed.
-        //However, if a regular inputstream has been sent in, we need to revert the pkg.
-        boolean mustRevertPackage = false;
         try {
             OOXMLExtractor extractor = null;
 
             // Locate or Open the OPCPackage for the file
-            TikaInputStream tis = TikaInputStream.get(stream);
             if (tis.getOpenContainer() instanceof OPCPackageWrapper) {
                 pkg = ((OPCPackageWrapper) tis.getOpenContainer()).getOPCPackage();
             } else {
@@ -130,7 +125,7 @@ public class OOXMLExtractorFactory {
             }
             if (type != null && OOXMLParser.UNSUPPORTED_OOXML_TYPES.contains(type)) {
                 // Not a supported type, delegate to Empty Parser
-                EmptyParser.INSTANCE.parse(stream, baseHandler, metadata, context);
+                EmptyParser.INSTANCE.parse(tis, baseHandler, metadata, context);
                 return;
             }
 
@@ -141,7 +136,7 @@ public class OOXMLExtractorFactory {
 
             if (type == null || OOXMLParser.UNSUPPORTED_OOXML_TYPES.contains(type)) {
                 // Not a supported type, delegate to Empty Parser
-                EmptyParser.INSTANCE.parse(stream, baseHandler, metadata, context);
+                EmptyParser.INSTANCE.parse(tis, baseHandler, metadata, context);
                 return;
             }
             metadata.set(Metadata.CONTENT_TYPE, type.toString());
@@ -216,9 +211,6 @@ public class OOXMLExtractorFactory {
         } catch (RuntimeSAXException e) {
             throw (SAXException) e.getCause();
         } finally {
-            if (pkg != null && mustRevertPackage) {
-                pkg.revert();
-            }
             if (tmpRepairedCopy != null) {
                 boolean deleted = tmpRepairedCopy.delete();
                 if (!deleted) {

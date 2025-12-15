@@ -18,12 +18,11 @@ package org.apache.tika.parser.image;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -38,8 +37,8 @@ public class ImageParserTest extends TikaTest {
     public void testBMP() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/bmp");
-        try (InputStream stream = getResourceAsStream("/test-documents/testBMP.bmp")) {
-            parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testBMP.bmp")) {
+            parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
         assertEquals("75", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "height"));
@@ -62,8 +61,8 @@ public class ImageParserTest extends TikaTest {
     public void testGIF() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/gif");
-        try (InputStream stream = getResourceAsStream("/test-documents/testGIF.gif")) {
-            parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testGIF.gif")) {
+            parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
         assertEquals("75", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "height"));
@@ -106,8 +105,8 @@ public class ImageParserTest extends TikaTest {
     public void testJPEG() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        try (InputStream stream = getResourceAsStream("/test-documents/testJPEG.jpg")) {
-            parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testJPEG.jpg")) {
+            parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
         assertEquals("75", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "height"));
@@ -158,8 +157,8 @@ public class ImageParserTest extends TikaTest {
     public void testPNG() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/png");
-        try (InputStream stream = getResourceAsStream("/test-documents/testPNG.png")) {
-            parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testPNG.png")) {
+            parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
         assertEquals("75", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "height"));
@@ -209,8 +208,8 @@ public class ImageParserTest extends TikaTest {
     public void testJBIG2() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/x-jbig2");
-        try (InputStream stream = getResourceAsStream("/test-documents/testJBIG2.jb2")) {
-            parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testJBIG2.jb2")) {
+            parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
         assertEquals("78", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "height"));
         assertEquals("328", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "width"));
@@ -228,14 +227,14 @@ public class ImageParserTest extends TikaTest {
     public void testNPEOnEmptyContentType() throws Exception {
         //test no NPE TIKA-3569
         Metadata metadata = new Metadata();
-        try (InputStream stream = getResourceAsStream("/test-documents/testBMP.bmp")) {
-            parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testBMP.bmp")) {
+            parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
         metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "unparseablegarbage");
-        try (InputStream stream = getResourceAsStream("/test-documents/testBMP.bmp")) {
-            parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testBMP.bmp")) {
+            parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
     }
 }

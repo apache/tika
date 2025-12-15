@@ -19,14 +19,13 @@ package org.apache.tika.parser.image;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.parser.ParseContext;
@@ -43,8 +42,8 @@ public class PSDParserTest extends TikaTest {
     public void testPSD() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/x-psd");
-        try (InputStream stream = getResourceAsStream("/test-documents/testPSD.psd")) {
-            parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testPSD.psd")) {
+            parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
         assertEquals("537", metadata.get(Metadata.IMAGE_WIDTH));
@@ -60,8 +59,8 @@ public class PSDParserTest extends TikaTest {
     public void testOddPSD() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/x-psd");
-        try (InputStream stream = getResourceAsStream("/test-documents/testPSD2.psd")) {
-            parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testPSD2.psd")) {
+            parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
         assertEquals("69", metadata.get(Metadata.IMAGE_WIDTH));
         assertEquals("70", metadata.get(Metadata.IMAGE_LENGTH));

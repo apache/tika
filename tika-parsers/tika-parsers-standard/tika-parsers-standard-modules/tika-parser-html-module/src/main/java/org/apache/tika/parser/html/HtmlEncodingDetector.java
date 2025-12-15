@@ -18,7 +18,6 @@ package org.apache.tika.parser.html;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -35,6 +34,7 @@ import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.utils.CharsetUtils;
 
@@ -134,21 +134,21 @@ public class HtmlEncodingDetector implements EncodingDetector {
         this(ConfigDeserializer.buildConfig(jsonConfig, Config.class));
     }
 
-    public Charset detect(InputStream input, Metadata metadata) throws IOException {
-        if (input == null) {
+    public Charset detect(TikaInputStream tis, Metadata metadata) throws IOException {
+        if (tis == null) {
             return null;
         }
 
         // Read enough of the text stream to capture possible meta tags
-        input.mark(markLimit);
+        tis.mark(markLimit);
         byte[] buffer = new byte[markLimit];
         int n = 0;
-        int m = input.read(buffer);
+        int m = tis.read(buffer);
         while (m != -1 && n < buffer.length) {
             n += m;
-            m = input.read(buffer, n, buffer.length - n);
+            m = tis.read(buffer, n, buffer.length - n);
         }
-        input.reset();
+        tis.reset();
 
         // Interpret the head as ASCII and try to spot a meta tag with
         // a possible character encoding hint

@@ -17,13 +17,13 @@
 package org.apache.tika.mime;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.tika.detect.Detector;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -121,19 +121,19 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
         threshold = 0.5001f;
     }
 
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
 
         List<MimeType> possibleTypes = new ArrayList<>();
 
         // Get type based on magic prefix
-        if (input != null) {
-            input.mark(mimeTypes.getMinLength());
+        if (tis != null) {
+            tis.mark(mimeTypes.getMinLength());
             try {
-                byte[] prefix = mimeTypes.readMagicHeader(input);
+                byte[] prefix = mimeTypes.readMagicHeader(tis);
                 //defensive copy
                 possibleTypes.addAll(mimeTypes.getMimeType(prefix));
             } finally {
-                input.reset();
+                tis.reset();
             }
         }
 

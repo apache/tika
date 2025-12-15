@@ -51,7 +51,7 @@ public class BoilerpipeHandlerTest extends TikaTest {
         Metadata metadata = new Metadata();
         BodyContentHandler handler = new BodyContentHandler();
         new JSoupParser()
-                .parse(TikaInputStream.get(getResourceAsStream(path)),
+                .parse(getResourceAsStream(path),
                         new BoilerpipeContentHandler(handler),
                         metadata,
                         new ParseContext());

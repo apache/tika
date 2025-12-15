@@ -24,9 +24,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.BoundedInputStream;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -109,22 +107,16 @@ public class InputStreamDigester implements Digester {
     }
 
     /**
-     * @param is           InputStream to digest. Best to use a TikaInputStream because
-     *                     of potential need to spool to disk.  InputStream must
-     *                     support mark/reset.
+     * @param tis          TikaInputStream to digest
      * @param metadata     metadata in which to store the digest information
      * @param parseContext ParseContext -- not actually used yet, but there for future expansion
      * @throws IOException on IO problem or IllegalArgumentException if algorithm couldn't be found
      */
     @Override
-    public void digest(InputStream is, Metadata metadata, ParseContext parseContext)
+    public void digest(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
             throws IOException {
-        TikaInputStream tis = TikaInputStream.cast(is);
-        if (tis != null && tis.hasFile()) {
-            long sz = -1;
-            if (tis.hasFile()) {
-                sz = tis.getLength();
-            }
+        if (tis.hasFile()) {
+            long sz = tis.getLength();
             //if the inputstream has a file,
             //and its size is greater than its mark limit,
             //just digest the underlying file.
@@ -134,11 +126,10 @@ public class InputStreamDigester implements Digester {
             }
         }
 
-
         //try the usual mark/reset stuff.
         //however, if you actually hit the bound,
         //then stop and spool to file via TikaInputStream
-        BoundedInputStream bis = new BoundedInputStream(markLimit, is);
+        BoundedInputStream bis = new BoundedInputStream(markLimit, tis);
         boolean finishedStream = false;
         bis.mark(markLimit + 1);
         finishedStream = digestStream(bis, metadata);
@@ -148,21 +139,7 @@ public class InputStreamDigester implements Digester {
         }
         //if the stream wasn't finished -- if the stream was longer than the mark limit --
         //spool to File and digest that.
-        if (tis != null) {
-            digestFile(tis.getFile(), -1, metadata);
-        } else {
-            TemporaryResources tmp = new TemporaryResources();
-            try {
-                TikaInputStream tmpTikaInputStream = TikaInputStream.get(is, tmp, metadata);
-                digestFile(tmpTikaInputStream.getFile(), -1, metadata);
-            } finally {
-                try {
-                    tmp.dispose();
-                } catch (TikaException e) {
-                    throw new IOException(e);
-                }
-            }
-        }
+        digestFile(tis.getFile(), -1, metadata);
     }
 
     private void digestFile(File f, long sz, Metadata m) throws IOException {

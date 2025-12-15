@@ -18,7 +18,6 @@ package org.apache.tika.parser.csv;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UncheckedIOException;
@@ -34,7 +33,6 @@ import java.util.Set;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -45,6 +43,7 @@ import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -151,7 +150,17 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
+        tis.setCloseShield();
+        try {
+            parseInternal(tis, handler, metadata, context);
+        } finally {
+            tis.removeCloseShield();
+        }
+    }
+
+    private void parseInternal(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         TextAndCSVConfig textAndCSVConfig = context.get(TextAndCSVConfig.class, defaultTextAndCSVConfig);
 
@@ -159,14 +168,14 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
         Reader reader;
         Charset charset;
         if (!params.isComplete()) {
-            reader = detect(params, textAndCSVConfig, stream, metadata, context);
+            reader = detect(params, textAndCSVConfig, tis, metadata, context);
             if (params.getCharset() != null) {
                 charset = params.getCharset();
             } else {
                 charset = ((AutoDetectReader) reader).getCharset();
             }
         } else {
-            reader = new BufferedReader(new InputStreamReader(stream, params.getCharset()));
+            reader = new BufferedReader(new InputStreamReader(tis, params.getCharset()));
             charset = params.getCharset();
         }
 
@@ -260,7 +269,7 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
         xhtml.endDocument();
     }
 
-    private Reader detect(CSVParams params, TextAndCSVConfig textAndCSVConfig, InputStream stream, Metadata metadata,
+    private Reader detect(CSVParams params, TextAndCSVConfig textAndCSVConfig, TikaInputStream tis, Metadata metadata,
                           ParseContext context) throws IOException, TikaException {
         //if the file was already identified as not .txt, .csv or .tsv
         //don't even try to csv or not
@@ -269,13 +278,13 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
             MediaType mediaType = MediaType.parse(mediaString);
             if (!SUPPORTED_TYPES.contains(mediaType.getBaseType())) {
                 params.setMediaType(mediaType);
-                return new AutoDetectReader(CloseShieldInputStream.wrap(stream), metadata,
+                return new AutoDetectReader(tis, metadata,
                         getEncodingDetector(context));
             }
         }
         Reader reader;
         if (params.getCharset() == null) {
-            reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream), metadata,
+            reader = new AutoDetectReader(tis, metadata,
                     getEncodingDetector(context));
             params.setCharset(((AutoDetectReader) reader).getCharset());
             if (params.isComplete()) {
@@ -283,7 +292,7 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
             }
         } else {
             reader = new BufferedReader(
-                    new InputStreamReader(CloseShieldInputStream.wrap(stream), params.getCharset()));
+                    new InputStreamReader(tis, params.getCharset()));
         }
 
         if (params.getDelimiter() == null &&

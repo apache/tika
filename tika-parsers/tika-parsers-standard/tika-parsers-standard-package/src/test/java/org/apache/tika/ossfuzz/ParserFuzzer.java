@@ -16,7 +16,6 @@
  */
 package org.apache.tika.ossfuzz;
 
-import java.io.InputStream;
 
 import org.xml.sax.ContentHandler;
 
@@ -58,8 +57,8 @@ class ParserFuzzer {
         //make sure that other parsers cannot be invoked
         parseContext.set(Parser.class, parser);
         //try first with bytes
-        try (InputStream is = TikaInputStream.get(bytes)) {
-            parser.parse(is, handler, new Metadata(), parseContext);
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            parser.parse(tis, handler, new Metadata(), parseContext);
         }
     }
 

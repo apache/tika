@@ -18,7 +18,6 @@ package org.apache.tika.parser.microsoft;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,6 +30,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -73,10 +73,10 @@ public class OldExcelParser implements Parser {
     /**
      * Extracts properties and text from an MS Document input stream
      */
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         // Open the POI provided extractor
-        OldExcelExtractor extractor = new OldExcelExtractor(stream);
+        OldExcelExtractor extractor = new OldExcelExtractor(tis);
 
         // We can't do anything about metadata, as these old formats
         //  didn't have any stored with them

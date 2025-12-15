@@ -40,6 +40,7 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.TikaServerParseExceptionMapper;
@@ -108,11 +109,13 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
                 break;
             }
         }
-        assertEquals("image/tiff", TikaLoader
-                .loadDefault()
-                .loadDetectors()
-                .detect(new ByteArrayInputStream(renderedImage), new Metadata())
-                .toString());
+        try (TikaInputStream tis = TikaInputStream.get(renderedImage)) {
+            assertEquals("image/tiff", TikaLoader
+                    .loadDefault()
+                    .loadDetectors()
+                    .detect(tis, new Metadata())
+                    .toString());
+        }
 
         try (InputStream is = new ByteArrayInputStream(renderedImage)) {
             BufferedImage image = ImageIO.read(is);
@@ -171,11 +174,13 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
                 break;
             }
         }
-        assertEquals("image/jpeg", TikaLoader
-                .loadDefault()
-                .loadDetectors()
-                .detect(new ByteArrayInputStream(renderedImage), new Metadata())
-                .toString());
+        try (TikaInputStream tis = TikaInputStream.get(renderedImage)) {
+            assertEquals("image/jpeg", TikaLoader
+                    .loadDefault()
+                    .loadDetectors()
+                    .detect(tis, new Metadata())
+                    .toString());
+        }
 
         try (InputStream is = new ByteArrayInputStream(renderedImage)) {
             BufferedImage image = ImageIO.read(is);
