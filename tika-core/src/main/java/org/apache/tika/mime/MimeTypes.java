@@ -42,6 +42,7 @@ import org.apache.tika.detect.XmlRootExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * This class is a MimeType repository. It gathers a set of MimeTypes and
@@ -297,7 +298,7 @@ public final class MimeTypes implements Detector, Serializable {
             TextDetector detector = new TextDetector(getMinLength());
             try (TikaInputStream tis = TikaInputStream.get(
                     UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get())) {
-                MimeType type = forName(detector.detect(tis, new Metadata()).toString());
+                MimeType type = forName(detector.detect(tis, new Metadata(), new ParseContext()).toString());
                 return Collections.singletonList(type);
             }
         } catch (Exception e) {
@@ -520,7 +521,8 @@ public final class MimeTypes implements Detector, Serializable {
      * @throws IOException if the document stream could not be read
      */
     @Override
-    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
+            throws IOException {
         List<MimeType> possibleTypes = null;
 
         // Get type based on magic prefix

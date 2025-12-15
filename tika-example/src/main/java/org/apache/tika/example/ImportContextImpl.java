@@ -37,6 +37,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * <code>ImportContextImpl</code>...
@@ -84,7 +85,7 @@ public class ImportContextImpl implements ImportContext {
         if (stream != null && !stream.markSupported()) {
             stream = new BufferedInputStream(stream);
         }
-        type = detector.detect(TikaInputStream.get(stream), metadata);
+        type = detector.detect(TikaInputStream.get(stream), metadata, new ParseContext());
 
         this.inputFile = IOUtil.getTempFile(stream);
     }

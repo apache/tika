@@ -177,7 +177,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                         try (TikaInputStream resultInputStream = result.getInputStream()) {
                             //TODO: add markup here?
                             embeddedDocumentExtractor.parseEmbedded(resultInputStream, xhtml,
-                                    result.getMetadata(), true);
+                                    result.getMetadata(), true, context);
                         }
                     }
                 }

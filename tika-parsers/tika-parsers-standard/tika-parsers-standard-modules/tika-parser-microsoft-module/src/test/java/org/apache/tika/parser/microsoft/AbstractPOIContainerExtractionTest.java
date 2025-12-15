@@ -25,6 +25,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Parent class of tests that the various POI powered parsers are
@@ -61,15 +62,16 @@ public abstract class AbstractPOIContainerExtractionTest extends TikaTest {
 
     protected TrackingHandler process(String filename, ContainerExtractor extractor,
                                       boolean recurse) throws Exception {
+        ParseContext context = new ParseContext();
         try (TikaInputStream tis = getTestFile(filename)) {
-            assertEquals(true, extractor.isSupported(tis));
+            assertEquals(true, extractor.isSupported(tis, context));
 
             // Process it
             TrackingHandler handler = new TrackingHandler();
             if (recurse) {
-                extractor.extract(tis, extractor, handler);
+                extractor.extract(tis, extractor, handler, context);
             } else {
-                extractor.extract(tis, null, handler);
+                extractor.extract(tis, null, handler, context);
             }
 
             // So they can check what happened

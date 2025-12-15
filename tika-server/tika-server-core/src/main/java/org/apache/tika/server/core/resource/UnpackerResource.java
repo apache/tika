@@ -260,7 +260,7 @@ public class UnpackerResource {
         }
 
         @Override
-        public void parseEmbedded(TikaInputStream tis, ContentHandler contentHandler, Metadata metadata, boolean b) throws SAXException, IOException {
+        public void parseEmbedded(TikaInputStream tis, ContentHandler contentHandler, Metadata metadata, boolean b, ParseContext parseContext) throws SAXException, IOException {
             UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream
                     .builder()
                     .get();

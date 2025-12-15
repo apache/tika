@@ -33,6 +33,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
 public class BOMDetectorTest extends TikaTest {
     @Test
@@ -51,7 +52,7 @@ public class BOMDetectorTest extends TikaTest {
                 assertEquals(bom, bomInputStream.getBOM());
             }
             try (TikaInputStream tis = TikaInputStream.get(bos.toByteArray())) {
-                assertEquals(Charset.forName(bom.getCharsetName()), detector.detect(tis, new Metadata()));
+                assertEquals(Charset.forName(bom.getCharsetName()), detector.detect(tis, new Metadata(), new ParseContext()));
                 int cnt = 0;
                 int c = tis.read();
                 while (c > -1) {
@@ -75,7 +76,7 @@ public class BOMDetectorTest extends TikaTest {
             bytes[1] = (byte)32;
             bytes[2] = (byte)32;
             try (TikaInputStream tis = TikaInputStream.get(bytes)) {
-                assertNull(detector.detect(tis, new Metadata()));
+                assertNull(detector.detect(tis, new Metadata(), new ParseContext()));
             }
         }
     }

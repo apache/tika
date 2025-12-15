@@ -1174,7 +1174,7 @@ public class HtmlParserTest extends TikaTest {
 
     public String getEncoding(EncodingDetector detector, Path p) throws IOException {
         try (TikaInputStream tis = TikaInputStream.get(p)) {
-            Charset charset = detector.detect(tis, new Metadata());
+            Charset charset = detector.detect(tis, new Metadata(), new ParseContext());
             if (charset == null) {
                 return "NULL";
             } else {

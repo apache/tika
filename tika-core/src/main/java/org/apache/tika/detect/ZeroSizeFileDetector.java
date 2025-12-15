@@ -21,12 +21,14 @@ import java.io.IOException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Detector to identify zero length files as application/x-zerovalue
  */
 public class ZeroSizeFileDetector implements Detector {
-    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
+            throws IOException {
         if (tis != null) {
             try {
                 tis.mark(1);

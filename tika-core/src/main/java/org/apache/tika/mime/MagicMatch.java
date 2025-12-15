@@ -23,6 +23,7 @@ import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.tika.detect.MagicDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Defines a magic match.
@@ -59,7 +60,7 @@ class MagicMatch implements Clause {
     public boolean eval(byte[] data) {
         try (TikaInputStream tis = TikaInputStream.get(
                 UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get())) {
-            return getDetector().detect(tis, new Metadata()) !=
+            return getDetector().detect(tis, new Metadata(), new ParseContext()) !=
                     MediaType.OCTET_STREAM;
         } catch (IOException e) {
             // Should never happen with a ByteArrayInputStream

@@ -31,6 +31,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 public class TruncatedOOXMLTest extends TikaTest {
 
@@ -70,7 +71,7 @@ public class TruncatedOOXMLTest extends TikaTest {
         Metadata metadata = new Metadata();
         try (InputStream is = new BufferedInputStream(TruncatedOOXMLTest.class.getResourceAsStream(
                 "/test-documents/testWORD_truncated.docx"))) {
-            MediaType mediaType = detector.detect(TikaInputStream.get(is), metadata);
+            MediaType mediaType = detector.detect(TikaInputStream.get(is), metadata, new ParseContext());
             assertEquals(MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document"),
                     mediaType);
         }
@@ -83,7 +84,7 @@ public class TruncatedOOXMLTest extends TikaTest {
         try (TikaInputStream tis = TikaInputStream.get(TruncatedOOXMLTest.class.getResourceAsStream(
                 "/test-documents/testWORD_truncated.docx"))) {
             tis.getPath();
-            MediaType mediaType = detector.detect(tis, metadata);
+            MediaType mediaType = detector.detect(tis, metadata, new ParseContext());
             assertEquals(
                     MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document"),
                     mediaType);

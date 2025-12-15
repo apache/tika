@@ -62,20 +62,19 @@ public class ParserContainerExtractor implements ContainerExtractor {
     }
 
     @Override
-    public boolean isSupported(TikaInputStream input) throws IOException {
-        MediaType type = detector.detect(input, new Metadata());
-        return parser.getSupportedTypes(new ParseContext()).contains(type);
+    public boolean isSupported(TikaInputStream input, ParseContext parseContext) throws IOException {
+        MediaType type = detector.detect(input, new Metadata(), parseContext);
+        return parser.getSupportedTypes(parseContext).contains(type);
     }
 
     @Override
     public void extract(
             TikaInputStream stream, ContainerExtractor recurseExtractor,
-            EmbeddedResourceHandler handler)
+            EmbeddedResourceHandler handler, ParseContext parseContext)
             throws IOException, TikaException {
-        ParseContext context = new ParseContext();
-        context.set(Parser.class, new RecursiveParser(parser, recurseExtractor, handler));
+        parseContext.set(Parser.class, new RecursiveParser(parser, recurseExtractor, handler, parseContext));
         try {
-            parser.parse(stream, new DefaultHandler(), new Metadata(), context);
+            parser.parse(stream, new DefaultHandler(), new Metadata(), parseContext);
         } catch (SAXException e) {
             throw new TikaException("Unexpected SAX exception", e);
         }
@@ -87,12 +86,16 @@ public class ParserContainerExtractor implements ContainerExtractor {
 
         private final EmbeddedResourceHandler handler;
 
+        private final ParseContext parseContext;
+
         private RecursiveParser(Parser statelessParser,
                 ContainerExtractor extractor,
-                EmbeddedResourceHandler handler) {
+                EmbeddedResourceHandler handler,
+                ParseContext parseContext) {
             super(statelessParser);
             this.extractor = extractor;
             this.handler = handler;
+            this.parseContext = parseContext;
         }
 
         @Override
@@ -107,22 +110,22 @@ public class ParserContainerExtractor implements ContainerExtractor {
                 throws IOException, SAXException, TikaException {
             // Figure out what we have to process
             String filename = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-            MediaType type = detector.detect(stream, metadata);
+            MediaType type = detector.detect(stream, metadata, parseContext);
 
             if (extractor == null) {
                 // Let the handler process the embedded resource
-                handler.handle(filename, type, stream);
+                handler.handle(filename, type, stream, parseContext);
             } else {
                 // Use a temporary file to process the stream twice
                 File file = stream.getFile();
 
                 // Let the handler process the embedded resource
                 try (TikaInputStream input = TikaInputStream.get(file.toPath())) {
-                    handler.handle(filename, type, input);
+                    handler.handle(filename, type, input, parseContext);
                 }
 
                 // Recurse
-                extractor.extract(stream, extractor, handler);
+                extractor.extract(stream, extractor, handler, parseContext);
             }
         }
 

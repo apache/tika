@@ -26,6 +26,7 @@ import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
 @TikaComponent(spi = false)
 public class UniversalEncodingDetector implements EncodingDetector {
@@ -68,7 +69,7 @@ public class UniversalEncodingDetector implements EncodingDetector {
         this(ConfigDeserializer.buildConfig(jsonConfig, Config.class));
     }
 
-    public Charset detect(TikaInputStream tis, Metadata metadata) throws IOException {
+    public Charset detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) throws IOException {
         if (tis == null) {
             return null;
         }

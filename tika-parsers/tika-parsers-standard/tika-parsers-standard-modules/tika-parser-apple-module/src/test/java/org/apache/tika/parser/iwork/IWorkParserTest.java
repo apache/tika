@@ -425,7 +425,7 @@ public class IWorkParserTest extends TikaTest {
         Detector d = new CompositeDetector(new DefaultZipContainerDetector(zips));
         try (InputStream is = this.getClass()
                 .getResourceAsStream("/test-documents/testIWorksNPEDetector.zip")) {
-            MediaType mt = d.detect(TikaInputStream.get(is), new Metadata());
+            MediaType mt = d.detect(TikaInputStream.get(is), new Metadata(), new ParseContext());
             assertEquals(MediaType.application("zip"), mt);
         }
     }

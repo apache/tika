@@ -23,6 +23,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
 public interface EmbeddedDocumentExtractor {
     boolean shouldParseEmbedded(Metadata metadata);
@@ -34,10 +35,10 @@ public interface EmbeddedDocumentExtractor {
      * @param handler The handler to use
      * @param metadata The metadata for the embedded resource
      * @param outputHtml Should we output HTML for this resource, or has the parser already done so?
+     * @param parseContext The parse context
      * @throws org.xml.sax.SAXException
      * @throws java.io.IOException
      */
-    void parseEmbedded(
-            TikaInputStream stream, ContentHandler handler, Metadata metadata, boolean outputHtml)
-            throws SAXException, IOException;
+    void parseEmbedded(TikaInputStream stream, ContentHandler handler, Metadata metadata,
+            boolean outputHtml, ParseContext parseContext) throws SAXException, IOException;
 }

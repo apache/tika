@@ -23,6 +23,7 @@ import org.apache.tika.config.SelfConfiguring;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Content type detector. Implementations of this interface use various
@@ -49,9 +50,11 @@ public interface Detector extends Serializable, SelfConfiguring {
      *
      * @param tis      document input stream, or <code>null</code>
      * @param metadata input metadata for the document
+     * @param parseContext the parse context
      * @return detected media type, or <code>application/octet-stream</code>
      * @throws IOException if the document input stream could not be read
      */
-    MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException;
+    MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
+            throws IOException;
 
 }

@@ -329,7 +329,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         //this keeps track of how many entries were processed.
         AtomicInteger entryCnt = new AtomicInteger();
         try {
-            parseEntries(ais, metadata, extractor, xhtml, false, entryCnt);
+            parseEntries(ais, metadata, extractor, xhtml, false, entryCnt, context);
         } catch (UnsupportedZipFeatureException zfe) {
             // If this is a zip archive which requires a data descriptor, parse it again
             if (zfe.getFeature() == Feature.DATA_DESCRIPTOR) {
@@ -339,7 +339,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 tis.reset();
                 ais = new ZipArchiveInputStream(CloseShieldInputStream.wrap(tis), encoding, true,
                         true);
-                parseEntries(ais, metadata, extractor, xhtml, true, entryCnt);
+                parseEntries(ais, metadata, extractor, xhtml, true, entryCnt, context);
             }
         } finally {
             ais.close();
@@ -363,7 +363,8 @@ public class PackageParser extends AbstractEncodingDetectorParser {
      */
     private void parseEntries(ArchiveInputStream ais, Metadata metadata,
                               EmbeddedDocumentExtractor extractor, XHTMLContentHandler xhtml,
-                              boolean shouldUseDataDescriptor, AtomicInteger entryCnt)
+                              boolean shouldUseDataDescriptor, AtomicInteger entryCnt,
+                              ParseContext context)
             throws TikaException, IOException, SAXException {
         try {
             ArchiveEntry entry = ais.getNextEntry();
@@ -379,7 +380,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 }
 
                 if (!entry.isDirectory()) {
-                    parseEntry(ais, entry, extractor, metadata, xhtml);
+                    parseEntry(ais, entry, extractor, metadata, xhtml, context);
                 }
 
                 if (!shouldUseDataDescriptor) {
@@ -435,7 +436,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
 
     private void parseEntry(ArchiveInputStream archive, ArchiveEntry entry,
                             EmbeddedDocumentExtractor extractor, Metadata parentMetadata,
-                            XHTMLContentHandler xhtml)
+                            XHTMLContentHandler xhtml, ParseContext context)
             throws SAXException, IOException, TikaException {
         String name = entry.getName();
         
@@ -455,7 +456,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
             Charset candidate =
                     getEncodingDetector().detect(
                             TikaInputStream.get(UnsynchronizedByteArrayInputStream.builder().setByteArray(extendedEntryName).get()),
-                            parentMetadata);
+                            parentMetadata, context);
             if (candidate != null) {
                 name = new String(((ZipArchiveEntry) entry).getRawName(), candidate);
             }
@@ -474,7 +475,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 TemporaryResources tmp = new TemporaryResources();
                 try {
                     TikaInputStream tis = TikaInputStream.get(archive, tmp, entrydata);
-                    extractor.parseEmbedded(tis, xhtml, entrydata, true);
+                    extractor.parseEmbedded(tis, xhtml, entrydata, true, new ParseContext());
                 } finally {
                     tmp.dispose();
                 }

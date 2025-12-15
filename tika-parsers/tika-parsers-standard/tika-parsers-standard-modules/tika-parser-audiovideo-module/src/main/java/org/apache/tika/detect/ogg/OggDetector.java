@@ -37,6 +37,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Detector for identifying specific file types stored
@@ -55,7 +56,7 @@ public class OggDetector implements Detector {
     public static final MediaType OGG_VIDEO = MediaType.video("ogg");
 
     @Override
-    public MediaType detect(TikaInputStream tis, Metadata metadata)
+    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
             throws IOException {
         // Check if we have access to the document
         if (tis == null) {

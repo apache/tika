@@ -29,6 +29,7 @@ import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * An encoding detector that tries to respect the spirit of the HTML spec
@@ -75,7 +76,7 @@ public final class StandardHtmlEncodingDetector implements EncodingDetector {
     }
 
     @Override
-    public Charset detect(TikaInputStream tis, Metadata metadata) throws IOException {
+    public Charset detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) throws IOException {
         int limit = getMarkLimit();
         tis.mark(limit);
         // Never read more than the first META_TAG_BUFFER_SIZE bytes

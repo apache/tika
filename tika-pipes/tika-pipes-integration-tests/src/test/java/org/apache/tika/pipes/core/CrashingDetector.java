@@ -22,6 +22,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Detector that crashes with SystemExit
@@ -30,7 +31,7 @@ import org.apache.tika.mime.MediaType;
 public class CrashingDetector implements Detector {
 
     @Override
-    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) throws IOException {
         System.exit(1);
         return null;
     }

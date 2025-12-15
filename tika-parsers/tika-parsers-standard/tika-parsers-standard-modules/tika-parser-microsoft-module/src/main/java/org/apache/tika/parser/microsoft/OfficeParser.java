@@ -131,7 +131,7 @@ public class OfficeParser extends AbstractOfficeParser {
             if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
                 embeddedDocumentExtractor.parseEmbedded(
                         //pass in space character so that we don't trigger a zero-byte exception
-                        TikaInputStream.get(new byte[]{'\u0020'}), xhtml, m, true);
+                        TikaInputStream.get(new byte[]{'\u0020'}), xhtml, m, true, new ParseContext());
             }
             return;
         }
@@ -145,7 +145,7 @@ public class OfficeParser extends AbstractOfficeParser {
             }
             if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
                 try (TikaInputStream tis = TikaInputStream.get(e.getValue().getBytes(StandardCharsets.UTF_8))) {
-                    embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, true);
+                    embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, true, new ParseContext());
                 }
             }
         }

@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
 public class HtmlEncodingDetectorTest {
 
@@ -132,6 +133,6 @@ public class HtmlEncodingDetectorTest {
     private Charset detectCharset(String test) throws IOException {
         Metadata metadata = new Metadata();
         TikaInputStream inStream = TikaInputStream.get(test.getBytes(StandardCharsets.UTF_8));
-        return new HtmlEncodingDetector().detect(inStream, metadata);
+        return new HtmlEncodingDetector().detect(inStream, metadata, new ParseContext());
     }
 }

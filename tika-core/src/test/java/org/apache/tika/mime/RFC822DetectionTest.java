@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
 public class RFC822DetectionTest {
 
@@ -71,7 +72,7 @@ public class RFC822DetectionTest {
     private void assertMime(String expected, String txt) throws IOException {
 
         MediaType mediaType =
-                MIME_TYPES.detect(TikaInputStream.get(txt.getBytes(StandardCharsets.UTF_8)), new Metadata());
+                MIME_TYPES.detect(TikaInputStream.get(txt.getBytes(StandardCharsets.UTF_8)), new Metadata(), new ParseContext());
         assertEquals(expected, mediaType.toString(), txt);
     }
 }

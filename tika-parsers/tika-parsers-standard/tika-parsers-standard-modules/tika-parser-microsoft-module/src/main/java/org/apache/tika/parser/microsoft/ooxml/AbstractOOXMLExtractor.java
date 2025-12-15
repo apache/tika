@@ -199,7 +199,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
                     if (embeddedExtractor.shouldParseEmbedded(thumbnailMetadata)) {
                         embeddedExtractor.parseEmbedded(TikaInputStream.get(tStream),
-                                new EmbeddedContentHandler(handler), thumbnailMetadata, false);
+                                new EmbeddedContentHandler(handler), thumbnailMetadata, false, context);
                     }
                 }
             }
@@ -365,7 +365,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 if (embeddedExtractor.shouldParseEmbedded(metadata)) {
                     embeddedExtractor
                             .parseEmbedded(stream, xhtml, metadata,
-                                    true);
+                                    true, context);
                 }
             } else if (POIFSDocumentType.OLE10_NATIVE == type) {
                 // TIKA-704: OLE 1.0 embedded document
@@ -387,7 +387,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 if (stream != null && embeddedExtractor.shouldParseEmbedded(metadata)) {
                     embeddedExtractor
                             .parseEmbedded(stream, xhtml, metadata,
-                                    true);
+                                    true, context);
                 }
             } else {
                 handleEmbeddedFile(part, xhtml, rel, embeddedPartMetadata,
@@ -465,7 +465,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         if (embeddedExtractor.shouldParseEmbedded(metadata)) {
             try (TikaInputStream tis = TikaInputStream.get(part.getInputStream())) {
                 embeddedExtractor
-                        .parseEmbedded(tis, xhtml, metadata, true);
+                        .parseEmbedded(tis, xhtml, metadata, true, context);
             }
         }
     }

@@ -26,6 +26,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Selector for combining different mime detection results
@@ -121,7 +122,8 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
         threshold = 0.5001f;
     }
 
-    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
+            throws IOException {
 
         List<MimeType> possibleTypes = new ArrayList<>();
 

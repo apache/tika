@@ -34,6 +34,7 @@ import org.apache.tika.detect.microsoft.POIFSContainerDetector;
 import org.apache.tika.detect.zip.DefaultZipContainerDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.pst.OutlookPSTParser;
 
 /**
@@ -103,9 +104,9 @@ public class TikaDetectorConfigTest extends TikaTest {
                 .get(getResourceAsStream("/test-documents/testPST.pst"))) {
             try (TikaInputStream stream = TikaInputStream.get(outer.getPath())) {
                 assertEquals(OutlookPSTParser.MS_OUTLOOK_PST_MIMETYPE,
-                        detectorWX.detect(stream, new Metadata()));
+                        detectorWX.detect(stream, new Metadata(), new ParseContext()));
                 assertEquals(OutlookPSTParser.MS_OUTLOOK_PST_MIMETYPE,
-                        detectorCL.detect(stream, new Metadata()));
+                        detectorCL.detect(stream, new Metadata(), new ParseContext()));
             }
         }
     }

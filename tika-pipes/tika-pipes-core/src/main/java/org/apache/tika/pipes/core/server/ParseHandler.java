@@ -108,7 +108,7 @@ class ParseHandler {
             }
         }
         try {
-            MediaType mt = detector.detect(tis, metadata);
+            MediaType mt = detector.detect(tis, metadata, parseContext);
             metadata.set(Metadata.CONTENT_TYPE, mt.toString());
             metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, mt.toString());
         } catch (IOException e) {

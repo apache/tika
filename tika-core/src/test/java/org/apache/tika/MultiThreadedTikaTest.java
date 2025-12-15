@@ -87,8 +87,8 @@ public class MultiThreadedTikaTest extends TikaTest {
         for (Path f : files) {
             Metadata metadata = new Metadata();
             try (TikaInputStream tis = TikaInputStream.get(f, metadata)) {
-                baseline.put(f, detector.detect(tis, metadata));
-                baseline.put(f, detector.detect(tis, metadata));
+                baseline.put(f, detector.detect(tis, metadata, new ParseContext()));
+                baseline.put(f, detector.detect(tis, metadata, new ParseContext()));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -423,7 +423,7 @@ public class MultiThreadedTikaTest extends TikaTest {
                 Path testFile = files[randIndex];
                 Metadata metadata = new Metadata();
                 try (TikaInputStream tis = TikaInputStream.get(testFile, metadata)) {
-                    MediaType mediaType = detector.detect(tis, metadata);
+                    MediaType mediaType = detector.detect(tis, metadata, new ParseContext());
                     assertEquals(truth.get(testFile), mediaType,
                             "failed on: " + testFile.getFileName());
                 }

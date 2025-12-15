@@ -352,6 +352,7 @@ class OneNoteTreeWalker {
             return;
         }
         Metadata embeddedMetadata = new Metadata();
+        ParseContext parseContext = new ParseContext();
         try {
             AttributesImpl attributes = new AttributesImpl();
             attributes.addAttribute("", "class", "class", "CDATA", "embedded");
@@ -359,7 +360,7 @@ class OneNoteTreeWalker {
             xhtml.endElement("div");
             stream = TikaInputStream.get(buf.array());
             embeddedDocumentExtractor.parseEmbedded(stream, new EmbeddedContentHandler(xhtml),
-                    embeddedMetadata, false);
+                    embeddedMetadata, false, parseContext);
         } finally {
             IOUtils.closeQuietly(stream);
         }

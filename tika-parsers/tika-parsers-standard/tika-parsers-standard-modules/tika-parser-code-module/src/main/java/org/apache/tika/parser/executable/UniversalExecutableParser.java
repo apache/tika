@@ -74,11 +74,11 @@ public class UniversalExecutableParser implements Parser {
 
         if ((first4[0] == (byte) 0xBF || first4[0] == (byte) 0xBE) &&
                 first4[1] == (byte) 0xBA && first4[2] == (byte) 0xFE && first4[3] == (byte) 0xCA) {
-            parseMachO(xhtml, extractor, metadata, tis, first4);
+            parseMachO(xhtml, extractor, metadata, tis, first4, context);
         } else if (first4[0] == (byte) 0xCA && first4[1] == (byte) 0xFE &&
                 first4[2] == (byte) 0xBA &&
                 (first4[3] == (byte) 0xBF || first4[3] == (byte) 0xBE)) {
-            parseMachO(xhtml, extractor, metadata, tis, first4);
+            parseMachO(xhtml, extractor, metadata, tis, first4, context);
         } else {
             throw new UnsupportedFormatException("Not a universal executable file");
         }
@@ -91,7 +91,7 @@ public class UniversalExecutableParser implements Parser {
      */
     public void parseMachO(XHTMLContentHandler xhtml, EmbeddedDocumentExtractor extractor,
                            Metadata metadata, InputStream tis,
-                           byte[] first4)
+                           byte[] first4, ParseContext context)
             throws IOException, SAXException, TikaException {
         var currentOffset = (long) first4.length;
         var isLE = first4[3] == (byte) 0xCA;
@@ -160,7 +160,7 @@ public class UniversalExecutableParser implements Parser {
             var perArchMetadata = new Metadata();
             var tikaInputStream = TikaInputStream.get(perArchMachO, perArchMetadata);
             if (extractor.shouldParseEmbedded(perArchMetadata)) {
-                extractor.parseEmbedded(tikaInputStream, xhtml, perArchMetadata, true);
+                extractor.parseEmbedded(tikaInputStream, xhtml, perArchMetadata, true, context);
             }
         }
     }

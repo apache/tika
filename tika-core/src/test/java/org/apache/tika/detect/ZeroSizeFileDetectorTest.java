@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 public class ZeroSizeFileDetectorTest {
 
@@ -53,7 +54,7 @@ public class ZeroSizeFileDetectorTest {
     private void detect(byte[] data, MediaType type) {
         try {
             TikaInputStream tis = TikaInputStream.get(data);
-            assertEquals(type, detector.detect(tis, new Metadata()));
+            assertEquals(type, detector.detect(tis, new Metadata(), new ParseContext()));
         } catch (IOException e) {
             fail("Unexpected exception from ZeroSizeFileDetector");
         }

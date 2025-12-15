@@ -193,7 +193,7 @@ public class TikaCLI {
         public void process(TikaInputStream tis, OutputStream output, Metadata metadata) throws Exception {
             PrintWriter writer = new PrintWriter(getOutputWriter(output, encoding));
             writer.println(detector
-                    .detect(tis, metadata)
+                    .detect(tis, metadata, new ParseContext())
                     .toString());
             writer.flush();
         }
@@ -1144,10 +1144,10 @@ public class TikaCLI {
         }
 
         @Override
-        public void parseEmbedded(TikaInputStream tis, ContentHandler contentHandler, Metadata metadata, boolean outputHtml) throws SAXException, IOException {
+        public void parseEmbedded(TikaInputStream tis, ContentHandler contentHandler, Metadata metadata, boolean outputHtml, ParseContext parseContext) throws SAXException, IOException {
             String contentType = metadata.get(Metadata.CONTENT_TYPE);
             if (StringUtils.isBlank(contentType)) {
-                MediaType mediaType = detector.detect(tis, metadata);
+                MediaType mediaType = detector.detect(tis, metadata, new ParseContext());
                 if (mediaType == null) {
                     mediaType = MediaType.OCTET_STREAM;
                 }

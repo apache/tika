@@ -497,7 +497,7 @@ public class AutoDetectParserTest extends TikaTest {
      */
     @SuppressWarnings("serial")
     private static class MyDetector implements Detector {
-        public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
+        public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) throws IOException {
             return MY_MEDIA_TYPE;
         }
     }

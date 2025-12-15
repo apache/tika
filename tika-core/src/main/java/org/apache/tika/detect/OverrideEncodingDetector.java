@@ -25,6 +25,7 @@ import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Always returns the charset passed in via the initializer
@@ -81,7 +82,7 @@ public class OverrideEncodingDetector implements EncodingDetector {
     }
 
     @Override
-    public Charset detect(TikaInputStream tis, Metadata metadata) throws IOException {
+    public Charset detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) throws IOException {
         return charset;
     }
 

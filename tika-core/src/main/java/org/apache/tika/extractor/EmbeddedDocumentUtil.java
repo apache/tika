@@ -159,7 +159,7 @@ public class EmbeddedDocumentUtil implements Serializable {
         }
         if (mimeType == null) {
             try {
-                MediaType mediaType = getDetector().detect(is, metadata);
+                MediaType mediaType = getDetector().detect(is, metadata, context);
                 mimeType = localMimeTypes.forName(mediaType.toString());
                 detected = true;
                 is.reset();
@@ -197,7 +197,7 @@ public class EmbeddedDocumentUtil implements Serializable {
 
     public void parseEmbedded(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                               boolean outputHtml) throws IOException, SAXException {
-        embeddedDocumentExtractor.parseEmbedded(tis, handler, metadata, outputHtml);
+        embeddedDocumentExtractor.parseEmbedded(tis, handler, metadata, outputHtml, context);
     }
 
     /**

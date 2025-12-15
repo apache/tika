@@ -174,7 +174,7 @@ abstract class AbstractPOIFSExtractor {
                 Detector detector = new DefaultZipContainerDetector();
                 MediaType type = null;
                 try {
-                    type = detector.detect(stream, metadata);
+                    type = detector.detect(stream, metadata, context);
                 } catch (SecurityException e) {
                     throw e;
                 } catch (Exception e) {
@@ -306,7 +306,7 @@ abstract class AbstractPOIFSExtractor {
         }
         try (TikaInputStream tis = TikaInputStream.get(inp)) {
             // Try to work out what it is
-            MediaType mediaType = getDetector().detect(tis, metadata);
+            MediaType mediaType = getDetector().detect(tis, metadata, context);
             String extension = type.getExtension();
             try {
                 MimeType mimeType =

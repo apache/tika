@@ -33,6 +33,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Test cases for detecting zip-based files.
@@ -115,7 +116,7 @@ public class ZipDetectionTest extends TikaTest {
 
     private void assertExpected(Detector detector, InputStream is, String expectedMime, String expectedDigest) throws IOException {
         TikaInputStream tis = TikaInputStream.get(is);
-        MediaType mt = detector.detect(tis, new Metadata());
+        MediaType mt = detector.detect(tis, new Metadata(), new ParseContext());
         assertEquals(expectedMime, mt.toString());
         assertEquals(expectedDigest, digest(tis));
 

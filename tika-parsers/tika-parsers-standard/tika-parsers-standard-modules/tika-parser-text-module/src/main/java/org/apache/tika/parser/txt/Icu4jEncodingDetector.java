@@ -29,6 +29,7 @@ import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.CharsetUtils;
 
 @TikaComponent(spi = false, name = "icu4j-encoding-detector")
@@ -96,7 +97,7 @@ public class Icu4jEncodingDetector implements EncodingDetector {
 
 
     @Override
-    public Charset detect(TikaInputStream tis, Metadata metadata) throws IOException {
+    public Charset detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) throws IOException {
         if (tis == null) {
             return null;
         }

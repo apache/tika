@@ -279,7 +279,7 @@ public class OpenDocumentParser implements Parser {
                             TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
 
                     MediaType embeddedMimeType =
-                            embeddedDocumentUtil.getDetector().detect(tis, embeddedMetadata);
+                            embeddedDocumentUtil.getDetector().detect(tis, embeddedMetadata, context);
                     if (embeddedMimeType != null) {
                         embeddedMetadata.set(Metadata.CONTENT_TYPE, embeddedMimeType.toString());
                     }

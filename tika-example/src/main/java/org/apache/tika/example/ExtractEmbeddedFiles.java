@@ -76,7 +76,7 @@ public class ExtractEmbeddedFiles {
         }
 
         @Override
-        public void parseEmbedded(TikaInputStream stream, ContentHandler handler, Metadata metadata, boolean outputHtml) throws SAXException, IOException {
+        public void parseEmbedded(TikaInputStream stream, ContentHandler handler, Metadata metadata, boolean outputHtml, ParseContext parseContext) throws SAXException, IOException {
 
             //try to get the name of the embedded file from the metadata
             String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
@@ -96,7 +96,7 @@ public class ExtractEmbeddedFiles {
             }
 
             //now try to figure out the right extension for the embedded file
-            MediaType contentType = detector.detect(stream, metadata);
+            MediaType contentType = detector.detect(stream, metadata, context);
 
             if (name.indexOf('.') == -1 && contentType != null) {
                 try {

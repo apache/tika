@@ -79,7 +79,7 @@ public class EmailVisitor implements FileVisitor<Path> {
         emailMetadata.set(PST.PST_FOLDER_PATH, pstPath);
         try (TikaInputStream tis = TikaInputStream.get(file)) {
             try {
-                embeddedDocumentExtractor.parseEmbedded(tis, xhtml, emailMetadata, true);
+                embeddedDocumentExtractor.parseEmbedded(tis, xhtml, emailMetadata, true, new ParseContext());
             } catch (SAXException e) {
                 throw new IOException(e);
             }

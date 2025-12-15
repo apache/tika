@@ -143,7 +143,7 @@ public class MboxParser implements Parser {
                     message = null;
 
                     if (extractor.shouldParseEmbedded(mailMetadata)) {
-                        extractor.parseEmbedded(msgStream, xhtml, mailMetadata, true);
+                        extractor.parseEmbedded(msgStream, xhtml, mailMetadata, true, context);
                     }
 
                     if (tracking) {

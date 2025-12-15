@@ -32,6 +32,7 @@ import org.apache.tika.config.TikaComponent;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Content type detection based on magic bytes, i.e. type-specific patterns
@@ -338,8 +339,10 @@ public class MagicDetector implements Detector {
     /**
      * @param tis      document input stream, or <code>null</code>
      * @param metadata ignored
+     * @param parseContext the parse context
      */
-    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
+            throws IOException {
         if (tis == null) {
             return MediaType.OCTET_STREAM;
         }

@@ -44,7 +44,7 @@ public class OldExcelParserTest extends TikaTest {
         Detector detector = new DefaultDetector();
         try (TikaInputStream tis = getTestFile(file)) {
             assertEquals(MediaType.application("vnd.ms-excel.sheet.4"),
-                    detector.detect(tis, new Metadata()));
+                    detector.detect(tis, new Metadata(), new ParseContext()));
         }
     }
 

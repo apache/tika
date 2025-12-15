@@ -28,6 +28,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
 public class TestMimeTypesExtended extends TikaTest {
 
@@ -47,7 +48,7 @@ public class TestMimeTypesExtended extends TikaTest {
         try (TikaInputStream tis = getResourceAsStream("/test-documents/" + filename)) {
             assertNotNull(tis, "Test file not found: " + filename);
             Metadata metadata = new Metadata();
-            assertEquals(expected, repo.detect(tis, metadata).toString());
+            assertEquals(expected, repo.detect(tis, metadata, new ParseContext()).toString());
         }
     }
 }

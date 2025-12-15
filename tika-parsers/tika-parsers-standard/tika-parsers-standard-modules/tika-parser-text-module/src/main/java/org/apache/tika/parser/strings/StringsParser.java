@@ -122,7 +122,7 @@ public class StringsParser implements Parser, Initializable {
 
     private String doFile(TikaInputStream tis) throws IOException {
         Metadata tmpMetadata = new Metadata();
-        fileCommandDetector.detect(tis, tmpMetadata);
+        fileCommandDetector.detect(tis, tmpMetadata, new ParseContext());
         return tmpMetadata.get(Metadata.CONTENT_TYPE);
     }
 

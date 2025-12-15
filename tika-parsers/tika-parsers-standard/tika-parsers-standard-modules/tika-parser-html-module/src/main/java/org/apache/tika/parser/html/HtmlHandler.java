@@ -341,7 +341,7 @@ class HtmlHandler extends TextContentHandler {
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
             try (TikaInputStream tis = TikaInputStream.get(string.getBytes(StandardCharsets.UTF_8))) {
-                embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, true);
+                embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, true, context);
             } catch (IOException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
             }
@@ -368,7 +368,7 @@ class HtmlHandler extends TextContentHandler {
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
             try (TikaInputStream tis = TikaInputStream.get(dataURIScheme.getInputStream())) {
-                embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, true);
+                embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, true, context);
             } catch (IOException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
             }
@@ -402,7 +402,7 @@ class HtmlHandler extends TextContentHandler {
             if (embeddedDocumentExtractor.shouldParseEmbedded(dataUriMetadata)) {
                 try (TikaInputStream tis = TikaInputStream.get(dataURIScheme.getInputStream())) {
                     embeddedDocumentExtractor
-                            .parseEmbedded(tis, xhtml, dataUriMetadata, true);
+                            .parseEmbedded(tis, xhtml, dataUriMetadata, true, context);
                 } catch (IOException e) {
                     //swallow
                 }
@@ -410,7 +410,7 @@ class HtmlHandler extends TextContentHandler {
         }
 
         try (TikaInputStream tis = TikaInputStream.get(script.toString().getBytes(StandardCharsets.UTF_8))) {
-            embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, true);
+            embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, true, context);
         } catch (IOException e) {
             //shouldn't ever happen
         } finally {

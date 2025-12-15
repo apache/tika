@@ -210,7 +210,7 @@ public class PSTMailItemParser implements Parser {
         for (int i = 0; i < numberOfAttachments; i++) {
             try {
                 PSTAttachment attachment = email.getAttachment(i);
-                parseMailAttachment(xhtml, attachment, metadata, embeddedExtractor);
+                parseMailAttachment(xhtml, attachment, metadata, embeddedExtractor, context);
             } catch (Exception e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
             }
@@ -218,8 +218,8 @@ public class PSTMailItemParser implements Parser {
     }
 
     private void parseMailAttachment(XHTMLContentHandler xhtml, PSTAttachment attachment, Metadata metadata,
-                                     EmbeddedDocumentExtractor embeddedExtractor) throws PSTException, IOException,
-            TikaException, SAXException {
+                                     EmbeddedDocumentExtractor embeddedExtractor, ParseContext context)
+            throws PSTException, IOException, TikaException, SAXException {
 
         PSTMessage attachedEmail = attachment.getEmbeddedPSTMessage();
         //check for whether this is a binary attachment or an embedded pst msg
@@ -230,7 +230,7 @@ public class PSTMailItemParser implements Parser {
                 attachMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
                 attachMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, attachedEmail.getSubject() + ".msg");
                 attachMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name());
-                embeddedExtractor.parseEmbedded(tis, xhtml, attachMetadata, true);
+                embeddedExtractor.parseEmbedded(tis, xhtml, attachMetadata, true, context);
             }
             return;
         }
@@ -262,7 +262,7 @@ public class PSTMailItemParser implements Parser {
             }
 
             try {
-                embeddedExtractor.parseEmbedded(tis, xhtml, attachMeta, false);
+                embeddedExtractor.parseEmbedded(tis, xhtml, attachMeta, false, context);
             } finally {
                 tis.close();
             }

@@ -326,12 +326,13 @@ public class RFC822ParserTest extends TikaTest {
     @Test
     public void testGetAttachmentsAsEmbeddedResources() throws Exception {
         TrackingHandler tracker = new TrackingHandler();
+        ParseContext context = new ParseContext();
         ContainerExtractor ex = new ParserContainerExtractor(
                 EXTRACT_ALL_ALTERNATIVES_PARSER, ((AutoDetectParser)EXTRACT_ALL_ALTERNATIVES_PARSER).getDetector());
         try (TikaInputStream tis = TikaInputStream
                 .get(getStream("test-documents/testRFC822-multipart"))) {
-            assertEquals(true, ex.isSupported(tis));
-            ex.extract(tis, ex, tracker);
+            assertEquals(true, ex.isSupported(tis, context));
+            ex.extract(tis, ex, tracker, context);
         }
 
         // Check we found all 3 parts
