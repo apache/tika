@@ -24,13 +24,10 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.Date;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.ConfigContainer;
-import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -69,47 +66,26 @@ public class FileSystemFetcher extends AbstractTikaExtension implements Fetcher 
     }
 
     @Override
-    public TikaInputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws IOException, TikaException {
+    public TikaInputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext)
+            throws IOException, TikaException {
         if (fetchKey.contains("\u0000")) {
-            throw new IllegalArgumentException("Path must not contain 'u0000'. " +
-                    "Please review the life decisions that led you to requesting " +
-                    "a file name with this character in it.");
+            throw new IllegalArgumentException("Path must not contain 'u0000'. "
+                    + "Please review the life decisions that led you to requesting "
+                    + "a file name with this character in it.");
         }
         FileSystemFetcherConfig config = defaultFileSystemFetcherConfig;
-        ConfigContainer configContainer = parseContext.get(ConfigContainer.class);
-        if (configContainer != null) {
-            Optional<JsonConfig> configJson = configContainer.get(getExtensionConfig().id());
-            if (configJson.isPresent()) {
-                try {
-                    // Check if basePath is present in runtime config - this is not allowed for security
-                    if (configJson.get().json().contains("\"basePath\"")) {
-                        throw new TikaConfigException(
-                                "Cannot change 'basePath' at runtime for security reasons. " +
-                                        "basePath can only be set during initialization.");
-                    }
-
-                    // Load runtime config (excludes basePath for security)
-                    FileSystemFetcherRuntimeConfig runtimeConfig =
-                            FileSystemFetcherRuntimeConfig.load(configJson.get().json());
-
-                    // Merge runtime config into default config while preserving basePath
-                    config = new FileSystemFetcherConfig()
-                            .setBasePath(defaultFileSystemFetcherConfig.getBasePath())
-                            .setExtractFileSystemMetadata(runtimeConfig.isExtractFileSystemMetadata());
-                } catch (TikaConfigException e) {
-                    throw new IOException("Failed to load runtime config", e);
-                }
-            }
-        }
-        Path p = null;
-        if (! StringUtils.isBlank(config.getBasePath())) {
+        Path p;
+        if (StringUtils.isBlank(config.getBasePath())) {
+            // No basePath - treat fetchKey as absolute path
+            p = Paths.get(fetchKey);
+        } else {
             Path basePath = Paths.get(config.getBasePath());
             if (!Files.isDirectory(basePath)) {
                 throw new IOException("BasePath is not a directory: " + basePath);
             }
             p = basePath.resolve(fetchKey);
             if (!p.toRealPath().startsWith(basePath.toRealPath())) {
-                throw new IllegalArgumentException(
+                throw new SecurityException(
                         "fetchKey must resolve to be a descendant of the 'basePath'");
             }
         }
@@ -143,36 +119,37 @@ public class FileSystemFetcher extends AbstractTikaExtension implements Fetcher 
         metadata.set(property, new Date(fileTime.toMillis()));
     }
 
-    private void checkConfig(FileSystemFetcherConfig fetcherConfig) throws TikaConfigException {
+    private void checkConfig(FileSystemFetcherConfig fetcherConfig)
+            throws TikaConfigException {
         String basePath = fetcherConfig.getBasePath();
         if (basePath == null || basePath.isBlank()) {
-            LOG.warn("'basePath' has not been set. " +
-                    "This means that client code or clients can read from any file that this " +
-                    "process has permissions to read. If you are running tika-server, make " +
-                    "absolutely certain that you've locked down " +
-                    "access to tika-server and file-permissions for the tika-server process.");
+            if (!fetcherConfig.isAllowAbsolutePaths()) {
+                throw new TikaConfigException(
+                        "'basePath' must be set, or 'allowAbsolutePaths' must be true. "
+                                + "Without basePath, clients can read any file this process "
+                                + "has access to. Set 'allowAbsolutePaths: true' to explicitly "
+                                + "allow this behavior and accept the security risks.");
+            }
             return;
         }
-        if (basePath.toString().startsWith("http://")) {
-            throw new TikaConfigException("FileSystemFetcher only works with local file systems. " +
-                    " Please use the tika-fetcher-http module for http calls");
-        } else if (basePath.toString().startsWith("ftp://")) {
-            throw new TikaConfigException("FileSystemFetcher only works with local file systems. " +
-                    " Please consider contributing an ftp fetcher module");
-        } else if (basePath.toString().startsWith("s3://")) {
-            throw new TikaConfigException("FileSystemFetcher only works with local file systems. " +
-                    " Please use the tika-fetcher-s3 module");
+        if (basePath.startsWith("http://")) {
+            throw new TikaConfigException(
+                    "FileSystemFetcher only works with local file systems. "
+                            + "Please use the tika-fetcher-http module for http calls");
+        } else if (basePath.startsWith("ftp://")) {
+            throw new TikaConfigException(
+                    "FileSystemFetcher only works with local file systems. "
+                            + "Please consider contributing an ftp fetcher module");
+        } else if (basePath.startsWith("s3://")) {
+            throw new TikaConfigException(
+                    "FileSystemFetcher only works with local file systems. "
+                            + "Please use the tika-fetcher-s3 module");
         }
 
         if (basePath.contains("\u0000")) {
             throw new TikaConfigException(
-                    "base path must not contain \u0000. " + "Seriously, what were you thinking?");
+                    "base path must not contain \u0000. Seriously, what were you thinking?");
         }
-    }
-
-    static boolean isDescendant(Path root, Path descendant) {
-        return descendant.toAbsolutePath().normalize()
-                         .startsWith(root.toAbsolutePath().normalize());
     }
 
     @Override
