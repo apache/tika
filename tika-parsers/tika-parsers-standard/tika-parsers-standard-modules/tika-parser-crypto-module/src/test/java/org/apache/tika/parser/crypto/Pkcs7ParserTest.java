@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.InputStream;
 
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
@@ -30,6 +31,8 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 
 public class Pkcs7ParserTest extends TikaTest {
+
+    @Test
     public void testDetachedSignature() throws Exception {
         try (InputStream input = getResourceAsStream("/test-documents/testDetached.p7s")) {
             ContentHandler handler = new BodyContentHandler();

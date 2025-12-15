@@ -105,7 +105,7 @@ public class TikaDetectionTest {
         assertEquals("application/pics-rules", tika.detect("x.prf"));
         assertEquals("application/pkcs10", tika.detect("x.p10"));
         assertEquals("application/pkcs7-mime", tika.detect("x.p7m"));
-        assertEquals("application/pkcs7-mime", tika.detect("x.p7c"));
+        assertEquals("application/pkcs7-mime; smime-type=certs-only", tika.detect("x.p7c"));
         assertEquals("application/pkcs7-signature", tika.detect("x.p7s"));
         assertEquals("application/pkix-cert", tika.detect("x.cer"));
         assertEquals("application/pkix-crl", tika.detect("x.crl"));
