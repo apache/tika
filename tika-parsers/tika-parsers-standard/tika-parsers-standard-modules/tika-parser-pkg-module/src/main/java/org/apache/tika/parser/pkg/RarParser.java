@@ -88,7 +88,7 @@ public class RarParser implements Parser {
                             xhtml);
                     try (TikaInputStream rarTis = TikaInputStream.get(rar.getInputStream(header))) {
                         if (extractor.shouldParseEmbedded(entrydata)) {
-                            extractor.parseEmbedded(rarTis, handler, entrydata, true, context);
+                            extractor.parseEmbedded(rarTis, handler, entrydata, context, true);
                         }
                     }
                 }

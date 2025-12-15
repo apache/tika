@@ -391,8 +391,7 @@ public class EpubParser implements Parser {
                 outputHtml = false;
             }
             embeddedDocumentExtractor
-                    .parseEmbedded(tis, new EmbeddedContentHandler(xhtml), embeddedMetadata,
-                            outputHtml, context);
+                    .parseEmbedded(tis, new EmbeddedContentHandler(xhtml), embeddedMetadata, context, outputHtml);
 
         } finally {
             IOUtils.closeQuietly(tis);

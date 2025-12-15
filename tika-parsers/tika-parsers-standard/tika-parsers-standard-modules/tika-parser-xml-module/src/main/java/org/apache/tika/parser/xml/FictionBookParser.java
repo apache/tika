@@ -91,7 +91,7 @@ public class FictionBookParser extends XMLParser {
             if (binaryMode) {
                 try (TikaInputStream tis = TikaInputStream.get(Base64.decodeBase64(binaryData.toString()))) {
                     partExtractor.parseEmbedded(
-                            tis, handler, metadata, true, context);
+                            tis, handler, metadata, context, true);
                 } catch (IOException e) {
                     throw new SAXException("IOException in parseEmbedded", e);
                 }

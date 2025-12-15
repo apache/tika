@@ -360,7 +360,7 @@ class OneNoteTreeWalker {
             xhtml.endElement("div");
             tis = TikaInputStream.get(buf.array());
             embeddedDocumentExtractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),
-                    embeddedMetadata, false, parseContext);
+                    embeddedMetadata, parseContext, false);
         } finally {
             IOUtils.closeQuietly(tis);
         }

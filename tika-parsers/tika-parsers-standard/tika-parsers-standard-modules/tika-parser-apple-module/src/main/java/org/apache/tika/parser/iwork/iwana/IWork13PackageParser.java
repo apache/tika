@@ -209,7 +209,7 @@ public class IWork13PackageParser implements Parser {
                                 EmbeddedDocumentExtractor embeddedDocumentExtractor)
             throws IOException, SAXException {
         if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
-            embeddedDocumentExtractor.parseEmbedded(tis, xhtml, embeddedMetadata, true, new ParseContext());
+            embeddedDocumentExtractor.parseEmbedded(tis, xhtml, embeddedMetadata, new ParseContext(), true);
         }
     }
 

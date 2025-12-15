@@ -94,7 +94,7 @@ public class HttpParser implements Parser {
                               ParseContext context) throws IOException, SAXException {
         EmbeddedDocumentExtractor ex = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         if (ex.shouldParseEmbedded(metadata)) {
-            ex.parseEmbedded(tis, handler, metadata, true, context);
+            ex.parseEmbedded(tis, handler, metadata, context, true);
         }
     }
 

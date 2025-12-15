@@ -160,7 +160,7 @@ public class UniversalExecutableParser implements Parser {
             var perArchMetadata = new Metadata();
             var tikaInputStream = TikaInputStream.get(perArchMachO, perArchMetadata);
             if (extractor.shouldParseEmbedded(perArchMetadata)) {
-                extractor.parseEmbedded(tikaInputStream, xhtml, perArchMetadata, true, context);
+                extractor.parseEmbedded(tikaInputStream, xhtml, perArchMetadata, context, true);
             }
         }
     }

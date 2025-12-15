@@ -334,7 +334,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             throws IOException, SAXException {
         try {
             embeddedDocumentExtractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),
-                    embeddedMetadata, true, context);
+                    embeddedMetadata, context, true);
         } catch (IOException e) {
             handleCatchableIOE(e);
         }
@@ -503,7 +503,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
         try {
             embeddedDocumentExtractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),
-                    embeddedMetadata, false, context);
+                    embeddedMetadata, context, false);
         } finally {
             IOUtils.closeQuietly(tis);
         }
@@ -863,7 +863,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         Metadata m = getJavascriptMetadata("3DD_ON_INSTANTIATE", null, null);
         if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
             try (TikaInputStream tis = TikaInputStream.get(stream.createInputStream())) {
-                embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, true, context);
+                embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, context, true);
             }
         }
         AttributesImpl attrs = new AttributesImpl();
@@ -1056,7 +1056,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         js = (js == null) ? "" : js;
         if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
             try (TikaInputStream tis = TikaInputStream.get(js.getBytes(StandardCharsets.UTF_8))) {
-                embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, true, context);
+                embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, context, true);
             }
         };
         addNonNullAttribute("class", "javascript", attrs);
@@ -1202,7 +1202,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             if (embeddedDocumentExtractor.shouldParseEmbedded(updateMetadata)) {
                 try (TikaInputStream tis = TikaInputStream.get(update)) {
                     context.set(IsIncrementalUpdate.class, IsIncrementalUpdate.IS_INCREMENTAL_UPDATE);
-                    embeddedDocumentExtractor.parseEmbedded(tis, xhtml, updateMetadata, false, context);
+                    embeddedDocumentExtractor.parseEmbedded(tis, xhtml, updateMetadata, context, false);
                 }
             }
         } finally {

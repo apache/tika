@@ -30,15 +30,16 @@ public interface EmbeddedDocumentExtractor {
 
     /**
      * Processes the supplied embedded resource, calling the delegating
-     *  parser with the appropriate details.
-     * @param stream The embedded resource
-     * @param handler The handler to use
-     * @param metadata The metadata for the embedded resource
-     * @param outputHtml Should we output HTML for this resource, or has the parser already done so?
+     * parser with the appropriate details.
+     *
+     * @param stream       The embedded resource
+     * @param handler      The handler to use
+     * @param metadata     The metadata for the embedded resource
      * @param parseContext The parse context
+     * @param outputHtml   Should we output HTML for this resource, or has the parser already done so?
      * @throws org.xml.sax.SAXException
      * @throws java.io.IOException
      */
-    void parseEmbedded(TikaInputStream stream, ContentHandler handler, Metadata metadata,
-            boolean outputHtml, ParseContext parseContext) throws SAXException, IOException;
+    void parseEmbedded(TikaInputStream stream, ContentHandler handler, Metadata metadata, ParseContext parseContext,
+                       boolean outputHtml) throws SAXException, IOException;
 }

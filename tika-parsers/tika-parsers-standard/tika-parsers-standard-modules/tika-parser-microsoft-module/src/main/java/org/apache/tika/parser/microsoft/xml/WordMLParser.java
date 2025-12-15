@@ -289,7 +289,7 @@ public class WordMLParser extends AbstractXML2003Parser {
                         metadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, pictSource);
                     }
                     if (embeddedDocumentExtractor.shouldParseEmbedded(metadata)) {
-                        embeddedDocumentExtractor.parseEmbedded(tis, handler, metadata, outputHtml, parseContext);
+                        embeddedDocumentExtractor.parseEmbedded(tis, handler, metadata, parseContext, outputHtml);
                     }
                 } catch (IOException e) {
                     //log

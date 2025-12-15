@@ -257,7 +257,7 @@ public class CompressorParser implements Parser {
                     EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
             if (extractor.shouldParseEmbedded(entrydata)) {
                 try (TikaInputStream inner = TikaInputStream.get(cis)) {
-                    extractor.parseEmbedded(inner, xhtml, entrydata, true, context);
+                    extractor.parseEmbedded(inner, xhtml, entrydata, context, true);
                 }
             }
         } finally {

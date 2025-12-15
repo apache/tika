@@ -134,7 +134,7 @@ public class UnrarParser implements Parser {
         metadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, relPath);
         if (extractor.shouldParseEmbedded(metadata)) {
             try (TikaInputStream tis = TikaInputStream.get(embeddedFile)) {
-                extractor.parseEmbedded(tis, xhtml, metadata, true, context);
+                extractor.parseEmbedded(tis, xhtml, metadata, context, true);
             }
         }
     }

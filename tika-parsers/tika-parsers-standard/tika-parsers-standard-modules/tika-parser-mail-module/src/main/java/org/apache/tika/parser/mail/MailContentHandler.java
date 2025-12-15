@@ -246,7 +246,7 @@ class MailContentHandler implements ContentHandler {
             if (extractor.shouldParseEmbedded(metadata)) {
                 // Wrap the InputStream before passing on, as the James provided
                 //  one misses many features we might want eg mark/reset
-                extractor.parseEmbedded(tis, handler, metadata, false, parseContext);
+                extractor.parseEmbedded(tis, handler, metadata, parseContext, false);
             }
         } catch (SAXException e) {
             throw new MimeException(e);

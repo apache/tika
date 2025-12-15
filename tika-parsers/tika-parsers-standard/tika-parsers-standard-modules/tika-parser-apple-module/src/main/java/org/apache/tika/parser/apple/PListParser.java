@@ -198,7 +198,7 @@ public class PListParser implements Parser {
 
         try (TikaInputStream tis = TikaInputStream.get(value.bytes())) {
             state.embeddedDocumentExtractor
-                    .parseEmbedded(tis, state.xhtml, embeddedMetadata, true, new ParseContext());
+                    .parseEmbedded(tis, state.xhtml, embeddedMetadata, new ParseContext(), true);
         }
     }
 

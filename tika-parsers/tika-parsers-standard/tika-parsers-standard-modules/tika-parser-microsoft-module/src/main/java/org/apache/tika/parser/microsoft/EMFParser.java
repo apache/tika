@@ -81,8 +81,7 @@ public class EMFParser implements Parser {
             Metadata embeddedMetadata = new Metadata();
             if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
                 embeddedDocumentExtractor
-                        .parseEmbedded(tis, new EmbeddedContentHandler(handler), embeddedMetadata,
-                                true, context);
+                        .parseEmbedded(tis, new EmbeddedContentHandler(handler), embeddedMetadata, context, true);
             }
         } catch (IOException e) {
             //swallow
@@ -259,7 +258,7 @@ public class EMFParser implements Parser {
             try (TikaInputStream tis = TikaInputStream.get(bytes)) {
                 embeddedDocumentExtractor
                         .parseEmbedded(tis, new EmbeddedContentHandler(contentHandler),
-                                embeddedMetadata, true, context);
+                                embeddedMetadata, context, true);
 
             }
 

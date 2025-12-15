@@ -267,7 +267,7 @@ public class MockParser implements Parser {
             m.set(Metadata.CONTENT_TYPE, contentType);
         }
         try (TikaInputStream tis = TikaInputStream.get(embeddedText.getBytes(UTF_8))) {
-            extractor.parseEmbedded(tis, new EmbeddedContentHandler(handler), m, true, context);
+            extractor.parseEmbedded(tis, new EmbeddedContentHandler(handler), m, context, true);
         }
     }
 

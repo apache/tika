@@ -120,7 +120,7 @@ public class OutlookPSTParser implements Parser {
                 metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, pstMail.getSubject() + ".msg");
                 long length = estimateSize(pstMail);
                 try (TikaInputStream tis = TikaInputStream.getFromContainer(pstMail, length, metadata)) {
-                    embeddedExtractor.parseEmbedded(tis, handler, metadata, true, new ParseContext());
+                    embeddedExtractor.parseEmbedded(tis, handler, metadata, new ParseContext(), true);
                 }
                 pstMail = (PSTMessage) pstFolder.getNextChild();
             }

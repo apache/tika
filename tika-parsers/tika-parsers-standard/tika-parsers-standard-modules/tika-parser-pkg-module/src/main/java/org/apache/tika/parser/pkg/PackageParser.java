@@ -51,7 +51,6 @@ import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
 import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException.Feature;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -468,7 +467,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 TemporaryResources tmp = new TemporaryResources();
                 try {
                     TikaInputStream tis = TikaInputStream.get(archive, tmp, entrydata);
-                    extractor.parseEmbedded(tis, xhtml, entrydata, true, new ParseContext());
+                    extractor.parseEmbedded(tis, xhtml, entrydata, new ParseContext(), true);
                 } finally {
                     tmp.dispose();
                 }

@@ -197,7 +197,7 @@ public class EmbeddedDocumentUtil implements Serializable {
 
     public void parseEmbedded(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                               boolean outputHtml) throws IOException, SAXException {
-        embeddedDocumentExtractor.parseEmbedded(tis, handler, metadata, outputHtml, context);
+        embeddedDocumentExtractor.parseEmbedded(tis, handler, metadata, context, outputHtml);
     }
 
     /**

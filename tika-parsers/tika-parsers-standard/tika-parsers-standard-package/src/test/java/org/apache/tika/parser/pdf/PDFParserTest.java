@@ -682,12 +682,11 @@ public class PDFParserTest extends TikaTest {
         }
 
         @Override
-        public void parseEmbedded(TikaInputStream tis, ContentHandler handler, Metadata metadata,
-                                  boolean outputHtml, ParseContext parseContext) throws SAXException, IOException {
+        public void parseEmbedded(TikaInputStream tis, ContentHandler handler, Metadata metadata, ParseContext parseContext, boolean outputHtml) throws SAXException, IOException {
 
             byte[] bytes = Files.readAllBytes(tis.getPath());
             embedded.put(count++, bytes);
-            super.parseEmbedded(tis, handler, metadata, outputHtml, parseContext);
+            super.parseEmbedded(tis, handler, metadata, parseContext, outputHtml);
         }
 
         public Map<Integer, byte[]> getEmbedded() {

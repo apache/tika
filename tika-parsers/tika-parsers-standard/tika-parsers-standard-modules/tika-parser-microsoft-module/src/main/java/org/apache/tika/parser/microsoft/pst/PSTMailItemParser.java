@@ -230,7 +230,7 @@ public class PSTMailItemParser implements Parser {
                 attachMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
                 attachMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, attachedEmail.getSubject() + ".msg");
                 attachMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name());
-                embeddedExtractor.parseEmbedded(tis, xhtml, attachMetadata, true, context);
+                embeddedExtractor.parseEmbedded(tis, xhtml, attachMetadata, context, true);
             }
             return;
         }
@@ -262,7 +262,7 @@ public class PSTMailItemParser implements Parser {
             }
 
             try {
-                embeddedExtractor.parseEmbedded(tis, xhtml, attachMeta, false, context);
+                embeddedExtractor.parseEmbedded(tis, xhtml, attachMeta, context, false);
             } finally {
                 tis.close();
             }
