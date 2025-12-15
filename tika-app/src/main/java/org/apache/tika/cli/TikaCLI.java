@@ -1144,7 +1144,8 @@ public class TikaCLI {
         }
 
         @Override
-        public void parseEmbedded(TikaInputStream tis, ContentHandler contentHandler, Metadata metadata, boolean outputHtml, ParseContext parseContext) throws SAXException, IOException {
+        public void parseEmbedded(TikaInputStream tis, ContentHandler contentHandler, Metadata metadata, boolean outputHtml,
+                                  ParseContext parseContext) throws SAXException, IOException {
             String contentType = metadata.get(Metadata.CONTENT_TYPE);
             if (StringUtils.isBlank(contentType)) {
                 MediaType mediaType = detector.detect(tis, metadata, new ParseContext());
