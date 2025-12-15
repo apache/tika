@@ -18,17 +18,17 @@ package org.apache.tika.parser.isatab;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 
-public class ISArchiveParserTest {
+public class ISArchiveParserTest extends TikaTest {
 
     @Test
     public void testParseArchive() throws Exception {
@@ -42,8 +42,8 @@ public class ISArchiveParserTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
-        try (InputStream stream = ISArchiveParserTest.class.getResourceAsStream(path)) {
-            parser.parse(stream, handler, metadata, context);
+        try (TikaInputStream tis = getResourceAsStream(path)) {
+            parser.parse(tis, handler, metadata, context);
         }
 
         // INVESTIGATION

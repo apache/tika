@@ -17,7 +17,6 @@
 package org.apache.tika.parser.sas;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.Format;
 import java.util.Collections;
 import java.util.HashMap;
@@ -34,6 +33,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Database;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.MachineMetadata;
@@ -63,14 +63,14 @@ public class SAS7BDATParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         metadata.set(Metadata.CONTENT_TYPE, TYPE_SAS7BDAT.toString());
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
-        SasFileReader sas = new SasFileReaderImpl(stream);
+        SasFileReader sas = new SasFileReaderImpl(tis);
         SasFileProperties props = sas.getSasFileProperties();
 
         // Record the interesting parts of the file's metadata

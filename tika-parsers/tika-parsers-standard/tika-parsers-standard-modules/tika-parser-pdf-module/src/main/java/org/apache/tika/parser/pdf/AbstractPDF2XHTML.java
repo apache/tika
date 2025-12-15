@@ -487,9 +487,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
             return;
         }
-        TikaInputStream stream = null;
+        TikaInputStream tis = null;
         try {
-            stream = TikaInputStream.get(pdEmbeddedFile.createInputStream());
+            tis = TikaInputStream.get(pdEmbeddedFile.createInputStream());
         } catch (IOException e) {
             //store this exception in the parent's metadata
             EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
@@ -502,10 +502,10 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         xhtml.endElement("div");
 
         try {
-            embeddedDocumentExtractor.parseEmbedded(stream, new EmbeddedContentHandler(xhtml),
+            embeddedDocumentExtractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),
                     embeddedMetadata, false);
         } finally {
-            IOUtils.closeQuietly(stream);
+            IOUtils.closeQuietly(tis);
         }
 
     }

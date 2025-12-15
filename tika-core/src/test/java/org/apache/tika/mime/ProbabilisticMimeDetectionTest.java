@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -32,6 +31,7 @@ import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -81,13 +81,16 @@ public class ProbabilisticMimeDetectionTest {
 
     @Test
     public void testByteOrderMark() throws Exception {
-        assertEquals(MediaType.TEXT_PLAIN, proDetector
-                .detect(new ByteArrayInputStream("\ufefftest".getBytes(UTF_16LE)), new Metadata()));
-        assertEquals(MediaType.TEXT_PLAIN, proDetector
-                .detect(new ByteArrayInputStream("\ufefftest".getBytes(UTF_16BE)), new Metadata()));
+        try (TikaInputStream tis = TikaInputStream.get("\ufefftest".getBytes(UTF_16LE))) {
+            assertEquals(MediaType.TEXT_PLAIN, proDetector.detect(tis, new Metadata()));
+        }
+        try (TikaInputStream tis = TikaInputStream.get("\ufefftest".getBytes(UTF_16BE))) {
+            assertEquals(MediaType.TEXT_PLAIN, proDetector.detect(tis, new Metadata()));
+        }
 
-        assertEquals(MediaType.TEXT_PLAIN, proDetector
-                .detect(new ByteArrayInputStream("\ufefftest".getBytes(UTF_8)), new Metadata()));
+        try (TikaInputStream tis = TikaInputStream.get("\ufefftest".getBytes(UTF_8))) {
+            assertEquals(MediaType.TEXT_PLAIN, proDetector.detect(tis, new Metadata()));
+        }
     }
 
     @Test
@@ -137,22 +140,17 @@ public class ProbabilisticMimeDetectionTest {
     private void testStream(String expected, String urlOrFileName, InputStream in)
             throws IOException {
         assertNotNull(in, "Test stream: [" + urlOrFileName + "] is null!");
-        if (!in.markSupported()) {
-            in = new java.io.BufferedInputStream(in);
-        }
-        try {
+        try (TikaInputStream tis = TikaInputStream.get(in)) {
             Metadata metadata = new Metadata();
-            String mime = this.proDetector.detect(in, metadata).toString();
+            String mime = this.proDetector.detect(tis, metadata).toString();
             assertEquals(expected, mime,
                     urlOrFileName + " is not properly detected: detected.");
 
             // Add resource name and test again
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, urlOrFileName);
-            mime = this.proDetector.detect(in, metadata).toString();
+            mime = this.proDetector.detect(tis, metadata).toString();
             assertEquals(expected, mime,
                     urlOrFileName + " is not properly detected after adding resource name.");
-        } finally {
-            in.close();
         }
     }
 
@@ -164,18 +162,24 @@ public class ProbabilisticMimeDetectionTest {
      */
     @Test
     public void testEmptyDocument() throws IOException {
-        assertEquals(MediaType.OCTET_STREAM,
-                proDetector.detect(new ByteArrayInputStream(new byte[0]), new Metadata()));
+        try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
+            assertEquals(MediaType.OCTET_STREAM,
+                    proDetector.detect(tis, new Metadata()));
+        }
 
         Metadata namehint = new Metadata();
         namehint.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.txt");
-        assertEquals(MediaType.TEXT_PLAIN,
-                proDetector.detect(new ByteArrayInputStream(new byte[0]), namehint));
+        try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
+            assertEquals(MediaType.TEXT_PLAIN,
+                    proDetector.detect(tis, namehint));
+        }
 
         Metadata typehint = new Metadata();
         typehint.set(Metadata.CONTENT_TYPE, "text/plain");
-        assertEquals(MediaType.TEXT_PLAIN,
-                proDetector.detect(new ByteArrayInputStream(new byte[0]), typehint));
+        try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
+            assertEquals(MediaType.TEXT_PLAIN,
+                    proDetector.detect(tis, typehint));
+        }
 
     }
 
@@ -188,8 +192,9 @@ public class ProbabilisticMimeDetectionTest {
      */
     @Test
     public void testNotXML() throws IOException {
-        assertEquals(MediaType.TEXT_PLAIN, proDetector
-                .detect(new ByteArrayInputStream("<!-- test -->".getBytes(UTF_8)), new Metadata()));
+        try (TikaInputStream tis = TikaInputStream.get("<!-- test -->".getBytes(UTF_8))) {
+            assertEquals(MediaType.TEXT_PLAIN, proDetector.detect(tis, new Metadata()));
+        }
     }
 
     /**
@@ -219,29 +224,33 @@ public class ProbabilisticMimeDetectionTest {
         // With a filename, picks the right one
         metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.hello.world");
-        assertEquals(helloType, proDetector.detect(new ByteArrayInputStream(helloWorld), metadata));
+        try (TikaInputStream tis = TikaInputStream.get(helloWorld)) {
+            assertEquals(helloType, proDetector.detect(tis, metadata));
+        }
 
         metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.x-hello-world");
-        assertEquals(helloXType,
-                proDetector.detect(new ByteArrayInputStream(helloWorld), metadata));
+        try (TikaInputStream tis = TikaInputStream.get(helloWorld)) {
+            assertEquals(helloXType, proDetector.detect(tis, metadata));
+        }
 
         // Without, goes for the one that sorts last
         metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "testingTESTINGtesting");
-        assertEquals(helloXType,
-                proDetector.detect(new ByteArrayInputStream(helloWorld), metadata));
+        try (TikaInputStream tis = TikaInputStream.get(helloWorld)) {
+            assertEquals(helloXType, proDetector.detect(tis, metadata));
+        }
     }
 
     @Test
     public void testTIKA2237() throws IOException {
         Metadata metadata = new Metadata();
         metadata.add(Metadata.CONTENT_TYPE, MediaType.text("javascript").toString());
-        InputStream input = new ByteArrayInputStream(
+        TikaInputStream tis = TikaInputStream.get(
                 ("function() {};\n" + "try {\n" + "    window.location = 'index.html';\n" +
                         "} catch (e) {\n" + "    console.log(e);\n" + "}")
                         .getBytes(StandardCharsets.UTF_8));
-        MediaType detect = new ProbabilisticMimeDetectionSelector().detect(input, metadata);
+        MediaType detect = new ProbabilisticMimeDetectionSelector().detect(tis, metadata);
         assertEquals(MediaType.text("javascript"), detect);
     }
 }

@@ -20,8 +20,8 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.fork.ParserFactory;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.ParserFactory;
 
 
 public class MockParserFactory extends ParserFactory {

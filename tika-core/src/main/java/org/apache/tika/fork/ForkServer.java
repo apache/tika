@@ -30,7 +30,6 @@ import java.net.URL;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.ParserFactory;
 
 class ForkServer implements Runnable {
 
@@ -195,7 +194,7 @@ class ForkServer implements Runnable {
                     //the user has submitted a parser factory, but no class loader
                     classLoader = ForkServer.class.getClassLoader();
                     ParserFactory parserFactory = ((ParserFactoryFactory) firstObject).build();
-                    parser = parserFactory.build();
+                    parser = new ParserWrapper(parserFactory.build());
                 } else {
                     throw new IllegalArgumentException(
                             "Expecting only one object of class ParserFactoryFactory");
@@ -216,7 +215,7 @@ class ForkServer implements Runnable {
                 if (firstObject instanceof ParserFactoryFactory) {
                     //the user has submitted a parser factory and a class loader
                     ParserFactory parserFactory = ((ParserFactoryFactory) firstObject).build();
-                    parser = parserFactory.build();
+                    parser = new ParserWrapper(parserFactory.build());
                     classLoader = (ClassLoader) readObject(ForkServer.class.getClassLoader());
                     Thread.currentThread().setContextClassLoader(classLoader);
                 } else {
@@ -298,7 +297,6 @@ class ForkServer implements Runnable {
         // Tell the parent process that we successfully received this object
         output.writeByte(ForkServer.DONE);
         output.flush();
-
         return object;
     }
 }

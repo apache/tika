@@ -17,13 +17,13 @@ application/java-archive	class org.apache.tika.parser.pkg.PackageParser
 application/java-vm	class org.apache.tika.parser.asm.ClassParser
 application/jaxa-pal-sar	class org.apache.tika.parser.gdal.GDALParser
 application/jdem	class org.apache.tika.parser.gdal.GDALParser
-application/kate	class org.gagravarr.tika.OggParser
+application/kate	class org.apache.tika.parser.ogg.OggParser
 application/leveller	class org.apache.tika.parser.gdal.GDALParser
 application/mbox	class org.apache.tika.parser.mbox.MboxParser
 application/mock+xml	class org.apache.tika.parser.mock.MockParser
 application/mp4	class org.apache.tika.parser.mp4.MP4Parser
 application/msword	class org.apache.tika.parser.microsoft.OfficeParser
-application/ogg	class org.gagravarr.tika.OggParser
+application/ogg	class org.apache.tika.parser.ogg.OggParser
 application/onenote; format=one	class org.apache.tika.parser.microsoft.onenote.OneNoteParser
 application/pcisdk	class org.apache.tika.parser.gdal.GDALParser
 application/pdf	class org.apache.tika.parser.pdf.PDFParser
@@ -257,17 +257,17 @@ audio/basic	class org.apache.tika.parser.audio.AudioParser
 audio/midi	class org.apache.tika.parser.audio.MidiParser
 audio/mp4	class org.apache.tika.parser.mp4.MP4Parser
 audio/mpeg	class org.apache.tika.parser.mp3.Mp3Parser
-audio/ogg	class org.gagravarr.tika.OggParser
-audio/ogg; codecs=opus	class org.gagravarr.tika.OpusParser
-audio/ogg; codecs=speex	class org.gagravarr.tika.SpeexParser
-audio/opus	class org.gagravarr.tika.OpusParser
-audio/speex	class org.gagravarr.tika.SpeexParser
+audio/ogg	class org.apache.tika.parser.ogg.OggParser
+audio/ogg; codecs=opus	class org.apache.tika.parser.ogg.OpusParser
+audio/ogg; codecs=speex	class org.apache.tika.parser.ogg.SpeexParser
+audio/opus	class org.apache.tika.parser.ogg.OpusParser
+audio/speex	class org.apache.tika.parser.ogg.SpeexParser
 audio/vnd.wave	class org.apache.tika.parser.audio.AudioParser
-audio/vorbis	class org.gagravarr.tika.VorbisParser
+audio/vorbis	class org.apache.tika.parser.ogg.VorbisParser
 audio/x-aiff	class org.apache.tika.parser.audio.AudioParser
-audio/x-flac	class org.gagravarr.tika.FlacParser
-audio/x-oggflac	class org.gagravarr.tika.FlacParser
-audio/x-oggpcm	class org.gagravarr.tika.OggParser
+audio/x-flac	class org.apache.tika.parser.ogg.FlacParser
+audio/x-oggflac	class org.apache.tika.parser.ogg.FlacParser
+audio/x-oggpcm	class org.apache.tika.parser.ogg.OggParser
 image/adrg	class org.apache.tika.parser.gdal.GDALParser
 image/arg	class org.apache.tika.parser.gdal.GDALParser
 image/big-gif	class org.apache.tika.parser.gdal.GDALParser
@@ -332,15 +332,15 @@ text/x-groovy	class org.apache.tika.parser.code.SourceCodeParser
 text/x-java-source	class org.apache.tika.parser.code.SourceCodeParser
 video/3gpp	class org.apache.tika.parser.mp4.MP4Parser
 video/3gpp2	class org.apache.tika.parser.mp4.MP4Parser
-video/daala	class org.gagravarr.tika.OggParser
+video/daala	class org.apache.tika.parser.ogg.OggParser
 video/mp4	class org.apache.tika.parser.mp4.MP4Parser
-video/ogg	class org.gagravarr.tika.OggParser
+video/ogg	class org.apache.tika.parser.ogg.OggParser
 video/quicktime	class org.apache.tika.parser.mp4.MP4Parser
-video/theora	class org.gagravarr.tika.TheoraParser
-video/x-dirac	class org.gagravarr.tika.OggParser
+video/theora	class org.apache.tika.parser.ogg.TheoraParser
+video/x-dirac	class org.apache.tika.parser.ogg.OggParser
 video/x-flv	class org.apache.tika.parser.video.FLVParser
 video/x-m4v	class org.apache.tika.parser.mp4.MP4Parser
-video/x-oggrgb	class org.gagravarr.tika.OggParser
-video/x-ogguvs	class org.gagravarr.tika.OggParser
-video/x-oggyuv	class org.gagravarr.tika.OggParser
-video/x-ogm	class org.gagravarr.tika.OggParser
+video/x-oggrgb	class org.apache.tika.parser.ogg.OggParser
+video/x-ogguvs	class org.apache.tika.parser.ogg.OggParser
+video/x-oggyuv	class org.apache.tika.parser.ogg.OggParser
+video/x-ogm	class org.apache.tika.parser.ogg.OggParser

@@ -21,11 +21,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.BodyContentHandler;
 
@@ -43,8 +42,8 @@ public class TarParserTest extends AbstractPkgTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = getResourceAsStream("/test-documents/test-documents.tar")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/test-documents.tar")) {
+            AUTO_DETECT_PARSER.parse(tis, handler, metadata, trackingContext);
         }
 
         // Should have found all 9 documents, but not the directory

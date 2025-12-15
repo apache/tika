@@ -16,11 +16,8 @@
  */
 package org.apache.tika.example;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.URL;
@@ -81,8 +78,8 @@ public class TIAParsingExample {
         ContentHandler handler = new DefaultHandler();
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
-        try (InputStream stream = new FileInputStream(new File(filename))) {
-            parser.parse(stream, handler, metadata, context);
+        try (TikaInputStream tis = TikaInputStream.get(Paths.get(filename))) {
+            parser.parse(tis, handler, metadata, context);
         }
     }
 
@@ -91,8 +88,8 @@ public class TIAParsingExample {
         ContentHandler handler = new DefaultHandler();
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
-        try (InputStream stream = new GZIPInputStream(new URL(address).openStream())) {
-            parser.parse(stream, handler, metadata, context);
+        try (TikaInputStream tis = TikaInputStream.get(new GZIPInputStream(new URL(address).openStream()))) {
+            parser.parse(tis, handler, metadata, context);
         }
     }
 
@@ -101,99 +98,105 @@ public class TIAParsingExample {
         ContentHandler handler = new DefaultHandler();
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
-        try (InputStream stream = TikaInputStream.get(Paths.get(filename))) {
-            parser.parse(stream, handler, metadata, context);
+        try (TikaInputStream tis = TikaInputStream.get(Paths.get(filename))) {
+            parser.parse(tis, handler, metadata, context);
         }
     }
 
     public static File tikaInputStreamGetFile(String filename) throws Exception {
-        try (InputStream stream = TikaInputStream.get(Paths.get(filename))) {
-            TikaInputStream tikaInputStream = TikaInputStream.get(stream);
-            return tikaInputStream.getFile();
+        try (TikaInputStream tis = TikaInputStream.get(Paths.get(filename))) {
+            return tis.getFile();
         }
     }
 
     public static void useHtmlParser() throws Exception {
-        InputStream stream = new ByteArrayInputStream(new byte[0]);
-        ContentHandler handler = new DefaultHandler();
-        Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
-        Parser parser = new JSoupParser();
-        parser.parse(stream, handler, metadata, context);
+        try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
+            ContentHandler handler = new DefaultHandler();
+            Metadata metadata = new Metadata();
+            ParseContext context = new ParseContext();
+            Parser parser = new JSoupParser();
+            parser.parse(tis, handler, metadata, context);
+        }
     }
 
     public static void useCompositeParser() throws Exception {
-        InputStream stream = new ByteArrayInputStream(new byte[0]);
-        ContentHandler handler = new DefaultHandler();
-        ParseContext context = new ParseContext();
-        Map<MediaType, Parser> parsersByType = new HashMap<>();
-        parsersByType.put(MediaType.parse("text/html"), new JSoupParser());
-        parsersByType.put(MediaType.parse("application/xml"), new XMLParser());
+        try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
+            ContentHandler handler = new DefaultHandler();
+            ParseContext context = new ParseContext();
+            Map<MediaType, Parser> parsersByType = new HashMap<>();
+            parsersByType.put(MediaType.parse("text/html"), new JSoupParser());
+            parsersByType.put(MediaType.parse("application/xml"), new XMLParser());
 
-        CompositeParser parser = new CompositeParser();
-        parser.setParsers(parsersByType);
-        parser.setFallback(new TXTParser());
+            CompositeParser parser = new CompositeParser();
+            parser.setParsers(parsersByType);
+            parser.setFallback(new TXTParser());
 
-        Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "text/html");
-        parser.parse(stream, handler, metadata, context);
+            Metadata metadata = new Metadata();
+            metadata.set(Metadata.CONTENT_TYPE, "text/html");
+            parser.parse(tis, handler, metadata, context);
+        }
     }
 
     public static void useAutoDetectParser() throws Exception {
-        InputStream stream = new ByteArrayInputStream(new byte[0]);
-        ContentHandler handler = new DefaultHandler();
-        Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
-        Parser parser = new AutoDetectParser();
-        parser.parse(stream, handler, metadata, context);
+        try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
+            ContentHandler handler = new DefaultHandler();
+            Metadata metadata = new Metadata();
+            ParseContext context = new ParseContext();
+            Parser parser = new AutoDetectParser();
+            parser.parse(tis, handler, metadata, context);
+        }
     }
 
     public static void testTeeContentHandler(String filename) throws Exception {
-        InputStream stream = new ByteArrayInputStream(new byte[0]);
-        Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
-        Parser parser = new AutoDetectParser();
-        LinkContentHandler linkCollector = new LinkContentHandler();
-        try (Writer writer = Files.newBufferedWriter(Paths.get(filename), StandardCharsets.UTF_8)) {
-            ContentHandler handler = new TeeContentHandler(new BodyContentHandler(writer), linkCollector);
-            parser.parse(stream, handler, metadata, context);
+        try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
+            Metadata metadata = new Metadata();
+            ParseContext context = new ParseContext();
+            Parser parser = new AutoDetectParser();
+            LinkContentHandler linkCollector = new LinkContentHandler();
+            try (Writer writer = Files.newBufferedWriter(Paths.get(filename), StandardCharsets.UTF_8)) {
+                ContentHandler handler = new TeeContentHandler(new BodyContentHandler(writer), linkCollector);
+                parser.parse(tis, handler, metadata, context);
+            }
         }
     }
 
     public static void testLocale() throws Exception {
-        InputStream stream = new ByteArrayInputStream(new byte[0]);
-        ContentHandler handler = new DefaultHandler();
-        Metadata metadata = new Metadata();
-        Parser parser = new AutoDetectParser();
-        ParseContext context = new ParseContext();
-        context.set(Locale.class, Locale.ENGLISH);
-        parser.parse(stream, handler, metadata, context);
+        try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
+            ContentHandler handler = new DefaultHandler();
+            Metadata metadata = new Metadata();
+            Parser parser = new AutoDetectParser();
+            ParseContext context = new ParseContext();
+            context.set(Locale.class, Locale.ENGLISH);
+            parser.parse(tis, handler, metadata, context);
+        }
     }
 
     public static void testHtmlMapper() throws Exception {
-        InputStream stream = new ByteArrayInputStream(new byte[0]);
-        ContentHandler handler = new DefaultHandler();
-        Metadata metadata = new Metadata();
-        Parser parser = new AutoDetectParser();
-        ParseContext context = new ParseContext();
-        context.set(HtmlMapper.class, new IdentityHtmlMapper());
-        parser.parse(stream, handler, metadata, context);
+        try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
+            ContentHandler handler = new DefaultHandler();
+            Metadata metadata = new Metadata();
+            Parser parser = new AutoDetectParser();
+            ParseContext context = new ParseContext();
+            context.set(HtmlMapper.class, new IdentityHtmlMapper());
+            parser.parse(tis, handler, metadata, context);
+        }
     }
 
     public static void testCompositeDocument() throws Exception {
-        InputStream stream = new ByteArrayInputStream(new byte[0]);
-        ContentHandler handler = new DefaultHandler();
-        Metadata metadata = new Metadata();
-        Parser parser = new AutoDetectParser();
-        ParseContext context = new ParseContext();
-        context.set(Parser.class, new ParserDecorator(parser) {
-            private static final long serialVersionUID = 4424210691523343833L;
+        try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
+            ContentHandler handler = new DefaultHandler();
+            Metadata metadata = new Metadata();
+            Parser parser = new AutoDetectParser();
+            ParseContext context = new ParseContext();
+            context.set(Parser.class, new ParserDecorator(parser) {
+                private static final long serialVersionUID = 4424210691523343833L;
 
-            @Override
-            public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
-                // custom processing of the component document
-            }
-        });
-        parser.parse(stream, handler, metadata, context);
+                @Override
+                public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+                    // custom processing of the component document
+                }
+            });
+            parser.parse(tis, handler, metadata, context);
+        }
     }
 }

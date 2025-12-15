@@ -22,13 +22,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+
+import org.apache.tika.io.TikaInputStream;
 
 /**
  * Test class for {@code MpegStream}.
@@ -83,8 +84,8 @@ public class MpegStreamTest {
      * @throws IOException if an error occurs
      */
     private void checkDefaultHeader(ByteArrayOutputStream bos) throws IOException {
-        ByteArrayInputStream in = new ByteArrayInputStream(bos.toByteArray());
-        stream = new MpegStream(in);
+        TikaInputStream tis = TikaInputStream.get(bos.toByteArray());
+        stream = new MpegStream(tis);
         AudioFrame header = stream.nextFrame();
         assertNotNull(header, "No header found");
         assertEquals(AudioFrame.MPEG_V2, header.getVersionCode(), "Wrong MPEG version");
@@ -134,8 +135,8 @@ public class MpegStreamTest {
         bos.write(0xFF);
         bos.write(0xF3);
         bos.write(0x96);
-        ByteArrayInputStream in = new ByteArrayInputStream(bos.toByteArray());
-        stream = new MpegStream(in);
+        TikaInputStream tis = TikaInputStream.get(bos.toByteArray());
+        stream = new MpegStream(tis);
         assertNull(stream.nextFrame(), "Got a frame");
     }
 
@@ -146,8 +147,8 @@ public class MpegStreamTest {
     public void testSkipNoCurrentHeader() throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         bos.write("This is a test".getBytes(UTF_8));
-        ByteArrayInputStream in = new ByteArrayInputStream(bos.toByteArray());
-        stream = new MpegStream(in);
+        TikaInputStream tis = TikaInputStream.get(bos.toByteArray());
+        stream = new MpegStream(tis);
         assertFalse(stream.skipFrame(), "Wrong result");
     }
 }

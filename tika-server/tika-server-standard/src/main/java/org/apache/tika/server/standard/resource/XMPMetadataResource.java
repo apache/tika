@@ -30,6 +30,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.server.core.resource.MetadataResource;
 import org.apache.tika.server.core.resource.TikaResource;
@@ -50,17 +51,21 @@ public class XMPMetadataResource extends MetadataResource implements TikaServerR
     @Produces({"application/rdf+xml"})
     @Path("form")
     public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info) throws Exception {
-        return Response
-                .ok(parseMetadata(att.getObject(InputStream.class), new Metadata(), att.getHeaders(), info))
-                .build();
+        try (TikaInputStream tis = TikaInputStream.get(att.getObject(InputStream.class))) {
+            return Response
+                    .ok(parseMetadata(tis, new Metadata(), att.getHeaders(), info))
+                    .build();
+        }
     }
 
     @PUT
     @Produces({"application/rdf+xml"})
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
         Metadata metadata = new Metadata();
-        return Response
-                .ok(parseMetadata(TikaResource.getInputStream(is, metadata, httpHeaders, info), metadata, httpHeaders.getRequestHeaders(), info))
-                .build();
+        try (TikaInputStream tis = TikaResource.getInputStream(is, metadata, httpHeaders, info)) {
+            return Response
+                    .ok(parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(), info))
+                    .build();
+        }
     }
 }

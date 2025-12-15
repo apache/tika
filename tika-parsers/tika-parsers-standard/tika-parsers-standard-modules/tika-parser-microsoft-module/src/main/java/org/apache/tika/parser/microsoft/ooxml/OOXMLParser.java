@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -31,6 +30,7 @@ import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -125,11 +125,11 @@ public class OOXMLParser extends AbstractOfficeParser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         //set OfficeParserConfig if the user hasn't specified one
         configure(context);
         // Have the OOXML file processed
-        OOXMLExtractorFactory.parse(stream, handler, metadata, context);
+        OOXMLExtractorFactory.parse(tis, handler, metadata, context);
     }
 }

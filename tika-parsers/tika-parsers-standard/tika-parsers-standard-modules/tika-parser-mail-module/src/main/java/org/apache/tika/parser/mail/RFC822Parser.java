@@ -17,7 +17,6 @@
 package org.apache.tika.parser.mail;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
@@ -100,7 +99,7 @@ public class RFC822Parser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         // Get the mime4j configuration, or use a default one
         MimeConfig config =
@@ -126,12 +125,11 @@ public class RFC822Parser implements Parser {
         parser.setContentDecoding(true);
         parser.setNoRecurse();
         xhtml.startDocument();
-        TikaInputStream tstream = TikaInputStream.get(stream);
-        checkForZeroByte(tstream);//avoid stackoverflow
+        checkForZeroByte(tis);//avoid stackoverflow
         try {
-            parser.parse(tstream);
+            parser.parse(tis);
         } catch (IOException e) {
-            tstream.throwIfCauseOf(e);
+            tis.throwIfCauseOf(e);
             throw new TikaException("Failed to parse an email message", e);
         } catch (MimeException e) {
             // Unwrap the exception in case it was not thrown by mime4j

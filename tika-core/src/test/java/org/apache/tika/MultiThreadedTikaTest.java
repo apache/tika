@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.FileFilter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -102,9 +101,9 @@ public class MultiThreadedTikaTest extends TikaTest {
         ConcurrentHashMap<Path, Extract> baseline = new ConcurrentHashMap<>();
 
         for (Path f : files) {
-            try (TikaInputStream is = TikaInputStream.get(f)) {
+            try (TikaInputStream tis = TikaInputStream.get(f)) {
 
-                List<Metadata> metadataList = getRecursiveMetadata(is, parser, parseContext);
+                List<Metadata> metadataList = getRecursiveMetadata(tis, parser, parseContext);
                 baseline.put(f, new Extract(metadataList));
 
             } catch (Exception e) {
@@ -114,7 +113,7 @@ public class MultiThreadedTikaTest extends TikaTest {
         return baseline;
     }
 
-    private static List<Metadata> getRecursiveMetadata(InputStream is, Parser parser,
+    private static List<Metadata> getRecursiveMetadata(TikaInputStream tis, Parser parser,
                                                        ParseContext parseContext) throws Exception {
         //different from parent TikaTest in that this extracts text.
         //can't extract xhtml because "tmp" file names wind up in
@@ -123,7 +122,7 @@ public class MultiThreadedTikaTest extends TikaTest {
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
                 -1);
-        parser.parse(is, handler, new Metadata(), parseContext);
+        parser.parse(tis, handler, new Metadata(), parseContext);
         return handler.getMetadataList();
     }
 
@@ -352,8 +351,8 @@ public class MultiThreadedTikaTest extends TikaTest {
                 Path testFile = files[randIndex];
                 List<Metadata> metadataList = null;
                 boolean success = false;
-                try (InputStream is = TikaInputStream.get(testFile)) {
-                    metadataList = getRecursiveMetadata(is, parser, new ParseContext());
+                try (TikaInputStream tis = TikaInputStream.get(testFile)) {
+                    metadataList = getRecursiveMetadata(tis, parser, new ParseContext());
                     success = true;
                 } catch (Exception e) {
                     //swallow

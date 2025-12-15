@@ -19,7 +19,6 @@ package org.apache.tika.parser.pdf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 import org.apache.jempbox.xmp.XMPMetadata;
 import org.junit.jupiter.api.Test;
@@ -28,6 +27,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -108,8 +108,8 @@ public class CustomTikaXMPTest extends TikaTest {
     }
 
     private Metadata extract(String xmpFileName) throws IOException, TikaException, SAXException {
-        try (InputStream is = getResourceAsStream("/test-documents/xmp/" + xmpFileName)) {
-            Document doc = XMLReaderUtils.buildDOM(is);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/xmp/" + xmpFileName)) {
+            Document doc = XMLReaderUtils.buildDOM(tis);
             XMPMetadata xmp = new XMPMetadata(doc);
             ParseContext context = new ParseContext();
             Metadata metadata = new Metadata();

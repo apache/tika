@@ -340,7 +340,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
             return;
         }
-        TikaInputStream stream = null;
+        TikaInputStream tis = null;
         try {
             Metadata metadata = new Metadata();
             metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
@@ -361,10 +361,10 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 //OLE 2.0
                 updateMetadata(metadata, embeddedPartMetadata);
 
-                stream = TikaInputStream.get(fs.createDocumentInputStream(packageEntryName));
+                tis = TikaInputStream.get(fs.createDocumentInputStream(packageEntryName));
                 if (embeddedExtractor.shouldParseEmbedded(metadata)) {
                     embeddedExtractor
-                            .parseEmbedded(stream, xhtml, metadata,
+                            .parseEmbedded(tis, xhtml, metadata,
                                     true);
                 }
             } else if (POIFSDocumentType.OLE10_NATIVE == type) {
@@ -381,12 +381,12 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 }
                 byte[] data = ole.getDataBuffer();
                 if (data != null) {
-                    stream = TikaInputStream.get(data);
+                    tis = TikaInputStream.get(data);
                 }
 
-                if (stream != null && embeddedExtractor.shouldParseEmbedded(metadata)) {
+                if (tis != null && embeddedExtractor.shouldParseEmbedded(metadata)) {
                     embeddedExtractor
-                            .parseEmbedded(stream, xhtml, metadata,
+                            .parseEmbedded(tis, xhtml, metadata,
                                     true);
                 }
             } else {
@@ -401,8 +401,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
         } finally {
             fs.close();
-            if (stream != null) {
-                stream.close();
+            if (tis != null) {
+                tis.close();
             }
         }
     }

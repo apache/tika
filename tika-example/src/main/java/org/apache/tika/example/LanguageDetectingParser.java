@@ -17,12 +17,12 @@
 package org.apache.tika.example;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.language.detect.LanguageHandler;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.metadata.Metadata;
@@ -34,11 +34,11 @@ import org.apache.tika.sax.TeeContentHandler;
 public class LanguageDetectingParser extends DelegatingParser {
     private static final long serialVersionUID = 4291320409396502774L;
 
-    public void parse(InputStream stream, ContentHandler handler, final Metadata metadata, ParseContext context) throws SAXException, IOException, TikaException {
+    public void parse(TikaInputStream tis, ContentHandler handler, final Metadata metadata, ParseContext context) throws SAXException, IOException, TikaException {
         LanguageHandler langHandler = new LanguageHandler();
         ContentHandler tee = new TeeContentHandler(handler, langHandler);
 
-        super.parse(stream, tee, metadata, context);
+        super.parse(tis, tee, metadata, context);
 
         LanguageResult result = langHandler.getLanguage();
         if (result.isReasonablyCertain()) {

@@ -21,7 +21,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.CharArrayWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.util.Arrays;
@@ -30,6 +29,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.tika.config.TikaComponent;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -336,24 +336,24 @@ public class MagicDetector implements Detector {
     }
 
     /**
-     * @param input    document input stream, or <code>null</code>
+     * @param tis      document input stream, or <code>null</code>
      * @param metadata ignored
      */
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
-        if (input == null) {
+    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
+        if (tis == null) {
             return MediaType.OCTET_STREAM;
         }
 
-        input.mark(offsetRangeEnd + length);
+        tis.mark(offsetRangeEnd + length);
         try {
             int offset = 0;
 
             // Skip bytes at the beginning, using skip() or read()
             while (offset < offsetRangeBegin) {
-                long n = input.skip(offsetRangeBegin - offset);
+                long n = tis.skip(offsetRangeBegin - offset);
                 if (n > 0) {
                     offset += n;
-                } else if (input.read() != -1) {
+                } else if (tis.read() != -1) {
                     offset += 1;
                 } else {
                     return MediaType.OCTET_STREAM;
@@ -362,13 +362,13 @@ public class MagicDetector implements Detector {
 
             // Fill in the comparison window
             byte[] buffer = new byte[length + (offsetRangeEnd - offsetRangeBegin)];
-            int n = input.read(buffer);
+            int n = tis.read(buffer);
             if (n > 0) {
                 offset += n;
             }
             while (n != -1 && offset < offsetRangeEnd + length) {
                 int bufferOffset = offset - offsetRangeBegin;
-                n = input.read(buffer, bufferOffset, buffer.length - bufferOffset);
+                n = tis.read(buffer, bufferOffset, buffer.length - bufferOffset);
                 // increment offset - in case not all read (see testDetectStreamReadProblems)
                 if (n > 0) {
                     offset += n;
@@ -419,7 +419,7 @@ public class MagicDetector implements Detector {
 
             return MediaType.OCTET_STREAM;
         } finally {
-            input.reset();
+            tis.reset();
         }
     }
 

@@ -23,8 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import java.io.InputStream;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.junit.jupiter.api.Test;
@@ -51,8 +49,8 @@ public class ZipParserTest extends AbstractPkgTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = getResourceAsStream("/test-documents/test-documents.zip")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/test-documents.zip")) {
+            AUTO_DETECT_PARSER.parse(tis, handler, metadata, trackingContext);
         }
 
         // Should have found all 9 documents
@@ -103,12 +101,12 @@ public class ZipParserTest extends AbstractPkgTest {
         ArchiveStreamFactory factory = new ArchiveStreamFactory("SJIS");
         trackingContext.set(ArchiveStreamFactory.class, factory);
 
-        try (InputStream stream = TikaInputStream.get(Base64.decodeBase64(
+        try (TikaInputStream tis = TikaInputStream.get(Base64.decodeBase64(
                 "UEsDBBQAAAAIAI+CvUCDo3+zIgAAACgAAAAOAAAAk/qWe4zqg4GDgi50" +
                         "eHRr2tj0qulsc2pzRHN609Gm7Y1OvFxNYLHJv6ZV97yCiQEAUEsBAh" +
                         "QLFAAAAAgAj4K9QIOjf7MiAAAAKAAAAA4AAAAAAAAAAAAgAAAAAAAA" +
                         "AJP6lnuM6oOBg4IudHh0UEsFBgAAAAABAAEAPAAAAE4AAAAAAA=="))) {
-            AUTO_DETECT_PARSER.parse(stream, new DefaultHandler(), new Metadata(), trackingContext);
+            AUTO_DETECT_PARSER.parse(tis, new DefaultHandler(), new Metadata(), trackingContext);
         }
 
         assertEquals(1, tracker.filenames.size());
@@ -143,9 +141,9 @@ public class ZipParserTest extends AbstractPkgTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = getResourceAsStream(
+        try (TikaInputStream tis = getResourceAsStream(
                 "/test-documents/testZip_with_DataDescriptor.zip")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
+            AUTO_DETECT_PARSER.parse(tis, handler, metadata, trackingContext);
 
             assertEquals(5, tracker.filenames.size());
             assertEquals("en0", tracker.filenames.get(0));

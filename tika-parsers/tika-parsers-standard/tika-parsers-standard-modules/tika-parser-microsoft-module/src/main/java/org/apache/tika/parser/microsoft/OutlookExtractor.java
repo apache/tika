@@ -41,7 +41,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.james.mime4j.codec.DecodeMonitor;
 import org.apache.james.mime4j.codec.DecoderUtil;
 import org.apache.poi.hmef.attribute.MAPIRtfAttribute;
@@ -814,9 +813,8 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             String html = msg.getHtmlBody();
             if (html != null && html.length() > 0) {
                 Charset charset = null;
-                try {
-                    charset = detector.detect(UnsynchronizedByteArrayInputStream.builder().setByteArray(html.getBytes(UTF_8)).get(),
-                            EMPTY_METADATA);
+                try (TikaInputStream tis = TikaInputStream.get(html.getBytes(UTF_8))) {
+                    charset = detector.detect(tis, EMPTY_METADATA);
                 } catch (IOException e) {
                     //swallow
                 }

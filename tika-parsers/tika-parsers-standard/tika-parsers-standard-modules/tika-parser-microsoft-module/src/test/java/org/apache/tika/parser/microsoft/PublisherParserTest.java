@@ -19,11 +19,10 @@ package org.apache.tika.parser.microsoft;
 import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -33,11 +32,11 @@ public class PublisherParserTest {
 
     @Test
     public void testPublisherParser() throws Exception {
-        try (InputStream input = PublisherParserTest.class
-                .getResourceAsStream("/test-documents/testPUBLISHER.pub")) {
+        try (TikaInputStream tis = TikaInputStream.get(PublisherParserTest.class
+                .getResourceAsStream("/test-documents/testPUBLISHER.pub"))) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new OfficeParser().parse(input, handler, metadata, new ParseContext());
+            new OfficeParser().parse(tis, handler, metadata, new ParseContext());
 
             assertEquals("application/x-mspublisher", metadata.get(Metadata.CONTENT_TYPE));
             assertEquals(null, metadata.get(TikaCoreProperties.TITLE));

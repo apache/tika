@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPMM;
@@ -38,7 +38,7 @@ public class JempboxExtractorTest extends TikaTest {
     @Test
     public void testParseJpeg() throws IOException, TikaException {
         Metadata metadata = new Metadata();
-        try (InputStream stream = getResourceAsStream("/test-documents/testJPEG_commented.jpg")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testJPEG_commented.jpg")) {
             // set some values before extraction to see that they are overridden
             metadata.set(TikaCoreProperties.TITLE, "old title");
             metadata.set(TikaCoreProperties.DESCRIPTION, "old description");
@@ -47,7 +47,7 @@ public class JempboxExtractorTest extends TikaTest {
             metadata.add(TikaCoreProperties.SUBJECT, "oldkeyword");
 
             JempboxExtractor extractor = new JempboxExtractor(metadata);
-            extractor.parse(stream);
+            extractor.parse(tis);
 
             // DublinCore fields
             assertEquals("Tosteberga \u00C4ngar", metadata.get(TikaCoreProperties.TITLE));
@@ -67,10 +67,10 @@ public class JempboxExtractorTest extends TikaTest {
     @Test
     public void testParseJpegPhotoshop() throws IOException, TikaException {
         Metadata metadata = new Metadata();
-        try (InputStream stream = getResourceAsStream(
+        try (TikaInputStream tis = getResourceAsStream(
                 "/test-documents/testJPEG_commented_pspcs2mac.jpg")) {
             JempboxExtractor extractor = new JempboxExtractor(metadata);
-            extractor.parse(stream);
+            extractor.parse(tis);
 
             // DublinCore fields
             assertEquals("Tosteberga \u00C4ngar", metadata.get(TikaCoreProperties.TITLE));
@@ -87,10 +87,10 @@ public class JempboxExtractorTest extends TikaTest {
     @Test
     public void testParseJpegXnviewmp() throws IOException, TikaException {
         Metadata metadata = new Metadata();
-        try (InputStream stream = getResourceAsStream(
+        try (TikaInputStream tis = getResourceAsStream(
                 "/test-documents/testJPEG_commented_xnviewmp026.jpg")) {
             JempboxExtractor extractor = new JempboxExtractor(metadata);
-            extractor.parse(stream);
+            extractor.parse(tis);
 
             // XnViewMp fields not understood by Jempbox
             assertEquals("Bird site in north eastern Sk\u00E5ne, Sweden.\n(new line)",
@@ -116,16 +116,16 @@ public class JempboxExtractorTest extends TikaTest {
         try {
             Metadata m = new Metadata();
             JempboxExtractor ex = new JempboxExtractor(m);
-            try (InputStream is = getResourceAsStream("/test-documents/testXMP.xmp")) {
-                ex.parse(is);
+            try (TikaInputStream tis = getResourceAsStream("/test-documents/testXMP.xmp")) {
+                ex.parse(tis);
             }
             assertEquals(7, m.getValues(XMPMM.HISTORY_EVENT_INSTANCEID).length);
 
             JempboxExtractor.setMaxXMPMMHistory(5);
             m = new Metadata();
             ex = new JempboxExtractor(m);
-            try (InputStream is = getResourceAsStream("/test-documents/testXMP.xmp")) {
-                ex.parse(is);
+            try (TikaInputStream tis = getResourceAsStream("/test-documents/testXMP.xmp")) {
+                ex.parse(tis);
             }
             assertEquals(5, m.getValues(XMPMM.HISTORY_EVENT_INSTANCEID).length);
         } finally {
@@ -138,8 +138,8 @@ public class JempboxExtractorTest extends TikaTest {
     public void testModifiedTZ() throws Exception {
         Metadata m = new Metadata();
         JempboxExtractor ex = new JempboxExtractor(m);
-        try (InputStream is = getResourceAsStream("/test-documents/testXMP.xmp")) {
-            ex.parse(is);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testXMP.xmp")) {
+            ex.parse(tis);
         }
         assertEquals("2014-03-04T22:50:41Z", m.get(XMPMM.HISTORY_WHEN));
     }
@@ -148,8 +148,8 @@ public class JempboxExtractorTest extends TikaTest {
     public void testXMPMMMisc() throws Exception {
         Metadata m = new Metadata();
         JempboxExtractor ex = new JempboxExtractor(m);
-        try (InputStream is = getResourceAsStream("/test-documents/testXMP.xmp")) {
-            ex.parse(is);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testXMP.xmp")) {
+            ex.parse(tis);
         }
         assertEquals("uuid:cccee1fc-51b3-4b52-ac86-672af3974d25", m.getValues(XMPMM.DOCUMENTID)[0]);
         assertEquals("uuid:afa71b09-7cc5-48ac-8664-ac6dcf8b5ab4", m.getValues(XMPMM.INSTANCEID)[0]);

@@ -17,7 +17,6 @@
 package org.apache.tika.parser.apple;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -89,7 +88,7 @@ public class PListParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         EmbeddedDocumentExtractor embeddedDocumentExtractor =
@@ -98,16 +97,14 @@ public class PListParser implements Parser {
         NSObject rootObj = null;
         //if this already went through the PListDetector,
         //there should be an NSObject in the open container
-        if (stream instanceof TikaInputStream) {
-            rootObj = (NSObject) ((TikaInputStream) stream).getOpenContainer();
-        }
+        rootObj = (NSObject) tis.getOpenContainer();
 
         if (rootObj == null) {
             try {
-                if (stream instanceof TikaInputStream && ((TikaInputStream) stream).hasFile()) {
-                    rootObj = PropertyListParser.parse(((TikaInputStream) stream).getFile());
+                if (tis.hasFile()) {
+                    rootObj = PropertyListParser.parse(tis.getFile());
                 } else {
-                    rootObj = PropertyListParser.parse(stream);
+                    rootObj = PropertyListParser.parse(tis);
                 }
             } catch (PropertyListFormatException | ParseException |
                     ParserConfigurationException e) {

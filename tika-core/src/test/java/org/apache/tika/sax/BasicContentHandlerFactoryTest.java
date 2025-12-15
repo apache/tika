@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Set;
 
@@ -36,6 +35,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -311,7 +311,7 @@ public class BasicContentHandlerFactoryTest {
         }
 
         @Override
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+        public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                           ParseContext context) throws IOException, SAXException, TikaException {
             handler.startDocument();
             handler.startPrefixMapping("", XHTML);

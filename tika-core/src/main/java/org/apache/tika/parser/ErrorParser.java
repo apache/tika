@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser;
 
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
@@ -24,6 +23,7 @@ import org.xml.sax.ContentHandler;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -44,7 +44,7 @@ public class ErrorParser implements Parser {
         return Collections.emptySet();
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws TikaException {
         throw new TikaException("Parse error");
     }

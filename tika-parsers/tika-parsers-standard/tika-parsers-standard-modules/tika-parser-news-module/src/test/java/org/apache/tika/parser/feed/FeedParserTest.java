@@ -19,17 +19,17 @@ package org.apache.tika.parser.feed;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 
-public class FeedParserTest {
+public class FeedParserTest extends TikaTest {
 
     @Test
     public void testRSSParser() throws Exception {
@@ -37,12 +37,12 @@ public class FeedParserTest {
         //  represented in the various RSS format versions
         for (String rssFile : new String[]{"/test-documents/rsstest_091.rss",
                 "/test-documents/rsstest_20.rss"}) {
-            try (InputStream input = FeedParserTest.class.getResourceAsStream(rssFile)) {
+            try (TikaInputStream tis = getResourceAsStream(rssFile)) {
                 Metadata metadata = new Metadata();
                 ContentHandler handler = new BodyContentHandler();
                 ParseContext context = new ParseContext();
 
-                new FeedParser().parse(input, handler, metadata, context);
+                new FeedParser().parse(tis, handler, metadata, context);
 
                 String content = handler.toString();
                 assertNotNull(content);
@@ -59,13 +59,12 @@ public class FeedParserTest {
 
     @Test
     public void testAtomParser() throws Exception {
-        try (InputStream input = FeedParserTest.class
-                .getResourceAsStream("/test-documents/testATOM.atom")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testATOM.atom")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             ParseContext context = new ParseContext();
 
-            new FeedParser().parse(input, handler, metadata, context);
+            new FeedParser().parse(tis, handler, metadata, context);
 
             String content = handler.toString();
             assertNotNull(content);

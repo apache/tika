@@ -17,8 +17,8 @@
 package org.apache.tika.detect;
 
 import java.io.IOException;
-import java.io.InputStream;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -26,15 +26,15 @@ import org.apache.tika.mime.MediaType;
  * Detector to identify zero length files as application/x-zerovalue
  */
 public class ZeroSizeFileDetector implements Detector {
-    public MediaType detect(InputStream stream, Metadata metadata) throws IOException {
-        if (stream != null) {
+    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
+        if (tis != null) {
             try {
-                stream.mark(1);
-                if (stream.read() == -1) {
+                tis.mark(1);
+                if (tis.read() == -1) {
                     return MediaType.EMPTY;
                 }
             } finally {
-                stream.reset();
+                tis.reset();
             }
         }
         return MediaType.OCTET_STREAM;

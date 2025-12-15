@@ -16,9 +16,8 @@
  */
 package org.apache.tika.detect.zip;
 
-import java.io.InputStream;
-
 import org.apache.tika.detect.Detector;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -31,15 +30,15 @@ public class DeprecatedStreamingZipContainerDetector extends ZipContainerDetecto
      */
 
     /**
-     * @param is inputstream to read from. Callers must mark/reset the stream
-     *           before/after this call to detect.  This call does not close the stream!
-     *           Depending on the file type, this call to detect may read the entire stream.
-     *           Make sure to use a {@link org.apache.tika.io.BoundedInputStream} or similar
-     *           if you want to protect against reading the entire stream.
+     * @param tis inputstream to read from. Callers must mark/reset the stream
+     *            before/after this call to detect.  This call does not close the stream!
+     *            Depending on the file type, this call to detect may read the entire stream.
+     *            Make sure to use a {@link org.apache.tika.io.BoundedInputStream} or similar
+     *            if you want to protect against reading the entire stream.
      * @return
      */
     @Override
-    public MediaType detect(InputStream is, Metadata metadata) {
+    public MediaType detect(TikaInputStream tis, Metadata metadata) {
 /*
         Set<String> fileNames = new HashSet<>();
         Set<String> directoryNames = new HashSet<>();

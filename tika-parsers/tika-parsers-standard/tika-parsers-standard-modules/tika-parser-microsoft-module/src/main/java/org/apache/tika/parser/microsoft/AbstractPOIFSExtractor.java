@@ -168,13 +168,13 @@ abstract class AbstractPOIFSExtractor {
             // It's OOXML (has a ZipFile):
             metadata.set(Metadata.CONTENT_LENGTH,
                     Integer.toString(((DocumentEntry)ooxml).getSize()));
-            try (TikaInputStream stream = TikaInputStream
+            try (TikaInputStream tis = TikaInputStream
                     .get(new DocumentInputStream((DocumentEntry) ooxml))) {
 
                 Detector detector = new DefaultZipContainerDetector();
                 MediaType type = null;
                 try {
-                    type = detector.detect(stream, metadata);
+                    type = detector.detect(tis, metadata);
                 } catch (SecurityException e) {
                     throw e;
                 } catch (Exception e) {
@@ -182,7 +182,7 @@ abstract class AbstractPOIFSExtractor {
                     EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
                     return;
                 }
-                handleEmbeddedResource(stream, metadata,null, dir.getName(), dir.getStorageClsid(),
+                handleEmbeddedResource(tis, metadata,null, dir.getName(), dir.getStorageClsid(),
                         type.toString(), xhtml, outputHtml);
                 return;
             }

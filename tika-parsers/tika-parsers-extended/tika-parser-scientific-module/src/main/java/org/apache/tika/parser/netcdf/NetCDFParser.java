@@ -19,7 +19,6 @@ package org.apache.tika.parser.netcdf;
 //JDK imports
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -33,7 +32,6 @@ import ucar.nc2.Variable;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -79,12 +77,9 @@ public class NetCDFParser implements Parser {
      * org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata,
      * org.apache.tika.parser.ParseContext)
      */
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
-        TemporaryResources tmp =
-                TikaInputStream.isTikaInputStream(stream) ? null : new TemporaryResources();
-        TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
         try (NetcdfFile ncFile = NetcdfFile.open(tis.getFile().getAbsolutePath())) {
             metadata.set("File-Type-Description", ncFile.getFileTypeDescription());
             // first parse out the set of global attributes
@@ -132,10 +127,6 @@ public class NetCDFParser implements Parser {
             xhtml.endDocument();
         } catch (IOException e) {
             throw new TikaException("NetCDF parse error", e);
-        } finally {
-            if (tmp != null) {
-                tmp.dispose();
-            }
         }
     }
 

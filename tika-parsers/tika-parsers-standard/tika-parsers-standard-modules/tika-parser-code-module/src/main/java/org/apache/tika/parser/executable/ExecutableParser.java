@@ -31,6 +31,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.MachineMetadata;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -81,27 +82,27 @@ public class ExecutableParser implements Parser, MachineMetadata {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         // We only do metadata, for now
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         // What kind is it?
         byte[] first4 = new byte[4];
-        IOUtils.readFully(stream, first4);
+        IOUtils.readFully(tis, first4);
 
         if (first4[0] == (byte) 'M' && first4[1] == (byte) 'Z') {
-            parsePE(xhtml, metadata, stream, first4);
+            parsePE(xhtml, metadata, tis, first4);
         } else if (first4[0] == (byte) 0x7f && first4[1] == (byte) 'E' && first4[2] == (byte) 'L' &&
                 first4[3] == (byte) 'F') {
-            parseELF(xhtml, metadata, stream, first4);
+            parseELF(xhtml, metadata, tis, first4);
         } else if ((first4[0] == (byte) 0xCF || first4[0] == (byte) 0xCE) &&
                 first4[1] == (byte) 0xFA && first4[2] == (byte) 0xED && first4[3] == (byte) 0xFE) {
-            parseMachO(xhtml, metadata, stream, first4);
+            parseMachO(xhtml, metadata, tis, first4);
         } else if (first4[0] == (byte) 0xFE && first4[1] == (byte) 0xED &&
                 first4[2] == (byte) 0xFA &&
                 (first4[3] == (byte) 0xCF || first4[3] == (byte) 0xCE)) {
-            parseMachO(xhtml, metadata, stream, first4);
+            parseMachO(xhtml, metadata, tis, first4);
         }
 
 
@@ -112,17 +113,17 @@ public class ExecutableParser implements Parser, MachineMetadata {
     /**
      * Parses a DOS or Windows PE file
      */
-    public void parsePE(XHTMLContentHandler xhtml, Metadata metadata, InputStream stream,
+    public void parsePE(XHTMLContentHandler xhtml, Metadata metadata, InputStream tis,
                         byte[] first4) throws TikaException, IOException {
         metadata.set(Metadata.CONTENT_TYPE, PE_EXE.toString());
         metadata.set(PLATFORM, PLATFORM_WINDOWS);
 
         // Skip over the MS-DOS bit
         byte[] msdosSection = new byte[0x3c - 4];
-        IOUtils.readFully(stream, msdosSection);
+        IOUtils.readFully(tis, msdosSection);
 
         // Grab the PE header offset
-        int peOffset = EndianUtils.readIntLE(stream);
+        int peOffset = EndianUtils.readIntLE(tis);
 
         // Reasonability check - while it may go anywhere, it's normally in the first few kb
         if (peOffset > 4096 || peOffset < 0x3f) {
@@ -131,11 +132,11 @@ public class ExecutableParser implements Parser, MachineMetadata {
 
         // Skip the rest of the MS-DOS stub (if PE), until we reach what should
         //  be the PE header (if this is a PE executable)
-        stream.skip(peOffset - 0x40);
+        tis.skip(peOffset - 0x40);
 
         // Read the PE header
         byte[] pe = new byte[24];
-        IOUtils.readFully(stream, pe);
+        IOUtils.readFully(tis, pe);
 
         // Check it really is a PE header
         if (pe[0] == (byte) 'P' && pe[1] == (byte) 'E' && pe[2] == 0 && pe[3] == 0) {
@@ -258,10 +259,10 @@ public class ExecutableParser implements Parser, MachineMetadata {
     /**
      * Parses a Unix ELF file
      */
-    public void parseELF(XHTMLContentHandler xhtml, Metadata metadata, InputStream stream,
+    public void parseELF(XHTMLContentHandler xhtml, Metadata metadata, InputStream tis,
                          byte[] first4) throws TikaException, IOException {
         // Byte 5 is the architecture
-        int architecture = stream.read();
+        int architecture = tis.read();
         if (architecture == 1) {
             metadata.set(ARCHITECTURE_BITS, "32");
         } else if (architecture == 2) {
@@ -269,7 +270,7 @@ public class ExecutableParser implements Parser, MachineMetadata {
         }
 
         // Byte 6 is the endian-ness
-        int endian = stream.read();
+        int endian = tis.read();
         if (endian == 1) {
             metadata.set(ENDIAN, Endian.LITTLE.getName());
         } else if (endian == 2) {
@@ -277,12 +278,12 @@ public class ExecutableParser implements Parser, MachineMetadata {
         }
 
         // Byte 7 is the elf version
-        int elfVer = stream.read();
+        int elfVer = tis.read();
 
         // Byte 8 is the OS, if set (lots of compilers don't)
         // Byte 9 is the OS (specific) ABI version
-        int os = stream.read();
-        int osVer = stream.read();
+        int os = tis.read();
+        int osVer = tis.read();
         if (os > 0 || osVer > 0) {
             switch (os) {
                 case 0:
@@ -338,14 +339,14 @@ public class ExecutableParser implements Parser, MachineMetadata {
 
         // Bytes 10-16 are padding and lengths
         byte[] padLength = new byte[7];
-        IOUtils.readFully(stream, padLength);
+        IOUtils.readFully(tis, padLength);
 
         // Bytes 16-17 are the object type (LE/BE)
         int type;
         if (endian == 1) {
-            type = EndianUtils.readUShortLE(stream);
+            type = EndianUtils.readUShortLE(tis);
         } else {
-            type = EndianUtils.readUShortBE(stream);
+            type = EndianUtils.readUShortBE(tis);
         }
         switch (type) {
             case 1:
@@ -372,9 +373,9 @@ public class ExecutableParser implements Parser, MachineMetadata {
         // Bytes 18-19 are the machine (EM_*)
         int machine;
         if (endian == 1) {
-            machine = EndianUtils.readUShortLE(stream);
+            machine = EndianUtils.readUShortLE(tis);
         } else {
-            machine = EndianUtils.readUShortBE(stream);
+            machine = EndianUtils.readUShortBE(tis);
         }
         switch (machine) {
             case 2:
@@ -434,7 +435,7 @@ public class ExecutableParser implements Parser, MachineMetadata {
     /**
      * Parses a Mach-O file
      */
-    public void parseMachO(XHTMLContentHandler xhtml, Metadata metadata, InputStream stream,
+    public void parseMachO(XHTMLContentHandler xhtml, Metadata metadata, InputStream tis,
                            byte[] first4) throws TikaException, IOException {
         var isLE = first4[3] == (byte) 0xFE;
         if (isLE) {
@@ -445,8 +446,8 @@ public class ExecutableParser implements Parser, MachineMetadata {
 
         // Bytes 5-8 are the CPU type and architecture bits
         var cpuType = isLE
-                ? EndianUtils.readIntLE(stream)
-                : EndianUtils.readIntBE(stream);
+                ? EndianUtils.readIntLE(tis)
+                : EndianUtils.readIntBE(tis);
         if ((cpuType >> 24) == 1) {
             metadata.set(ARCHITECTURE_BITS, "64");
         }
@@ -483,13 +484,13 @@ public class ExecutableParser implements Parser, MachineMetadata {
 
         // Bytes 9-12 are the CPU subtype
         var cpuSubtype = isLE
-                ? EndianUtils.readIntLE(stream)
-                : EndianUtils.readIntBE(stream);
+                ? EndianUtils.readIntLE(tis)
+                : EndianUtils.readIntBE(tis);
 
         // Bytes 13-16 are the file type
         var fileType = isLE
-                ? EndianUtils.readIntLE(stream)
-                : EndianUtils.readIntBE(stream);
+                ? EndianUtils.readIntLE(tis)
+                : EndianUtils.readIntBE(tis);
         switch (fileType) {
             case 0x1:
                 metadata.set(Metadata.CONTENT_TYPE, MACH_O_OBJECT.toString());

@@ -18,11 +18,10 @@ package org.apache.tika.parser.mat;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -62,8 +61,8 @@ public class MatParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String path = "/test-documents/test_mat_text.mat";
 
-        try (InputStream stream = getResourceAsStream(path)) {
-            parser.parse(stream, handler, metadata, new ParseContext());
+        try (TikaInputStream tis = getResourceAsStream(path)) {
+            parser.parse(tis, handler, metadata, new ParseContext());
         }
 
         // Check Content

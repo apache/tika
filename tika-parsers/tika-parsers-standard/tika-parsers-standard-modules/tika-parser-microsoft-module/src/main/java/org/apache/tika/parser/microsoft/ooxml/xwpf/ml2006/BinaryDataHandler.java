@@ -65,8 +65,8 @@ class BinaryDataHandler extends AbstractPartHandler {
             EmbeddedDocumentExtractor embeddedDocumentExtractor =
                     EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
             Metadata embeddedMetadata = new Metadata();
-            try (TikaInputStream stream = TikaInputStream.get(getInputStream())) {
-                embeddedDocumentExtractor.parseEmbedded(stream, handler, embeddedMetadata, true);
+            try (TikaInputStream tis = TikaInputStream.get(getInputStream())) {
+                embeddedDocumentExtractor.parseEmbedded(tis, handler, embeddedMetadata, true);
             } catch (IOException e) {
                 throw new TikaException("error in finishing part", e);
             }

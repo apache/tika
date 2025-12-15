@@ -17,7 +17,6 @@
 package org.apache.tika.example;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
@@ -50,7 +49,7 @@ public class ExtractEmbeddedFiles {
     public ExtractEmbeddedFiles() throws TikaConfigException, IOException {
     }
 
-    public void extract(InputStream is, Path outputDir) throws SAXException, TikaException, IOException {
+    public void extract(TikaInputStream tis, Path outputDir) throws SAXException, TikaException, IOException {
         Metadata m = new Metadata();
         ParseContext c = new ParseContext();
         ContentHandler h = new BodyContentHandler(-1);
@@ -59,7 +58,7 @@ public class ExtractEmbeddedFiles {
         EmbeddedDocumentExtractor ex = new MyEmbeddedDocumentExtractor(outputDir, c);
         c.set(EmbeddedDocumentExtractor.class, ex);
 
-        parser.parse(is, h, m, c);
+        parser.parse(tis, h, m, c);
     }
 
     private class MyEmbeddedDocumentExtractor extends ParsingEmbeddedDocumentExtractor {

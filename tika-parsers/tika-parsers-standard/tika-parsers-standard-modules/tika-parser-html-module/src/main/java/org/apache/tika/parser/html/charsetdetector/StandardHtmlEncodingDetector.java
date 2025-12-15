@@ -26,6 +26,7 @@ import org.apache.commons.io.input.BoundedInputStream;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -74,11 +75,11 @@ public final class StandardHtmlEncodingDetector implements EncodingDetector {
     }
 
     @Override
-    public Charset detect(InputStream input, Metadata metadata) throws IOException {
+    public Charset detect(TikaInputStream tis, Metadata metadata) throws IOException {
         int limit = getMarkLimit();
-        input.mark(limit);
+        tis.mark(limit);
         // Never read more than the first META_TAG_BUFFER_SIZE bytes
-        InputStream limitedStream = BoundedInputStream.builder().setInputStream(input).setMaxCount(limit).get();
+        InputStream limitedStream = BoundedInputStream.builder().setInputStream(tis).setMaxCount(limit).get();
         PreScanner preScanner = new PreScanner(limitedStream);
 
         // The order of priority for detection is:
@@ -93,7 +94,7 @@ public final class StandardHtmlEncodingDetector implements EncodingDetector {
             detectedCharset = preScanner.scan();
         }
 
-        input.reset();
+        tis.reset();
         return detectedCharset;
     }
 

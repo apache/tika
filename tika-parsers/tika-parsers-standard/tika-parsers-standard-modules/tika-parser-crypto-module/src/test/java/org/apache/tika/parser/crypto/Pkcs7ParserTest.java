@@ -19,22 +19,21 @@ package org.apache.tika.parser.crypto;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.InputStream;
-
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 
 public class Pkcs7ParserTest extends TikaTest {
     public void testDetachedSignature() throws Exception {
-        try (InputStream input = getResourceAsStream("/test-documents/testDetached.p7s")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testDetached.p7s")) {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
-            new Pkcs7Parser().parse(input, handler, metadata, new ParseContext());
+            new Pkcs7Parser().parse(tis, handler, metadata, new ParseContext());
         } catch (NullPointerException npe) {
             fail("should not get NPE");
         } catch (TikaException te) {

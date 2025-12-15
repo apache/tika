@@ -56,9 +56,6 @@ public class ComponentRegistry {
 
     private static Map<String, String> createBuiltinAliases() {
         Map<String, String> aliases = new HashMap<>();
-        // Alias for org.gagravarr:vorbis-java-tika dependency
-        // TODO -- make this configurable
-        aliases.put("ogg-detector", "org.gagravarr.tika.OggDetector");
         // HandlerConfig is in tika-pipes-api which can't depend on tika-core for @TikaComponent
         aliases.put("handler-config", "org.apache.tika.pipes.api.HandlerConfig");
         // EmbeddedDocumentBytesConfig is in tika-pipes-core which can't depend on tika-core for @TikaComponent

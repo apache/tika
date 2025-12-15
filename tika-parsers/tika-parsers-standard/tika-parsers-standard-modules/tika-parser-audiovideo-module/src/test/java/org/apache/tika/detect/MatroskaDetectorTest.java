@@ -20,21 +20,17 @@ package org.apache.tika.detect;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
-import java.io.InputStream;
 
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
-public class MatroskaDetectorTest {
+public class MatroskaDetectorTest extends TikaTest {
 
     private final MatroskaDetector detector = new MatroskaDetector();
-
-    private InputStream getResourceAsStream(String resourcePath) {
-        return this.getClass().getResourceAsStream(resourcePath);
-    }
 
     @Test
     public void testDetectMKV() throws IOException {
@@ -62,12 +58,16 @@ public class MatroskaDetectorTest {
                 detector.detect(null, new Metadata()));
 
         byte[] bytes = new byte[10];
-        assertEquals(MediaType.OCTET_STREAM,
-                detector.detect(UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get(), new Metadata()));
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            assertEquals(MediaType.OCTET_STREAM,
+                    detector.detect(tis, new Metadata()));
+        }
 
         bytes = new byte[0];
-        assertEquals(MediaType.OCTET_STREAM,
-                detector.detect(UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get(), new Metadata()));
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            assertEquals(MediaType.OCTET_STREAM,
+                    detector.detect(tis, new Metadata()));
+        }
 
     }
 }

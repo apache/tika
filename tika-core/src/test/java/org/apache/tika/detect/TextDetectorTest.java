@@ -20,13 +20,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -84,23 +83,23 @@ public class TextDetectorTest {
 
     private void assertText(byte[] data) {
         try {
-            InputStream stream = new ByteArrayInputStream(data);
-            assertEquals(MediaType.TEXT_PLAIN, detector.detect(stream, new Metadata()));
+            TikaInputStream tis = TikaInputStream.get(data);
+            assertEquals(MediaType.TEXT_PLAIN, detector.detect(tis, new Metadata()));
 
             // Test that the stream has been reset
             for (byte aByte : data) {
-                assertEquals(aByte, (byte) stream.read());
+                assertEquals(aByte, (byte) tis.read());
             }
-            assertEquals(-1, stream.read());
+            assertEquals(-1, tis.read());
         } catch (IOException e) {
             fail("Unexpected exception from TextDetector");
         }
     }
 
     private void assertNotText(byte[] data) {
-        try {
+        try (TikaInputStream tis = TikaInputStream.get(data)) {
             assertEquals(MediaType.OCTET_STREAM,
-                    detector.detect(new ByteArrayInputStream(data), new Metadata()));
+                    detector.detect(tis, new Metadata()));
         } catch (IOException e) {
             fail("Unexpected exception from TextDetector");
         }

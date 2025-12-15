@@ -17,7 +17,6 @@
 package org.apache.tika.parser;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -30,7 +29,6 @@ import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractorFactory;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -147,58 +145,52 @@ public class AutoDetectParser extends CompositeParser {
         return this.autoDetectParserConfig;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         if (autoDetectParserConfig.getMetadataWriteFilterFactory() != null) {
             metadata.setMetadataWriteFilter(
                     autoDetectParserConfig.getMetadataWriteFilterFactory().newInstance());
         }
-        TemporaryResources tmp = new TemporaryResources();
-        try {
-            TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
-            //figure out if we should spool to disk
-            maybeSpool(tis, autoDetectParserConfig, metadata);
+        //figure out if we should spool to disk
+        maybeSpool(tis, autoDetectParserConfig, metadata);
 
-            // Compute digests before type detection if configured
-            DigestHelper.maybeDigest(tis,
-                    autoDetectParserConfig.digester(),
-                    autoDetectParserConfig.isSkipContainerDocumentDigest(),
-                    metadata, context, tmp);
+        // Compute digests before type detection if configured
+        DigestHelper.maybeDigest(tis,
+                autoDetectParserConfig.digester(),
+                autoDetectParserConfig.isSkipContainerDocumentDigest(),
+                metadata, context);
 
-            // Automatically detect the MIME type of the document
-            MediaType type = detector.detect(tis, metadata);
-            //update CONTENT_TYPE as long as it wasn't set by parser override
-            if (metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE) == null ||
-                    !metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE)
-                            .equals(type.toString())) {
-                metadata.set(Metadata.CONTENT_TYPE, type.toString());
-            }
-            //check for zero-byte inputstream
-            if (tis.getOpenContainer() == null) {
-                if (autoDetectParserConfig.getThrowOnZeroBytes()) {
-                    tis.mark(1);
-                    if (tis.read() == -1) {
-                        throw new ZeroByteFileException("InputStream must have > 0 bytes");
-                    }
-                    tis.reset();
+        // Automatically detect the MIME type of the document
+        MediaType type = detector.detect(tis, metadata);
+        //update CONTENT_TYPE as long as it wasn't set by parser override
+        if (metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE) == null ||
+                !metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE)
+                        .equals(type.toString())) {
+            metadata.set(Metadata.CONTENT_TYPE, type.toString());
+        }
+        //check for zero-byte inputstream
+        if (tis.getOpenContainer() == null) {
+            if (autoDetectParserConfig.getThrowOnZeroBytes()) {
+                tis.mark(1);
+                if (tis.read() == -1) {
+                    throw new ZeroByteFileException("InputStream must have > 0 bytes");
                 }
+                tis.reset();
             }
-            handler = decorateHandler(handler, metadata, context, autoDetectParserConfig);
-            // TIKA-216: Zip bomb prevention
-            SecureContentHandler sch = handler != null ?
-                    createSecureContentHandler(handler, tis, autoDetectParserConfig) : null;
+        }
+        handler = decorateHandler(handler, metadata, context, autoDetectParserConfig);
+        // TIKA-216: Zip bomb prevention
+        SecureContentHandler sch = handler != null ?
+                createSecureContentHandler(handler, tis, autoDetectParserConfig) : null;
 
-            initializeEmbeddedDocumentExtractor(metadata, context);
-            try {
-                // Parse the document
-                super.parse(tis, sch, metadata, context);
-            } catch (SAXException e) {
-                // Convert zip bomb exceptions to TikaExceptions
-                sch.throwIfCauseOf(e);
-                throw e;
-            }
-        } finally {
-            tmp.dispose();
+        initializeEmbeddedDocumentExtractor(metadata, context);
+        try {
+            // Parse the document
+            super.parse(tis, sch, metadata, context);
+        } catch (SAXException e) {
+            // Convert zip bomb exceptions to TikaExceptions
+            sch.throwIfCauseOf(e);
+            throw e;
         }
     }
 
@@ -273,11 +265,11 @@ public class AutoDetectParser extends CompositeParser {
         context.set(EmbeddedDocumentExtractor.class, edx);
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata)
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
         ParseContext context = new ParseContext();
         context.set(Parser.class, this);
-        parse(stream, handler, metadata, context);
+        parse(tis, handler, metadata, context);
     }
 
     private SecureContentHandler createSecureContentHandler(ContentHandler handler,

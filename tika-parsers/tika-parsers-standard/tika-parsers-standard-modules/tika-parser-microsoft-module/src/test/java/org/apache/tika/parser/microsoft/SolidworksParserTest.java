@@ -19,12 +19,11 @@ package org.apache.tika.parser.microsoft;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -37,11 +36,11 @@ public class SolidworksParserTest extends TikaTest {
      */
     @Test
     public void testPart2013SP2Parser() throws Exception {
-        try (InputStream input = getResourceAsStream(
+        try (TikaInputStream tis = getResourceAsStream(
                 "/test-documents/testsolidworksPart2013SP2.SLDPRT")) {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
-            new OfficeParser().parse(input, handler, metadata, new ParseContext());
+            new OfficeParser().parse(tis, handler, metadata, new ParseContext());
 
             //Check content type
             assertEquals("application/sldworks", metadata.get(Metadata.CONTENT_TYPE));
@@ -64,11 +63,11 @@ public class SolidworksParserTest extends TikaTest {
      */
     @Test
     public void testPart2014SP0Parser() throws Exception {
-        try (InputStream input = getResourceAsStream(
+        try (TikaInputStream tis = getResourceAsStream(
                 "/test-documents/testsolidworksPart2014SP0.SLDPRT")) {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
-            new OfficeParser().parse(input, handler, metadata, new ParseContext());
+            new OfficeParser().parse(tis, handler, metadata, new ParseContext());
 
             //Check content type
             assertEquals("application/sldworks", metadata.get(Metadata.CONTENT_TYPE));
@@ -91,11 +90,11 @@ public class SolidworksParserTest extends TikaTest {
      */
     @Test
     public void testAssembly2013SP2Parser() throws Exception {
-        try (InputStream input = getResourceAsStream(
+        try (TikaInputStream tis = getResourceAsStream(
                 "/test-documents/testsolidworksAssembly2013SP2.SLDASM")) {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
-            new OfficeParser().parse(input, handler, metadata, new ParseContext());
+            new OfficeParser().parse(tis, handler, metadata, new ParseContext());
 
             //Check content type
             assertEquals("application/sldworks", metadata.get(Metadata.CONTENT_TYPE));
@@ -118,11 +117,11 @@ public class SolidworksParserTest extends TikaTest {
      */
     @Test
     public void testAssembly2014SP0Parser() throws Exception {
-        try (InputStream input = getResourceAsStream(
+        try (TikaInputStream tis = getResourceAsStream(
                 "/test-documents/testsolidworksAssembly2014SP0.SLDASM")) {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
-            new OfficeParser().parse(input, handler, metadata, new ParseContext());
+            new OfficeParser().parse(tis, handler, metadata, new ParseContext());
 
             //Check content type
             assertEquals("application/sldworks", metadata.get(Metadata.CONTENT_TYPE));
@@ -145,11 +144,11 @@ public class SolidworksParserTest extends TikaTest {
      */
     @Test
     public void testDrawing2013SP2Parser() throws Exception {
-        try (InputStream input = getResourceAsStream(
+        try (TikaInputStream tis = getResourceAsStream(
                 "/test-documents/testsolidworksDrawing2013SP2.SLDDRW")) {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
-            new OfficeParser().parse(input, handler, metadata, new ParseContext());
+            new OfficeParser().parse(tis, handler, metadata, new ParseContext());
 
             //Check content type
             assertEquals("application/sldworks", metadata.get(Metadata.CONTENT_TYPE));
@@ -172,11 +171,11 @@ public class SolidworksParserTest extends TikaTest {
      */
     @Test
     public void testDrawing2014SP0Parser() throws Exception {
-        try (InputStream input = getResourceAsStream(
+        try (TikaInputStream tis = getResourceAsStream(
                 "/test-documents/testsolidworksDrawing2014SP0.SLDDRW")) {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
-            new OfficeParser().parse(input, handler, metadata, new ParseContext());
+            new OfficeParser().parse(tis, handler, metadata, new ParseContext());
 
             //Check content type
             assertEquals("application/sldworks", metadata.get(Metadata.CONTENT_TYPE));

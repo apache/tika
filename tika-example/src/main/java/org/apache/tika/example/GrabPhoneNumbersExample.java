@@ -28,6 +28,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collections;
 import java.util.HashSet;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -93,8 +94,9 @@ public class GrabPhoneNumbersExample {
         // The PhoneExtractingContentHandler will examine any characters for phone numbers before passing them
         // to the underlying Handler.
         PhoneExtractingContentHandler handler = new PhoneExtractingContentHandler(new BodyContentHandler(), metadata);
-        try (InputStream stream = new BufferedInputStream(Files.newInputStream(path))) {
-            parser.parse(stream, handler, metadata, new ParseContext());
+        try (InputStream stream = new BufferedInputStream(Files.newInputStream(path));
+             TikaInputStream tis = TikaInputStream.get(stream)) {
+            parser.parse(tis, handler, metadata, new ParseContext());
         }
         String[] numbers = metadata.getValues("phonenumbers");
         Collections.addAll(phoneNumbers, numbers);

@@ -18,12 +18,11 @@ package org.apache.tika.parser.tmx;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
@@ -35,10 +34,10 @@ public class TMXParserTest extends TikaTest {
 
     @Test
     public void testTMX() throws Exception {
-        try (InputStream input = getResourceAsStream("/test-documents/testTMX.tmx")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testTMX.tmx")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new TMXParser().parse(input, handler, metadata, new ParseContext());
+            new TMXParser().parse(tis, handler, metadata, new ParseContext());
             String content = handler.toString();
             assertContains("Hello world!", content);
             assertContains("Salut lume!", content);

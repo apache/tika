@@ -17,7 +17,6 @@
 package org.apache.tika.parser.txt;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 
@@ -25,6 +24,7 @@ import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 
 @TikaComponent(spi = false)
@@ -68,29 +68,29 @@ public class UniversalEncodingDetector implements EncodingDetector {
         this(ConfigDeserializer.buildConfig(jsonConfig, Config.class));
     }
 
-    public Charset detect(InputStream input, Metadata metadata) throws IOException {
-        if (input == null) {
+    public Charset detect(TikaInputStream tis, Metadata metadata) throws IOException {
+        if (tis == null) {
             return null;
         }
 
-        input.mark(markLimit);
+        tis.mark(markLimit);
         try {
             UniversalEncodingListener listener = new UniversalEncodingListener(metadata);
 
             byte[] b = new byte[BUFSIZE];
             int n = 0;
-            int m = input.read(b);
+            int m = tis.read(b);
             while (m != -1 && n < markLimit && !listener.isDone()) {
                 n += m;
                 listener.handleData(b, 0, m);
-                m = input.read(b, 0, Math.min(b.length, markLimit - n));
+                m = tis.read(b, 0, Math.min(b.length, markLimit - n));
             }
 
             return listener.dataEnd();
         } catch (LinkageError e) {
             return null; // juniversalchardet is not available
         } finally {
-            input.reset();
+            tis.reset();
         }
     }
 

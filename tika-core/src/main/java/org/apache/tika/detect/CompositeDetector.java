@@ -17,13 +17,13 @@
 package org.apache.tika.detect;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -71,7 +71,7 @@ public class CompositeDetector implements Detector {
         this(Arrays.asList(detectors));
     }
 
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
         MediaType override = detectOverrides(metadata);
         if (override != null) {
             return override;
@@ -81,7 +81,7 @@ public class CompositeDetector implements Detector {
         //we have to iterate through all detectors because the override detector may
         //be within a CompositeDetector
         for (Detector detector : getDetectors()) {
-            MediaType detected = detector.detect(input, metadata);
+            MediaType detected = detector.detect(tis, metadata);
             if (registry.isSpecializationOf(detected, type)) {
                 type = detected;
             }

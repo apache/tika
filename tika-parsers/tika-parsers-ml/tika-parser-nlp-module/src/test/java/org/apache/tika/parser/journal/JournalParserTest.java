@@ -21,16 +21,15 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 
-public class JournalParserTest {
+public class JournalParserTest extends TikaTest {
 
     @Test
     public void testJournalParser() {
@@ -40,10 +39,9 @@ public class JournalParserTest {
 
         assumeTrue(canRun());
 
-        InputStream stream = JournalParserTest.class.getResourceAsStream(path);
         JournalParser jParser = new JournalParser();
         try {
-            jParser.parse(stream, handler, metadata, new ParseContext());
+            jParser.parse(getResourceAsStream(path), handler, metadata, new ParseContext());
         } catch (Exception e) {
             e.printStackTrace();
             fail(e.getMessage());

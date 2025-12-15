@@ -65,6 +65,7 @@ import org.apache.tika.config.Initializable;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -115,7 +116,7 @@ public class AmazonTranscribe implements Parser, Initializable {
     /**
      * Starts AWS Transcribe Job with language specification.
      *
-     * @param stream   the source input stream.
+     * @param stream   the source input tis.
      * @param handler  handler to use
      * @param metadata
      * @param context  -- set the {@link LanguageCode} in the ParseContext if known
@@ -126,7 +127,7 @@ public class AmazonTranscribe implements Parser, Initializable {
      * Language Code</a>
      */
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         if (!isAvailable) {
@@ -138,7 +139,7 @@ public class AmazonTranscribe implements Parser, Initializable {
         }
         String jobName = getJobKey();
         LanguageCode languageCode = context.get(LanguageCode.class);
-        uploadFileToBucket(stream, jobName);
+        uploadFileToBucket(tis, jobName);
         StartTranscriptionJobRequest startTranscriptionJobRequest =
                 StartTranscriptionJobRequest.builder()
                         .build();

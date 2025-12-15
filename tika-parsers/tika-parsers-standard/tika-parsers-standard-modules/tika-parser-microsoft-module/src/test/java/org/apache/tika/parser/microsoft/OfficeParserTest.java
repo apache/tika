@@ -18,8 +18,6 @@ package org.apache.tika.parser.microsoft;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
@@ -39,7 +37,7 @@ public class OfficeParserTest extends TikaTest {
         assertTrue(xml.contains("test"));
     }
 
-    private InputStream getTestDocument(String name) {
+    private TikaInputStream getTestDocument(String name) {
         return TikaInputStream.get(getResourceAsStream("/test-documents/" + name));
     }
 }

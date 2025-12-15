@@ -18,7 +18,6 @@ package org.apache.tika.fork;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,12 +31,14 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.TeeContentHandler;
 
@@ -120,6 +121,11 @@ public class ForkParser implements Parser, Closeable {
             throw new IllegalArgumentException(
                     "The underlying parser of a ForkParser should not be a ForkParser, " +
                             "but a specific implementation.");
+        }
+        if (parser instanceof RecursiveParserWrapper) {
+            parser = new RPWShim(((RecursiveParserWrapper) parser).getWrappedParser());
+        } else {
+            parser = new ParserWrapper(parser);
         }
         this.tikaBin = null;
         this.parserFactoryFactory = null;
@@ -227,9 +233,9 @@ public class ForkParser implements Parser, Closeable {
      * @throws SAXException
      * @throws TikaException
      */
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        if (stream == null) {
+        if (tis == null) {
             throw new NullPointerException("null stream");
         }
 
@@ -242,7 +248,7 @@ public class ForkParser implements Parser, Closeable {
                     (handler instanceof AbstractRecursiveParserWrapperHandler) ? handler :
                             new TeeContentHandler(handler, new MetadataContentHandler(metadata));
 
-            t = client.call("parse", stream, tee, metadata, context);
+            t = client.call("parseStream", tis, tee, metadata, context);
             alive = true;
         } catch (TikaException te) {
             // Problem occurred on our side

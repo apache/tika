@@ -265,19 +265,19 @@ public class ExternalParser implements Parser {
      * Metadata is only extracted if {@link #setMetadataExtractionPatterns(Map)}
      * has been called to set patterns.
      */
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
 
         TemporaryResources tmp = new TemporaryResources();
         try {
-            parse(TikaInputStream.get(stream, tmp, metadata), xhtml, metadata, tmp);
+            parse(tis, xhtml, metadata, tmp);
         } finally {
             tmp.dispose();
         }
     }
 
-    private void parse(TikaInputStream stream, XHTMLContentHandler xhtml, Metadata metadata,
+    private void parse(TikaInputStream tis, XHTMLContentHandler xhtml, Metadata metadata,
                        TemporaryResources tmp) throws IOException, SAXException, TikaException {
         boolean inputToStdIn = true;
         boolean outputFromStdOut = true;
@@ -295,7 +295,7 @@ public class ExternalParser implements Parser {
         }
         for (int i = 0; i < cmd.length; i++) {
             if (cmd[i].contains(INPUT_FILE_TOKEN)) {
-                cmd[i] = cmd[i].replace(INPUT_FILE_TOKEN, stream.getFile().getPath());
+                cmd[i] = cmd[i].replace(INPUT_FILE_TOKEN, tis.getFile().getPath());
                 inputToStdIn = false;
             }
             if (cmd[i].contains(OUTPUT_FILE_TOKEN)) {
@@ -319,7 +319,7 @@ public class ExternalParser implements Parser {
 
         try {
             if (inputToStdIn) {
-                sendInput(process, stream);
+                sendInput(process, tis);
             } else {
                 process.getOutputStream().close();
             }

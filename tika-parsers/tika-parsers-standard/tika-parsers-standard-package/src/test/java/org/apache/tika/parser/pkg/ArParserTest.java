@@ -18,11 +18,10 @@ package org.apache.tika.parser.pkg;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.BodyContentHandler;
 
@@ -35,8 +34,8 @@ public class ArParserTest extends AbstractPkgTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = getResourceAsStream("/test-documents/testARofText.ar")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testARofText.ar")) {
+            AUTO_DETECT_PARSER.parse(tis, handler, metadata, recursingContext);
         }
 
         assertEquals("application/x-archive", metadata.get(Metadata.CONTENT_TYPE));
@@ -45,8 +44,8 @@ public class ArParserTest extends AbstractPkgTest {
         assertContains("Test d'indexation de Txt", content);
         assertContains("http://www.apache.org", content);
 
-        try (InputStream stream = getResourceAsStream("/test-documents/testARofSND.ar")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testARofSND.ar")) {
+            AUTO_DETECT_PARSER.parse(tis, handler, metadata, recursingContext);
         }
 
         assertEquals("application/x-archive", metadata.get(Metadata.CONTENT_TYPE));

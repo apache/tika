@@ -17,7 +17,6 @@
 package org.apache.tika.parser.odf;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -26,6 +25,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -179,9 +179,9 @@ public class OpenDocumentMetaParser extends XMLParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        super.parse(stream, handler, metadata, context);
+        super.parse(tis, handler, metadata, context);
         // Copy subject to description for OO2
         String odfSubject = metadata.get(OfficeOpenXMLCore.SUBJECT);
         if (odfSubject != null && !odfSubject.equals("") &&

@@ -20,8 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -30,6 +28,7 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.language.translate.EmptyTranslator;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.Metadata;
@@ -66,8 +65,8 @@ public class TikaLoaderTest {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "application/test+configurable");
 
-        try (InputStream stream = new ByteArrayInputStream("test".getBytes(StandardCharsets.UTF_8))) {
-            compositeParser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
+            compositeParser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
         // Verify the configured values were used
@@ -125,8 +124,8 @@ public class TikaLoaderTest {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "application/test+minimal");
 
-        try (InputStream stream = new ByteArrayInputStream("test".getBytes(StandardCharsets.UTF_8))) {
-            compositeParser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
+            compositeParser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
         // Verify minimal parser was invoked
@@ -145,8 +144,8 @@ public class TikaLoaderTest {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "application/test+fallback");
 
-        try (InputStream stream = new ByteArrayInputStream("test".getBytes(StandardCharsets.UTF_8))) {
-            compositeParser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
+            compositeParser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
         // Verify fallback parser was invoked with correct config
@@ -167,8 +166,8 @@ public class TikaLoaderTest {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "application/test+configurable");
 
-        try (InputStream stream = new ByteArrayInputStream("test".getBytes(StandardCharsets.UTF_8))) {
-            compositeParser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
+            compositeParser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
         // Verify it used the configured instance (with "explicitly-configured" name)
@@ -180,8 +179,8 @@ public class TikaLoaderTest {
         Metadata fallbackMetadata = new Metadata();
         fallbackMetadata.set(Metadata.CONTENT_TYPE, "application/test+fallback");
 
-        try (InputStream stream = new ByteArrayInputStream("test".getBytes(StandardCharsets.UTF_8))) {
-            compositeParser.parse(stream, new DefaultHandler(), fallbackMetadata, new ParseContext());
+        try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
+            compositeParser.parse(tis, new DefaultHandler(), fallbackMetadata, new ParseContext());
         }
 
         // FallbackTestParser should be loaded from SPI with default config
@@ -202,8 +201,8 @@ public class TikaLoaderTest {
         Metadata configurableMetadata = new Metadata();
         configurableMetadata.set(Metadata.CONTENT_TYPE, "application/test+configurable");
 
-        try (InputStream stream = new ByteArrayInputStream("test".getBytes(StandardCharsets.UTF_8))) {
-            compositeParser.parse(stream, new DefaultHandler(), configurableMetadata, new ParseContext());
+        try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
+            compositeParser.parse(tis, new DefaultHandler(), configurableMetadata, new ParseContext());
         }
 
         assertEquals("with-default-config", configurableMetadata.get("parser-name"));
@@ -213,8 +212,8 @@ public class TikaLoaderTest {
         Metadata fallbackMetadata = new Metadata();
         fallbackMetadata.set(Metadata.CONTENT_TYPE, "application/test+fallback");
 
-        try (InputStream stream = new ByteArrayInputStream("test".getBytes(StandardCharsets.UTF_8))) {
-            compositeParser.parse(stream, new DefaultHandler(), fallbackMetadata, new ParseContext());
+        try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
+            compositeParser.parse(tis, new DefaultHandler(), fallbackMetadata, new ParseContext());
         }
 
         // FallbackTestParser should be loaded from SPI with default config
@@ -288,8 +287,8 @@ public class TikaLoaderTest {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "application/test+optin");
 
-        try (InputStream stream = new ByteArrayInputStream("test".getBytes(StandardCharsets.UTF_8))) {
-            compositeParser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
+            compositeParser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
         // Verify opt-in parser was loaded

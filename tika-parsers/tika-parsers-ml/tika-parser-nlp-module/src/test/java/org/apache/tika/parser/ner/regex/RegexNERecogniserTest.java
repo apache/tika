@@ -18,7 +18,6 @@ package org.apache.tika.parser.ner.regex;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -28,6 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ner.NamedEntityParser;
@@ -44,7 +44,7 @@ public class RegexNERecogniserTest extends TikaTest {
                         getConfigPath(RegexNERecogniserTest.class, "tika-config.json"))
                 .loadAutoDetectParser();
         Metadata md = getXML(
-                new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)),
+                TikaInputStream.get(text.getBytes(StandardCharsets.UTF_8)),
                 parser, new Metadata()).metadata;
 
         Set<String> days = new HashSet<>(Arrays.asList(md.getValues("NER_WEEK_DAY")));

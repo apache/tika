@@ -18,7 +18,6 @@ package org.apache.tika.parser.sas;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.InputStream;
 import java.text.DateFormatSymbols;
 import java.util.Arrays;
 import java.util.Locale;
@@ -27,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Database;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.MachineMetadata;
@@ -48,8 +48,8 @@ public class SAS7BDATParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = getResourceAsStream("/test-documents/testSAS.sas7bdat")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testSAS.sas7bdat")) {
+            parser.parse(tis, handler, metadata, new ParseContext());
         }
 
         assertEquals("application/x-sas-data", metadata.get(Metadata.CONTENT_TYPE));
@@ -83,8 +83,8 @@ public class SAS7BDATParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = getResourceAsStream("/test-documents/test-columnar.sas7bdat")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/test-columnar.sas7bdat")) {
+            AUTO_DETECT_PARSER.parse(tis, handler, metadata, new ParseContext());
         }
 
         assertEquals("application/x-sas-data", metadata.get(Metadata.CONTENT_TYPE));

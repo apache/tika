@@ -25,7 +25,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.StringWriter;
 import java.text.DecimalFormatSymbols;
@@ -298,8 +297,8 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
             };
             ParseContext context = new ParseContext();
 
-            try (InputStream input = getResourceAsStream("/test-documents/" + filename)) {
-                AUTO_DETECT_PARSER.parse(input, handler, metadata, context);
+            try (TikaInputStream tis = getResourceAsStream("/test-documents/" + filename)) {
+                AUTO_DETECT_PARSER.parse(tis, handler, metadata, context);
             }
         }
     }
@@ -793,12 +792,12 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     public void testWordCustomProperties() throws Exception {
         Metadata metadata = new Metadata();
 
-        try (InputStream input = getResourceAsStream(
+        try (TikaInputStream tis = getResourceAsStream(
                 "/test-documents/testWORD_custom_props.docx")) {
             ContentHandler handler = new BodyContentHandler(-1);
             ParseContext context = new ParseContext();
             context.set(Locale.class, Locale.US);
-            new OOXMLParser().parse(input, handler, metadata, context);
+            new OOXMLParser().parse(tis, handler, metadata, context);
         }
 
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -828,11 +827,11 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     public void testPowerPointCustomProperties() throws Exception {
         Metadata metadata = new Metadata();
 
-        try (InputStream input = getResourceAsStream("/test-documents/testPPT_custom_props.pptx")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testPPT_custom_props.pptx")) {
             ContentHandler handler = new BodyContentHandler(-1);
             ParseContext context = new ParseContext();
             context.set(Locale.class, Locale.US);
-            new OOXMLParser().parse(input, handler, metadata, context);
+            new OOXMLParser().parse(tis, handler, metadata, context);
         }
 
         assertEquals("application/vnd.openxmlformats-officedocument.presentationml.presentation",
@@ -862,9 +861,9 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");
         handler.setResult(new StreamResult(sw));
 
-        try (InputStream input = getResourceAsStream(
+        try (TikaInputStream tis = getResourceAsStream(
                 "/test-documents/testWORD_embedded_pdf.docx")) {
-            new OOXMLParser().parse(input, handler, metadata, new ParseContext());
+            new OOXMLParser().parse(tis, handler, metadata, new ParseContext());
         }
         String xml = sw.toString();
         int i = xml.indexOf("Here is the pdf file:");
@@ -916,8 +915,8 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = getResourceAsStream("/test-documents/testWORD_no_format.docx")) {
-            new OOXMLParser().parse(stream, handler, metadata, new ParseContext());
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testWORD_no_format.docx")) {
+            new OOXMLParser().parse(tis, handler, metadata, new ParseContext());
         }
 
         String content = handler.toString();
@@ -1428,12 +1427,12 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
                 if (!f.getName().endsWith(".docx")) {
                     continue;
                 }
-                try (InputStream is = TikaInputStream.get(f.toPath())) {
+                try (TikaInputStream tis = TikaInputStream.get(f.toPath())) {
                     ParseContext parseContext = new ParseContext();
                     parseContext.set(OfficeParserConfig.class, officeParserConfig);
                     //test only the extraction of the main docx content, not embedded docs
                     parseContext.set(Parser.class, new EmptyParser());
-                    XMLResult r = getXML(is, AUTO_DETECT_PARSER, new Metadata(), parseContext);
+                    XMLResult r = getXML(tis, AUTO_DETECT_PARSER, new Metadata(), parseContext);
                 } catch (Exception e) {
                     ex++;
 
@@ -1465,8 +1464,8 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
 
         // Should be detected correctly
         MediaType type;
-        try (InputStream input = getResourceAsStream("/test-documents/testEXCEL.xlsb")) {
-            type = detector.detect(input, m);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testEXCEL.xlsb")) {
+            type = detector.detect(tis, m);
             assertEquals("application/vnd.ms-excel.sheet.binary.macroenabled.12", type.toString());
         }
 

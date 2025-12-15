@@ -17,16 +17,15 @@
 package org.apache.tika.parser.odf;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -43,19 +42,23 @@ public class OpenDocumentContentParser implements Parser {
         return Collections.emptySet(); // not a top-level parser
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        parseInternal(stream, new XHTMLContentHandler(handler, metadata), metadata, context);
+        parseInternal(tis, new XHTMLContentHandler(handler, metadata), metadata, context);
     }
 
-    void parseInternal(InputStream stream, final ContentHandler handler, Metadata metadata,
+    void parseInternal(TikaInputStream tis, final ContentHandler handler, Metadata metadata,
                        ParseContext context) throws IOException, SAXException, TikaException {
 
         DefaultHandler dh = new OpenDocumentBodyHandler(handler, context);
 
-
-        XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
-                new NSNormalizerContentHandler(dh), context);
+        tis.setCloseShield();
+        try {
+            XMLReaderUtils.parseSAX(tis,
+                    new NSNormalizerContentHandler(dh), context);
+        } finally {
+            tis.removeCloseShield();
+        }
     }
 
 }

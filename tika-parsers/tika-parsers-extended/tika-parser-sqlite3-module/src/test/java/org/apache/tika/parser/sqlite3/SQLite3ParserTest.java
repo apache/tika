@@ -19,12 +19,11 @@ package org.apache.tika.parser.sqlite3;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -42,8 +41,8 @@ public class SQLite3ParserTest extends TikaTest {
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, TEST_FILE_NAME);
         ContentHandler handler = new BodyContentHandler(-1);
         ParseContext ctx = new ParseContext();
-        try (InputStream stream = getResourceAsStream(TEST_FILE1)) {
-            TikaTest.AUTO_DETECT_PARSER.parse(stream, handler, metadata, ctx);
+        try (TikaInputStream tis = getResourceAsStream(TEST_FILE1)) {
+            TikaTest.AUTO_DETECT_PARSER.parse(tis, handler, metadata, ctx);
         }
         String s = handler.toString();
         TikaTest.assertContains("0\t2.3\t2.4\tlorem", s);

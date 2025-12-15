@@ -19,11 +19,10 @@ package org.apache.tika.parser.pkg;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.BodyContentHandler;
 
@@ -41,8 +40,8 @@ public class GzipParserTest extends AbstractPkgTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = getResourceAsStream("/test-documents/test-documents.tgz")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/test-documents.tgz")) {
+            AUTO_DETECT_PARSER.parse(tis, handler, metadata, trackingContext);
         }
 
         // Should find a single entry, for the (compressed) tar file

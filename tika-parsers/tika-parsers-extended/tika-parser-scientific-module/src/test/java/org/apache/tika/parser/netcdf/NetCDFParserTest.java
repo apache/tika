@@ -19,11 +19,10 @@ package org.apache.tika.parser.netcdf;
 import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -41,9 +40,9 @@ public class NetCDFParserTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = NetCDFParser.class
-                .getResourceAsStream("/test-documents/sresa1b_ncar_ccsm3_0_run1_200001.nc")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
+        try (TikaInputStream tis = TikaInputStream.get(NetCDFParser.class
+                .getResourceAsStream("/test-documents/sresa1b_ncar_ccsm3_0_run1_200001.nc"))) {
+            parser.parse(tis, handler, metadata, new ParseContext());
         }
 
         assertEquals(metadata.get(TikaCoreProperties.TITLE), "model output prepared for IPCC AR4");
