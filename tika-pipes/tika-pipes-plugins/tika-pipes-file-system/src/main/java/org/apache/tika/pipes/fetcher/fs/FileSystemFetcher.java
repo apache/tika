@@ -84,7 +84,14 @@ public class FileSystemFetcher extends AbstractTikaExtension implements Fetcher 
                 throw new IOException("BasePath is not a directory: " + basePath);
             }
             p = basePath.resolve(fetchKey);
-            if (!p.toRealPath().startsWith(basePath.toRealPath())) {
+            // First check using normalize() - catches obvious path traversal attempts
+            // This doesn't require the file to exist, so it works on all platforms
+            if (!p.normalize().startsWith(basePath.normalize())) {
+                throw new SecurityException(
+                        "fetchKey must resolve to be a descendant of the 'basePath'");
+            }
+            // Additional check using toRealPath() for symlink attacks (only if file exists)
+            if (Files.exists(p) && !p.toRealPath().startsWith(basePath.toRealPath())) {
                 throw new SecurityException(
                         "fetchKey must resolve to be a descendant of the 'basePath'");
             }
