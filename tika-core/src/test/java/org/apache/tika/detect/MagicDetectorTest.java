@@ -29,6 +29,7 @@ import java.io.InputStream;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -36,7 +37,7 @@ import org.apache.tika.mime.MediaType;
 /**
  * Test cases for the {@link MagicDetector} class.
  */
-public class MagicDetectorTest {
+public class MagicDetectorTest extends TikaTest {
 
     @Test
     public void testDetectNull() throws Exception {
@@ -171,8 +172,7 @@ public class MagicDetectorTest {
 
     @Test
     public void testDetectApplicationEnviHdr() throws Exception {
-        InputStream iStream = MagicDetectorTest.class
-                .getResourceAsStream("/test-documents/ang20150420t182050_corr_v1e_img.hdr");
+        InputStream iStream = getResourceAsStream("/test-documents/ang20150420t182050_corr_v1e_img.hdr");
         byte[] data = IOUtils.toByteArray(iStream);
         MediaType testMT = new MediaType("application", "envi.hdr");
         Detector detector = new MagicDetector(testMT, data, null, false, 0, 0);
@@ -260,9 +260,7 @@ public class MagicDetectorTest {
     }
 
     private String detect(Detector detector, String bz2Name) throws IOException  {
-        try (TikaInputStream tis = TikaInputStream.get(
-                this.getClass().getResourceAsStream(
-                        "/test-documents/bz2/" + bz2Name))) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/bz2/" + bz2Name)) {
             return detector.detect(tis, new Metadata()).toString();
         }
     }

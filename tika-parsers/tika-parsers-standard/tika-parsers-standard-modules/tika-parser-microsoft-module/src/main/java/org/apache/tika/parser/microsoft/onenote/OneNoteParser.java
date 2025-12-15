@@ -17,6 +17,7 @@
 package org.apache.tika.parser.microsoft.onenote;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,14 +25,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -78,15 +77,11 @@ public class OneNoteParser implements Parser {
     @Override
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        byte[] oneStoreFileBytes = IOUtils.toByteArray(tis);
 
-        try (TemporaryResources temporaryResources = new TemporaryResources();
-                TikaInputStream tikaInputStream = TikaInputStream.get(oneStoreFileBytes);
-                OneNoteDirectFileResource oneNoteDirectFileResource = new OneNoteDirectFileResource(
-                        tikaInputStream.getFile())) {
+        try (OneNoteDirectFileResource oneNoteDirectFileResource = new OneNoteDirectFileResource(
+                        tis.getFile())) {
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();
-            temporaryResources.addResource(oneNoteDirectFileResource);
             OneNoteDocument oneNoteDocument =
                     createOneNoteDocumentFromDirectFileResource(oneNoteDirectFileResource);
 
@@ -162,7 +157,9 @@ public class OneNoteParser implements Parser {
             } else if (header.isLegacyOrAlternativePackaging()) {
                 try {
                     AlternativePackaging alternatePackageOneStoreFile = new AlternativePackaging();
-                    alternatePackageOneStoreFile.doDeserializeFromByteArray(oneStoreFileBytes, 0);
+                    byte[] bytes = Files.readAllBytes(tis.getPath());
+                    //enable streaming deserialization
+                    alternatePackageOneStoreFile.doDeserializeFromByteArray(bytes, 0);
 
                     MSOneStoreParser onenoteParser = new MSOneStoreParser();
                     MSOneStorePackage pkg =

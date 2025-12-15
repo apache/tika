@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipException;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
@@ -191,7 +190,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         Map<String, String> linkedRelationships =
                 loadLinkedRelationships(packagePart, true, metadata);
         try (InputStream stream = packagePart.getInputStream()) {
-            XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
+            XMLReaderUtils.parseSAX(stream,
                     new EmbeddedContentHandler(new OOXMLWordAndPowerPointTextHandler(
                             new OOXMLTikaBodyPartHandler(xhtml, styles, listManager, config),
                             linkedRelationships, config.isIncludeShapeBasedContent(),

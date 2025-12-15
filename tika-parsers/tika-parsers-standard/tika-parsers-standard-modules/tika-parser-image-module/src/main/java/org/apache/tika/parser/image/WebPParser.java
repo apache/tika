@@ -25,7 +25,6 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -50,13 +49,7 @@ public class WebPParser implements Parser {
 
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        TemporaryResources tmp = new TemporaryResources();
-        try {
-            TikaInputStream inner = TikaInputStream.get(tis, tmp, metadata);
-            new ImageMetadataExtractor(metadata).parseWebP(inner.getFile());
-        } finally {
-            tmp.dispose();
-        }
+        new ImageMetadataExtractor(metadata).parseWebP(tis.getFile());
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();

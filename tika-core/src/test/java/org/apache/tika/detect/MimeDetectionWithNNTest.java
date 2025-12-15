@@ -24,12 +24,12 @@ import java.io.IOException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MimeDetectionTest;
 
-public class MimeDetectionWithNNTest {
+public class MimeDetectionWithNNTest extends TikaTest {
 
     private Detector detector;
 
@@ -88,13 +88,13 @@ public class MimeDetectionWithNNTest {
     }
 
     private void testUrl(String expected, String url, String file) throws IOException {
-        TikaInputStream tis = TikaInputStream.get(MimeDetectionTest.class.getResourceAsStream(file));
+        TikaInputStream tis = getResourceAsStream("/org/apache/tika/mime/" + file);
         testStream(expected, url, tis);
     }
 
     private void testFile(String expected, String filename) throws IOException {
 
-        TikaInputStream tis = TikaInputStream.get(MimeDetectionTest.class.getResourceAsStream(filename));
+        TikaInputStream tis = getResourceAsStream("/org/apache/tika/mime/" + filename);
         testStream(expected, filename, tis);
     }
 
@@ -122,8 +122,10 @@ public class MimeDetectionWithNNTest {
      */
     @Test
     public void testEmptyDocument() throws IOException {
-        assertEquals(MediaType.OCTET_STREAM,
-                detector.detect(TikaInputStream.get(new byte[0]), new Metadata()));
+        try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
+            assertEquals(MediaType.OCTET_STREAM,
+                    detector.detect(tis, new Metadata()));
+        }
 
     }
 

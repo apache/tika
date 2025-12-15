@@ -61,8 +61,8 @@ public class ExternalParserTest extends TikaTest {
                 "Title: the quick brown fox\n" +
                 "Author: jumped over\n" +
                 "Created: 10/20/2024";
-        try (TikaInputStream stream = TikaInputStream.get(output.getBytes(StandardCharsets.UTF_8))) {
-            outputParser.parse(stream, contentHandler, m, new ParseContext());
+        try (TikaInputStream tis = TikaInputStream.get(output.getBytes(StandardCharsets.UTF_8))) {
+            outputParser.parse(tis, contentHandler, m, new ParseContext());
         }
         assertEquals("the quick brown fox", m.get("title"));
     }

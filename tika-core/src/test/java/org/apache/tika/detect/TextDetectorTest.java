@@ -97,9 +97,9 @@ public class TextDetectorTest {
     }
 
     private void assertNotText(byte[] data) {
-        try {
+        try (TikaInputStream tis = TikaInputStream.get(data)) {
             assertEquals(MediaType.OCTET_STREAM,
-                    detector.detect(TikaInputStream.get(data), new Metadata()));
+                    detector.detect(tis, new Metadata()));
         } catch (IOException e) {
             fail("Unexpected exception from TextDetector");
         }

@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -61,8 +60,9 @@ public class DIFParser implements Parser {
         xhtml.startDocument();
         xhtml.startElement("p");
         TaggedContentHandler tagged = new TaggedContentHandler(handler);
+        tis.setCloseShield();
         try {
-            XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(tis),
+            XMLReaderUtils.parseSAX(tis,
                             new EmbeddedContentHandler(
                                     getContentHandler(tagged, metadata, context)),
                     context);
@@ -70,6 +70,7 @@ public class DIFParser implements Parser {
             tagged.throwIfCauseOf(e);
             throw new TikaException("XML parse error", e);
         } finally {
+            tis.removeCloseShield();
             xhtml.endElement("p");
             xhtml.endDocument();
         }

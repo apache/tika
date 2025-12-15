@@ -33,7 +33,9 @@ public class SpringExample {
     public static void main(String[] args) throws Exception {
         ApplicationContext context = new ClassPathXmlApplicationContext(new String[]{"org/apache/tika/example/spring.xml"});
         Parser parser = context.getBean("tika", Parser.class);
-        parser.parse(TikaInputStream.get("Hello, World!".getBytes(UTF_8)), new WriteOutContentHandler(new OutputStreamWriter(System.out, UTF_8)), new Metadata(),
-                new ParseContext());
+        try (TikaInputStream tis = TikaInputStream.get("Hello, World!".getBytes(UTF_8))) {
+            parser.parse(tis, new WriteOutContentHandler(new OutputStreamWriter(System.out, UTF_8)), new Metadata(),
+                    new ParseContext());
+        }
     }
 }

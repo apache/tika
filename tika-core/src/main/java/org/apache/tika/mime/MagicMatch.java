@@ -18,8 +18,6 @@ package org.apache.tika.mime;
 
 import java.io.IOException;
 
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-
 import org.apache.tika.detect.MagicDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -57,8 +55,7 @@ class MagicMatch implements Clause {
     }
 
     public boolean eval(byte[] data) {
-        try (TikaInputStream tis = TikaInputStream.get(
-                UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get())) {
+        try (TikaInputStream tis = TikaInputStream.get(data)) {
             return getDetector().detect(tis, new Metadata()) !=
                     MediaType.OCTET_STREAM;
         } catch (IOException e) {

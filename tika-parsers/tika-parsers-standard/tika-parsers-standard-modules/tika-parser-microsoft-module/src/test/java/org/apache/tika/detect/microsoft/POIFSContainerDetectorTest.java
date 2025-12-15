@@ -24,12 +24,13 @@ import java.io.InputStream;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
-public class POIFSContainerDetectorTest {
+public class POIFSContainerDetectorTest extends TikaTest {
 
     @Test
     public void testBasic() throws Exception {
@@ -73,7 +74,7 @@ public class POIFSContainerDetectorTest {
     }
 
     private TikaInputStream getStream(String fileName) {
-        return TikaInputStream.get(POIFSContainerDetectorTest.class.getResourceAsStream("/test-documents/" + fileName));
+        return getResourceAsStream("/test-documents/" + fileName);
     }
 
     private void assertExpected(Detector detector, TikaInputStream tis, String expectedMime, String expectedDigest) throws IOException {

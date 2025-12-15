@@ -741,10 +741,10 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     if (blip != null) {
                         HSSFPictureData picture = new HSSFPictureData(blip);
                         String mimeType = picture.getMimeType();
-                        TikaInputStream stream = TikaInputStream.get(picture.getData());
+                        TikaInputStream tis = TikaInputStream.get(picture.getData());
 
                         // Handle the embeded resource
-                        extractor.handleEmbeddedResource(stream, null, null, mimeType, handler,
+                        extractor.handleEmbeddedResource(tis, null, null, mimeType, handler,
                                 true);
                     }
                 }

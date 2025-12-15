@@ -1521,8 +1521,8 @@ public class PDFParserTest extends TikaTest {
         ContentHandler contentHandler = factory.getNewContentHandler();
         Metadata metadata = new Metadata();
         ParseContext parseContext = new ParseContext();
-        try (TikaInputStream is = getResourceAsStream("/test-documents/" + fileName)) {
-            AUTO_DETECT_PARSER.parse(is, contentHandler, metadata, parseContext);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/" + fileName)) {
+            AUTO_DETECT_PARSER.parse(tis, contentHandler, metadata, parseContext);
         } catch (WriteLimitReachedException e) {
             //e.printStackTrace();
         }

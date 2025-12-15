@@ -21,7 +21,6 @@ import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -77,7 +76,8 @@ public class TXTParser extends AbstractEncodingDetectorParser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         // Automatically detect the character encoding
-        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(tis),
+        tis.setCloseShield();
+        try (AutoDetectReader reader = new AutoDetectReader(tis,
                 metadata, getEncodingDetector(context))) {
             //try to get detected content type; could be a subclass of text/plain
             //such as vcal, etc.
@@ -108,6 +108,8 @@ public class TXTParser extends AbstractEncodingDetectorParser {
             xhtml.endElement("p");
 
             xhtml.endDocument();
+        } finally {
+            tis.removeCloseShield();
         }
     }
 

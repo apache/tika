@@ -279,17 +279,17 @@ public class RFC822ParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
 
-        try {
-            EXTRACT_ALL_ALTERNATIVES_PARSER
-                    .parse(TikaInputStream.get(data), handler, metadata, context);
+        try (TikaInputStream tis = TikaInputStream.get(data)) {
+            EXTRACT_ALL_ALTERNATIVES_PARSER.parse(tis, handler, metadata, context);
             fail();
         } catch (TikaException expected) {
         }
 
         MimeConfig config = new MimeConfig.Builder().setMaxHeaderLen(-1).setMaxLineLen(-1).build();
         context.set(MimeConfig.class, config);
-        EXTRACT_ALL_ALTERNATIVES_PARSER
-                .parse(TikaInputStream.get(data), handler, metadata, context);
+        try (TikaInputStream tis = TikaInputStream.get(data)) {
+            EXTRACT_ALL_ALTERNATIVES_PARSER.parse(tis, handler, metadata, context);
+        }
         assertEquals(name.trim(), metadata.get(TikaCoreProperties.CREATOR));
     }
 
@@ -378,8 +378,9 @@ public class RFC822ParserTest extends TikaTest {
                 "Subject: I Urge You to Require Notice of Mercury";
         Parser p = new RFC822Parser();
         Metadata m = new Metadata();
-        p.parse(TikaInputStream.get(s.getBytes(StandardCharsets.UTF_8)), new DefaultHandler(), m,
-                new ParseContext());
+        try (TikaInputStream tis = TikaInputStream.get(s.getBytes(StandardCharsets.UTF_8))) {
+            p.parse(tis, new DefaultHandler(), m, new ParseContext());
+        }
         assertEquals("I Urge You to Require Notice of Mercury", m.get(TikaCoreProperties.TITLE));
     }
 

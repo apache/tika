@@ -51,7 +51,6 @@ import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
 import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException.Feature;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -245,21 +244,20 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         return SUPPORTED_TYPES;
     }
 
+
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws IOException, SAXException, TikaException {
-
-        // TikaInputStream always supports mark
-
-        TemporaryResources tmp = new TemporaryResources();
+                ParseContext context)
+            throws TikaException, IOException, SAXException {
+        tis.setCloseShield();
         try {
-            _parse(tis, handler, metadata, context, tmp);
+            _parseInternal(tis, handler, metadata, context);
         } finally {
-            tmp.close();
+            tis.removeCloseShield();
         }
     }
 
-    private void _parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
-                ParseContext context, TemporaryResources tmp)
+    private void _parseInternal(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                ParseContext context)
             throws TikaException, IOException, SAXException {
         ArchiveInputStream ais = null;
         String encoding = null;
@@ -276,14 +274,13 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 // At the end we want to close the archive stream to release
                 // any associated resources, but the underlying document stream
                 // should not be closed
-            ais = factory.createArchiveInputStream(CloseShieldInputStream.wrap(tis));
+            ais = factory.createArchiveInputStream(tis);
 
         } catch (StreamingNotSupportedException sne) {
             // Most archive formats work on streams, but a few need files
             if (sne.getFormat().equals(ArchiveStreamFactory.SEVEN_Z)) {
                 // Rework as a file, and wrap
                 tis.reset();
-                TikaInputStream tstream = TikaInputStream.get(tis, tmp, metadata);
 
                 // Seven Zip suports passwords, was one given?
                 String password = null;
@@ -294,7 +291,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
 
                 SevenZFile sevenz;
                 try {
-                    SevenZFile.Builder builder = new SevenZFile.Builder().setFile(tstream.getFile());
+                    SevenZFile.Builder builder = new SevenZFile.Builder().setFile(tis.getFile());
                     if (password == null) {
                         sevenz = builder.get();
                     } else {
@@ -307,11 +304,9 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 // Pending a fix for COMPRESS-269 / TIKA-1525, this bit is a little nasty
                 ais = new SevenZWrapper(sevenz);
             } else {
-                tmp.close();
                 throw new TikaException("Unknown non-streaming format " + sne.getFormat(), sne);
             }
         } catch (ArchiveException e) {
-            tmp .close();
             throw new TikaException("Unable to unpack document stream", e);
         }
 
@@ -337,13 +332,12 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 ais.close();
                 // An exception would be thrown if MARK_LIMIT is not big enough
                 tis.reset();
-                ais = new ZipArchiveInputStream(CloseShieldInputStream.wrap(tis), encoding, true,
+                ais = new ZipArchiveInputStream(tis, encoding, true,
                         true);
                 parseEntries(ais, metadata, extractor, xhtml, true, entryCnt);
             }
         } finally {
             ais.close();
-            tmp.close();
             xhtml.endDocument();
         }
     }

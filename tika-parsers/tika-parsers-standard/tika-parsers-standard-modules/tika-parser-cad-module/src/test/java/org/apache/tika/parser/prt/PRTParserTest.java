@@ -34,10 +34,10 @@ public class PRTParserTest extends TikaTest {
      */
     @Test
     public void testPRTParserBasics() throws Exception {
-        try (TikaInputStream input = getResourceAsStream("/test-documents/testCADKEY.prt")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testCADKEY.prt")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new PRTParser().parse(input, handler, metadata, new ParseContext());
+            new PRTParser().parse(tis, handler, metadata, new ParseContext());
 
             assertEquals("application/x-prt", metadata.get(Metadata.CONTENT_TYPE));
 
@@ -68,10 +68,10 @@ public class PRTParserTest extends TikaTest {
      */
     @Test
     public void testPRTParserComplex() throws Exception {
-        try (TikaInputStream input = getResourceAsStream("/test-documents/testCADKEY2.prt")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testCADKEY2.prt")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new PRTParser().parse(input, handler, metadata, new ParseContext());
+            new PRTParser().parse(tis, handler, metadata, new ParseContext());
 
             assertEquals("application/x-prt", metadata.get(Metadata.CONTENT_TYPE));
 

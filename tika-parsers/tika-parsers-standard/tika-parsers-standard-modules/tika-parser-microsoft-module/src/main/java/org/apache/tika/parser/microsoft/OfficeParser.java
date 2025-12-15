@@ -29,8 +29,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.hdgf.extractor.VisioTextExtractor;
 import org.apache.poi.hpbf.extractor.PublisherTextExtractor;
 import org.apache.poi.poifs.crypt.Decryptor;
@@ -166,11 +164,11 @@ public class OfficeParser extends AbstractOfficeParser {
         xhtml.startDocument();
 
         final DirectoryNode root;
-        POIFSFileSystem mustCloseFs = null;
         boolean isDirectoryNode = false;
+        tis.setCloseShield();
         try {
             final Object container = tis.getOpenContainer();
-                if (container instanceof POIFSFileSystem) {
+            if (container instanceof POIFSFileSystem) {
                 root = ((POIFSFileSystem) container).getRoot();
             } else if (container instanceof DirectoryNode) {
                 root = (DirectoryNode) container;
@@ -180,7 +178,7 @@ public class OfficeParser extends AbstractOfficeParser {
                 if (tis.hasFile()) {
                     fs = new POIFSFileSystem(tis.getFile(), true);
                 } else {
-                    fs = new POIFSFileSystem(CloseShieldInputStream.wrap(tis));
+                    fs = new POIFSFileSystem(tis);
                 }
                 //stream will close the fs, no need to close this below
                 tis.setOpenContainer(fs);
@@ -195,16 +193,15 @@ public class OfficeParser extends AbstractOfficeParser {
 
                 //We might consider not bothering to check for macros in root,
                 //if we know we're processing ppt based on content-type identified in metadata
-                if (! isDirectoryNode) {
+                if (!isDirectoryNode) {
                     // if the "root" is a directory node, we assume that the macros have already
                     // been extracted from the parent's fileSystem -- TIKA-4116
-                    extractMacros(root.getFileSystem(), xhtml,
-                            EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context));
+                    extractMacros(root.getFileSystem(), xhtml, EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context));
                 }
 
             }
         } finally {
-            IOUtils.closeQuietly(mustCloseFs);
+            tis.removeCloseShield();
         }
         xhtml.endDocument();
     }

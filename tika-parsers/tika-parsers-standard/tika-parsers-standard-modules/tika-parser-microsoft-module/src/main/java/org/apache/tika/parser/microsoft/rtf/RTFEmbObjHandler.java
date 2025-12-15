@@ -217,9 +217,9 @@ class RTFEmbObjHandler {
         metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(bytes.length));
 
         if (embeddedDocumentUtil.shouldParseEmbedded(metadata)) {
-            TikaInputStream stream = TikaInputStream.get(bytes);
+            TikaInputStream tis = TikaInputStream.get(bytes);
             if (metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY) == null) {
-                String extension = embeddedDocumentUtil.getExtension(stream, metadata);
+                String extension = embeddedDocumentUtil.getExtension(tis, metadata);
                 if (inObject && state == EMB_STATE.PICT) {
                     metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
                             "thumbnail_" + thumbCount++ + extension);
@@ -231,12 +231,12 @@ class RTFEmbObjHandler {
             }
             try {
                 embeddedDocumentUtil
-                        .parseEmbedded(stream, new EmbeddedContentHandler(handler), metadata,
+                        .parseEmbedded(tis, new EmbeddedContentHandler(handler), metadata,
                                 true);
             } catch (IOException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
             } finally {
-                stream.close();
+                tis.close();
             }
         }
     }

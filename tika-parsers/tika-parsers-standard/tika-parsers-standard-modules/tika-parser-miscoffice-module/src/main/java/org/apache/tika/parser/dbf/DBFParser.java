@@ -137,8 +137,9 @@ public class DBFParser implements Parser {
         byte[] bytes = bos.toByteArray();
         if (bytes.length > 20) {
             EncodingDetector detector = new Icu4jEncodingDetector();
-            detector.detect(TikaInputStream.get(bytes), new Metadata());
-            charset = detector.detect(TikaInputStream.get(bytes), new Metadata());
+            try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+                charset = detector.detect(tis, new Metadata());
+            }
         }
         return charset;
     }

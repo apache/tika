@@ -65,9 +65,9 @@ public class MimeTypesReaderTest {
 
     private static String getTypeAsString(MimeTypes mimeTypes, String text, Metadata metadata)
             throws IOException {
-        return mimeTypes
-                .detect(TikaInputStream.get(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8))), metadata)
-                .toString();
+        try (TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)))) {
+            return mimeTypes.detect(tis, metadata).toString();
+        }
 
     }
 

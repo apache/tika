@@ -32,7 +32,6 @@ import ucar.nc2.Variable;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -81,7 +80,6 @@ public class NetCDFParser implements Parser {
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
-        TemporaryResources tmp = null;
         try (NetcdfFile ncFile = NetcdfFile.open(tis.getFile().getAbsolutePath())) {
             metadata.set("File-Type-Description", ncFile.getFileTypeDescription());
             // first parse out the set of global attributes
@@ -129,10 +127,6 @@ public class NetCDFParser implements Parser {
             xhtml.endDocument();
         } catch (IOException e) {
             throw new TikaException("NetCDF parse error", e);
-        } finally {
-            if (tmp != null) {
-                tmp.dispose();
-            }
         }
     }
 

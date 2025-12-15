@@ -69,8 +69,9 @@ public class TruncatedOOXMLTest extends TikaTest {
         Detector detector = new DefaultDetector();
         Metadata metadata = new Metadata();
         try (InputStream is = new BufferedInputStream(TruncatedOOXMLTest.class.getResourceAsStream(
-                "/test-documents/testWORD_truncated.docx"))) {
-            MediaType mediaType = detector.detect(TikaInputStream.get(is), metadata);
+                "/test-documents/testWORD_truncated.docx"));
+             TikaInputStream tis = TikaInputStream.get(is)) {
+            MediaType mediaType = detector.detect(tis, metadata);
             assertEquals(MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document"),
                     mediaType);
         }
@@ -80,8 +81,8 @@ public class TruncatedOOXMLTest extends TikaTest {
     public void testTruncatedPathDetection() throws Exception {
         Detector detector = new DefaultDetector();
         Metadata metadata = new Metadata();
-        try (TikaInputStream tis = TikaInputStream.get(TruncatedOOXMLTest.class.getResourceAsStream(
-                "/test-documents/testWORD_truncated.docx"))) {
+        try (TikaInputStream tis = getResourceAsStream(
+                "/test-documents/testWORD_truncated.docx")) {
             tis.getPath();
             MediaType mediaType = detector.detect(tis, metadata);
             assertEquals(

@@ -1393,9 +1393,11 @@ public class TestMimeTypes {
     }
 
     private void assertMagic(String expected, byte[] prefix) throws IOException {
-        MediaType type = repo.detect(TikaInputStream.get(prefix), new Metadata());
-        assertNotNull(type);
-        assertEquals(expected, type.toString());
+        try (TikaInputStream tis = TikaInputStream.get(prefix)) {
+            MediaType type = repo.detect(tis, new Metadata());
+            assertNotNull(type);
+            assertEquals(expected, type.toString());
+        }
     }
 
     private void assertType(String expected, String filename) throws Exception {

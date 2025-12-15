@@ -23,11 +23,13 @@ import static org.apache.tika.server.core.resource.RecursiveMetadataResource.HAN
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.TransformerConfigurationException;
@@ -389,11 +391,8 @@ public class TikaResource {
         final Parser parser = createParser();
         logRequest(LOG, "/tika/config", metadata);
 
-        return outputStream -> {
-            Writer writer = new OutputStreamWriter(outputStream, UTF_8);
-            BodyContentHandler body = new BodyContentHandler(new RichTextContentHandler(writer));
-            parse(parser, LOG, info.getPath(), tis, body, metadata, context);
-        };
+        return new ParseStreamingOutput(tis, parser, LOG, info.getPath(), metadata, context,
+                os -> new BodyContentHandler(new RichTextContentHandler(new OutputStreamWriter(os, UTF_8))));
     }
 
     //this is equivalent to text-main in tika-app
@@ -423,13 +422,8 @@ public class TikaResource {
 
         logRequest(LOG, "/tika", metadata);
 
-        return outputStream -> {
-            Writer writer = new OutputStreamWriter(outputStream, UTF_8);
-
-            ContentHandler handler = new BoilerpipeContentHandler(writer);
-
-            parse(parser, LOG, info.getPath(), tis, handler, metadata, context);
-        };
+        return new ParseStreamingOutput(tis, parser, LOG, info.getPath(), metadata, context,
+                os -> new BoilerpipeContentHandler(new OutputStreamWriter(os, UTF_8)));
     }
 
     @PUT
@@ -449,13 +443,8 @@ public class TikaResource {
 
         logRequest(LOG, "/tika", metadata);
 
-        return outputStream -> {
-            Writer writer = new OutputStreamWriter(outputStream, UTF_8);
-
-            BodyContentHandler body = new BodyContentHandler(new RichTextContentHandler(writer));
-
-            parse(parser, LOG, info.getPath(), tis, body, metadata, context);
-        };
+        return new ParseStreamingOutput(tis, parser, LOG, info.getPath(), metadata, context,
+                os -> new BodyContentHandler(new RichTextContentHandler(new OutputStreamWriter(os, UTF_8))));
     }
 
     @POST
@@ -573,6 +562,7 @@ public class TikaResource {
             }
         } finally {
             metadata.add(TikaCoreProperties.TIKA_CONTENT, contentHandler.toString());
+            tis.close();
         }
     }
 
@@ -610,7 +600,12 @@ public class TikaResource {
                 throw new WebApplicationException(e);
             }
 
-            parse(parser, LOG, info.getPath(), tis, content, metadata, context);
+            try {
+                parse(parser, LOG, info.getPath(), tis, content, metadata, context);
+                outputStream.flush();
+            } finally {
+                tis.close();
+            }
         };
     }
 
@@ -652,4 +647,41 @@ public class TikaResource {
         }
         return finalHeaders;
     }
+
+    //enables streaming output AND closing of the TikaInputStream after the parse.
+    public class ParseStreamingOutput implements StreamingOutput {
+
+        private final TikaInputStream tis;
+        private final Parser parser;
+        private final Logger logger;
+        private final String path;
+        private final Metadata metadata;
+        private final ParseContext parseContext;
+        private final Function<OutputStream, ContentHandler> handlerBuilder;
+
+        public ParseStreamingOutput(TikaInputStream tis, Parser parser, Logger logger,
+                                    String path, Metadata metadata, ParseContext parseContext,
+                                    Function<OutputStream, ContentHandler> handlerBuilder) {
+            this.tis = tis;
+            this.parser = parser;
+            this.logger = logger;
+            this.path = path;
+            this.metadata = metadata;
+            this.parseContext = parseContext;
+            this.handlerBuilder = handlerBuilder;
+        }
+
+        @Override
+        public void write(OutputStream outputStream) throws IOException, WebApplicationException {
+            ContentHandler contentHandler = handlerBuilder.apply(outputStream);
+            try {
+                parse(parser, logger, path, tis, contentHandler, metadata, parseContext);
+                outputStream.flush();
+            } finally {
+                tis.close();
+            }
+        }
+
+    }
+
 }

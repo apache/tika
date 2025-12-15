@@ -101,8 +101,9 @@ public class StandardsExtractionExample {
         // to the underlying Handler.
         StandardsExtractingContentHandler handler = new StandardsExtractingContentHandler(new BodyContentHandler(-1), metadata);
         handler.setThreshold(0.75);
-        try (InputStream stream = new BufferedInputStream(Files.newInputStream(path))) {
-            parser.parse(TikaInputStream.get(stream), handler, metadata, new ParseContext());
+        try (InputStream stream = new BufferedInputStream(Files.newInputStream(path));
+             TikaInputStream tis = TikaInputStream.get(stream)) {
+            parser.parse(tis, handler, metadata, new ParseContext());
         }
         String[] references = metadata.getValues(StandardsExtractingContentHandler.STANDARD_REFERENCES);
         Collections.addAll(standardReferences, references);

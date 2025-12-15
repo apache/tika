@@ -17,11 +17,9 @@
 package org.apache.tika.parser.odf;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -49,14 +47,18 @@ public class OpenDocumentContentParser implements Parser {
         parseInternal(tis, new XHTMLContentHandler(handler, metadata), metadata, context);
     }
 
-    void parseInternal(InputStream tis, final ContentHandler handler, Metadata metadata,
+    void parseInternal(TikaInputStream tis, final ContentHandler handler, Metadata metadata,
                        ParseContext context) throws IOException, SAXException, TikaException {
 
         DefaultHandler dh = new OpenDocumentBodyHandler(handler, context);
 
-
-        XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(tis),
-                new NSNormalizerContentHandler(dh), context);
+        tis.setCloseShield();
+        try {
+            XMLReaderUtils.parseSAX(tis,
+                    new NSNormalizerContentHandler(dh), context);
+        } finally {
+            tis.removeCloseShield();
+        }
     }
 
 }

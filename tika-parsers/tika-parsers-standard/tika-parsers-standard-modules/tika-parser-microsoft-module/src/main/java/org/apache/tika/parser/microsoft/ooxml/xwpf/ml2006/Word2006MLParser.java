@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -55,15 +54,18 @@ public class Word2006MLParser extends AbstractOfficeParser {
         final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
 
         xhtml.startDocument();
+        tis.setCloseShield();
         try {
             //need to get new SAXParser because
             //an attachment might require another SAXParser
             //mid-parse
-            XMLReaderUtils.getSAXParser().parse(CloseShieldInputStream.wrap(tis),
+            XMLReaderUtils.getSAXParser().parse(tis,
                     new EmbeddedContentHandler(
                             new Word2006MLDocHandler(xhtml, metadata, context)));
         } catch (SAXException e) {
             throw new TikaException("XML parse error", e);
+        } finally {
+            tis.removeCloseShield();
         }
         xhtml.endDocument();
     }

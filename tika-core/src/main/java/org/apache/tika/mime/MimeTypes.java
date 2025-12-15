@@ -32,8 +32,6 @@ import java.util.Locale;
 import java.util.Map;
 import javax.xml.namespace.QName;
 
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.Detector;
@@ -295,8 +293,7 @@ public final class MimeTypes implements Detector, Serializable {
         // Finally, assume plain text if no control bytes are found
         try {
             TextDetector detector = new TextDetector(getMinLength());
-            try (TikaInputStream tis = TikaInputStream.get(
-                    UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get())) {
+            try (TikaInputStream tis = TikaInputStream.get(data)) {
                 MimeType type = forName(detector.detect(tis, new Metadata()).toString());
                 return Collections.singletonList(type);
             }

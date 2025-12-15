@@ -53,16 +53,18 @@ public class RollbackSoftware {
         LinkContentHandler handler = new LinkContentHandler();
         Metadata met = new Metadata();
         DeploymentAreaParser parser = new DeploymentAreaParser();
-        parser.parse(TikaInputStream.get(IOUtils.toInputStream(deployArea.getAbsolutePath(), UTF_8)), handler, met);
-        List<Link> links = handler.getLinks();
-        if (links.size() < 2) {
-            throw new IOException("Must have installed at least 2 versions!");
-        }
-        links.sort(Comparator.comparing(Link::getText));
+        try (TikaInputStream tis = TikaInputStream.get(IOUtils.toInputStream(deployArea.getAbsolutePath(), UTF_8))) {
+            parser.parse(tis, handler, met);
+            List<Link> links = handler.getLinks();
+            if (links.size() < 2) {
+                throw new IOException("Must have installed at least 2 versions!");
+            }
+            links.sort(Comparator.comparing(Link::getText));
 
-        this.updateVersion(links
-                .get(links.size() - 2)
-                .getText());
+            this.updateVersion(links
+                    .get(links.size() - 2)
+                    .getText());
+        }
     }
 
     private void updateVersion(String version) {

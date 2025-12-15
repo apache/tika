@@ -23,12 +23,13 @@ import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
 
-public class FileCommandDetectorTest {
+public class FileCommandDetectorTest extends TikaTest {
 
     // Use undeclared_entity.xml instead of basic_embedded.xml because
     // basic_embedded.xml has <mock> root which triggers custom mime type
@@ -45,8 +46,7 @@ public class FileCommandDetectorTest {
                 MimeTypes.getDefaultMimeTypes().getMediaTypeRegistry(),
                 Arrays.asList(fileDetector, defaultDetector));
 
-        try (TikaInputStream tis = TikaInputStream.get(getClass()
-                .getResourceAsStream(TEST_FILE))) {
+        try (TikaInputStream tis = getResourceAsStream(TEST_FILE)) {
             //run more than once to ensure that the input stream is reset
             for (int i = 0; i < 2; i++) {
                 Metadata metadata = new Metadata();
@@ -62,8 +62,7 @@ public class FileCommandDetectorTest {
         }
 
         //now try with TikaInputStream
-        try (TikaInputStream tis = TikaInputStream
-                .get(getClass().getResourceAsStream(TEST_FILE))) {
+        try (TikaInputStream tis = getResourceAsStream(TEST_FILE)) {
             //run more than once to ensure that the input stream is reset
             for (int i = 0; i < 2; i++) {
                 MediaType answer = detector.detect(tis, new Metadata());

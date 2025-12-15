@@ -57,9 +57,11 @@ public class TestChmExtraction extends MultiThreadedTikaTest {
     @Test
     public void testGetText() throws Exception {
         BodyContentHandler handler = new BodyContentHandler();
-        new ChmParser()
-                .parse(TikaInputStream.get(TestParameters.chmData), handler, new Metadata(),
-                        new ParseContext());
+        try (TikaInputStream tis = TikaInputStream.get(TestParameters.chmData)) {
+            new ChmParser()
+                    .parse(tis, handler, new Metadata(),
+                            new ParseContext());
+        }
         assertTrue(handler.toString().contains("The TCard method accepts only numeric arguments"));
     }
 

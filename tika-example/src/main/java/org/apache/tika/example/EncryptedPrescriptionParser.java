@@ -45,7 +45,9 @@ public class EncryptedPrescriptionParser implements Parser {
             cipher.init(Cipher.DECRYPT_MODE, key);
             InputStream decrypted = new CipherInputStream(tis, cipher);
 
-            new PrescriptionParser().parse(TikaInputStream.get(decrypted), handler, metadata, context);
+            try (TikaInputStream tisDec = TikaInputStream.get(decrypted)) {
+                new PrescriptionParser().parse(tisDec, handler, metadata, context);
+            }
         } catch (GeneralSecurityException e) {
             throw new TikaException("Unable to decrypt a digital prescription", e);
         }

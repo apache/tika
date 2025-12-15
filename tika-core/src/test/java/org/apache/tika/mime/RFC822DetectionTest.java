@@ -70,8 +70,9 @@ public class RFC822DetectionTest {
 
     private void assertMime(String expected, String txt) throws IOException {
 
-        MediaType mediaType =
-                MIME_TYPES.detect(TikaInputStream.get(txt.getBytes(StandardCharsets.UTF_8)), new Metadata());
-        assertEquals(expected, mediaType.toString(), txt);
+        try (TikaInputStream tis = TikaInputStream.get(txt.getBytes(StandardCharsets.UTF_8))) {
+            MediaType mediaType = MIME_TYPES.detect(tis, new Metadata());
+            assertEquals(expected, mediaType.toString(), txt);
+        }
     }
 }

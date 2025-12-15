@@ -135,10 +135,12 @@ public class RecursiveMetadataResource {
     @Produces({"application/json"})
     @Path("form{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
     public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info, @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName) throws Exception {
-        return Response
-                .ok(parseMetadataToMetadataList(TikaInputStream.get(att.getObject(InputStream.class)), new Metadata(), att.getHeaders(), info,
-                        buildHandlerConfig(att.getHeaders(), handlerTypeName, HandlerConfig.PARSE_MODE.RMETA)))
-                .build();
+        try (TikaInputStream tis = TikaInputStream.get(att.getObject(InputStream.class))) {
+            return Response
+                    .ok(parseMetadataToMetadataList(tis, new Metadata(), att.getHeaders(), info,
+                            buildHandlerConfig(att.getHeaders(), handlerTypeName, HandlerConfig.PARSE_MODE.RMETA)))
+                    .build();
+        }
     }
 
     /**
@@ -222,10 +224,12 @@ public class RecursiveMetadataResource {
     @Path("{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info, @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName) throws Exception {
         Metadata metadata = new Metadata();
-        return Response
-                .ok(parseMetadataToMetadataList(TikaResource.getInputStream(is, metadata, httpHeaders, info), metadata, httpHeaders.getRequestHeaders(), info,
-                        buildHandlerConfig(httpHeaders.getRequestHeaders(), handlerTypeName, HandlerConfig.PARSE_MODE.RMETA)))
-                .build();
+        try (TikaInputStream tis = TikaResource.getInputStream(is, metadata, httpHeaders, info)) {
+            return Response
+                    .ok(parseMetadataToMetadataList(tis, metadata, httpHeaders.getRequestHeaders(), info,
+                            buildHandlerConfig(httpHeaders.getRequestHeaders(), handlerTypeName, HandlerConfig.PARSE_MODE.RMETA)))
+                    .build();
+        }
     }
 
     private MetadataList parseMetadataToMetadataList(TikaInputStream tis, Metadata metadata, MultivaluedMap<String, String> httpHeaders, UriInfo info, HandlerConfig handlerConfig)

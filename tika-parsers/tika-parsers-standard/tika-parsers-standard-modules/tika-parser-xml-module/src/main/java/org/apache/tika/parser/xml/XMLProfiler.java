@@ -26,7 +26,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -91,8 +90,12 @@ public class XMLProfiler implements Parser {
     @Override
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(tis),
-                new XMLProfileHandler(metadata), context);
+        tis.setCloseShield();
+        try {
+            XMLReaderUtils.parseSAX(tis, new XMLProfileHandler(metadata), context);
+        } finally {
+            tis.removeCloseShield();
+        }
     }
 
     private static class XMLProfileHandler extends DefaultHandler {

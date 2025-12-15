@@ -24,6 +24,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -118,7 +119,11 @@ public class XLZParser implements Parser {
         }
         while (entry != null) {
             if (entry.getName().contains(XLF)) {
-                xliffParser.parse(TikaInputStream.get(zipStream), handler, metadata, context);
+                // Wrap in CloseShieldInputStream so closing TikaInputStream won't close zipStream
+                try (TikaInputStream tisZip =
+                             TikaInputStream.get(CloseShieldInputStream.wrap(zipStream))) {
+                    xliffParser.parse(tisZip, handler, metadata, context);
+                }
             }
             entry = zipStream.getNextEntry();
         }
@@ -132,7 +137,9 @@ public class XLZParser implements Parser {
         while (entries.hasMoreElements()) {
             ZipEntry entry = entries.nextElement();
             if (entry.getName().contains(XLF)) {
-                xliffParser.parse(TikaInputStream.get(zipFile.getInputStream(entry)), handler, metadata, context);
+                try (TikaInputStream tisZip = TikaInputStream.get(zipFile.getInputStream(entry))) {
+                    xliffParser.parse(tisZip, handler, metadata, context);
+                }
             }
         }
     }

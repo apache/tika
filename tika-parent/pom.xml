@@ -19,14 +19,15 @@
   under the License.
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>org.apache</groupId>
     <artifactId>apache</artifactId>
     <version>35</version>
-    <relativePath />
+    <relativePath/>
   </parent>
 
   <groupId>org.apache.tika</groupId>
@@ -139,7 +140,7 @@
       <organization>NASA Jet Propulsion Laboratory</organization>
       <organizationUrl>http://www.jpl.nasa.gov</organizationUrl>
       <timezone>-8</timezone>
-      <properties />
+      <properties/>
       <roles>
         <role>committer</role>
       </roles>
@@ -149,7 +150,7 @@
       <id>mikemccand</id>
       <email>mikemccand@apache.org</email>
       <organization>IBM</organization>
-      <properties />
+      <properties/>
       <roles>
         <role>committer</role>
       </roles>
@@ -457,12 +458,12 @@
     <maven.exec.version>3.6.2</maven.exec.version>
 
     <!-- needs to exist even if empty due to problems with jacoco-maven-plugin -->
-    <addmod />
+    <addmod/>
     <!-- This is a default value to avoid problems when running single tests
           see also https://stackoverflow.com/a/28695766/535646
           https://maven.apache.org/surefire/maven-surefire-plugin/faq.html#late-property-evaluation
     -->
-    <surefireArgLine />
+    <surefireArgLine/>
   </properties>
 
   <dependencyManagement>
@@ -557,24 +558,24 @@
       </dependency>
       <!-- avoid outdated http2 dependencies when using solr 8 -->
       <dependency>
-          <groupId>org.eclipse.jetty.http2</groupId>
-          <artifactId>http2-http-client-transport</artifactId>
-          <version>${jetty.http2.version}</version>
+        <groupId>org.eclipse.jetty.http2</groupId>
+        <artifactId>http2-http-client-transport</artifactId>
+        <version>${jetty.http2.version}</version>
       </dependency>
       <dependency>
-          <groupId>org.eclipse.jetty.http2</groupId>
-          <artifactId>http2-hpack</artifactId> 
-          <version>${jetty.http2.version}</version>
+        <groupId>org.eclipse.jetty.http2</groupId>
+        <artifactId>http2-hpack</artifactId>
+        <version>${jetty.http2.version}</version>
       </dependency>
       <dependency>
-          <groupId>org.eclipse.jetty.http2</groupId>
-          <artifactId>http2-client</artifactId>
-          <version>${jetty.http2.version}</version>
+        <groupId>org.eclipse.jetty.http2</groupId>
+        <artifactId>http2-client</artifactId>
+        <version>${jetty.http2.version}</version>
       </dependency>
       <dependency>
-          <groupId>org.eclipse.jetty.http2</groupId>
-          <artifactId>http2-common</artifactId>
-          <version>${jetty.http2.version}</version>
+        <groupId>org.eclipse.jetty.http2</groupId>
+        <artifactId>http2-common</artifactId>
+        <version>${jetty.http2.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jsoup</groupId>
@@ -898,7 +899,7 @@
         <artifactId>log4j-core</artifactId>
         <version>${log4j2.version}</version>
         <exclusions>
-        <!-- weak dependency on org.osgi.core 4.3.1 -->
+          <!-- weak dependency on org.osgi.core 4.3.1 -->
           <exclusion>
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.core</artifactId>
@@ -1115,14 +1116,14 @@
         <version>${maven.plugin.annotations.version}</version>
       </dependency>
       <dependency>
-          <groupId>org.bytedeco</groupId>
-          <artifactId>hdf5</artifactId>
-          <version>${hdf5.version}</version>
+        <groupId>org.bytedeco</groupId>
+        <artifactId>hdf5</artifactId>
+        <version>${hdf5.version}</version>
       </dependency>
       <dependency>
-          <groupId>org.bytedeco</groupId>
-          <artifactId>hdf5-platform</artifactId>
-          <version>${hdf5.version}</version>
+        <groupId>org.bytedeco</groupId>
+        <artifactId>hdf5-platform</artifactId>
+        <version>${hdf5.version}</version>
       </dependency>
       <dependency>
         <groupId>org.pf4j</groupId>
@@ -1153,21 +1154,21 @@
   <build>
     <pluginManagement>
       <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <version>3.9.0</version>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-deploy-plugin</artifactId>
-        <version>3.1.4</version>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-enforcer-plugin</artifactId>
-        <version>3.6.2</version>
-      </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>3.9.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <version>3.1.4</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>3.6.2</version>
+        </plugin>
         <plugin>
           <groupId>org.apache.rat</groupId>
           <artifactId>apache-rat-plugin</artifactId>
@@ -1176,31 +1177,31 @@
       </plugins>
     </pluginManagement>
     <plugins>
-        <plugin>
-            <groupId>org.jacoco</groupId>
-            <artifactId>jacoco-maven-plugin</artifactId>
-            <version>0.8.14</version>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.14</version>
+        <configuration>
+          <skip>${skipTests}</skip>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
             <configuration>
-                <skip>${skipTests}</skip>
+              <propertyName>surefireArgLine</propertyName>
             </configuration>
-            <executions>
-                <execution>
-                    <goals>
-                        <goal>prepare-agent</goal>
-                    </goals>
-                    <configuration>
-                        <propertyName>surefireArgLine</propertyName>
-                    </configuration>
-                </execution>
-                <execution>
-                    <id>report</id>
-                    <phase>test</phase>
-                    <goals>
-                        <goal>report</goal>
-                    </goals>
-                </execution>
-            </executions>
-        </plugin>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -1242,9 +1243,9 @@
             </coordinate>
             <!-- [CVE-2025-1948], used in the Solr emitter. No apparent upgrade available yet. -->
             <coordinate>
-                <groupId>org.eclipse.jetty.http2</groupId>
-                <artifactId>http2-common</artifactId>
-                <version>11.0.26</version>
+              <groupId>org.eclipse.jetty.http2</groupId>
+              <artifactId>http2-common</artifactId>
+              <version>11.0.26</version>
             </coordinate>
             <!-- used only in tests and in tika-eval, and this problem requires the use of the console.
                  https://github.com/h2database/h2database/issues/1294 -->
@@ -1270,14 +1271,14 @@
                  https://www.hdfgroup.org/2024/05/new-hdf5-cve-issues-fixed-in-1-14-4/
             -->
             <coordinate>
-                <groupId>org.bytedeco</groupId>
-                <artifactId>hdf5</artifactId>
-                <version>1.14.3-1.5.10</version>
+              <groupId>org.bytedeco</groupId>
+              <artifactId>hdf5</artifactId>
+              <version>1.14.3-1.5.10</version>
             </coordinate>
             <coordinate>
-                <groupId>org.bytedeco</groupId>
-                <artifactId>hdf5-platform</artifactId>
-                <version>1.14.3-1.5.10</version>
+              <groupId>org.bytedeco</groupId>
+              <artifactId>hdf5-platform</artifactId>
+              <version>1.14.3-1.5.10</version>
             </coordinate>
           </excludeCoordinates>
           <fail>true</fail>
@@ -1380,7 +1381,7 @@
             <id>enforce-maven</id>
             <configuration>
               <rules>
-                <dependencyConvergence />
+                <dependencyConvergence/>
                 <requireMavenVersion>
                   <version>3.5</version>
                 </requireMavenVersion>
@@ -1479,7 +1480,7 @@
         </executions>
       </plugin>
       <plugin>
-      <!-- mvn validate -->
+        <!-- mvn validate -->
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
         <version>${checkstyle.plugin.version}</version>

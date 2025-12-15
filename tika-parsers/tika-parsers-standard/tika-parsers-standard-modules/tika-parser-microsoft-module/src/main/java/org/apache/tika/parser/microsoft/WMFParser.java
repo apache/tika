@@ -21,7 +21,6 @@ import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.hwmf.record.HwmfFont;
 import org.apache.poi.hwmf.record.HwmfRecord;
 import org.apache.poi.hwmf.record.HwmfRecordType;
@@ -62,10 +61,11 @@ public class WMFParser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
+        tis.setCloseShield();
         try {
             HwmfPicture picture = null;
             try {
-                picture = new HwmfPicture(CloseShieldInputStream.wrap(tis));
+                picture = new HwmfPicture(tis);
             } catch (ArrayIndexOutOfBoundsException e) {
                 //POI can throw this on corrupt files
                 throw new TikaException(e.getClass().getSimpleName() + ": " + e.getMessage(), e);
@@ -102,6 +102,8 @@ public class WMFParser implements Parser {
             throw new TikaException(e.getMessage(), e);
         } catch (AssertionError e) { //POI's hwmfparser can throw these for parse exceptions
             throw new TikaException(e.getMessage(), e);
+        } finally {
+            tis.removeCloseShield();
         }
         xhtml.endDocument();
     }

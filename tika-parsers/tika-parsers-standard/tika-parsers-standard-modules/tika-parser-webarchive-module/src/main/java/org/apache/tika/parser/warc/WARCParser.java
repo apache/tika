@@ -84,12 +84,14 @@ public class WARCParser implements Parser {
         xhtml.startDocument();
         EmbeddedDocumentExtractor embeddedDocumentExtractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        tis.setCloseShield();
         try (WarcReader warcreader = new WarcReader(tis)) {
             //TODO: record warnings in metadata: warcreader.onWarning();
             for (WarcRecord record : warcreader) {
                 processRecord(record, xhtml, metadata, context, embeddedDocumentExtractor);
             }
         } finally {
+            tis.removeCloseShield();
             xhtml.endDocument();
         }
     }

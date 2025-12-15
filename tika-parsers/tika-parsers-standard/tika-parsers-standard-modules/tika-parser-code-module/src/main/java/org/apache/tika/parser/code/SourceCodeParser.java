@@ -30,7 +30,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.XMLConstants;
 
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.codelibs.jhighlight.renderer.Renderer;
 import org.codelibs.jhighlight.renderer.XhtmlRendererFactory;
 import org.jsoup.Jsoup;
@@ -97,7 +96,8 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
     @Override
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(tis),
+        tis.setCloseShield();
+        try (AutoDetectReader reader = new AutoDetectReader(tis,
                 metadata, getEncodingDetector(context))) {
             Charset charset = reader.getCharset();
             String mediaType = metadata.get(Metadata.CONTENT_TYPE);
@@ -138,6 +138,8 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
             } finally {
                 xhtml.endDocument();
             }
+        } finally {
+            tis.removeCloseShield();
         }
     }
 
