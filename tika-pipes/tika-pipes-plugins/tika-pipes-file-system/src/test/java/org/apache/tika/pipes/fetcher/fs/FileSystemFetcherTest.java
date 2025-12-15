@@ -19,6 +19,7 @@ package org.apache.tika.pipes.fetcher.fs;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -42,8 +43,7 @@ public class FileSystemFetcherTest {
     @TempDir
     Path tempDir;
 
-    private Fetcher createFetcher(Path basePath, Boolean allowAbsolutePaths)
-            throws TikaConfigException {
+    private Fetcher createFetcher(Path basePath, Boolean allowAbsolutePaths) throws TikaConfigException, IOException {
         ObjectNode config = MAPPER.createObjectNode();
         if (basePath != null) {
             config.put("basePath", basePath.toAbsolutePath().toString());
