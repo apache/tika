@@ -31,6 +31,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -72,7 +73,7 @@ public class PRTParser implements Parser {
      *  Note - all text is null terminated
      */
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
@@ -81,9 +82,9 @@ public class PRTParser implements Parser {
 
         // Try to get the creation date, which is YYYYMMDDhhmm
         byte[] header = new byte[30];
-        IOUtils.readFully(stream, header);
+        IOUtils.readFully(tis, header);
         byte[] date = new byte[12];
-        IOUtils.readFully(stream, date);
+        IOUtils.readFully(tis, date);
 
         String dateStr = new String(date, US_ASCII);
         if (dateStr.startsWith("19") || dateStr.startsWith("20")) {
@@ -98,26 +99,26 @@ public class PRTParser implements Parser {
 
         // The description, if set, is the next up-to-500 bytes
         byte[] desc = new byte[500];
-        IOUtils.readFully(stream, desc);
+        IOUtils.readFully(tis, desc);
         String description = extractText(desc, true);
         if (description.length() > 0) {
             metadata.set(TikaCoreProperties.DESCRIPTION, description);
         }
 
         // Now look for text
-        while ((read = stream.read()) > -1) {
+        while ((read = tis.read()) > -1) {
             if (read == 0xe0 || read == 0xe3 || read == 0xf0) {
-                int nread = stream.read();
+                int nread = tis.read();
                 if (nread == 0x3f || nread == 0xbf) {
                     // Looks promising, check back for a suitable value
                     if (read == 0xe3 && nread == 0x3f) {
                         if (l5.is33()) {
                             // Bingo, note text
-                            handleNoteText(stream, xhtml);
+                            handleNoteText(tis, xhtml);
                         }
                     } else if (l5.is00()) {
                         // Likely view name
-                        handleViewName(read, nread, stream, xhtml, l5);
+                        handleViewName(read, nread, tis, xhtml, l5);
                     }
                 }
             } else {
@@ -126,12 +127,12 @@ public class PRTParser implements Parser {
         }
     }
 
-    private void handleNoteText(InputStream stream, XHTMLContentHandler xhtml)
+    private void handleNoteText(InputStream tis, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
         // Ensure we have the right padding text
         int read;
         for (int i = 0; i < 10; i++) {
-            read = stream.read();
+            read = tis.read();
             if (read >= 0 && read <= 0x0f) {
                 // Promising
             } else {
@@ -139,27 +140,27 @@ public class PRTParser implements Parser {
                 return;
             }
         }
-        read = stream.read();
+        read = tis.read();
         if (read != 0x1f) {
             // Wrong, false detection
             return;
         }
 
-        int length = EndianUtils.readUShortLE(stream);
+        int length = EndianUtils.readUShortLE(tis);
         if (length <= MAX_TEXT_LENGTH) {
             // Length check passed
-            handleText(length, stream, xhtml);
+            handleText(length, tis, xhtml);
         }
     }
 
-    private void handleViewName(int typeA, int typeB, InputStream stream, XHTMLContentHandler xhtml,
+    private void handleViewName(int typeA, int typeB, InputStream tis, XHTMLContentHandler xhtml,
                                 Last5 l5) throws IOException, SAXException, TikaException {
         // Is it 8 byte zero padded?
-        int maybeLength = EndianUtils.readUShortLE(stream);
+        int maybeLength = EndianUtils.readUShortLE(tis);
         if (maybeLength == 0) {
             // Check the next 6 bytes too
             for (int i = 0; i < 6; i++) {
-                int read = stream.read();
+                int read = tis.read();
                 if (read >= 0 && read <= 0x0f) {
                     // Promising
                 } else {
@@ -169,11 +170,11 @@ public class PRTParser implements Parser {
             }
 
             byte[] b2 = new byte[2];
-            IOUtils.readFully(stream, b2);
+            IOUtils.readFully(tis, b2);
             int length = EndianUtils.getUShortLE(b2);
             if (length > 1 && length <= MAX_TEXT_LENGTH) {
                 // Length check passed
-                handleText(length, stream, xhtml);
+                handleText(length, tis, xhtml);
             } else {
                 // Was probably something else
                 l5.record(b2[0]);
@@ -181,14 +182,14 @@ public class PRTParser implements Parser {
             }
         } else if (maybeLength > 0 && maybeLength < MAX_TEXT_LENGTH) {
             // Looks like it's straight into the text
-            handleText(maybeLength, stream, xhtml);
+            handleText(maybeLength, tis, xhtml);
         }
     }
 
-    private void handleText(int length, InputStream stream, XHTMLContentHandler xhtml)
+    private void handleText(int length, InputStream tis, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
         byte[] str = new byte[length];
-        IOUtils.readFully(stream, str);
+        IOUtils.readFully(tis, str);
         if (str[length - 1] != 0) {
             // Not properly null terminated, must be wrong
             return;

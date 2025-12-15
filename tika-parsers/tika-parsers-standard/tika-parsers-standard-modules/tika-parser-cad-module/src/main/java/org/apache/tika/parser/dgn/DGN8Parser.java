@@ -17,7 +17,6 @@
 package org.apache.tika.parser.dgn;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
@@ -52,17 +51,17 @@ public class DGN8Parser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         SummaryExtractor summaryExtractor = new SummaryExtractor(metadata);
         final DirectoryNode root;
-        TikaInputStream tstream = TikaInputStream.cast(stream);
+        TikaInputStream tstream = tis;
         POIFSFileSystem mustCloseFs = null;
         try {
             if (tstream == null) {
-                mustCloseFs = new POIFSFileSystem(CloseShieldInputStream.wrap(stream));
+                mustCloseFs = new POIFSFileSystem(CloseShieldInputStream.wrap(tis));
                 root = mustCloseFs.getRoot();
             } else {
                 final Object container = tstream.getOpenContainer();

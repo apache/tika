@@ -18,7 +18,6 @@ package org.apache.tika.parser.geoinfo;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -86,15 +85,14 @@ public class GeographicInformationParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream inputStream, ContentHandler contentHandler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler contentHandler, Metadata metadata,
                       ParseContext parseContext) throws IOException, SAXException, TikaException {
         metadata.set(Metadata.CONTENT_TYPE, geoInfoType);
         XHTMLContentHandler xhtmlContentHandler = new XHTMLContentHandler(contentHandler, metadata);
 
-        TemporaryResources tmp =
-                TikaInputStream.isTikaInputStream(inputStream) ? null : new TemporaryResources();
-        try (TikaInputStream tikaInputStream = TikaInputStream.get(inputStream, tmp, metadata)) {
-            File file = tikaInputStream.getFile();
+        TemporaryResources tmp = null;
+        try (tis) {
+            File file = tis.getFile();
             try (DataStore dataStore = DataStores.open(file)) {
                 DefaultMetadata defaultMetadata = new DefaultMetadata(dataStore.getMetadata());
                 extract(xhtmlContentHandler, metadata, defaultMetadata);

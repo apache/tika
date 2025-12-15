@@ -26,11 +26,9 @@ import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 import static org.ops4j.pax.exam.CoreOptions.options;
 import static org.ops4j.pax.exam.CoreOptions.systemPackages;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URISyntaxException;
@@ -160,19 +158,20 @@ public class BundleIT {
         try (ForkParser parser = new ForkParser(Activator.class.getClassLoader(), defaultParser)) {
             String data =
                     "<!DOCTYPE html>\n<html><body><p>test <span>content</span></p></body></html>";
-            InputStream stream = new ByteArrayInputStream(data.getBytes(UTF_8));
-            Writer writer = new StringWriter();
-            ContentHandler contentHandler = new BodyContentHandler(writer);
-            Metadata metadata = new Metadata();
-            MediaType type = contentTypeDetector.detect(stream, metadata);
-            assertEquals(type.toString(), "text/html");
-            metadata.add(Metadata.CONTENT_TYPE, type.toString());
-            ParseContext parseCtx = new ParseContext();
-            parser.parse(stream, contentHandler, metadata, parseCtx);
-            writer.flush();
-            String content = writer.toString();
-            assertTrue(content.length() > 0);
-            assertEquals("test content", content.trim());
+            try (TikaInputStream tis = TikaInputStream.get(data.getBytes(UTF_8))) {
+                Writer writer = new StringWriter();
+                ContentHandler contentHandler = new BodyContentHandler(writer);
+                Metadata metadata = new Metadata();
+                MediaType type = contentTypeDetector.detect(tis, metadata);
+                assertEquals(type.toString(), "text/html");
+                metadata.add(Metadata.CONTENT_TYPE, type.toString());
+                ParseContext parseCtx = new ParseContext();
+                parser.parse(tis, contentHandler, metadata, parseCtx);
+                writer.flush();
+                String content = writer.toString();
+                assertTrue(content.length() > 0);
+                assertEquals("test content", content.trim());
+            }
         }
     }
 
@@ -259,8 +258,8 @@ public class BundleIT {
         ContentHandler handler = new BodyContentHandler();
         ParseContext context = new ParseContext();
         Parser tesseractParser = new TesseractOCRParser();
-        try (InputStream stream = new FileInputStream("src/test/resources/testOCR.jpg")) {
-            tesseractParser.parse(stream, handler, new Metadata(), context);
+        try (TikaInputStream tis = TikaInputStream.get(Paths.get("src/test/resources/testOCR.jpg"))) {
+            tesseractParser.parse(tis, handler, new Metadata(), context);
         }
     }
 
@@ -274,9 +273,9 @@ public class BundleIT {
         ParseContext context = new ParseContext();
         context.set(Parser.class, parser);
 
-        try (InputStream stream = TikaInputStream.get(
+        try (TikaInputStream tis = TikaInputStream.get(
                 Paths.get("src/test/resources/test-documents.zip"))) {
-            parser.parse(stream, handler, new Metadata(), context);
+            parser.parse(tis, handler, new Metadata(), context);
         }
 
         String content = handler.toString();
@@ -310,9 +309,9 @@ public class BundleIT {
         ParseContext context = new ParseContext();
         context.set(Parser.class, parser);
 
-        try (InputStream stream = TikaInputStream.get(
+        try (TikaInputStream tis = TikaInputStream.get(
                 Paths.get("src/test/resources/testPPT.pptx"))) {
-            parser.parse(stream, handler, new Metadata(), context);
+            parser.parse(tis, handler, new Metadata(), context);
         }
 
         String content = handler.toString();
@@ -340,8 +339,8 @@ public class BundleIT {
             }
             System.out.println("about to parse " + f);
             Metadata metadata = new Metadata();
-            try (InputStream is = TikaInputStream.get(f.toPath())) {
-                parser.parse(is, handler, metadata, context);
+            try (TikaInputStream tis = TikaInputStream.get(f.toPath())) {
+                parser.parse(tis, handler, metadata, context);
             } catch (EncryptedDocumentException e) {
                 //swallow
             } catch (SAXException e) {

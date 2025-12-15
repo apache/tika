@@ -19,11 +19,10 @@ package org.apache.tika.parser.feed;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -37,7 +36,7 @@ public class FeedParserTest {
         //  represented in the various RSS format versions
         for (String rssFile : new String[]{"/test-documents/rsstest_091.rss",
                 "/test-documents/rsstest_20.rss"}) {
-            try (InputStream input = FeedParserTest.class.getResourceAsStream(rssFile)) {
+            try (TikaInputStream input = TikaInputStream.get(FeedParserTest.class.getResourceAsStream(rssFile))) {
                 Metadata metadata = new Metadata();
                 ContentHandler handler = new BodyContentHandler();
                 ParseContext context = new ParseContext();
@@ -59,8 +58,8 @@ public class FeedParserTest {
 
     @Test
     public void testAtomParser() throws Exception {
-        try (InputStream input = FeedParserTest.class
-                .getResourceAsStream("/test-documents/testATOM.atom")) {
+        try (TikaInputStream input = TikaInputStream.get(FeedParserTest.class
+                .getResourceAsStream("/test-documents/testATOM.atom"))) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             ParseContext context = new ParseContext();

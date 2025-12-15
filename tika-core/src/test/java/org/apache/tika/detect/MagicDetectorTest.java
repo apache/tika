@@ -22,7 +22,6 @@ import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,6 +29,7 @@ import java.io.InputStream;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -164,8 +164,9 @@ public class MagicDetectorTest {
         Detector detector = new MagicDetector(testMT, data, null, false, 0, 0);
         // Deliberately prevent InputStream.read(...) from reading the entire
         // buffer in one go
-        InputStream stream = new RestrictiveInputStream(data);
-        assertEquals(testMT, detector.detect(stream, new Metadata()));
+        try (TikaInputStream tis = TikaInputStream.get(new RestrictiveInputStream(data))) {
+            assertEquals(testMT, detector.detect(tis, new Metadata()));
+        }
     }
 
     @Test
@@ -177,8 +178,9 @@ public class MagicDetectorTest {
         Detector detector = new MagicDetector(testMT, data, null, false, 0, 0);
         // Deliberately prevent InputStream.read(...) from reading the entire
         // buffer in one go
-        InputStream stream = new RestrictiveInputStream(data);
-        assertEquals(testMT, detector.detect(stream, new Metadata()));
+        try (TikaInputStream tis = TikaInputStream.get(new RestrictiveInputStream(data))) {
+            assertEquals(testMT, detector.detect(tis, new Metadata()));
+        }
     }
 
     @Test
@@ -211,14 +213,14 @@ public class MagicDetectorTest {
 
     private void assertDetect(Detector detector, MediaType type, byte[] bytes) {
         try {
-            InputStream stream = new ByteArrayInputStream(bytes);
-            assertEquals(type, detector.detect(stream, new Metadata()));
+            TikaInputStream tis = TikaInputStream.get(bytes);
+            assertEquals(type, detector.detect(tis, new Metadata()));
 
             // Test that the stream has been reset
             for (byte aByte : bytes) {
-                assertEquals(aByte, (byte) stream.read());
+                assertEquals(aByte, (byte) tis.read());
             }
-            assertEquals(-1, stream.read());
+            assertEquals(-1, tis.read());
         } catch (IOException e) {
             fail("Unexpected exception from MagicDetector");
         }
@@ -258,10 +260,10 @@ public class MagicDetectorTest {
     }
 
     private String detect(Detector detector, String bz2Name) throws IOException  {
-        try (InputStream is = new BufferedInputStream(
+        try (TikaInputStream tis = TikaInputStream.get(
                 this.getClass().getResourceAsStream(
                         "/test-documents/bz2/" + bz2Name))) {
-            return detector.detect(is, new Metadata()).toString();
+            return detector.detect(tis, new Metadata()).toString();
         }
     }
 }

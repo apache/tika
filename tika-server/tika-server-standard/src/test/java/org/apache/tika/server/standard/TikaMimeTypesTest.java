@@ -83,7 +83,7 @@ public class TikaMimeTypesTest extends CXFTestBase {
 
         Map<String, Object> ogm = json.get("video/x-ogm");
         assertEquals("video/ogg", ogm.get("supertype"));
-        assertEquals("org.gagravarr.tika.OggParser", ogm.get("parser"));
+        assertEquals("org.apache.tika.parser.ogg.OggParser", ogm.get("parser"));
     }
 
 }

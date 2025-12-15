@@ -16,26 +16,23 @@
  */
 package org.apache.tika.parser.xml;
 
-import static org.apache.tika.TikaTest.assertContains;
-
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 
-public class FictionBookParserTest {
+public class FictionBookParserTest extends TikaTest {
 
     @Test
     public void testFB2() throws Exception {
-        try (InputStream input = FictionBookParserTest.class
-                .getResourceAsStream("/test-documents/test.fb2")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/test.fb2")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new FictionBookParser().parse(input, handler, metadata, new ParseContext());
+            new FictionBookParser().parse(tis, handler, metadata, new ParseContext());
             String content = handler.toString();
 
             assertContains("1812", content);

@@ -18,11 +18,10 @@ package org.apache.tika.parser.pkg;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.BodyContentHandler;
 
@@ -37,8 +36,8 @@ public class RarParserTest extends AbstractPkgTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = getResourceAsStream("/test-documents/test-documents.rar")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/test-documents.rar")) {
+            AUTO_DETECT_PARSER.parse(tis, handler, metadata, recursingContext);
         }
 
         assertEquals("application/x-rar-compressed; version=4",

@@ -18,7 +18,6 @@ package org.apache.tika.renderer.pdf.pdfbox;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -88,17 +87,16 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
 
 
     @Override
-    public RenderResults render(InputStream is, Metadata metadata, ParseContext parseContext,
+    public RenderResults render(TikaInputStream tis, Metadata metadata, ParseContext parseContext,
                                 RenderRequest... requests) throws IOException, TikaException {
 
 
         PDDocument pdDocument;
-        TikaInputStream tis = TikaInputStream.get(is);
         boolean mustClose = false;
         if (tis.getOpenContainer() != null) {
             pdDocument = (PDDocument) tis.getOpenContainer();
         } else {
-            pdDocument = Loader.loadPDF(new RandomAccessReadBuffer(is));
+            pdDocument = Loader.loadPDF(new RandomAccessReadBuffer(tis));
             mustClose = true;
         }
         PageBasedRenderResults results = new PageBasedRenderResults(new TemporaryResources());

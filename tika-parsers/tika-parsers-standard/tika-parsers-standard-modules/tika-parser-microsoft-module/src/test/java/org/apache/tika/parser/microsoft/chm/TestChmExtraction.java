@@ -21,9 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -41,6 +39,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -59,7 +58,7 @@ public class TestChmExtraction extends MultiThreadedTikaTest {
     public void testGetText() throws Exception {
         BodyContentHandler handler = new BodyContentHandler();
         new ChmParser()
-                .parse(new ByteArrayInputStream(TestParameters.chmData), handler, new Metadata(),
+                .parse(TikaInputStream.get(TestParameters.chmData), handler, new Metadata(),
                         new ParseContext());
         assertTrue(handler.toString().contains("The TCard method accepts only numeric arguments"));
     }
@@ -67,15 +66,15 @@ public class TestChmExtraction extends MultiThreadedTikaTest {
     @Test
     public void testChmParser() throws Exception {
         for (String fileName : files) {
-            InputStream stream = getResourceAsStream(fileName);
-            testingChm(stream);
+            TikaInputStream tis = getResourceAsStream(fileName);
+            testingChm(tis);
         }
     }
 
-    private void testingChm(InputStream stream) throws IOException, SAXException, TikaException {
-        try (stream) {
+    private void testingChm(TikaInputStream tis) throws IOException, SAXException, TikaException {
+        try (tis) {
             BodyContentHandler handler = new BodyContentHandler(-1);
-            parser.parse(stream, handler, new Metadata(), new ParseContext());
+            parser.parse(tis, handler, new Metadata(), new ParseContext());
             assertTrue(!handler.toString().isEmpty());
         }
     }
@@ -83,8 +82,8 @@ public class TestChmExtraction extends MultiThreadedTikaTest {
     @Test
     public void testExtractChmEntries() throws TikaException, IOException {
         for (String fileName : files) {
-            try (InputStream stream = getResourceAsStream(fileName)) {
-                testExtractChmEntry(stream);
+            try (TikaInputStream tis = getResourceAsStream(fileName)) {
+                testExtractChmEntry(tis);
             }
         }
     }
@@ -168,17 +167,17 @@ public class TestChmExtraction extends MultiThreadedTikaTest {
         for (int i = 0; i < TestParameters.NTHREADS; i++) {
             executor.execute(() -> {
                 for (String fileName : files) {
-                    InputStream stream = null;
+                    TikaInputStream tis = null;
                     try {
-                        stream = getResourceAsStream(fileName);
+                        tis = getResourceAsStream(fileName);
                         BodyContentHandler handler = new BodyContentHandler(-1);
-                        parser.parse(stream, handler, new Metadata(), new ParseContext());
+                        parser.parse(tis, handler, new Metadata(), new ParseContext());
                         assertFalse(handler.toString().isEmpty());
                     } catch (Exception e) {
                         e.printStackTrace();
                     } finally {
                         try {
-                            stream.close();
+                            tis.close();
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
@@ -199,8 +198,8 @@ public class TestChmExtraction extends MultiThreadedTikaTest {
         File chmFolder = new File(chmDir.toURI());
         for (String fileName : chmFolder.list()) {
             File file = new File(chmFolder, fileName);
-            InputStream stream = new FileInputStream(file);
-            testingChm(stream);
+            TikaInputStream tis = TikaInputStream.get(file.toPath());
+            testingChm(tis);
         }
     }
 

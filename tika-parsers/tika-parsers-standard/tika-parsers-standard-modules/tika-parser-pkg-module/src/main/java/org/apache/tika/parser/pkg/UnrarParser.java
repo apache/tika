@@ -18,7 +18,6 @@ package org.apache.tika.parser.pkg;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -67,7 +66,7 @@ public class UnrarParser implements Parser {
     private long timeoutMillis = 60000;
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
@@ -80,7 +79,7 @@ public class UnrarParser implements Parser {
         try {
             Path tmp = Files.createTempFile(cwd, "input", ".rar");
             try (OutputStream os = Files.newOutputStream(tmp, StandardOpenOption.WRITE)) {
-                IOUtils.copy(stream, os);
+                IOUtils.copy(tis, os);
             }
             FileProcessResult result = unrar(cwd, tmp);
             //delete the tmp rar file so that we don't recursively parse it in the next step

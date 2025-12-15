@@ -21,7 +21,6 @@ import static org.apache.tika.utils.ParserUtils.recordParserDetails;
 import static org.apache.tika.utils.ParserUtils.recordParserFailure;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -35,6 +34,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -220,9 +220,9 @@ public abstract class AbstractMultipleParser implements Parser {
      * call the method with a {@link ContentHandlerFactory} instead.
      */
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        parse(stream, handler, null, metadata, context);
+        parse(tis, handler, null, metadata, context);
     }
 
     /**
@@ -236,12 +236,12 @@ public abstract class AbstractMultipleParser implements Parser {
      * and the method signature is subject to change before Tika 2.0
      */
     @Deprecated
-    public void parse(InputStream stream, ContentHandlerFactory handlers, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandlerFactory handlers, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        parse(stream, null, handlers, metadata, context);
+        parse(tis, null, handlers, metadata, context);
     }
 
-    private void parse(InputStream stream, ContentHandler handler,
+    private void parse(TikaInputStream tis, ContentHandler handler,
                        ContentHandlerFactory handlerFactory, Metadata originalMetadata,
                        ParseContext context) throws IOException, SAXException, TikaException {
         // Track the metadata between parsers, so we can apply our policy
@@ -253,7 +253,7 @@ public abstract class AbstractMultipleParser implements Parser {
         try {
             // Ensure we'll be able to re-read safely, buffering to disk if so,
             //  to permit Parsers 2+ to be able to read the same data
-            InputStream taggedStream = ParserUtils.ensureStreamReReadable(stream, tmp, originalMetadata);
+            TikaInputStream taggedStream = ParserUtils.ensureStreamReReadable(tis, tmp, originalMetadata);
 
             for (Parser p : parsers) {
                 // Get a new handler for this parser, if we can

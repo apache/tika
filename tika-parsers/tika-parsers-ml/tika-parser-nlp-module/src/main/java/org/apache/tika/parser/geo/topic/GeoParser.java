@@ -17,7 +17,6 @@
 package org.apache.tika.parser.geo.topic;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -36,6 +35,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -97,7 +97,7 @@ public class GeoParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         /*----------------configure this parser by ParseContext Object---------------------*/
@@ -118,7 +118,7 @@ public class GeoParser implements Parser {
 
         /*----------------get locationNameEntities and best nameEntity for the
         input stream---------------------*/
-        extractor.getAllNameEntitiesfromInput(stream);
+        extractor.getAllNameEntitiesfromInput(tis);
         extractor.getBestNameEntity();
         ArrayList<String> locationNameEntities = extractor.locationNameEntities;
         String bestner = extractor.bestNameEntity;

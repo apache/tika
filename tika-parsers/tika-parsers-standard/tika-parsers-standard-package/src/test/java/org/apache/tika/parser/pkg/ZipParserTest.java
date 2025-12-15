@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.InputStream;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -45,8 +44,8 @@ public class ZipParserTest extends AbstractPkgTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = getResourceAsStream("/test-documents/test-documents.zip")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/test-documents.zip")) {
+            AUTO_DETECT_PARSER.parse(tis, handler, metadata, recursingContext);
         }
 
         assertEquals("application/zip", metadata.get(Metadata.CONTENT_TYPE));
@@ -83,8 +82,8 @@ public class ZipParserTest extends AbstractPkgTest {
         ParseContext context = new ParseContext();
         GatherRelIDsDocumentExtractor relIDs = new GatherRelIDsDocumentExtractor();
         context.set(EmbeddedDocumentExtractor.class, relIDs);
-        try (InputStream input = getResourceAsStream("/test-documents/testEmbedded.zip")) {
-            AUTO_DETECT_PARSER.parse(input, new BodyContentHandler(), new Metadata(), context);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testEmbedded.zip")) {
+            AUTO_DETECT_PARSER.parse(tis, new BodyContentHandler(), new Metadata(), context);
         }
 
         assertTrue(relIDs.allRelIDs.contains("test1.txt"));

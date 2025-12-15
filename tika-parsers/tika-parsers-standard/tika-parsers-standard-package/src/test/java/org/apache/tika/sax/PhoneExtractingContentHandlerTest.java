@@ -21,6 +21,7 @@ import java.io.InputStream;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
@@ -45,7 +46,7 @@ public class PhoneExtractingContentHandlerTest extends TikaTest {
                 new PhoneExtractingContentHandler(new BodyContentHandler(), metadata);
         try (InputStream stream = getResourceAsStream(
                 "/test-documents/testPhoneNumberExtractor.odt")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
+            AUTO_DETECT_PARSER.parse(TikaInputStream.get(stream), handler, metadata, new ParseContext());
         }
         String[] phoneNumbers = metadata.getValues("phonenumbers");
         assertContains("9498888888", phoneNumbers[0]);

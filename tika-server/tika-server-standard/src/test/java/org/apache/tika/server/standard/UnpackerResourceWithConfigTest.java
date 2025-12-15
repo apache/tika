@@ -40,6 +40,7 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.TikaServerParseExceptionMapper;
@@ -111,7 +112,7 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
         assertEquals("image/tiff", TikaLoader
                 .loadDefault()
                 .loadDetectors()
-                .detect(new ByteArrayInputStream(renderedImage), new Metadata())
+                .detect(TikaInputStream.get(renderedImage), new Metadata())
                 .toString());
 
         try (InputStream is = new ByteArrayInputStream(renderedImage)) {
@@ -174,7 +175,7 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
         assertEquals("image/jpeg", TikaLoader
                 .loadDefault()
                 .loadDetectors()
-                .detect(new ByteArrayInputStream(renderedImage), new Metadata())
+                .detect(TikaInputStream.get(renderedImage), new Metadata())
                 .toString());
 
         try (InputStream is = new ByteArrayInputStream(renderedImage)) {

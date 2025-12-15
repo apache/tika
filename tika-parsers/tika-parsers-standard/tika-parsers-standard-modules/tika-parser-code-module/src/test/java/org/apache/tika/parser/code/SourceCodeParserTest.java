@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.ByteArrayInputStream;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -74,7 +73,7 @@ public class SourceCodeParserTest extends TikaTest {
         assertFalse(textContent.contains("html"));
 
         textContent =
-                getText(new ByteArrayInputStream("public class HelloWorld {}".getBytes(UTF_8)),
+                getText(TikaInputStream.get("public class HelloWorld {}".getBytes(UTF_8)),
                         sourceCodeParser, createMetadata("text/x-java-source"));
         assertTrue(textContent.length() > 0);
         assertFalse(textContent.contains("html"));

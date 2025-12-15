@@ -16,10 +16,7 @@
  */
 package org.apache.tika.example;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
 
@@ -28,6 +25,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -51,10 +49,10 @@ public class InterruptableParsingExample {
         ParseContext context = new ParseContext();
         context.set(Parser.class, tika.getParser());
 
-        try (InputStream is = new BufferedInputStream(Files.newInputStream(path))) {
+        try (TikaInputStream tis = TikaInputStream.get(path, metadata)) {
             tika
                     .getParser()
-                    .parse(is, handler, metadata, context);
+                    .parse(tis, handler, metadata, context);
         } catch (QueryMatchedException e) {
             return true;
         } catch (SAXException | TikaException | IOException e) {

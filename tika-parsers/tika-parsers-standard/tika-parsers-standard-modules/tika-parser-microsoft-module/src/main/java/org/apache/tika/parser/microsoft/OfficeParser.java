@@ -18,7 +18,6 @@ package org.apache.tika.parser.microsoft;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
@@ -159,7 +158,7 @@ public class OfficeParser extends AbstractOfficeParser {
     /**
      * Extracts properties and text from an MS Document input stream
      */
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         configure(context);
@@ -167,32 +166,25 @@ public class OfficeParser extends AbstractOfficeParser {
         xhtml.startDocument();
 
         final DirectoryNode root;
-        TikaInputStream tstream = TikaInputStream.cast(stream);
         POIFSFileSystem mustCloseFs = null;
         boolean isDirectoryNode = false;
         try {
-            if (tstream == null) {
-                mustCloseFs = new POIFSFileSystem(CloseShieldInputStream.wrap(stream));
-                root = mustCloseFs.getRoot();
-            } else {
-                final Object container = tstream.getOpenContainer();
+            final Object container = tis.getOpenContainer();
                 if (container instanceof POIFSFileSystem) {
-                    root = ((POIFSFileSystem) container).getRoot();
-                } else if (container instanceof DirectoryNode) {
-                    root = (DirectoryNode) container;
-                    isDirectoryNode = true;
+                root = ((POIFSFileSystem) container).getRoot();
+            } else if (container instanceof DirectoryNode) {
+                root = (DirectoryNode) container;
+                isDirectoryNode = true;
+            } else {
+                POIFSFileSystem fs = null;
+                if (tis.hasFile()) {
+                    fs = new POIFSFileSystem(tis.getFile(), true);
                 } else {
-                    POIFSFileSystem fs = null;
-                    if (tstream.hasFile()) {
-                        fs = new POIFSFileSystem(tstream.getFile(), true);
-                    } else {
-                        fs = new POIFSFileSystem(CloseShieldInputStream.wrap(tstream));
-                    }
-                    //tstream will close the fs, no need to close this below
-                    tstream.setOpenContainer(fs);
-                    root = fs.getRoot();
-
+                    fs = new POIFSFileSystem(CloseShieldInputStream.wrap(tis));
                 }
+                //stream will close the fs, no need to close this below
+                tis.setOpenContainer(fs);
+                root = fs.getRoot();
             }
             parse(root, context, metadata, xhtml);
             OfficeParserConfig officeParserConfig = context.get(OfficeParserConfig.class);
@@ -287,7 +279,7 @@ public class OfficeParser extends AbstractOfficeParser {
                         throw new EncryptedDocumentException();
                     }
 
-                    // Decrypt the OLE2 stream, and delegate the resulting OOXML
+                    // Decrypt the OLE2 tis, and delegate the resulting OOXML
                     //  file to the regular OOXML parser for normal handling
                     OOXMLParser parser = new OOXMLParser();
                     try (TikaInputStream tis = TikaInputStream.get(d.getDataStream(root))) {

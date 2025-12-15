@@ -18,9 +18,7 @@ package org.apache.tika.parser.audio;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -38,6 +36,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -60,19 +59,16 @@ public class MidiParser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         metadata.set(Metadata.CONTENT_TYPE, "audio/midi");
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
-        // MidiSystem expects the stream to support the mark feature
-        if (!stream.markSupported()) {
-            stream = new BufferedInputStream(stream);
-        }
+        // TikaInputStream always supports mark
         try {
-            Sequence sequence = MidiSystem.getSequence(stream);
+            Sequence sequence = MidiSystem.getSequence(tis);
 
             Track[] tracks = sequence.getTracks();
             metadata.set("tracks", String.valueOf(tracks.length));

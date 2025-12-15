@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
@@ -37,7 +36,6 @@ import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.extractor.EmbeddedDocumentBytesHandler;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -76,7 +74,7 @@ class ParseHandler {
         this.recursiveParserWrapper = recursiveParserWrapper;
     }
 
-    PipesWorker.ParseDataOrPipesResult parseWithStream(FetchEmitTuple fetchEmitTuple, InputStream stream, Metadata metadata, ParseContext parseContext)
+    PipesWorker.ParseDataOrPipesResult parseWithStream(FetchEmitTuple fetchEmitTuple, TikaInputStream stream, Metadata metadata, ParseContext parseContext)
             throws TikaConfigException, InterruptedException {
 
         List<Metadata> metadataList;
@@ -128,23 +126,14 @@ class ParseHandler {
         }
     }
 
-    private Metadata preParse(FetchEmitTuple t, InputStream stream, Metadata metadata,
+    private Metadata preParse(FetchEmitTuple t, TikaInputStream tis, Metadata metadata,
                           ParseContext parseContext) {
-        TemporaryResources tmp = null;
-        try {
-            TikaInputStream tis = TikaInputStream.cast(stream);
-            if (tis == null) {
-                tis = TikaInputStream.get(stream, tmp, metadata);
-            }
-            _preParse(t, tis, metadata, parseContext);
-        } finally {
-            IOUtils.closeQuietly(tmp);
-        }
+        _preParse(t, tis, metadata, parseContext);
         return metadata;
     }
 
     public List<Metadata> parseRecursive(FetchEmitTuple fetchEmitTuple,
-                                              HandlerConfig handlerConfig, InputStream stream,
+                                              HandlerConfig handlerConfig, TikaInputStream stream,
                                               Metadata metadata, ParseContext parseContext) throws InterruptedException {
         //Intentionally do not add the metadata filter here!
         //We need to let stacktraces percolate
@@ -179,7 +168,7 @@ class ParseHandler {
     }
 
     public List<Metadata> parseConcatenated(FetchEmitTuple fetchEmitTuple,
-                                             HandlerConfig handlerConfig, InputStream stream,
+                                             HandlerConfig handlerConfig, TikaInputStream stream,
                                              Metadata metadata, ParseContext parseContext) {
 
         ContentHandlerFactory contentHandlerFactory =

@@ -25,12 +25,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -67,14 +67,14 @@ public class OneOffMimeTest extends TikaTest {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, p.getFileName().toString());
         assertEquals(expected,
-                getRecursiveMetadata(UnsynchronizedByteArrayInputStream.builder().setByteArray(new byte[0]).get(),
+                getRecursiveMetadata(TikaInputStream.get(new byte[0]),
                         metadata,
                         new ParseContext(), true).get(0).get(Metadata.CONTENT_TYPE));
     }
 
     private void assertByData(String expected, Path p) throws Exception {
-        try (InputStream is = Files.newInputStream(p)) {
-            List<Metadata> metadataList = getRecursiveMetadata(is, true);
+        try (TikaInputStream tis = TikaInputStream.get(p)) {
+            List<Metadata> metadataList = getRecursiveMetadata(tis, true);
             assertEquals(expected, metadataList.get(0).get(Metadata.CONTENT_TYPE));
         }
     }

@@ -18,12 +18,11 @@ package org.apache.tika.parser.xml;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -40,10 +39,10 @@ public class EmptyAndDuplicateElementsXMLParserTest extends TikaTest {
 
     @Test
     public void testDefaultBehavior() throws Exception {
-        try (InputStream input = getResourceAsStream("/test-documents/testXML3.xml")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testXML3.xml")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new DefaultCustomXMLTestParser().parse(input, handler, metadata, new ParseContext());
+            new DefaultCustomXMLTestParser().parse(tis, handler, metadata, new ParseContext());
 
             assertEquals(4, metadata.getValues(FIRST_NAME).length);
             assertEquals(2, metadata.getValues(LAST_NAME).length);
@@ -64,11 +63,11 @@ public class EmptyAndDuplicateElementsXMLParserTest extends TikaTest {
 
     @Test
     public void testEmptiesAndRepeats() throws Exception {
-        try (InputStream input = getResourceAsStream("/test-documents/testXML3.xml")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testXML3.xml")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new AllowEmptiesAndDuplicatesCustomXMLTestParser()
-                    .parse(input, handler, metadata, new ParseContext());
+                    .parse(tis, handler, metadata, new ParseContext());
 
             assertEquals(4, metadata.getValues(FIRST_NAME).length);
             assertEquals(4, metadata.getValues(LAST_NAME).length);

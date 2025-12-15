@@ -20,11 +20,10 @@ import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -34,11 +33,11 @@ public class VisioParserTest {
 
     @Test
     public void testVisioParser() throws Exception {
-        try (InputStream input = VisioParserTest.class
-                .getResourceAsStream("/test-documents/testVISIO.vsd")) {
+        try (TikaInputStream tis = TikaInputStream.get(VisioParserTest.class
+                .getResourceAsStream("/test-documents/testVISIO.vsd"))) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new OfficeParser().parse(input, handler, metadata, new ParseContext());
+            new OfficeParser().parse(tis, handler, metadata, new ParseContext());
 
             assertEquals("application/vnd.visio", metadata.get(Metadata.CONTENT_TYPE));
             assertNull(metadata.get(TikaCoreProperties.TITLE));

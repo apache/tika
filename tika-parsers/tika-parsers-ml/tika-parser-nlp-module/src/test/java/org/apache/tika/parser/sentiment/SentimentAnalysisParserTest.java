@@ -19,7 +19,6 @@ package org.apache.tika.parser.sentiment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -30,6 +29,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 
@@ -47,9 +47,8 @@ public class SentimentAnalysisParserTest extends TikaTest {
 
         String text = "What a wonderful thought it is that" +
                 " some of the best days of our lives haven't happened yet.";
-        ByteArrayInputStream stream =
-                new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
-        Metadata md = getXML(stream, parser, new Metadata()).metadata;
+        Metadata md = getXML(TikaInputStream.get(text.getBytes(StandardCharsets.UTF_8)),
+                parser, new Metadata()).metadata;
         String sentiment = md.get("Sentiment");
         assertNotNull(sentiment);
         assertEquals("positive", sentiment);
@@ -62,9 +61,8 @@ public class SentimentAnalysisParserTest extends TikaTest {
             return;
         }
         String text = "Whatever, I need some cooling off time!";
-        ByteArrayInputStream stream =
-                new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
-        Metadata md = getXML(stream, parser, new Metadata()).metadata;
+        Metadata md = getXML(TikaInputStream.get(text.getBytes(StandardCharsets.UTF_8)),
+                parser, new Metadata()).metadata;
         String sentiment = md.get("Sentiment");
         assertNotNull(sentiment);
         assertEquals("angry", sentiment);

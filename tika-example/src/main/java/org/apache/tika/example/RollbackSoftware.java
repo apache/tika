@@ -20,7 +20,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -32,6 +31,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -53,7 +53,7 @@ public class RollbackSoftware {
         LinkContentHandler handler = new LinkContentHandler();
         Metadata met = new Metadata();
         DeploymentAreaParser parser = new DeploymentAreaParser();
-        parser.parse(IOUtils.toInputStream(deployArea.getAbsolutePath(), UTF_8), handler, met);
+        parser.parse(TikaInputStream.get(IOUtils.toInputStream(deployArea.getAbsolutePath(), UTF_8)), handler, met);
         List<Link> links = handler.getLinks();
         if (links.size() < 2) {
             throw new IOException("Must have installed at least 2 versions!");
@@ -94,8 +94,8 @@ public class RollbackSoftware {
          * @see org.apache.tika.parser.Parser#parse(java.io.InputStream,
          * org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata)
          */
-        public void parse(InputStream is, ContentHandler handler, Metadata metadata) throws IOException, SAXException, TikaException {
-            parse(is, handler, metadata, new ParseContext());
+        public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata) throws IOException, SAXException, TikaException {
+            parse(tis, handler, metadata, new ParseContext());
         }
 
         /*
@@ -105,9 +105,9 @@ public class RollbackSoftware {
          * org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata,
          * org.apache.tika.parser.ParseContext)
          */
-        public void parse(InputStream is, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+        public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
 
-            File deployArea = new File(IOUtils.toString(is, UTF_8));
+            File deployArea = new File(IOUtils.toString(tis, UTF_8));
             File[] versions = deployArea.listFiles(pathname -> !pathname
                     .getName()
                     .startsWith("current"));

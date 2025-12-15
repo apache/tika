@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -53,15 +52,15 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
     public void testTiffWorkaround() throws Exception {
         //TIKA-2591
         Metadata metadata = new Metadata();
-        try (InputStream is = TikaInputStream
+        try (TikaInputStream tis = TikaInputStream
                 .get(getResourceAsStream("/test-documents/testTIFF.tif"))) {
-            MediaType mt = compositeZipContainerDetector.detect(is, metadata);
+            MediaType mt = compositeZipContainerDetector.detect(tis, metadata);
             assertEquals(TIFF, mt);
         }
         metadata = new Metadata();
-        try (InputStream is = TikaInputStream
+        try (TikaInputStream tis = TikaInputStream
                 .get(getResourceAsStream("/test-documents/testTIFF_multipage.tif"))) {
-            MediaType mt = compositeZipContainerDetector.detect(is, metadata);
+            MediaType mt = compositeZipContainerDetector.detect(tis, metadata);
             assertEquals(TIFF, mt);
         }
     }
@@ -134,23 +133,23 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
         for (int i = 0; i < 20; i++) {
             for (File z : zips) {
                 long start = System.currentTimeMillis();
-                try (InputStream is = new BufferedInputStream(new FileInputStream(z))) {
-                    MediaType mt = detector.detect(is, new Metadata());
+                try (TikaInputStream tis = TikaInputStream.get(new BufferedInputStream(new FileInputStream(z)))) {
+                    MediaType mt = detector.detect(tis, new Metadata());
                     mediaTypeSet.add(mt);
                 }
                 nonTikaStream += System.currentTimeMillis() - start;
 
                 start = System.currentTimeMillis();
-                try (InputStream is = TikaInputStream
+                try (TikaInputStream tis = TikaInputStream
                         .get(new BufferedInputStream(new FileInputStream(z)))) {
-                    MediaType mt = detector.detect(is, new Metadata());
+                    MediaType mt = detector.detect(tis, new Metadata());
                     mediaTypeSet.add(mt);
                 }
                 tikaStream += System.currentTimeMillis() - start;
 
                 start = System.currentTimeMillis();
-                try (InputStream is = TikaInputStream.get(z.toPath())) {
-                    MediaType mt = detector.detect(is, new Metadata());
+                try (TikaInputStream tis = TikaInputStream.get(z.toPath())) {
+                    MediaType mt = detector.detect(tis, new Metadata());
                     mediaTypeSet.add(mt);
                 }
                 tikaStreamWFile += System.currentTimeMillis() - start;
@@ -177,19 +176,19 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
         for (int i = 0; i < 10; i++) {
             for (File z : zips) {
                 long start = System.currentTimeMillis();
-                try (InputStream is = new BufferedInputStream(new FileInputStream(z))) {
-                    getRecursiveMetadata(is, true);
+                try (TikaInputStream tis = TikaInputStream.get(new BufferedInputStream(new FileInputStream(z)))) {
+                    getRecursiveMetadata(tis, true);
                 }
                 nonTikaStream += System.currentTimeMillis() - start;
                 start = System.currentTimeMillis();
-                try (InputStream is = TikaInputStream
+                try (TikaInputStream tis = TikaInputStream
                         .get(new BufferedInputStream(new FileInputStream(z)))) {
-                    getRecursiveMetadata(is, true);
+                    getRecursiveMetadata(tis, true);
                 }
                 tikaStream += System.currentTimeMillis() - start;
                 start = System.currentTimeMillis();
-                try (InputStream is = TikaInputStream.get(z.toPath())) {
-                    getRecursiveMetadata(is, true);
+                try (TikaInputStream tis = TikaInputStream.get(z.toPath())) {
+                    getRecursiveMetadata(tis, true);
                 }
                 tikaStreamWFile += System.currentTimeMillis() - start;
 
@@ -206,8 +205,8 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
             throws Exception {
         List<File> zips = new ArrayList<>();
         for (File f : Paths.get(getResourceAsUri("/test-documents")).toFile().listFiles()) {
-            try (InputStream is = TikaInputStream.get(f.toPath())) {
-                MediaType mt = detector.detect(is, new Metadata());
+            try (TikaInputStream tis = TikaInputStream.get(f.toPath())) {
+                MediaType mt = detector.detect(tis, new Metadata());
                 if (registry.isSpecializationOf(mt, MediaType.APPLICATION_ZIP)) {
                     zips.add(f);
                 }

@@ -33,7 +33,6 @@ import static org.apache.tika.detect.zip.CompressorConstants.ZLIB;
 import static org.apache.tika.detect.zip.CompressorConstants.ZSTD;
 import static org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -200,17 +199,13 @@ public class CompressorParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         // At the end we want to close the compression stream to release
         // any associated resources, but the underlying document stream
         // should not be closed
-        if (stream.markSupported()) {
-            stream = CloseShieldInputStream.wrap(stream);
-        } else {
-            // Ensure that the stream supports the mark feature
-            stream = new BufferedInputStream(CloseShieldInputStream.wrap(stream));
-        }
+        // TikaInputStream always supports mark
+        InputStream wrappedStream = CloseShieldInputStream.wrap(tis);
 
         CompressorInputStream cis;
         try {
@@ -224,9 +219,9 @@ public class CompressorParser implements Parser {
             //to avoid calling CompressorStreamFactory.detect() twice
             String name = getStreamName(metadata);
             if (name != null) {
-                cis = factory.createCompressorInputStream(name, stream);
+                cis = factory.createCompressorInputStream(name, wrappedStream);
             } else {
-                cis = factory.createCompressorInputStream(stream);
+                cis = factory.createCompressorInputStream(wrappedStream);
                 MediaType type = getMediaType(cis);
                 if (!type.equals(MediaType.OCTET_STREAM)) {
                     metadata.set(CONTENT_TYPE, type.toString());
@@ -262,8 +257,8 @@ public class CompressorParser implements Parser {
             EmbeddedDocumentExtractor extractor =
                     EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
             if (extractor.shouldParseEmbedded(entrydata)) {
-                try (TikaInputStream tis = TikaInputStream.get(cis)) {
-                    extractor.parseEmbedded(tis, xhtml, entrydata, true);
+                try (TikaInputStream inner = TikaInputStream.get(cis)) {
+                    extractor.parseEmbedded(inner, xhtml, entrydata, true);
                 }
             }
         } finally {

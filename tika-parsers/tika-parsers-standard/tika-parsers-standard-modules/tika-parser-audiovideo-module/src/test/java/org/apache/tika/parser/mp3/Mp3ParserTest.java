@@ -19,11 +19,10 @@ package org.apache.tika.parser.mp3;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import java.io.ByteArrayInputStream;
-
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
@@ -283,7 +282,7 @@ public class Mp3ParserTest extends TikaTest {
         assertEquals(257, ID3v2Frame.getInt(new byte[]{0, 0, 1, 1}));
 
         ID3v2Frame f =
-                (ID3v2Frame) ID3v2Frame.createFrameIfPresent(new ByteArrayInputStream(empty));
+                (ID3v2Frame) ID3v2Frame.createFrameIfPresent(TikaInputStream.get(empty));
         assertEquals(3, f.getMajorVersion());
         assertEquals(1, f.getMinorVersion());
         assertEquals(0, f.getFlags());

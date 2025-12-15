@@ -19,7 +19,6 @@ package org.apache.tika.example;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.File;
-import java.io.InputStream;
 import java.nio.file.Paths;
 
 import org.apache.commons.io.FileUtils;
@@ -74,8 +73,8 @@ public class MyFirstTika {
 
         Parser parser = tikaLoader.loadAutoDetectParser();
         ContentHandler handler = new BodyContentHandler();
-        TikaInputStream stream = TikaInputStream.get(Paths.get(filename), metadata);
-        parser.parse(stream, handler, metadata, new ParseContext());
+        TikaInputStream tis = TikaInputStream.get(Paths.get(filename), metadata);
+        parser.parse(tis, handler, metadata, new ParseContext());
         return handler.toString();
     }
 
@@ -87,12 +86,12 @@ public class MyFirstTika {
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
         System.out.println("The MIME type (based on filename) is: [" + mimeRegistry.detect(null, metadata) + "]");
 
-        InputStream stream = TikaInputStream.get(Paths.get(filename));
-        System.out.println("The MIME type (based on MAGIC) is: [" + mimeRegistry.detect(stream, metadata) + "]");
+        TikaInputStream tis = TikaInputStream.get(Paths.get(filename));
+        System.out.println("The MIME type (based on MAGIC) is: [" + mimeRegistry.detect(tis, metadata) + "]");
 
-        stream = TikaInputStream.get(Paths.get(filename));
+        tis = TikaInputStream.get(Paths.get(filename));
         Detector detector = tikaLoader.loadDetectors();
-        System.out.println("The MIME type (based on the Detector interface) is: [" + detector.detect(stream, metadata) + "]");
+        System.out.println("The MIME type (based on the Detector interface) is: [" + detector.detect(tis, metadata) + "]");
 
         LanguageDetector langDetector = new OptimaizeLangDetector().loadModels();
         LanguageResult lang = langDetector.detect(FileUtils.readFileToString(new File(filename), UTF_8));
@@ -102,11 +101,11 @@ public class MyFirstTika {
         // Get a non-detecting parser that handles all the types it can
         Parser parser = tikaLoader.loadParsers();
         // Tell it what we think the content is
-        MediaType type = detector.detect(stream, metadata);
+        MediaType type = detector.detect(tis, metadata);
         metadata.set(Metadata.CONTENT_TYPE, type.toString());
         // Have the file parsed to get the content and metadata
         ContentHandler handler = new BodyContentHandler();
-        parser.parse(stream, handler, metadata, new ParseContext());
+        parser.parse(tis, handler, metadata, new ParseContext());
 
         return handler.toString();
     }

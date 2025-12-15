@@ -17,7 +17,6 @@
 package org.apache.tika.pipes.core.server;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,19 +45,13 @@ class FetchHandler {
         if (fetcherResult.pipesResult != null) {
             return new TisOrResult(null, fetcherResult.pipesResult);
         }
-        InputStream is = null;
         try {
-            is = fetcherResult.fetcher.fetch(
+            TikaInputStream tis = fetcherResult.fetcher.fetch(
                     fetchEmitTuple.getFetchKey().getFetchKey(), metadata, fetchEmitTuple.getParseContext());
+            return new TisOrResult(tis, null);
         } catch (IOException | TikaException e) {
             return new TisOrResult(null, new PipesResult(PipesResult.RESULT_STATUS.FETCH_EXCEPTION, ExceptionUtils.getStackTrace(e)));
         }
-
-        TikaInputStream tis = TikaInputStream.cast(is);
-        if (tis == null) {
-            return new TisOrResult(TikaInputStream.get(is), null);
-        }
-        return new TisOrResult(tis, null);
     }
 
     private FetcherOrResult getFetcher(FetchEmitTuple t) {

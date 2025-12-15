@@ -115,7 +115,7 @@ public class EpubParser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         // Because an EPub file is often made up of multiple XHTML files,
         //  we need explicit control over the start and end of the document
@@ -127,13 +127,13 @@ public class EpubParser implements Parser {
         Set<String> encryptedItems = Collections.EMPTY_SET;
         if (streaming) {
             try {
-                streamingParse(stream, childHandler, metadata, context);
+                streamingParse(tis, childHandler, metadata, context);
             } catch (IOException e) {
                 caughtException = e;
             }
         } else {
             try {
-                encryptedItems = bufferedParse(stream, childHandler, xhtml, metadata, context);
+                encryptedItems = bufferedParse(tis, childHandler, xhtml, metadata, context);
             } catch (IOException e) {
                 caughtException = e;
             }
@@ -161,13 +161,13 @@ public class EpubParser implements Parser {
                 //when streaming, throw an encryption exception if anything is encrypted
                 checkForDRM(zip, context);
             } else if (entry.getName().equals("metadata.xml")) {
-                meta.parse(zip, new DefaultHandler(), metadata, context);
+                meta.parse(TikaInputStream.get(CloseShieldInputStream.wrap(zip)), new DefaultHandler(), metadata, context);
             } else if (entry.getName().endsWith(".opf")) {
-                opf.parse(zip, new DefaultHandler(), metadata, context);
+                opf.parse(TikaInputStream.get(CloseShieldInputStream.wrap(zip)), new DefaultHandler(), metadata, context);
             } else if (entry.getName().endsWith(".htm") || entry.getName().endsWith(".html") ||
                     entry.getName().endsWith(".xhtml") || entry.getName().endsWith(".xml")) {
                 try {
-                    content.parse(zip, bodyHandler, metadata, context);
+                    content.parse(TikaInputStream.get(CloseShieldInputStream.wrap(zip)), bodyHandler, metadata, context);
                 } catch (SAXException e) {
                     if (WriteLimitReachedException.isWriteLimitReached(e)) {
                         throw e;
@@ -203,7 +203,7 @@ public class EpubParser implements Parser {
         TikaInputStream tis;
         TemporaryResources temporaryResources = null;
         if (TikaInputStream.isTikaInputStream(stream)) {
-            tis = TikaInputStream.cast(stream);
+            tis = (TikaInputStream) stream;
             if (tis.getOpenContainer() instanceof ZipFile) {
                 return bufferedParseZipFile((ZipFile) tis.getOpenContainer(), bodyHandler, xhtml,
                         metadata, context, true);
@@ -242,7 +242,7 @@ public class EpubParser implements Parser {
             try (ZipFile zipFile = ZipFile.builder().setFile(salvaged.toFile()).get()) {
                 return bufferedParseZipFile(zipFile, bodyHandler, xhtml, metadata, context, false);
             } catch (EpubZipException e) {
-                try (InputStream is = TikaInputStream.get(salvaged)) {
+                try (TikaInputStream is = TikaInputStream.get(salvaged)) {
                     return streamingParse(is, xhtml, metadata, context);
                 }
             }
@@ -262,7 +262,7 @@ public class EpubParser implements Parser {
         if (zae == null || !zipFile.canReadEntryData(zae)) {
             throw new EpubZipException();
         }
-        opf.parse(zipFile.getInputStream(zae), new DefaultHandler(), metadata, context);
+        opf.parse(TikaInputStream.get(zipFile.getInputStream(zae)), new DefaultHandler(), metadata, context);
 
         ContentOrderScraper contentOrderScraper = new ContentOrderScraper();
         try (InputStream is = zipFile.getInputStream(zae)) {
@@ -322,8 +322,8 @@ public class EpubParser implements Parser {
                     }
                     zae = zipFile.getEntry(relativePath + hRefMediaPair.href);
                     if (zae != null) {
-                        try (InputStream is = zipFile.getInputStream(zae)) {
-                            content.parse(is, bodyHandler, metadata, context);
+                        try (TikaInputStream tis = TikaInputStream.get(zipFile.getInputStream(zae))) {
+                            content.parse(tis, bodyHandler, metadata, context);
                         } catch (SAXException e) {
                             if (WriteLimitReachedException.isWriteLimitReached(e)) {
                                 throw e;
@@ -474,8 +474,8 @@ public class EpubParser implements Parser {
         }
         zae = zipFile.getEntry("metadata.xml");
         if (zae != null && zipFile.canReadEntryData(zae)) {
-            try (InputStream is = zipFile.getInputStream(zae)) {
-                meta.parse(is, new DefaultHandler(), metadata, context);
+            try (TikaInputStream tis = TikaInputStream.get(zipFile.getInputStream(zae))) {
+                meta.parse(tis, new DefaultHandler(), metadata, context);
             }
         }
     }

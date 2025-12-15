@@ -20,7 +20,6 @@ import static java.lang.String.valueOf;
 import static java.util.Collections.singleton;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Set;
 
 import com.pff.PSTException;
@@ -66,7 +65,7 @@ public class OutlookPSTParser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         // Use the delegate parser to parse the contained document
@@ -78,10 +77,10 @@ public class OutlookPSTParser implements Parser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
-        TikaInputStream in = TikaInputStream.get(stream);
+        TikaInputStream inner = TikaInputStream.get(tis);
         PSTFile pstFile = null;
         try {
-            pstFile = new PSTFile(in.getFile().getPath());
+            pstFile = new PSTFile(inner.getFile().getPath());
             metadata.set(Metadata.CONTENT_LENGTH, valueOf(pstFile.getFileHandle().length()));
             boolean isValid = pstFile.getFileHandle().getFD().valid();
             metadata.set(PST.IS_VALID, isValid);

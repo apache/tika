@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
@@ -30,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.html.charsetdetector.StandardHtmlEncodingDetector;
 import org.apache.tika.parser.html.charsetdetector.charsets.ReplacementCharset;
@@ -170,7 +170,7 @@ public class StandardHtmlEncodingDetectorTest {
     public void replacement() throws IOException {
         // Several dangerous charsets should are aliases of 'replacement' in the spec
         String inString = "<meta charset='iso-2022-cn'>";
-        assertCharset(new ByteArrayInputStream(inString.getBytes(StandardCharsets.ISO_8859_1)),
+        assertCharset(TikaInputStream.get(inString.getBytes(StandardCharsets.ISO_8859_1)),
                 new ReplacementCharset());
     }
 
@@ -326,7 +326,7 @@ public class StandardHtmlEncodingDetectorTest {
         // The stream should be reset after detection
         byte[] inBytes = {0, 1, 2, 3, 4};
         byte[] outBytes = new byte[5];
-        InputStream inStream = new ByteArrayInputStream(inBytes);
+        InputStream inStream = TikaInputStream.get(inBytes);
         detectCharset(inStream);
         // The stream should still be readable from the beginning after detection
         inStream.read(outBytes);
@@ -343,7 +343,7 @@ public class StandardHtmlEncodingDetectorTest {
 
     private void assertCharset(String html, Charset charset) throws IOException {
         final Charset contentsCharset = (charset == null) ? StandardCharsets.UTF_8 : charset;
-        InputStream inStream = new ByteArrayInputStream(html.getBytes(contentsCharset));
+        InputStream inStream = TikaInputStream.get(html.getBytes(contentsCharset));
         final Charset detected = detectCharset(inStream);
         assertEquals(charset, detected,
                 html + " should be detected as " + charset);
@@ -355,12 +355,14 @@ public class StandardHtmlEncodingDetectorTest {
     }
 
     private Charset detectCharset(InputStream inStream) throws IOException {
-        return new StandardHtmlEncodingDetector().detect(inStream, metadata);
+        TikaInputStream tis = (inStream instanceof TikaInputStream) ?
+                (TikaInputStream) inStream : TikaInputStream.get(inStream);
+        return new StandardHtmlEncodingDetector().detect(tis, metadata);
     }
 
     private InputStream throwAfter(String html) {
         byte[] contents = html.getBytes(StandardCharsets.UTF_8);
-        InputStream contentsInStream = new ByteArrayInputStream(contents);
+        InputStream contentsInStream = TikaInputStream.get(contents);
         InputStream errorThrowing = new InputStream() {
             @Override
             public int read() throws IOException {

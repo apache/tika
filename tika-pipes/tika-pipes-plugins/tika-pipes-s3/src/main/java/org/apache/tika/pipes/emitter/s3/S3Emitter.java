@@ -170,7 +170,7 @@ public class S3Emitter extends AbstractStreamEmitter {
                 JsonMetadataList.toJson(metadataList, writer);
             }
             byte[] bytes = bos.toByteArray();
-            try (InputStream is = TikaInputStream.get(bytes)) {
+            try (TikaInputStream is = TikaInputStream.get(bytes)) {
                 emit(emitKey, is, new Metadata(), parseContext);
             }
         } else {
@@ -179,7 +179,7 @@ public class S3Emitter extends AbstractStreamEmitter {
                 try (Writer writer = Files.newBufferedWriter(tmpPath, StandardCharsets.UTF_8, StandardOpenOption.CREATE)) {
                     JsonMetadataList.toJson(metadataList, writer);
                 }
-                try (InputStream is = TikaInputStream.get(tmpPath)) {
+                try (TikaInputStream is = TikaInputStream.get(tmpPath)) {
                     emit(emitKey, is, new Metadata(), parseContext);
                 }
             }

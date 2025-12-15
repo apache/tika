@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -63,7 +62,7 @@ public class TNEFParser implements Parser {
     /**
      * Extracts properties and text from an MS Document input stream
      */
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         // We work by recursing, so get the appropriate bits
@@ -71,7 +70,7 @@ public class TNEFParser implements Parser {
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
         // Ask POI to process the file for us
-        HMEFMessage msg = new HMEFMessage(stream);
+        HMEFMessage msg = new HMEFMessage(tis);
 
         // Set the message subject if known
         String subject = msg.getSubject();

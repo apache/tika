@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Set;
@@ -28,6 +27,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -58,13 +58,13 @@ public class MSOwnerFileParser implements Parser {
     /**
      * Extracts owner from MS temp file
      */
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         byte[] asciiNameBytes = new byte[ASCII_CHUNK_LENGTH];
-        IOUtils.readFully(stream, asciiNameBytes);
+        IOUtils.readFully(tis, asciiNameBytes);
         int asciiNameLength =
                 (int) asciiNameBytes[0];//don't need to convert to unsigned int because it can't
         // be that long
@@ -79,12 +79,12 @@ public class MSOwnerFileParser implements Parser {
                 new String(asciiNameBytes, 1, asciiNameLength, StandardCharsets.US_ASCII);
         metadata.set(TikaCoreProperties.MODIFIER, asciiName);
 
-        int unicodeCharLength = stream.read();
+        int unicodeCharLength = tis.read();
         if (asciiNameLength == unicodeCharLength) {
-            stream.read();//zero after the char length
+            tis.read();//zero after the char length
             //this is effectively bounds checked by asciiNameLength
             byte[] unicodeBytes = new byte[unicodeCharLength * 2];
-            IOUtils.readFully(stream, unicodeBytes);
+            IOUtils.readFully(tis, unicodeBytes);
             String unicodeName = new String(unicodeBytes, StandardCharsets.UTF_16LE);
             metadata.set(TikaCoreProperties.MODIFIER, unicodeName);
         } else {

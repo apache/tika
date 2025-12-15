@@ -16,11 +16,7 @@
  */
 package org.apache.tika.detect.magika;
 
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,8 +31,6 @@ import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.Detector;
-import org.apache.tika.io.BoundedInputStream;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.ExternalProcess;
 import org.apache.tika.metadata.Metadata;
@@ -155,13 +149,13 @@ public class MagikaDetector implements Detector {
     }
 
     /**
-     * @param input    document input stream, or <code>null</code>
+     * @param tis      document input stream, or <code>null</code>
      * @param metadata input metadata for the document
      * @return mime as identified by the file command or application/octet-stream otherwise
      * @throws IOException
      */
     @Override
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
         if (hasMagika == null) {
             hasMagika = checkHasMagika(this.config.magikaPath);
         }
@@ -172,21 +166,8 @@ public class MagikaDetector implements Detector {
             }
             return MediaType.OCTET_STREAM;
         }
-        TikaInputStream tis = TikaInputStream.cast(input);
-        if (tis != null) {
-            //spool the full file to disk, if called with a TikaInputStream
-            //and there is no underlying file
-            return detectOnPath(tis.getPath(), metadata);
-        }
-
-        input.mark(config.maxBytes);
-        try (TemporaryResources tmp = new TemporaryResources()) {
-            Path tmpFile = tmp.createTempFile();
-            Files.copy(new BoundedInputStream(config.maxBytes, input), tmpFile, REPLACE_EXISTING);
-            return detectOnPath(tmpFile, metadata);
-        } finally {
-            input.reset();
-        }
+        //spool the full file to disk if there is no underlying file
+        return detectOnPath(tis.getPath(), metadata);
     }
 
     /**

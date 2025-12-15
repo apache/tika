@@ -18,7 +18,6 @@ package org.apache.tika.pipes.fetcher.fs;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -70,7 +69,7 @@ public class FileSystemFetcher extends AbstractTikaExtension implements Fetcher 
     }
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws IOException, TikaException {
+    public TikaInputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws IOException, TikaException {
         if (fetchKey.contains("\u0000")) {
             throw new IllegalArgumentException("Path must not contain 'u0000'. " +
                     "Please review the life decisions that led you to requesting " +

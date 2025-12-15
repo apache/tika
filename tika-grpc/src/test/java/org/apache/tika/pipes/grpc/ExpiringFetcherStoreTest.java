@@ -19,7 +19,6 @@ package org.apache.tika.pipes.grpc;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.time.Duration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,6 +27,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
@@ -42,7 +42,7 @@ class ExpiringFetcherStoreTest {
         try (ExpiringFetcherStore expiringFetcherStore = new ExpiringFetcherStore(1, 5)) {
             Fetcher fetcher = new Fetcher() {
                 @Override
-                public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
+                public TikaInputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
                     return null;
                 }
 

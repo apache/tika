@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -43,7 +44,7 @@ public class MockParserTest extends TikaTest {
         //note that this is specific to MockParserTest with addition of M to the path!
         InputStream is = getResourceAsStream(M + path);
         try {
-            return super.getXML(is, AUTO_DETECT_PARSER, m);
+            return super.getXML(TikaInputStream.get(is), AUTO_DETECT_PARSER, m);
         } finally {
             IOUtils.closeQuietly(is);
         }

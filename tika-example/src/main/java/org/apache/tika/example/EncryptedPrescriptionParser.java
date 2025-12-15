@@ -29,6 +29,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -37,14 +38,14 @@ import org.apache.tika.parser.Parser;
 public class EncryptedPrescriptionParser implements Parser {
     private static final long serialVersionUID = -7816987249611278541L;
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
         try {
             Key key = Pharmacy.getKey();
             Cipher cipher = Cipher.getInstance("RSA");
             cipher.init(Cipher.DECRYPT_MODE, key);
-            InputStream decrypted = new CipherInputStream(stream, cipher);
+            InputStream decrypted = new CipherInputStream(tis, cipher);
 
-            new PrescriptionParser().parse(decrypted, handler, metadata, context);
+            new PrescriptionParser().parse(TikaInputStream.get(decrypted), handler, metadata, context);
         } catch (GeneralSecurityException e) {
             throw new TikaException("Unable to decrypt a digital prescription", e);
         }

@@ -18,7 +18,6 @@ package org.apache.tika.parser.external2;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -95,12 +94,11 @@ public class ExternalParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         //this may remain null, depending on whether the external parser writes to a file
         Path outFile = null;
         try (TemporaryResources tmp = new TemporaryResources()) {
-            TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
             Path p = tis.getPath();
             List<String> thisCommandLine = new ArrayList<>();
             Matcher inputMatcher = INPUT_TOKEN_MATCHER.matcher("");
@@ -178,13 +176,13 @@ public class ExternalParser implements Parser {
             }
         } else {
             if (outFile != null) {
-                try (InputStream is = TikaInputStream.get(outFile)) {
-                    outputParser.parse(is, new BodyContentHandler(xhtml), metadata, parseContext);
+                try (TikaInputStream tis = TikaInputStream.get(outFile)) {
+                    outputParser.parse(tis, new BodyContentHandler(xhtml), metadata, parseContext);
                 }
             } else {
-                try (InputStream is = TikaInputStream.get(
+                try (TikaInputStream tis = TikaInputStream.get(
                         result.getStdout().getBytes(StandardCharsets.UTF_8))) {
-                    outputParser.parse(is, new BodyContentHandler(xhtml), metadata, parseContext);
+                    outputParser.parse(tis, new BodyContentHandler(xhtml), metadata, parseContext);
                 }
             }
         }

@@ -21,7 +21,6 @@ package org.apache.tika.parser.gdal;
 import static org.apache.tika.parser.external.ExternalParser.INPUT_FILE_TOKEN;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Arrays;
@@ -163,8 +162,7 @@ public class GDALParser implements Parser {
         this.command = command;
     }
 
-    public String processCommand(InputStream stream) {
-        TikaInputStream tis = (TikaInputStream) stream;
+    public String processCommand(TikaInputStream tis) {
         String pCommand = this.command;
         try {
             if (this.command.contains(INPUT_FILE_TOKEN)) {
@@ -183,7 +181,7 @@ public class GDALParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         if (!ExternalParser.check("gdalinfo")) {
@@ -192,8 +190,7 @@ public class GDALParser implements Parser {
 
         // first set up and run GDAL
         // process the command
-        TemporaryResources tmp = new TemporaryResources();
-        TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
+        TemporaryResources tmp = null;
 
         String[] runCommand = processCommand(tis).split("\\s+", -1);
 

@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.parser.ParseContext;
@@ -46,7 +47,7 @@ public class JpegParserTest extends TikaTest {
         RecursiveParserWrapperHandler handler =
                 new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1), 1000, metadataFilter);
         try (InputStream is = getResourceAsStream("/test-documents/testJPEG_GEO_2.jpg")) {
-            wrapper.parse(is, handler, new Metadata(), new ParseContext());
+            wrapper.parse(TikaInputStream.get(is), handler, new Metadata(), new ParseContext());
         }
         List<Metadata> metadataList = handler.getMetadataList();
 

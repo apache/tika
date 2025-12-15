@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft.onenote;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -77,9 +76,9 @@ public class OneNoteParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        byte[] oneStoreFileBytes = IOUtils.toByteArray(stream);
+        byte[] oneStoreFileBytes = IOUtils.toByteArray(tis);
 
         try (TemporaryResources temporaryResources = new TemporaryResources();
                 TikaInputStream tikaInputStream = TikaInputStream.get(oneStoreFileBytes);

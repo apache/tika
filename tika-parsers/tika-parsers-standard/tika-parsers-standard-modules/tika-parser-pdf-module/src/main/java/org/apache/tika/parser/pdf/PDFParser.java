@@ -163,7 +163,7 @@ public class PDFParser implements Parser, RenderingParser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         PDFParserConfig localConfig = getConfig(context);
@@ -177,25 +177,15 @@ public class PDFParser implements Parser, RenderingParser {
 
         String password = "";
         PDFRenderingState incomingRenderingState = context.get(PDFRenderingState.class);
-        TikaInputStream tstream = null;
-        boolean shouldClose = false;
         OCRPageCounter prevOCRCounter = context.get(OCRPageCounter.class);
         context.set(OCRPageCounter.class, new OCRPageCounter());
         try {
             if (shouldSpool(localConfig)) {
-                if (stream instanceof TikaInputStream) {
-                    tstream = (TikaInputStream) stream;
-                } else {
-                    tstream = TikaInputStream.get(CloseShieldInputStream.wrap(stream));
-                    shouldClose = true;
-                }
-                context.set(PDFRenderingState.class, new PDFRenderingState(tstream));
-            } else {
-                tstream = TikaInputStream.cast(stream);
+                context.set(PDFRenderingState.class, new PDFRenderingState(tis));
             }
 
 
-            scanXRefOffsets(localConfig, tstream, metadata, context);
+            scanXRefOffsets(localConfig, tis, metadata, context);
 
             password = getPassword(metadata, context);
             MemoryUsageSetting memoryUsageSetting = null;
@@ -207,7 +197,7 @@ public class PDFParser implements Parser, RenderingParser {
                 memoryUsageSetting = MemoryUsageSetting.setupMainMemoryOnly();
             }
 
-            pdfDocument = getPDDocument(stream, tstream, password,
+            pdfDocument = getPDDocument(tis, tis, password,
                     memoryUsageSetting.streamCache, metadata, context);
 
 
@@ -221,7 +211,7 @@ public class PDFParser implements Parser, RenderingParser {
             extractSignatures(pdfDocument, metadata);
             checkIllustrator(pdfDocument, metadata);
             checkAccessPermissions(localConfig.getAccessCheckMode(), metadata);
-            renderPagesBeforeParse(tstream, handler, metadata, context, localConfig);
+            renderPagesBeforeParse(tis, handler, metadata, context, localConfig);
             if (handler != null) {
                 if (shouldHandleXFAOnly(hasXFA, localConfig)) {
                     handleXFAOnly(pdfDocument, handler, metadata, context);
@@ -257,9 +247,6 @@ public class PDFParser implements Parser, RenderingParser {
             } finally {
                 //replace the one that was here
                 context.set(PDFRenderingState.class, incomingRenderingState);
-                if (shouldClose && tstream != null) {
-                    tstream.close();
-                }
             }
 
         }
@@ -499,7 +486,7 @@ public class PDFParser implements Parser, RenderingParser {
                 tstream, metadata, parseContext, PageRangeRequest.RENDER_ALL);
     }
 
-    protected PDDocument getPDDocument(InputStream stream, TikaInputStream tstream, String password,
+    protected PDDocument getPDDocument(InputStream tis, TikaInputStream tstream, String password,
                                        RandomAccessStreamCache.StreamCacheCreateFunction streamCacheCreateFunction,
                                        Metadata metadata,
                                        ParseContext context)
@@ -512,7 +499,7 @@ public class PDFParser implements Parser, RenderingParser {
                         getPDDocument(tstream.getPath(), password, streamCacheCreateFunction, metadata,
                                 context);
             } else {
-                pdDocument = getPDDocument(CloseShieldInputStream.wrap(stream), password,
+                pdDocument = getPDDocument(CloseShieldInputStream.wrap(tis), password,
                         streamCacheCreateFunction, metadata, context);
             }
             if (tstream != null) {

@@ -19,8 +19,6 @@ package org.apache.tika.detect;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import java.io.BufferedInputStream;
-import java.io.InputStream;
 import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
@@ -47,12 +45,12 @@ public class FileCommandDetectorTest {
                 MimeTypes.getDefaultMimeTypes().getMediaTypeRegistry(),
                 Arrays.asList(fileDetector, defaultDetector));
 
-        try (InputStream is = new BufferedInputStream(getClass()
+        try (TikaInputStream tis = TikaInputStream.get(getClass()
                 .getResourceAsStream(TEST_FILE))) {
             //run more than once to ensure that the input stream is reset
             for (int i = 0; i < 2; i++) {
                 Metadata metadata = new Metadata();
-                MediaType answer = detector.detect(is, metadata);
+                MediaType answer = detector.detect(tis, metadata);
                 String fileMime = metadata.get(FileCommandDetector.FILE_MIME);
                 assertTrue(MediaType.text("xml").equals(answer) ||
                         MediaType.application("xml").equals(answer),
@@ -64,11 +62,11 @@ public class FileCommandDetectorTest {
         }
 
         //now try with TikaInputStream
-        try (InputStream is = TikaInputStream
+        try (TikaInputStream tis = TikaInputStream
                 .get(getClass().getResourceAsStream(TEST_FILE))) {
             //run more than once to ensure that the input stream is reset
             for (int i = 0; i < 2; i++) {
-                MediaType answer = detector.detect(is, new Metadata());
+                MediaType answer = detector.detect(tis, new Metadata());
                 assertTrue(MediaType.text("xml").equals(answer) ||
                         MediaType.application("xml").equals(answer),
                         "Expected text/xml or application/xml but got: " + answer);

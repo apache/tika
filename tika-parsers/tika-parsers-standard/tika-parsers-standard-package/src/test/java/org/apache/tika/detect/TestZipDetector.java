@@ -78,14 +78,14 @@ public class TestZipDetector extends TikaTest {
         metadata = new Metadata();
         try (InputStream is = new BufferedInputStream(Files.newInputStream(p))) {
             assertEquals(expectedMime, DETECTOR
-                    .detect(is, metadata)
+                    .detect(TikaInputStream.get(is), metadata)
                     .toString());
         }
 
         metadata = new Metadata();
         try (InputStream is = new ByteArrayInputStream(bytes)) {
             assertEquals(expectedMime, DETECTOR
-                    .detect(is, metadata)
+                    .detect(TikaInputStream.get(is), metadata)
                     .toString());
         }
     }

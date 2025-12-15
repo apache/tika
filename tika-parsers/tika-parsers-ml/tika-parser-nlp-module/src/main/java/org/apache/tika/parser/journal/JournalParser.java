@@ -17,9 +17,7 @@
 package org.apache.tika.parser.journal;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
@@ -28,7 +26,6 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -52,15 +49,14 @@ public class JournalParser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        TikaInputStream tis = TikaInputStream.get(stream, new TemporaryResources(), metadata);
         File tmpFile = tis.getFile();
 
         GrobidRESTParser grobidParser = new GrobidRESTParser();
         grobidParser.parse(tmpFile.getAbsolutePath(), handler, metadata, context);
 
-        try (InputStream pdfStream = new FileInputStream(tmpFile)) {
+        try (TikaInputStream pdfStream = TikaInputStream.get(tmpFile)) {
             PDFParser parser = new PDFParser();
             parser.parse(pdfStream, handler, metadata, context);
         }

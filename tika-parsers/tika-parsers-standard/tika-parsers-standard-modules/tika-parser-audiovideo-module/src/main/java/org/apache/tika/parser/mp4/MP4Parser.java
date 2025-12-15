@@ -46,7 +46,6 @@ import org.xml.sax.SAXException;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.RuntimeSAXException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -96,13 +95,10 @@ public class MP4Parser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
-        TemporaryResources tmp = new TemporaryResources();
-        TikaInputStream tstream = TikaInputStream.get(stream, tmp, metadata);
-
-        try (InputStream is = Files.newInputStream(tstream.getPath())) {
+        try (InputStream is = Files.newInputStream(tis.getPath())) {
 
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();
@@ -129,8 +125,6 @@ public class MP4Parser implements Parser {
                 metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, m);
             }
             xhtml.endDocument();
-        } finally {
-            tmp.dispose();
         }
     }
 

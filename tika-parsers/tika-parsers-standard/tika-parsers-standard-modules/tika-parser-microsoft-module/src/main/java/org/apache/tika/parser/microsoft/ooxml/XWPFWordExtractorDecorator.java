@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -67,6 +66,7 @@ import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTSectPr;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.EMFParser;
@@ -407,12 +407,12 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         }
         PackagePart packagePart = part.getPackagePart();
         if ("image/x-emf".equals(packagePart.getContentType())) {
-            try (InputStream is = packagePart.getInputStream()) {
+            try (TikaInputStream tis = TikaInputStream.get(packagePart.getInputStream())) {
                 EMFParser p = new EMFParser();
                 Metadata m = new Metadata();
                 ParseContext pc = new ParseContext();
                 ToTextContentHandler toTextContentHandler = new ToTextContentHandler();
-                p.parse(is, toTextContentHandler, m, pc);
+                p.parse(tis, toTextContentHandler, m, pc);
                 embeddedPartMetadata.setRenderedName(toTextContentHandler.toString().trim());
                 embeddedPartMetadata.setFullName(m.get(EMFParser.EMF_ICON_STRING));
             } catch (SecurityException e) {

@@ -154,7 +154,7 @@ public class OpenDocumentParser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler baseHandler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler baseHandler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         EmbeddedDocumentUtil embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
@@ -162,20 +162,12 @@ public class OpenDocumentParser implements Parser {
         // Open the Zip stream
         // Use a File if we can, and an already open zip is even better
         ZipFile zipFile = null;
-        TikaInputStream tmpTis = null;
-        if (stream instanceof TikaInputStream) {
-            TikaInputStream tis = (TikaInputStream) stream;
-            Object container = ((TikaInputStream) stream).getOpenContainer();
-            if (container instanceof ZipFile) {
-                zipFile = (ZipFile) container;
-            } else {
-                zipFile = new ZipFile(tis.getFile());
-                tis.setOpenContainer(zipFile);
-            }
+        Object container = tis.getOpenContainer();
+        if (container instanceof ZipFile) {
+            zipFile = (ZipFile) container;
         } else {
-            tmpTis = TikaInputStream.get(stream);
-            tmpTis.setOpenContainer(new ZipFile(tmpTis.getFile()));
-            zipFile = (ZipFile) tmpTis.getOpenContainer();
+            zipFile = new ZipFile(tis.getFile());
+            tis.setOpenContainer(zipFile);
         }
         // Prepare to handle the content
         XHTMLContentHandler xhtml = new XHTMLContentHandler(baseHandler, metadata);
@@ -185,15 +177,7 @@ public class OpenDocumentParser implements Parser {
         EndDocumentShieldingContentHandler handler = new EndDocumentShieldingContentHandler(xhtml);
 
         try {
-            try {
-                handleZipFile(zipFile, metadata, context, handler, embeddedDocumentUtil);
-            } finally {
-                //Do we want to close silently == catch an exception here?
-                if (tmpTis != null) {
-                    //tmpTis handles closing of the open zip container
-                    tmpTis.close();
-                }
-            }
+            handleZipFile(zipFile, metadata, context, handler, embeddedDocumentUtil);
         } catch (SAXException e) {
             if (e.getCause() instanceof EncryptedDocumentException) {
                 throw (EncryptedDocumentException)e.getCause();
@@ -259,22 +243,22 @@ public class OpenDocumentParser implements Parser {
             String type = IOUtils.toString(zip, UTF_8);
             metadata.set(Metadata.CONTENT_TYPE, type);
         } else if (entry.getName().equals(META_NAME)) {
-            meta.parse(zip, new DefaultHandler(), metadata, context);
+            meta.parse(TikaInputStream.get(zip), new DefaultHandler(), metadata, context);
         } else if (entry.getName().endsWith("content.xml")) {
             if (content instanceof OpenDocumentContentParser) {
                 ((OpenDocumentContentParser) content)
-                        .parseInternal(zip, handler, metadata, context);
+                        .parseInternal(TikaInputStream.get(zip), handler, metadata, context);
             } else {
                 // Foreign content parser was set:
-                content.parse(zip, handler, metadata, context);
+                content.parse(TikaInputStream.get(zip), handler, metadata, context);
             }
         } else if (entry.getName().endsWith("styles.xml")) {
             if (content instanceof OpenDocumentContentParser) {
                 ((OpenDocumentContentParser) content)
-                        .parseInternal(zip, handler, metadata, context);
+                        .parseInternal(TikaInputStream.get(zip), handler, metadata, context);
             } else {
                 // Foreign content parser was set:
-                content.parse(zip, handler, metadata, context);
+                content.parse(TikaInputStream.get(zip), handler, metadata, context);
             }
         } else {
             String embeddedName = entry.getName();
@@ -282,7 +266,7 @@ public class OpenDocumentParser implements Parser {
             if (embeddedName.contains("Thumbnails/") || embeddedName.contains("Pictures/")) {
 
                 Metadata embeddedMetadata = new Metadata();
-                TikaInputStream stream = TikaInputStream.get(zip);
+                TikaInputStream tis = TikaInputStream.get(zip);
 
                 embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, entry.getName());
                 if (embeddedName.startsWith("Thumbnails/")) {
@@ -295,15 +279,15 @@ public class OpenDocumentParser implements Parser {
                             TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
 
                     MediaType embeddedMimeType =
-                            embeddedDocumentUtil.getDetector().detect(stream, embeddedMetadata);
+                            embeddedDocumentUtil.getDetector().detect(tis, embeddedMetadata);
                     if (embeddedMimeType != null) {
                         embeddedMetadata.set(Metadata.CONTENT_TYPE, embeddedMimeType.toString());
                     }
-                    stream.reset();
+                    tis.reset();
                 }
 
                 if (embeddedDocumentUtil.shouldParseEmbedded(embeddedMetadata)) {
-                    embeddedDocumentUtil.parseEmbedded(stream, new EmbeddedContentHandler(handler),
+                    embeddedDocumentUtil.parseEmbedded(tis, new EmbeddedContentHandler(handler),
                             embeddedMetadata, false);
                 }
             } else if (extractMacros && embeddedName.contains("Basic/")) {

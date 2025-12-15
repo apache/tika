@@ -19,7 +19,6 @@ package org.apache.tika.parser;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.SAXParserFactory;
@@ -30,6 +29,7 @@ import org.junit.jupiter.api.Timeout;
 import org.xml.sax.SAXParseException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.utils.XMLReaderUtils;
 
 /**
@@ -64,7 +64,7 @@ public class TestXMLEntityExpansion extends XMLTestBase {
             throws Exception {
         boolean ex = false;
         try {
-            parse(testFileName, new ByteArrayInputStream(bytes), parser, context);
+            parse(testFileName, TikaInputStream.get(bytes), parser, context);
         } catch (SAXParseException e) {
             ex = true;
         } catch (TikaException e) {
@@ -85,7 +85,7 @@ public class TestXMLEntityExpansion extends XMLTestBase {
 
         Thread thread = new Thread(() -> {
             try {
-                parse("injected", new ByteArrayInputStream(injected),
+                parse("injected", TikaInputStream.get(injected),
                         new VulnerableSAXParser(), new ParseContext());
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -135,7 +135,7 @@ public class TestXMLEntityExpansion extends XMLTestBase {
         byte[] injected = injectXML(bytes, ENTITY_EXPANSION_BOMB);
         for (int i = 0; i < XMLReaderUtils.getPoolSize() * 6; i++) {
             try {
-                XMLReaderUtils.buildDOM(new ByteArrayInputStream(injected));
+                XMLReaderUtils.buildDOM(TikaInputStream.get(injected));
                 fail("should never parse!");
             } catch (SAXParseException e) {
                 //can't rely on message content with different xml parsers/java versions

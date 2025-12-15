@@ -19,7 +19,6 @@ package org.apache.tika.parser.image;
 import static org.apache.tika.parser.image.ICNSType.findIconType;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Set;
@@ -31,6 +30,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -52,17 +52,17 @@ public class ICNSParser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         byte[] header = new byte[4];
-        IOUtils.read(stream, header, 0, 4); // Extract magic byte
+        IOUtils.read(tis, header, 0, 4); // Extract magic byte
         if (header[0] == (byte) 'i' && header[1] == (byte) 'c' && header[2] == (byte) 'n' &&
                 header[3] == (byte) 's') {
             // Good, signature found
         } else {
             throw new TikaException("ICNS magic signature invalid");
         }
-        IOUtils.read(stream, header, 0, 4); //Extract image size/length of bytes in file
+        IOUtils.read(tis, header, 0, 4); //Extract image size/length of bytes in file
         int image_length = java.nio.ByteBuffer.wrap(header).getInt();
         image_length -= 8;//for the bytes read so far
         if (image_length > MAX_IMAGE_LENGTH_BYTES) {
@@ -72,7 +72,7 @@ public class ICNSParser implements Parser {
         }
 
         byte[] full_file = new byte[image_length];
-        IOUtils.readFully(stream, full_file);
+        IOUtils.readFully(tis, full_file);
         ArrayList<ICNSType> icons = new ArrayList<>();
         ArrayList<ICNSType> icon_masks = new ArrayList<>();
         byte[] tempByteArray = new byte[4];

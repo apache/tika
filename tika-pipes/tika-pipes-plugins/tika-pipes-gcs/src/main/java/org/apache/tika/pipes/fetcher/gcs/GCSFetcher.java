@@ -17,7 +17,6 @@
 package org.apache.tika.pipes.fetcher.gcs;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Map;
 
@@ -74,7 +73,7 @@ public class GCSFetcher extends AbstractTikaExtension implements Fetcher {
     }
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext)
+    public TikaInputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext)
             throws TikaException, IOException {
 
         LOGGER.debug("about to fetch fetchkey={} from bucket ({})", fetchKey, config.getBucket());

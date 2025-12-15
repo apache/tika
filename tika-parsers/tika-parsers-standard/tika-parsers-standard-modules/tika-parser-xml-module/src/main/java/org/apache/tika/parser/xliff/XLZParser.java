@@ -17,7 +17,6 @@
 package org.apache.tika.parser.xliff;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Set;
@@ -73,23 +72,18 @@ public class XLZParser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler baseHandler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler baseHandler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         ZipFile zipFile = null;
         ZipInputStream zipStream = null;
-        if (stream instanceof TikaInputStream) {
-            TikaInputStream tis = (TikaInputStream) stream;
-            Object container = ((TikaInputStream) stream).getOpenContainer();
-            if (container instanceof ZipFile) {
-                zipFile = (ZipFile) container;
-            } else if (tis.hasFile()) {
-                zipFile = new ZipFile(tis.getFile());
-            } else {
-                zipStream = new ZipInputStream(stream);
-            }
+        Object container = tis.getOpenContainer();
+        if (container instanceof ZipFile) {
+            zipFile = (ZipFile) container;
+        } else if (tis.hasFile()) {
+            zipFile = new ZipFile(tis.getFile());
         } else {
-            zipStream = new ZipInputStream(stream);
+            zipStream = new ZipInputStream(tis);
         }
 
         // Prepare to handle the content
@@ -124,7 +118,7 @@ public class XLZParser implements Parser {
         }
         while (entry != null) {
             if (entry.getName().contains(XLF)) {
-                xliffParser.parse(zipStream, handler, metadata, context);
+                xliffParser.parse(TikaInputStream.get(zipStream), handler, metadata, context);
             }
             entry = zipStream.getNextEntry();
         }
@@ -138,7 +132,7 @@ public class XLZParser implements Parser {
         while (entries.hasMoreElements()) {
             ZipEntry entry = entries.nextElement();
             if (entry.getName().contains(XLF)) {
-                xliffParser.parse(zipFile.getInputStream(entry), handler, metadata, context);
+                xliffParser.parse(TikaInputStream.get(zipFile.getInputStream(entry)), handler, metadata, context);
             }
         }
     }

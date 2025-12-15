@@ -190,10 +190,10 @@ public class TikaCLI {
     };
     private final OutputType DETECT = new OutputType() {
         @Override
-        public void process(InputStream stream, OutputStream output, Metadata metadata) throws Exception {
+        public void process(TikaInputStream tis, OutputStream output, Metadata metadata) throws Exception {
             PrintWriter writer = new PrintWriter(getOutputWriter(output, encoding));
             writer.println(detector
-                    .detect(stream, metadata)
+                    .detect(tis, metadata)
                     .toString());
             writer.flush();
         }
@@ -492,8 +492,8 @@ public class TikaCLI {
             configure();
 
             if (arg.equals("-")) {
-                try (InputStream stream = TikaInputStream.get(CloseShieldInputStream.wrap(System.in))) {
-                    type.process(stream, System.out, new Metadata());
+                try (TikaInputStream tis = TikaInputStream.get(CloseShieldInputStream.wrap(System.in))) {
+                    type.process(tis, System.out, new Metadata());
                 }
             } else {
                 URL url;
@@ -509,8 +509,8 @@ public class TikaCLI {
                     handleRecursiveJson(url, System.out);
                 } else {
                     Metadata metadata = new Metadata();
-                    try (InputStream input = TikaInputStream.get(url, metadata)) {
-                        type.process(input, System.out, metadata);
+                    try (TikaInputStream tis = TikaInputStream.get(url, metadata)) {
+                        type.process(tis, System.out, metadata);
                     } finally {
                         System.out.flush();
                     }
@@ -559,8 +559,8 @@ public class TikaCLI {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(getContentHandlerFactory(type), -1,
                 tikaLoader.loadMetadataFilters());
-        try (InputStream input = TikaInputStream.get(url, metadata)) {
-            wrapper.parse(input, handler, metadata, context);
+        try (TikaInputStream tis = TikaInputStream.get(url, metadata)) {
+            wrapper.parse(tis, handler, metadata, context);
         }
         JsonMetadataList.setPrettyPrinting(prettyPrint);
         try (Writer writer = getOutputWriter(output, encoding)) {
@@ -1104,14 +1104,14 @@ public class TikaCLI {
     }
 
     private class OutputType {
-        public void process(InputStream input, OutputStream output, Metadata metadata) throws Exception {
+        public void process(TikaInputStream tis, OutputStream output, Metadata metadata) throws Exception {
             Parser p = parser;
             if (fork) {
                 p = new ForkParser(TikaCLI.class.getClassLoader(), p);
             }
             ContentHandler handler = getContentHandler(output, metadata);
             try {
-                p.parse(input, handler, metadata, context);
+                p.parse(tis, handler, metadata, context);
                 // fix for TIKA-596: if a parser doesn't generate
                 // XHTML output, the lack of an output document prevents
                 // metadata from being output: this fixes that

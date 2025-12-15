@@ -18,9 +18,9 @@ package org.apache.tika.parser.mock;
 
 import java.util.Map;
 
+import org.apache.tika.fork.ParserFactory;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.ParserFactory;
 
 /**
  * Simple factory that returns a default AutoDetectParser.

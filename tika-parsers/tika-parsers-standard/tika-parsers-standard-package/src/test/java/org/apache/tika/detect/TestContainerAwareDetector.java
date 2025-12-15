@@ -620,28 +620,28 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
 
         //test default
         Detector detector = TikaLoader.loadDefault().loadDetectors();
-        try (InputStream is = TikaInputStream.get(bytes)) {
+        try (TikaInputStream is = TikaInputStream.get(bytes)) {
             assertEquals("application/msword",
                     detector.detect(is, new Metadata()).toString());
             assertEquals(len, countBytes(is));
         }
 
         detector = loadDetector("tika-4441-neg1.json");
-        try (InputStream is = TikaInputStream.get(bytes)) {
+        try (TikaInputStream is = TikaInputStream.get(bytes)) {
             assertEquals("application/msword",
                     detector.detect(is, new Metadata()).toString());
             assertEquals(len, countBytes(is));
         }
 
         detector = loadDetector("tika-4441-120.json");
-        try (InputStream is = TikaInputStream.get(bytes)) {
+        try (TikaInputStream is = TikaInputStream.get(bytes)) {
             assertEquals("application/x-tika-msoffice",
                     detector.detect(is, new Metadata()).toString());
             assertEquals(len, countBytes(is));
         }
 
         detector = loadDetector("tika-4441-12000000.json");
-        try (InputStream is = TikaInputStream.get(bytes)) {
+        try (TikaInputStream is = TikaInputStream.get(bytes)) {
             assertEquals("application/msword",
                     detector.detect(is, new Metadata()).toString());
             assertEquals(len, countBytes(is));

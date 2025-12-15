@@ -17,7 +17,6 @@
 package org.apache.tika.example;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -31,6 +30,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.detect.OverrideEncodingDetector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.ParseContext;
@@ -130,7 +130,7 @@ public class PickBestTextEncodingParser extends AbstractMultipleParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata originalMetadata, ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata originalMetadata, ParseContext context) throws IOException, SAXException, TikaException {
         // Use a BodyContentHandler for each of the charset test,
         //  then their real ContentHandler for the last one
         CharsetContentHandlerFactory handlerFactory = new CharsetContentHandlerFactory();
@@ -140,14 +140,14 @@ public class PickBestTextEncodingParser extends AbstractMultipleParser {
         context.set(CharsetTester.class, new CharsetTester());
 
         // Have the parsing done
-        super.parse(stream, handlerFactory, originalMetadata, context);
+        super.parse(tis, handlerFactory, originalMetadata, context);
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandlerFactory handlers, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(TikaInputStream tis, ContentHandlerFactory handlers, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
         // We only work with one ContentHandler as far as the user is
         //  concerned, any others are purely internal!
-        parse(stream, handlers.getNewContentHandler(), metadata, context);
+        parse(tis, handlers.getNewContentHandler(), metadata, context);
     }
 
     protected class CharsetContentHandlerFactory implements ContentHandlerFactory {

@@ -17,9 +17,9 @@
 package org.apache.tika.detect;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 import org.apache.tika.config.TikaComponent;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -34,7 +34,7 @@ public class EmptyDetector implements Detector {
      */
     public static final EmptyDetector INSTANCE = new EmptyDetector();
 
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
         return MediaType.OCTET_STREAM;
     }
 

@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.extractor.DocumentSelector;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.language.detect.LanguageHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -56,7 +57,7 @@ public class MetadataResource {
     @Path("form")
     public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info) throws Exception {
         return Response
-                .ok(parseMetadata(att.getObject(InputStream.class), new Metadata(), att.getHeaders(), info))
+                .ok(parseMetadata(TikaInputStream.get(att.getObject(InputStream.class)), new Metadata(), att.getHeaders(), info))
                 .build();
     }
 
@@ -75,7 +76,7 @@ public class MetadataResource {
 
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
-        try (InputStream tis = setupMultipartConfig(attachments, metadata, context)) {
+        try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
             // No need to parse embedded docs for metadata-only extraction
             context.set(DocumentSelector.class, metadata1 -> false);
 
@@ -161,7 +162,7 @@ public class MetadataResource {
                 .build();
     }
 
-    protected Metadata parseMetadata(InputStream is, Metadata metadata, MultivaluedMap<String, String> httpHeaders, UriInfo info)
+    protected Metadata parseMetadata(TikaInputStream tis, Metadata metadata, MultivaluedMap<String, String> httpHeaders, UriInfo info)
             throws IOException, TikaConfigException {
         final ParseContext context = new ParseContext();
         Parser parser = TikaResource.createParser();
@@ -170,7 +171,7 @@ public class MetadataResource {
         context.set(DocumentSelector.class, metadata1 -> false);
 
         TikaResource.logRequest(LOG, "/meta", metadata);
-        TikaResource.parse(parser, LOG, info.getPath(), is, new LanguageHandler() {
+        TikaResource.parse(parser, LOG, info.getPath(), tis, new LanguageHandler() {
             public void endDocument() {
                 metadata.set("language", getLanguage().getLanguage());
             }

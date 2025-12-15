@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.audio;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -38,6 +37,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
@@ -69,15 +69,12 @@ public class AudioParser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        // AudioSystem expects the stream to support the mark feature
-        if (!stream.markSupported()) {
-            stream = new BufferedInputStream(stream);
-        }
-        stream = new SkipFullyInputStream(stream);
+        // TikaInputStream always supports mark, wrap in SkipFullyInputStream for audio parsing
+        InputStream audioStream = new SkipFullyInputStream(tis);
         try {
-            AudioFileFormat fileFormat = AudioSystem.getAudioFileFormat(stream);
+            AudioFileFormat fileFormat = AudioSystem.getAudioFileFormat(audioStream);
             Type type = fileFormat.getType();
             if (type == Type.AIFC || type == Type.AIFF) {
                 metadata.set(Metadata.CONTENT_TYPE, "audio/x-aiff");

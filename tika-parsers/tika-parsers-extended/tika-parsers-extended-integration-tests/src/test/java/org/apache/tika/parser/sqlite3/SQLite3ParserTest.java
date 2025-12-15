@@ -19,7 +19,6 @@ package org.apache.tika.parser.sqlite3;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,15 +55,15 @@ public class SQLite3ParserTest extends TikaTest {
 
         //test different types of input streams
         //actual inputstream, memory buffered bytearray and literal file
-        try (InputStream stream = getResourceAsStream(TEST_FILE1)) {
-            _testBasic(stream);
+        try (TikaInputStream tis = getResourceAsStream(TEST_FILE1)) {
+            _testBasic(tis);
         }
 
-        try (InputStream is = getResourceAsStream(TEST_FILE1);
+        try (TikaInputStream tis = getResourceAsStream(TEST_FILE1);
                 ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            IOUtils.copy(is, bos);
-            try (InputStream stream = new ByteArrayInputStream(bos.toByteArray())) {
-                _testBasic(stream);
+            IOUtils.copy(tis, bos);
+            try (TikaInputStream innerTis = TikaInputStream.get(bos.toByteArray())) {
+                _testBasic(innerTis);
             }
         }
         try (TikaInputStream outer = TikaInputStream.get(getResourceAsStream(TEST_FILE1))) {
@@ -74,12 +73,12 @@ public class SQLite3ParserTest extends TikaTest {
         }
     }
 
-    private void _testBasic(InputStream stream) throws Exception {
+    private void _testBasic(TikaInputStream tis) throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, TEST_FILE_NAME);
         //1) getXML closes the stream
         //2) getXML runs recursively on the contents, so the embedded docs should show up
-        XMLResult result = getXML(stream, AUTO_DETECT_PARSER, metadata);
+        XMLResult result = getXML(tis, AUTO_DETECT_PARSER, metadata);
         String x = result.xml;
         //first table name
         assertContains("<table name=\"my_table1\"><thead><tr>\t<th>PK</th>", x);
@@ -112,9 +111,9 @@ public class SQLite3ParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         ParseContext parseContext = new ParseContext();
         parseContext.set(Parser.class, new EmptyParser());
-        try (InputStream is = getResourceAsStream(TEST_FILE1)) {
+        try (TikaInputStream tis = getResourceAsStream(TEST_FILE1)) {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, TEST_FILE_NAME);
-            AUTO_DETECT_PARSER.parse(is, handler, metadata, parseContext);
+            AUTO_DETECT_PARSER.parse(tis, handler, metadata, parseContext);
         }
         String xml = handler.toString();
         //just includes headers for embedded documents
@@ -138,9 +137,9 @@ public class SQLite3ParserTest extends TikaTest {
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.BODY, -1));
 
-        try (InputStream is = getResourceAsStream(TEST_FILE1)) {
+        try (TikaInputStream tis = getResourceAsStream(TEST_FILE1)) {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, TEST_FILE_NAME);
-            wrapper.parse(is, handler, metadata, new ParseContext());
+            wrapper.parse(tis, handler, metadata, new ParseContext());
         }
         List<Metadata> metadataList = handler.getMetadataList();
         assertEquals(5, metadataList.size());
@@ -174,9 +173,9 @@ public class SQLite3ParserTest extends TikaTest {
         ParserContainerExtractor ex = new ParserContainerExtractor();
         ByteCopyingHandler byteCopier = new ByteCopyingHandler();
         Metadata metadata = new Metadata();
-        try (TikaInputStream is = TikaInputStream.get(getResourceAsStream(TEST_FILE1))) {
+        try (TikaInputStream tis = TikaInputStream.get(getResourceAsStream(TEST_FILE1))) {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, TEST_FILE_NAME);
-            ex.extract(is, ex, byteCopier);
+            ex.extract(tis, ex, byteCopier);
         }
         assertEquals(4, byteCopier.bytes.size());
         String[] strings = new String[4];

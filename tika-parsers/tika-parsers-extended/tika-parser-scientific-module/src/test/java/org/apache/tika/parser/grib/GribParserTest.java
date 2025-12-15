@@ -19,11 +19,10 @@ package org.apache.tika.parser.grib;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -40,9 +39,9 @@ public class GribParserTest {
         Parser parser = new GribParser();
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
-        try (InputStream stream = GribParser.class
-                .getResourceAsStream("/test-documents/gdas1.forecmwf.2014062612.grib2")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
+        try (TikaInputStream tis = TikaInputStream.get(GribParser.class
+                .getResourceAsStream("/test-documents/gdas1.forecmwf.2014062612.grib2"))) {
+            parser.parse(tis, handler, metadata, new ParseContext());
         }
         assertNotNull(metadata);
         String content = handler.toString();

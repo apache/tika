@@ -70,7 +70,7 @@ public class TruncatedOOXMLTest extends TikaTest {
         Metadata metadata = new Metadata();
         try (InputStream is = new BufferedInputStream(TruncatedOOXMLTest.class.getResourceAsStream(
                 "/test-documents/testWORD_truncated.docx"))) {
-            MediaType mediaType = detector.detect(is, metadata);
+            MediaType mediaType = detector.detect(TikaInputStream.get(is), metadata);
             assertEquals(MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document"),
                     mediaType);
         }

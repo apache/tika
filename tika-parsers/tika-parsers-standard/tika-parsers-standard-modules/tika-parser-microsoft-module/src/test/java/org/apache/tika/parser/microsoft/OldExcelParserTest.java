@@ -42,9 +42,9 @@ public class OldExcelParserTest extends TikaTest {
     @Test
     public void testDetection() throws Exception {
         Detector detector = new DefaultDetector();
-        try (TikaInputStream stream = getTestFile(file)) {
+        try (TikaInputStream tis = getTestFile(file)) {
             assertEquals(MediaType.application("vnd.ms-excel.sheet.4"),
-                    detector.detect(stream, new Metadata()));
+                    detector.detect(tis, new Metadata()));
         }
     }
 
@@ -52,13 +52,13 @@ public class OldExcelParserTest extends TikaTest {
     @Test
     @Disabled
     public void testMetadata() throws Exception {
-        TikaInputStream stream = getTestFile(file);
+        TikaInputStream tis = getTestFile(file);
 
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
 
         OldExcelParser parser = new OldExcelParser();
-        parser.parse(stream, handler, metadata, new ParseContext());
+        parser.parse(tis, handler, metadata, new ParseContext());
 
         // We can get the content type
         assertEquals("application/vnd.ms-excel.sheet.4", metadata.get(Metadata.CONTENT_TYPE));
@@ -76,8 +76,8 @@ public class OldExcelParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (TikaInputStream stream = getTestFile(file)) {
-            new OldExcelParser().parse(stream, handler, metadata, new ParseContext());
+        try (TikaInputStream tis = getTestFile(file)) {
+            new OldExcelParser().parse(tis, handler, metadata, new ParseContext());
         }
 
         String text = handler.toString();

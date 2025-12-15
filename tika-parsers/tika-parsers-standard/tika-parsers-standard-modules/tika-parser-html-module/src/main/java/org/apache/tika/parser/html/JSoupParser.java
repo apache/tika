@@ -18,7 +18,6 @@ package org.apache.tika.parser.html;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.nio.charset.Charset;
@@ -51,6 +50,7 @@ import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
@@ -155,11 +155,11 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
     }
 
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         EncodingDetector encodingDetector = getEncodingDetector(context);
-        Charset charset = encodingDetector.detect(stream, metadata);
+        Charset charset = encodingDetector.detect(tis, metadata);
         charset = charset == null ? DEFAULT_CHARSET : charset;
         String previous = metadata.get(Metadata.CONTENT_TYPE);
         MediaType contentType = null;
@@ -190,7 +190,7 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
         */
 
         //do better with baseUri?
-        Document document = Jsoup.parse(CloseShieldInputStream.wrap(stream), charset.name(), "",
+        Document document = Jsoup.parse(CloseShieldInputStream.wrap(tis), charset.name(), "",
                 Parser.htmlParser().tagSet(tagSet));
         document.quirksMode(Document.QuirksMode.quirks);
         ContentHandler xhtml = new XHTMLDowngradeHandler(

@@ -17,11 +17,11 @@
 package org.apache.tika.detect;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 
 import org.apache.tika.config.SelfConfiguring;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 
 /**
@@ -41,19 +41,19 @@ public interface EncodingDetector extends Serializable, SelfConfiguring {
      * argument may be <code>null</code>. Otherwise the detector may
      * read bytes from the start of the stream to help in encoding detection.
      * The given stream is guaranteed to support the
-     * {@link InputStream#markSupported() mark feature} and the detector
-     * is expected to {@link InputStream#mark(int) mark} the stream before
-     * reading any bytes from it, and to {@link InputStream#reset() reset}
+     * {@link TikaInputStream#markSupported() mark feature} and the detector
+     * is expected to {@link TikaInputStream#mark(int) mark} the stream before
+     * reading any bytes from it, and to {@link TikaInputStream#reset() reset}
      * the stream before returning. The stream must not be closed by the
      * detector.
      * <p>
      * The given input metadata is only read, not modified, by the detector.
      *
-     * @param input    text document input stream, or <code>null</code>
+     * @param tis      text document input stream, or <code>null</code>
      * @param metadata input metadata for the document
      * @return detected character encoding, or <code>null</code>
      * @throws IOException if the document input stream could not be read
      */
-    Charset detect(InputStream input, Metadata metadata) throws IOException;
+    Charset detect(TikaInputStream tis, Metadata metadata) throws IOException;
 
 }

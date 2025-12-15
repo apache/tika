@@ -17,7 +17,6 @@
 package org.apache.tika.parser.image;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
@@ -49,12 +48,12 @@ public class WebPParser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         TemporaryResources tmp = new TemporaryResources();
         try {
-            TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
-            new ImageMetadataExtractor(metadata).parseWebP(tis.getFile());
+            TikaInputStream inner = TikaInputStream.get(tis, tmp, metadata);
+            new ImageMetadataExtractor(metadata).parseWebP(inner.getFile());
         } finally {
             tmp.dispose();
         }

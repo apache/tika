@@ -90,7 +90,7 @@ public class ParsingExample {
         BodyContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
         try (InputStream stream = ParsingExample.class.getResourceAsStream("test.doc")) {
-            parser.parse(stream, handler, metadata);
+            parser.parse(TikaInputStream.get(stream), handler, metadata);
             return handler.toString();
         }
     }
@@ -109,7 +109,7 @@ public class ParsingExample {
         ParseContext parseContext = new ParseContext();
         parseContext.set(Parser.class, new EmptyParser());
         try (InputStream stream = ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx")) {
-            parser.parse(stream, handler, metadata, parseContext);
+            parser.parse(TikaInputStream.get(stream), handler, metadata, parseContext);
             return handler.toString();
         }
     }
@@ -131,7 +131,7 @@ public class ParsingExample {
         ParseContext context = new ParseContext();
         context.set(Parser.class, parser);
         try (InputStream stream = ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx")) {
-            parser.parse(stream, handler, metadata, context);
+            parser.parse(TikaInputStream.get(stream), handler, metadata, context);
             return handler.toString();
         }
     }
@@ -168,7 +168,7 @@ public class ParsingExample {
         ParseContext context = new ParseContext();
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(factory, -1);
         try (InputStream stream = ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx")) {
-            wrapper.parse(stream, handler, metadata, context);
+            wrapper.parse(TikaInputStream.get(stream), handler, metadata, context);
         }
 
         return handler.getMetadataList();
@@ -207,8 +207,8 @@ public class ParsingExample {
     public List<Path> extractEmbeddedDocumentsExample(Path outputPath) throws IOException, SAXException, TikaException {
         ExtractEmbeddedFiles ex = new ExtractEmbeddedFiles();
         List<Path> ret = new ArrayList<>();
-        try (TikaInputStream stream = TikaInputStream.get(ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx"))) {
-            ex.extract(stream, outputPath);
+        try (TikaInputStream tis = TikaInputStream.get(ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx"))) {
+            ex.extract(tis, outputPath);
             try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(outputPath)) {
                 for (Path entry : dirStream) {
                     ret.add(entry);

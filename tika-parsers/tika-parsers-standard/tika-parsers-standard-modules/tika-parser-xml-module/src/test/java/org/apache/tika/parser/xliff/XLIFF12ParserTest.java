@@ -18,12 +18,11 @@ package org.apache.tika.parser.xliff;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
@@ -32,10 +31,10 @@ public class XLIFF12ParserTest extends TikaTest {
 
     @Test
     public void testXLIFF12() throws Exception {
-        try (InputStream input = getResourceAsStream("/test-documents/testXLIFF12.xlf")) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testXLIFF12.xlf")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new XLIFF12Parser().parse(input, handler, metadata, new ParseContext());
+            new XLIFF12Parser().parse(tis, handler, metadata, new ParseContext());
             String content = handler.toString();
             assertContains("Hooray", content);
             assertEquals("2", metadata.get("file-count"));

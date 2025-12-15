@@ -28,6 +28,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collections;
 import java.util.HashSet;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -101,7 +102,7 @@ public class StandardsExtractionExample {
         StandardsExtractingContentHandler handler = new StandardsExtractingContentHandler(new BodyContentHandler(-1), metadata);
         handler.setThreshold(0.75);
         try (InputStream stream = new BufferedInputStream(Files.newInputStream(path))) {
-            parser.parse(stream, handler, metadata, new ParseContext());
+            parser.parse(TikaInputStream.get(stream), handler, metadata, new ParseContext());
         }
         String[] references = metadata.getValues(StandardsExtractingContentHandler.STANDARD_REFERENCES);
         Collections.addAll(standardReferences, references);

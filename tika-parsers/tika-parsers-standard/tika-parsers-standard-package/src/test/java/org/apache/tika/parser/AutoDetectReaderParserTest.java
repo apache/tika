@@ -18,7 +18,6 @@ package org.apache.tika.parser;
 
 import java.io.FileFilter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,6 +31,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -64,7 +64,7 @@ public class AutoDetectReaderParserTest extends MultiThreadedTikaTest {
         }
 
         @Override
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+        public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                           ParseContext context) throws IOException, SAXException, TikaException {
             try (AutoDetectReader reader = new AutoDetectReader(stream)) {
                 Charset charset = reader.getCharset();

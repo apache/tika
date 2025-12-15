@@ -41,6 +41,7 @@ import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.fork.ForkParser;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.EmptyParser;
@@ -68,7 +69,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
             ContentHandler output = new BodyContentHandler();
             InputStream stream = getResourceAsStream("/test-documents/testTXT.txt");
             ParseContext context = new ParseContext();
-            parser.parse(stream, output, new Metadata(), context);
+            parser.parse(TikaInputStream.get(stream), output, new Metadata(), context);
 
             String content = output.toString();
             assertContains("Test d'indexation", content);
@@ -90,7 +91,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
         try {
             ContentHandler output = new BodyContentHandler();
             ParseContext context = new ParseContext();
-            parser.parse(stream, output, new Metadata(), context);
+            parser.parse(TikaInputStream.get(stream), output, new Metadata(), context);
             fail("Expected TikaException caused by Error");
         } catch (TikaException e) {
             assertEquals(brokenParser.err, e.getCause());
@@ -126,7 +127,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
 
         ParseContext context = new ParseContext();
         context.set(Detector.class, new Detector() {
-            public MediaType detect(InputStream input, Metadata metadata) {
+            public MediaType detect(TikaInputStream input, Metadata metadata) {
                 return MediaType.OCTET_STREAM;
             }
         });
@@ -134,7 +135,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
         try {
             ContentHandler output = new BodyContentHandler();
             InputStream stream = getResourceAsStream("/test-documents/testTXT.txt");
-            parser.parse(stream, output, new Metadata(), context);
+            parser.parse(TikaInputStream.get(stream), output, new Metadata(), context);
             fail("Should have blown up with a non serializable ParseContext");
         } catch (TikaException e) {
             // Check the right details
@@ -169,7 +170,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
         try {
             ContentHandler body = new BodyContentHandler();
             InputStream stream = getResourceAsStream("/test-documents/testTXT.txt");
-            parser.parse(stream, body, new Metadata(), context);
+            parser.parse(TikaInputStream.get(stream), body, new Metadata(), context);
             String content = body.toString();
             assertContains("Test d'indexation", content);
             assertContains("http://www.apache.org", content);
@@ -190,7 +191,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
             InputStream stream = getResourceAsStream("/test-documents/testPDF.pdf");
             ParseContext context = new ParseContext();
             context.set(Parser.class, new EmptyParser());
-            parser.parse(stream, output, new Metadata(), context);
+            parser.parse(TikaInputStream.get(stream), output, new Metadata(), context);
 
             String content = output.toString();
             assertContains("Apache Tika", content);
@@ -207,7 +208,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
             ContentHandler output = new BodyContentHandler();
             InputStream stream = getResourceAsStream("/test-documents/moby.zip");
             ParseContext context = new ParseContext();
-            parser.parse(stream, output, new Metadata(), context);
+            parser.parse(TikaInputStream.get(stream), output, new Metadata(), context);
             assertContains("Moby Dick", output.toString());
         }
     }
@@ -223,7 +224,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
             ContentHandler output = new BodyContentHandler();
             InputStream stream = getResourceAsStream("/test-documents/testPST.pst");
             ParseContext context = new ParseContext();
-            parser.parse(stream, output, new Metadata(), context);
+            parser.parse(TikaInputStream.get(stream), output, new Metadata(), context);
             assertContains("Barry Olddog", output.toString());
         }
     }
@@ -333,7 +334,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
             return new HashSet<>(Collections.singletonList(MediaType.TEXT_PLAIN));
         }
 
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+        public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
                           ParseContext context) throws IOException, SAXException, TikaException {
             if (re != null) {
                 throw re;

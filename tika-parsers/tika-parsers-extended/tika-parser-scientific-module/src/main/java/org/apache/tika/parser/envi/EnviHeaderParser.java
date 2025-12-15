@@ -17,7 +17,6 @@
 package org.apache.tika.parser.envi;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,6 +33,7 @@ import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
@@ -67,7 +67,7 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         // Only outputting the MIME type as metadata
@@ -75,7 +75,7 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
 
         // The following code was taken from the TXTParser
         // Automatically detect the character encoding
-        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(stream),
+        try (AutoDetectReader reader = new AutoDetectReader(CloseShieldInputStream.wrap(tis),
                 metadata, getEncodingDetector(context))) {
             Charset charset = reader.getCharset();
             // deprecated, see TIKA-431
@@ -85,7 +85,7 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
             readLines(reader, metadata);
             xhtml.endDocument();
         } catch (IOException | TikaException e) {
-            LOG.error("Error reading input data stream.", e);
+            LOG.error("Error reading input data tis.", e);
         }
 
     }

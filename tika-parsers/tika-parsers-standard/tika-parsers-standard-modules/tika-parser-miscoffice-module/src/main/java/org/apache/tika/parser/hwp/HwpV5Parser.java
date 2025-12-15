@@ -17,7 +17,6 @@
 package org.apache.tika.parser.hwp;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
@@ -26,6 +25,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -51,7 +51,7 @@ public class HwpV5Parser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         metadata.set(Metadata.CONTENT_TYPE, HWP_MIME_TYPE);
@@ -60,7 +60,7 @@ public class HwpV5Parser implements Parser {
         xhtml.startDocument();
 
         try {
-            extractor.extract(stream, metadata, xhtml);
+            extractor.extract(tis, metadata, xhtml);
         } finally {
             xhtml.endDocument();
         }

@@ -41,21 +41,21 @@ public class TNEFParserTest extends AbstractPOIContainerExtractionTest {
     @Test
     public void testBasics() throws Exception {
         Detector detector = new DefaultDetector();
-        try (TikaInputStream stream = getTestFile(file)) {
+        try (TikaInputStream tis = getTestFile(file)) {
             assertEquals(MediaType.application("vnd.ms-tnef"),
-                    detector.detect(stream, new Metadata()));
+                    detector.detect(tis, new Metadata()));
         }
     }
 
     @Test
     public void testMetadata() throws Exception {
-        TikaInputStream stream = getTestFile(file);
+        TikaInputStream tis = getTestFile(file);
 
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
 
         TNEFParser tnef = new TNEFParser();
-        tnef.parse(stream, handler, metadata, new ParseContext());
+        tnef.parse(tis, handler, metadata, new ParseContext());
 
         assertEquals("This is a test message", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("This is a test message", metadata.get(TikaCoreProperties.SUBJECT));

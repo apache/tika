@@ -28,6 +28,7 @@ import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -43,27 +44,27 @@ public class GZipSpecializationDetector implements Detector {
     public static MediaType ARC_GZ = MediaType.application("arc+gz");
 
     @Override
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
-        if (input == null) {
+    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
+        if (tis == null) {
             return MediaType.OCTET_STREAM;
         }
-        input.mark(2);
+        tis.mark(2);
         byte[] firstTwo = new byte[2];
         try {
             // do not change this to commons-io IOUtils.readFully because
             // org.apache.tika.parser.AutoDetectParserConfigTest tests will fail
-            org.apache.commons.compress.utils.IOUtils.readFully(input, firstTwo);
+            org.apache.commons.compress.utils.IOUtils.readFully(tis, firstTwo);
         } finally {
-            input.reset();
+            tis.reset();
         }
         int magic = ((firstTwo[1] & 0xff) << 8) | (firstTwo[0] & 0xff);
         if (GZIPInputStream.GZIP_MAGIC != magic) {
             return MediaType.OCTET_STREAM;
         }
-        return detectSpecialization(input, metadata);
+        return detectSpecialization(tis, metadata);
     }
 
-    private MediaType detectSpecialization(InputStream input, Metadata metadata) throws IOException {
+    private MediaType detectSpecialization(TikaInputStream input, Metadata metadata) throws IOException {
 
         int buffSize = 1024;
         UnsynchronizedByteArrayOutputStream gzippedBytes = UnsynchronizedByteArrayOutputStream.builder().get();

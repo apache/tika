@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -53,7 +54,7 @@ public class IWork13ParserTest extends TikaTest {
         InputStream input = getResourceAsStream("/test-documents/testKeynote2013.key");
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
-        iWorkParser.parse(input, handler, metadata, parseContext);
+        iWorkParser.parse(TikaInputStream.get(input), handler, metadata, parseContext);
 
         assertEquals(9, metadata.size());
         assertEquals(IWork13PackageParser.IWork13DocumentType.KEYNOTE13.getType().toString(),
@@ -65,7 +66,7 @@ public class IWork13ParserTest extends TikaTest {
         InputStream input = getResourceAsStream("/test-documents/testNumbers2013.numbers");
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
-        iWorkParser.parse(input, handler, metadata, parseContext);
+        iWorkParser.parse(TikaInputStream.get(input), handler, metadata, parseContext);
 
         // Currently parsing is a no-op, and we can't get the type without
         //  decoding the Snappy stream
@@ -81,7 +82,7 @@ public class IWork13ParserTest extends TikaTest {
         InputStream input = getResourceAsStream("/test-documents/testPages2013.pages");
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
-        iWorkParser.parse(input, handler, metadata, parseContext);
+        iWorkParser.parse(TikaInputStream.get(input), handler, metadata, parseContext);
 
         // Currently parsing is a no-op, and we can't get the type without
         //  decoding the Snappy stream

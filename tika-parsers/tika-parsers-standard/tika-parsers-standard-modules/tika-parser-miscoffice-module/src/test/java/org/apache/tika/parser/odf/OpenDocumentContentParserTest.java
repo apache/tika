@@ -19,8 +19,6 @@ package org.apache.tika.parser.odf;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -42,9 +41,9 @@ public class OpenDocumentContentParserTest extends TikaTest {
         Parser p = new OpenDocumentContentParser();
         Metadata metadata = new Metadata();
         XMLResult r = null;
-        try (InputStream is = new GzipCompressorInputStream(getResourceAsStream(
-                "/test-documents/testODTBodyListOpenClose.xml.gz"))) {
-            r = getXML(is, p, metadata);
+        try (TikaInputStream tis = TikaInputStream.get(new GzipCompressorInputStream(getResourceAsStream(
+                "/test-documents/testODTBodyListOpenClose.xml.gz")))) {
+            r = getXML(tis, p, metadata);
         }
         String xml = r.xml;
         //extract all the tags
@@ -66,7 +65,7 @@ public class OpenDocumentContentParserTest extends TikaTest {
         assertFalse(m.find());
 
         //just make sure this doesn't throw any exceptions
-        XMLReaderUtils.parseSAX(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)),
+        XMLReaderUtils.parseSAX(TikaInputStream.get(xml.getBytes(StandardCharsets.UTF_8)),
                 new DefaultHandler(), new ParseContext());
     }
 }

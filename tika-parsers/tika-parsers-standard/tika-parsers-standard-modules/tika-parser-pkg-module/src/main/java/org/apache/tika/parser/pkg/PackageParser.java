@@ -26,9 +26,7 @@ import static org.apache.tika.detect.zip.PackageConstants.SEVENZ;
 import static org.apache.tika.detect.zip.PackageConstants.TAR;
 import static org.apache.tika.detect.zip.PackageConstants.ZIP;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Date;
@@ -247,23 +245,20 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
-        // Ensure that the stream supports the mark feature
-        if (!stream.markSupported()) {
-            stream = new BufferedInputStream(stream);
-        }
+        // TikaInputStream always supports mark
 
         TemporaryResources tmp = new TemporaryResources();
         try {
-            _parse(stream, handler, metadata, context, tmp);
+            _parse(tis, handler, metadata, context, tmp);
         } finally {
             tmp.close();
         }
     }
 
-    private void _parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    private void _parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                 ParseContext context, TemporaryResources tmp)
             throws TikaException, IOException, SAXException {
         ArchiveInputStream ais = null;
@@ -281,14 +276,14 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 // At the end we want to close the archive stream to release
                 // any associated resources, but the underlying document stream
                 // should not be closed
-            ais = factory.createArchiveInputStream(CloseShieldInputStream.wrap(stream));
+            ais = factory.createArchiveInputStream(CloseShieldInputStream.wrap(tis));
 
         } catch (StreamingNotSupportedException sne) {
             // Most archive formats work on streams, but a few need files
             if (sne.getFormat().equals(ArchiveStreamFactory.SEVEN_Z)) {
                 // Rework as a file, and wrap
-                stream.reset();
-                TikaInputStream tstream = TikaInputStream.get(stream, tmp, metadata);
+                tis.reset();
+                TikaInputStream tstream = TikaInputStream.get(tis, tmp, metadata);
 
                 // Seven Zip suports passwords, was one given?
                 String password = null;
@@ -329,7 +324,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         xhtml.startDocument();
 
         // mark before we start parsing entries for potential reset
-        stream.mark(MARK_LIMIT);
+        tis.mark(MARK_LIMIT);
         //needed for mutable int by ref, not for thread safety.
         //this keeps track of how many entries were processed.
         AtomicInteger entryCnt = new AtomicInteger();
@@ -341,8 +336,8 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 // Close archive input stream and create a new one that could handle data descriptor
                 ais.close();
                 // An exception would be thrown if MARK_LIMIT is not big enough
-                stream.reset();
-                ais = new ZipArchiveInputStream(CloseShieldInputStream.wrap(stream), encoding, true,
+                tis.reset();
+                ais = new ZipArchiveInputStream(CloseShieldInputStream.wrap(tis), encoding, true,
                         true);
                 parseEntries(ais, metadata, extractor, xhtml, true, entryCnt);
             }
@@ -459,7 +454,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
 
             Charset candidate =
                     getEncodingDetector().detect(
-                            UnsynchronizedByteArrayInputStream.builder().setByteArray(extendedEntryName).get(),
+                            TikaInputStream.get(UnsynchronizedByteArrayInputStream.builder().setByteArray(extendedEntryName).get()),
                             parentMetadata);
             if (candidate != null) {
                 name = new String(((ZipArchiveEntry) entry).getRawName(), candidate);

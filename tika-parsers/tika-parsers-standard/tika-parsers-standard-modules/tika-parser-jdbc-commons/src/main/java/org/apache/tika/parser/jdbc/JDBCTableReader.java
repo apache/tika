@@ -214,13 +214,13 @@ public class JDBCTableReader {
         m.set(Database.PREFIX + "ROW_NUM", Integer.toString(rowNum));
         m.set(Database.PREFIX + "IS_BLOB", "true");
         Blob blob = null;
-        TikaInputStream is = null;
+        TikaInputStream tis = null;
         try {
             blob = getBlob(resultSet, columnIndex, m);
             if (blob == null) {
                 return;
             }
-            is = TikaInputStream.get(blob, m);
+            tis = TikaInputStream.get(blob, m);
             Attributes attrs = new AttributesImpl();
             ((AttributesImpl) attrs).addAttribute("", "type", "type", "CDATA", "blob");
             ((AttributesImpl) attrs)
@@ -228,14 +228,14 @@ public class JDBCTableReader {
             ((AttributesImpl) attrs).addAttribute("", "row_number", "row_number", "CDATA",
                     Integer.toString(rowNum));
             handler.startElement("", "span", "span", attrs);
-            String extension = embeddedDocumentUtil.getExtension(is, m);
+            String extension = embeddedDocumentUtil.getExtension(tis, m);
 
             m.set(TikaCoreProperties.RESOURCE_NAME_KEY,
                     //just in case something screwy is going on with the column name
                     FilenameUtils.normalize(
                             FilenameUtils.getName(columnName + "_" + rowNum + extension)));
             if (embeddedDocumentUtil.shouldParseEmbedded(m)) {
-                embeddedDocumentUtil.parseEmbedded(is, handler, m, true);
+                embeddedDocumentUtil.parseEmbedded(tis, handler, m, true);
             }
 
         } finally {
@@ -246,7 +246,7 @@ public class JDBCTableReader {
                     //swallow
                 }
             }
-            IOUtils.closeQuietly(is);
+            IOUtils.closeQuietly(tis);
         }
         handler.endElement("", "span", "span");
     }

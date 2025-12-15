@@ -17,11 +17,11 @@
 package org.apache.tika.detect;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 import org.apache.commons.io.IOUtils;
 
 import org.apache.tika.config.TikaComponent;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -46,24 +46,24 @@ public class MatroskaDetector implements Detector {
     /**
      * Detects the media type of the input stream by inspecting EBML headers.
      *
-     * @param input    the input stream
+     * @param tis      the input stream
      * @param metadata the metadata to populate
      * @return detected MediaType (WEBM, Matroska, or OCTET_STREAM)
      * @throws IOException if an I/O error occurs
      */
     @Override
-    public MediaType detect(InputStream input, Metadata metadata) throws IOException {
-        if (input == null) {
+    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
+        if (tis == null) {
             return MediaType.OCTET_STREAM;
         }
-        input.mark(64);
+        tis.mark(64);
 
         byte[] header = new byte[64];
         int bytesRead = -1;
         try {
-            bytesRead = IOUtils.read(input, header, 0, 64);
+            bytesRead = IOUtils.read(tis, header, 0, 64);
         } finally {
-            input.reset();
+            tis.reset();
         }
 
         if (bytesRead < EBML_HEADER.length) {

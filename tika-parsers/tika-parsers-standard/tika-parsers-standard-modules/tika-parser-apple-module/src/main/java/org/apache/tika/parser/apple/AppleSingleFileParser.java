@@ -35,7 +35,6 @@ import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.EndianUtils;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -81,40 +80,28 @@ public class AppleSingleFileParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         EmbeddedDocumentExtractor ex = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
-        short numEntries = readThroughNumEntries(stream);
+        short numEntries = readThroughNumEntries(tis);
         long bytesRead = 26;
-        List<FieldInfo> fieldInfoList = getSortedFieldInfoList(stream, numEntries);
+        List<FieldInfo> fieldInfoList = getSortedFieldInfoList(tis, numEntries);
         bytesRead += 12 * numEntries;
         Metadata embeddedMetadata = new Metadata();
-        bytesRead = processFieldEntries(stream, fieldInfoList, embeddedMetadata, bytesRead);
+        bytesRead = processFieldEntries(tis, fieldInfoList, embeddedMetadata, bytesRead);
         FieldInfo contentFieldInfo = getContentFieldInfo(fieldInfoList);
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         if (contentFieldInfo != null) {
             long diff = contentFieldInfo.offset - bytesRead;
-            IOUtils.skipFully(stream, diff);
+            IOUtils.skipFully(tis, diff);
             if (ex.shouldParseEmbedded(embeddedMetadata)) {
                 // TODO: we should probably add a readlimiting wrapper around this
                 // stream to ensure that not more than contentFieldInfo.length bytes
                 // are read
-                TikaInputStream tis = TikaInputStream.cast(stream);
-                TemporaryResources tmp = null;
-                if (tis == null) {
-                    tmp = new TemporaryResources();
-                    tis = TikaInputStream.get(stream, tmp, embeddedMetadata);
-                }
-                try {
-                    ex.parseEmbedded(tis, xhtml, embeddedMetadata, true);
-                } finally {
-                    if (tmp != null) {
-                        tmp.close();
-                    }
-                }
+                ex.parseEmbedded(tis, xhtml, embeddedMetadata, true);
             }
         }
         xhtml.endDocument();
@@ -130,27 +117,27 @@ public class AppleSingleFileParser implements Parser {
         return null;
     }
 
-    private long processFieldEntries(InputStream stream, List<FieldInfo> fieldInfoList,
+    private long processFieldEntries(InputStream tis, List<FieldInfo> fieldInfoList,
                                      Metadata embeddedMetadata, long bytesRead)
             throws IOException, TikaException {
         byte[] buffer = null;
         for (FieldInfo f : fieldInfoList) {
             long diff = f.offset - bytesRead;
             //just in case
-            IOUtils.skipFully(stream, diff);
+            IOUtils.skipFully(tis, diff);
             bytesRead += diff;
             if (f.entryId == REAL_NAME) {
                 if (f.length > MAX_FIELD_LENGTH) {
                     throw new TikaMemoryLimitException(f.length, MAX_FIELD_LENGTH);
                 }
                 buffer = new byte[(int) f.length];
-                IOUtils.readFully(stream, buffer);
+                IOUtils.readFully(tis, buffer);
                 bytesRead += f.length;
                 String originalFileName =
                         new String(buffer, 0, buffer.length, StandardCharsets.US_ASCII);
                 embeddedMetadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, originalFileName);
             } else if (f.entryId != DATA_FORK) {
-                IOUtils.skipFully(stream, f.length);
+                IOUtils.skipFully(tis, f.length);
                 bytesRead += f.length;
             }
         }
@@ -158,16 +145,16 @@ public class AppleSingleFileParser implements Parser {
     }
 
 
-    private List<FieldInfo> getSortedFieldInfoList(InputStream stream, short numEntries)
+    private List<FieldInfo> getSortedFieldInfoList(InputStream tis, short numEntries)
             throws IOException, TikaException {
         //this is probably overkill.  I'd hope that these were already
         //in order.  This ensures it.
         List<FieldInfo> fieldInfoList = new ArrayList<>(numEntries);
         for (int i = 0; i < numEntries; i++) {
             //convert 32-bit unsigned ints to longs
-            fieldInfoList.add(new FieldInfo(EndianUtils.readUIntBE(stream), //entry id
-                    EndianUtils.readUIntBE(stream), //offset
-                    EndianUtils.readUIntBE(stream) //length
+            fieldInfoList.add(new FieldInfo(EndianUtils.readUIntBE(tis), //entry id
+                    EndianUtils.readUIntBE(tis), //offset
+                    EndianUtils.readUIntBE(tis) //length
             ));
         }
         if (fieldInfoList.size() == 0) {
@@ -179,16 +166,16 @@ public class AppleSingleFileParser implements Parser {
     }
 
     //read through header until you hit the number of entries
-    private short readThroughNumEntries(InputStream stream) throws TikaException, IOException {
+    private short readThroughNumEntries(InputStream tis) throws TikaException, IOException {
         //mime
-        EndianUtils.readIntBE(stream);
+        EndianUtils.readIntBE(tis);
         //version
-        long version = EndianUtils.readIntBE(stream);
+        long version = EndianUtils.readIntBE(tis);
         if (version != 0x00020000) {
             throw new TikaException("Version should have been 0x00020000, but was:" + version);
         }
-        IOUtils.skipFully(stream, 16);//filler
-        return EndianUtils.readShortBE(stream);//number of entries
+        IOUtils.skipFully(tis, 16);//filler
+        return EndianUtils.readShortBE(tis);//number of entries
     }
 
     private static class FieldInfo {

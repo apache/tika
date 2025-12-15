@@ -52,8 +52,8 @@ import org.apache.tika.utils.SystemUtils;
 /**
  * Parser that uses the "strings" (or strings-alternative) command to find the
  * printable strings in a object, or other binary, file
- * (application/octet-stream). Useful as "best-effort" parser for files detected
- * as application/octet-stream.
+ * (application/octet-tis). Useful as "best-effort" parser for files detected
+ * as application/octet-tis.
  *
  * @author gtotaro
  */
@@ -88,7 +88,7 @@ public class StringsParser implements Parser, Initializable {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         if (!stringsPresent) {
@@ -97,7 +97,6 @@ public class StringsParser implements Parser, Initializable {
         StringsConfig stringsConfig = context.get(StringsConfig.class, defaultStringsConfig);
 
         try (TemporaryResources tmp = new TemporaryResources()) {
-            TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
             File input = tis.getFile();
 
             // Metadata
@@ -212,10 +211,10 @@ public class StringsParser implements Parser, Initializable {
         return totalBytes.get();
     }
 
-    private Thread logStream(final InputStream stream, final ContentHandler handler,
+    private Thread logStream(final InputStream tis, final ContentHandler handler,
                              final AtomicInteger totalBytes) {
         return new Thread(() -> {
-            Reader reader = new InputStreamReader(stream, UTF_8);
+            Reader reader = new InputStreamReader(tis, UTF_8);
             char[] buffer = new char[1024];
             try {
                 for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
@@ -225,7 +224,7 @@ public class StringsParser implements Parser, Initializable {
             } catch (SAXException | IOException e) {
                 //swallow
             } finally {
-                IOUtils.closeQuietly(stream);
+                IOUtils.closeQuietly(tis);
             }
         });
     }

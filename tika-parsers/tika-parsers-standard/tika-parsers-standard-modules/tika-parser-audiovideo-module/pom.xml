@@ -37,17 +37,6 @@
     </dependency>
     <dependency>
       <groupId>org.gagravarr</groupId>
-      <artifactId>vorbis-java-tika</artifactId>
-      <version>${vorbis.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.tika</groupId>
-          <artifactId>tika-core</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.gagravarr</groupId>
       <artifactId>vorbis-java-core</artifactId>
       <version>${vorbis.version}</version>
     </dependency>

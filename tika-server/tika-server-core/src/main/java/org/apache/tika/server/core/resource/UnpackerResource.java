@@ -134,12 +134,12 @@ public class UnpackerResource {
     private Map<String, byte[]> processWithConfig(List<Attachment> attachments, HttpHeaders httpHeaders, UriInfo info, boolean saveAll) throws Exception {
         Metadata metadata = new Metadata();
         ParseContext pc = new ParseContext();
-        try (InputStream tis = setupMultipartConfig(attachments, metadata, pc)) {
+        try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, pc)) {
             return processWithContext(tis, metadata, pc, info, saveAll);
         }
     }
 
-    private Map<String, byte[]> processWithContext(InputStream is, Metadata metadata, ParseContext pc, UriInfo info, boolean saveAll) throws Exception {
+    private Map<String, byte[]> processWithContext(TikaInputStream tis, Metadata metadata, ParseContext pc, UriInfo info, boolean saveAll) throws Exception {
         long unpackMaxBytes = DEFAULT_MAX_ATTACHMENT_BYTES;
 
         Parser parser = TikaResource.createParser();
@@ -164,7 +164,7 @@ public class UnpackerResource {
 
         pc.set(EmbeddedDocumentExtractor.class, new MyEmbeddedDocumentExtractor(count, files, unpackMaxBytes));
 
-        TikaResource.parse(parser, LOG, info.getPath(), is, ch, metadata, pc);
+        TikaResource.parse(parser, LOG, info.getPath(), tis, ch, metadata, pc);
 
         if (count.intValue() == 0 && !saveAll) {
             throw new WebApplicationException(Response.Status.NO_CONTENT);
@@ -184,7 +184,7 @@ public class UnpackerResource {
         return files;
     }
 
-    private Map<String, byte[]> process(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info, boolean saveAll) throws Exception {
+    private Map<String, byte[]> process(TikaInputStream tis, @Context HttpHeaders httpHeaders, @Context UriInfo info, boolean saveAll) throws Exception {
         Metadata metadata = new Metadata();
         ParseContext pc = new ParseContext();
         long unpackMaxBytes = DEFAULT_MAX_ATTACHMENT_BYTES;
@@ -222,7 +222,7 @@ public class UnpackerResource {
 
         pc.set(EmbeddedDocumentExtractor.class, new MyEmbeddedDocumentExtractor(count, files, unpackMaxBytes));
 
-        TikaResource.parse(parser, LOG, info.getPath(), is, ch, metadata, pc);
+        TikaResource.parse(parser, LOG, info.getPath(), tis, ch, metadata, pc);
 
         if (count.intValue() == 0 && !saveAll) {
             throw new WebApplicationException(Response.Status.NO_CONTENT);

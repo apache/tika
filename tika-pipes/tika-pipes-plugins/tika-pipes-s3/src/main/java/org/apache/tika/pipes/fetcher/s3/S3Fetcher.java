@@ -154,12 +154,12 @@ public class S3Fetcher extends AbstractTikaExtension implements Fetcher, RangeFe
     }
 
     @Override
-    public InputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
+    public TikaInputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException {
         return fetch(fetchKey, -1, -1, metadata, parseContext);
     }
 
     @Override
-    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata, ParseContext parseContext)
+    public TikaInputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata, ParseContext parseContext)
             throws TikaException, IOException {
         String prefix = config.getPrefix();
         String theFetchKey = StringUtils.isBlank(prefix) ? fetchKey : prefix + fetchKey;
@@ -183,7 +183,7 @@ public class S3Fetcher extends AbstractTikaExtension implements Fetcher, RangeFe
                 InputStream is = _fetch(theFetchKey, metadata, startRange, endRange);
                 long elapsed = System.currentTimeMillis() - start;
                 LOGGER.debug("total to fetch {}", elapsed);
-                return is;
+                return TikaInputStream.get(is);
             } catch (AwsServiceException e) {
                 if (e.awsErrorDetails() != null) {
                     String errorCode = e.awsErrorDetails().errorCode();
@@ -214,7 +214,7 @@ public class S3Fetcher extends AbstractTikaExtension implements Fetcher, RangeFe
         throw ex;
     }
 
-    private InputStream _fetch(String fetchKey, Metadata metadata,
+    private TikaInputStream _fetch(String fetchKey, Metadata metadata,
                                Long startRange, Long endRange) throws IOException {
         TemporaryResources tmp = null;
         ResponseInputStream<GetObjectResponse> s3Object = null;

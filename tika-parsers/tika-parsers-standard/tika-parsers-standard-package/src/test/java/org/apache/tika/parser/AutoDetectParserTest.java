@@ -23,10 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -34,9 +32,6 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import org.gagravarr.tika.FlacParser;
-import org.gagravarr.tika.OpusParser;
-import org.gagravarr.tika.VorbisParser;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
@@ -57,6 +52,9 @@ import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.digestutils.CommonsDigester;
 import org.apache.tika.parser.external.CompositeExternalParser;
+import org.apache.tika.parser.ogg.FlacParser;
+import org.apache.tika.parser.ogg.OpusParser;
+import org.apache.tika.parser.ogg.VorbisParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
@@ -96,8 +94,8 @@ public class AutoDetectParserTest extends TikaTest {
      * @throws IOException
      */
     private void assertAutoDetect(TestParams tp) throws Exception {
-        try (InputStream input = getResourceAsStream(tp.resourceRealName)) {
-            if (input == null) {
+        try (TikaInputStream tis = getResourceAsStream(tp.resourceRealName)) {
+            if (tis == null) {
                 fail("Could not open stream from specified resource: " + tp.resourceRealName);
             }
             Metadata metadata = new Metadata();
@@ -105,7 +103,7 @@ public class AutoDetectParserTest extends TikaTest {
             metadata.set(Metadata.CONTENT_TYPE, tp.statedType);
             ContentHandler handler = new BodyContentHandler();
             ParseContext pc = new ParseContext();
-            TikaLoader.loadDefault().loadAutoDetectParser().parse(input, handler, metadata, pc);
+            TikaLoader.loadDefault().loadAutoDetectParser().parse(tis, handler, metadata, pc);
 
             assertEquals(tp.realType, metadata.get(Metadata.CONTENT_TYPE),
                     "Bad content type: " + tp);
@@ -268,7 +266,7 @@ public class AutoDetectParserTest extends TikaTest {
      */
     @Test
     public void testZipBombPrevention() throws Exception {
-        try (InputStream tgz = getResourceAsStream("/test-documents/TIKA-216.tgz")) {
+        try (TikaInputStream tgz = getResourceAsStream("/test-documents/TIKA-216.tgz")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler(-1);
             TikaLoader.loadDefault().loadAutoDetectParser().parse(tgz, handler, metadata, new ParseContext());
@@ -295,7 +293,7 @@ public class AutoDetectParserTest extends TikaTest {
         zos.finish();
         zos.close();
         TikaLoader.loadDefault().loadAutoDetectParser()
-                .parse(new ByteArrayInputStream(baos.toByteArray()), new BodyContentHandler(-1),
+                .parse(TikaInputStream.get(baos.toByteArray()), new BodyContentHandler(-1),
                         new Metadata(), new ParseContext());
     }
 
@@ -337,13 +335,13 @@ public class AutoDetectParserTest extends TikaTest {
         // Have each file parsed, and check
         for (int i = 0; i < testFiles.length; i++) {
             String file = testFiles[i];
-            try (InputStream input = getResourceAsStream("/test-documents/" + file)) {
-                if (input == null) {
+            try (TikaInputStream tis = getResourceAsStream("/test-documents/" + file)) {
+                if (tis == null) {
                     fail("Could not find test file " + file);
                 }
                 Metadata metadata = new Metadata();
                 ContentHandler handler = new BodyContentHandler();
-                TikaLoader.loadDefault().loadAutoDetectParser().parse(input, handler, metadata, new ParseContext());
+                TikaLoader.loadDefault().loadAutoDetectParser().parse(tis, handler, metadata, new ParseContext());
 
                 assertEquals(mediaTypes[i].toString(), metadata.get(Metadata.CONTENT_TYPE),
                         "Incorrect content type for " + file);
@@ -382,7 +380,7 @@ public class AutoDetectParserTest extends TikaTest {
     public void testSpecificParserList() throws Exception {
         AutoDetectParser parser = new AutoDetectParser(new MyDetector(), new MyParser());
 
-        InputStream is = new ByteArrayInputStream("test".getBytes(UTF_8));
+        TikaInputStream is = TikaInputStream.get("test".getBytes(UTF_8));
         Metadata metadata = new Metadata();
         parser.parse(is, new BodyContentHandler(), metadata, new ParseContext());
 
@@ -419,9 +417,9 @@ public class AutoDetectParserTest extends TikaTest {
         ContentHandler handler = new WriteOutContentHandler(500);
         Metadata metadata = new Metadata();
         ParseContext parseContext = new ParseContext();
-        try (InputStream stream =
+        try (TikaInputStream tis =
                     getResourceAsStream("/test-documents/test_recursive_embedded.docx")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, parseContext);
+            AUTO_DETECT_PARSER.parse(tis, handler, metadata, parseContext);
             fail("write limit reached should have percolated to here");
         } catch (WriteLimitReachedException e) {
             //expected
@@ -441,9 +439,9 @@ public class AutoDetectParserTest extends TikaTest {
         ContentHandler handler = new WriteOutContentHandler(new ToXMLContentHandler(),
                 500, false, parseContext);
         Metadata metadata = new Metadata();
-        try (InputStream stream =
+        try (TikaInputStream tis =
                     getResourceAsStream("/test-documents/test_recursive_embedded.docx")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, parseContext);
+            AUTO_DETECT_PARSER.parse(tis, handler, metadata, parseContext);
         }
         String txt = handler.toString();
         assertEquals("true", metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
@@ -499,7 +497,7 @@ public class AutoDetectParserTest extends TikaTest {
      */
     @SuppressWarnings("serial")
     private static class MyDetector implements Detector {
-        public MediaType detect(InputStream input, Metadata metadata) throws IOException {
+        public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
             return MY_MEDIA_TYPE;
         }
     }
@@ -512,7 +510,7 @@ public class AutoDetectParserTest extends TikaTest {
             return supportedTypes;
         }
 
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+        public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                           ParseContext context) {
             metadata.add("MyParser", "value");
         }

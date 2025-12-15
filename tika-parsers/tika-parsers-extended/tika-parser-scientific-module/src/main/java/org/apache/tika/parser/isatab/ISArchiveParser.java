@@ -74,13 +74,11 @@ public class ISArchiveParser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
-        TemporaryResources tmp =
-                TikaInputStream.isTikaInputStream(stream) ? null : new TemporaryResources();
+        TemporaryResources tmp = null;
 
-        TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
         try {
             if (this.location == null) {
                 this.location = tis.getFile().getParent() + File.separator;
@@ -94,7 +92,7 @@ public class ISArchiveParser implements Parser {
             xhtml.startDocument();
 
             parseInvestigation(investigationList, xhtml, metadata, context);
-            parseStudy(stream, xhtml, metadata, context);
+            parseStudy(tis, xhtml, metadata, context);
             parseAssay(xhtml, metadata, context);
 
             xhtml.endDocument();
@@ -124,11 +122,11 @@ public class ISArchiveParser implements Parser {
         xhtml.element("h1", "INVESTIGATION " + metadata.get("Investigation Identifier"));
     }
 
-    private void parseStudy(InputStream stream, XHTMLContentHandler xhtml, Metadata metadata,
+    private void parseStudy(InputStream tis, XHTMLContentHandler xhtml, Metadata metadata,
                             ParseContext context) throws IOException, SAXException, TikaException {
         xhtml.element("h2", "STUDY " + metadata.get("Study Identifier"));
 
-        ISATabUtils.parseStudy(stream, xhtml, metadata, context);
+        ISATabUtils.parseStudy(tis, xhtml, metadata, context);
     }
 
     private void parseAssay(XHTMLContentHandler xhtml, Metadata metadata, ParseContext context)

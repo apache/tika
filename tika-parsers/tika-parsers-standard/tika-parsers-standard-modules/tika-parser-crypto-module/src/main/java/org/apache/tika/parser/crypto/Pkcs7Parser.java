@@ -17,7 +17,6 @@
 package org.apache.tika.parser.crypto;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
@@ -32,6 +31,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.EmptyParser;
@@ -60,20 +60,20 @@ public class Pkcs7Parser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         try {
             DigestCalculatorProvider digestCalculatorProvider =
                     new JcaDigestCalculatorProviderBuilder().setProvider("BC").build();
             CMSSignedDataParser parser = new CMSSignedDataParser(digestCalculatorProvider,
-                    CloseShieldInputStream.wrap(stream));
+                    CloseShieldInputStream.wrap(tis));
             try {
                 CMSTypedStream content = parser.getSignedContent();
                 if (content == null) {
                     throw new TikaException(
                             "cannot parse detached pkcs7 signature (no signed data to parse)");
                 }
-                try (InputStream input = content.getContentStream()) {
+                try (TikaInputStream input = TikaInputStream.get(content.getContentStream())) {
                     Parser delegate = context.get(Parser.class, EmptyParser.INSTANCE);
                     delegate.parse(input, handler, new Metadata(), context);
                 }

@@ -34,6 +34,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.apple.IWorkDetector;
 import org.apache.tika.detect.zip.DefaultZipContainerDetector;
 import org.apache.tika.detect.zip.ZipContainerDetector;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -63,7 +64,7 @@ public class IWorkParserTest extends TikaTest {
         InputStream input = getResourceAsStream("/test-documents/testKeynote.key");
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
-        iWorkParser.parse(input, handler, metadata, new ParseContext());
+        iWorkParser.parse(TikaInputStream.get(input), handler, metadata, new ParseContext());
         input.read();   // Will throw an Exception if the stream was already closed.
     }
 
@@ -424,7 +425,7 @@ public class IWorkParserTest extends TikaTest {
         Detector d = new CompositeDetector(new DefaultZipContainerDetector(zips));
         try (InputStream is = this.getClass()
                 .getResourceAsStream("/test-documents/testIWorksNPEDetector.zip")) {
-            MediaType mt = d.detect(is, new Metadata());
+            MediaType mt = d.detect(TikaInputStream.get(is), new Metadata());
             assertEquals(MediaType.application("zip"), mt);
         }
     }

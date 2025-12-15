@@ -26,6 +26,7 @@ import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.TypeDetector;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -58,7 +59,7 @@ public class MboxParserTest extends TikaTest {
         ParseContext context = new ParseContext();
 
         try (InputStream stream = getResourceAsStream("/test-documents/single_mail.mbox")) {
-            mboxParser.parse(stream, handler, metadata, context);
+            mboxParser.parse(TikaInputStream.get(stream), handler, metadata, context);
         }
 
         Metadata firstMail = mboxParser.getTrackingMetadata().get(0);

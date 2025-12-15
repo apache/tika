@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
@@ -124,8 +123,8 @@ public class DBFParserTest extends TikaTest {
     @Test
     public void testVariants() throws Exception {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        try (InputStream is = getResourceAsStream("/test-documents/testDBF.dbf")) {
-            IOUtils.copy(is, bos);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testDBF.dbf")) {
+            IOUtils.copy(tis, bos);
         }
         byte[] bytes = bos.toByteArray();
 

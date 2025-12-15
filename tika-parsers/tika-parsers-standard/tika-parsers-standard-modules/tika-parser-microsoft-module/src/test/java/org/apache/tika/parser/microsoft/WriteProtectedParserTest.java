@@ -18,11 +18,10 @@ package org.apache.tika.parser.microsoft;
 
 import static org.apache.tika.TikaTest.assertContains;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
@@ -31,12 +30,12 @@ public class WriteProtectedParserTest {
 
     @Test
     public void testWriteProtected() throws Exception {
-        InputStream input =
-                ExcelParserTest.class.getResourceAsStream("/test-documents/protect.xlsx");
+        TikaInputStream tis =
+                TikaInputStream.get(ExcelParserTest.class.getResourceAsStream("/test-documents/protect.xlsx"));
 
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
-        new OfficeParser().parse(input, handler, metadata, new ParseContext());
+        new OfficeParser().parse(tis, handler, metadata, new ParseContext());
         String content = handler.toString();
         assertContains("Office", content);
     }

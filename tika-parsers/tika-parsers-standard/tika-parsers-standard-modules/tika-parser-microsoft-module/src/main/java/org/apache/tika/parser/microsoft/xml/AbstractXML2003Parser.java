@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft.xml;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.Attributes;
@@ -27,6 +26,7 @@ import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -82,7 +82,7 @@ public abstract class AbstractXML2003Parser implements Parser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         setContentType(metadata);
 
@@ -94,7 +94,7 @@ public abstract class AbstractXML2003Parser implements Parser {
             //need to get new SAXParser because
             //an attachment might require another SAXParser
             //mid-parse
-            XMLReaderUtils.getSAXParser().parse(CloseShieldInputStream.wrap(stream),
+            XMLReaderUtils.getSAXParser().parse(CloseShieldInputStream.wrap(tis),
                     new EmbeddedContentHandler(
                             getContentHandler(tagged, metadata, context)));
         } catch (SAXException e) {

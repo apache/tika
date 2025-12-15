@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -34,6 +33,7 @@ import org.xml.sax.ContentHandler;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -164,8 +164,8 @@ public class SXSLFExtractorTest extends TikaTest {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
 
-            try (InputStream input = getResourceAsStream("/test-documents/" + filename)) {
-                AUTO_DETECT_PARSER.parse(input, handler, metadata, parseContext);
+            try (TikaInputStream tis = getResourceAsStream("/test-documents/" + filename)) {
+                AUTO_DETECT_PARSER.parse(tis, handler, metadata, parseContext);
 
                 assertEquals(mimeTypes[i], metadata.get(Metadata.CONTENT_TYPE),
                         "Mime-type checking for " + filename);
@@ -228,8 +228,8 @@ public class SXSLFExtractorTest extends TikaTest {
 
             };
 
-            try (InputStream input = getResourceAsStream("/test-documents/" + filename)) {
-                AUTO_DETECT_PARSER.parse(input, handler, metadata, parseContext);
+            try (TikaInputStream tis = getResourceAsStream("/test-documents/" + filename)) {
+                AUTO_DETECT_PARSER.parse(tis, handler, metadata, parseContext);
             }
         }
     }
@@ -253,8 +253,8 @@ public class SXSLFExtractorTest extends TikaTest {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
             ContentHandler handler = new BodyContentHandler();
 
-            try (InputStream input = getResourceAsStream("/test-documents/" + filename)) {
-                AUTO_DETECT_PARSER.parse(input, handler, metadata, parseContext);
+            try (TikaInputStream tis = getResourceAsStream("/test-documents/" + filename)) {
+                AUTO_DETECT_PARSER.parse(tis, handler, metadata, parseContext);
 
                 // Should get the metadata
                 assertEquals(mimeTypes[i], metadata.get(Metadata.CONTENT_TYPE),
@@ -482,9 +482,9 @@ public class SXSLFExtractorTest extends TikaTest {
         passwordContext.set(OfficeParserConfig.class, officeParserConfig);
 
         for (Map.Entry<String, String> e : tests.entrySet()) {
-            try (InputStream is = getResourceAsStream("/test-documents/" + e.getKey())) {
+            try (TikaInputStream tis = getResourceAsStream("/test-documents/" + e.getKey())) {
                 ContentHandler handler = new BodyContentHandler();
-                AUTO_DETECT_PARSER.parse(is, handler, m, passwordContext);
+                AUTO_DETECT_PARSER.parse(tis, handler, m, passwordContext);
                 assertContains(e.getValue(), handler.toString());
             }
         }
@@ -493,9 +493,9 @@ public class SXSLFExtractorTest extends TikaTest {
         //now try with no password
         for (Map.Entry<String, String> e : tests.entrySet()) {
             boolean exc = false;
-            try (InputStream is = getResourceAsStream("/test-documents/" + e.getKey())) {
+            try (TikaInputStream tis = getResourceAsStream("/test-documents/" + e.getKey())) {
                 ContentHandler handler = new BodyContentHandler();
-                AUTO_DETECT_PARSER.parse(is, handler, m, context);
+                AUTO_DETECT_PARSER.parse(tis, handler, m, context);
             } catch (EncryptedDocumentException ex) {
                 exc = true;
             }

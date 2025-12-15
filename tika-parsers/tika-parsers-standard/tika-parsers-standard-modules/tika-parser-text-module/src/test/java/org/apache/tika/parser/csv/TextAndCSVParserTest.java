@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +30,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -99,7 +99,7 @@ public class TextAndCSVParserTest extends TikaTest {
     public void testCSV_UTF8() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.csv");
-        XMLResult xmlResult = getXML(new ByteArrayInputStream(CSV_UTF8), PARSER, metadata);
+        XMLResult xmlResult = getXML(TikaInputStream.get(CSV_UTF8), PARSER, metadata);
         assertEquals("comma", xmlResult.metadata.get(TextAndCSVParser.DELIMITER_PROPERTY));
         assertMediaTypeEquals("csv", "ISO-8859-1", "comma",
                 xmlResult.metadata.get(Metadata.CONTENT_TYPE));
@@ -112,7 +112,7 @@ public class TextAndCSVParserTest extends TikaTest {
     public void testCSV_UTF8_TypeOverride() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE, "text/csv; charset=UTF-8");
-        XMLResult xmlResult = getXML(new ByteArrayInputStream(CSV_UTF8), PARSER, metadata);
+        XMLResult xmlResult = getXML(TikaInputStream.get(CSV_UTF8), PARSER, metadata);
         assertEquals("comma", xmlResult.metadata.get(TextAndCSVParser.DELIMITER_PROPERTY));
         assertMediaTypeEquals("csv", "UTF-8", "comma",
                 xmlResult.metadata.get(Metadata.CONTENT_TYPE));
@@ -124,7 +124,7 @@ public class TextAndCSVParserTest extends TikaTest {
     public void testCSV_UTF8_Type() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "text/csv");
-        XMLResult xmlResult = getXML(new ByteArrayInputStream(CSV_UTF8), PARSER, metadata);
+        XMLResult xmlResult = getXML(TikaInputStream.get(CSV_UTF8), PARSER, metadata);
         assertEquals("comma", xmlResult.metadata.get(TextAndCSVParser.DELIMITER_PROPERTY));
         assertMediaTypeEquals("csv", "ISO-8859-1", "comma",
                 xmlResult.metadata.get(Metadata.CONTENT_TYPE));
@@ -135,7 +135,7 @@ public class TextAndCSVParserTest extends TikaTest {
     public void testCSV_UTF16LE() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.csv");
-        XMLResult xmlResult = getXML(new ByteArrayInputStream(CSV_UTF_16LE), PARSER, metadata);
+        XMLResult xmlResult = getXML(TikaInputStream.get(CSV_UTF_16LE), PARSER, metadata);
         assertEquals("comma", xmlResult.metadata.get(TextAndCSVParser.DELIMITER_PROPERTY));
         assertMediaTypeEquals("csv", "UTF-16LE", "comma",
                 xmlResult.metadata.get(Metadata.CONTENT_TYPE));
@@ -146,7 +146,7 @@ public class TextAndCSVParserTest extends TikaTest {
     public void testCSV_UTF16LE_BOM() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.csv");
-        XMLResult xmlResult = getXML(new ByteArrayInputStream(
+        XMLResult xmlResult = getXML(TikaInputStream.get(
                 concat(ByteOrderMark.UTF_16LE.getBytes(), CSV_UTF_16LE)), PARSER, metadata);
         assertEquals("comma", xmlResult.metadata.get(TextAndCSVParser.DELIMITER_PROPERTY));
         assertMediaTypeEquals("csv", "UTF-16LE", "comma",
@@ -158,7 +158,7 @@ public class TextAndCSVParserTest extends TikaTest {
     public void testTSV_UTF8() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.csv");
-        XMLResult xmlResult = getXML(new ByteArrayInputStream(TSV_UTF8), PARSER, metadata);
+        XMLResult xmlResult = getXML(TikaInputStream.get(TSV_UTF8), PARSER, metadata);
         assertEquals("tab", xmlResult.metadata.get(TextAndCSVParser.DELIMITER_PROPERTY));
         assertMediaTypeEquals("tsv", "ISO-8859-1", "tab",
                 xmlResult.metadata.get(Metadata.CONTENT_TYPE));
@@ -169,7 +169,7 @@ public class TextAndCSVParserTest extends TikaTest {
     public void testTSV_UTF16LE() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.csv");
-        XMLResult xmlResult = getXML(new ByteArrayInputStream(TSV_UTF_16LE), PARSER, metadata);
+        XMLResult xmlResult = getXML(TikaInputStream.get(TSV_UTF_16LE), PARSER, metadata);
         assertEquals("tab", xmlResult.metadata.get(TextAndCSVParser.DELIMITER_PROPERTY));
         assertMediaTypeEquals("tsv", "UTF-16LE", "tab",
                 xmlResult.metadata.get(Metadata.CONTENT_TYPE));
@@ -189,7 +189,7 @@ public class TextAndCSVParserTest extends TikaTest {
                 .getBytes(StandardCharsets.UTF_8);
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.csv");
-        XMLResult xmlResult = getXML(new ByteArrayInputStream(csv), PARSER, metadata);
+        XMLResult xmlResult = getXML(TikaInputStream.get(csv), PARSER, metadata);
         assertNull(xmlResult.metadata.get(TextAndCSVParser.DELIMITER_PROPERTY));
         assertEquals("text/plain; charset=ISO-8859-1",
                 xmlResult.metadata.get(Metadata.CONTENT_TYPE));
@@ -203,11 +203,11 @@ public class TextAndCSVParserTest extends TikaTest {
                 ("testcsv\n" + "testcsv testcsv;;; testcsv").getBytes(StandardCharsets.UTF_8);
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.csv");
-        XMLResult xmlResult = getXML(new ByteArrayInputStream(bytes), PARSER, metadata);
+        XMLResult xmlResult = getXML(TikaInputStream.get(bytes), PARSER, metadata);
         assertContains("text/plain", xmlResult.metadata.get(Metadata.CONTENT_TYPE));
 
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.txt");
-        xmlResult = getXML(new ByteArrayInputStream(bytes), PARSER, metadata);
+        xmlResult = getXML(TikaInputStream.get(bytes), PARSER, metadata);
         assertContains("text/plain", xmlResult.metadata.get(Metadata.CONTENT_TYPE));
     }
 
@@ -223,7 +223,7 @@ public class TextAndCSVParserTest extends TikaTest {
         }
         Metadata metadata = new Metadata();
         XMLResult xmlResult =
-                getXML(new ByteArrayInputStream(sb.toString().getBytes(StandardCharsets.UTF_8)),
+                getXML(TikaInputStream.get(sb.toString().getBytes(StandardCharsets.UTF_8)),
                         PARSER, metadata);
         assertMediaTypeEquals("csv", "ISO-8859-1", "comma",
                 xmlResult.metadata.get(Metadata.CONTENT_TYPE));
