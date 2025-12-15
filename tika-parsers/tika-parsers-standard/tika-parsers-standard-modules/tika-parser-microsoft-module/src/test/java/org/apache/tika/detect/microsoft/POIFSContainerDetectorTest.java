@@ -79,7 +79,7 @@ public class POIFSContainerDetectorTest extends TikaTest {
     }
 
     private void assertExpected(Detector detector, TikaInputStream tis, String expectedMime, String expectedDigest) throws IOException {
-        MediaType mt = detector.detect(tis, new Metadata());
+        MediaType mt = detector.detect(tis, new Metadata(), new ParseContext());
         assertEquals(expectedMime, mt.toString());
         assertEquals(expectedDigest, digest(tis));
     }

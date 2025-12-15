@@ -89,7 +89,7 @@ public class ParsingExample {
         AutoDetectParser parser = new AutoDetectParser();
         BodyContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-        try (TikaInputStream tis = TikaInputStream.get(ParsingExample.class.getResourceAsStream("test.doc")) {
+        try (TikaInputStream tis = TikaInputStream.get(ParsingExample.class.getResourceAsStream("test.doc"))) {
             parser.parse(tis, handler, metadata, new ParseContext());
             return handler.toString();
         }

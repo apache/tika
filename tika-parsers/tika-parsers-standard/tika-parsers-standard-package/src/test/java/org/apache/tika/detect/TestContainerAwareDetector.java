@@ -112,7 +112,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
 
             MediaType expected = MediaType.parse(typeFromDetector);
             // All being well, the detector should get it perfect
-            assertEquals(expected, detector.detect(tis, m));
+            assertEquals(expected, detector.detect(tis, m, new ParseContext()));
 
             if (mediaTypeRegistry.isSpecializationOf(expected, MediaType.APPLICATION_ZIP) &&
                     !expected.toString().contains("tika-ooxml-protected")) {
@@ -623,28 +623,28 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         Detector detector = TikaLoader.loadDefault().loadDetectors();
         try (TikaInputStream tis = TikaInputStream.get(bytes)) {
             assertEquals("application/msword",
-                    detector.detect(tis, new Metadata()).toString());
+                    detector.detect(tis, new Metadata(), new ParseContext()).toString());
             assertEquals(len, countBytes(tis));
         }
 
         detector = loadDetector("tika-4441-neg1.json");
         try (TikaInputStream tis = TikaInputStream.get(bytes)) {
             assertEquals("application/msword",
-                    detector.detect(tis, new Metadata()).toString());
+                    detector.detect(tis, new Metadata(), new ParseContext()).toString());
             assertEquals(len, countBytes(tis));
         }
 
         detector = loadDetector("tika-4441-120.json");
         try (TikaInputStream tis = TikaInputStream.get(bytes)) {
             assertEquals("application/x-tika-msoffice",
-                    detector.detect(tis, new Metadata()).toString());
+                    detector.detect(tis, new Metadata(), new ParseContext()).toString());
             assertEquals(len, countBytes(tis));
         }
 
         detector = loadDetector("tika-4441-12000000.json");
         try (TikaInputStream tis = TikaInputStream.get(bytes)) {
             assertEquals("application/msword",
-                    detector.detect(tis, new Metadata()).toString());
+                    detector.detect(tis, new Metadata(), new ParseContext()).toString());
             assertEquals(len, countBytes(tis));
         }
 

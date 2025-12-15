@@ -167,7 +167,7 @@ public class MagicDetectorTest extends TikaTest {
         // Deliberately prevent InputStream.read(...) from reading the entire
         // buffer in one go
         try (TikaInputStream tis = TikaInputStream.get(new RestrictiveInputStream(data))) {
-            assertEquals(testMT, detector.detect(tis, new Metadata()));
+            assertEquals(testMT, detector.detect(tis, new Metadata(), new ParseContext()));
         }
     }
 
@@ -262,7 +262,7 @@ public class MagicDetectorTest extends TikaTest {
 
     private String detect(Detector detector, String bz2Name) throws IOException  {
         try (TikaInputStream tis = getResourceAsStream("/test-documents/bz2/" + bz2Name)) {
-            return detector.detect(tis, new Metadata()).toString();
+            return detector.detect(tis, new Metadata(), new ParseContext()).toString();
         }
     }
 }

@@ -56,7 +56,8 @@ class MagicMatch implements Clause {
     }
 
     public boolean eval(byte[] data) {
-        //TODO -- make this more efficient
+        //TODO -- claude can we make this more efficient? we don't need to wrap this, and we don't want to create
+        //new metadata object and new parsecontext for every eval. I'm ok with a specialized MagicDetector#parse(byte[])
         try (TikaInputStream tis = TikaInputStream.get(data)) {
             return getDetector().detect(tis, new Metadata(), new ParseContext()) !=
                     MediaType.OCTET_STREAM;

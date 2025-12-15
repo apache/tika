@@ -126,11 +126,13 @@ public class SiegfriedDetector implements Detector {
     /**
      * @param tis      document input stream, or <code>null</code>
      * @param metadata input metadata for the document
+     * @param parseContext the parse context
      * @return mime as identified by the file command or application/octet-stream otherwise
      * @throws IOException
      */
     @Override
-    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
+            throws IOException {
         if (hasSiegfriedCommand == null) {
             hasSiegfriedCommand = checkHasSiegfried(this.config.siegfriedPath);
         }

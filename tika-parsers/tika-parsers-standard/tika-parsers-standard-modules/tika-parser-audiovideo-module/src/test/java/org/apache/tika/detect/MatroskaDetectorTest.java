@@ -33,7 +33,7 @@ public class MatroskaDetectorTest extends TikaTest {
 
     private final MatroskaDetector detector = new MatroskaDetector();
 
-    private TikaInputStream getResourceAsStream(String resourcePath) {
+    public TikaInputStream getResourceAsStream(String resourcePath) {
         return TikaInputStream.get(this.getClass().getResourceAsStream(resourcePath));
     }
 

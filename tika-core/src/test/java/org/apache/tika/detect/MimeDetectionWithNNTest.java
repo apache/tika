@@ -28,7 +28,6 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MimeDetectionTest;
 import org.apache.tika.parser.ParseContext;
 
 public class MimeDetectionWithNNTest extends TikaTest {

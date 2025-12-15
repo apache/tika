@@ -249,6 +249,9 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         // TikaInputStream always supports mark
 
         TemporaryResources tmp = new TemporaryResources();
+        // Shield the TikaInputStream from being closed when we close archive streams.
+        // This allows us to reset and re-read the stream for data descriptor handling.
+        tis.setCloseShield();
         try {
             _parse(tis, handler, metadata, context, tmp);
         } finally {
