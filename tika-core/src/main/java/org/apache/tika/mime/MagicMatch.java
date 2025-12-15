@@ -16,12 +16,7 @@
  */
 package org.apache.tika.mime;
 
-import java.io.IOException;
-
 import org.apache.tika.detect.MagicDetector;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
 
 /**
  * Defines a magic match.
@@ -56,15 +51,7 @@ class MagicMatch implements Clause {
     }
 
     public boolean eval(byte[] data) {
-        //TODO -- claude can we make this more efficient? we don't need to wrap this, and we don't want to create
-        //new metadata object and new parsecontext for every eval. I'm ok with a specialized MagicDetector#parse(byte[])
-        try (TikaInputStream tis = TikaInputStream.get(data)) {
-            return getDetector().detect(tis, new Metadata(), new ParseContext()) !=
-                    MediaType.OCTET_STREAM;
-        } catch (IOException e) {
-            // Should never happen with a ByteArrayInputStream
-            return false;
-        }
+        return getDetector().matches(data);
     }
 
     public int size() {
