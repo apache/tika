@@ -16,85 +16,150 @@
  */
 package org.apache.tika.plugins;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.file.StandardCopyOption;
+import java.util.Comparator;
+import java.util.UUID;
+import java.util.stream.Stream;
 
 import org.pf4j.util.Unzip;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Thread-safe and process-safe plugin unzipper using atomic rename.
+ * <p>
+ * This avoids file locking issues on Windows by using a simple strategy:
+ * <ol>
+ *   <li>Check if destination directory exists with completion marker - if yes, already extracted</li>
+ *   <li>Extract to a temporary directory with a unique name</li>
+ *   <li>Create a completion marker file in the temp directory</li>
+ *   <li>Atomically rename temp dir to final destination</li>
+ *   <li>If rename fails (another process won), clean up temp dir</li>
+ * </ol>
+ * <p>
+ * The completion marker ensures that even if atomic move is not supported,
+ * other processes won't attempt to load a partially-moved directory.
+ */
 public class ThreadSafeUnzipper {
     private static final Logger LOG = LoggerFactory.getLogger(TikaPluginManager.class);
+    private static final String COMPLETE_MARKER = ".tika-extraction-complete";
 
-    private static final long MAX_WAIT_MS = 60000;
-
-    public static synchronized void unzipPlugin(Path source) throws IOException {
-        if (! source.getFileName().toString().endsWith(".zip")) {
+    /**
+     * Unzips a plugin zip file to a directory with the same name (minus .zip extension).
+     * Safe for concurrent calls from multiple threads or processes. See
+     * documentation at the head of this class for how it works.
+     *
+     * @param source path to the .zip file
+     * @throws IOException if extraction fails
+     */
+    public static void unzipPlugin(Path source) throws IOException {
+        if (!source.getFileName().toString().endsWith(".zip")) {
             throw new IllegalArgumentException("source file name must end in '.zip'");
         }
-        File lockFile = new File(source.toAbsolutePath() + ".lock");
-        FileChannel fileChannel = null;
-        FileLock fileLock = null;
-        List<IOException> exceptions = new ArrayList<>();
+
+        Path destination = getDestination(source);
+
+        // Already extracted - check for both directory AND completion marker
+        if (isExtractionComplete(destination)) {
+            LOG.debug("{} is already extracted", source);
+            return;
+        }
+
+        // Extract to a unique temp directory
+        Path tempDir = destination.resolveSibling(
+                destination.getFileName() + ".tmp." + UUID.randomUUID());
+
         try {
-            fileChannel = new RandomAccessFile(lockFile, "rw").getChannel();
-            LOG.debug("acquiring lock");
-            fileLock = fileChannel.lock();
-            LOG.debug("acquired lock");
-            if (isExtracted(source)) {
-                LOG.debug("{} is already extracted", source);
+            LOG.debug("extracting {} to temp dir {}", source, tempDir);
+            new Unzip(source.toFile(), tempDir.toFile()).extract();
+
+            // Create completion marker in temp dir before moving
+            Files.createFile(tempDir.resolve(COMPLETE_MARKER));
+
+            // Atomically rename to final destination
+            try {
+                Files.move(tempDir, destination, StandardCopyOption.ATOMIC_MOVE);
+                LOG.debug("successfully extracted {}", destination);
+            } catch (FileAlreadyExistsException | DirectoryNotEmptyException e) {
+                // Another process extracted it first - wait for completion marker
+                LOG.debug("plugin already extracted by another process: {}", destination);
+                waitForExtractionComplete(destination);
+            } catch (AtomicMoveNotSupportedException e) {
+                // Filesystem doesn't support atomic move, try regular move
+                try {
+                    Files.move(tempDir, destination);
+                    LOG.debug("successfully extracted {} (non-atomic)", destination);
+                } catch (FileAlreadyExistsException | DirectoryNotEmptyException e2) {
+                    // Another process extracted it first - wait for completion marker
+                    LOG.debug("plugin already extracted by another process: {}", destination);
+                    waitForExtractionComplete(destination);
+                }
+            }
+        } finally {
+            // Clean up temp dir if it still exists (we lost the race or there was an error)
+            if (Files.exists(tempDir)) {
+                deleteRecursively(tempDir);
+            }
+        }
+    }
+
+    /**
+     * Checks if extraction is complete by verifying both directory exists and completion marker is present.
+     */
+    private static boolean isExtractionComplete(Path destination) {
+        return Files.isDirectory(destination) && Files.exists(destination.resolve(COMPLETE_MARKER));
+    }
+
+    /**
+     * Waits for extraction to complete by polling for the completion marker.
+     * This is called when we detect another process is extracting.
+     */
+    private static void waitForExtractionComplete(Path destination) throws IOException {
+        long maxWaitMs = 60000; // 1 minute max wait
+        long pollIntervalMs = 100;
+        long waited = 0;
+
+        while (waited < maxWaitMs) {
+            if (isExtractionComplete(destination)) {
+                LOG.debug("extraction completed by another process: {}", destination);
                 return;
             }
-            extract(source);
-        } finally {
-            if (fileLock != null && fileLock.isValid()) {
-                try {
-                    fileLock.release();
-                } catch (IOException e) {
-                    LOG.warn("failed to release the lock");
-                    exceptions.add(e);
-                }
+            try {
+                Thread.sleep(pollIntervalMs);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException("interrupted while waiting for extraction to complete", e);
             }
-            if (fileChannel != null) {
-                try {
-                    fileChannel.close();
-                } catch (IOException e) {
-                    LOG.warn("failed to close the file channel");
-                    exceptions.add(e);
-                }
-            }
-            boolean isDeleted = lockFile.delete();
-            if (! isDeleted) {
-                LOG.warn("failed to delete the lock file");
-                exceptions.add(new IOException("failed to delete lock file: " + lockFile));
-            }
+            waited += pollIntervalMs;
         }
-        if (! exceptions.isEmpty()) {
-            throw exceptions.get(0);
-        }
-    }
 
-    private static void extract(Path source) throws IOException {
-        Path destination = getDestination(source);
-        Unzip unzip = new Unzip(source.toFile(), destination.toFile());
-        unzip.extract();
-    }
-
-    private static boolean isExtracted(Path source) {
-        Path destination = getDestination(source);
-        return Files.isDirectory(destination);
+        throw new IOException("timed out waiting for extraction to complete: " + destination);
     }
 
     private static Path getDestination(Path source) {
         String fName = source.getFileName().toString();
         fName = fName.substring(0, fName.length() - 4);
         return source.toAbsolutePath().getParent().resolve(fName);
+    }
+
+    private static void deleteRecursively(Path path) {
+        try (Stream<Path> walk = Files.walk(path)) {
+            walk.sorted(Comparator.reverseOrder())
+                    .forEach(p -> {
+                        try {
+                            Files.delete(p);
+                        } catch (IOException e) {
+                            LOG.warn("failed to delete temp file: {}", p, e);
+                        }
+                    });
+        } catch (IOException e) {
+            LOG.warn("failed to clean up temp directory: {}", path, e);
+        }
     }
 }

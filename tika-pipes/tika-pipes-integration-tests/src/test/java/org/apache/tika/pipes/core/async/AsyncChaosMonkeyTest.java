@@ -132,7 +132,7 @@ public class AsyncChaosMonkeyTest {
 
     @Test
     public void testBasic(@TempDir Path tmpDir) throws Exception {
-        AsyncProcessor processor = new AsyncProcessor(setUp(tmpDir, false));
+        AsyncProcessor processor = AsyncProcessor.load(setUp(tmpDir, false));
         for (int i = 0; i < totalFiles; i++) {
             FetchEmitTuple t = new FetchEmitTuple("myId-" + i,
                     new FetchKey(fetcherPluginId, i + ".xml"),
@@ -164,7 +164,7 @@ public class AsyncChaosMonkeyTest {
 
     @Test
     public void testEmitIntermediate(@TempDir Path tmpDir) throws Exception {
-        AsyncProcessor processor = new AsyncProcessor(setUp(tmpDir, true));
+        AsyncProcessor processor = AsyncProcessor.load(setUp(tmpDir, true));
         for (int i = 0; i < totalFiles; i++) {
             FetchEmitTuple t = new FetchEmitTuple("myId-" + i, new FetchKey(fetcherPluginId, i + ".xml"),
                     new EmitKey(emitterPluginId, "emit-" + i), new Metadata());

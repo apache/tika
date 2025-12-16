@@ -114,7 +114,7 @@ public class AsyncProcessorTest extends TikaTest {
     public void testRecursiveUnpacking() throws Exception {
 //        TikaAsyncCLI cli = new TikaAsyncCLI();
         //      cli.main(new String[]{ configDir.resolve("tika-config.xml").toAbsolutePath().toString()});
-        AsyncProcessor processor = new AsyncProcessor(configDir.resolve("tika-config.json"));
+        AsyncProcessor processor = AsyncProcessor.load(configDir.resolve("tika-config.json"));
 
         EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = new EmbeddedDocumentBytesConfig(true);
         embeddedDocumentBytesConfig.setIncludeOriginal(true);
@@ -163,7 +163,7 @@ public class AsyncProcessorTest extends TikaTest {
     public void testStopsOnApplicationError() throws Exception {
         // Test that AsyncProcessor stops processing when an application error occurs
         // (TIKA-4570)
-        AsyncProcessor processor = new AsyncProcessor(configDir.resolve("tika-config.json"));
+        AsyncProcessor processor = AsyncProcessor.load(configDir.resolve("tika-config.json"));
 
         // Create a tuple with a non-existent fetcher - this will cause FETCHER_NOT_FOUND
         // which is a TASK_EXCEPTION but will stop processing in CLI mode (default)
