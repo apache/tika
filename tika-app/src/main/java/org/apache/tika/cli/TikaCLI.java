@@ -77,7 +77,6 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.DefaultEmbeddedStreamTranslator;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedStreamTranslator;
-import org.apache.tika.fork.ForkParser;
 import org.apache.tika.gui.TikaGUI;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.language.detect.LanguageHandler;
@@ -204,7 +203,6 @@ public class TikaCLI {
     private String password = System.getenv("TIKA_PASSWORD");
     private Digester digester = null;
     private boolean pipeMode = true;
-    private boolean fork = false;
     private boolean prettyPrint;
     private final OutputType XML = new OutputType() {
         @Override
@@ -430,8 +428,6 @@ public class TikaCLI {
             convertConfigXmlToJson(arg.substring("--convert-config-xml-to-json=".length()));
         } else if (arg.equals("--container-aware") || arg.equals("--container-aware-detector")) {
             // ignore, as container-aware detectors are now always used
-        } else if (arg.equals("-f") || arg.equals("--fork")) {
-            fork = true;
         } else if (arg.startsWith("--config=")) {
             configFilePath = arg.substring("--config=".length());
         } else if (arg.startsWith("--digest=")) {
@@ -597,7 +593,6 @@ public class TikaCLI {
         out.println("    -V  or --version       Print the Apache Tika version number");
         out.println();
         out.println("    -g  or --gui           Start the Apache Tika GUI");
-        out.println("    -f  or --fork          Use Fork Mode for out-of-process extraction");
         out.println();
         out.println("    --config=<tika-config.xml>");
         out.println("        TikaConfig file. Must be specified before -g, -s, -f or the dump-x-config !");
@@ -1106,24 +1101,15 @@ public class TikaCLI {
     private class OutputType {
         public void process(TikaInputStream tis, OutputStream output, Metadata metadata) throws Exception {
             Parser p = parser;
-            if (fork) {
-                p = new ForkParser(TikaCLI.class.getClassLoader(), p);
-            }
             ContentHandler handler = getContentHandler(output, metadata);
-            try {
-                p.parse(tis, handler, metadata, context);
-                // fix for TIKA-596: if a parser doesn't generate
-                // XHTML output, the lack of an output document prevents
-                // metadata from being output: this fixes that
-                if (handler instanceof NoDocumentMetHandler) {
-                    NoDocumentMetHandler metHandler = (NoDocumentMetHandler) handler;
-                    if (!metHandler.metOutput()) {
-                        metHandler.endDocument();
-                    }
-                }
-            } finally {
-                if (fork) {
-                    ((ForkParser) p).close();
+            p.parse(tis, handler, metadata, context);
+            // fix for TIKA-596: if a parser doesn't generate
+            // XHTML output, the lack of an output document prevents
+            // metadata from being output: this fixes that
+            if (handler instanceof NoDocumentMetHandler) {
+                NoDocumentMetHandler metHandler = (NoDocumentMetHandler) handler;
+                if (!metHandler.metOutput()) {
+                    metHandler.endDocument();
                 }
             }
         }

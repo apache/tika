@@ -88,13 +88,13 @@ public class PackageParser extends AbstractEncodingDetectorParser {
     //We used to avoid overwriting file types if the file type
     //was a specialization of zip/tar.  We determined specialization of zip
     //via TikaConfig at parse time.
-    //However, TIKA-2483 showed that TikaConfig is not serializable
-    //and this causes an exception in the ForkParser.
     //The following is an inelegant hack, but until we can serialize TikaConfig,
     //or dramatically rework the ForkParser to avoid serialization
     //of parsers, this is what we have.
     //There is at least a test in PackageParserTest that makes sure that we
     //keep this list updated.
+    //This is now legacy behavior: TODO figure out if we can go make to using the
+    //mime registry
     static final Set<MediaType> PACKAGE_SPECIALIZATIONS = loadPackageSpecializations();
     /**
      * Serial version UID
