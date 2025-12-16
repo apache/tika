@@ -24,19 +24,59 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.tika.config.loader.TikaJsonConfig;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
+import org.apache.tika.plugins.TikaPluginManager;
 
 public class PipesParser implements Closeable {
 
+    /**
+     * Loads a PipesParser from a configuration file path.
+     * <p>
+     * This method:
+     * <ol>
+     *   <li>Loads the JSON configuration</li>
+     *   <li>Pre-extracts plugins before spawning child processes</li>
+     *   <li>Creates the PipesParser with the loaded configuration</li>
+     * </ol>
+     *
+     * @param tikaConfigPath path to the tika-config.json file
+     * @return a new PipesParser instance
+     * @throws IOException if reading config or extraction fails
+     * @throws TikaConfigException if configuration is invalid
+     */
+    public static PipesParser load(Path tikaConfigPath) throws IOException, TikaConfigException {
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+        return load(tikaJsonConfig, pipesConfig, tikaConfigPath);
+    }
+
+    /**
+     * Loads a PipesParser from pre-loaded configuration objects.
+     * <p>
+     * Use this method when you need to modify the PipesConfig before creating
+     * the parser (e.g., to override emit strategy).
+     *
+     * @param tikaJsonConfig the pre-loaded JSON configuration
+     * @param pipesConfig the pipes configuration (may be modified by caller)
+     * @param tikaConfigPath path to the config file (passed to child processes)
+     * @return a new PipesParser instance
+     * @throws IOException if plugin extraction fails
+     */
+    public static PipesParser load(TikaJsonConfig tikaJsonConfig, PipesConfig pipesConfig,
+            Path tikaConfigPath) throws IOException {
+        TikaPluginManager.preExtractPlugins(tikaJsonConfig);
+        return new PipesParser(pipesConfig, tikaConfigPath);
+    }
 
     private final PipesConfig pipesConfig;
     private final Path tikaConfigPath;
     private final List<PipesClient> clients = new ArrayList<>();
-    private final ArrayBlockingQueue<PipesClient> clientQueue ;
+    private final ArrayBlockingQueue<PipesClient> clientQueue;
 
-
-    public PipesParser(PipesConfig pipesConfig, Path tikaConfigPath) {
+    private PipesParser(PipesConfig pipesConfig, Path tikaConfigPath) {
         this.pipesConfig = pipesConfig;
         this.tikaConfigPath = tikaConfigPath;
         this.clientQueue = new ArrayBlockingQueue<>(pipesConfig.getNumClients());

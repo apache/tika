@@ -27,6 +27,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -119,8 +120,9 @@ public class PipesForkParser implements Closeable {
      * Creates a new PipesForkParser with default configuration.
      *
      * @throws IOException if the temporary config file cannot be created
+     * @throws TikaConfigException if configuration is invalid
      */
-    public PipesForkParser() throws IOException {
+    public PipesForkParser() throws IOException, TikaConfigException {
         this(new PipesForkParserConfig());
     }
 
@@ -129,11 +131,12 @@ public class PipesForkParser implements Closeable {
      *
      * @param config the configuration for this parser
      * @throws IOException if the temporary config file cannot be created
+     * @throws TikaConfigException if configuration is invalid
      */
-    public PipesForkParser(PipesForkParserConfig config) throws IOException {
+    public PipesForkParser(PipesForkParserConfig config) throws IOException, TikaConfigException {
         this.config = config;
         this.tikaConfigPath = createTikaConfigFile();
-        this.pipesParser = new PipesParser(config.getPipesConfig(), tikaConfigPath);
+        this.pipesParser = PipesParser.load(tikaConfigPath);
     }
 
     /**

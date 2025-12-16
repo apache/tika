@@ -259,7 +259,7 @@ public class TikaAsyncCLI {
 
     private static void processWithTikaConfig(PipesIterator pipesIterator, Path tikaConfigPath, SimpleAsyncConfig asyncConfig) throws Exception {
         long start = System.currentTimeMillis();
-        try (AsyncProcessor processor = new AsyncProcessor(tikaConfigPath, pipesIterator)) {
+        try (AsyncProcessor processor = AsyncProcessor.load(tikaConfigPath, pipesIterator)) {
 
             for (FetchEmitTuple t : pipesIterator) {
                 configureExtractBytes(t, asyncConfig);

@@ -62,7 +62,7 @@ public class AsyncResource {
     private ArrayBlockingQueue<FetchEmitTuple> queue;
 
     public AsyncResource(java.nio.file.Path tikaConfigPath) throws TikaException, IOException, SAXException {
-        this.asyncProcessor = new AsyncProcessor(tikaConfigPath);
+        this.asyncProcessor = AsyncProcessor.load(tikaConfigPath);
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         TikaPluginManager pluginManager = TikaPluginManager.load(tikaJsonConfig);
         this.emitterManager = EmitterManager.load(pluginManager, tikaJsonConfig);

@@ -54,6 +54,54 @@ public class TikaPluginManager extends DefaultPluginManager {
     }
 
     /**
+     * Pre-extracts plugin zip files without loading them.
+     * <p>
+     * Call this method early in parent processes (e.g., AsyncProcessor, PipesParser)
+     * before spawning child processes. This ensures plugins are extracted once in
+     * the parent, so child processes don't race to extract the same plugins.
+     * <p>
+     * This method is synchronized to prevent concurrent extraction within the same JVM.
+     * For cross-process safety, {@link ThreadSafeUnzipper} uses atomic rename.
+     * <p>
+     * If plugin-roots is not specified in the config, this method does nothing.
+     *
+     * @param tikaJsonConfig the configuration containing plugin-roots
+     * @throws IOException if extraction fails
+     */
+    public static synchronized void preExtractPlugins(TikaJsonConfig tikaJsonConfig)
+            throws IOException {
+        JsonNode root = tikaJsonConfig.getRootNode();
+        JsonNode pluginRoots = root.get("plugin-roots");
+        if (pluginRoots == null) {
+            // No plugins configured - nothing to extract
+            return;
+        }
+        List<Path> roots = OBJECT_MAPPER.convertValue(pluginRoots,
+                new TypeReference<List<Path>>() {});
+        for (Path pluginRoot : roots) {
+            extractPluginsInDirectory(pluginRoot);
+        }
+    }
+
+    private static void extractPluginsInDirectory(Path root) throws IOException {
+        if (!Files.isDirectory(root)) {
+            return;
+        }
+        long start = System.currentTimeMillis();
+        File[] files = root.toFile().listFiles();
+        if (files == null) {
+            return;
+        }
+        for (File f : files) {
+            if (f.getName().endsWith(".zip")) {
+                ThreadSafeUnzipper.unzipPlugin(f.toPath());
+            }
+        }
+        LOG.debug("took {} ms to pre-extract plugins in {}",
+                System.currentTimeMillis() - start, root);
+    }
+
+    /**
      * Loads plugin manager from a pre-parsed TikaJsonConfig.
      * This is the preferred method when sharing configuration across
      * core Tika and pipes components.
