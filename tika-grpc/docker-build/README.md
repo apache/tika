@@ -16,21 +16,33 @@ The Docker image includes:
 
 ### Prerequisites
 
-1. Build Tika from the project root:
+1. Build Tika from the project root (this builds all modules including plugins):
 ```bash
 mvn clean install -DskipTests
 ```
 
-2. Set the required environment variable:
+### Option 1: Run Docker Build During Maven Package
+
+The Docker build can be triggered automatically during the Maven package phase:
+
 ```bash
-export TIKA_VERSION=4.0.0-SNAPSHOT
+cd tika-grpc
+mvn package -Dskip.docker.build=false
 ```
 
-### Run the Docker Build Script
+Or from the project root:
+```bash
+mvn clean install -DskipTests -Dskip.docker.build=false
+```
 
-From the project root directory:
+**Note:** By default, `skip.docker.build=true` to avoid running Docker builds during normal development.
+
+### Option 2: Run the Docker Build Script Manually
+
+Set the required environment variable and run the script:
 
 ```bash
+export TIKA_VERSION=4.0.0-SNAPSHOT
 ./tika-grpc/docker-build/docker-build.sh
 ```
 
@@ -47,7 +59,12 @@ From the project root directory:
 
 ### Examples
 
-Build and tag for Docker Hub:
+Build with Maven (recommended for CI/CD):
+```bash
+mvn clean install -DskipTests -Dskip.docker.build=false -DdockerId=myusername
+```
+
+Build and tag for Docker Hub (manual script):
 ```bash
 export TIKA_VERSION=4.0.0-SNAPSHOT
 export DOCKER_ID=myusername
