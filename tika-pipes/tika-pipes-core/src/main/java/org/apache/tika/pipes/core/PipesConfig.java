@@ -74,6 +74,16 @@ public class PipesConfig {
     private int queueSize = DEFAULT_QUEUE_SIZE;
     private int numEmitters = DEFAULT_NUM_EMITTERS;
     private boolean emitIntermediateResults = false;
+    /**
+     * When true, only stop processing on fatal errors (FAILED_TO_INITIALIZE).
+     * When false (default), also stop on initialization failures and not-found errors.
+     * <p>
+     * Use true for server mode (tika-server /pipes, /async) where different requests
+     * may use different fetchers/emitters.
+     * Use false (default) for CLI batch mode where all tasks typically use the same
+     * fetcher/emitter configuration.
+     */
+    private boolean stopOnlyOnFatal = false;
 
     private ArrayList<String> forkedJvmArgs = new ArrayList<>();
     private String javaPath = "java";
@@ -316,5 +326,26 @@ public class PipesConfig {
 
     public void setEmitIntermediateResults(boolean emitIntermediateResults) {
         this.emitIntermediateResults = emitIntermediateResults;
+    }
+
+    /**
+     * When true, only stop processing on fatal errors (FAILED_TO_INITIALIZE).
+     * When false (default), also stop on initialization failures (FETCHER_INITIALIZATION_EXCEPTION,
+     * EMITTER_INITIALIZATION_EXCEPTION, CLIENT_UNAVAILABLE_WITHIN_MS) and not-found errors
+     * (FETCHER_NOT_FOUND, EMITTER_NOT_FOUND).
+     * <p>
+     * Use true for server mode (tika-server /pipes, /async) where different requests
+     * may use different fetchers/emitters - a bad request shouldn't kill the server.
+     * Use false (default) for CLI batch mode where all tasks typically use the same
+     * fetcher/emitter configuration - no point continuing if configuration is wrong.
+     *
+     * @return true if only fatal errors should stop processing
+     */
+    public boolean isStopOnlyOnFatal() {
+        return stopOnlyOnFatal;
+    }
+
+    public void setStopOnlyOnFatal(boolean stopOnlyOnFatal) {
+        this.stopOnlyOnFatal = stopOnlyOnFatal;
     }
 }

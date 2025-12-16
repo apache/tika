@@ -77,12 +77,30 @@ public class PipesForkResult {
     }
 
     /**
-     * Check if there was an application error.
+     * Check if there was a fatal error (failed to initialize pipes system).
      *
-     * @return true if there was an application-level error
+     * @return true if there was a fatal error
      */
-    public boolean isApplicationError() {
-        return pipesResult.isApplicationError();
+    public boolean isFatal() {
+        return pipesResult.isFatal();
+    }
+
+    /**
+     * Check if there was an initialization failure (fetcher/emitter initialization issues).
+     *
+     * @return true if there was an initialization failure
+     */
+    public boolean isInitializationFailure() {
+        return pipesResult.isInitializationFailure();
+    }
+
+    /**
+     * Check if there was a task exception (fetch/emit/parse issues for a specific request).
+     *
+     * @return true if there was a task exception
+     */
+    public boolean isTaskException() {
+        return pipesResult.isTaskException();
     }
 
     /**
