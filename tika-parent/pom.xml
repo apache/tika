@@ -309,7 +309,7 @@
     <rat.version>0.17</rat.version>
     <scm.version>2.2.1</scm.version>
     <spotless.goal>apply</spotless.goal>
-
+    <spotless.header.file>${maven.multiModuleProjectDirectory}/tika-parent/license-header.txt</spotless.header.file>
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.60.0</google.cloud.version>
@@ -1457,7 +1457,7 @@
               <exclude>**/XMPRights.java</exclude>
             </excludes>
             <licenseHeader>
-              <file>${session.executionRootDirectory}/tika-parent/license-header.txt</file>
+              <file>${spotless.header.file}</file>
               <delimiter>package</delimiter>
             </licenseHeader>
             <indent>
@@ -1609,6 +1609,7 @@
       <properties>
         <!-- Override the Spotless goal when this profile is active -->
         <spotless.goal>check</spotless.goal>
+        <spotless.header.file>${session.executionRootDirectory}/tika-parent/license-header.txt</spotless.header.file>
       </properties>
     </profile>
     <profile>
