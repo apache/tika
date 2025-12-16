@@ -40,6 +40,42 @@
     <j2objc-annotations.version>3.1</j2objc-annotations.version>
     <skip.docker.build>true</skip.docker.build>
   </properties>
+  
+  <profiles>
+    <profile>
+      <id>enable-docker-build-aws</id>
+      <activation>
+        <property>
+          <name>env.AWS_ACCOUNT_ID</name>
+        </property>
+      </activation>
+      <properties>
+        <skip.docker.build>false</skip.docker.build>
+      </properties>
+    </profile>
+    <profile>
+      <id>enable-docker-build-azure</id>
+      <activation>
+        <property>
+          <name>env.AZURE_REGISTRY_NAME</name>
+        </property>
+      </activation>
+      <properties>
+        <skip.docker.build>false</skip.docker.build>
+      </properties>
+    </profile>
+    <profile>
+      <id>enable-docker-build-dockerhub</id>
+      <activation>
+        <property>
+          <name>env.DOCKER_ID</name>
+        </property>
+      </activation>
+      <properties>
+        <skip.docker.build>false</skip.docker.build>
+      </properties>
+    </profile>
+  </profiles>
 
   <dependencyManagement>
     <dependencies>
