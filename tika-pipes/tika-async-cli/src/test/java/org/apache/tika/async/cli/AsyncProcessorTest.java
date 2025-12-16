@@ -166,7 +166,7 @@ public class AsyncProcessorTest extends TikaTest {
         AsyncProcessor processor = new AsyncProcessor(configDir.resolve("tika-config.json"));
 
         // Create a tuple with a non-existent fetcher - this will cause FETCHER_NOT_FOUND
-        // which is an APPLICATION_ERROR
+        // which is a TASK_EXCEPTION but will stop processing in CLI mode (default)
         ParseContext parseContext = new ParseContext();
         parseContext.set(HandlerConfig.class, DEFAULT_HANDLER_CONFIG);
         FetchEmitTuple badTuple = new FetchEmitTuple(

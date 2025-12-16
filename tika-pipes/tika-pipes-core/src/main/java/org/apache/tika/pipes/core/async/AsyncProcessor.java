@@ -338,14 +338,16 @@ public class AsyncProcessor implements Closeable {
                             LOG.warn("pipesClientId={} crash", pipesClient.getPipesClientId(), e);
                             result = PipesResults.UNSPECIFIED_CRASH;
                         }
-                        // Check for application errors - these indicate configuration issues
-                        // or other problems that would affect all workers
-                        if (result.isApplicationError()) {
-                            LOG.error("pipesClientId={}: application error ({}), stopping all processing",
-                                    pipesClient.getPipesClientId(), result.status());
+                        // Check if we should stop processing based on the result
+                        if (shouldStopProcessing(result)) {
+                            LOG.error("pipesClientId={}: {} ({}), stopping all processing",
+                                    pipesClient.getPipesClientId(),
+                                    describeStopReason(result),
+                                    result.status());
                             applicationErrorOccurred.set(true);
                             pipesReporter.report(t, result, System.currentTimeMillis() - start);
-                            throw new PipesException("Application error: " + result.status() +
+                            throw new PipesException(describeStopReason(result) + ": " +
+                                    result.status() +
                                     (result.message() != null ? " - " + result.message() : ""));
                         }
                         if (LOG.isTraceEnabled()) {
@@ -382,7 +384,47 @@ public class AsyncProcessor implements Closeable {
                     result.status() == PipesResult.RESULT_STATUS.PARSE_SUCCESS_WITH_EXCEPTION) {
                 return true;
             }
-            return asyncConfig.isEmitIntermediateResults() && (result.isApplicationError() || result.isProcessCrash());
+            // Emit intermediate results on any non-success if configured
+            return asyncConfig.isEmitIntermediateResults() && !result.isSuccess();
+        }
+
+        /**
+         * Determines if processing should stop based on the result and configuration.
+         * <p>
+         * When stopOnlyOnFatal is true (server mode): only stop on fatal errors.
+         * When stopOnlyOnFatal is false (CLI mode, default): also stop on initialization
+         * failures and fetcher/emitter not found errors.
+         */
+        private boolean shouldStopProcessing(PipesResult result) {
+            // Always stop on fatal errors
+            if (result.isFatal()) {
+                return true;
+            }
+
+            // In server mode, only fatal errors stop processing
+            if (asyncConfig.isStopOnlyOnFatal()) {
+                return false;
+            }
+
+            // In CLI mode, also stop on initialization failures and not-found errors
+            if (result.isInitializationFailure()) {
+                return true;
+            }
+
+            // Stop on fetcher/emitter not found in CLI mode
+            PipesResult.RESULT_STATUS status = result.status();
+            return status == PipesResult.RESULT_STATUS.FETCHER_NOT_FOUND ||
+                   status == PipesResult.RESULT_STATUS.EMITTER_NOT_FOUND;
+        }
+
+        private String describeStopReason(PipesResult result) {
+            if (result.isFatal()) {
+                return "Fatal error";
+            } else if (result.isInitializationFailure()) {
+                return "Initialization failure";
+            } else {
+                return "Configuration error";
+            }
         }
     }
 }

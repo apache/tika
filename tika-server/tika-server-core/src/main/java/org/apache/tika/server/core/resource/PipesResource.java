@@ -102,7 +102,8 @@ public class PipesResource {
         PipesResult pipesResult = pipesParser.parse(fetchEmitTuple);
         if (pipesResult.isProcessCrash()) {
             return returnProcessCrash(pipesResult.status().toString());
-        } else if (pipesResult.isApplicationError()) {
+        } else if (!pipesResult.isSuccess()) {
+            // Handle fatal errors, initialization failures, and task exceptions
             return returnApplicationError(pipesResult
                     .status()
                     .toString());

@@ -432,14 +432,17 @@ public class PipesForkParserTest {
             PipesForkResult result = parser.parse(tis);
 
             // At least one of these should be true
-            boolean hasCategory = result.isSuccess() || result.isProcessCrash() || result.isApplicationError();
+            boolean hasCategory = result.isSuccess() || result.isProcessCrash() ||
+                    result.isFatal() || result.isInitializationFailure() || result.isTaskException();
             assertTrue(hasCategory, "Result should have a valid category");
 
             // These should be mutually exclusive
             int trueCount = 0;
             if (result.isSuccess()) trueCount++;
             if (result.isProcessCrash()) trueCount++;
-            if (result.isApplicationError()) trueCount++;
+            if (result.isFatal()) trueCount++;
+            if (result.isInitializationFailure()) trueCount++;
+            if (result.isTaskException()) trueCount++;
             assertEquals(1, trueCount, "Exactly one category should be true");
         }
     }

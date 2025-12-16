@@ -25,65 +25,61 @@ public record PipesResult(RESULT_STATUS status, EmitData emitData, String messag
     /**
      * High-level categorization of result statuses.
      * <p>
-     * Categories help distinguish between:
+     * Categories help distinguish between different types of failures and successes,
+     * allowing infrastructure to decide how to handle each case:
      * <ul>
-     *   <li>Process crashes (OOM, timeout, system-level failures)</li>
-     *   <li>Application errors (process ran but encountered errors)</li>
-     *   <li>Successful processing (possibly with warnings)</li>
+     *   <li>{@link #FATAL} - System cannot continue, must be fixed and restarted</li>
+     *   <li>{@link #INITIALIZATION_FAILURE} - Component failed to initialize, might be transient</li>
+     *   <li>{@link #TASK_EXCEPTION} - This task failed, but other tasks may succeed</li>
+     *   <li>{@link #PROCESS_CRASH} - Forked process crashed, auto-restart and continue</li>
+     *   <li>{@link #SUCCESS} - Processing completed successfully (possibly with warnings)</li>
      * </ul>
      */
     public enum CATEGORY {
-        /** Forked process crashed due to OOM, timeout, or other system failure */
-        PROCESS_CRASH,
+        /** Fatal system error - cannot continue, must be fixed and restarted */
+        FATAL,
 
-        /** Process completed but encountered application-level errors */
-        APPLICATION_ERROR,
+        /** Component initialization failed - processing should stop, might be transient */
+        INITIALIZATION_FAILURE,
+
+        /** Task-level exception - this task failed, log and continue with next task */
+        TASK_EXCEPTION,
+
+        /** Forked process crashed due to OOM, timeout, or other system failure - auto-restart */
+        PROCESS_CRASH,
 
         /** Processing completed successfully (possibly with warnings) */
         SUCCESS
     }
 
     public enum RESULT_STATUS {
-        // Process crashes
+        // Fatal errors - system cannot continue
+        FAILED_TO_INITIALIZE(CATEGORY.FATAL),
+
+        // Initialization failures - component failed to start, might be transient
+        FETCHER_INITIALIZATION_EXCEPTION(CATEGORY.INITIALIZATION_FAILURE),
+        EMITTER_INITIALIZATION_EXCEPTION(CATEGORY.INITIALIZATION_FAILURE),
+        CLIENT_UNAVAILABLE_WITHIN_MS(CATEGORY.INITIALIZATION_FAILURE),
+
+        // Task exceptions - this task failed, continue with next
+        FETCH_EXCEPTION(CATEGORY.TASK_EXCEPTION),
+        EMIT_EXCEPTION(CATEGORY.TASK_EXCEPTION),
+        FETCHER_NOT_FOUND(CATEGORY.TASK_EXCEPTION),
+        EMITTER_NOT_FOUND(CATEGORY.TASK_EXCEPTION),
+
+        // Process crashes - forked process died, auto-restart
         OOM(CATEGORY.PROCESS_CRASH),
         TIMEOUT(CATEGORY.PROCESS_CRASH),
         UNSPECIFIED_CRASH(CATEGORY.PROCESS_CRASH),
 
-        // Initialization failures
-        FAILED_TO_INITIALIZE(CATEGORY.APPLICATION_ERROR),
-
-        // Process crashes (system-level failures)
-        CLIENT_UNAVAILABLE_WITHIN_MS(CATEGORY.APPLICATION_ERROR),
-
-        // Fetch failures
-        FETCHER_INITIALIZATION_EXCEPTION(CATEGORY.APPLICATION_ERROR),
-        FETCH_EXCEPTION(CATEGORY.APPLICATION_ERROR),
-
-        // Success with edge case
+        // Success states
         EMPTY_OUTPUT(CATEGORY.SUCCESS),
-
-
-        // Parse success states
         PARSE_SUCCESS(CATEGORY.SUCCESS),
         PARSE_SUCCESS_WITH_EXCEPTION(CATEGORY.SUCCESS),
         PARSE_EXCEPTION_NO_EMIT(CATEGORY.SUCCESS),
-
-
-        // Emit success states
         EMIT_SUCCESS(CATEGORY.SUCCESS),
         EMIT_SUCCESS_PARSE_EXCEPTION(CATEGORY.SUCCESS),
-        EMIT_SUCCESS_PASSBACK(CATEGORY.SUCCESS),
-
-        // Emit failure
-        EMIT_EXCEPTION(CATEGORY.APPLICATION_ERROR),
-
-        // Emitter failures
-        EMITTER_INITIALIZATION_EXCEPTION(CATEGORY.APPLICATION_ERROR),
-        EMITTER_NOT_FOUND(CATEGORY.APPLICATION_ERROR),
-
-        // Other errors
-        INTERRUPTED_EXCEPTION(CATEGORY.APPLICATION_ERROR),
-        FETCHER_NOT_FOUND(CATEGORY.APPLICATION_ERROR);
+        EMIT_SUCCESS_PASSBACK(CATEGORY.SUCCESS);
 
 
         private final CATEGORY category;
@@ -95,14 +91,54 @@ public record PipesResult(RESULT_STATUS status, EmitData emitData, String messag
         /**
          * Gets the high-level category for this result status.
          *
-         * @return the category (PROCESS_CRASH, APPLICATION_ERROR, or SUCCESS)
+         * @return the category (FATAL, INITIALIZATION_FAILURE, TASK_EXCEPTION, PROCESS_CRASH, or SUCCESS)
          */
         public CATEGORY getCategory() {
             return category;
         }
 
         /**
+         * Checks if this status represents a fatal error.
+         * <p>
+         * Fatal errors mean the system cannot continue and must be fixed and restarted.
+         *
+         * @return true if this is a fatal error
+         */
+        public boolean isFatal() {
+            return category == CATEGORY.FATAL;
+        }
+
+        /**
+         * Checks if this status represents an initialization failure.
+         * <p>
+         * Initialization failures occur when a component (fetcher, emitter, client)
+         * fails to start. These might be transient (e.g., network issues) or require
+         * configuration fixes.
+         *
+         * @return true if a component failed to initialize
+         */
+        public boolean isInitializationFailure() {
+            return category == CATEGORY.INITIALIZATION_FAILURE;
+        }
+
+        /**
+         * Checks if this status represents a task-level exception.
+         * <p>
+         * Task exceptions indicate this specific task failed, but other tasks
+         * may succeed. Processing can continue with the next task.
+         *
+         * @return true if this task failed
+         */
+        public boolean isTaskException() {
+            return category == CATEGORY.TASK_EXCEPTION;
+        }
+
+        /**
          * Checks if this status represents a process crash (OOM, timeout, etc.).
+         * <p>
+         * Process crashes are system-level failures where the forked process
+         * terminated abnormally. The process will be auto-restarted and
+         * processing can continue.
          *
          * @return true if the forked process crashed
          */
@@ -111,18 +147,10 @@ public record PipesResult(RESULT_STATUS status, EmitData emitData, String messag
         }
 
         /**
-         * Checks if this status represents an application error.
-         *
-         * @return true if the process ran but encountered an error
-         */
-        public boolean isApplicationError() {
-            return category == CATEGORY.APPLICATION_ERROR;
-        }
-
-        /**
-         * Checks if this status represents successful processing. Successful
-         * processing includes handling standard runtime exceptions during the
-         * parse.
+         * Checks if this status represents successful processing.
+         * <p>
+         * Success includes normal completion as well as cases where
+         * processing completed with warnings (e.g., PARSE_SUCCESS_WITH_EXCEPTION).
          *
          * @return true if processing completed successfully (possibly with warnings)
          */
@@ -161,36 +189,59 @@ public record PipesResult(RESULT_STATUS status, EmitData emitData, String messag
     /**
      * Gets the high-level category for this result.
      *
-     * @return the category (PROCESS_CRASH, APPLICATION_ERROR, or SUCCESS)
+     * @return the category (FATAL, INITIALIZATION_FAILURE, TASK_EXCEPTION, PROCESS_CRASH, or SUCCESS)
      */
     public CATEGORY getCategory() {
         return status.getCategory();
     }
 
     /**
+     * Checks if this result represents a fatal error.
+     * <p>
+     * Fatal errors mean the system cannot continue and must be fixed and restarted.
+     *
+     * @return true if this is a fatal error
+     */
+    public boolean isFatal() {
+        return status.isFatal();
+    }
+
+    /**
+     * Checks if this result represents an initialization failure.
+     * <p>
+     * Initialization failures occur when a component (fetcher, emitter, client)
+     * fails to start. These might be transient (e.g., network issues) or require
+     * configuration fixes.
+     *
+     * @return true if a component failed to initialize
+     */
+    public boolean isInitializationFailure() {
+        return status.isInitializationFailure();
+    }
+
+    /**
+     * Checks if this result represents a task-level exception.
+     * <p>
+     * Task exceptions indicate this specific task failed, but other tasks
+     * may succeed. Processing can continue with the next task.
+     *
+     * @return true if this task failed
+     */
+    public boolean isTaskException() {
+        return status.isTaskException();
+    }
+
+    /**
      * Checks if this result represents a process crash (OOM, timeout, etc.).
      * <p>
      * Process crashes are system-level failures where the forked process
-     * terminated abnormally, as opposed to application errors where the
-     * process completed but encountered errors during execution.
+     * terminated abnormally. The process will be auto-restarted and
+     * processing can continue.
      *
      * @return true if the forked process crashed
      */
     public boolean isProcessCrash() {
         return status.isProcessCrash();
-    }
-
-    /**
-     * Checks if this result represents an application error.
-     * <p>
-     * Application errors occur when the process runs but encounters
-     * errors during fetch, parse, or emit operations. These are
-     * caught runtime exceptions, not process crashes.
-     *
-     * @return true if the process ran but encountered an error
-     */
-    public boolean isApplicationError() {
-        return status.isApplicationError();
     }
 
     /**

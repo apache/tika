@@ -26,7 +26,6 @@ public class PipesResults {
     public static final PipesResult OOM = new PipesResult(PipesResult.RESULT_STATUS.OOM);
     public static final PipesResult UNSPECIFIED_CRASH = new PipesResult(PipesResult.RESULT_STATUS.UNSPECIFIED_CRASH);
     public static final PipesResult EMIT_SUCCESS = new PipesResult(PipesResult.RESULT_STATUS.EMIT_SUCCESS);
-    public static final PipesResult INTERRUPTED_EXCEPTION = new PipesResult(PipesResult.RESULT_STATUS.INTERRUPTED_EXCEPTION);
     public static final PipesResult EMPTY_OUTPUT = new PipesResult(PipesResult.RESULT_STATUS.EMPTY_OUTPUT);
 
 }

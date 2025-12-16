@@ -186,7 +186,7 @@ public class PipesClientTest {
 
             PipesResult pipesResult = pipesClient.process(tuple);
             assertEquals(PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE, pipesResult.status());
-            assertTrue(pipesResult.isApplicationError(), "FAILED_TO_INITIALIZE should be an application error");
+            assertTrue(pipesResult.isFatal(), "FAILED_TO_INITIALIZE should be a fatal error");
             Assertions.assertNotNull(pipesResult.message(), "Should have error message from server");
             assertTrue(pipesResult.message().contains("non-existent-fetcher-plugin") ||
                       pipesResult.message().contains("TikaConfigException") ||
@@ -215,7 +215,7 @@ public class PipesClientTest {
 
             PipesResult pipesResult = pipesClient.process(tuple);
             assertEquals(PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE, pipesResult.status());
-            assertTrue(pipesResult.isApplicationError(), "FAILED_TO_INITIALIZE should be an application error");
+            assertTrue(pipesResult.isFatal(), "FAILED_TO_INITIALIZE should be a fatal error");
             Assertions.assertNotNull(pipesResult.message(), "Should have error message");
             assertTrue(pipesResult.message().contains("exit code") ||
                             pipesResult.message().contains("JVM") ||
@@ -243,7 +243,7 @@ public class PipesClientTest {
 
             PipesResult pipesResult = pipesClient.process(tuple);
             assertEquals(PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE, pipesResult.status());
-            assertTrue(pipesResult.isApplicationError(), "FAILED_TO_INITIALIZE should be an application error");
+            assertTrue(pipesResult.isFatal(), "FAILED_TO_INITIALIZE should be a fatal error");
             Assertions.assertNotNull(pipesResult.message(), "Should have error message");
             assertTrue(pipesResult.message().contains("No such file") || pipesResult.message().contains("thisIsntJava"),
                     "Error message should indicate process failure: " + pipesResult.message());
@@ -272,8 +272,8 @@ public class PipesClientTest {
             // Should be UNSPECIFIED_CRASH because RuntimeException during detection
             // is not caught by pre-parse IOException handler
             assertEquals(PipesResult.RESULT_STATUS.UNSPECIFIED_CRASH, pipesResult.status());
-            assertTrue(pipesResult.isProcessCrash() || pipesResult.isApplicationError(),
-                    "Should be categorized as a crash or application error");
+            assertTrue(pipesResult.isProcessCrash(),
+                    "Should be categorized as a process crash");
 
             // Should have error message about the crash
             Assertions.assertNotNull(pipesResult.message(), "Should have error message");
@@ -412,9 +412,9 @@ public class PipesClientTest {
             assertEquals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION, pipesResult.status(),
                     "Should return FETCH_EXCEPTION when file cannot be fetched");
 
-            // Verify it's categorized as APPLICATION_ERROR
-            assertTrue(pipesResult.isApplicationError(),
-                    "FETCH_EXCEPTION should be application error category");
+            // Verify it's categorized as TASK_EXCEPTION
+            assertTrue(pipesResult.isTaskException(),
+                    "FETCH_EXCEPTION should be task exception category");
 
             // Verify error message contains useful information
             Assertions.assertNotNull(pipesResult.message());
@@ -464,9 +464,9 @@ public class PipesClientTest {
             assertEquals(PipesResult.RESULT_STATUS.EMIT_EXCEPTION, pipesResult.status(),
                     "Should return EMIT_EXCEPTION when emitter fails to write");
 
-            // Verify it's categorized as APPLICATION_ERROR
-            assertTrue(pipesResult.isApplicationError(),
-                    "EMIT_EXCEPTION should be application error category");
+            // Verify it's categorized as TASK_EXCEPTION
+            assertTrue(pipesResult.isTaskException(),
+                    "EMIT_EXCEPTION should be task exception category");
         }
     }
 
@@ -493,9 +493,9 @@ public class PipesClientTest {
             assertEquals(PipesResult.RESULT_STATUS.FETCHER_INITIALIZATION_EXCEPTION, pipesResult.status(),
                     "Should return FETCHER_INITIALIZATION_EXCEPTION when fetcher name is invalid");
 
-            // Verify it's categorized as APPLICATION_ERROR
-            assertTrue(pipesResult.isApplicationError(),
-                    "FETCHER_NOT_FOUND should be application error category");
+            // Verify it's categorized as INITIALIZATION_FAILURE
+            assertTrue(pipesResult.isInitializationFailure(),
+                    "FETCHER_INITIALIZATION_EXCEPTION should be initialization failure category");
 
             // Verify error message mentions the fetcher name
             Assertions.assertNotNull(pipesResult.message());
@@ -539,9 +539,9 @@ public class PipesClientTest {
             assertEquals(PipesResult.RESULT_STATUS.EMITTER_NOT_FOUND, pipesResult.status(),
                     "Should return EMITTER_NOT_FOUND when emitter name is invalid");
 
-            // Verify it's categorized as APPLICATION_ERROR
-            assertTrue(pipesResult.isApplicationError(),
-                    "EMITTER_NOT_FOUND should be application error category");
+            // Verify it's categorized as TASK_EXCEPTION
+            assertTrue(pipesResult.isTaskException(),
+                    "EMITTER_NOT_FOUND should be task exception category");
 
             // Verify error message mentions the emitter name
             Assertions.assertNotNull(pipesResult.message());
