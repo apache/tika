@@ -199,7 +199,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
                     if (embeddedExtractor.shouldParseEmbedded(thumbnailMetadata)) {
                         embeddedExtractor.parseEmbedded(TikaInputStream.get(tStream),
-                                new EmbeddedContentHandler(handler), thumbnailMetadata, false);
+                                new EmbeddedContentHandler(handler), thumbnailMetadata, context, false);
                     }
                 }
             }
@@ -364,8 +364,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 tis = TikaInputStream.get(fs.createDocumentInputStream(packageEntryName));
                 if (embeddedExtractor.shouldParseEmbedded(metadata)) {
                     embeddedExtractor
-                            .parseEmbedded(tis, xhtml, metadata,
-                                    true);
+                            .parseEmbedded(tis, xhtml, metadata, context, true);
                 }
             } else if (POIFSDocumentType.OLE10_NATIVE == type) {
                 // TIKA-704: OLE 1.0 embedded document
@@ -386,8 +385,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
                 if (tis != null && embeddedExtractor.shouldParseEmbedded(metadata)) {
                     embeddedExtractor
-                            .parseEmbedded(tis, xhtml, metadata,
-                                    true);
+                            .parseEmbedded(tis, xhtml, metadata, context, true);
                 }
             } else {
                 handleEmbeddedFile(part, xhtml, rel, embeddedPartMetadata,
@@ -465,7 +463,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         if (embeddedExtractor.shouldParseEmbedded(metadata)) {
             try (TikaInputStream tis = TikaInputStream.get(part.getInputStream())) {
                 embeddedExtractor
-                        .parseEmbedded(tis, xhtml, metadata, true);
+                        .parseEmbedded(tis, xhtml, metadata, context, true);
             }
         }
     }

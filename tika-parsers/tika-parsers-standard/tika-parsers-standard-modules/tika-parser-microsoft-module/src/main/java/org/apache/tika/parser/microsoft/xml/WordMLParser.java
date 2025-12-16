@@ -83,7 +83,7 @@ public class WordMLParser extends AbstractXML2003Parser {
 
         return new TeeContentHandler(super.getContentHandler(ch, metadata, context),
                 new WordMLHandler(ch), new HyperlinkHandler(ch, WORD_ML_URL),
-                new PictHandler(ch, metadata,
+                new PictHandler(ch, metadata, context,
                         EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context)));
     }
 
@@ -181,16 +181,18 @@ public class WordMLParser extends AbstractXML2003Parser {
         final ContentHandler handler;
         final Base64 base64 = new Base64();
         byte[] rawBytes = null;
+        final ParseContext parseContext;
         EmbeddedDocumentExtractor embeddedDocumentExtractor;
         boolean inPict = false;
         boolean inBin = false;
         String pictName = null;
         String pictSource = null;
 
-        public PictHandler(ContentHandler handler, Metadata metadata,
+        public PictHandler(ContentHandler handler, Metadata metadata, ParseContext parseContext,
                            EmbeddedDocumentExtractor embeddedDocumentExtractor) {
             this.handler = handler;
             this.parentMetadata = metadata;
+            this.parseContext = parseContext;
             this.embeddedDocumentExtractor = embeddedDocumentExtractor;
         }
 
@@ -287,7 +289,7 @@ public class WordMLParser extends AbstractXML2003Parser {
                         metadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, pictSource);
                     }
                     if (embeddedDocumentExtractor.shouldParseEmbedded(metadata)) {
-                        embeddedDocumentExtractor.parseEmbedded(tis, handler, metadata, outputHtml);
+                        embeddedDocumentExtractor.parseEmbedded(tis, handler, metadata, parseContext, outputHtml);
                     }
                 } catch (IOException e) {
                     //log

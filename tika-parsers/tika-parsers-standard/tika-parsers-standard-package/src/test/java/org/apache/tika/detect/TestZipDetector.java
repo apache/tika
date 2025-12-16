@@ -35,6 +35,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
 public class TestZipDetector extends TikaTest {
 
@@ -63,7 +64,7 @@ public class TestZipDetector extends TikaTest {
         Metadata metadata = new Metadata();
         try (TikaInputStream tis = TikaInputStream.get(p, metadata)) {
             assertEquals(expectedMime, DETECTOR
-                    .detect(tis, metadata)
+                    .detect(tis, metadata, new ParseContext())
                     .toString());
         }
 
@@ -71,7 +72,7 @@ public class TestZipDetector extends TikaTest {
         metadata = new Metadata();
         try (TikaInputStream tis = TikaInputStream.get(bytes)) {
             assertEquals(expectedMime, DETECTOR
-                    .detect(tis, metadata)
+                    .detect(tis, metadata, new ParseContext())
                     .toString());
         }
 
@@ -79,7 +80,7 @@ public class TestZipDetector extends TikaTest {
         try (InputStream is = new BufferedInputStream(Files.newInputStream(p));
              TikaInputStream tis = TikaInputStream.get(is)) {
             assertEquals(expectedMime, DETECTOR
-                    .detect(tis, metadata)
+                    .detect(tis, metadata, new ParseContext())
                     .toString());
         }
 
@@ -87,7 +88,7 @@ public class TestZipDetector extends TikaTest {
         try (InputStream is = new ByteArrayInputStream(bytes);
              TikaInputStream tis = TikaInputStream.get(is)) {
             assertEquals(expectedMime, DETECTOR
-                    .detect(tis, metadata)
+                    .detect(tis, metadata, new ParseContext())
                     .toString());
         }
     }

@@ -27,6 +27,7 @@ import java.util.List;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 
 public class CompositeEncodingDetector implements EncodingDetector, Serializable {
 
@@ -61,9 +62,9 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
      * @throws IOException
      */
     @Override
-    public Charset detect(TikaInputStream tis, Metadata metadata) throws IOException {
+    public Charset detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) throws IOException {
         for (EncodingDetector detector : getDetectors()) {
-            Charset detected = detector.detect(tis, metadata);
+            Charset detected = detector.detect(tis, metadata, parseContext);
             if (detected != null) {
                 metadata.set(TikaCoreProperties.DETECTED_ENCODING, detected.name());
                 //if this has been set by a leaf detector, do not overwrite

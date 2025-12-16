@@ -40,6 +40,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 
 /**
@@ -364,11 +365,12 @@ public class RTFParserTest extends TikaTest {
     @Test
     public void testBinControlWord() throws Exception {
         ByteCopyingHandler embHandler = new ByteCopyingHandler();
+        ParseContext context = new ParseContext();
         try (TikaInputStream tis = TikaInputStream
                 .get(getResourceAsStream("/test-documents/testBinControlWord.rtf"))) {
             ContainerExtractor ex = new ParserContainerExtractor();
-            assertEquals(true, ex.isSupported(tis));
-            ex.extract(tis, ex, embHandler);
+            assertEquals(true, ex.isSupported(tis, context));
+            ex.extract(tis, ex, embHandler, context);
         }
         assertEquals(1, embHandler.bytes.size());
 
@@ -420,12 +422,13 @@ public class RTFParserTest extends TikaTest {
         skipTypes.add(MediaType.parse("image/emf"));
         skipTypes.add(MediaType.parse("image/wmf"));
 
+        ParseContext context = new ParseContext();
         TrackingHandler tracker = new TrackingHandler(skipTypes);
         try (TikaInputStream tis = TikaInputStream
                 .get(getResourceAsStream("/test-documents/testRTFEmbeddedLink.rtf"))) {
             ContainerExtractor ex = new ParserContainerExtractor();
-            assertEquals(true, ex.isSupported(tis));
-            ex.extract(tis, ex, tracker);
+            assertEquals(true, ex.isSupported(tis, context));
+            ex.extract(tis, ex, tracker, context);
         }
         //should gracefully skip link and not throw NPE, IOEx, etc
         assertEquals(0, tracker.filenames.size());
@@ -434,8 +437,8 @@ public class RTFParserTest extends TikaTest {
         try (TikaInputStream tis = TikaInputStream
                 .get(getResourceAsStream("/test-documents/testRTFEmbeddedLink.rtf"))) {
             ContainerExtractor ex = new ParserContainerExtractor();
-            assertEquals(true, ex.isSupported(tis));
-            ex.extract(tis, ex, tracker);
+            assertEquals(true, ex.isSupported(tis, context));
+            ex.extract(tis, ex, tracker, context);
         }
         //should gracefully skip link and not throw NPE, IOEx, etc
         assertEquals(2, tracker.filenames.size());

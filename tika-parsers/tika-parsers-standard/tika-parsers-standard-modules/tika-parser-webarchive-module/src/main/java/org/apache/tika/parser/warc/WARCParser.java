@@ -150,7 +150,7 @@ public class WARCParser implements Parser {
             //TODO check Content-Encoding on the warcResponse.http.headers and wrap the tis.
             //May need to sniff first few bytes to confirm accuracy, e.g. gzip compression ?
             try (TikaInputStream tis = TikaInputStream.get(payload.body().stream())) {
-                embeddedDocumentExtractor.parseEmbedded(tis, xhtml, metadata, true);
+                embeddedDocumentExtractor.parseEmbedded(tis, xhtml, metadata, context, true);
             }
         }
 

@@ -161,7 +161,7 @@ public class AutoDetectParser extends CompositeParser {
                 metadata, context);
 
         // Automatically detect the MIME type of the document
-        MediaType type = detector.detect(tis, metadata);
+        MediaType type = detector.detect(tis, metadata, context);
         //update CONTENT_TYPE as long as it wasn't set by parser override
         if (metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE) == null ||
                 !metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE)

@@ -93,7 +93,8 @@ public class MP4Parser implements Parser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
 
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);

@@ -814,7 +814,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             if (html != null && html.length() > 0) {
                 Charset charset = null;
                 try (TikaInputStream tis = TikaInputStream.get(html.getBytes(UTF_8))) {
-                    charset = detector.detect(tis, EMPTY_METADATA);
+                    charset = detector.detect(tis, EMPTY_METADATA, context);
                 } catch (IOException e) {
                     //swallow
                 }

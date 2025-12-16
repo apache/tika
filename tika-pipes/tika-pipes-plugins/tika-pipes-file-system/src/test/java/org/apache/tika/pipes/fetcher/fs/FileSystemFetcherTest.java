@@ -16,42 +16,127 @@
  */
 package org.apache.tika.pipes.fetcher.fs;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.plugins.ExtensionConfig;
 
 
 public class FileSystemFetcherTest {
 
-    @Test
-    public void testDescendant() throws Exception {
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
-        Path root = Paths.get("/ab/cd/");
-        Path descendant = root.resolve("ef/gh/ij.pdf");
-        assertTrue(FileSystemFetcher.isDescendant(root, descendant));
+    @TempDir
+    Path tempDir;
 
-        descendant = Paths.get("/cd/ef.pdf");
-        assertFalse(FileSystemFetcher.isDescendant(root, descendant));
-
-        descendant = root.resolve("../../ij.pdf");
-        assertFalse(FileSystemFetcher.isDescendant(root, descendant));
+    private Fetcher createFetcher(Path basePath, Boolean allowAbsolutePaths) throws TikaConfigException, IOException {
+        ObjectNode config = MAPPER.createObjectNode();
+        if (basePath != null) {
+            config.put("basePath", basePath.toAbsolutePath().toString());
+        }
+        if (allowAbsolutePaths != null) {
+            config.put("allowAbsolutePaths", allowAbsolutePaths);
+        }
+        ExtensionConfig pluginConfig = new ExtensionConfig("test", "test", config.toString());
+        return new FileSystemFetcherFactory().buildExtension(pluginConfig);
     }
 
     @Test
     public void testNullByte() throws Exception {
         assertThrows(TikaConfigException.class, () -> {
-            ExtensionConfig pluginConfig = new ExtensionConfig("test", "test",
-                    "{ \"basePath\":\"bad\\u0000path\"}");
-            Fetcher f = new FileSystemFetcherFactory().buildExtension(pluginConfig);
+            ObjectNode config = MAPPER.createObjectNode();
+            config.put("basePath", "bad\u0000path");
+            ExtensionConfig pluginConfig = new ExtensionConfig("test", "test", config.toString());
+            new FileSystemFetcherFactory().buildExtension(pluginConfig);
         });
+    }
+
+    @Test
+    public void testPathTraversalBlocked() throws Exception {
+        // Create a subdirectory as basePath and a file outside it
+        Path basePath = tempDir.resolve("allowed");
+        Files.createDirectories(basePath);
+
+        Path fileInBase = basePath.resolve("safe.txt");
+        Files.writeString(fileInBase, "safe content");
+
+        Path fileOutsideBase = tempDir.resolve("secret.txt");
+        Files.writeString(fileOutsideBase, "secret content");
+
+        // Create fetcher with basePath set to the subdirectory
+        Fetcher fetcher = createFetcher(basePath, null);
+
+        // Valid path within basePath should work
+        try (TikaInputStream tis = fetcher.fetch("safe.txt", new Metadata(), new ParseContext())) {
+            assertNotNull(tis);
+        }
+
+        // Path traversal attempt should be rejected
+        assertThrows(SecurityException.class, () -> {
+            fetcher.fetch("../secret.txt", new Metadata(), new ParseContext());
+        });
+    }
+
+    @Test
+    public void testDeepPathTraversalBlocked() throws Exception {
+        // Create nested directories
+        Path basePath = tempDir.resolve("a/b/c");
+        Files.createDirectories(basePath);
+
+        Path fileInBase = basePath.resolve("file.txt");
+        Files.writeString(fileInBase, "nested content");
+
+        Path fileOutsideBase = tempDir.resolve("outside.txt");
+        Files.writeString(fileOutsideBase, "outside content");
+
+        Fetcher fetcher = createFetcher(basePath, null);
+
+        // Deep path traversal should be rejected
+        assertThrows(SecurityException.class, () -> {
+            fetcher.fetch("../../../outside.txt", new Metadata(), new ParseContext());
+        });
+
+        // Even deeper traversal should be rejected
+        assertThrows(SecurityException.class, () -> {
+            fetcher.fetch("../../../../../../../../etc/passwd", new Metadata(), new ParseContext());
+        });
+    }
+
+    @Test
+    public void testAllowAbsolutePathsRequired() throws Exception {
+        // Without basePath and without allowAbsolutePaths, should throw
+        assertThrows(TikaConfigException.class, () -> {
+            createFetcher(null, null);
+        });
+    }
+
+    @Test
+    public void testAllowAbsolutePathsWorks() throws Exception {
+        // Create a file to fetch
+        Path testFile = tempDir.resolve("test.txt");
+        Files.writeString(testFile, "test content");
+
+        // With allowAbsolutePaths=true and no basePath, should work
+        Fetcher fetcher = createFetcher(null, true);
+
+        // Fetch using absolute path
+        try (TikaInputStream tis = fetcher.fetch(
+                testFile.toAbsolutePath().toString(), new Metadata(), new ParseContext())) {
+            assertNotNull(tis);
+        }
     }
 }

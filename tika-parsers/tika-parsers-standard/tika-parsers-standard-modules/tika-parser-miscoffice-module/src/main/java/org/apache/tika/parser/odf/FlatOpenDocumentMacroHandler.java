@@ -109,7 +109,7 @@ class FlatOpenDocumentMacroHandler extends ContentHandlerDecorator {
         if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
             try (TikaInputStream tis = TikaInputStream.get(bytes)) {
                 embeddedDocumentExtractor
-                        .parseEmbedded(tis, contentHandler, embeddedMetadata, true);
+                        .parseEmbedded(tis, contentHandler, embeddedMetadata, parseContext, true);
             }
         }
     }

@@ -209,7 +209,7 @@ public class IWork13PackageParser implements Parser {
                                 EmbeddedDocumentExtractor embeddedDocumentExtractor)
             throws IOException, SAXException {
         if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
-            embeddedDocumentExtractor.parseEmbedded(tis, xhtml, embeddedMetadata, true);
+            embeddedDocumentExtractor.parseEmbedded(tis, xhtml, embeddedMetadata, new ParseContext(), true);
         }
     }
 
@@ -316,7 +316,7 @@ public class IWork13PackageParser implements Parser {
 
             // Is it the main document?
             if (name.equals(IWORK13_MAIN_ENTRY)) {
-                // TODO Decode the snappy stream, and check for the Message Type
+                // TODO Decode the snappy tis, and check for the Message Type
                 // =     2 (TN::SheetArchive), it is a numbers file;
                 // = 10000 (TP::DocumentArchive), that's a pages file
                 return null;

@@ -17,7 +17,6 @@
 package org.apache.tika.example;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,8 +51,7 @@ public class ContentHandlerExample {
 
         AutoDetectParser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
-        try (InputStream stream = ContentHandlerExample.class.getResourceAsStream("test.doc");
-             TikaInputStream tis = TikaInputStream.get(stream)) {
+        try (TikaInputStream tis = TikaInputStream.get(ContentHandlerExample.class.getResourceAsStream("test.doc"))) {
             parser.parse(tis, handler, metadata);
             return handler.toString();
         }
@@ -67,8 +65,7 @@ public class ContentHandlerExample {
 
         AutoDetectParser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
-        try (InputStream stream = ContentHandlerExample.class.getResourceAsStream("test.doc");
-             TikaInputStream tis = TikaInputStream.get(stream)) {
+        try (TikaInputStream tis = TikaInputStream.get(ContentHandlerExample.class.getResourceAsStream("test.doc"))) {
             parser.parse(tis, handler, metadata);
             return handler.toString();
         }
@@ -83,8 +80,7 @@ public class ContentHandlerExample {
 
         AutoDetectParser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
-        try (InputStream stream = ContentHandlerExample.class.getResourceAsStream("test.doc");
-             TikaInputStream tis = TikaInputStream.get(stream)) {
+        try (TikaInputStream tis = TikaInputStream.get(ContentHandlerExample.class.getResourceAsStream("test.doc"))) {
             parser.parse(tis, handler, metadata);
             return handler.toString();
         }
@@ -102,8 +98,7 @@ public class ContentHandlerExample {
 
         AutoDetectParser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
-        try (InputStream stream = ContentHandlerExample.class.getResourceAsStream("test2.doc");
-             TikaInputStream tis = TikaInputStream.get(stream)) {
+        try (TikaInputStream tis = TikaInputStream.get(ContentHandlerExample.class.getResourceAsStream("test2.doc"))) {
             parser.parse(tis, handler, metadata);
             return handler.toString();
         }
@@ -132,8 +127,7 @@ public class ContentHandlerExample {
 
         AutoDetectParser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
-        try (InputStream stream = ContentHandlerExample.class.getResourceAsStream("test2.doc");
-             TikaInputStream tis = TikaInputStream.get(stream)) {
+        try (TikaInputStream tis = TikaInputStream.get(ContentHandlerExample.class.getResourceAsStream("test2.doc"))) {
             parser.parse(tis, handler, metadata);
             return chunks;
         }

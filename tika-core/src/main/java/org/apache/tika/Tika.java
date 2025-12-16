@@ -146,10 +146,10 @@ public class Tika {
      */
     public String detect(InputStream stream, Metadata metadata) throws IOException {
         if (stream == null) {
-            return detector.detect(null, metadata).toString();
+            return detector.detect(null, metadata, new ParseContext()).toString();
         }
         try (TikaInputStream tis = TikaInputStream.get(stream)) {
-            return detector.detect(tis, metadata).toString();
+            return detector.detect(tis, metadata, new ParseContext()).toString();
         }
     }
 

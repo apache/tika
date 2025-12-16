@@ -284,7 +284,7 @@ public class EpubParser implements Parser {
                 }
                 if (shouldHandleEmbedded(hRefMediaPair.media)) {
                     handleEmbedded(zipFile, relativePath, hRefMediaPair, embeddedDocumentExtractor,
-                            xhtml, metadata);
+                            xhtml, metadata, context);
                 }
             }
         }
@@ -354,7 +354,8 @@ public class EpubParser implements Parser {
 
     private void handleEmbedded(ZipFile zipFile, String relativePath, HRefMediaPair hRefMediaPair,
                                 EmbeddedDocumentExtractor embeddedDocumentExtractor,
-                                XHTMLContentHandler xhtml, Metadata parentMetadata)
+                                XHTMLContentHandler xhtml, Metadata parentMetadata,
+                                ParseContext context)
             throws IOException, SAXException {
         if (hRefMediaPair.href == null) {
             return;
@@ -390,8 +391,7 @@ public class EpubParser implements Parser {
                 outputHtml = false;
             }
             embeddedDocumentExtractor
-                    .parseEmbedded(tis, new EmbeddedContentHandler(xhtml), embeddedMetadata,
-                            outputHtml);
+                    .parseEmbedded(tis, new EmbeddedContentHandler(xhtml), embeddedMetadata, context, outputHtml);
 
         } finally {
             IOUtils.closeQuietly(tis);

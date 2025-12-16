@@ -26,6 +26,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.parser.ParseContext;
 
 public class FictionBookParserTest {
 
@@ -35,12 +36,12 @@ public class FictionBookParserTest {
                 .getResourceAsStream("/test-documents/test.fb2")) {
             ContainerExtractor extractor = new ParserContainerExtractor();
             TikaInputStream tis = TikaInputStream.get(input);
-
-            assertEquals(true, extractor.isSupported(tis));
+            ParseContext parseContext = new ParseContext();
+            assertEquals(true, extractor.isSupported(tis, parseContext));
 
             // Process it
             TikaTest.TrackingHandler handler = new TikaTest.TrackingHandler();
-            extractor.extract(tis, null, handler);
+            extractor.extract(tis, null, handler, parseContext);
 
             assertEquals(2, handler.filenames.size());
         }

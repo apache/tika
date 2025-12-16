@@ -85,7 +85,7 @@ public class TNEFParser implements Parser {
         if (attr != null && attr instanceof MAPIRtfAttribute) {
             MAPIRtfAttribute rtf = (MAPIRtfAttribute) attr;
             handleEmbedded("message.rtf", "application/rtf", rtf.getData(), embeddedExtractor,
-                    xhtml);
+                    xhtml, context);
         }
 
         // Recurse into each attachment in turn
@@ -100,13 +100,14 @@ public class TNEFParser implements Parser {
                     name = "unknown" + ext;
                 }
             }
-            handleEmbedded(name, null, attachment.getContents(), embeddedExtractor, xhtml);
+            handleEmbedded(name, null, attachment.getContents(), embeddedExtractor, xhtml, context);
         }
         xhtml.endDocument();
     }
 
     private void handleEmbedded(String name, String type, byte[] contents,
-                                EmbeddedDocumentExtractor embeddedExtractor, ContentHandler handler)
+                                EmbeddedDocumentExtractor embeddedExtractor, ContentHandler handler,
+                                ParseContext context)
             throws IOException, SAXException, TikaException {
         Metadata metadata = new Metadata();
         if (name != null) {
@@ -118,7 +119,7 @@ public class TNEFParser implements Parser {
 
         if (embeddedExtractor.shouldParseEmbedded(metadata)) {
             embeddedExtractor.parseEmbedded(TikaInputStream.get(contents),
-                    new EmbeddedContentHandler(handler), metadata, true);
+                    new EmbeddedContentHandler(handler), metadata, context, true);
         }
     }
 }

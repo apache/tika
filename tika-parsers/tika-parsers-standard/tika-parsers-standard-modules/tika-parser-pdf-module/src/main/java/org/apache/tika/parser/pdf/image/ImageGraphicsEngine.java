@@ -431,8 +431,7 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
                     tis.setOpenContainer(bufferedImage);
                 }
                 embeddedDocumentExtractor
-                        .parseEmbedded(tis, new EmbeddedContentHandler(xhtml), metadata,
-                                false);
+                        .parseEmbedded(tis, new EmbeddedContentHandler(xhtml), metadata, parseContext, false);
             }
         }
 
@@ -453,7 +452,7 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
             parseContext.set(ZeroByteFileException.IgnoreZeroByteFileException.class,
                     ZeroByteFileException.IGNORE_ZERO_BYTE_FILE_EXCEPTION);
             embeddedDocumentExtractor.parseEmbedded(TikaInputStream.get(new byte[0]),
-                    new EmbeddedContentHandler(xhtml), metadata, false);
+                    new EmbeddedContentHandler(xhtml), metadata, parseContext, false);
         } finally {
             //replace whatever was there before
             parseContext.set(ZeroByteFileException.IgnoreZeroByteFileException.class, before);

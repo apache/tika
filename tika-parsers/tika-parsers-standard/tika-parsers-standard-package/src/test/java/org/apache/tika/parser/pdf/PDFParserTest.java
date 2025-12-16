@@ -202,11 +202,11 @@ public class PDFParserTest extends TikaTest {
         assertTrue(needle > pdfHaystack && pdfHaystack > outerHaystack);
 
         TrackingHandler tracker = new TrackingHandler();
-
+        ParseContext context = new ParseContext();
         ContainerExtractor ex = new ParserContainerExtractor();
         try (TikaInputStream tis = TikaInputStream
                 .get(getResourceAsStream("/test-documents/testPDFEmbeddingAndEmbedded.docx"))) {
-            ex.extract(tis, ex, tracker);
+            ex.extract(tis, ex, tracker, context);
         }
 
         assertEquals(3, tracker.filenames.size());
@@ -682,12 +682,11 @@ public class PDFParserTest extends TikaTest {
         }
 
         @Override
-        public void parseEmbedded(TikaInputStream tis, ContentHandler handler, Metadata metadata,
-                                  boolean outputHtml) throws SAXException, IOException {
+        public void parseEmbedded(TikaInputStream tis, ContentHandler handler, Metadata metadata, ParseContext parseContext, boolean outputHtml) throws SAXException, IOException {
 
             byte[] bytes = Files.readAllBytes(tis.getPath());
             embedded.put(count++, bytes);
-            super.parseEmbedded(tis, handler, metadata, outputHtml);
+            super.parseEmbedded(tis, handler, metadata, parseContext, outputHtml);
         }
 
         public Map<Integer, byte[]> getEmbedded() {

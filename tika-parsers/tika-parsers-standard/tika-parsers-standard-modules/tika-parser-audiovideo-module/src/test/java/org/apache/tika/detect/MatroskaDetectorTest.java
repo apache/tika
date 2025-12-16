@@ -27,20 +27,25 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 public class MatroskaDetectorTest extends TikaTest {
 
     private final MatroskaDetector detector = new MatroskaDetector();
 
+    public TikaInputStream getResourceAsStream(String resourcePath) {
+        return TikaInputStream.get(this.getClass().getResourceAsStream(resourcePath));
+    }
+
     @Test
     public void testDetectMKV() throws IOException {
         assertEquals(MediaType.application("x-matroska"),
                 detector.detect(getResourceAsStream("/test-documents/sample-mkv.noext"),
-                        new Metadata()));
+                        new Metadata(), new ParseContext()));
 
         assertEquals(MediaType.application("x-matroska"),
                 detector.detect(getResourceAsStream("/test-documents/testMKV.mkv"),
-                        new Metadata()));
+                        new Metadata(), new ParseContext()));
 
 
     }
@@ -49,24 +54,24 @@ public class MatroskaDetectorTest extends TikaTest {
     public void testDetectWEBM() throws IOException {
         assertEquals(MediaType.video("webm"),
                 detector.detect(getResourceAsStream("/test-documents/sample-webm.noext"),
-                        new Metadata()));
+                        new Metadata(), new ParseContext()));
     }
 
     @Test
     public void testNullAndShort() throws Exception {
         assertEquals(MediaType.OCTET_STREAM,
-                detector.detect(null, new Metadata()));
+                detector.detect(null, new Metadata(), new ParseContext()));
 
         byte[] bytes = new byte[10];
         try (TikaInputStream tis = TikaInputStream.get(bytes)) {
             assertEquals(MediaType.OCTET_STREAM,
-                    detector.detect(tis, new Metadata()));
+                    detector.detect(tis, new Metadata(), new ParseContext()));
         }
 
         bytes = new byte[0];
         try (TikaInputStream tis = TikaInputStream.get(bytes)) {
             assertEquals(MediaType.OCTET_STREAM,
-                    detector.detect(tis, new Metadata()));
+                    detector.detect(tis, new Metadata(), new ParseContext()));
         }
 
     }

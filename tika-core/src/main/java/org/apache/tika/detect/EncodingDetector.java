@@ -23,6 +23,7 @@ import java.nio.charset.Charset;
 import org.apache.tika.config.SelfConfiguring;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Character encoding detector. Implementations of this interface use
@@ -51,9 +52,11 @@ public interface EncodingDetector extends Serializable, SelfConfiguring {
      *
      * @param tis      text document input stream, or <code>null</code>
      * @param metadata input metadata for the document
+     * @param parseContext the parse context
      * @return detected character encoding, or <code>null</code>
      * @throws IOException if the document input stream could not be read
      */
-    Charset detect(TikaInputStream tis, Metadata metadata) throws IOException;
+    Charset detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
+            throws IOException;
 
 }

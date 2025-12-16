@@ -22,6 +22,7 @@ import java.util.Arrays;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Content type detection of plain text documents. This detector looks at the
@@ -107,10 +108,11 @@ public class TextDetector implements Detector {
      *
      * @param tis      document input stream, or <code>null</code>
      * @param metadata ignored
+     * @param context the parse context
      * @return "text/plain" if the input stream suggest a text document,
      * "application/octet-stream" otherwise
      */
-    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext context) throws IOException {
         if (tis == null) {
             return MediaType.OCTET_STREAM;
         }

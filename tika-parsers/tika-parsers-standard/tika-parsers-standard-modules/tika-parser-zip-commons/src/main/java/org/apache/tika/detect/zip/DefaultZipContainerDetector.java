@@ -46,6 +46,7 @@ import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * This class is designed to detect subtypes of zip-based file formats.
@@ -191,7 +192,7 @@ public class DefaultZipContainerDetector implements Detector {
     }
 
     @Override
-    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) throws IOException {
         // Check if we have access to the document
         if (tis == null) {
             return MediaType.OCTET_STREAM;
@@ -212,9 +213,9 @@ public class DefaultZipContainerDetector implements Detector {
             return TIFF;
         } else if (isZipArchive(type)) {
             if (markLimit < 1 || tis.hasFile()) {
-                return detectZipFormatOnFile(tis, metadata);
+                return detectZipFormatOnFile(tis, metadata, parseContext);
             } else {
-                return tryStreamingOnTikaInputStream(tis, metadata);
+                return tryStreamingOnTikaInputStream(tis, metadata, parseContext);
             }
         } else if (!type.equals(MediaType.OCTET_STREAM)) {
             return type;
@@ -223,7 +224,7 @@ public class DefaultZipContainerDetector implements Detector {
         }
     }
 
-    private MediaType tryStreamingOnTikaInputStream(TikaInputStream tis, Metadata metadata) throws IOException {
+    private MediaType tryStreamingOnTikaInputStream(TikaInputStream tis, Metadata metadata, ParseContext parseContext) throws IOException {
         BoundedInputStream boundedInputStream = new BoundedInputStream(markLimit, tis);
         boundedInputStream.mark(markLimit);
         //try streaming detect
@@ -236,7 +237,7 @@ public class DefaultZipContainerDetector implements Detector {
             boundedInputStream.reset();
         }
         //spool to disk
-        return detectZipFormatOnFile(tis, metadata);
+        return detectZipFormatOnFile(tis, metadata, parseContext);
     }
 
     /**
@@ -247,7 +248,7 @@ public class DefaultZipContainerDetector implements Detector {
      * @param tis
      * @return
      */
-    private MediaType detectZipFormatOnFile(TikaInputStream tis, Metadata metadata) {
+    private MediaType detectZipFormatOnFile(TikaInputStream tis, Metadata metadata, ParseContext parseContext) {
         ZipFile zip = null;
         try {
             zip = ZipFile.builder().setFile(tis.getFile()).get();

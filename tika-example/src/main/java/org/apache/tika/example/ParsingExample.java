@@ -89,9 +89,8 @@ public class ParsingExample {
         AutoDetectParser parser = new AutoDetectParser();
         BodyContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-        try (InputStream stream = ParsingExample.class.getResourceAsStream("test.doc");
-             TikaInputStream tis = TikaInputStream.get(stream)) {
-            parser.parse(tis, handler, metadata);
+        try (TikaInputStream tis = TikaInputStream.get(ParsingExample.class.getResourceAsStream("test.doc"))) {
+            parser.parse(tis, handler, metadata, new ParseContext());
             return handler.toString();
         }
     }
@@ -109,11 +108,11 @@ public class ParsingExample {
         Metadata metadata = new Metadata();
         ParseContext parseContext = new ParseContext();
         parseContext.set(Parser.class, new EmptyParser());
-        try (InputStream stream = ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx");
-             TikaInputStream tis = TikaInputStream.get(stream)) {
+        try (TikaInputStream tis = TikaInputStream.get(ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx"))) {
             parser.parse(tis, handler, metadata, parseContext);
             return handler.toString();
         }
+
     }
 
 
@@ -132,8 +131,7 @@ public class ParsingExample {
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
         context.set(Parser.class, parser);
-        try (InputStream stream = ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx");
-             TikaInputStream tis = TikaInputStream.get(stream)) {
+        try (TikaInputStream tis = TikaInputStream.get(ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx"))) {
             parser.parse(tis, handler, metadata, context);
             return handler.toString();
         }
@@ -150,7 +148,7 @@ public class ParsingExample {
      * MSPowerPoint, RTF, PDF, MSG and several others.
      * <p>
      * The "content" format is determined by the ContentHandlerFactory, and
-     * the content is stored in {@link org.apache.tika.parser.RecursiveParserWrapper#TIKA_CONTENT}
+     * the content is stored in {@link org.apache.tika.metadata.TikaCoreProperties#TIKA_CONTENT}
      * <p>
      * The drawback to the RecursiveParserWrapper is that it caches metadata and contents
      * in memory.  This should not be used on files whose contents are too big to be handled
@@ -170,8 +168,7 @@ public class ParsingExample {
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test_recursive_embedded.docx");
         ParseContext context = new ParseContext();
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(factory, -1);
-        try (InputStream stream = ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx");
-             TikaInputStream tis = TikaInputStream.get(stream)) {
+        try (TikaInputStream tis = TikaInputStream.get(ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx"))) {
             wrapper.parse(tis, handler, metadata, context);
         }
 

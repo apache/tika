@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Test cases for the {@link TextDetector} class.
@@ -38,7 +39,7 @@ public class TextDetectorTest {
 
     @Test
     public void testDetectNull() throws Exception {
-        assertEquals(MediaType.OCTET_STREAM, detector.detect(null, new Metadata()));
+        assertEquals(MediaType.OCTET_STREAM, detector.detect(null, new Metadata(), new ParseContext()));
     }
 
     /**
@@ -84,7 +85,7 @@ public class TextDetectorTest {
     private void assertText(byte[] data) {
         try {
             TikaInputStream tis = TikaInputStream.get(data);
-            assertEquals(MediaType.TEXT_PLAIN, detector.detect(tis, new Metadata()));
+            assertEquals(MediaType.TEXT_PLAIN, detector.detect(tis, new Metadata(), new ParseContext()));
 
             // Test that the stream has been reset
             for (byte aByte : data) {
@@ -99,7 +100,7 @@ public class TextDetectorTest {
     private void assertNotText(byte[] data) {
         try (TikaInputStream tis = TikaInputStream.get(data)) {
             assertEquals(MediaType.OCTET_STREAM,
-                    detector.detect(tis, new Metadata()));
+                    detector.detect(tis, new Metadata(), new ParseContext()));
         } catch (IOException e) {
             fail("Unexpected exception from TextDetector");
         }

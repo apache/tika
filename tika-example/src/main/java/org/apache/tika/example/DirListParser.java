@@ -49,9 +49,7 @@ public class DirListParser implements Parser {
     public static void main(String[] args) throws IOException, SAXException, TikaException {
         DirListParser parser = new DirListParser();
         Metadata met = new Metadata();
-        try (TikaInputStream tis = TikaInputStream.get(System.in)) {
-            parser.parse(tis, new BodyContentHandler(), met);
-        }
+        parser.parse(TikaInputStream.get(System.in), new BodyContentHandler(), met);
 
         System.out.println("Num files: " + met.getValues("Filename").length);
         System.out.println("Num executables: " + met.get("NumExecutables"));

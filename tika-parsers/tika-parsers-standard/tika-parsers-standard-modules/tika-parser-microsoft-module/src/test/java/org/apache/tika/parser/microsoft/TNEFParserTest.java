@@ -43,7 +43,7 @@ public class TNEFParserTest extends AbstractPOIContainerExtractionTest {
         Detector detector = new DefaultDetector();
         try (TikaInputStream tis = getTestFile(file)) {
             assertEquals(MediaType.application("vnd.ms-tnef"),
-                    detector.detect(tis, new Metadata()));
+                    detector.detect(tis, new Metadata(), new ParseContext()));
         }
     }
 

@@ -131,7 +131,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
 
         ParseContext context = new ParseContext();
         context.set(Detector.class, new Detector() {
-            public MediaType detect(TikaInputStream input, Metadata metadata) {
+            public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) {
                 return MediaType.OCTET_STREAM;
             }
         });

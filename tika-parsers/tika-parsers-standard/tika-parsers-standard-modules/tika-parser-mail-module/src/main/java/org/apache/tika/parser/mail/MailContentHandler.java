@@ -220,7 +220,7 @@ class MailContentHandler implements ContentHandler {
         }
 
         try (TikaInputStream tis = TikaInputStream.get(bytes)) {
-            MediaType mediaType = detector.detect(tis, submd);
+            MediaType mediaType = detector.detect(tis, submd, parseContext);
             if (mediaType != null) {
                 //detect only once
                 submd.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, mediaType.toString());
@@ -246,7 +246,7 @@ class MailContentHandler implements ContentHandler {
             if (extractor.shouldParseEmbedded(metadata)) {
                 // Wrap the InputStream before passing on, as the James provided
                 //  one misses many features we might want eg mark/reset
-                extractor.parseEmbedded(tis, handler, metadata, false);
+                extractor.parseEmbedded(tis, handler, metadata, parseContext, false);
             }
         } catch (SAXException e) {
             throw new MimeException(e);

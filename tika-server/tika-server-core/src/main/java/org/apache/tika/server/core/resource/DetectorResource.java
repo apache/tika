@@ -64,7 +64,7 @@ public class DetectorResource {
             return TikaResource
                     .getTikaLoader()
                     .loadDetectors()
-                    .detect(tis, met)
+                    .detect(tis, met, parseContext)
                     .toString();
         } catch (IOException | TikaConfigException e) {
             LOG.warn("Unable to detect MIME type for file. Reason: {} ({})", e.getMessage(), filename, e);

@@ -35,9 +35,7 @@ public class DisplayMetInstance {
     public static Metadata getMet(URL url) throws IOException, SAXException, TikaException {
         Metadata met = new Metadata();
         PDFParser parser = new PDFParser();
-        try (TikaInputStream tis = TikaInputStream.get(url.openStream())) {
-            parser.parse(tis, new BodyContentHandler(), met, new ParseContext());
-        }
+        parser.parse(TikaInputStream.get(url, met), new BodyContentHandler(), met, new ParseContext());
         return met;
     }
 

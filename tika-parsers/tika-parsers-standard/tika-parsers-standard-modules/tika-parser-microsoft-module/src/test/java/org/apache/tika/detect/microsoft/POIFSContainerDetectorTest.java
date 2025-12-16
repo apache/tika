@@ -29,6 +29,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 public class POIFSContainerDetectorTest extends TikaTest {
 
@@ -78,7 +79,7 @@ public class POIFSContainerDetectorTest extends TikaTest {
     }
 
     private void assertExpected(Detector detector, TikaInputStream tis, String expectedMime, String expectedDigest) throws IOException {
-        MediaType mt = detector.detect(tis, new Metadata());
+        MediaType mt = detector.detect(tis, new Metadata(), new ParseContext());
         assertEquals(expectedMime, mt.toString());
         assertEquals(expectedDigest, digest(tis));
     }

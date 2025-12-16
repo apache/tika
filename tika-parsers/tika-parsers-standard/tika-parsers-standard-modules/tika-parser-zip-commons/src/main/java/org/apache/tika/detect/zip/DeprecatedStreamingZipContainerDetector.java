@@ -20,6 +20,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 public class DeprecatedStreamingZipContainerDetector extends ZipContainerDetectorBase
         implements Detector {
@@ -38,7 +39,7 @@ public class DeprecatedStreamingZipContainerDetector extends ZipContainerDetecto
      * @return
      */
     @Override
-    public MediaType detect(TikaInputStream tis, Metadata metadata) {
+    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) {
 /*
         Set<String> fileNames = new HashSet<>();
         Set<String> directoryNames = new HashSet<>();

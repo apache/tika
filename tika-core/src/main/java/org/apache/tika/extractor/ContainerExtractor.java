@@ -21,6 +21,7 @@ import java.io.Serializable;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Tika container extractor interface.
@@ -32,9 +33,11 @@ public interface ContainerExtractor extends Serializable {
      * Is this Container Extractor able to process the
      * supplied container?
      *
+     * @param input the input stream
+     * @param parseContext the parse context
      * @since Apache Tika 0.8
      */
-    boolean isSupported(TikaInputStream input) throws IOException;
+    boolean isSupported(TikaInputStream input, ParseContext parseContext) throws IOException;
 
     /**
      * Processes a container file, and extracts all the embedded
@@ -55,10 +58,12 @@ public interface ContainerExtractor extends Serializable {
      * @param stream           the document stream (input)
      * @param recurseExtractor the extractor to use on any embedded containers
      * @param handler          handler for the embedded files (output)
+     * @param parseContext     the parse context
      * @throws IOException   if the document stream could not be read
      * @throws TikaException if the container could not be parsed
      * @since Apache Tika 0.8
      */
     void extract(TikaInputStream stream, ContainerExtractor recurseExtractor,
-                 EmbeddedResourceHandler handler) throws IOException, TikaException;
+            EmbeddedResourceHandler handler, ParseContext parseContext)
+            throws IOException, TikaException;
 }

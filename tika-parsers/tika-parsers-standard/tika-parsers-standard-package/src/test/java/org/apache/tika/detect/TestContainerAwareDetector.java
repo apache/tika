@@ -53,6 +53,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeTypes;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.iwork.iwana.IWork13PackageParser;
 import org.apache.tika.parser.iwork.iwana.IWork18PackageParser;
 import org.apache.tika.utils.XMLReaderUtils;
@@ -106,17 +107,17 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
 
             // Mime Magic version is likely to be less precise
             if (typeFromMagic != null) {
-                assertEquals(MediaType.parse(typeFromMagic), mimeTypes.detect(tis, m));
+                assertEquals(MediaType.parse(typeFromMagic), mimeTypes.detect(tis, m, new ParseContext()));
             }
 
             MediaType expected = MediaType.parse(typeFromDetector);
             // All being well, the detector should get it perfect
-            assertEquals(expected, detector.detect(tis, m));
+            assertEquals(expected, detector.detect(tis, m, new ParseContext()));
 
             if (mediaTypeRegistry.isSpecializationOf(expected, MediaType.APPLICATION_ZIP) &&
                     !expected.toString().contains("tika-ooxml-protected")) {
 
-                assertEquals(expected, streamingZipDetector.detect(tis, m),
+                assertEquals(expected, streamingZipDetector.detect(tis, m, new ParseContext()),
                         "streaming zip detector failed");
             }
         }
@@ -239,7 +240,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
                 .get(getResourceAsUrl("/test-documents/testPPT.ppt"))) {
             assertNull(tis.getOpenContainer());
             assertEquals(MediaType.parse("application/vnd.ms-powerpoint"),
-                    detector.detect(tis, new Metadata()));
+                    detector.detect(tis, new Metadata(), new ParseContext()));
             assertTrue(tis.getOpenContainer() instanceof POIFSFileSystem);
         }
     }
@@ -284,7 +285,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
                 getResourceAsStream("/test-documents/testODFwithOOo3.odt"))) {
             //force underlying file to test the proper behavior with the underlying zipfile
             tis.getFile();
-            MediaType mt = zipContainerDetector.detect(tis, new Metadata());
+            MediaType mt = zipContainerDetector.detect(tis, new Metadata(), new ParseContext());
             assertEquals("application/vnd.oasis.opendocument.text", mt.toString());
             assertNotNull(tis.getOpenContainer());
             assertEquals("org.apache.commons.compress.archivers.zip.ZipFile",
@@ -412,7 +413,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
 
         try (TikaInputStream tis = TikaInputStream
                 .get(getResourceAsUrl("/test-documents/" + fileName))) {
-            detector.detect(tis, new Metadata());
+            detector.detect(tis, new Metadata(), new ParseContext());
         }
 
         assertEquals(numberOfTempFiles, countTemporaryFiles());
@@ -530,7 +531,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         // With only the data supplied, the best we can do is the container
         Metadata m = new Metadata();
         try (TikaInputStream xlsx = getTruncatedFile("testEXCEL.xlsx", 300)) {
-            assertEquals(MediaType.application("x-tika-ooxml"), detector.detect(xlsx, m));
+            assertEquals(MediaType.application("x-tika-ooxml"), detector.detect(xlsx, m, new ParseContext()));
         }
 
         // With truncated data + filename, we can use the filename to specialise
@@ -539,20 +540,20 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         try (TikaInputStream xlsx = getTruncatedFile("testEXCEL.xlsx", 300)) {
             assertEquals(
                     MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
-                    detector.detect(xlsx, m));
+                    detector.detect(xlsx, m, new ParseContext()));
         }
 
         // Now a truncated OLE2 file 
         m = new Metadata();
         try (TikaInputStream xls = getTruncatedFile("testEXCEL.xls", 400)) {
-            assertEquals(MediaType.application("x-tika-msoffice"), detector.detect(xls, m));
+            assertEquals(MediaType.application("x-tika-msoffice"), detector.detect(xls, m, new ParseContext()));
         }
 
         // Finally a truncated OLE2 file, with a filename available
         m = new Metadata();
         m.add(TikaCoreProperties.RESOURCE_NAME_KEY, "testEXCEL.xls");
         try (TikaInputStream xls = getTruncatedFile("testEXCEL.xls", 400)) {
-            assertEquals(MediaType.application("vnd.ms-excel"), detector.detect(xls, m));
+            assertEquals(MediaType.application("vnd.ms-excel"), detector.detect(xls, m, new ParseContext()));
         }
     }
 
@@ -622,28 +623,28 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         Detector detector = TikaLoader.loadDefault().loadDetectors();
         try (TikaInputStream tis = TikaInputStream.get(bytes)) {
             assertEquals("application/msword",
-                    detector.detect(tis, new Metadata()).toString());
+                    detector.detect(tis, new Metadata(), new ParseContext()).toString());
             assertEquals(len, countBytes(tis));
         }
 
         detector = loadDetector("tika-4441-neg1.json");
         try (TikaInputStream tis = TikaInputStream.get(bytes)) {
             assertEquals("application/msword",
-                    detector.detect(tis, new Metadata()).toString());
+                    detector.detect(tis, new Metadata(), new ParseContext()).toString());
             assertEquals(len, countBytes(tis));
         }
 
         detector = loadDetector("tika-4441-120.json");
         try (TikaInputStream tis = TikaInputStream.get(bytes)) {
             assertEquals("application/x-tika-msoffice",
-                    detector.detect(tis, new Metadata()).toString());
+                    detector.detect(tis, new Metadata(), new ParseContext()).toString());
             assertEquals(len, countBytes(tis));
         }
 
         detector = loadDetector("tika-4441-12000000.json");
         try (TikaInputStream tis = TikaInputStream.get(bytes)) {
             assertEquals("application/msword",
-                    detector.detect(tis, new Metadata()).toString());
+                    detector.detect(tis, new Metadata(), new ParseContext()).toString());
             assertEquals(len, countBytes(tis));
         }
 

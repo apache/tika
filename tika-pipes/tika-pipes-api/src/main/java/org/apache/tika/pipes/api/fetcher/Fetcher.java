@@ -35,5 +35,21 @@ import org.apache.tika.plugins.TikaExtension;
  */
 public interface Fetcher extends TikaExtension, ExtensionPoint {
 
-    TikaInputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws TikaException, IOException;
+    /**
+     * Fetches a resource and returns it as a TikaInputStream.
+     *
+     * @param fetchKey the key identifying the resource to fetch (interpretation
+     *                 depends on the implementation, e.g., file path, URL, S3 key)
+     * @param metadata metadata object to be updated with resource information
+     * @param parseContext the parse context
+     * @return a TikaInputStream for reading the resource content
+     * @throws TikaException if a Tika-specific error occurs during fetching
+     * @throws IOException if an I/O error occurs during fetching
+     * @throws SecurityException if the fetchKey attempts to access a resource
+     *         outside permitted boundaries (e.g., path traversal attack)
+     * @throws IllegalArgumentException if the fetchKey contains invalid characters
+     *         (e.g., null bytes)
+     */
+    TikaInputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext)
+            throws TikaException, IOException;
 }
