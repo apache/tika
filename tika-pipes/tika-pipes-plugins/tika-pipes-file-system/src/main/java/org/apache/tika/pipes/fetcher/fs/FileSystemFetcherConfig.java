@@ -37,7 +37,8 @@ public class FileSystemFetcherConfig {
     }
 
     private String basePath;
-    private boolean extractFileSystemMetadata;
+    private boolean extractFileSystemMetadata = false;
+    private boolean allowAbsolutePaths = false;
 
     public boolean isExtractFileSystemMetadata() {
         return extractFileSystemMetadata;
@@ -54,6 +55,20 @@ public class FileSystemFetcherConfig {
 
     public FileSystemFetcherConfig setBasePath(String basePath) {
         this.basePath = basePath;
+        return this;
+    }
+
+    /**
+     * If true, allows fetchKey to be an absolute path when basePath is not set.
+     * This suppresses the security warning about unrestricted file access.
+     * Use this when you intentionally want to allow fetching from any path.
+     */
+    public boolean isAllowAbsolutePaths() {
+        return allowAbsolutePaths;
+    }
+
+    public FileSystemFetcherConfig setAllowAbsolutePaths(boolean allowAbsolutePaths) {
+        this.allowAbsolutePaths = allowAbsolutePaths;
         return this;
     }
 }
