@@ -102,6 +102,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         
         try {
             pluginManager = TikaPluginManager.load(tikaJsonConfig);
+            pluginManager.loadPlugins();
+            pluginManager.startPlugins();
         } catch (TikaConfigException e) {
             LOG.warn("Could not load plugin manager, using default: {}", e.getMessage());
             pluginManager = new org.pf4j.DefaultPluginManager();
@@ -231,15 +233,22 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
     private String findFactoryNameForClass(String className) throws TikaConfigException {
         var factories = pluginManager.getExtensions(org.apache.tika.pipes.api.fetcher.FetcherFactory.class);
+        LOG.debug("Looking for factory that produces class: {}", className);
+        LOG.debug("Found {} factories", factories.size());
         for (var factory : factories) {
+            LOG.debug("Checking factory: {} (name={})", factory.getClass().getName(), factory.getName());
             try {
-                ExtensionConfig tempConfig = new ExtensionConfig("temp", factory.getName(), "{}");
+                // Use a permissive config that should allow most factories to create an instance
+                // FileSystemFetcher requires basePath or allowAbsolutePaths
+                String tempJson = "{\"allowAbsolutePaths\": true}";
+                ExtensionConfig tempConfig = new ExtensionConfig("temp", factory.getName(), tempJson);
                 Fetcher fetcher = factory.buildExtension(tempConfig);
+                LOG.debug("Factory {} produced: {}", factory.getName(), fetcher.getClass().getName());
                 if (fetcher.getClass().getName().equals(className)) {
                     return factory.getName();
                 }
             } catch (Exception e) {
-                LOG.debug("Could not build fetcher for factory: {}", factory.getName(), e);
+                LOG.debug("Could not build fetcher for factory: {} - {}", factory.getName(), e.getMessage());
             }
         }
         throw new TikaConfigException("Could not find factory for class: " + className);
