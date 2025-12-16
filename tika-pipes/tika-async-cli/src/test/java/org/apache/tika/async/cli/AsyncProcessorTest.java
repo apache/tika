@@ -19,6 +19,8 @@ package org.apache.tika.async.cli;
 
 import static org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig.DEFAULT_HANDLER_CONFIG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.OutputStream;
@@ -46,6 +48,7 @@ import org.apache.tika.pipes.api.HandlerConfig;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.async.AsyncProcessor;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.serialization.JsonMetadataList;
@@ -154,5 +157,54 @@ public class AsyncProcessorTest extends TikaTest {
         assertContains("some_embedded_content", metadataList
                 .get(1)
                 .get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testStopsOnApplicationError() throws Exception {
+        // Test that AsyncProcessor stops processing when an application error occurs
+        // (TIKA-4570)
+        AsyncProcessor processor = new AsyncProcessor(configDir.resolve("tika-config.json"));
+
+        // Create a tuple with a non-existent fetcher - this will cause FETCHER_NOT_FOUND
+        // which is a TASK_EXCEPTION but will stop processing in CLI mode (default)
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(HandlerConfig.class, DEFAULT_HANDLER_CONFIG);
+        FetchEmitTuple badTuple = new FetchEmitTuple(
+                "bad-tuple-1",
+                new FetchKey("non-existent-fetcher", "some-file.txt"),
+                new EmitKey("fse-json", "emit-bad"),
+                new Metadata(),
+                parseContext,
+                FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+
+        // Offer the bad tuple
+        processor.offer(badTuple, 1000);
+
+        // Wait for the error to be detected
+        int maxWaitMs = 30000;
+        int waited = 0;
+        while (!processor.hasApplicationError() && waited < maxWaitMs) {
+            Thread.sleep(100);
+            waited += 100;
+        }
+
+        // Verify that the application error was detected
+        assertTrue(processor.hasApplicationError(),
+                "AsyncProcessor should detect application error from bad fetcher");
+
+        // Verify that subsequent offers throw PipesException
+        FetchEmitTuple anotherTuple = new FetchEmitTuple(
+                "another-tuple",
+                new FetchKey("fsf", "mock.xml"),
+                new EmitKey("fse-json", "emit-another"),
+                new Metadata(),
+                parseContext,
+                FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+
+        assertThrows(PipesException.class, () -> {
+            processor.offer(anotherTuple, 1000);
+        }, "Should throw PipesException when offering after application error");
+
+        processor.close();
     }
 }

@@ -1,0 +1,35 @@
+{
+  "pipes": {
+    "numClients": 2,
+    "forkedJvmArgs": [
+      "-Xmx1g",
+      "-XX:ParallelGCThreads=2"
+    ],
+    "timeoutMillis": 60000,
+    "emitStrategy": {
+      "type": "PASSBACK_ALL"
+    },
+    "staleFetcherTimeoutSeconds": 600,
+    "staleFetcherDelaySeconds": 60
+  },
+  "fetchers": {
+    "nick1:is:cool:super/class org.apache.tika.pipes.fetcher.fs.FileSystemFetcher": {
+      "file-system-fetcher": {
+        "basePath": "/home/ndipiazza/source/github/apache/tika/tika-grpc/target",
+        "extractFileSystemMetadata": true
+      }
+    },
+    "httpFetcherIdHere": {
+      "http-fetcher": {
+        "requestTimeout": 30000,
+        "socketTimeout": 30000,
+        "connectTimeout": 20000,
+        "maxConnectionsPerRoute": 200,
+        "maxRedirects": 0,
+        "maxSpoolSize": -1,
+        "overallTimeout": 50000
+      }
+    }
+  },
+  "plugin-roots": ["/tmp/tika-test-plugins"]
+}

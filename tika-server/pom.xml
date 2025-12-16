@@ -20,7 +20,6 @@
     <module>tika-server-core</module>
     <module>tika-server-standard</module>
     <module>tika-server-client</module>
-    <module>tika-server-eval</module>
   </modules>
 
   <parent>

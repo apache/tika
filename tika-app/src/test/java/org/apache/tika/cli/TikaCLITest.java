@@ -201,17 +201,6 @@ public class TikaCLITest {
     }
 
     /**
-     * Tests -f option of the cli
-     *
-     * @throws Exception
-     */
-    @Test
-    public void testForkParser() throws Exception {
-        String content = getParamOutContent("-f", resourcePrefix + "alice.cli.test");
-        assertTrue(content.contains("finished off the cake"));
-    }
-
-    /**
      * Tests -m option of the cli
      *
      * @throws Exception
