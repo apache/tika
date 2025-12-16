@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -30,6 +32,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -64,6 +67,7 @@ import org.apache.tika.GetFetcherRequest;
 import org.apache.tika.SaveFetcherReply;
 import org.apache.tika.SaveFetcherRequest;
 import org.apache.tika.TikaGrpc;
+import org.apache.tika.config.JsonConfigHelper;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcher;
 
@@ -72,69 +76,41 @@ public class TikaGrpcServerTest {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final Logger LOG = LoggerFactory.getLogger(TikaGrpcServerTest.class);
     public static final int NUM_TEST_DOCS = 2;
-    static File tikaConfigTemplate = Paths
-            .get("src", "test", "resources", "tika-pipes-test-config.json")
-            .toFile();
-    static File tikaConfig = new File("target", "tika-config-" + UUID.randomUUID() + ".json");
+    static Path tikaConfig = Paths.get("target", "tika-config-" + UUID.randomUUID() + ".json");
 
 
     @BeforeAll
     static void init() throws Exception {
-        // Read the template config
-        String configContent = FileUtils.readFileToString(tikaConfigTemplate, StandardCharsets.UTF_8);
-
-        // Parse it as JSON to inject the correct javaPath
-        @SuppressWarnings("unchecked")
-        Map<String, Object> configMap = OBJECT_MAPPER.readValue(configContent, Map.class);
-
-        // Get or create the pipes section
-        @SuppressWarnings("unchecked")
-        Map<String, Object> pipesSection = (Map<String, Object>) configMap.get("pipes");
-        if (pipesSection == null) {
-            pipesSection = new java.util.HashMap<>();
-            configMap.put("pipes", pipesSection);
-        }
-
-        // Set javaPath to the same Java running the test
+        // Build the javaPath from java.home
         String javaHome = System.getProperty("java.home");
-        String javaPath = javaHome + File.separator + "bin" + File.separator + "java";
-        pipesSection.put("javaPath", javaPath);
+        Path javaPath = Paths.get(javaHome, "bin", "java");
+
+        // Set up paths
+        Path targetPath = Paths.get("target").toAbsolutePath();
+        Path pluginsDir = targetPath.resolve("plugins");
 
         LOG.info("Setting javaPath to: {}", javaPath);
         LOG.info("java.home is: {}", javaHome);
 
-        // Update basePath in fetchers to use current working directory
-        @SuppressWarnings("unchecked")
-        Map<String, Object> fetchersSection = (Map<String, Object>) configMap.get("fetchers");
-        if (fetchersSection != null) {
-            String targetPath = new File("target").getAbsolutePath();
-            for (Map.Entry<String, Object> fetcherEntry : fetchersSection.entrySet()) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> fetcherConfig = (Map<String, Object>) fetcherEntry.getValue();
-                if (fetcherConfig.containsKey("file-system-fetcher")) {
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> fsConfig = (Map<String, Object>) fetcherConfig.get("file-system-fetcher");
-                    fsConfig.put("basePath", targetPath);
-                }
-            }
-        }
+        // Use JsonConfigHelper to load template and apply replacements
+        Map<String, Object> replacements = new HashMap<>();
+        replacements.put("JAVA_PATH", javaPath);
+        replacements.put("FETCHER_BASE_PATH", targetPath);
+        replacements.put("PLUGIN_ROOTS", pluginsDir);
 
-        // Write the modified config
-        String modifiedConfig = OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(configMap);
-        FileUtils.writeStringToFile(tikaConfig, modifiedConfig, StandardCharsets.UTF_8);
+        JsonConfigHelper.writeConfigFromResource("/tika-pipes-test-config.json",
+                TikaGrpcServerTest.class, replacements, tikaConfig);
 
-        LOG.info("Written config to: {}", tikaConfig.getAbsolutePath());
-        LOG.info("Config content:\n{}", modifiedConfig);
+        LOG.debug("Written config to: {}", tikaConfig.toAbsolutePath());
     }
 
     @AfterAll
     static void clean() {
-        if (tikaConfig.exists()) {
-            if (!tikaConfig.setWritable(true)) {
-                LOG.warn("Failed to set {} writable", tikaConfig);
-            }
+        try {
+            Files.deleteIfExists(tikaConfig);
+        } catch (Exception e) {
+            LOG.warn("Failed to delete {}", tikaConfig, e);
         }
-        FileUtils.deleteQuietly(tikaConfig);
     }
 
     static final int NUM_FETCHERS_TO_CREATE = 10;
@@ -146,7 +122,7 @@ public class TikaGrpcServerTest {
         Server server = InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
-                .addService(new TikaGrpcServerImpl(tikaConfig.getAbsolutePath()))
+                .addService(new TikaGrpcServerImpl(tikaConfig.toAbsolutePath().toString()))
                 .build()
                 .start();
         resources.register(server, Duration.ofSeconds(10));
@@ -232,7 +208,7 @@ public class TikaGrpcServerTest {
         Server server = InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
-                .addService(new TikaGrpcServerImpl(tikaConfig.getAbsolutePath()))
+                .addService(new TikaGrpcServerImpl(tikaConfig.toAbsolutePath().toString()))
                 .build()
                 .start();
         resources.register(server, Duration.ofSeconds(10));
