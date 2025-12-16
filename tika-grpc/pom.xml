@@ -421,6 +421,13 @@
               </arguments>
               <environmentVariables>
                 <TIKA_VERSION>${project.version}</TIKA_VERSION>
+                <MULTI_ARCH>${env.MULTI_ARCH}</MULTI_ARCH>
+                <AWS_REGION>${env.AWS_REGION}</AWS_REGION>
+                <AWS_ACCOUNT_ID>${env.AWS_ACCOUNT_ID}</AWS_ACCOUNT_ID>
+                <AZURE_REGISTRY_NAME>${env.AZURE_REGISTRY_NAME}</AZURE_REGISTRY_NAME>
+                <DOCKER_ID>${env.DOCKER_ID}</DOCKER_ID>
+                <PROJECT_NAME>${env.PROJECT_NAME}</PROJECT_NAME>
+                <RELEASE_IMAGE_TAG>${env.RELEASE_IMAGE_TAG}</RELEASE_IMAGE_TAG>
               </environmentVariables>
               <skip>${skip.docker.build}</skip>
             </configuration>

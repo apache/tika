@@ -37,6 +37,34 @@ mvn clean install -DskipTests -Dskip.docker.build=false
 
 **Note:** By default, `skip.docker.build=true` to avoid running Docker builds during normal development.
 
+#### Controlling Docker Build with Environment Variables
+
+All docker-build.sh environment variables are passed through from your shell:
+
+```bash
+# Build and push to Docker Hub
+MULTI_ARCH=false DOCKER_ID=ndipiazza PROJECT_NAME=tika-grpc RELEASE_IMAGE_TAG=4.0.0-SNAPSHOT \
+  mvn clean package -Dskip.docker.build=false
+```
+
+```bash
+# Build multi-arch and push to Docker Hub
+MULTI_ARCH=true DOCKER_ID=myusername PROJECT_NAME=tika-grpc \
+  mvn clean package -Dskip.docker.build=false
+```
+
+```bash
+# Build and push to AWS ECR
+AWS_ACCOUNT_ID=123456789012 AWS_REGION=us-east-1 \
+  mvn clean package -Dskip.docker.build=false
+```
+
+```bash
+# Build and push to Azure Container Registry
+AZURE_REGISTRY_NAME=myregistry \
+  mvn clean package -Dskip.docker.build=false
+```
+
 ### Option 2: Run the Docker Build Script Manually
 
 Set the required environment variable and run the script:
@@ -59,33 +87,30 @@ export TIKA_VERSION=4.0.0-SNAPSHOT
 
 ### Examples
 
-Build with Maven (recommended for CI/CD):
+**Maven build with Docker Hub (recommended):**
 ```bash
-mvn clean install -DskipTests -Dskip.docker.build=false -DdockerId=myusername
+MULTI_ARCH=false DOCKER_ID=ndipiazza PROJECT_NAME=tika-grpc RELEASE_IMAGE_TAG=4.0.0-SNAPSHOT \
+  mvn clean package -Dskip.docker.build=false
 ```
 
-Build and tag for Docker Hub (manual script):
+**Maven build with multi-arch:**
+```bash
+MULTI_ARCH=true DOCKER_ID=ndipiazza PROJECT_NAME=tika-grpc \
+  mvn clean package -Dskip.docker.build=false
+```
+
+**Maven build with AWS ECR:**
+```bash
+AWS_ACCOUNT_ID=123456789012 AWS_REGION=us-east-1 \
+  mvn clean package -Dskip.docker.build=false
+```
+
+**Manual script build and tag for Docker Hub:**
 ```bash
 export TIKA_VERSION=4.0.0-SNAPSHOT
 export DOCKER_ID=myusername
 ./tika-grpc/docker-build/docker-build.sh
 docker push myusername/tika-grpc:4.0.0
-```
-
-Build and push to AWS ECR:
-```bash
-export TIKA_VERSION=4.0.0-SNAPSHOT
-export AWS_ACCOUNT_ID=123456789012
-export AWS_REGION=us-east-1
-./tika-grpc/docker-build/docker-build.sh
-```
-
-Build multi-architecture image:
-```bash
-export TIKA_VERSION=4.0.0-SNAPSHOT
-export DOCKER_ID=myusername
-export MULTI_ARCH=true
-./tika-grpc/docker-build/docker-build.sh
 ```
 
 ## Running the Docker Container
