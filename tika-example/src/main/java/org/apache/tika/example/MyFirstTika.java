@@ -86,7 +86,7 @@ public class MyFirstTika {
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
         System.out.println("The MIME type (based on filename) is: [" + mimeRegistry.detect(null, metadata, new ParseContext()) + "]");
 
-        try(TikaInputStream tis = TikaInputStream.get(Paths.get(filename))) {
+        try (TikaInputStream tis = TikaInputStream.get(Paths.get(filename))) {
             System.out.println("The MIME type (based on MAGIC) is: [" + mimeRegistry.detect(tis, metadata, new ParseContext()) + "]");
         }
 
