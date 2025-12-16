@@ -43,8 +43,8 @@ public class TikaGrpcServer {
     @Parameter(names = {"-p", "--port"}, description = "The grpc server port", help = true)
     private Integer port = TIKA_SERVER_GRPC_DEFAULT_PORT;
 
-    @Parameter(names = {"-c", "--config"}, description = "The grpc server port", help = true)
-    private File tikaConfigXml;
+    @Parameter(names = {"-c", "--config"}, description = "The tika config file", help = true)
+    private File tikaConfig;
 
     @Parameter(names = {"-l", "--plugins"}, description = "The tika pipes plugins config file", help = true)
     private File tikaPlugins;
@@ -86,15 +86,10 @@ public class TikaGrpcServer {
         } else {
             creds = InsecureServerCredentials.create();
         }
-        //TODO -- this has to be converted to json
-        if (tikaConfigXml == null) {
-            // Create a default tika config
-            /*tikaConfigXml = Files.createTempFile("tika-config", ".xml").toFile();
-            try (FileWriter fw = new FileWriter(tikaConfigXml, StandardCharsets.UTF_8)) {
-                TikaConfigSerializer.serialize(new TikaConfig(), TikaConfigSerializer.Mode.STATIC_FULL, fw, StandardCharsets.UTF_8);
-            }*/
+        if (tikaConfig == null) {
+            throw new IllegalArgumentException("Tika config file is required");
         }
-        File tikaConfigFile = new File(tikaConfigXml.getAbsolutePath());
+        File tikaConfigFile = new File(tikaConfig.getAbsolutePath());
         healthStatusManager.setStatus(TikaGrpcServer.class.getSimpleName(), ServingStatus.SERVING);
         server = Grpc
                 .newServerBuilderForPort(port, creds)
@@ -157,8 +152,8 @@ public class TikaGrpcServer {
         server.blockUntilShutdown();
     }
 
-    public TikaGrpcServer setTikaConfigXml(File tikaConfigXml) {
-        this.tikaConfigXml = tikaConfigXml;
+    public TikaGrpcServer setTikaConfig(File tikaConfig) {
+        this.tikaConfig = tikaConfig;
         return this;
     }
 
