@@ -60,7 +60,6 @@ import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.fork.ForkParser;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -151,28 +150,6 @@ public class BundleIT {
         // Simple type detection
         assertEquals(MediaType.TEXT_PLAIN, contentTypeDetector.detect(null, metadataTXT, new ParseContext()));
         assertEquals(MediaType.application("pdf"), contentTypeDetector.detect(null, metadataPDF, new ParseContext()));
-    }
-
-    @Test
-    public void testForkParser() throws Exception {
-        try (ForkParser parser = new ForkParser(Activator.class.getClassLoader(), defaultParser)) {
-            String data =
-                    "<!DOCTYPE html>\n<html><body><p>test <span>content</span></p></body></html>";
-            try (TikaInputStream tis = TikaInputStream.get(data.getBytes(UTF_8))) {
-                Writer writer = new StringWriter();
-                ContentHandler contentHandler = new BodyContentHandler(writer);
-                Metadata metadata = new Metadata();
-                MediaType type = contentTypeDetector.detect(tis, metadata, new ParseContext());
-                assertEquals(type.toString(), "text/html");
-                metadata.add(Metadata.CONTENT_TYPE, type.toString());
-                ParseContext parseCtx = new ParseContext();
-                parser.parse(tis, contentHandler, metadata, parseCtx);
-                writer.flush();
-                String content = writer.toString();
-                assertTrue(content.length() > 0);
-                assertEquals("test content", content.trim());
-            }
-        }
     }
 
     @Test
