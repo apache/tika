@@ -35,6 +35,9 @@ import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.extractor.SkipEmbeddedDocumentSelector;
+import org.apache.tika.metadata.filter.AttachmentCountingListFilter;
+import org.apache.tika.metadata.filter.CompositeMetadataFilter;
+import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.parser.ParseContext;
 
 /**
@@ -294,6 +297,29 @@ public class TestParseContextSerialization {
         ObjectMapper mapper = createMapper();
         JsonNode root = mapper.readTree(json);
         assertEquals(0, root.size(), "Objects without friendly names should not be serialized");
+    }
+
+    @Test
+    public void testMetadataList() throws Exception {
+        ConfigContainer configContainer = new ConfigContainer();
+        configContainer.set("metadata-filters", """
+            [
+              "attachment-counting-list-filter",
+              "mock-upper-case-filter"
+            ]
+        """);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ConfigContainer.class, configContainer);
+
+        ObjectMapper mapper = createMapper();
+        String json = mapper.writeValueAsString(parseContext);
+
+        ParseContext deser = mapper.readValue(json, ParseContext.class);
+        MetadataFilter resolvedFilter = deser.get(MetadataFilter.class);
+        assertNotNull(resolvedFilter, "MetadataFilter should be resolved");
+        assertEquals(CompositeMetadataFilter.class, resolvedFilter.getClass());
+        CompositeMetadataFilter deserFilter = (CompositeMetadataFilter) resolvedFilter;
+        assertEquals(AttachmentCountingListFilter.class, deserFilter.getFilters().get(0).getClass());
     }
 
     @Test

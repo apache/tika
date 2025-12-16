@@ -19,7 +19,9 @@ package org.apache.tika.serialization;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,9 +29,11 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.loader.ComponentInfo;
+import org.apache.tika.config.loader.ComponentInstantiator;
 import org.apache.tika.config.loader.ComponentRegistry;
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.metadata.filter.CompositeMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.parser.ParseContext;
 
@@ -69,6 +73,20 @@ public class ParseContextUtils {
     );
 
     /**
+     * Mapping of array config keys to their context keys and composite wrapper factories.
+     * Key: config name (e.g., "metadata-filters")
+     * Value: (contextKey, componentInterface)
+     */
+    private static final Map<String, ArrayConfigInfo> ARRAY_CONFIGS = Map.of(
+            "metadata-filters", new ArrayConfigInfo(MetadataFilter.class, MetadataFilter.class)
+    );
+
+    /**
+     * Holds information about how to process array configs.
+     */
+    private record ArrayConfigInfo(Class<?> contextKey, Class<?> componentInterface) {}
+
+    /**
      * Resolves all friendly-named components from ConfigContainer and adds them to ParseContext.
      * <p>
      * Iterates through all entries in ConfigContainer, looks up the friendly name in ComponentRegistry,
@@ -102,12 +120,27 @@ public class ParseContextUtils {
 
         List<String> resolvedKeys = new ArrayList<>();
 
+        // First, process known array configs (e.g., "metadata-filters")
+        // These don't depend on the other-configs registry
+        for (String friendlyName : new ArrayList<>(container.getKeys())) {
+            if (ARRAY_CONFIGS.containsKey(friendlyName)) {
+                JsonConfig jsonConfig = container.get(friendlyName, null);
+                if (jsonConfig != null && resolveArrayConfig(friendlyName, jsonConfig, context, classLoader)) {
+                    resolvedKeys.add(friendlyName);
+                }
+            }
+        }
+
+        // Then, try to load the "other-configs" registry for single component configs
         try {
-            // Load the "other-configs" registry which includes parse-context components
             ComponentRegistry registry = new ComponentRegistry("other-configs", classLoader);
 
-            // Iterate through all configs in the container
             for (String friendlyName : container.getKeys()) {
+                // Skip already resolved array configs
+                if (resolvedKeys.contains(friendlyName)) {
+                    continue;
+                }
+
                 JsonConfig jsonConfig = container.get(friendlyName, null);
                 if (jsonConfig == null) {
                     continue;
@@ -143,7 +176,8 @@ public class ParseContextUtils {
                 }
             }
         } catch (TikaConfigException e) {
-            LOG.warn("Failed to load other-configs registry for parse-context resolution", e);
+            // other-configs registry not available - that's okay, array configs were still processed
+            LOG.debug("other-configs registry not available: {}", e.getMessage());
         }
 
         // Remove resolved configs from the container
@@ -190,5 +224,103 @@ public class ParseContextUtils {
 
         // Use the single matched interface, or fall back to the component class
         return matches.isEmpty() ? info.componentClass() : matches.get(0);
+    }
+
+    /**
+     * Resolves an array config entry (e.g., "metadata-filters") to a composite component.
+     * <p>
+     * The array can contain either strings (friendly names) or objects:
+     * <pre>
+     * ["filter-name-1", "filter-name-2"]              // String shorthand
+     * [{"filter-name-1": {}}, {"filter-name-2": {}}]  // Object format
+     * </pre>
+     *
+     * @param configName the config name (e.g., "metadata-filters")
+     * @param jsonConfig the JSON configuration (should be an array)
+     * @param context the ParseContext to add the resolved component to
+     * @param classLoader the ClassLoader to use for loading component classes
+     * @return true if resolution was successful
+     */
+    @SuppressWarnings("unchecked")
+    private static boolean resolveArrayConfig(String configName, JsonConfig jsonConfig,
+                                              ParseContext context, ClassLoader classLoader) {
+        ArrayConfigInfo configInfo = ARRAY_CONFIGS.get(configName);
+        if (configInfo == null) {
+            return false;
+        }
+
+        try {
+            JsonNode arrayNode = MAPPER.readTree(jsonConfig.json());
+            if (!arrayNode.isArray()) {
+                LOG.warn("Expected array for '{}', got: {}", configName, arrayNode.getNodeType());
+                return false;
+            }
+
+            List<Object> components = new ArrayList<>();
+
+            for (JsonNode item : arrayNode) {
+                String typeName;
+                JsonNode configNode;
+
+                if (item.isTextual()) {
+                    // String shorthand: "component-name"
+                    typeName = item.asText();
+                    configNode = MAPPER.createObjectNode();
+                } else if (item.isObject() && item.size() == 1) {
+                    // Object format: {"component-name": {...}}
+                    typeName = item.fieldNames().next();
+                    configNode = item.get(typeName);
+                } else {
+                    LOG.warn("Unexpected item format in '{}': {}", configName, item);
+                    continue;
+                }
+
+                try {
+                    Object component = ComponentInstantiator.instantiate(
+                            typeName, configNode, MAPPER, classLoader);
+                    components.add(component);
+                    LOG.debug("Instantiated '{}' for '{}'", typeName, configName);
+                } catch (TikaConfigException e) {
+                    LOG.warn("Failed to instantiate '{}' for '{}': {}", typeName, configName, e.getMessage());
+                }
+            }
+
+            // Create the composite and add to ParseContext
+            if (!components.isEmpty()) {
+                Object composite = createComposite(configName, components, configInfo);
+                if (composite != null) {
+                    context.set((Class) configInfo.contextKey(), composite);
+                    LOG.debug("Resolved '{}' -> {} with {} components",
+                            configName, composite.getClass().getSimpleName(), components.size());
+                    return true;
+                }
+            }
+        } catch (IOException e) {
+            LOG.warn("Failed to parse array config '{}': {}", configName, e.getMessage());
+        }
+
+        return false;
+    }
+
+    /**
+     * Creates a composite component from a list of individual components.
+     *
+     * @param configName the config name (for error messages)
+     * @param components the list of components
+     * @param configInfo the array config info
+     * @return the composite component, or null if creation failed
+     */
+    @SuppressWarnings("unchecked")
+    private static Object createComposite(String configName, List<Object> components,
+                                          ArrayConfigInfo configInfo) {
+        // Handle known composite types
+        if (configInfo.componentInterface() == MetadataFilter.class) {
+            List<MetadataFilter> filters = (List<MetadataFilter>) (List<?>) components;
+            return new CompositeMetadataFilter(filters);
+        }
+
+        // Add more composite types as needed
+        LOG.warn("No composite factory for '{}'", configName);
+        return null;
     }
 }
