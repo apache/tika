@@ -1,5 +1,6 @@
 {
   "pipes": {
+    "javaPath": "JAVA_PATH",
     "numClients": 2,
     "forkedJvmArgs": [
       "-Xmx1g",
@@ -15,7 +16,7 @@
   "fetchers": {
     "nick1:is:cool:super/class org.apache.tika.pipes.fetcher.fs.FileSystemFetcher": {
       "file-system-fetcher": {
-        "basePath": "/home/ndipiazza/source/github/apache/tika/tika-grpc/target",
+        "basePath": "FETCHER_BASE_PATH",
         "extractFileSystemMetadata": true
       }
     },
@@ -31,5 +32,5 @@
       }
     }
   },
-  "plugin-roots": ["/tmp/tika-test-plugins"]
+  "plugin-roots": "PLUGIN_ROOTS"
 }
