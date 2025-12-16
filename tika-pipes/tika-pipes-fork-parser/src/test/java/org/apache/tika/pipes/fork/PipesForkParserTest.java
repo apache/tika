@@ -19,6 +19,7 @@ package org.apache.tika.pipes.fork;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -35,6 +36,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.api.HandlerConfig;
 import org.apache.tika.pipes.api.PipesResult;
@@ -82,8 +84,9 @@ public class PipesForkParserTest {
                 .setTimeoutMillis(60000)
                 .addJvmArg("-Xmx256m");
 
-        try (PipesForkParser parser = new PipesForkParser(config)) {
-            PipesForkResult result = parser.parse(testFile);
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testFile)) {
+            PipesForkResult result = parser.parse(tis);
 
             assertTrue(result.isSuccess(), "Parse should succeed. Status: " + result.getStatus()
                     + ", message: " + result.getMessage());
@@ -114,9 +117,10 @@ public class PipesForkParserTest {
                 .setParseMode(HandlerConfig.PARSE_MODE.RMETA)
                 .setTimeoutMillis(60000);
 
-        try (PipesForkParser parser = new PipesForkParser(config)) {
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testFile)) {
             Metadata initialMetadata = new Metadata();
-            PipesForkResult result = parser.parse(testFile, initialMetadata);
+            PipesForkResult result = parser.parse(tis, initialMetadata);
 
             assertTrue(result.isSuccess(), "Parse should succeed");
 
@@ -144,13 +148,17 @@ public class PipesForkParserTest {
                 .setTimeoutMillis(60000);
 
         try (PipesForkParser parser = new PipesForkParser(config)) {
-            PipesForkResult result1 = parser.parse(testFile1);
-            assertTrue(result1.isSuccess());
-            assertTrue(result1.getContent().contains("first file"));
+            try (TikaInputStream tis1 = TikaInputStream.get(testFile1)) {
+                PipesForkResult result1 = parser.parse(tis1);
+                assertTrue(result1.isSuccess());
+                assertTrue(result1.getContent().contains("first file"));
+            }
 
-            PipesForkResult result2 = parser.parse(testFile2);
-            assertTrue(result2.isSuccess());
-            assertTrue(result2.getContent().contains("second file"));
+            try (TikaInputStream tis2 = TikaInputStream.get(testFile2)) {
+                PipesForkResult result2 = parser.parse(tis2);
+                assertTrue(result2.isSuccess());
+                assertTrue(result2.getContent().contains("second file"));
+            }
         }
     }
 
@@ -166,8 +174,9 @@ public class PipesForkParserTest {
                 .setParseMode(HandlerConfig.PARSE_MODE.CONCATENATE)
                 .setTimeoutMillis(60000);
 
-        try (PipesForkParser parser = new PipesForkParser(config)) {
-            PipesForkResult result = parser.parse(testZip);
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testZip)) {
+            PipesForkResult result = parser.parse(tis);
 
             assertTrue(result.isSuccess(), "Parse should succeed");
 
@@ -198,8 +207,9 @@ public class PipesForkParserTest {
                 .setParseMode(HandlerConfig.PARSE_MODE.RMETA)
                 .setTimeoutMillis(60000);
 
-        try (PipesForkParser parser = new PipesForkParser(config)) {
-            PipesForkResult result = parser.parse(testZip);
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testZip)) {
+            PipesForkResult result = parser.parse(tis);
 
             assertTrue(result.isSuccess(), "Parse should succeed");
 
@@ -226,8 +236,9 @@ public class PipesForkParserTest {
                 .setTimeoutMillis(60000);
 
         int explicitMetadataCount;
-        try (PipesForkParser parser = new PipesForkParser(explicitConfig)) {
-            PipesForkResult result = parser.parse(testZip);
+        try (PipesForkParser parser = new PipesForkParser(explicitConfig);
+             TikaInputStream tis = TikaInputStream.get(testZip)) {
+            PipesForkResult result = parser.parse(tis);
             assertTrue(result.isSuccess());
             explicitMetadataCount = result.getMetadataList().size();
         }
@@ -235,8 +246,9 @@ public class PipesForkParserTest {
         // Parse with default config (only pluginsDir set) - should produce same results
         PipesForkParserConfig defaultConfig = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR);
-        try (PipesForkParser parser = new PipesForkParser(defaultConfig)) {
-            PipesForkResult result = parser.parse(testZip);
+        try (PipesForkParser parser = new PipesForkParser(defaultConfig);
+             TikaInputStream tis = TikaInputStream.get(testZip)) {
+            PipesForkResult result = parser.parse(tis);
 
             assertTrue(result.isSuccess(), "Parse with default config should succeed");
             assertEquals(explicitMetadataCount, result.getMetadataList().size(),
@@ -260,8 +272,9 @@ public class PipesForkParserTest {
                 .setTimeoutMillis(60000);
 
         String textContent;
-        try (PipesForkParser parser = new PipesForkParser(textConfig)) {
-            PipesForkResult result = parser.parse(testFile);
+        try (PipesForkParser parser = new PipesForkParser(textConfig);
+             TikaInputStream tis = TikaInputStream.get(testFile)) {
+            PipesForkResult result = parser.parse(tis);
             assertTrue(result.isSuccess(), "TEXT parse should succeed");
             textContent = result.getContent();
             assertNotNull(textContent, "TEXT content should not be null");
@@ -279,8 +292,9 @@ public class PipesForkParserTest {
                 .setTimeoutMillis(60000);
 
         String xmlContent;
-        try (PipesForkParser parser = new PipesForkParser(xmlConfig)) {
-            PipesForkResult result = parser.parse(testFile);
+        try (PipesForkParser parser = new PipesForkParser(xmlConfig);
+             TikaInputStream tis = TikaInputStream.get(testFile)) {
+            PipesForkResult result = parser.parse(tis);
             assertTrue(result.isSuccess(), "XML parse should succeed");
             xmlContent = result.getContent();
             assertNotNull(xmlContent, "XML content should not be null");
@@ -312,8 +326,9 @@ public class PipesForkParserTest {
                 .setWriteLimit(100)  // Limit to 100 characters
                 .setTimeoutMillis(60000);
 
-        try (PipesForkParser parser = new PipesForkParser(config)) {
-            PipesForkResult result = parser.parse(testFile);
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testFile)) {
+            PipesForkResult result = parser.parse(tis);
 
             // Note: behavior depends on throwOnWriteLimitReached setting
             // With default (true), this may result in an exception being recorded
@@ -329,38 +344,29 @@ public class PipesForkParserTest {
         // Use default configuration (only pluginsDir set)
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR);
-        try (PipesForkParser parser = new PipesForkParser(config)) {
-            PipesForkResult result = parser.parse(testFile);
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testFile)) {
+            PipesForkResult result = parser.parse(tis);
             assertTrue(result.isSuccess());
             assertNotNull(result.getContent());
         }
     }
 
     @Test
-    public void testFileNotFoundReturnsFetchException() throws Exception {
+    public void testFileNotFoundThrowsException() throws Exception {
         // Try to parse a file that doesn't exist
         Path nonExistentFile = tempDir.resolve("does_not_exist.txt");
 
-        PipesForkParserConfig config = new PipesForkParserConfig()
-                .setPluginsDir(PLUGINS_DIR)
-                .setTimeoutMillis(60000);
-
-        try (PipesForkParser parser = new PipesForkParser(config)) {
-            // This should NOT throw an exception - fetch failures are returned in the result
-            PipesForkResult result = parser.parse(nonExistentFile);
-
-            // The result should indicate a fetch exception, not success
-            assertFalse(result.isSuccess(), "Should not succeed for non-existent file");
-            assertFalse(result.isProcessCrash(), "Should not be a process crash");
-            assertEquals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION, result.getStatus(),
-                    "Should be a FETCH_EXCEPTION");
-            assertNotNull(result.getMessage(), "Should have an error message");
-        }
+        // TikaInputStream.get(Path) throws NoSuchFileException for non-existent files
+        // because it needs to read file attributes (size)
+        assertThrows(java.nio.file.NoSuchFileException.class, () -> {
+            TikaInputStream.get(nonExistentFile);
+        });
     }
 
     @Test
-    public void testFetchExceptionDoesNotPreventNextParse() throws Exception {
-        // First try a non-existent file, then try a real file
+    public void testExceptionOnOneFileDoesNotPreventNextParse() throws Exception {
+        // Test that an exception when opening one file doesn't prevent parsing another file
         Path nonExistentFile = tempDir.resolve("does_not_exist.txt");
         Path realFile = tempDir.resolve("real_file.txt");
         Files.writeString(realFile, "This file exists");
@@ -370,14 +376,17 @@ public class PipesForkParserTest {
                 .setTimeoutMillis(60000);
 
         try (PipesForkParser parser = new PipesForkParser(config)) {
-            // First parse - should fail with fetch exception
-            PipesForkResult result1 = parser.parse(nonExistentFile);
-            assertEquals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION, result1.getStatus());
+            // First attempt - TikaInputStream.get() will throw for non-existent file
+            assertThrows(java.nio.file.NoSuchFileException.class, () -> {
+                TikaInputStream.get(nonExistentFile);
+            });
 
-            // Second parse - should succeed
-            PipesForkResult result2 = parser.parse(realFile);
-            assertTrue(result2.isSuccess(), "Should succeed for existing file");
-            assertTrue(result2.getContent().contains("This file exists"));
+            // Second parse - should succeed despite the previous exception
+            try (TikaInputStream tis2 = TikaInputStream.get(realFile)) {
+                PipesForkResult result2 = parser.parse(tis2);
+                assertTrue(result2.isSuccess(), "Should succeed for existing file");
+                assertTrue(result2.getContent().contains("This file exists"));
+            }
         }
     }
 
@@ -392,8 +401,9 @@ public class PipesForkParserTest {
                 .setPluginsDir(PLUGINS_DIR)
                 .setTimeoutMillis(60000);
 
-        try (PipesForkParser parser = new PipesForkParser(config)) {
-            PipesForkResult result = parser.parse(testFile);
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testFile)) {
+            PipesForkResult result = parser.parse(tis);
 
             // Verify we can check for different success states
             if (result.isSuccess()) {
@@ -417,8 +427,9 @@ public class PipesForkParserTest {
                 .setPluginsDir(PLUGINS_DIR)
                 .setTimeoutMillis(60000);
 
-        try (PipesForkParser parser = new PipesForkParser(config)) {
-            PipesForkResult result = parser.parse(testFile);
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testFile)) {
+            PipesForkResult result = parser.parse(tis);
 
             // At least one of these should be true
             boolean hasCategory = result.isSuccess() || result.isProcessCrash() || result.isApplicationError();

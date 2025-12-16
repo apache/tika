@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -42,13 +43,31 @@ import org.apache.tika.pipes.core.PipesParser;
 /**
  * A ForkParser implementation backed by {@link PipesParser}.
  * <p>
+ * <strong>This class is intended to replace the legacy
+ * {@code org.apache.tika.fork.ForkParser}.</strong> The legacy ForkParser streamed
+ * SAX events between processes, which was complex and error-prone. This implementation
+ * uses the modern pipes infrastructure and returns parsed content in the metadata
+ * (via {@link org.apache.tika.metadata.TikaCoreProperties#TIKA_CONTENT}).
+ * <p>
  * This parser runs parsing in forked JVM processes, providing isolation from
  * crashes, memory leaks, and other issues that can occur during parsing.
  * Multiple forked processes can be used for concurrent parsing.
  * <p>
- * Unlike the legacy ForkParser which streams SAX events between processes,
- * this implementation uses the pipes infrastructure and returns parsed content
- * in the metadata (via {@link org.apache.tika.metadata.TikaCoreProperties#TIKA_CONTENT}).
+ * <strong>Getting Started:</strong> This class is designed as a simple entry point
+ * to help users get started with forked parsing using files on the local filesystem.
+ * Under the hood, it uses a {@code FileSystemFetcher} to read files. For more advanced
+ * use cases, the Tika Pipes infrastructure supports many other sources and destinations
+ * through plugins:
+ * <ul>
+ *   <li><strong>Fetchers</strong> (read from): S3, Azure Blob, Google Cloud Storage,
+ *       HTTP, Microsoft Graph, and more</li>
+ *   <li><strong>Emitters</strong> (write to): OpenSearch, Solr, S3, filesystem, and more</li>
+ *   <li><strong>Pipes Iterators</strong> (batch processing): JDBC, CSV, filesystem crawling,
+ *       and more</li>
+ * </ul>
+ * See the {@code tika-pipes} module and its submodules for available plugins. For
+ * production batch processing, consider using {@code AsyncProcessor} or the
+ * {@code tika-pipes-cli} directly with a JSON configuration file.
  * <p>
  * <strong>Thread Safety:</strong> This class is thread-safe. Multiple threads can
  * call {@link #parse} concurrently, and requests will be distributed across the
@@ -69,13 +88,24 @@ import org.apache.tika.pipes.core.PipesParser;
  * config.setHandlerConfig(new HandlerConfig(HANDLER_TYPE.TEXT, PARSE_MODE.RMETA, -1, -1, true));
  *
  * try (PipesForkParser parser = new PipesForkParser(config)) {
- *     PipesForkResult result = parser.parse(Paths.get("/path/to/file.pdf"));
- *     for (Metadata m : result.getMetadataList()) {
- *         String content = m.get(TikaCoreProperties.TIKA_CONTENT);
- *         // process content and metadata
+ *     // Parse from a file
+ *     try (TikaInputStream tis = TikaInputStream.get(Paths.get("/path/to/file.pdf"))) {
+ *         PipesForkResult result = parser.parse(tis);
+ *         for (Metadata m : result.getMetadataList()) {
+ *             String content = m.get(TikaCoreProperties.TIKA_CONTENT);
+ *             // process content and metadata
+ *         }
+ *     }
+ *
+ *     // Or parse from an InputStream (will be spooled to temp file)
+ *     try (TikaInputStream tis = TikaInputStream.get(inputStream)) {
+ *         PipesForkResult result = parser.parse(tis);
+ *         // ...
  *     }
  * }
  * </pre>
+ *
+ * @see org.apache.tika.pipes.core.async.AsyncProcessor for batch processing
  */
 public class PipesForkParser implements Closeable {
 
@@ -109,7 +139,9 @@ public class PipesForkParser implements Closeable {
     /**
      * Parse a file in a forked JVM process.
      *
-     * @param path the path to the file to parse
+     * @param tis the TikaInputStream to parse. If the stream doesn't have an underlying
+     *            file, it will be spooled to a temporary file. The caller must keep
+     *            the TikaInputStream open until this method returns.
      * @return the parse result containing metadata and content
      * @throws IOException if an I/O error occurs
      * @throws InterruptedException if the parsing is interrupted
@@ -117,15 +149,17 @@ public class PipesForkParser implements Closeable {
      * @throws PipesForkParserException if an application error occurs (initialization
      *         failure or configuration error)
      */
-    public PipesForkResult parse(Path path)
+    public PipesForkResult parse(TikaInputStream tis)
             throws IOException, InterruptedException, PipesException, TikaException {
-        return parse(path, new Metadata(), new ParseContext());
+        return parse(tis, new Metadata(), new ParseContext());
     }
 
     /**
      * Parse a file in a forked JVM process with the specified metadata.
      *
-     * @param path the path to the file to parse
+     * @param tis the TikaInputStream to parse. If the stream doesn't have an underlying
+     *            file, it will be spooled to a temporary file. The caller must keep
+     *            the TikaInputStream open until this method returns.
      * @param metadata initial metadata (e.g., content type hint)
      * @return the parse result containing metadata and content
      * @throws IOException if an I/O error occurs
@@ -134,15 +168,17 @@ public class PipesForkParser implements Closeable {
      * @throws PipesForkParserException if an application error occurs (initialization
      *         failure or configuration error)
      */
-    public PipesForkResult parse(Path path, Metadata metadata)
+    public PipesForkResult parse(TikaInputStream tis, Metadata metadata)
             throws IOException, InterruptedException, PipesException, TikaException {
-        return parse(path, metadata, new ParseContext());
+        return parse(tis, metadata, new ParseContext());
     }
 
     /**
      * Parse a file in a forked JVM process with the specified metadata and parse context.
      *
-     * @param path the path to the file to parse
+     * @param tis the TikaInputStream to parse. If the stream doesn't have an underlying
+     *            file, it will be spooled to a temporary file. The caller must keep
+     *            the TikaInputStream open until this method returns.
      * @param metadata initial metadata (e.g., content type hint)
      * @param parseContext the parse context
      * @return the parse result containing metadata and content
@@ -152,9 +188,13 @@ public class PipesForkParser implements Closeable {
      * @throws PipesForkParserException if an application error occurs (initialization
      *         failure or configuration error)
      */
-    public PipesForkResult parse(Path path, Metadata metadata, ParseContext parseContext)
+    public PipesForkResult parse(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
             throws IOException, InterruptedException, PipesException, TikaException {
 
+        // Get the path - this will spool to a temp file if the stream doesn't have
+        // an underlying file. The temp file is managed by TikaInputStream and will
+        // be cleaned up when the TikaInputStream is closed.
+        Path path = tis.getPath();
         String absolutePath = path.toAbsolutePath().toString();
         String id = absolutePath;
 
