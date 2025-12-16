@@ -24,6 +24,7 @@ import org.apache.tika.config.TikaComponent;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Detector for Matroska (MKV and WEBM) files based on the EBML header.
@@ -52,7 +53,7 @@ public class MatroskaDetector implements Detector {
      * @throws IOException if an I/O error occurs
      */
     @Override
-    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) throws IOException {
         if (tis == null) {
             return MediaType.OCTET_STREAM;
         }

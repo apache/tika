@@ -30,6 +30,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.CharsetUtils;
 
 /**
@@ -87,7 +88,7 @@ public class AutoDetectReader extends BufferedReader {
                                   EncodingDetector detector)
             throws IOException, TikaException {
         // Ask all given detectors for the character encoding
-        Charset charset = detector.detect(tis, metadata);
+        Charset charset = detector.detect(tis, metadata, new ParseContext());
         if (charset != null) {
             return charset;
         }

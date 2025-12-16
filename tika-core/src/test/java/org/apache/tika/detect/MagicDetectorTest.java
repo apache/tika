@@ -33,6 +33,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Test cases for the {@link MagicDetector} class.
@@ -43,7 +44,7 @@ public class MagicDetectorTest extends TikaTest {
     public void testDetectNull() throws Exception {
         MediaType html = new MediaType("text", "html");
         Detector detector = new MagicDetector(html, "<html".getBytes(US_ASCII));
-        assertEquals(MediaType.OCTET_STREAM, detector.detect(null, new Metadata()));
+        assertEquals(MediaType.OCTET_STREAM, detector.detect(null, new Metadata(), new ParseContext()));
     }
 
     @Test
@@ -166,7 +167,7 @@ public class MagicDetectorTest extends TikaTest {
         // Deliberately prevent InputStream.read(...) from reading the entire
         // buffer in one go
         try (TikaInputStream tis = TikaInputStream.get(new RestrictiveInputStream(data))) {
-            assertEquals(testMT, detector.detect(tis, new Metadata()));
+            assertEquals(testMT, detector.detect(tis, new Metadata(), new ParseContext()));
         }
     }
 
@@ -179,7 +180,7 @@ public class MagicDetectorTest extends TikaTest {
         // Deliberately prevent InputStream.read(...) from reading the entire
         // buffer in one go
         try (TikaInputStream tis = TikaInputStream.get(new RestrictiveInputStream(data))) {
-            assertEquals(testMT, detector.detect(tis, new Metadata()));
+            assertEquals(testMT, detector.detect(tis, new Metadata(), new ParseContext()));
         }
     }
 
@@ -214,7 +215,7 @@ public class MagicDetectorTest extends TikaTest {
     private void assertDetect(Detector detector, MediaType type, byte[] bytes) {
         try {
             TikaInputStream tis = TikaInputStream.get(bytes);
-            assertEquals(type, detector.detect(tis, new Metadata()));
+            assertEquals(type, detector.detect(tis, new Metadata(), new ParseContext()));
 
             // Test that the stream has been reset
             for (byte aByte : bytes) {
@@ -261,7 +262,7 @@ public class MagicDetectorTest extends TikaTest {
 
     private String detect(Detector detector, String bz2Name) throws IOException  {
         try (TikaInputStream tis = getResourceAsStream("/test-documents/bz2/" + bz2Name)) {
-            return detector.detect(tis, new Metadata()).toString();
+            return detector.detect(tis, new Metadata(), new ParseContext()).toString();
         }
     }
 }

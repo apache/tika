@@ -31,6 +31,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * This is designed to detect commonly gzipped file types such as warc.gz.
@@ -44,7 +45,7 @@ public class GZipSpecializationDetector implements Detector {
     public static MediaType ARC_GZ = MediaType.application("arc+gz");
 
     @Override
-    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) throws IOException {
         if (tis == null) {
             return MediaType.OCTET_STREAM;
         }

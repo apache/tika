@@ -34,6 +34,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 /**
  * TODO: refactor this copy/paste from POIFSContainerDetector
  */
@@ -163,7 +164,7 @@ public class MiscOLEDetector implements Detector {
     }
 
     @Override
-    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) throws IOException {
         // Check if we have access to the document
         if (tis == null) {
             return MediaType.OCTET_STREAM;

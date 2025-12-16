@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 
 public class MimeDetectionTest {
 
@@ -104,13 +105,13 @@ public class MimeDetectionTest {
     @Test
     public void testByteOrderMark() throws Exception {
         try (TikaInputStream tis = TikaInputStream.get("\ufefftest".getBytes(UTF_16LE))) {
-            assertEquals(MediaType.TEXT_PLAIN, MIME_TYPES.detect(tis, new Metadata()));
+            assertEquals(MediaType.TEXT_PLAIN, MIME_TYPES.detect(tis, new Metadata(), new ParseContext()));
         }
         try (TikaInputStream tis = TikaInputStream.get("\ufefftest".getBytes(UTF_16BE))) {
-            assertEquals(MediaType.TEXT_PLAIN, MIME_TYPES.detect(tis, new Metadata()));
+            assertEquals(MediaType.TEXT_PLAIN, MIME_TYPES.detect(tis, new Metadata(), new ParseContext()));
         }
         try (TikaInputStream tis = TikaInputStream.get("\ufefftest".getBytes(UTF_8))) {
-            assertEquals(MediaType.TEXT_PLAIN, MIME_TYPES.detect(tis, new Metadata()));
+            assertEquals(MediaType.TEXT_PLAIN, MIME_TYPES.detect(tis, new Metadata(), new ParseContext()));
         }
     }
 
@@ -121,7 +122,7 @@ public class MimeDetectionTest {
                 "Subject: Received\r\n";
         MediaType rfc822 = MediaType.parse("message/rfc822");
         try (TikaInputStream tis = TikaInputStream.get(header.getBytes(UTF_8))) {
-            assertEquals(rfc822, MIME_TYPES.detect(tis, new Metadata()));
+            assertEquals(rfc822, MIME_TYPES.detect(tis, new Metadata(), new ParseContext()));
         }
 
         int utfLength = ByteOrderMark.UTF_8.length();
@@ -129,7 +130,7 @@ public class MimeDetectionTest {
         System.arraycopy(ByteOrderMark.UTF_8.getBytes(), 0, bytes, 0, utfLength);
         System.arraycopy(header.getBytes(UTF_8), 0, bytes, 3, header.getBytes(UTF_8).length);
         try (TikaInputStream tis = TikaInputStream.get(bytes)) {
-            assertEquals(rfc822, MIME_TYPES.detect(tis, new Metadata()));
+            assertEquals(rfc822, MIME_TYPES.detect(tis, new Metadata(), new ParseContext()));
         }
     }
 
@@ -171,7 +172,7 @@ public class MimeDetectionTest {
     private void testUrlWithoutContent(String expected, String url) throws IOException {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, url);
-        String mime = this.MIME_TYPES.detect(null, metadata).toString();
+        String mime = this.MIME_TYPES.detect(null, metadata, new ParseContext()).toString();
         assertEquals(expected, mime,
                 url + " is not properly detected using only resource name");
     }
@@ -193,13 +194,13 @@ public class MimeDetectionTest {
         assertNotNull(in, "Test stream: [" + urlOrFileName + "] is null!");
         try (TikaInputStream tis = TikaInputStream.get(in)) {
             Metadata metadata = new Metadata();
-            String mime = this.MIME_TYPES.detect(tis, metadata).toString();
+            String mime = this.MIME_TYPES.detect(tis, metadata, new ParseContext()).toString();
             assertEquals(expected, mime,
                     urlOrFileName + " is not properly detected: detected.");
 
             //Add resource name and test again
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, urlOrFileName);
-            mime = this.MIME_TYPES.detect(tis, metadata).toString();
+            mime = this.MIME_TYPES.detect(tis, metadata, new ParseContext()).toString();
             assertEquals(expected, mime,
                     urlOrFileName + " is not properly detected after adding resource name.");
         }
@@ -214,21 +215,21 @@ public class MimeDetectionTest {
     public void testEmptyDocument() throws IOException {
         try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
             assertEquals(MediaType.OCTET_STREAM,
-                    MIME_TYPES.detect(tis, new Metadata()));
+                    MIME_TYPES.detect(tis, new Metadata(), new ParseContext()));
         }
 
         Metadata namehint = new Metadata();
         namehint.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.txt");
         try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
             assertEquals(MediaType.TEXT_PLAIN,
-                    MIME_TYPES.detect(tis, namehint));
+                    MIME_TYPES.detect(tis, namehint, new ParseContext()));
         }
 
         Metadata typehint = new Metadata();
         typehint.set(Metadata.CONTENT_TYPE, "text/plain");
         try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
             assertEquals(MediaType.TEXT_PLAIN,
-                    MIME_TYPES.detect(tis, typehint));
+                    MIME_TYPES.detect(tis, typehint, new ParseContext()));
         }
 
     }
@@ -242,7 +243,7 @@ public class MimeDetectionTest {
     @Test
     public void testNotXML() throws IOException {
         try (TikaInputStream tis = TikaInputStream.get("<!-- test -->".getBytes(UTF_8))) {
-            assertEquals(MediaType.TEXT_PLAIN, MIME_TYPES.detect(tis, new Metadata()));
+            assertEquals(MediaType.TEXT_PLAIN, MIME_TYPES.detect(tis, new Metadata(), new ParseContext()));
         }
     }
 
@@ -275,20 +276,20 @@ public class MimeDetectionTest {
         metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.hello.world");
         try (TikaInputStream tis = TikaInputStream.get(helloWorld)) {
-            assertEquals(helloType, MIME_TYPES.detect(tis, metadata));
+            assertEquals(helloType, MIME_TYPES.detect(tis, metadata, new ParseContext()));
         }
 
         metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.x-hello-world");
         try (TikaInputStream tis = TikaInputStream.get(helloWorld)) {
-            assertEquals(helloXType, MIME_TYPES.detect(tis, metadata));
+            assertEquals(helloXType, MIME_TYPES.detect(tis, metadata, new ParseContext()));
         }
 
         // Without, goes for the one that sorts last
         metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "testingTESTINGtesting");
         try (TikaInputStream tis = TikaInputStream.get(helloWorld)) {
-            assertEquals(helloXType, MIME_TYPES.detect(tis, metadata));
+            assertEquals(helloXType, MIME_TYPES.detect(tis, metadata, new ParseContext()));
         }
     }
 

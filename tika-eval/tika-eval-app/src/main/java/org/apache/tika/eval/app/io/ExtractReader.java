@@ -41,6 +41,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.ToTextContentHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.apache.tika.serialization.JsonMetadataList;
@@ -204,7 +205,7 @@ public class ExtractReader {
         //but better than nothing.
         m.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileSuffixes.originalFileName);
 
-        MediaType mimeType = mimeTypes.detect(null, m);
+        MediaType mimeType = mimeTypes.detect(null, m, new ParseContext());
         if (mimeType != null) {
             m.set(Metadata.CONTENT_TYPE, mimeType.toString());
         }

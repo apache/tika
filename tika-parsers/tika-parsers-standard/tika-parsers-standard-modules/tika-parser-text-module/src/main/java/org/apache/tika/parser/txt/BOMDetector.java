@@ -27,6 +27,7 @@ import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
 /*
  This is an optional detector that is not loaded automatically by SPI. You need to configure it.
@@ -58,7 +59,7 @@ public class BOMDetector implements EncodingDetector {
         }
     }
     @Override
-    public Charset detect(TikaInputStream tis, Metadata metadata) throws IOException {
+    public Charset detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) throws IOException {
         tis.mark(MAX_BYTES);
         byte[] bytes = new byte[MAX_BYTES];
         try {

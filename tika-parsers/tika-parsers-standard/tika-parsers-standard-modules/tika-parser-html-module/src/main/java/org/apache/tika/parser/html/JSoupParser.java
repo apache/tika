@@ -158,7 +158,7 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         EncodingDetector encodingDetector = getEncodingDetector(context);
-        Charset charset = encodingDetector.detect(tis, metadata);
+        Charset charset = encodingDetector.detect(tis, metadata, context);
         charset = charset == null ? DEFAULT_CHARSET : charset;
         String previous = metadata.get(Metadata.CONTENT_TYPE);
         MediaType contentType = null;

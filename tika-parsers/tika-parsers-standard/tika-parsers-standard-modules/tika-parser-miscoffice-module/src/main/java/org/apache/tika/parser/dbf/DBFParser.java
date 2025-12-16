@@ -86,7 +86,7 @@ public class DBFParser implements Parser {
             row = reader.next();
         }
 
-        Charset charset = getCharset(firstRows, header);
+        Charset charset = getCharset(firstRows, header, context);
         metadata.set(Metadata.CONTENT_ENCODING, charset.toString());
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
@@ -118,7 +118,7 @@ public class DBFParser implements Parser {
         xhtml.endDocument();
     }
 
-    private Charset getCharset(List<DBFRow> firstRows, DBFFileHeader header)
+    private Charset getCharset(List<DBFRow> firstRows, DBFFileHeader header, ParseContext parseContext)
             throws IOException, TikaException {
         //TODO: potentially use codepage info in the header
         Charset charset = DEFAULT_CHARSET;
@@ -138,7 +138,7 @@ public class DBFParser implements Parser {
         if (bytes.length > 20) {
             EncodingDetector detector = new Icu4jEncodingDetector();
             try (TikaInputStream tis = TikaInputStream.get(bytes)) {
-                charset = detector.detect(tis, new Metadata());
+                charset = detector.detect(TikaInputStream.get(bytes), new Metadata(), parseContext);
             }
         }
         return charset;

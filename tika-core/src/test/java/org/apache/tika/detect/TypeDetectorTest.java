@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Test cases for the {@link TypeDetector} class.
@@ -58,7 +59,7 @@ public class TypeDetectorTest {
         assertDetect(MediaType.OCTET_STREAM, "");
         assertDetect(MediaType.OCTET_STREAM, null);
         try {
-            assertEquals(MediaType.OCTET_STREAM, detector.detect(null, new Metadata()));
+            assertEquals(MediaType.OCTET_STREAM, detector.detect(null, new Metadata(), new ParseContext()));
         } catch (IOException e) {
             fail("TypeDetector should never throw an IOException");
         }
@@ -68,7 +69,7 @@ public class TypeDetectorTest {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, name);
         try {
-            assertEquals(type, detector.detect(null, metadata));
+            assertEquals(type, detector.detect(null, metadata, new ParseContext()));
         } catch (IOException e) {
             fail("TypeDetector should never throw an IOException");
         }

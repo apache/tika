@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -62,7 +63,7 @@ public class DIFParser implements Parser {
         TaggedContentHandler tagged = new TaggedContentHandler(handler);
         tis.setCloseShield();
         try {
-            XMLReaderUtils.parseSAX(tis,
+            XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(tis),
                             new EmbeddedContentHandler(
                                     getContentHandler(tagged, metadata, context)),
                     context);

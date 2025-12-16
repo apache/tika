@@ -26,7 +26,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -656,7 +655,8 @@ public abstract class TikaTest {
         }
 
         @Override
-        public void handle(String filename, MediaType mediaType, InputStream stream) {
+        public void handle(String filename, MediaType mediaType, TikaInputStream stream,
+                           ParseContext parseContext) {
             if (skipTypes.contains(mediaType)) {
                 return;
             }
@@ -673,11 +673,9 @@ public abstract class TikaTest {
         public List<byte[]> bytes = new ArrayList<>();
 
         @Override
-        public void handle(String filename, MediaType mediaType, InputStream stream) {
+        public void handle(String filename, MediaType mediaType, TikaInputStream stream,
+                           ParseContext parseContext) {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
-            if (!stream.markSupported()) {
-                stream = TikaInputStream.get(stream);
-            }
             stream.mark(0);
             try {
                 IOUtils.copy(stream, os);

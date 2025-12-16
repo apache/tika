@@ -50,7 +50,7 @@ public class HDFParserTest extends TikaTest {
          * ftp://acdisc.gsfc.nasa.gov/data/s4pa///Aura_MLS_Level2/ML2O3.002//2009
          * /MLS-Aura_L2GP-O3_v02-23-c01_2009d122.he5
          */
-        try (TikaInputStream tis = getResourceAsStream("/test-documents/test.he5")) {
+        try (TikaInputStream tis = TikaInputStream.get(HDFParser.class.getResourceAsStream("/test-documents/test.he5"))) {
             parser.parse(tis, handler, metadata, new ParseContext());
         }
 

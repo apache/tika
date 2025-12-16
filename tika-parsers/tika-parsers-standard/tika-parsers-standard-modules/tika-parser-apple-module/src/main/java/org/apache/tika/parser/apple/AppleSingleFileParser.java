@@ -101,7 +101,7 @@ public class AppleSingleFileParser implements Parser {
                 // TODO: we should probably add a readlimiting wrapper around this
                 // stream to ensure that not more than contentFieldInfo.length bytes
                 // are read
-                ex.parseEmbedded(tis, xhtml, embeddedMetadata, true);
+                ex.parseEmbedded(tis, xhtml, embeddedMetadata, context, true);
             }
         }
         xhtml.endDocument();

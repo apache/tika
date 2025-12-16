@@ -35,6 +35,7 @@ import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 public abstract class TrainedModelDetector implements Detector {
     private static final long serialVersionUID = 1L;
@@ -48,7 +49,8 @@ public abstract class TrainedModelDetector implements Detector {
         return Integer.MAX_VALUE;
     }
 
-    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
+            throws IOException {
         // convert to byte-histogram
         if (tis != null) {
             tis.mark(getMinLength());

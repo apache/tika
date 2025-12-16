@@ -23,6 +23,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypesFactory;
+import org.apache.tika.parser.ParseContext;
 
 public class AdvancedTypeDetector {
     public static String detectWithCustomConfig(String name) throws Exception {
@@ -38,7 +39,7 @@ public class AdvancedTypeDetector {
         Detector custom = new Detector() {
             private static final long serialVersionUID = -5420638839201540749L;
 
-            public MediaType detect(TikaInputStream tis, Metadata metadata) {
+            public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) {
                 String type = metadata.get("my-custom-type-override");
                 if (type != null) {
                     return MediaType.parse(type);

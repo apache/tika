@@ -622,7 +622,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             if ("Excel.Chart.8".equals(progId)) {
                 mediaType = "application/vnd.ms-excel";
             } else {
-                MediaType mt = getDetector().detect(tis, new Metadata());
+                MediaType mt = getDetector().detect(tis, new Metadata(), context);
                 mediaType = mt.toString();
             }
             if (mediaType

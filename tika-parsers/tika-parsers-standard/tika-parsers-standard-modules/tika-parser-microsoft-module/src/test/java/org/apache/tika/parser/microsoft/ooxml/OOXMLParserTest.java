@@ -1465,7 +1465,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         // Should be detected correctly
         MediaType type;
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testEXCEL.xlsb")) {
-            type = detector.detect(tis, m);
+            type = detector.detect(tis, m, new ParseContext());
             assertEquals("application/vnd.ms-excel.sheet.binary.macroenabled.12", type.toString());
         }
 

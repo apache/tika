@@ -135,7 +135,7 @@ public class ZipParserTest extends AbstractPkgTest {
         }
 
         public void parseEmbedded(TikaInputStream inputStream, ContentHandler contentHandler,
-                                  Metadata metadata, boolean outputHtml) {
+                                  Metadata metadata, ParseContext parseContext, boolean outputHtml) {
             throw new UnsupportedOperationException("should never be called");
         }
     }

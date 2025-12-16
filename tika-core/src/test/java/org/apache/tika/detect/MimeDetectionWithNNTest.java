@@ -28,6 +28,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 public class MimeDetectionWithNNTest extends TikaTest {
 
@@ -103,13 +104,13 @@ public class MimeDetectionWithNNTest extends TikaTest {
         assertNotNull(in, "Test stream: [" + urlOrFileName + "] is null!");
         try {
             Metadata metadata = new Metadata();
-            String mime = this.detector.detect(in, metadata).toString();
+            String mime = this.detector.detect(in, metadata, new ParseContext()).toString();
             assertEquals(expected, mime,
                     urlOrFileName + " is not properly detected: detected.");
 
             // Add resource name and test again
             // metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, urlOrFileName);
-            mime = this.detector.detect(in, metadata).toString();
+            mime = this.detector.detect(in, metadata, new ParseContext()).toString();
             assertEquals(expected, mime,
                     urlOrFileName + " is not properly detected after adding resource name.");
         } finally {
@@ -124,7 +125,7 @@ public class MimeDetectionWithNNTest extends TikaTest {
     public void testEmptyDocument() throws IOException {
         try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
             assertEquals(MediaType.OCTET_STREAM,
-                    detector.detect(tis, new Metadata()));
+                    detector.detect(tis, new Metadata(), new ParseContext()));
         }
 
     }

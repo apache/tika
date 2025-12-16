@@ -288,7 +288,7 @@ public class ExcelParserTest extends TikaTest {
         m = new Metadata();
         m.add(TikaCoreProperties.RESOURCE_NAME_KEY, "excel_5.xls");
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testEXCEL_5.xls")) {
-            type = detector.detect(tis, m);
+            type = detector.detect(tis, m, new ParseContext());
             assertEquals("application/vnd.ms-excel", type.toString());
         }
 
@@ -296,7 +296,7 @@ public class ExcelParserTest extends TikaTest {
         m = new Metadata();
         m.add(TikaCoreProperties.RESOURCE_NAME_KEY, "excel_95.xls");
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testEXCEL_95.xls")) {
-            type = detector.detect(tis, m);
+            type = detector.detect(tis, m, new ParseContext());
             assertEquals("application/vnd.ms-excel", type.toString());
         }
 

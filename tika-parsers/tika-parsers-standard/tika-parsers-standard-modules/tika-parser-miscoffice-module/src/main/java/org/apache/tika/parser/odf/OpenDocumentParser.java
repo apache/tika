@@ -278,16 +278,17 @@ public class OpenDocumentParser implements Parser {
                         tisZip.getFile();
                         MediaType embeddedMimeType = embeddedDocumentUtil
                                 .getDetector()
-                                .detect(tisZip, embeddedMetadata);
+                                .detect(tisZip, embeddedMetadata, context);
                         if (embeddedMimeType != null) {
                             embeddedMetadata.set(Metadata.CONTENT_TYPE, embeddedMimeType.toString());
                         }
                         tisZip.reset();
                     }
 
-                    if (embeddedDocumentUtil.shouldParseEmbedded(embeddedMetadata)) {
-                        embeddedDocumentUtil.parseEmbedded(tisZip, new EmbeddedContentHandler(handler), embeddedMetadata, false);
-                    }
+                if (embeddedDocumentUtil.shouldParseEmbedded(embeddedMetadata)) {
+                    embeddedDocumentUtil.parseEmbedded(tisZip, new EmbeddedContentHandler(handler),
+                            embeddedMetadata, false);
+                }
             } else if (extractMacros && embeddedName.contains("Basic/")) {
                 //process all files under Basic/; let maybeHandleMacro figure
                 //out if it is a macro or not

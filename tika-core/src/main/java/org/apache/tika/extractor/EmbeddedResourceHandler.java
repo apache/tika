@@ -16,9 +16,9 @@
  */
 package org.apache.tika.extractor;
 
-import java.io.InputStream;
-
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Tika container extractor callback interface.
@@ -31,11 +31,13 @@ public interface EmbeddedResourceHandler {
      * This will be called once per embedded resource within the
      *  container, along with whatever details are available on
      *  the embedded resource.
-     *  
+     *
      * @since Apache Tika 0.8
      * @param filename The filename of the embedded resource, if known
      * @param mediaType The media type of the embedded resource, if known
      * @param stream The contents of the embedded resource
+     * @param parseContext The parse context
      */
-    void handle(String filename, MediaType mediaType, InputStream stream);
+    void handle(String filename, MediaType mediaType, TikaInputStream stream,
+            ParseContext parseContext);
 }

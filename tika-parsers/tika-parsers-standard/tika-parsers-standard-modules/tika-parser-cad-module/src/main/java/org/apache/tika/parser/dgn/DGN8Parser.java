@@ -49,7 +49,8 @@ public class DGN8Parser implements Parser {
     }
 
     @Override
-    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         SummaryExtractor summaryExtractor = new SummaryExtractor(metadata);

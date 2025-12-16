@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
@@ -40,7 +41,7 @@ public class JournalParserTest extends TikaTest {
         assumeTrue(canRun());
 
         JournalParser jParser = new JournalParser();
-        try {
+        try (TikaInputStream tis = getResourceAsStream(path)) {
             jParser.parse(getResourceAsStream(path), handler, metadata, new ParseContext());
         } catch (Exception e) {
             e.printStackTrace();

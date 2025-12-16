@@ -28,6 +28,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
+import org.apache.tika.parser.ParseContext;
 
 public class FileCommandDetectorTest extends TikaTest {
 
@@ -46,11 +47,12 @@ public class FileCommandDetectorTest extends TikaTest {
                 MimeTypes.getDefaultMimeTypes().getMediaTypeRegistry(),
                 Arrays.asList(fileDetector, defaultDetector));
 
-        try (TikaInputStream tis = getResourceAsStream(TEST_FILE)) {
+        try (TikaInputStream tis = TikaInputStream.get(getClass()
+                .getResourceAsStream(TEST_FILE))) {
             //run more than once to ensure that the input stream is reset
             for (int i = 0; i < 2; i++) {
                 Metadata metadata = new Metadata();
-                MediaType answer = detector.detect(tis, metadata);
+                MediaType answer = detector.detect(tis, metadata, new ParseContext());
                 String fileMime = metadata.get(FileCommandDetector.FILE_MIME);
                 assertTrue(MediaType.text("xml").equals(answer) ||
                         MediaType.application("xml").equals(answer),
@@ -62,10 +64,11 @@ public class FileCommandDetectorTest extends TikaTest {
         }
 
         //now try with TikaInputStream
-        try (TikaInputStream tis = getResourceAsStream(TEST_FILE)) {
+        try (TikaInputStream tis = TikaInputStream
+                .get(getClass().getResourceAsStream(TEST_FILE))) {
             //run more than once to ensure that the input stream is reset
             for (int i = 0; i < 2; i++) {
-                MediaType answer = detector.detect(tis, new Metadata());
+                MediaType answer = detector.detect(tis, new Metadata(), new ParseContext());
                 assertTrue(MediaType.text("xml").equals(answer) ||
                         MediaType.application("xml").equals(answer),
                         "Expected text/xml or application/xml but got: " + answer);

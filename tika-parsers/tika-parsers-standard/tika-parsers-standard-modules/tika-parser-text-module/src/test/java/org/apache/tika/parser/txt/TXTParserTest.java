@@ -183,6 +183,8 @@ public class TXTParserTest extends TikaTest {
         try (TikaInputStream tis = TikaInputStream.get(test2.getBytes(ISO_8859_1))) {
             parser.parse(tis, new BodyContentHandler(), metadata, new ParseContext());
         }
+        parser.parse(TikaInputStream.get(test2.getBytes(ISO_8859_1)), new BodyContentHandler(),
+                metadata, new ParseContext());
         assertEquals("text/plain; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING)); // deprecated
 

@@ -30,11 +30,12 @@ import org.apache.tika.io.LookaheadInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 public class EncryptedPrescriptionDetector implements Detector {
     private static final long serialVersionUID = -1709652690773421147L;
 
-    public MediaType detect(TikaInputStream tis, Metadata metadata) throws IOException {
+    public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) throws IOException {
         Key key = Pharmacy.getKey();
         MediaType type = MediaType.OCTET_STREAM;
 

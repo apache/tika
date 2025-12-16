@@ -40,6 +40,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.parser.ParseContext;
 
 public class CompositeZipContainerDetectorTest extends TikaTest {
     private static MediaType ODT_TEXT = MediaType.application("vnd.oasis.opendocument.text");
@@ -54,13 +55,13 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
         Metadata metadata = new Metadata();
         try (TikaInputStream tis = TikaInputStream
                 .get(getResourceAsStream("/test-documents/testTIFF.tif"))) {
-            MediaType mt = compositeZipContainerDetector.detect(tis, metadata);
+            MediaType mt = compositeZipContainerDetector.detect(tis, metadata, new ParseContext());
             assertEquals(TIFF, mt);
         }
         metadata = new Metadata();
         try (TikaInputStream tis = TikaInputStream
                 .get(getResourceAsStream("/test-documents/testTIFF_multipage.tif"))) {
-            MediaType mt = compositeZipContainerDetector.detect(tis, metadata);
+            MediaType mt = compositeZipContainerDetector.detect(tis, metadata, new ParseContext());
             assertEquals(TIFF, mt);
         }
     }
@@ -72,7 +73,7 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
             try (InputStream input = ODFParserTest.class.getResourceAsStream(
                     "/test-documents/testODFwithOOo3.odt")) {
                 Metadata metadata = new Metadata();
-                MediaType mt = zipContainerDetector.detect(input, metadata);
+                MediaType mt = zipContainerDetector.detect(input, metadata, new ParseContext());
                 assertEquals(ODT_TEXT, mt);
             }
         }
@@ -83,7 +84,7 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
             try (InputStream input = ODFParserTest.class.getResourceAsStream(
                     "/test-documents/testPages.pages")) {
                 Metadata metadata = new Metadata();
-                MediaType mt = zipContainerDetector.detect(input, metadata);
+                MediaType mt = zipContainerDetector.detect(input, metadata, new ParseContext());
                 assertEquals("application/vnd.apple.pages", mt.toString());
             }
 
@@ -94,7 +95,7 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
             try (InputStream input = ODFParserTest.class.getResourceAsStream(
                     "/test-documents/testPages.pages")) {
                 Metadata metadata = new Metadata();
-                MediaType mt = tikaConfig.getDetector().detect(input, metadata);
+                MediaType mt = tikaConfig.getDetector().detect(input, metadata, new ParseContext());
                 assertEquals("application/zip", mt.toString());
             }
         }
@@ -105,13 +106,13 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
                 long start = System.currentTimeMillis();
                 try (InputStream input = ODFParserTest.class.getResourceAsStream(
                         "/test-documents/" + file)) {
-                    MediaType mediaType = streamingZipDetector.detect(input, new Metadata());
+                    MediaType mediaType = streamingZipDetector.detect(input, new Metadata(), new ParseContext());
                     assertEquals(ZipContainerDetectorBase.XPS, mediaType);
                 }
                 try (TikaInputStream tis = TikaInputStream.get(
                 Paths.get(ODFParserTest.class.getResource(
                         "/test-documents/" + file).toURI()))) {
-                    MediaType mediaType = zipContainerDetector.detect(tis, new Metadata());
+                    MediaType mediaType = zipContainerDetector.detect(input, new Metadata(), new ParseContext());
                     assertEquals(ZipContainerDetectorBase.XPS, mediaType);
                 }
             }
@@ -134,7 +135,7 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
             for (File z : zips) {
                 long start = System.currentTimeMillis();
                 try (TikaInputStream tis = TikaInputStream.get(new BufferedInputStream(new FileInputStream(z)))) {
-                    MediaType mt = detector.detect(tis, new Metadata());
+                    MediaType mt = detector.detect(tis, new Metadata(), new ParseContext());
                     mediaTypeSet.add(mt);
                 }
                 nonTikaStream += System.currentTimeMillis() - start;
@@ -142,14 +143,14 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
                 start = System.currentTimeMillis();
                 try (TikaInputStream tis = TikaInputStream
                         .get(new BufferedInputStream(new FileInputStream(z)))) {
-                    MediaType mt = detector.detect(tis, new Metadata());
+                    MediaType mt = detector.detect(tis, new Metadata(), new ParseContext());
                     mediaTypeSet.add(mt);
                 }
                 tikaStream += System.currentTimeMillis() - start;
 
                 start = System.currentTimeMillis();
                 try (TikaInputStream tis = TikaInputStream.get(z.toPath())) {
-                    MediaType mt = detector.detect(tis, new Metadata());
+                    MediaType mt = detector.detect(tis, new Metadata(), new ParseContext());
                     mediaTypeSet.add(mt);
                 }
                 tikaStreamWFile += System.currentTimeMillis() - start;
@@ -206,7 +207,7 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
         List<File> zips = new ArrayList<>();
         for (File f : Paths.get(getResourceAsUri("/test-documents")).toFile().listFiles()) {
             try (TikaInputStream tis = TikaInputStream.get(f.toPath())) {
-                MediaType mt = detector.detect(tis, new Metadata());
+                MediaType mt = detector.detect(tis, new Metadata(), new ParseContext());
                 if (registry.isSpecializationOf(mt, MediaType.APPLICATION_ZIP)) {
                     zips.add(f);
                 }

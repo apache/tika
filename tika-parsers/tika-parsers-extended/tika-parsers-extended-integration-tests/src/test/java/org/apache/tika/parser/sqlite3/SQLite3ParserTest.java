@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -173,9 +172,10 @@ public class SQLite3ParserTest extends TikaTest {
         ParserContainerExtractor ex = new ParserContainerExtractor();
         ByteCopyingHandler byteCopier = new ByteCopyingHandler();
         Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
         try (TikaInputStream tis = TikaInputStream.get(getResourceAsStream(TEST_FILE1))) {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, TEST_FILE_NAME);
-            ex.extract(tis, ex, byteCopier);
+            ex.extract(tis, ex, byteCopier, context);
         }
         assertEquals(4, byteCopier.bytes.size());
         String[] strings = new String[4];
@@ -207,10 +207,11 @@ public class SQLite3ParserTest extends TikaTest {
         ParserContainerExtractor ex = new ParserContainerExtractor();
         InputStreamResettingHandler byteCopier = new InputStreamResettingHandler();
         Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, TEST_FILE_NAME);
         try (TikaInputStream outer = TikaInputStream.get(getResourceAsStream(TEST_FILE1))) {
             try (TikaInputStream tis = TikaInputStream.get(outer.getPath())) {
-                ex.extract(tis, ex, byteCopier);
+                ex.extract(tis, ex, byteCopier, context);
                 tis.reset();
             }
         }
@@ -223,7 +224,8 @@ public class SQLite3ParserTest extends TikaTest {
         public List<byte[]> bytes = new ArrayList<>();
 
         @Override
-        public void handle(String filename, MediaType mediaType, InputStream stream) {
+        public void handle(String filename, MediaType mediaType, TikaInputStream stream,
+                           ParseContext parseContext) {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             if (!stream.markSupported()) {
                 stream = TikaInputStream.get(stream);

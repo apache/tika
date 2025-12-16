@@ -18,8 +18,6 @@ package org.apache.tika.parser.mail;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.InputStream;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
@@ -58,8 +56,7 @@ public class MboxParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
 
-        try (InputStream stream = getResourceAsStream("/test-documents/single_mail.mbox");
-             TikaInputStream tis = TikaInputStream.get(stream)) {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/single_mail.mbox")) {
             mboxParser.parse(tis, handler, metadata, context);
         }
 
