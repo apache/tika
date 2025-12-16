@@ -111,7 +111,7 @@ public class AsyncProcessorTest extends TikaTest {
     public void testRecursiveUnpacking() throws Exception {
 //        TikaAsyncCLI cli = new TikaAsyncCLI();
         //      cli.main(new String[]{ configDir.resolve("tika-config.xml").toAbsolutePath().toString()});
-        AsyncProcessor processor = new AsyncProcessor(configDir.resolve("tika-config.json"));
+        AsyncProcessor processor = AsyncProcessor.load(configDir.resolve("tika-config.json"));
 
         EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = new EmbeddedDocumentBytesConfig(true);
         embeddedDocumentBytesConfig.setIncludeOriginal(true);

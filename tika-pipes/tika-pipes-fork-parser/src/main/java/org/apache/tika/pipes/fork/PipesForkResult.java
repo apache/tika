@@ -77,9 +77,9 @@ public class PipesForkResult {
     }
 
     /**
-     * Check if there was an application error.
+     * Check if there was an application error (initialization failures, fetch/emit errors, etc.).
      *
-     * @return true if there was an application-level error
+     * @return true if there was an application error
      */
     public boolean isApplicationError() {
         return pipesResult.isApplicationError();

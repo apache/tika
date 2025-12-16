@@ -65,7 +65,7 @@ public class PipesResource {
                 pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.EMIT_ALL));
             }
         }
-        this.pipesParser = new PipesParser(pipesConfig, tikaConfig);
+        this.pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfig);
     }
 
 

@@ -77,12 +77,42 @@ public class AsyncProcessor implements Closeable {
     private boolean addedEmitterSemaphores = false;
     boolean isShuttingDown = false;
 
-    public AsyncProcessor(Path tikaConfigPath) throws TikaException, IOException {
-        this(tikaConfigPath, null);
+    /**
+     * Loads an AsyncProcessor from a configuration file path.
+     * <p>
+     * This method pre-extracts plugins before loading, ensuring child processes
+     * don't race to extract the same plugins.
+     *
+     * @param tikaConfigPath path to the tika-config.json file
+     * @return a new AsyncProcessor instance
+     * @throws IOException if reading config or plugin extraction fails
+     * @throws TikaException if configuration is invalid
+     */
+    public static AsyncProcessor load(Path tikaConfigPath) throws TikaException, IOException {
+        return load(tikaConfigPath, null);
     }
 
-    public AsyncProcessor(Path tikaConfigPath, PipesIterator pipesIterator) throws TikaException, IOException {
+    /**
+     * Loads an AsyncProcessor from a configuration file path with a custom PipesIterator.
+     * <p>
+     * This method pre-extracts plugins before loading, ensuring child processes
+     * don't race to extract the same plugins.
+     *
+     * @param tikaConfigPath path to the tika-config.json file
+     * @param pipesIterator optional custom pipes iterator (may be null)
+     * @return a new AsyncProcessor instance
+     * @throws IOException if reading config or plugin extraction fails
+     * @throws TikaException if configuration is invalid
+     */
+    public static AsyncProcessor load(Path tikaConfigPath, PipesIterator pipesIterator)
+            throws TikaException, IOException {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        TikaPluginManager.preExtractPlugins(tikaJsonConfig);
+        return new AsyncProcessor(tikaConfigPath, pipesIterator, tikaJsonConfig);
+    }
+
+    private AsyncProcessor(Path tikaConfigPath, PipesIterator pipesIterator,
+            TikaJsonConfig tikaJsonConfig) throws TikaException, IOException {
         TikaPluginManager tikaPluginManager = TikaPluginManager.load(tikaJsonConfig);
         MetadataFilter metadataFilter = TikaLoader.load(tikaConfigPath).loadMetadataFilters();
         this.asyncConfig = PipesConfig.load(tikaJsonConfig);

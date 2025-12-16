@@ -432,7 +432,8 @@ public class PipesForkParserTest {
             PipesForkResult result = parser.parse(tis);
 
             // At least one of these should be true
-            boolean hasCategory = result.isSuccess() || result.isProcessCrash() || result.isApplicationError();
+            boolean hasCategory = result.isSuccess() || result.isProcessCrash() ||
+                    result.isApplicationError();
             assertTrue(hasCategory, "Result should have a valid category");
 
             // These should be mutually exclusive
