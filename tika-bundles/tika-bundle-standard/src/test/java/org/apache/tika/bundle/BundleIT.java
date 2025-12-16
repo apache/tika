@@ -16,7 +16,6 @@
  */
 package org.apache.tika.bundle;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -29,8 +28,6 @@ import static org.ops4j.pax.exam.CoreOptions.systemPackages;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -69,7 +66,6 @@ import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.internal.Activator;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.sax.BodyContentHandler;
 
