@@ -200,6 +200,9 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
             parseContext.set(ConfigContainer.class, configContainer);
         }
 
+        // Resolve array configs (e.g., "metadata-filters") and non-SelfConfiguring components
+        ParseContextUtils.resolveAll(parseContext, ParseContextDeserializer.class.getClassLoader());
+
         return parseContext;
     }
 }

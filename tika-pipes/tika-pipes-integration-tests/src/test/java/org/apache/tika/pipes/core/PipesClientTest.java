@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.metadata.Metadata;
@@ -41,6 +42,7 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.serialization.ParseContextUtils;
 
 public class PipesClientTest {
     String fetcherName = "fsf";
@@ -102,6 +104,74 @@ public class PipesClientTest {
         assertEquals(5, pipesResult.emitData().getMetadataList().size());
         Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
         assertEquals(4, Integer.parseInt(metadata.get("X-TIKA:attachment_count")));
+    }
+
+    @Test
+    public void testMetadataFilterFromJsonConfig(@TempDir Path tmp) throws Exception {
+        // Test that metadata filters specified as JSON array in ConfigContainer
+        // are properly resolved and applied during pipe processing.
+        // This tests the full serialization/deserialization flow.
+        ParseContext parseContext = new ParseContext();
+        ConfigContainer configContainer = new ConfigContainer();
+        configContainer.set("metadata-filters", """
+            [
+              "mock-upper-case-filter"
+            ]
+        """);
+        parseContext.set(ConfigContainer.class, configContainer);
+
+        // Resolve the config to actual MetadataFilter instances
+        ParseContextUtils.resolveAll(parseContext, PipesClientTest.class.getClassLoader());
+
+        // Verify the filter was resolved
+        MetadataFilter resolvedFilter = parseContext.get(MetadataFilter.class);
+        Assertions.assertNotNull(resolvedFilter, "MetadataFilter should be resolved from ConfigContainer");
+        assertEquals(CompositeMetadataFilter.class, resolvedFilter.getClass());
+
+        PipesClient pipesClient = init(tmp, testDoc);
+        PipesResult pipesResult = pipesClient.process(
+                new FetchEmitTuple(testDoc, new FetchKey(fetcherName, testDoc),
+                        new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+
+        Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
+        assertEquals(1, pipesResult.emitData().getMetadataList().size());
+        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
+        // MockUpperCaseFilter uppercases all metadata values
+        assertEquals("TESTOVERLAPPINGTEXT.PDF", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+    }
+
+    @Test
+    public void testMultipleMetadataFiltersFromJsonConfig(@TempDir Path tmp) throws Exception {
+        // Test multiple filters specified as JSON array
+        ParseContext parseContext = new ParseContext();
+        ConfigContainer configContainer = new ConfigContainer();
+        configContainer.set("metadata-filters", """
+            [
+              "attachment-counting-list-filter",
+              "mock-upper-case-filter"
+            ]
+        """);
+        parseContext.set(ConfigContainer.class, configContainer);
+
+        // Resolve the config to actual MetadataFilter instances
+        ParseContextUtils.resolveAll(parseContext, PipesClientTest.class.getClassLoader());
+
+        String testFile = "mock-embedded.xml";
+        PipesClient pipesClient = init(tmp, testFile);
+
+        PipesResult pipesResult = pipesClient.process(
+                new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
+                        new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+
+        Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
+        assertEquals(5, pipesResult.emitData().getMetadataList().size());
+        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
+
+        // AttachmentCountingListFilter should have added the count
+        assertEquals(4, Integer.parseInt(metadata.get("X-TIKA:attachment_count")));
+
+        // MockUpperCaseFilter should have uppercased the resource name
+        assertEquals("MOCK-EMBEDDED.XML", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
 
     @Test
