@@ -66,12 +66,32 @@ public class FetcherManager extends AbstractComponentManager<Fetcher, FetcherFac
     public static FetcherManager load(PluginManager pluginManager, TikaJsonConfig tikaJsonConfig,
                                      boolean allowRuntimeModifications)
             throws TikaConfigException, IOException {
+        return load(pluginManager, tikaJsonConfig, allowRuntimeModifications, null);
+    }
+
+    /**
+     * Loads a FetcherManager with optional support for runtime modifications and a custom config store.
+     *
+     * @param pluginManager the plugin manager
+     * @param tikaJsonConfig the configuration
+     * @param allowRuntimeModifications if true, allows calling {@link #saveFetcher(ExtensionConfig)}
+     *                                  to add fetchers at runtime
+     * @param configStore custom config store implementation, or null to use default in-memory store
+     * @return a FetcherManager
+     */
+    public static FetcherManager load(PluginManager pluginManager, TikaJsonConfig tikaJsonConfig,
+                                     boolean allowRuntimeModifications,
+                                     org.apache.tika.pipes.core.config.ConfigStore configStore)
+            throws TikaConfigException, IOException {
         FetcherManager manager = new FetcherManager(pluginManager, allowRuntimeModifications);
         JsonNode fetchersNode = tikaJsonConfig.getRootNode().get(CONFIG_KEY);
 
         // Validate configuration and collect fetcher configs without instantiating
         Map<String, ExtensionConfig> configs = manager.validateAndCollectConfigs(pluginManager, fetchersNode);
 
+        if (configStore != null) {
+            return new FetcherManager(pluginManager, configs, allowRuntimeModifications, configStore);
+        }
         return new FetcherManager(pluginManager, configs, allowRuntimeModifications);
     }
 
@@ -82,6 +102,12 @@ public class FetcherManager extends AbstractComponentManager<Fetcher, FetcherFac
     private FetcherManager(PluginManager pluginManager, Map<String, ExtensionConfig> fetcherConfigs,
                           boolean allowRuntimeModifications) {
         super(pluginManager, fetcherConfigs, allowRuntimeModifications);
+    }
+
+    private FetcherManager(PluginManager pluginManager, Map<String, ExtensionConfig> fetcherConfigs,
+                          boolean allowRuntimeModifications,
+                          org.apache.tika.pipes.core.config.ConfigStore configStore) {
+        super(pluginManager, fetcherConfigs, allowRuntimeModifications, configStore);
     }
 
     @Override
