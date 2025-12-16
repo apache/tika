@@ -28,6 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
@@ -71,6 +72,7 @@ public class AsyncProcessor implements Closeable {
     private final Path tikaConfigPath;
     private final PipesReporter pipesReporter;
     private final AtomicLong totalProcessed = new AtomicLong(0);
+    private final AtomicBoolean applicationErrorOccurred = new AtomicBoolean(false);
     private static long MAX_OFFER_WAIT_MS = 120000;
     private volatile int numParserThreadsFinished = 0;
     private volatile int numEmitterThreadsFinished = 0;
@@ -115,7 +117,8 @@ public class AsyncProcessor implements Closeable {
 
             for (int i = 0; i < asyncConfig.getNumClients(); i++) {
                 executorCompletionService.submit(
-                        new FetchEmitWorker(asyncConfig, tikaConfigPath, fetchEmitTuples, emitDatumTuples));
+                        new FetchEmitWorker(asyncConfig, tikaConfigPath, fetchEmitTuples,
+                                emitDatumTuples, applicationErrorOccurred));
             }
 
             EmitterManager emitterManager = EmitterManager.load(tikaPluginManager, tikaJsonConfig);
@@ -158,6 +161,9 @@ public class AsyncProcessor implements Closeable {
             throw new IllegalStateException(
                     "Can't call offer after calling close() or " + "shutdownNow()");
         }
+        if (applicationErrorOccurred.get()) {
+            throw new PipesException("Can't call offer after an application error occurred");
+        }
         if (newFetchEmitTuples.size() > asyncConfig.getQueueSize()) {
             throw new OfferLargerThanQueueSize(newFetchEmitTuples.size(),
                     asyncConfig.getQueueSize());
@@ -193,8 +199,22 @@ public class AsyncProcessor implements Closeable {
             throw new IllegalStateException(
                     "Can't call offer after calling close() or " + "shutdownNow()");
         }
+        if (applicationErrorOccurred.get()) {
+            throw new PipesException("Can't call offer after an application error occurred");
+        }
         checkActive();
         return fetchEmitTuples.offer(t, offerMs, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Returns true if an application error has occurred during processing.
+     * When this returns true, all workers have stopped or are stopping,
+     * and no new tuples can be offered.
+     *
+     * @return true if an application error occurred
+     */
+    public boolean hasApplicationError() {
+        return applicationErrorOccurred.get();
     }
 
     public void finished() throws InterruptedException {
@@ -271,15 +291,18 @@ public class AsyncProcessor implements Closeable {
         private final Path tikaConfigPath;
         private final ArrayBlockingQueue<FetchEmitTuple> fetchEmitTuples;
         private final ArrayBlockingQueue<EmitDataPair> emitDataTupleQueue;
+        private final AtomicBoolean applicationErrorOccurred;
 
         private FetchEmitWorker(PipesConfig asyncConfig,
                                 Path tikaConfigPath,
                                 ArrayBlockingQueue<FetchEmitTuple> fetchEmitTuples,
-                                ArrayBlockingQueue<EmitDataPair> emitDataTupleQueue) {
+                                ArrayBlockingQueue<EmitDataPair> emitDataTupleQueue,
+                                AtomicBoolean applicationErrorOccurred) {
             this.asyncConfig = asyncConfig;
             this.tikaConfigPath = tikaConfigPath;
             this.fetchEmitTuples = fetchEmitTuples;
             this.emitDataTupleQueue = emitDataTupleQueue;
+            this.applicationErrorOccurred = applicationErrorOccurred;
         }
 
         @Override
@@ -287,6 +310,12 @@ public class AsyncProcessor implements Closeable {
 
             try (PipesClient pipesClient = new PipesClient(asyncConfig, tikaConfigPath)) {
                 while (true) {
+                    // Check if another worker encountered an application error
+                    if (applicationErrorOccurred.get()) {
+                        LOG.info("pipesClientId={}: stopping due to application error in another worker",
+                                pipesClient.getPipesClientId());
+                        return PARSER_FUTURE_CODE;
+                    }
                     FetchEmitTuple t = fetchEmitTuples.poll(1, TimeUnit.SECONDS);
                     if (t == null) {
                         //skip
@@ -308,6 +337,16 @@ public class AsyncProcessor implements Closeable {
                         } catch (IOException e) {
                             LOG.warn("pipesClientId={} crash", pipesClient.getPipesClientId(), e);
                             result = PipesResults.UNSPECIFIED_CRASH;
+                        }
+                        // Check for application errors - these indicate configuration issues
+                        // or other problems that would affect all workers
+                        if (result.isApplicationError()) {
+                            LOG.error("pipesClientId={}: application error ({}), stopping all processing",
+                                    pipesClient.getPipesClientId(), result.status());
+                            applicationErrorOccurred.set(true);
+                            pipesReporter.report(t, result, System.currentTimeMillis() - start);
+                            throw new PipesException("Application error: " + result.status() +
+                                    (result.message() != null ? " - " + result.message() : ""));
                         }
                         if (LOG.isTraceEnabled()) {
                             LOG.trace("timer -- pipes client process: {} ms",

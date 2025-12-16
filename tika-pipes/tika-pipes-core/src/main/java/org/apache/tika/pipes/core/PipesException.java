@@ -21,7 +21,15 @@ package org.apache.tika.pipes.core;
  */
 public class PipesException extends Exception {
 
+    public PipesException(String message) {
+        super(message);
+    }
+
     public PipesException(Throwable t) {
         super(t);
+    }
+
+    public PipesException(String message, Throwable t) {
+        super(message, t);
     }
 }
