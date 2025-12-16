@@ -46,7 +46,7 @@ public class InMemoryConfigStore implements ConfigStore {
 
     @Override
     public Set<String> keySet() {
-        return store.keySet();
+        return Set.copyOf(store.keySet());
     }
 
     @Override

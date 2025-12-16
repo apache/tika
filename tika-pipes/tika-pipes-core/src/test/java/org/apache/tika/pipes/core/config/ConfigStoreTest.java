@@ -89,4 +89,27 @@ public class ConfigStoreTest {
         
         assertEquals(numThreads * numOperationsPerThread, store.size());
     }
+    
+    @Test
+    public void testLoggingConfigStore() {
+        ConfigStore store = new LoggingConfigStore();
+        
+        ExtensionConfig config1 = new ExtensionConfig("id1", "type1", "{\"key\":\"value\"}");
+        ExtensionConfig config2 = new ExtensionConfig("id2", "type2", "{\"key2\":\"value2\"}");
+        
+        store.put("id1", config1);
+        store.put("id2", config2);
+        
+        assertNotNull(store.get("id1"));
+        assertEquals("id1", store.get("id1").id());
+        
+        assertTrue(store.containsKey("id1"));
+        assertFalse(store.containsKey("id3"));
+        
+        assertEquals(2, store.size());
+        assertEquals(2, store.keySet().size());
+        assertTrue(store.keySet().contains("id1"));
+        
+        assertNull(store.get("nonexistent"));
+    }
 }

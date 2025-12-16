@@ -20,20 +20,25 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.plugins.ExtensionConfig;
 
 /**
  * Example custom ConfigStore implementation for demonstration purposes.
  * This implementation logs all operations and could be extended to add
  * persistence, caching, or other custom behavior.
+ * Thread-safe through synchronized access to the underlying map.
  */
 public class LoggingConfigStore implements ConfigStore {
 
+    private static final Logger LOG = LoggerFactory.getLogger(LoggingConfigStore.class);
     private final Map<String, ExtensionConfig> store = new HashMap<>();
     
     @Override
     public void put(String id, ExtensionConfig config) {
-        System.out.println("ConfigStore: Storing config with id=" + id);
+        LOG.debug("ConfigStore: Storing config with id={}", id);
         synchronized (store) {
             store.put(id, config);
         }
@@ -44,9 +49,9 @@ public class LoggingConfigStore implements ConfigStore {
         synchronized (store) {
             ExtensionConfig config = store.get(id);
             if (config != null) {
-                System.out.println("ConfigStore: Retrieved config with id=" + id);
+                LOG.debug("ConfigStore: Retrieved config with id={}", id);
             } else {
-                System.out.println("ConfigStore: Config not found for id=" + id);
+                LOG.debug("ConfigStore: Config not found for id={}", id);
             }
             return config;
         }
