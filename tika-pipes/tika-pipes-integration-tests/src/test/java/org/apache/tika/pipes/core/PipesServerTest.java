@@ -16,9 +16,6 @@
  */
 package org.apache.tika.pipes.core;
 
-
-
-
 import org.apache.tika.TikaTest;
 
 public class PipesServerTest extends TikaTest {

@@ -16,9 +16,7 @@
  */
 package org.apache.tika.sax;
 
-import java.io.OutputStream;
 import java.io.Serializable;
-import java.nio.charset.Charset;
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -55,12 +53,8 @@ public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandl
         this.maxEmbeddedResources = maxEmbeddedResources;
     }
 
-    public ContentHandler getNewContentHandler() {
-        return contentHandlerFactory.getNewContentHandler();
-    }
-
-    public ContentHandler getNewContentHandler(OutputStream os, Charset charset) {
-        return contentHandlerFactory.getNewContentHandler(os, charset);
+    public ContentHandler createHandler() {
+        return contentHandlerFactory.createHandler();
     }
 
     /**

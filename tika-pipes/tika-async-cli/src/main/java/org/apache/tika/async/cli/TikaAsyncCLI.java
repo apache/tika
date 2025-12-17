@@ -37,7 +37,6 @@ import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.api.HandlerConfig;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
@@ -47,6 +46,7 @@ import org.apache.tika.pipes.core.pipesiterator.PipesIteratorManager;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.utils.StringUtils;
 
 public class TikaAsyncCLI {
@@ -290,9 +290,8 @@ public class TikaAsyncCLI {
         if (asyncConfig.getHandlerType() == BasicContentHandlerFactory.HANDLER_TYPE.TEXT) {
             return;
         }
-        HandlerConfig handlerConfig = new HandlerConfig(asyncConfig.getHandlerType(), HandlerConfig.PARSE_MODE.RMETA,
-                -1, -1, false);
-        t.getParseContext().set(HandlerConfig.class, handlerConfig);
+        ContentHandlerFactory factory = new BasicContentHandlerFactory(asyncConfig.getHandlerType(), -1);
+        t.getParseContext().set(ContentHandlerFactory.class, factory);
     }
 
     private static void configureExtractBytes(FetchEmitTuple t, SimpleAsyncConfig asyncConfig) {

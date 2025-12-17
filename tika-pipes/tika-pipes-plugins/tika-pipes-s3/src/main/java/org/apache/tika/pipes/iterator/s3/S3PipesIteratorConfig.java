@@ -22,10 +22,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig;
-import org.apache.tika.pipes.api.pipesiterator.PipesIteratorConfig;
+import org.apache.tika.pipes.pipesiterator.PipesIteratorConfig;
 
-public class S3PipesIteratorConfig implements PipesIteratorConfig {
+public class S3PipesIteratorConfig extends PipesIteratorConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -50,7 +49,6 @@ public class S3PipesIteratorConfig implements PipesIteratorConfig {
     private String fileNamePattern;
     private int maxConnections = 50;
     private boolean pathStyleAccessEnabled = false;
-    private PipesIteratorBaseConfig baseConfig = null;
 
     public String getPrefix() {
         return prefix;
@@ -97,16 +95,13 @@ public class S3PipesIteratorConfig implements PipesIteratorConfig {
     }
 
     @Override
-    public PipesIteratorBaseConfig getBaseConfig() {
-        return baseConfig;
-    }
-
-    @Override
-    public final boolean equals(Object o) {
+    public boolean equals(Object o) {
         if (!(o instanceof S3PipesIteratorConfig that)) {
             return false;
         }
-
+        if (!super.equals(o)) {
+            return false;
+        }
         return maxConnections == that.maxConnections &&
                 pathStyleAccessEnabled == that.pathStyleAccessEnabled &&
                 Objects.equals(prefix, that.prefix) &&
@@ -117,13 +112,13 @@ public class S3PipesIteratorConfig implements PipesIteratorConfig {
                 Objects.equals(credentialsProvider, that.credentialsProvider) &&
                 Objects.equals(profile, that.profile) &&
                 Objects.equals(bucket, that.bucket) &&
-                Objects.equals(fileNamePattern, that.fileNamePattern) &&
-                Objects.equals(baseConfig, that.baseConfig);
+                Objects.equals(fileNamePattern, that.fileNamePattern);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hashCode(prefix);
+        int result = super.hashCode();
+        result = 31 * result + Objects.hashCode(prefix);
         result = 31 * result + Objects.hashCode(region);
         result = 31 * result + Objects.hashCode(accessKey);
         result = 31 * result + Objects.hashCode(secretKey);
@@ -134,7 +129,6 @@ public class S3PipesIteratorConfig implements PipesIteratorConfig {
         result = 31 * result + Objects.hashCode(fileNamePattern);
         result = 31 * result + maxConnections;
         result = 31 * result + Boolean.hashCode(pathStyleAccessEnabled);
-        result = 31 * result + Objects.hashCode(baseConfig);
         return result;
     }
 }

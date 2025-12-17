@@ -48,7 +48,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import org.apache.tika.cli.TikaCLI;
 import org.apache.tika.config.JsonConfigHelper;
-import org.apache.tika.pipes.api.HandlerConfig;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.emitter.solr.SolrEmitterConfig;
 import org.apache.tika.utils.SystemUtils;
 
@@ -210,7 +210,7 @@ public abstract class TikaPipesSolrTestBase {
 
         Path tikaConfigFile = getTikaConfig(pipesDirectory,
                 SolrEmitterConfig.UpdateStrategy.ADD, SolrEmitterConfig.AttachmentStrategy.PARENT_CHILD,
-                HandlerConfig.PARSE_MODE.RMETA);
+                ParseMode.RMETA);
 
         TikaCLI.main(new String[]{"-a", "-c", tikaConfigFile.toAbsolutePath().toString()});
 
@@ -244,7 +244,7 @@ public abstract class TikaPipesSolrTestBase {
         tikaConfigFile = getTikaConfig(pipesDirectory,
                 SolrEmitterConfig.UpdateStrategy.UPDATE_MUST_EXIST,
                 SolrEmitterConfig.AttachmentStrategy.PARENT_CHILD,
-                HandlerConfig.PARSE_MODE.RMETA);
+                ParseMode.RMETA);
 
         TikaCLI.main(new String[]{"-a", "-c", tikaConfigFile.toAbsolutePath().toString()});
 
@@ -263,7 +263,7 @@ public abstract class TikaPipesSolrTestBase {
     private Path getTikaConfig(Path pipesDirectory,
                                SolrEmitterConfig.UpdateStrategy updateStrategy,
                                SolrEmitterConfig.AttachmentStrategy attachmentStrategy,
-                               HandlerConfig.PARSE_MODE parseMode) throws IOException {
+                               ParseMode parseMode) throws IOException {
         Path tikaConfig = pipesDirectory.resolve("plugins-config.json");
 
         Path log4jPropFile = pipesDirectory.resolve("log4j2.xml");

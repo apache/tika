@@ -38,7 +38,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.pipes.api.HandlerConfig;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 
@@ -80,7 +80,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(HandlerConfig.PARSE_MODE.RMETA)
+                .setParseMode(ParseMode.RMETA)
                 .setTimeoutMillis(60000)
                 .addJvmArg("-Xmx256m");
 
@@ -114,7 +114,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(HandlerConfig.PARSE_MODE.RMETA)
+                .setParseMode(ParseMode.RMETA)
                 .setTimeoutMillis(60000);
 
         try (PipesForkParser parser = new PipesForkParser(config);
@@ -144,7 +144,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(HandlerConfig.PARSE_MODE.RMETA)
+                .setParseMode(ParseMode.RMETA)
                 .setTimeoutMillis(60000);
 
         try (PipesForkParser parser = new PipesForkParser(config)) {
@@ -171,7 +171,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(HandlerConfig.PARSE_MODE.CONCATENATE)
+                .setParseMode(ParseMode.CONCATENATE)
                 .setTimeoutMillis(60000);
 
         try (PipesForkParser parser = new PipesForkParser(config);
@@ -204,7 +204,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(HandlerConfig.PARSE_MODE.RMETA)
+                .setParseMode(ParseMode.RMETA)
                 .setTimeoutMillis(60000);
 
         try (PipesForkParser parser = new PipesForkParser(config);
@@ -232,7 +232,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig explicitConfig = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(HandlerConfig.PARSE_MODE.RMETA)
+                .setParseMode(ParseMode.RMETA)
                 .setTimeoutMillis(60000);
 
         int explicitMetadataCount;
@@ -268,7 +268,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig textConfig = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(HandlerConfig.PARSE_MODE.RMETA)
+                .setParseMode(ParseMode.RMETA)
                 .setTimeoutMillis(60000);
 
         String textContent;
@@ -288,7 +288,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig xmlConfig = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.XML)
-                .setParseMode(HandlerConfig.PARSE_MODE.RMETA)
+                .setParseMode(ParseMode.RMETA)
                 .setTimeoutMillis(60000);
 
         String xmlContent;
@@ -322,7 +322,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(HandlerConfig.PARSE_MODE.RMETA)
+                .setParseMode(ParseMode.RMETA)
                 .setWriteLimit(100)  // Limit to 100 characters
                 .setTimeoutMillis(60000);
 

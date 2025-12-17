@@ -4,12 +4,6 @@
   "fetchKey": "0.xml",
   "emitter": "fs",
   "emitKey": "0.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -18,12 +12,6 @@
   "fetchKey": "1.xml",
   "emitter": "fs",
   "emitKey": "1.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -32,12 +20,6 @@
   "fetchKey": "2.xml",
   "emitter": "fs",
   "emitKey": "2.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -46,12 +28,6 @@
   "fetchKey": "3.xml",
   "emitter": "fs",
   "emitKey": "3.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -60,12 +36,6 @@
   "fetchKey": "4.xml",
   "emitter": "fs",
   "emitKey": "4.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -74,12 +44,6 @@
   "fetchKey": "5.xml",
   "emitter": "fs",
   "emitKey": "5.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -88,12 +52,6 @@
   "fetchKey": "6.xml",
   "emitter": "fs",
   "emitKey": "6.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -102,12 +60,6 @@
   "fetchKey": "7.xml",
   "emitter": "fs",
   "emitKey": "7.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -116,12 +68,6 @@
   "fetchKey": "8.xml",
   "emitter": "fs",
   "emitKey": "8.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -130,12 +76,6 @@
   "fetchKey": "9.xml",
   "emitter": "fs",
   "emitKey": "9.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -144,12 +84,6 @@
   "fetchKey": "10.xml",
   "emitter": "fs",
   "emitKey": "10.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -158,12 +92,6 @@
   "fetchKey": "11.xml",
   "emitter": "fs",
   "emitKey": "11.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -172,12 +100,6 @@
   "fetchKey": "12.xml",
   "emitter": "fs",
   "emitKey": "12.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -186,12 +108,6 @@
   "fetchKey": "13.xml",
   "emitter": "fs",
   "emitKey": "13.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -200,12 +116,6 @@
   "fetchKey": "14.xml",
   "emitter": "fs",
   "emitKey": "14.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -214,12 +124,6 @@
   "fetchKey": "15.xml",
   "emitter": "fs",
   "emitKey": "15.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -228,12 +132,6 @@
   "fetchKey": "16.xml",
   "emitter": "fs",
   "emitKey": "16.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -242,12 +140,6 @@
   "fetchKey": "17.xml",
   "emitter": "fs",
   "emitKey": "17.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -256,12 +148,6 @@
   "fetchKey": "18.xml",
   "emitter": "fs",
   "emitKey": "18.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -270,12 +156,6 @@
   "fetchKey": "19.xml",
   "emitter": "fs",
   "emitKey": "19.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -284,12 +164,6 @@
   "fetchKey": "20.xml",
   "emitter": "fs",
   "emitKey": "20.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -298,12 +172,6 @@
   "fetchKey": "21.xml",
   "emitter": "fs",
   "emitKey": "21.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -312,12 +180,6 @@
   "fetchKey": "22.xml",
   "emitter": "fs",
   "emitKey": "22.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -326,12 +188,6 @@
   "fetchKey": "23.xml",
   "emitter": "fs",
   "emitKey": "23.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -340,12 +196,6 @@
   "fetchKey": "24.xml",
   "emitter": "fs",
   "emitKey": "24.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -354,12 +204,6 @@
   "fetchKey": "25.xml",
   "emitter": "fs",
   "emitKey": "25.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -368,12 +212,6 @@
   "fetchKey": "26.xml",
   "emitter": "fs",
   "emitKey": "26.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -382,12 +220,6 @@
   "fetchKey": "27.xml",
   "emitter": "fs",
   "emitKey": "27.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -396,12 +228,6 @@
   "fetchKey": "28.xml",
   "emitter": "fs",
   "emitKey": "28.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -410,12 +236,6 @@
   "fetchKey": "29.xml",
   "emitter": "fs",
   "emitKey": "29.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -424,12 +244,6 @@
   "fetchKey": "30.xml",
   "emitter": "fs",
   "emitKey": "30.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -438,12 +252,6 @@
   "fetchKey": "31.xml",
   "emitter": "fs",
   "emitKey": "31.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -452,12 +260,6 @@
   "fetchKey": "32.xml",
   "emitter": "fs",
   "emitKey": "32.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -466,12 +268,6 @@
   "fetchKey": "33.xml",
   "emitter": "fs",
   "emitKey": "33.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -480,12 +276,6 @@
   "fetchKey": "34.xml",
   "emitter": "fs",
   "emitKey": "34.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -494,12 +284,6 @@
   "fetchKey": "35.xml",
   "emitter": "fs",
   "emitKey": "35.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -508,12 +292,6 @@
   "fetchKey": "36.xml",
   "emitter": "fs",
   "emitKey": "36.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -522,12 +300,6 @@
   "fetchKey": "37.xml",
   "emitter": "fs",
   "emitKey": "37.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -536,12 +308,6 @@
   "fetchKey": "38.xml",
   "emitter": "fs",
   "emitKey": "38.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -550,12 +316,6 @@
   "fetchKey": "39.xml",
   "emitter": "fs",
   "emitKey": "39.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -564,12 +324,6 @@
   "fetchKey": "40.xml",
   "emitter": "fs",
   "emitKey": "40.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -578,12 +332,6 @@
   "fetchKey": "41.xml",
   "emitter": "fs",
   "emitKey": "41.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -592,12 +340,6 @@
   "fetchKey": "42.xml",
   "emitter": "fs",
   "emitKey": "42.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -606,12 +348,6 @@
   "fetchKey": "43.xml",
   "emitter": "fs",
   "emitKey": "43.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -620,12 +356,6 @@
   "fetchKey": "44.xml",
   "emitter": "fs",
   "emitKey": "44.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -634,12 +364,6 @@
   "fetchKey": "45.xml",
   "emitter": "fs",
   "emitKey": "45.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -648,12 +372,6 @@
   "fetchKey": "46.xml",
   "emitter": "fs",
   "emitKey": "46.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -662,12 +380,6 @@
   "fetchKey": "47.xml",
   "emitter": "fs",
   "emitKey": "47.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -676,12 +388,6 @@
   "fetchKey": "48.xml",
   "emitter": "fs",
   "emitKey": "48.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -690,12 +396,6 @@
   "fetchKey": "49.xml",
   "emitter": "fs",
   "emitKey": "49.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -704,12 +404,6 @@
   "fetchKey": "50.xml",
   "emitter": "fs",
   "emitKey": "50.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -718,12 +412,6 @@
   "fetchKey": "51.xml",
   "emitter": "fs",
   "emitKey": "51.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -732,12 +420,6 @@
   "fetchKey": "52.xml",
   "emitter": "fs",
   "emitKey": "52.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -746,12 +428,6 @@
   "fetchKey": "53.xml",
   "emitter": "fs",
   "emitKey": "53.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -760,12 +436,6 @@
   "fetchKey": "54.xml",
   "emitter": "fs",
   "emitKey": "54.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -774,12 +444,6 @@
   "fetchKey": "55.xml",
   "emitter": "fs",
   "emitKey": "55.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -788,12 +452,6 @@
   "fetchKey": "56.xml",
   "emitter": "fs",
   "emitKey": "56.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -802,12 +460,6 @@
   "fetchKey": "57.xml",
   "emitter": "fs",
   "emitKey": "57.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -816,12 +468,6 @@
   "fetchKey": "58.xml",
   "emitter": "fs",
   "emitKey": "58.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -830,12 +476,6 @@
   "fetchKey": "59.xml",
   "emitter": "fs",
   "emitKey": "59.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -844,12 +484,6 @@
   "fetchKey": "60.xml",
   "emitter": "fs",
   "emitKey": "60.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -858,12 +492,6 @@
   "fetchKey": "61.xml",
   "emitter": "fs",
   "emitKey": "61.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -872,12 +500,6 @@
   "fetchKey": "62.xml",
   "emitter": "fs",
   "emitKey": "62.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -886,12 +508,6 @@
   "fetchKey": "63.xml",
   "emitter": "fs",
   "emitKey": "63.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -900,12 +516,6 @@
   "fetchKey": "64.xml",
   "emitter": "fs",
   "emitKey": "64.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -914,12 +524,6 @@
   "fetchKey": "65.xml",
   "emitter": "fs",
   "emitKey": "65.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -928,12 +532,6 @@
   "fetchKey": "66.xml",
   "emitter": "fs",
   "emitKey": "66.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -942,12 +540,6 @@
   "fetchKey": "67.xml",
   "emitter": "fs",
   "emitKey": "67.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -956,12 +548,6 @@
   "fetchKey": "68.xml",
   "emitter": "fs",
   "emitKey": "68.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -970,12 +556,6 @@
   "fetchKey": "69.xml",
   "emitter": "fs",
   "emitKey": "69.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -984,12 +564,6 @@
   "fetchKey": "70.xml",
   "emitter": "fs",
   "emitKey": "70.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -998,12 +572,6 @@
   "fetchKey": "71.xml",
   "emitter": "fs",
   "emitKey": "71.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1012,12 +580,6 @@
   "fetchKey": "72.xml",
   "emitter": "fs",
   "emitKey": "72.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1026,12 +588,6 @@
   "fetchKey": "73.xml",
   "emitter": "fs",
   "emitKey": "73.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1040,12 +596,6 @@
   "fetchKey": "74.xml",
   "emitter": "fs",
   "emitKey": "74.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1054,12 +604,6 @@
   "fetchKey": "75.xml",
   "emitter": "fs",
   "emitKey": "75.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1068,12 +612,6 @@
   "fetchKey": "76.xml",
   "emitter": "fs",
   "emitKey": "76.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1082,12 +620,6 @@
   "fetchKey": "77.xml",
   "emitter": "fs",
   "emitKey": "77.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1096,12 +628,6 @@
   "fetchKey": "78.xml",
   "emitter": "fs",
   "emitKey": "78.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1110,12 +636,6 @@
   "fetchKey": "79.xml",
   "emitter": "fs",
   "emitKey": "79.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1124,12 +644,6 @@
   "fetchKey": "80.xml",
   "emitter": "fs",
   "emitKey": "80.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1138,12 +652,6 @@
   "fetchKey": "81.xml",
   "emitter": "fs",
   "emitKey": "81.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1152,12 +660,6 @@
   "fetchKey": "82.xml",
   "emitter": "fs",
   "emitKey": "82.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1166,12 +668,6 @@
   "fetchKey": "83.xml",
   "emitter": "fs",
   "emitKey": "83.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1180,12 +676,6 @@
   "fetchKey": "84.xml",
   "emitter": "fs",
   "emitKey": "84.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1194,12 +684,6 @@
   "fetchKey": "85.xml",
   "emitter": "fs",
   "emitKey": "85.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1208,12 +692,6 @@
   "fetchKey": "86.xml",
   "emitter": "fs",
   "emitKey": "86.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1222,12 +700,6 @@
   "fetchKey": "87.xml",
   "emitter": "fs",
   "emitKey": "87.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1236,12 +708,6 @@
   "fetchKey": "88.xml",
   "emitter": "fs",
   "emitKey": "88.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1250,12 +716,6 @@
   "fetchKey": "89.xml",
   "emitter": "fs",
   "emitKey": "89.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1264,12 +724,6 @@
   "fetchKey": "90.xml",
   "emitter": "fs",
   "emitKey": "90.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1278,12 +732,6 @@
   "fetchKey": "91.xml",
   "emitter": "fs",
   "emitKey": "91.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1292,12 +740,6 @@
   "fetchKey": "92.xml",
   "emitter": "fs",
   "emitKey": "92.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1306,12 +748,6 @@
   "fetchKey": "93.xml",
   "emitter": "fs",
   "emitKey": "93.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1320,12 +756,6 @@
   "fetchKey": "94.xml",
   "emitter": "fs",
   "emitKey": "94.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1334,12 +764,6 @@
   "fetchKey": "95.xml",
   "emitter": "fs",
   "emitKey": "95.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1348,12 +772,6 @@
   "fetchKey": "96.xml",
   "emitter": "fs",
   "emitKey": "96.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1362,12 +780,6 @@
   "fetchKey": "97.xml",
   "emitter": "fs",
   "emitKey": "97.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1376,12 +788,6 @@
   "fetchKey": "98.xml",
   "emitter": "fs",
   "emitKey": "98.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }
 {
@@ -1390,11 +796,5 @@
   "fetchKey": "99.xml",
   "emitter": "fs",
   "emitKey": "99.xml.json",
-  "handlerConfig": {
-    "type": "text",
-    "parseMode": "rmeta",
-    "writeLimit": -1,
-    "maxEmbeddedResources": -1
-  },
   "onParseException": "emit"
 }

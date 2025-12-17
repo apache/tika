@@ -1518,7 +1518,7 @@ public class PDFParserTest extends TikaTest {
         BasicContentHandlerFactory factory = new BasicContentHandlerFactory(
                 BasicContentHandlerFactory.HANDLER_TYPE.TEXT, limit
         );
-        ContentHandler contentHandler = factory.getNewContentHandler();
+        ContentHandler contentHandler = factory.createHandler();
         Metadata metadata = new Metadata();
         ParseContext parseContext = new ParseContext();
         try (TikaInputStream tis = getResourceAsStream("/test-documents/" + fileName)) {

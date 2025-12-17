@@ -53,7 +53,7 @@ import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.api.HandlerConfig;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.emitter.opensearch.HttpClientConfig;
@@ -96,7 +96,7 @@ public class OpenSearchTest {
         Path pluginsConfg = getPluginsConfig(
                 pipesDirectory, OpenSearchEmitterConfig.AttachmentStrategy.PARENT_CHILD,
                 OpenSearchEmitterConfig.UpdateStrategy.OVERWRITE,
-                HandlerConfig.PARSE_MODE.RMETA, "https://opensearch", Paths.get("testDocs"));
+                ParseMode.RMETA, "https://opensearch", Paths.get("testDocs"));
         //      PipesReporter reporter = ReporterManager.load(pluginsConfg);
 //        System.out.println(reporter);
 //        PipesIterator pipesIterator = PipesIteratorManager.load(pluginsConfg);
@@ -113,7 +113,7 @@ public class OpenSearchTest {
         sendMappings(client, endpoint, TEST_INDEX, "opensearch-mappings.json");
 
         runPipes(client, OpenSearchEmitterConfig.AttachmentStrategy.SEPARATE_DOCUMENTS,
-                OpenSearchEmitterConfig.UpdateStrategy.UPSERT, HandlerConfig.PARSE_MODE.CONCATENATE, endpoint,
+                OpenSearchEmitterConfig.UpdateStrategy.UPSERT, ParseMode.CONCATENATE, endpoint,
                 pipesDirectory, testDocDirectory);
 
         String query = "{ \"track_total_hits\": true, \"query\": { \"match\": { \"content\": { " +
@@ -182,7 +182,7 @@ public class OpenSearchTest {
 
         runPipes(client, OpenSearchEmitterConfig.AttachmentStrategy.PARENT_CHILD,
                 OpenSearchEmitterConfig.UpdateStrategy.OVERWRITE,
-                HandlerConfig.PARSE_MODE.RMETA, endpoint, pipesDirectory, testDocDirectory);
+                ParseMode.RMETA, endpoint, pipesDirectory, testDocDirectory);
 
         String query = "{ \"track_total_hits\": true, \"from\":0, \"size\": 10000, \"query\": { \"match\": { \"content\": { " +
                 "\"query\": \"happiness\" } } } }";
@@ -250,7 +250,7 @@ public class OpenSearchTest {
 
         runPipes(client, OpenSearchEmitterConfig.AttachmentStrategy.SEPARATE_DOCUMENTS,
                 OpenSearchEmitterConfig.UpdateStrategy.OVERWRITE,
-                HandlerConfig.PARSE_MODE.RMETA, endpoint,
+                ParseMode.RMETA, endpoint,
                 pipesDirectory, testDocDirectory);
 
         String query = "{ \"track_total_hits\": true, \"query\": { \"match\": { \"content\": { " +
@@ -316,7 +316,7 @@ public class OpenSearchTest {
 
         runPipes(client, OpenSearchEmitterConfig.AttachmentStrategy.SEPARATE_DOCUMENTS,
                 OpenSearchEmitterConfig.UpdateStrategy.UPSERT,
-                HandlerConfig.PARSE_MODE.RMETA, endpoint, pipesDirectory, testDocDirectory);
+                ParseMode.RMETA, endpoint, pipesDirectory, testDocDirectory);
 
         String query = "{ \"track_total_hits\": true, \"query\": { \"match\": { \"content\": { " +
                 "\"query\": \"happiness\" } } } }";
@@ -376,7 +376,7 @@ public class OpenSearchTest {
         String endpoint = CONTAINER.getHttpHostAddress() + "/" + TEST_INDEX;
         sendMappings(client, endpoint, TEST_INDEX, "opensearch-mappings.json");
         Path pluginsConfigFile = getPluginsConfig(pipesDirectory, OpenSearchEmitterConfig.AttachmentStrategy.SEPARATE_DOCUMENTS,
-                        OpenSearchEmitterConfig.UpdateStrategy.UPSERT, HandlerConfig.PARSE_MODE.RMETA,
+                        OpenSearchEmitterConfig.UpdateStrategy.UPSERT, ParseMode.RMETA,
                         endpoint, testDocDirectory);
 
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(pluginsConfigFile);
@@ -448,7 +448,7 @@ public class OpenSearchTest {
 
     private void runPipes(OpensearchTestClient client, OpenSearchEmitterConfig.AttachmentStrategy attachmentStrategy,
                           OpenSearchEmitterConfig.UpdateStrategy updateStrategy,
-                          HandlerConfig.PARSE_MODE parseMode, String endpoint, Path pipesDirectory, Path testDocDirectory) throws Exception {
+                          ParseMode parseMode, String endpoint, Path pipesDirectory, Path testDocDirectory) throws Exception {
 
         Path pluginsConfig = getPluginsConfig(pipesDirectory, attachmentStrategy, updateStrategy, parseMode,
                 endpoint, testDocDirectory);
@@ -464,7 +464,7 @@ public class OpenSearchTest {
     @NotNull
     private Path getPluginsConfig(Path pipesDirectory, OpenSearchEmitterConfig.AttachmentStrategy attachmentStrategy,
                                        OpenSearchEmitterConfig.UpdateStrategy updateStrategy,
-                                       HandlerConfig.PARSE_MODE parseMode, String endpoint, Path testDocDirectory) throws IOException {
+                                       ParseMode parseMode, String endpoint, Path testDocDirectory) throws IOException {
         Path tikaConfig = pipesDirectory.resolve("plugins-config.json");
 
         Path log4jPropFile = pipesDirectory.resolve("log4j2.xml");

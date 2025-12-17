@@ -260,7 +260,7 @@ public abstract class AbstractMultipleParser implements Parser {
                 // If not, the user will get text from every parser
                 //  mushed together onto the one solitary handler...
                 if (handlerFactory != null) {
-                    handler = handlerFactory.getNewContentHandler();
+                    handler = handlerFactory.createHandler();
                 }
 
                 // Record that we used this parser

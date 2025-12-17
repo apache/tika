@@ -64,7 +64,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import org.apache.tika.cli.TikaCLI;
 import org.apache.tika.config.JsonConfigHelper;
-import org.apache.tika.pipes.api.HandlerConfig;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.utils.SystemUtils;
 
 /**
@@ -220,7 +220,7 @@ public class TikaPipesKafkaTest {
         replacements.put("EMITTER_TOPIC", EMITTER_TOPIC);
         replacements.put("BOOTSTRAP_SERVERS", kafka.getBootstrapServers());
         replacements.put("FETCHER_BASE_PATH", testFileFolderPath);
-        replacements.put("PARSE_MODE", HandlerConfig.PARSE_MODE.RMETA.name());
+        replacements.put("PARSE_MODE", ParseMode.RMETA.name());
         replacements.put("LOG4J_JVM_ARG", "-Dlog4j.configurationFile=" + log4jPropFile.toAbsolutePath());
 
         JsonConfigHelper.writeConfigFromResource("/kafka/plugins-template.json",

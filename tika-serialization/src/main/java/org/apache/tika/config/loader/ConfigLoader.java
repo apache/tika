@@ -40,10 +40,10 @@ import org.apache.tika.exception.TikaConfigException;
  * TikaLoader loader = TikaLoader.load(configPath);
  *
  * // Load by explicit key
- * HandlerConfig config = loader.configs().load("handler-config", HandlerConfig.class);
+ * MyConfig config = loader.configs().load("my-config", MyConfig.class);
  *
  * // Load by class name (auto-converts to kebab-case)
- * HandlerConfig config = loader.configs().load(HandlerConfig.class);
+ * MyConfig config = loader.configs().load(MyConfig.class);
  * </pre>
  *
  * <p>JSON configuration example:
@@ -57,7 +57,7 @@ import org.apache.tika.exception.TikaConfigException;
  *
  *   // Custom configs MUST be in "other-configs" (loaded via configs())
  *   "other-configs": {
- *     "handler-config": {
+ *     "my-config": {
  *       "timeout": 5000,
  *       "retries": 3
  *     },
@@ -93,7 +93,7 @@ public class ConfigLoader {
     /**
      * Loads a configuration object using the class name converted to kebab-case.
      * <p>
-     * For example, {@code HandlerConfig.class} will look for key "handler-config".
+     * For example, {@code MyAppConfig.class} will look for key "my-app-config".
      * Class name suffixes like "Config", "Configuration", "Settings" are stripped first.
      * <p>
      * For interfaces, the JSON must specify the implementation (see {@link #load(String, Class)}).
@@ -213,7 +213,7 @@ public class ConfigLoader {
      *
      * <p>Example:
      * <pre>
-     * HandlerConfig defaults = new HandlerConfig();
+     * MyConfig defaults = new MyConfig();
      * defaults.setTimeout(30000);
      * defaults.setRetries(2);
      * defaults.setEnabled(false);
@@ -221,9 +221,9 @@ public class ConfigLoader {
      * // JSON: { "enabled": true }
      * // Result: timeout=30000, retries=2, enabled=true (merged!)
      * // Note: 'defaults' object remains unchanged
-     * HandlerConfig config = loader.configs().loadWithDefaults("handler-config",
-     *                                                           HandlerConfig.class,
-     *                                                           defaults);
+     * MyConfig config = loader.configs().loadWithDefaults("my-config",
+     *                                                      MyConfig.class,
+     *                                                      defaults);
      * </pre>
      *
      * @param key The JSON key to load from

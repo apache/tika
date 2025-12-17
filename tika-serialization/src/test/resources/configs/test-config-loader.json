@@ -4,7 +4,7 @@
   ],
 
   "other-configs": {
-    "handler-config": {
+    "retry-config": {
       "timeout": 5000,
       "retries": 3,
       "enabled": true

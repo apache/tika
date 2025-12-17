@@ -1,18 +1,6 @@
 {
   "basePath": "FETCHER_BASE_PATH",
   "countTotal": true,
-  "baseConfig": {
-    "fetcherId": "fsf",
-    "emitterId": "",
-    "handlerConfig": {
-      "type": "TEXT",
-      "parseMode": "RMETA",
-      "writeLimit": -1,
-      "maxEmbeddedResources": -1,
-      "throwOnWriteLimitReached": true
-    },
-    "onParseException": "EMIT",
-    "maxWaitMs": 600000,
-    "queueSize": 10000
-  }
+  "fetcherId": "fsf",
+  "emitterId": ""
 }

@@ -48,6 +48,20 @@ import org.apache.tika.exception.TikaConfigException;
  */
 public class ComponentRegistry {
 
+    /**
+     * Built-in aliases for external dependencies.
+     * Maps component names to fully qualified class names.
+     */
+    private static final Map<String, String> BUILTIN_ALIASES = createBuiltinAliases();
+
+    private static Map<String, String> createBuiltinAliases() {
+        Map<String, String> aliases = new HashMap<>();
+        // EmbeddedDocumentBytesConfig is in tika-pipes-core which can't depend on tika-core for @TikaComponent
+        aliases.put("embedded-document-bytes-config",
+                "org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig");
+        return Collections.unmodifiableMap(aliases);
+    }
+
     private final Map<String, ComponentInfo> components;
     private final Map<String, String> classNameToFriendlyName;  // Reverse lookup by class name
     private final ClassLoader classLoader;

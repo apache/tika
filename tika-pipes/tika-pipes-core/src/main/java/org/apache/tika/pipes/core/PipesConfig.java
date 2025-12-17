@@ -21,6 +21,8 @@ import java.util.ArrayList;
 
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.ParseMode;
 
 public class PipesConfig {
 
@@ -84,6 +86,17 @@ public class PipesConfig {
      * fetcher/emitter configuration.
      */
     private boolean stopOnlyOnFatal = false;
+
+    /**
+     * Default parse mode for how embedded documents are handled.
+     * Can be overridden per-file via ParseContext.
+     */
+    private ParseMode parseMode = ParseMode.RMETA;
+
+    /**
+     * Default behavior when a parse exception occurs.
+     */
+    private FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT;
 
     private ArrayList<String> forkedJvmArgs = new ArrayList<>();
     private String javaPath = "java";
@@ -347,5 +360,51 @@ public class PipesConfig {
 
     public void setStopOnlyOnFatal(boolean stopOnlyOnFatal) {
         this.stopOnlyOnFatal = stopOnlyOnFatal;
+    }
+
+    /**
+     * Gets the default parse mode for how embedded documents are handled.
+     *
+     * @return the default parse mode
+     */
+    public ParseMode getParseMode() {
+        return parseMode;
+    }
+
+    /**
+     * Sets the default parse mode for how embedded documents are handled.
+     * This can be overridden per-file via ParseContext.
+     *
+     * @param parseMode the parse mode (RMETA or CONCATENATE)
+     */
+    public void setParseMode(ParseMode parseMode) {
+        this.parseMode = parseMode;
+    }
+
+    /**
+     * Sets the default parse mode from a string.
+     *
+     * @param parseMode the parse mode name (rmeta or concatenate)
+     */
+    public void setParseMode(String parseMode) {
+        this.parseMode = ParseMode.parse(parseMode);
+    }
+
+    /**
+     * Gets the default behavior when a parse exception occurs.
+     *
+     * @return the parse exception behavior
+     */
+    public FetchEmitTuple.ON_PARSE_EXCEPTION getOnParseException() {
+        return onParseException;
+    }
+
+    /**
+     * Sets the default behavior when a parse exception occurs.
+     *
+     * @param onParseException the parse exception behavior
+     */
+    public void setOnParseException(FetchEmitTuple.ON_PARSE_EXCEPTION onParseException) {
+        this.onParseException = onParseException;
     }
 }
