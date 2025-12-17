@@ -1,0 +1,5 @@
+# Component registry for tika-pipes-api
+# Format: friendly-name=fully.qualified.ClassName
+# this has to be manually generated for now because of the dependency graph
+
+handler-config=org.apache.tika.pipes.api.HandlerConfig

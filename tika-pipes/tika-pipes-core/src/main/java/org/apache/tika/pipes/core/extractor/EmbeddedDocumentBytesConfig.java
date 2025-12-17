@@ -19,6 +19,9 @@ package org.apache.tika.pipes.core.extractor;
 import java.io.Serializable;
 import java.util.Objects;
 
+import org.apache.tika.config.TikaComponent;
+
+@TikaComponent(name = "embedded-document-bytes-config")
 public class EmbeddedDocumentBytesConfig implements Serializable {
 
     /**

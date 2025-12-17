@@ -20,6 +20,7 @@ import static org.apache.tika.serialization.ParseContextSerializer.PARSE_CONTEXT
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Optional;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -33,9 +34,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.config.SelfConfiguring;
 import org.apache.tika.config.loader.ComponentInfo;
-import org.apache.tika.config.loader.ComponentRegistry;
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.ParseContext;
 
 /**
@@ -56,25 +55,6 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
 
     private static final Logger LOG = LoggerFactory.getLogger(ParseContextDeserializer.class);
     private static final ObjectMapper MAPPER = TikaObjectMapperFactory.getMapper();
-
-    // Lazily loaded registry for looking up friendly names
-    private static volatile ComponentRegistry registry;
-
-    private static ComponentRegistry getRegistry() {
-        if (registry == null) {
-            synchronized (ParseContextDeserializer.class) {
-                if (registry == null) {
-                    try {
-                        registry = new ComponentRegistry("other-configs",
-                                ParseContextDeserializer.class.getClassLoader());
-                    } catch (TikaConfigException e) {
-                        LOG.warn("Failed to load component registry for deserialization", e);
-                    }
-                }
-            }
-        }
-        return registry;
-    }
 
     @Override
     public ParseContext deserialize(JsonParser jsonParser,
@@ -128,22 +108,19 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
             }
 
             // If not found as FQCN, check registry for friendly name
+            // Use ComponentNameResolver to ensure consistency with TikaObjectMapperFactory's registries
             boolean isSelfConfiguring = false;
             Class<?> contextKey = null;  // The key to use when adding to ParseContext
             if (keyClass == null) {
-                ComponentRegistry reg = getRegistry();
-                if (reg != null && reg.hasComponent(fieldName)) {
-                    try {
-                        ComponentInfo info = reg.getComponentInfo(fieldName);
-                        keyClass = info.componentClass();
-                        isSelfConfiguring = info.selfConfiguring();
-                        contextKey = info.contextKey();
-                        LOG.debug("Resolved friendly name '{}' to class {} (selfConfiguring={}, contextKey={})",
-                                fieldName, keyClass.getName(), isSelfConfiguring,
-                                contextKey != null ? contextKey.getName() : "null");
-                    } catch (TikaConfigException e) {
-                        LOG.debug("Failed to get component info for '{}': {}", fieldName, e.getMessage());
-                    }
+                Optional<ComponentInfo> infoOpt = ComponentNameResolver.getComponentInfo(fieldName);
+                if (infoOpt.isPresent()) {
+                    ComponentInfo info = infoOpt.get();
+                    keyClass = info.componentClass();
+                    isSelfConfiguring = info.selfConfiguring();
+                    contextKey = info.contextKey();
+                    LOG.debug("Resolved friendly name '{}' to class {} (selfConfiguring={}, contextKey={})",
+                            fieldName, keyClass.getName(), isSelfConfiguring,
+                            contextKey != null ? contextKey.getName() : "null");
                 }
             } else {
                 // For FQCN resolution, check SelfConfiguring directly
