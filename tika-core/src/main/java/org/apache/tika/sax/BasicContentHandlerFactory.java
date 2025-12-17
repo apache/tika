@@ -26,6 +26,7 @@ import java.util.Locale;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.parser.ParseContext;
 
 /**
@@ -34,6 +35,7 @@ import org.apache.tika.parser.ParseContext;
  * Implements {@link StreamingContentHandlerFactory} to support both in-memory
  * content extraction and streaming output to an OutputStream.
  */
+@TikaComponent(contextKey = ContentHandlerFactory.class)
 public class BasicContentHandlerFactory implements StreamingContentHandlerFactory, WriteLimiter {
 
     private HANDLER_TYPE type = HANDLER_TYPE.TEXT;
@@ -139,7 +141,7 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
     }
 
     @Override
-    public ContentHandler getNewContentHandler() {
+    public ContentHandler createHandler() {
 
         if (type == HANDLER_TYPE.BODY) {
             return new BodyContentHandler(
@@ -170,7 +172,7 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
     }
 
     @Override
-    public ContentHandler getNewContentHandler(OutputStream os, Charset charset) {
+    public ContentHandler createHandler(OutputStream os, Charset charset) {
 
         if (type == HANDLER_TYPE.IGNORE) {
             return new DefaultHandler();
@@ -231,14 +233,6 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
     }
 
     /**
-     * Sets the handler type from a string.
-     * @param type the handler type name (text, html, xml, body, ignore)
-     */
-    public void setType(String type) {
-        this.type = parseHandlerType(type, HANDLER_TYPE.TEXT);
-    }
-
-    /**
      * Common handler types for content.
      */
     public enum HANDLER_TYPE {
@@ -293,5 +287,29 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
      */
     public void setParseContext(ParseContext parseContext) {
         this.parseContext = parseContext;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        BasicContentHandlerFactory that = (BasicContentHandlerFactory) o;
+        return writeLimit == that.writeLimit &&
+                throwOnWriteLimitReached == that.throwOnWriteLimitReached &&
+                maxEmbeddedResources == that.maxEmbeddedResources &&
+                type == that.type;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = type != null ? type.hashCode() : 0;
+        result = 31 * result + writeLimit;
+        result = 31 * result + (throwOnWriteLimitReached ? 1 : 0);
+        result = 31 * result + maxEmbeddedResources;
+        return result;
     }
 }

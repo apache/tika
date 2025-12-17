@@ -39,6 +39,8 @@ import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.renderer.CompositeRenderer;
 import org.apache.tika.renderer.Renderer;
+import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.ContentHandlerFactory;
 
 /**
  * Main entry point for loading Tika components from JSON configuration.
@@ -84,6 +86,7 @@ public class TikaLoader {
     private Detector detectors;
     private EncodingDetector encodingDetectors;
     private MetadataFilter metadataFilter;
+    private ContentHandlerFactory contentHandlerFactory;
     private Renderer renderers;
     private Translator translator;
     private ConfigLoader configLoader;
@@ -263,6 +266,47 @@ public class TikaLoader {
             }
         }
         return metadataFilter;
+    }
+
+    /**
+     * Loads and returns the content handler factory.
+     * If "content-handler-factory" section exists in config, uses that factory.
+     * If section missing, returns a default BasicContentHandlerFactory with TEXT handler.
+     * Results are cached - subsequent calls return the same instance.
+     *
+     * <p>Example JSON:
+     * <pre>
+     * {
+     *   "content-handler-factory": {
+     *     "basic-content-handler-factory": {
+     *       "type": "HTML",
+     *       "writeLimit": 100000
+     *     }
+     *   }
+     * }
+     * </pre>
+     *
+     * @return the content handler factory
+     * @throws TikaConfigException if loading fails
+     */
+    public synchronized ContentHandlerFactory loadContentHandlerFactory() throws TikaConfigException {
+        if (contentHandlerFactory == null) {
+            // Check if content-handler-factory section exists in config
+            if (config.hasComponentSection("content-handler-factory")) {
+                try {
+                    contentHandlerFactory = config.deserialize("content-handler-factory",
+                            ContentHandlerFactory.class);
+                } catch (IOException e) {
+                    throw new TikaConfigException("Failed to load content-handler-factory", e);
+                }
+            }
+            // Default to BasicContentHandlerFactory with TEXT handler if not configured
+            if (contentHandlerFactory == null) {
+                contentHandlerFactory = new BasicContentHandlerFactory(
+                        BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1);
+            }
+        }
+        return contentHandlerFactory;
     }
 
     /**

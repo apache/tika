@@ -1,11 +1,6 @@
 {
   "content-handler-factory": {
-    "basic-content-handler-factory": {
-      "type": "TEXT",
-      "writeLimit": -1,
-      "maxEmbeddedResources": -1,
-      "throwOnWriteLimitReached": true
-    }
+    "uppercasing-content-handler-factory": {}
   },
   "fetchers": {
     "fsf": {
@@ -40,7 +35,8 @@
     "emitIntermediateResults": "EMIT_INTERMEDIATE_RESULTS",
     "forkedJvmArgs": ["-Xmx512m"],
     "emitStrategy": {
-      "type": "EMIT_ALL"
+      "type": "DYNAMIC",
+      "thresholdBytes": 1000000
     }
   },
   "auto-detect-parser": {

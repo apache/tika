@@ -623,6 +623,54 @@ public class PipesClientTest {
     }
 
     @Test
+    public void testCustomContentHandlerFactory(@TempDir Path tmp) throws Exception {
+        // Test that a custom ContentHandlerFactory configured in tika-config.json
+        // is properly used during parsing. The UppercasingContentHandlerFactory
+        // converts all extracted text to uppercase.
+        Path inputDir = tmp.resolve("input");
+        Files.createDirectories(inputDir);
+
+        // Create a simple mock XML file with known content
+        String mockContent = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
+                "<metadata action=\"add\" name=\"dc:creator\">Test Author</metadata>" +
+                "<write element=\"p\">Hello World from Tika</write>" +
+                "</mock>";
+        String testFile = "test-uppercase.xml";
+        Files.write(inputDir.resolve(testFile), mockContent.getBytes(StandardCharsets.UTF_8));
+
+        // Use the uppercasing config
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
+                "tika-config-uppercasing.json", tmp, inputDir, tmp.resolve("output"), false);
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+
+        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
+            FetchEmitTuple tuple = new FetchEmitTuple(testFile,
+                    new FetchKey(fetcherName, testFile),
+                    new EmitKey(), new Metadata(), new ParseContext(),
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
+
+            PipesResult pipesResult = pipesClient.process(tuple);
+
+            // Should succeed
+            assertTrue(pipesResult.isSuccess(),
+                    "Processing should succeed. Got status: " + pipesResult.status() +
+                            ", message: " + pipesResult.message());
+
+            Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
+            assertEquals(1, pipesResult.emitData().getMetadataList().size());
+
+            Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
+
+            // The content should be uppercased due to UppercasingContentHandlerFactory
+            String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
+            Assertions.assertNotNull(content, "Content should not be null");
+            assertTrue(content.contains("HELLO WORLD FROM TIKA"),
+                    "Content should be uppercased. Actual content: " + content);
+        }
+    }
+
+    @Test
     public void testHeartbeatProtocol(@TempDir Path tmp) throws Exception {
         // Test that heartbeat protocol works correctly and doesn't cause protocol errors
         // This test exercises the WORKING status messages during long-running operations

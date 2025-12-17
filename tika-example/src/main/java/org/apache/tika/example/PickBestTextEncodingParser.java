@@ -17,7 +17,6 @@
 package org.apache.tika.example;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -147,7 +146,7 @@ public class PickBestTextEncodingParser extends AbstractMultipleParser {
     public void parse(TikaInputStream tis, ContentHandlerFactory handlers, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
         // We only work with one ContentHandler as far as the user is
         //  concerned, any others are purely internal!
-        parse(tis, handlers.getNewContentHandler(), metadata, context);
+        parse(tis, handlers.createHandler(), metadata, context);
     }
 
     protected class CharsetContentHandlerFactory implements ContentHandlerFactory {
@@ -157,7 +156,7 @@ public class PickBestTextEncodingParser extends AbstractMultipleParser {
         private ContentHandler handler;
 
         @Override
-        public ContentHandler getNewContentHandler() {
+        public ContentHandler createHandler() {
             index++;
             if (index < charsetsToTry.length) {
                 return new BodyContentHandler();

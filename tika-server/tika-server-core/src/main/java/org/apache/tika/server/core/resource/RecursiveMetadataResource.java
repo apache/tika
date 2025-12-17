@@ -47,6 +47,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.server.core.MetadataList;
 import org.apache.tika.server.core.TikaServerParseException;
@@ -69,9 +70,15 @@ public class RecursiveMetadataResource {
         fillMetadata(parser, metadata, httpHeaders);
         TikaResource.logRequest(LOG, "/rmeta", metadata);
 
-        BasicContentHandlerFactory.HANDLER_TYPE type = handlerConfig.type();
+        // Check if a ContentHandlerFactory was provided in ParseContext
+        ContentHandlerFactory factory = context.get(ContentHandlerFactory.class);
+        if (factory == null) {
+            // Fall back to creating one from HTTP headers
+            BasicContentHandlerFactory.HANDLER_TYPE type = handlerConfig.type();
+            factory = new BasicContentHandlerFactory(type, handlerConfig.writeLimit(), handlerConfig.throwOnWriteLimitReached(), context);
+        }
         RecursiveParserWrapperHandler handler =
-                new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(type, handlerConfig.writeLimit(), handlerConfig.throwOnWriteLimitReached(), context),
+                new RecursiveParserWrapperHandler(factory,
                         handlerConfig.maxEmbeddedResources(), TikaResource
                         .getTikaLoader()
                         .loadMetadataFilters());
@@ -176,9 +183,15 @@ public class RecursiveMetadataResource {
         Parser parser = TikaResource.createParser();
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
 
-        BasicContentHandlerFactory.HANDLER_TYPE type = handlerConfig.type();
+        // Check if a ContentHandlerFactory was provided in ParseContext (e.g., from config JSON)
+        ContentHandlerFactory factory = context.get(ContentHandlerFactory.class);
+        if (factory == null) {
+            // Fall back to creating one from HTTP headers
+            BasicContentHandlerFactory.HANDLER_TYPE type = handlerConfig.type();
+            factory = new BasicContentHandlerFactory(type, handlerConfig.writeLimit(), handlerConfig.throwOnWriteLimitReached(), context);
+        }
         RecursiveParserWrapperHandler handler =
-                new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(type, handlerConfig.writeLimit(), handlerConfig.throwOnWriteLimitReached(), context),
+                new RecursiveParserWrapperHandler(factory,
                         handlerConfig.maxEmbeddedResources(), TikaResource
                         .getTikaLoader()
                         .loadMetadataFilters());
@@ -232,7 +245,8 @@ public class RecursiveMetadataResource {
         }
     }
 
-    private MetadataList parseMetadataToMetadataList(TikaInputStream tis, Metadata metadata, MultivaluedMap<String, String> httpHeaders, UriInfo info, ServerHandlerConfig handlerConfig)
+    private MetadataList parseMetadataToMetadataList(TikaInputStream tis, Metadata metadata,
+                                                     MultivaluedMap<String, String> httpHeaders, UriInfo info, ServerHandlerConfig handlerConfig)
             throws Exception {
         return new MetadataList(parseMetadata(tis, metadata, httpHeaders, info, handlerConfig));
     }

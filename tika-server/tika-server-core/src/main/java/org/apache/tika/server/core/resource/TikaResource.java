@@ -74,6 +74,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
 import org.apache.tika.sax.RichTextContentHandler;
 import org.apache.tika.sax.boilerpipe.BoilerpipeContentHandler;
@@ -532,9 +533,14 @@ public class TikaResource {
             writeLimit = Integer.parseInt(httpHeaders.getFirst("writeLimit"));
         }
 
-        BasicContentHandlerFactory.HANDLER_TYPE type = BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE);
-        BasicContentHandlerFactory fact = new BasicContentHandlerFactory(type, writeLimit, throwOnWriteLimitReached, context);
-        ContentHandler contentHandler = fact.getNewContentHandler();
+        // Check if a ContentHandlerFactory was provided in ParseContext (e.g., from config JSON)
+        ContentHandlerFactory fact = context.get(ContentHandlerFactory.class);
+        if (fact == null) {
+            // Fall back to creating one from HTTP headers
+            BasicContentHandlerFactory.HANDLER_TYPE type = BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE);
+            fact = new BasicContentHandlerFactory(type, writeLimit, throwOnWriteLimitReached, context);
+        }
+        ContentHandler contentHandler = fact.createHandler();
 
         try {
             parse(parser, LOG, info.getPath(), tis, contentHandler, metadata, context);

@@ -111,6 +111,7 @@ public class TikaJsonConfig {
             "detectors",
             "encoding-detectors",
             "metadata-filters",
+            "content-handler-factory",
             "renderers",
             "translator",
             "auto-detect-parser",

@@ -61,9 +61,9 @@ import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
+import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
-import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.FetcherStreamFactory;
@@ -182,9 +182,8 @@ public class TikaPipesTest extends CXFTestBase {
     @Test
     public void testConcatenated() throws Exception {
         ParseContext parseContext = new ParseContext();
-        // Use addConfig with JSON for handler-config
-        parseContext.addConfig("handler-config",
-                "{\"type\": \"TEXT\", \"parseMode\": \"CONCATENATE\", \"writeLimit\": -1, \"maxEmbeddedResources\": -1, \"throwOnWriteLimitReached\": true}");
+        // Set ParseMode directly - it's now separate from ContentHandlerFactory
+        parseContext.set(ParseMode.class, ParseMode.CONCATENATE);
 
         FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey(FETCHER_ID, "test_recursive_embedded.docx"),
                 new EmitKey(EMITTER_JSON_ID, ""), new Metadata(), parseContext,

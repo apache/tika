@@ -53,8 +53,8 @@ public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandl
         this.maxEmbeddedResources = maxEmbeddedResources;
     }
 
-    public ContentHandler getNewContentHandler() {
-        return contentHandlerFactory.getNewContentHandler();
+    public ContentHandler createHandler() {
+        return contentHandlerFactory.createHandler();
     }
 
     /**

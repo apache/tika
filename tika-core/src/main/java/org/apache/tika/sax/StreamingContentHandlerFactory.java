@@ -16,27 +16,30 @@
  */
 package org.apache.tika.sax;
 
-import java.io.Serializable;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
 
 import org.xml.sax.ContentHandler;
 
 /**
- * Factory interface for creating ContentHandler instances.
+ * Extended factory interface for creating ContentHandler instances that write
+ * directly to an OutputStream.
  * <p>
- * This is the base interface used by tika-pipes, RecursiveParserWrapper, and other
- * components that need to create content handlers for in-memory content extraction.
- * <p>
- * For streaming output to an OutputStream, see {@link StreamingContentHandlerFactory}.
+ * This interface extends {@link ContentHandlerFactory} to add streaming output
+ * capability, primarily used by tika-server's /tika endpoint for streaming
+ * responses back to clients.
  *
- * @see StreamingContentHandlerFactory
+ * @see ContentHandlerFactory
  * @see BasicContentHandlerFactory
  */
-public interface ContentHandlerFactory extends Serializable {
+public interface StreamingContentHandlerFactory extends ContentHandlerFactory {
 
     /**
-     * Creates a new ContentHandler for extracting content.
+     * Creates a new ContentHandler that writes output directly to the given OutputStream.
      *
-     * @return a new ContentHandler instance
+     * @param os      the output stream to write to
+     * @param charset the character encoding to use
+     * @return a new ContentHandler instance that writes to the stream
      */
-    ContentHandler createHandler();
+    ContentHandler createHandler(OutputStream os, Charset charset);
 }

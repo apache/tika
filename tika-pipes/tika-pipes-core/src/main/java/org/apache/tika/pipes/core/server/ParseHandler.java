@@ -61,17 +61,22 @@ class ParseHandler {
     private final CountDownLatch countDownLatch;
     private final AutoDetectParser autoDetectParser;
     private final RecursiveParserWrapper recursiveParserWrapper;
+    private final ContentHandlerFactory defaultContentHandlerFactory;
+    private final ParseMode defaultParseMode;
 
 
     ParseHandler(Detector detector, Digester digester, ArrayBlockingQueue<Metadata> intermediateResult,
                  CountDownLatch countDownLatch, AutoDetectParser autoDetectParser,
-                 RecursiveParserWrapper recursiveParserWrapper) {
+                 RecursiveParserWrapper recursiveParserWrapper, ContentHandlerFactory defaultContentHandlerFactory,
+                 ParseMode defaultParseMode) {
         this.detector = detector;
         this.digester = digester;
         this.intermediateResult = intermediateResult;
         this.countDownLatch = countDownLatch;
         this.autoDetectParser = autoDetectParser;
         this.recursiveParserWrapper = recursiveParserWrapper;
+        this.defaultContentHandlerFactory = defaultContentHandlerFactory;
+        this.defaultParseMode = defaultParseMode;
     }
 
     PipesWorker.ParseDataOrPipesResult parseWithStream(FetchEmitTuple fetchEmitTuple, TikaInputStream stream, Metadata metadata, ParseContext parseContext)
@@ -98,8 +103,8 @@ class ParseHandler {
         if (mode != null) {
             return mode;
         }
-        // Default to RMETA mode
-        return ParseMode.RMETA;
+        // Fall back to default loaded from TikaLoader
+        return defaultParseMode;
     }
 
     private ContentHandlerFactory getContentHandlerFactory(ParseContext parseContext) {
@@ -107,8 +112,8 @@ class ParseHandler {
         if (factory != null) {
             return factory;
         }
-        // Default to BasicContentHandlerFactory with TEXT handler, unlimited write
-        return new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1);
+        // Fall back to default loaded from TikaLoader
+        return defaultContentHandlerFactory;
     }
 
 
@@ -192,7 +197,7 @@ class ParseHandler {
                                              ContentHandlerFactory contentHandlerFactory, TikaInputStream stream,
                                              Metadata metadata, ParseContext parseContext) {
 
-        ContentHandler handler = contentHandlerFactory.getNewContentHandler();
+        ContentHandler handler = contentHandlerFactory.createHandler();
         int maxEmbedded = -1;
         if (contentHandlerFactory instanceof BasicContentHandlerFactory) {
             maxEmbedded = ((BasicContentHandlerFactory) contentHandlerFactory).getMaxEmbeddedResources();

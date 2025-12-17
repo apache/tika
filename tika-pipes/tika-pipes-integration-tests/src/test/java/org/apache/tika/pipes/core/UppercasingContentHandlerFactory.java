@@ -14,29 +14,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.sax;
-
-import java.io.Serializable;
+package org.apache.tika.pipes.core;
 
 import org.xml.sax.ContentHandler;
 
-/**
- * Factory interface for creating ContentHandler instances.
- * <p>
- * This is the base interface used by tika-pipes, RecursiveParserWrapper, and other
- * components that need to create content handlers for in-memory content extraction.
- * <p>
- * For streaming output to an OutputStream, see {@link StreamingContentHandlerFactory}.
- *
- * @see StreamingContentHandlerFactory
- * @see BasicContentHandlerFactory
- */
-public interface ContentHandlerFactory extends Serializable {
+import org.apache.tika.config.TikaComponent;
+import org.apache.tika.sax.ContentHandlerFactory;
+import org.apache.tika.sax.ToTextContentHandler;
 
-    /**
-     * Creates a new ContentHandler for extracting content.
-     *
-     * @return a new ContentHandler instance
-     */
-    ContentHandler createHandler();
+/**
+ * A ContentHandlerFactory that creates UppercasingContentHandler instances.
+ * This factory wraps a ToTextContentHandler with an uppercasing decorator
+ * to convert all extracted text to uppercase.
+ * <p>
+ * Used for testing custom ContentHandlerFactory configurations in tika-pipes.
+ */
+@TikaComponent(contextKey = ContentHandlerFactory.class)
+public class UppercasingContentHandlerFactory implements ContentHandlerFactory {
+
+    private static final long serialVersionUID = 1L;
+
+    @Override
+    public ContentHandler createHandler() {
+        return new UppercasingContentHandler(new ToTextContentHandler());
+    }
 }

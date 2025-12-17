@@ -14,29 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.sax;
+package org.apache.tika.server.core.resource;
 
-import java.io.Serializable;
-
-import org.xml.sax.ContentHandler;
+import org.apache.tika.pipes.api.ParseMode;
+import org.apache.tika.sax.BasicContentHandlerFactory;
 
 /**
- * Factory interface for creating ContentHandler instances.
- * <p>
- * This is the base interface used by tika-pipes, RecursiveParserWrapper, and other
- * components that need to create content handlers for in-memory content extraction.
- * <p>
- * For streaming output to an OutputStream, see {@link StreamingContentHandlerFactory}.
- *
- * @see StreamingContentHandlerFactory
- * @see BasicContentHandlerFactory
+ * Server-internal configuration for request handlers.
+ * This holds configuration parsed from HTTP headers for a single request
+ * for the BasicContentHandlerFactory kinds of elements.
  */
-public interface ContentHandlerFactory extends Serializable {
-
-    /**
-     * Creates a new ContentHandler for extracting content.
-     *
-     * @return a new ContentHandler instance
-     */
-    ContentHandler createHandler();
+public record ServerHandlerConfig(
+        BasicContentHandlerFactory.HANDLER_TYPE type,
+        ParseMode parseMode,
+        int writeLimit,
+        int maxEmbeddedResources,
+        boolean throwOnWriteLimitReached
+) {
 }
