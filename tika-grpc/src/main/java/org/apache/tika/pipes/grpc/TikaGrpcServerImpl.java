@@ -200,40 +200,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         try {
             String factoryName = findFactoryNameForClass(request.getFetcherClass());
             ExtensionConfig config = new ExtensionConfig(request.getFetcherId(), factoryName, request.getFetcherConfigJson());
-
-            // Check if fetcher already exists, if so, we need to update it
-            if (fetcherManager.getSupported().contains(request.getFetcherId())) {
-                LOG.info("Updating existing fetcher: {}", request.getFetcherId());
-                // We can't update directly through the API, so we use reflection to update
-                // the configStore's internal map and clear the componentCache
-                try {
-                    // Get the AbstractComponentManager superclass
-                    Class<?> superClass = fetcherManager.getClass().getSuperclass();
-                    
-                    // Access the configStore field
-                    java.lang.reflect.Field configStoreField = superClass.getDeclaredField("configStore");
-                    configStoreField.setAccessible(true);
-                    Object configStore = configStoreField.get(fetcherManager);
-                    
-                    // For InMemoryConfigStore, access its internal map to replace the config
-                    java.lang.reflect.Field storeField = configStore.getClass().getDeclaredField("store");
-                    storeField.setAccessible(true);
-                    @SuppressWarnings("unchecked") 
-                    java.util.Map<String, ExtensionConfig> store = 
-                        (java.util.Map<String, ExtensionConfig>) storeField.get(configStore);
-                    store.put(config.id(), config);
-
-                    // Also clear the cache so it gets re-instantiated
-                    java.lang.reflect.Field cacheField = superClass.getDeclaredField("componentCache");
-                    cacheField.setAccessible(true);
-                    @SuppressWarnings("unchecked") java.util.Map<String, Fetcher> cache = (java.util.Map<String, Fetcher>) cacheField.get(fetcherManager);
-                    cache.remove(config.id());
-                } catch (Exception e) {
-                    throw new RuntimeException("Failed to update fetcher", e);
-                }
-            } else {
-                fetcherManager.saveFetcher(config);
-            }
+            fetcherManager.saveFetcher(config);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

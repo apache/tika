@@ -21,6 +21,8 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
+import com.fasterxml.jackson.core.StreamReadConstraints;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.config.GlobalSettings;
@@ -39,6 +41,8 @@ import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.renderer.CompositeRenderer;
 import org.apache.tika.renderer.Renderer;
+import org.apache.tika.serialization.JsonMetadata;
+import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 
@@ -440,17 +444,18 @@ public class TikaLoader {
      *
      * <p>Settings include:
      * <ul>
-     *   <li>maxJsonStringFieldLength - Maximum JSON string field length (static, affects all JSON parsing)</li>
-     *   <li>service-loader.initializableProblemHandler - How to handle initialization problems</li>
+     *   <li>metadata-list - Jackson StreamReadConstraints for JsonMetadata/JsonMetadataList serialization</li>
+     *   <li>service-loader - Service loader configuration</li>
      *   <li>xml-reader-utils - XML parser security settings</li>
      * </ul>
      *
      * <p>Example JSON:
      * <pre>
      * {
-     *   "maxJsonStringFieldLength": 50000000,
-     *   "service-loader": {
-     *     "initializableProblemHandler": "ignore"
+     *   "metadata-list": {
+     *     "maxStringLength": 50000000,
+     *     "maxNestingDepth": 10,
+     *     "maxNumberLength": 500
      *   },
      *   "xml-reader-utils": {
      *     "maxEntityExpansions": 1000,
@@ -467,11 +472,8 @@ public class TikaLoader {
         if (globalSettings == null) {
             globalSettings = new GlobalSettings();
 
-            // Load maxJsonStringFieldLength from top level and set it statically
-            if (config.getRootNode().has("maxJsonStringFieldLength")) {
-                GlobalSettings.setMaxJsonStringFieldLength(
-                        config.getRootNode().get("maxJsonStringFieldLength").asInt());
-            }
+            // Load metadata-list config for JsonMetadata/JsonMetadataList serialization
+            loadMetadataListConfig();
 
             // Load service-loader config (official Tika config at root level)
             GlobalSettings.ServiceLoaderConfig serviceLoaderConfig =
@@ -488,6 +490,44 @@ public class TikaLoader {
             }
         }
         return globalSettings;
+    }
+
+    /**
+     * Loads the metadata-list configuration section and applies it to
+     * JsonMetadata and JsonMetadataList serializers.
+     * <p>
+     * Configuration uses Jackson's StreamReadConstraints property names:
+     * <pre>
+     * {
+     *   "metadata-list": {
+     *     "maxStringLength": 20000000,
+     *     "maxNestingDepth": 10,
+     *     "maxNumberLength": 500
+     *   }
+     * }
+     * </pre>
+     */
+    private void loadMetadataListConfig() {
+        JsonNode metadataListNode = config.getRootNode().get("metadata-list");
+        if (metadataListNode == null) {
+            return;
+        }
+
+        StreamReadConstraints.Builder builder = StreamReadConstraints.builder();
+
+        if (metadataListNode.has("maxStringLength")) {
+            builder.maxStringLength(metadataListNode.get("maxStringLength").asInt());
+        }
+        if (metadataListNode.has("maxNestingDepth")) {
+            builder.maxNestingDepth(metadataListNode.get("maxNestingDepth").asInt());
+        }
+        if (metadataListNode.has("maxNumberLength")) {
+            builder.maxNumberLength(metadataListNode.get("maxNumberLength").asInt());
+        }
+
+        StreamReadConstraints constraints = builder.build();
+        JsonMetadata.setStreamReadConstraints(constraints);
+        JsonMetadataList.setStreamReadConstraints(constraints);
     }
 
     /**

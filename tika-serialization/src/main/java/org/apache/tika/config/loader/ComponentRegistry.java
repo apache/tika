@@ -43,8 +43,8 @@ import org.apache.tika.exception.TikaConfigException;
  *   <li>Optional explicit context key for ParseContext</li>
  * </ul>
  * <p>
- * Also includes built-in aliases for external dependencies that cannot be
- * annotated with @TikaComponent.
+ * Modules that can't use @TikaComponent (due to dependency constraints) can provide
+ * their own META-INF/tika/*.idx files to register components.
  */
 public class ComponentRegistry {
 
@@ -63,7 +63,7 @@ public class ComponentRegistry {
     }
 
     private final Map<String, ComponentInfo> components;
-    private final Map<Class<?>, String> classToName;  // Reverse lookup
+    private final Map<String, String> classNameToFriendlyName;  // Reverse lookup by class name
     private final ClassLoader classLoader;
 
     /**
@@ -78,10 +78,10 @@ public class ComponentRegistry {
             throws TikaConfigException {
         this.classLoader = classLoader;
         this.components = loadComponents(indexFileName);
-        // Build reverse lookup
-        this.classToName = new HashMap<>();
+        // Build reverse lookup by class name (not Class object) to handle classloader differences
+        this.classNameToFriendlyName = new HashMap<>();
         for (Map.Entry<String, ComponentInfo> entry : components.entrySet()) {
-            classToName.put(entry.getValue().componentClass(), entry.getKey());
+            classNameToFriendlyName.put(entry.getValue().componentClass().getName(), entry.getKey());
         }
     }
 
@@ -134,12 +134,13 @@ public class ComponentRegistry {
 
     /**
      * Looks up a component's friendly name by its class.
+     * Uses class name (not Class object) for lookup to handle classloader differences.
      *
      * @param clazz the component class
      * @return the friendly name, or null if not registered
      */
     public String getFriendlyName(Class<?> clazz) {
-        return classToName.get(clazz);
+        return classNameToFriendlyName.get(clazz.getName());
     }
 
     private Map<String, ComponentInfo> loadComponents(String indexFileName)
@@ -163,23 +164,7 @@ public class ComponentRegistry {
             throw new TikaConfigException("Failed to load component index: " + resourcePath, e);
         }
 
-        // Load built-in aliases for external dependencies
-        loadBuiltinAliases(result);
-
         return result;
-    }
-
-    private void loadBuiltinAliases(Map<String, ComponentInfo> result) {
-        for (Map.Entry<String, String> alias : BUILTIN_ALIASES.entrySet()) {
-            try {
-                Class<?> clazz = Class.forName(alias.getValue(), false, classLoader);
-                boolean selfConfiguring = SelfConfiguring.class.isAssignableFrom(clazz);
-                result.put(alias.getKey(), new ComponentInfo(clazz, selfConfiguring, null));
-            } catch (ClassNotFoundException e) {
-                // External dependency not on classpath - skip this alias
-                // This is expected behavior, not an error
-            }
-        }
     }
 
     private void loadFromUrl(URL url, Map<String, ComponentInfo> result) throws TikaConfigException {
