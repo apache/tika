@@ -16,8 +16,6 @@
  */
 package org.apache.tika.serialization;
 
-import static org.apache.tika.serialization.JsonMetadata.buildObjectMapper;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -29,36 +27,69 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
-import org.apache.tika.config.GlobalSettings;
 import org.apache.tika.metadata.Metadata;
 
 public class JsonMetadataList {
 
     static volatile boolean PRETTY_PRINT = false;
 
-    private static ObjectMapper OBJECT_MAPPER;
-    private static final ObjectMapper PRETTY_SERIALIZER;
+    /**
+     * Default stream read constraints for metadata list serialization.
+     */
+    private static final StreamReadConstraints DEFAULT_CONSTRAINTS = StreamReadConstraints
+            .builder()
+            .maxNestingDepth(10)
+            .maxStringLength(20_000_000)
+            .maxNumberLength(500)
+            .build();
+
+    private static volatile StreamReadConstraints streamReadConstraints = DEFAULT_CONSTRAINTS;
+    private static volatile ObjectMapper OBJECT_MAPPER;
+    private static volatile ObjectMapper PRETTY_SERIALIZER;
 
     static {
+        rebuildObjectMappers();
+    }
+
+    private static void rebuildObjectMappers() {
         JsonFactory factory = new JsonFactory();
-        factory.setStreamReadConstraints(StreamReadConstraints
-                .builder()
-                .maxNestingDepth(10)
-                .maxStringLength(GlobalSettings.getMaxJsonStringFieldLength())
-                .maxNumberLength(500)
-//                                                              .maxDocumentLength(1000000)
-                .build());
-        OBJECT_MAPPER = new ObjectMapper(factory);
+        factory.setStreamReadConstraints(streamReadConstraints);
+
+        ObjectMapper mapper = new ObjectMapper(factory);
         SimpleModule baseModule = new SimpleModule();
         baseModule.addDeserializer(Metadata.class, new MetadataDeserializer());
         baseModule.addSerializer(Metadata.class, new MetadataSerializer());
-        OBJECT_MAPPER.registerModule(baseModule);
+        mapper.registerModule(baseModule);
+        OBJECT_MAPPER = mapper;
 
-        PRETTY_SERIALIZER = new ObjectMapper(factory);
+        ObjectMapper prettyMapper = new ObjectMapper(factory);
         SimpleModule prettySerializerModule = new SimpleModule();
         prettySerializerModule.addSerializer(Metadata.class, new MetadataSerializer(true));
-        PRETTY_SERIALIZER.registerModule(prettySerializerModule);
+        prettyMapper.registerModule(prettySerializerModule);
+        PRETTY_SERIALIZER = prettyMapper;
+    }
 
+    /**
+     * Sets the stream read constraints for JSON parsing of metadata lists.
+     * This affects all subsequent calls to {@link #fromJson(Reader)}.
+     * <p>
+     * Typically called by TikaLoader during initialization based on the
+     * "metadata-list" configuration section.
+     *
+     * @param constraints the constraints to use
+     */
+    public static synchronized void setStreamReadConstraints(StreamReadConstraints constraints) {
+        streamReadConstraints = constraints;
+        rebuildObjectMappers();
+    }
+
+    /**
+     * Gets the current stream read constraints.
+     *
+     * @return the current constraints
+     */
+    public static StreamReadConstraints getStreamReadConstraints() {
+        return streamReadConstraints;
     }
 
     /**
@@ -89,21 +120,16 @@ public class JsonMetadataList {
     }
 
     /**
-     * Read metadata from reader. This does not close the reader
+     * Read metadata from reader. This does not close the reader.
      *
-     * @param reader
-     * @return Metadata or null if nothing could be read from the reader
+     * @param reader the reader to read from
+     * @return Metadata list or null if reader is null
      * @throws IOException in case of parse failure or IO failure with Reader
      */
     public static List<Metadata> fromJson(Reader reader) throws IOException {
         if (reader == null) {
             return null;
         }
-        if (OBJECT_MAPPER.getFactory().streamReadConstraints().getMaxStringLength()
-                != GlobalSettings.getMaxJsonStringFieldLength()) {
-            OBJECT_MAPPER = buildObjectMapper(GlobalSettings.getMaxJsonStringFieldLength());
-        }
-
         return OBJECT_MAPPER.readValue(reader, new TypeReference<List<Metadata>>(){});
     }
 
