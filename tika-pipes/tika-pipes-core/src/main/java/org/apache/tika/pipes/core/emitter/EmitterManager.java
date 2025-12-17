@@ -157,9 +157,10 @@ public class EmitterManager extends AbstractComponentManager<Emitter, EmitterFac
     }
 
     /**
-     * Dynamically adds an emitter configuration at runtime.
+     * Dynamically adds or updates an emitter configuration at runtime.
      * The emitter will not be instantiated until it is first requested via {@link #getEmitter(String)}.
      * This allows for dynamic configuration without the overhead of immediate instantiation.
+     * If an emitter with the same ID already exists, it will be replaced and the cached instance cleared.
      * <p>
      * This method is only available if the EmitterManager was loaded with
      * {@link #load(PluginManager, TikaJsonConfig, boolean)} with allowRuntimeModifications=true.
@@ -167,8 +168,7 @@ public class EmitterManager extends AbstractComponentManager<Emitter, EmitterFac
      * Only authorized/authenticated users should be allowed to modify emitters. BE CAREFUL.
      *
      * @param config the extension configuration for the emitter
-     * @throws TikaConfigException if the emitter type is unknown, if an emitter with the same ID
-     *                             already exists, or if runtime modifications are not allowed
+     * @throws TikaConfigException if the emitter type is unknown or if runtime modifications are not allowed
      * @throws IOException if there is an error accessing the plugin manager
      */
     public void saveEmitter(ExtensionConfig config) throws TikaConfigException, IOException {

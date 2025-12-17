@@ -376,18 +376,29 @@ public class FetcherManagerTest {
 
         FetcherManager fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig, true);
 
-        // Try to add a fetcher with the same ID as existing one
+        // Update existing fetcher with new configuration
         String newConfigJson = String.format(Locale.ROOT, """
                 {"basePath": "%s"}
                 """, JsonConfigHelper.toJsonPath(tmpDir.resolve("path2")));
-        ExtensionConfig duplicateConfig = new ExtensionConfig("fsf", "file-system-fetcher", newConfigJson);
+        ExtensionConfig updatedConfig = new ExtensionConfig("fsf", "file-system-fetcher", newConfigJson);
 
-        TikaConfigException exception = assertThrows(TikaConfigException.class, () -> {
-            fetcherManager.saveFetcher(duplicateConfig);
-        });
+        // Get original fetcher instance
+        Fetcher originalFetcher = fetcherManager.getFetcher("fsf");
+        assertNotNull(originalFetcher);
 
-        assertTrue(exception.getMessage().contains("already exists"));
-        assertTrue(exception.getMessage().contains("fsf"));
+        // Update the fetcher config
+        fetcherManager.saveFetcher(updatedConfig);
+
+        // Should still only have 1 fetcher
+        assertEquals(1, fetcherManager.getSupported().size());
+        assertTrue(fetcherManager.getSupported().contains("fsf"));
+
+        // Getting the fetcher again should return a NEW instance (cache cleared)
+        Fetcher updatedFetcher = fetcherManager.getFetcher("fsf");
+        assertNotNull(updatedFetcher);
+        
+        // Should be different instance due to re-instantiation
+        assertTrue(originalFetcher != updatedFetcher, "Updated fetcher should be a new instance");
     }
 
     @Test
