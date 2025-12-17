@@ -22,10 +22,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig;
-import org.apache.tika.pipes.api.pipesiterator.PipesIteratorConfig;
+import org.apache.tika.pipes.pipesiterator.PipesIteratorConfig;
 
-public class KafkaPipesIteratorConfig implements PipesIteratorConfig {
+public class KafkaPipesIteratorConfig extends PipesIteratorConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -49,7 +48,6 @@ public class KafkaPipesIteratorConfig implements PipesIteratorConfig {
     private int pollDelayMs = 100;
     private int emitMax = -1;
     private int groupInitialRebalanceDelayMs = 3000;
-    private PipesIteratorBaseConfig baseConfig = null;
 
     public String getTopic() {
         return topic;
@@ -88,16 +86,13 @@ public class KafkaPipesIteratorConfig implements PipesIteratorConfig {
     }
 
     @Override
-    public PipesIteratorBaseConfig getBaseConfig() {
-        return baseConfig;
-    }
-
-    @Override
-    public final boolean equals(Object o) {
+    public boolean equals(Object o) {
         if (!(o instanceof KafkaPipesIteratorConfig that)) {
             return false;
         }
-
+        if (!super.equals(o)) {
+            return false;
+        }
         return pollDelayMs == that.pollDelayMs &&
                 emitMax == that.emitMax &&
                 groupInitialRebalanceDelayMs == that.groupInitialRebalanceDelayMs &&
@@ -106,13 +101,13 @@ public class KafkaPipesIteratorConfig implements PipesIteratorConfig {
                 Objects.equals(keySerializer, that.keySerializer) &&
                 Objects.equals(valueSerializer, that.valueSerializer) &&
                 Objects.equals(groupId, that.groupId) &&
-                Objects.equals(autoOffsetReset, that.autoOffsetReset) &&
-                Objects.equals(baseConfig, that.baseConfig);
+                Objects.equals(autoOffsetReset, that.autoOffsetReset);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hashCode(topic);
+        int result = super.hashCode();
+        result = 31 * result + Objects.hashCode(topic);
         result = 31 * result + Objects.hashCode(bootstrapServers);
         result = 31 * result + Objects.hashCode(keySerializer);
         result = 31 * result + Objects.hashCode(valueSerializer);
@@ -121,7 +116,6 @@ public class KafkaPipesIteratorConfig implements PipesIteratorConfig {
         result = 31 * result + pollDelayMs;
         result = 31 * result + emitMax;
         result = 31 * result + groupInitialRebalanceDelayMs;
-        result = 31 * result + Objects.hashCode(baseConfig);
         return result;
     }
 }

@@ -54,6 +54,16 @@ public abstract class PipesIteratorBase extends AbstractTikaExtension implements
     private int added = 0;
     private FutureTask<Integer> futureTask;
 
+    /**
+     * The fetcher ID to use for fetching documents.
+     */
+    private String fetcherId;
+
+    /**
+     * The emitter ID to use for emitting results.
+     */
+    private String emitterId;
+
     public PipesIteratorBase(ExtensionConfig pluginConfig) {
         super(pluginConfig);
     }

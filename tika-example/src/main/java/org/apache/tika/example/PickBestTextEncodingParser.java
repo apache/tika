@@ -164,11 +164,6 @@ public class PickBestTextEncodingParser extends AbstractMultipleParser {
             }
             return handler;
         }
-
-        @Override
-        public ContentHandler getNewContentHandler(OutputStream os, Charset charset) {
-            return getNewContentHandler();
-        }
     }
 
     protected class CharsetTester {

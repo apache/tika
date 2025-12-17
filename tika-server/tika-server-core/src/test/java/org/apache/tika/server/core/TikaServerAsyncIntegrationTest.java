@@ -18,7 +18,6 @@ package org.apache.tika.server.core;
 
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig.DEFAULT_HANDLER_CONFIG;
 import static org.apache.tika.server.core.CXFTestBase.EMITTER_JSON_ID;
 import static org.apache.tika.server.core.CXFTestBase.FETCHER_ID;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -49,8 +48,10 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.api.HandlerConfig;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.emitter.EmitKey;
+import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTupleList;
 
@@ -170,7 +171,9 @@ public class TikaServerAsyncIntegrationTest extends IntegrationTestBase {
 
     private FetchEmitTuple getFetchEmitTuple(String fileName) throws IOException {
         ParseContext parseContext = new ParseContext();
-        parseContext.set(HandlerConfig.class, DEFAULT_HANDLER_CONFIG);
+        parseContext.set(ContentHandlerFactory.class,
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
+        parseContext.set(ParseMode.class, ParseMode.RMETA);
 
         return new FetchEmitTuple(fileName, new FetchKey(FETCHER_ID, fileName), new EmitKey(EMITTER_JSON_ID, ""), new Metadata(), parseContext, ON_PARSE_EXCEPTION);
     }

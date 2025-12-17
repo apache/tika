@@ -17,7 +17,6 @@
 package org.apache.tika.server.core.resource;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig.DEFAULT_HANDLER_CONFIG;
 import static org.apache.tika.server.core.resource.RecursiveMetadataResource.DEFAULT_HANDLER_TYPE;
 import static org.apache.tika.server.core.resource.RecursiveMetadataResource.HANDLER_TYPE_PARAM;
 
@@ -341,7 +340,8 @@ public class TikaResource {
                 throw new IllegalArgumentException("'throwOnWriteLimitReached' must be either 'true' or 'false'");
             }
         }
-        return DEFAULT_HANDLER_CONFIG.isThrowOnWriteLimitReached();
+        // Default: throw on write limit reached
+        return true;
     }
 
     public static long getTaskTimeout(ParseContext parseContext) {

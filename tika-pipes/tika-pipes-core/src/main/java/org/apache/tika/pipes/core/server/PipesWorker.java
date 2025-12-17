@@ -16,8 +16,6 @@
  */
 package org.apache.tika.pipes.core.server;
 
-import static org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig.DEFAULT_HANDLER_CONFIG;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.time.Duration;
@@ -41,7 +39,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.api.HandlerConfig;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.core.PipesResults;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
@@ -149,9 +146,8 @@ class PipesWorker implements Callable<PipesResult> {
 
     private ParseContext setupParseContext(FetchEmitTuple fetchEmitTuple) throws TikaException, IOException {
         ParseContext parseContext = fetchEmitTuple.getParseContext();
-        if (parseContext.get(HandlerConfig.class) == null) {
-            parseContext.set(HandlerConfig.class, DEFAULT_HANDLER_CONFIG);
-        }
+        // ContentHandlerFactory and ParseMode are retrieved from ParseContext in ParseHandler.
+        // They are set in ParseContext from PipesConfig loaded via TikaLoader at startup.
         EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);
         if (embeddedDocumentBytesConfig == null) {
             //make sure there's one here -- or do we make this default in fetchemit tuple?

@@ -340,9 +340,9 @@ public class TikaLoader {
      *
      * <p>Usage:
      * <pre>
-     * HandlerConfig config = loader.configs().load("handler-config", HandlerConfig.class);
+     * MyConfig config = loader.configs().load("my-config", MyConfig.class);
      * // Or use kebab-case auto-conversion:
-     * HandlerConfig config = loader.configs().load(HandlerConfig.class);
+     * MyConfig config = loader.configs().load(MyConfig.class);
      * </pre>
      *
      * @return the ConfigLoader instance

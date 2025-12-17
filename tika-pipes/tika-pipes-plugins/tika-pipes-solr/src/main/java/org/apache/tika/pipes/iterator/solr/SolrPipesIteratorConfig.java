@@ -24,10 +24,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig;
-import org.apache.tika.pipes.api.pipesiterator.PipesIteratorConfig;
+import org.apache.tika.pipes.pipesiterator.PipesIteratorConfig;
 
-public class SolrPipesIteratorConfig implements PipesIteratorConfig {
+public class SolrPipesIteratorConfig extends PipesIteratorConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -60,7 +59,6 @@ public class SolrPipesIteratorConfig implements PipesIteratorConfig {
     private String authScheme;
     private String proxyHost;
     private int proxyPort = 0;
-    private PipesIteratorBaseConfig baseConfig = null;
 
     public String getSolrCollection() {
         return solrCollection;
@@ -135,16 +133,13 @@ public class SolrPipesIteratorConfig implements PipesIteratorConfig {
     }
 
     @Override
-    public PipesIteratorBaseConfig getBaseConfig() {
-        return baseConfig;
-    }
-
-    @Override
-    public final boolean equals(Object o) {
+    public boolean equals(Object o) {
         if (!(o instanceof SolrPipesIteratorConfig that)) {
             return false;
         }
-
+        if (!super.equals(o)) {
+            return false;
+        }
         return rows == that.rows &&
                 connectionTimeout == that.connectionTimeout &&
                 socketTimeout == that.socketTimeout &&
@@ -162,13 +157,13 @@ public class SolrPipesIteratorConfig implements PipesIteratorConfig {
                 Objects.equals(userName, that.userName) &&
                 Objects.equals(password, that.password) &&
                 Objects.equals(authScheme, that.authScheme) &&
-                Objects.equals(proxyHost, that.proxyHost) &&
-                Objects.equals(baseConfig, that.baseConfig);
+                Objects.equals(proxyHost, that.proxyHost);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hashCode(solrCollection);
+        int result = super.hashCode();
+        result = 31 * result + Objects.hashCode(solrCollection);
         result = 31 * result + Objects.hashCode(solrUrls);
         result = 31 * result + Objects.hashCode(solrZkHosts);
         result = 31 * result + Objects.hashCode(solrZkChroot);
@@ -186,7 +181,6 @@ public class SolrPipesIteratorConfig implements PipesIteratorConfig {
         result = 31 * result + Objects.hashCode(authScheme);
         result = 31 * result + Objects.hashCode(proxyHost);
         result = 31 * result + proxyPort;
-        result = 31 * result + Objects.hashCode(baseConfig);
         return result;
     }
 }

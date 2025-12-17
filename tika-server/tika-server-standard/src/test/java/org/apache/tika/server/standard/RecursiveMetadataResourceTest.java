@@ -426,8 +426,8 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         }
     }
 
-    // TIKA-3227 - TODO: re-enable once HandlerConfig is configurable via JSON
-    // Use maxEmbeddedResources=0 in handler-config to skip embedded documents
+    // TIKA-3227 - TODO: re-enable once maxEmbeddedResources is configurable via JSON
+    // Use maxEmbeddedResources=0 in config to skip embedded documents
 
     @Test
     public void testWriteLimit() throws Exception {

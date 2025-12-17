@@ -17,7 +17,6 @@
 package org.apache.tika.async.cli;
 
 
-import static org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig.DEFAULT_HANDLER_CONFIG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -44,7 +43,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.api.HandlerConfig;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
@@ -112,8 +110,6 @@ public class AsyncProcessorTest extends TikaTest {
 
     @Test
     public void testRecursiveUnpacking() throws Exception {
-//        TikaAsyncCLI cli = new TikaAsyncCLI();
-        //      cli.main(new String[]{ configDir.resolve("tika-config.xml").toAbsolutePath().toString()});
         AsyncProcessor processor = AsyncProcessor.load(configDir.resolve("tika-config.json"));
 
         EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = new EmbeddedDocumentBytesConfig(true);
@@ -122,7 +118,6 @@ public class AsyncProcessorTest extends TikaTest {
         embeddedDocumentBytesConfig.setSuffixStrategy(EmbeddedDocumentBytesConfig.SUFFIX_STRATEGY.NONE);
         embeddedDocumentBytesConfig.setEmbeddedIdPrefix("-");
         ParseContext parseContext = new ParseContext();
-        parseContext.set(HandlerConfig.class, DEFAULT_HANDLER_CONFIG);
         parseContext.set(EmbeddedDocumentBytesConfig.class, embeddedDocumentBytesConfig);
         FetchEmitTuple t =
                 new FetchEmitTuple("myId-1", new FetchKey("fsf", "mock.xml"),
@@ -133,7 +128,6 @@ public class AsyncProcessorTest extends TikaTest {
         for (int i = 0; i < 10; i++) {
             processor.offer(PipesIterator.COMPLETED_SEMAPHORE, 1000);
         }
-        //TODO clean this up
         while (processor.checkActive()) {
             Thread.sleep(100);
         }
@@ -161,14 +155,9 @@ public class AsyncProcessorTest extends TikaTest {
 
     @Test
     public void testStopsOnApplicationError() throws Exception {
-        // Test that AsyncProcessor stops processing when an application error occurs
-        // (TIKA-4570)
         AsyncProcessor processor = AsyncProcessor.load(configDir.resolve("tika-config.json"));
 
-        // Create a tuple with a non-existent fetcher - this will cause FETCHER_NOT_FOUND
-        // which is a TASK_EXCEPTION but will stop processing in CLI mode (default)
         ParseContext parseContext = new ParseContext();
-        parseContext.set(HandlerConfig.class, DEFAULT_HANDLER_CONFIG);
         FetchEmitTuple badTuple = new FetchEmitTuple(
                 "bad-tuple-1",
                 new FetchKey("non-existent-fetcher", "some-file.txt"),
@@ -177,10 +166,8 @@ public class AsyncProcessorTest extends TikaTest {
                 parseContext,
                 FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
 
-        // Offer the bad tuple
         processor.offer(badTuple, 1000);
 
-        // Wait for the error to be detected
         int maxWaitMs = 30000;
         int waited = 0;
         while (!processor.hasApplicationError() && waited < maxWaitMs) {
@@ -188,11 +175,9 @@ public class AsyncProcessorTest extends TikaTest {
             waited += 100;
         }
 
-        // Verify that the application error was detected
         assertTrue(processor.hasApplicationError(),
                 "AsyncProcessor should detect application error from bad fetcher");
 
-        // Verify that subsequent offers throw PipesException
         FetchEmitTuple anotherTuple = new FetchEmitTuple(
                 "another-tuple",
                 new FetchKey("fsf", "mock.xml"),
