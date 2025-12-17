@@ -257,16 +257,16 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
     }
 
     /**
-     * Dynamically adds a component configuration at runtime.
+     * Dynamically adds or updates a component configuration at runtime.
      * The component will not be instantiated until it is first requested via {@link #getComponent(String)}.
+     * If a component with the same ID already exists, it will be replaced and the cached instance cleared.
      * <p>
      * This method is only available if the manager was loaded with allowRuntimeModifications=true.
      * <p>
      * Only authorized/authenticated users should be allowed to modify components. BE CAREFUL.
      *
      * @param config the extension configuration for the component
-     * @throws TikaConfigException if the component type is unknown, if a component with the same ID already exists,
-     *         or if runtime modifications are not allowed
+     * @throws TikaConfigException if the component type is unknown or if runtime modifications are not allowed
      * @throws IOException if there is an error accessing the plugin manager
      */
     public synchronized void saveComponent(ExtensionConfig config) throws TikaConfigException, IOException {
@@ -284,12 +284,6 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
         String componentId = config.id();
         String typeName = config.name();
 
-        // Check for duplicate ID
-        if (configStore.containsKey(componentId)) {
-            throw new TikaConfigException(getComponentName().substring(0, 1).toUpperCase(Locale.ROOT) +
-                    getComponentName().substring(1) + " with id '" + componentId + "' already exists");
-        }
-
         // Validate that factory exists for this type
         Map<String, F> factories = getFactories(pluginManager);
         if (!factories.containsKey(typeName)) {
@@ -298,9 +292,16 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
                     ". Available: " + factories.keySet());
         }
 
+        // If updating existing component, clear the cache so it gets re-instantiated
+        if (configStore.containsKey(componentId)) {
+            componentCache.remove(componentId);
+            LOG.debug("Updating existing {} config: id={}, type={}", getComponentName(), componentId, typeName);
+        } else {
+            LOG.debug("Creating new {} config: id={}, type={}", getComponentName(), componentId, typeName);
+        }
+
         // Store config without instantiating
         configStore.put(componentId, config);
-        LOG.debug("Saved {} config: id={}, type={}", getComponentName(), componentId, typeName);
     }
 
     /**
