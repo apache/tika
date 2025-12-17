@@ -1,8 +1,4 @@
 FROM ubuntu:22.04
-COPY libs/ /tika/libs/
-COPY plugins/ /tika/plugins/
-COPY config/ /tika/config/
-COPY bin/ /tika/bin
 ARG JRE='openjdk-17-jre-headless'
 ARG VERSION
 ARG TIKA_GRPC_MAX_INBOUND_MESSAGE_SIZE=104857600
@@ -30,10 +26,19 @@ RUN set -eux \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+COPY libs/ /tika/libs/
+COPY plugins/ /tika/plugins/
+COPY config/ /tika/config/
+COPY bin/ /tika/bin
+
 EXPOSE 9090
 ENV TIKA_VERSION=$VERSION
 ENV TIKA_GRPC_MAX_INBOUND_MESSAGE_SIZE=$TIKA_GRPC_MAX_INBOUND_MESSAGE_SIZE
 ENV TIKA_GRPC_MAX_OUTBOUND_MESSAGE_SIZE=$TIKA_GRPC_MAX_OUTBOUND_MESSAGE_SIZE
 ENV TIKA_GRPC_NUM_THREADS=$TIKA_GRPC_NUM_THREADS
-RUN chmod +x "/tika/bin/start-tika-grpc.sh"
+RUN chmod +x "/tika/bin/start-tika-grpc.sh" \
+    && groupadd --system tika \
+    && useradd --system --no-create-home --gid tika --shell /usr/sbin/nologin tika \
+    && chown -R tika:tika /tika
+USER tika
 ENTRYPOINT ["/tika/bin/start-tika-grpc.sh"]

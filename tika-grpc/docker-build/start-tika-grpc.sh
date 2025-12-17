@@ -1,4 +1,8 @@
 #!/bin/bash
+if [ -z "${TIKA_VERSION}" ]; then
+    echo "ERROR: TIKA_VERSION environment variable is not set"
+    exit 1
+fi
 echo "Tika Version:"
 echo "${TIKA_VERSION}"
 echo "Tika Plugins:"

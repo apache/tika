@@ -123,7 +123,7 @@ AWS_ACCOUNT_ID=123456789012 AWS_REGION=us-east-1 \
 
 **Build with explicit property (for testing/development):**
 ```bash
-mvn package -Dskip.docker.build=false -DDOCKER_ID=myusername
+DOCKER_ID=myusername mvn package -Dskip.docker.build=false
 ```
 
 **Manual script build and tag for Docker Hub:**

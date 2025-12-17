@@ -1,5 +1,6 @@
 #!/bin/bash
 # This script is intended to be run from Maven exec plugin during the package phase of maven build
+set -e
 
 # Check if Docker is installed
 if ! command -v docker &> /dev/null; then
@@ -36,14 +37,14 @@ mkdir -p "${OUT_DIR}/libs"
 mkdir -p "${OUT_DIR}/plugins"
 mkdir -p "${OUT_DIR}/config"
 mkdir -p "${OUT_DIR}/bin"
-cp -v -r "tika-grpc/target/tika-grpc-${TIKA_VERSION}.jar" "${OUT_DIR}/libs"
+cp -v "tika-grpc/target/tika-grpc-${TIKA_VERSION}.jar" "${OUT_DIR}/libs"
 
 # Copy all tika-pipes plugin zip files
 for dir in tika-pipes/tika-pipes-plugins/*/; do
     plugin_name=$(basename "$dir")
     zip_file="${dir}target/${plugin_name}-${TIKA_VERSION}.zip"
     if [ -f "$zip_file" ]; then
-        cp -v -r "$zip_file" "${OUT_DIR}/plugins"
+        cp -v "$zip_file" "${OUT_DIR}/plugins"
     else
         echo "WARNING: Plugin file $zip_file does not exist, skipping."
     fi
@@ -61,13 +62,13 @@ for parser_package in "${parser_packages[@]}"; do
     package_name=$(basename "$parser_package")
     jar_file="${parser_package}/target/${package_name}-${TIKA_VERSION}.jar"
     if [ -f "$jar_file" ]; then
-        cp -v -r "$jar_file" "${OUT_DIR}/plugins"
+        cp -v "$jar_file" "${OUT_DIR}/plugins"
     else
         echo "Parser package file $jar_file does not exist, skipping."
     fi
 done
 
-cp -v -r "tika-grpc/docker-build/start-tika-grpc.sh" "${OUT_DIR}/bin"
+cp -v "tika-grpc/docker-build/start-tika-grpc.sh" "${OUT_DIR}/bin"
 
 cp -v "tika-grpc/docker-build/Dockerfile" "${OUT_DIR}/Dockerfile"
 
@@ -102,24 +103,45 @@ if [ ${#IMAGE_TAGS[@]} -eq 0 ]; then
 fi
 
 tag="${IMAGE_TAGS[*]}"
+BUILDX_BUILDER_NAME="tikabuilder"
+BUILDX_CREATED_BY_SCRIPT=false
+
 if [ "${MULTI_ARCH}" == "true" ]; then
   echo "Building multi arch image"
-  docker buildx create --name tikabuilder
-  # Pin binfmt to a specific digest for security
+  if docker buildx inspect "${BUILDX_BUILDER_NAME}" >/dev/null 2>&1; then
+    echo "Using existing Docker buildx builder '${BUILDX_BUILDER_NAME}'"
+  else
+    echo "Creating Docker buildx builder '${BUILDX_BUILDER_NAME}'"
+    docker buildx create --name "${BUILDX_BUILDER_NAME}"
+    BUILDX_CREATED_BY_SCRIPT=true
+  fi
+  # Pin binfmt to a specific digest for security (digest verified 2025-12-17)
   # see https://askubuntu.com/questions/1339558/cant-build-dockerfile-for-arm64-due-to-libc-bin-segmentation-fault/1398147#1398147
   docker run --rm --privileged tonistiigi/binfmt:latest@sha256:8de6f2decb92e9001d094534bf8a92880c175bd5dfb4a9d8579f26f09821cfa2 --install amd64
   docker run --rm --privileged tonistiigi/binfmt:latest@sha256:8de6f2decb92e9001d094534bf8a92880c175bd5dfb4a9d8579f26f09821cfa2 --install arm64
-  docker buildx build \
-      --builder=tikabuilder . \
+  if ! docker buildx build \
+      --builder="${BUILDX_BUILDER_NAME}" . \
+      --build-arg VERSION="${TIKA_VERSION}" \
       ${tag} \
       --platform linux/amd64,linux/arm64 \
-      --push
-  docker buildx stop tikabuilder
-  docker buildx rm tikabuilder
+      --push; then
+    echo "ERROR: Docker multi-arch build or push failed"
+    if [ "${BUILDX_CREATED_BY_SCRIPT}" = "true" ]; then
+      docker buildx stop "${BUILDX_BUILDER_NAME}" >/dev/null 2>&1 || true
+      docker buildx rm "${BUILDX_BUILDER_NAME}" >/dev/null 2>&1 || true
+    fi
+    exit 1
+  fi
+  if [ "${BUILDX_CREATED_BY_SCRIPT}" = "true" ]; then
+    docker buildx stop "${BUILDX_BUILDER_NAME}"
+    docker buildx rm "${BUILDX_BUILDER_NAME}"
+  fi
 else
   echo "Building single arch image"
-  # build single arch
-  docker build . ${tag}
+  if ! docker build . --build-arg VERSION="${TIKA_VERSION}" ${tag}; then
+    echo "ERROR: Docker single-arch build failed"
+    exit 1
+  fi
 fi
 
 echo " ==================================================================================================="
