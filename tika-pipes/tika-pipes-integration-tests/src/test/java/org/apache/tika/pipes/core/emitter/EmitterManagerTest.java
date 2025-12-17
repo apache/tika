@@ -385,21 +385,32 @@ public class EmitterManagerTest {
 
         EmitterManager emitterManager = EmitterManager.load(pluginManager, tikaJsonConfig, true);
 
-        // Try to add an emitter with the same ID as existing one
+        // Update existing emitter with new configuration
         String newConfigJson = String.format(Locale.ROOT, """
                 {
                   "basePath": "%s",
                   "onExists": "REPLACE"
                 }
                 """, JsonConfigHelper.toJsonPath(tmpDir.resolve("output2")));
-        ExtensionConfig duplicateConfig = new ExtensionConfig("fse", "file-system-emitter", newConfigJson);
+        ExtensionConfig updatedConfig = new ExtensionConfig("fse", "file-system-emitter", newConfigJson);
 
-        TikaConfigException exception = assertThrows(TikaConfigException.class, () -> {
-            emitterManager.saveEmitter(duplicateConfig);
-        });
+        // Get original emitter instance
+        Emitter originalEmitter = emitterManager.getEmitter("fse");
+        assertNotNull(originalEmitter);
 
-        assertTrue(exception.getMessage().contains("already exists"));
-        assertTrue(exception.getMessage().contains("fse"));
+        // Update the emitter config
+        emitterManager.saveEmitter(updatedConfig);
+
+        // Should still only have 1 emitter
+        assertEquals(1, emitterManager.getSupported().size());
+        assertTrue(emitterManager.getSupported().contains("fse"));
+
+        // Getting the emitter again should return a NEW instance (cache cleared)
+        Emitter updatedEmitter = emitterManager.getEmitter("fse");
+        assertNotNull(updatedEmitter);
+        
+        // Should be different instance due to re-instantiation
+        assertTrue(originalEmitter != updatedEmitter, "Updated emitter should be a new instance");
     }
 
     @Test
