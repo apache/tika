@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.List;
+import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -38,6 +39,7 @@ import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.extractor.SkipEmbeddedDocumentSelector;
 import org.apache.tika.metadata.filter.AttachmentCountingListFilter;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
+import org.apache.tika.metadata.filter.IncludeFieldMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.filter.MockUpperCaseFilter;
 import org.apache.tika.parser.ParseContext;
@@ -327,7 +329,9 @@ public class TestParseContextSerialization {
 
     @Test
     public void testMetadataListPOJO() throws Exception {
-        CompositeMetadataFilter metadataFilter = new CompositeMetadataFilter(List.of(new AttachmentCountingListFilter(), new MockUpperCaseFilter()));
+        CompositeMetadataFilter metadataFilter =
+                new CompositeMetadataFilter(List.of(new MockUpperCaseFilter(), new AttachmentCountingListFilter(),
+                        new IncludeFieldMetadataFilter(Set.of("blah", "blah2"))));
 
         ParseContext parseContext = new ParseContext();
         parseContext.set(MetadataFilter.class, metadataFilter);
@@ -340,7 +344,9 @@ public class TestParseContextSerialization {
         assertNotNull(resolvedFilter, "MetadataFilter should be resolved");
         assertEquals(CompositeMetadataFilter.class, resolvedFilter.getClass());
         CompositeMetadataFilter deserFilter = (CompositeMetadataFilter) resolvedFilter;
-        assertEquals(AttachmentCountingListFilter.class, deserFilter.getFilters().get(0).getClass());
+        assertEquals(MockUpperCaseFilter.class, deserFilter.getFilters().get(0).getClass());
+        assertEquals(AttachmentCountingListFilter.class, deserFilter.getFilters().get(1).getClass());
+        assertEquals(IncludeFieldMetadataFilter.class, deserFilter.getFilters().get(2).getClass());
     }
 
     @Test
