@@ -410,19 +410,24 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>${maven.exec.version}</version>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>3.1.0</version>
         <executions>
           <execution>
+            <id>set-chmod-on-docker-build-sh</id>
+            <phase>validate</phase>
             <goals>
-              <goal>java</goal>
+              <goal>run</goal>
             </goals>
+            <configuration>
+              <target>
+                <chmod file="${project.basedir}/docker-build/docker-build.sh" perm="755" failonerror="false"/>
+              </target>
+              <skip>${skip.docker.build}</skip>
+            </configuration>
           </execution>
         </executions>
-        <configuration>
-          <mainClass>org.apache.tika.pipes.grpc.TikaGrpcServer</mainClass>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -430,18 +435,12 @@
         <version>${maven.exec.version}</version>
         <executions>
           <execution>
-            <id>set-chmod-on-docker-build-sh</id>
-            <phase>validate</phase>
+            <id>exec-java</id>
             <goals>
-              <goal>exec</goal>
+              <goal>java</goal>
             </goals>
             <configuration>
-              <executable>chmod</executable>
-              <arguments>
-                <argument>+x</argument>
-                <argument>${project.basedir}/docker-build/docker-build.sh</argument>
-              </arguments>
-              <skip>${skip.docker.build}</skip>
+              <mainClass>org.apache.tika.pipes.grpc.TikaGrpcServer</mainClass>
             </configuration>
           </execution>
           <execution>

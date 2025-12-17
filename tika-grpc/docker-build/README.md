@@ -18,52 +18,68 @@ The Docker image includes:
 
 1. Build Tika from the project root (this builds all modules including plugins):
 ```bash
+cd <tika-root>
 mvn clean install -DskipTests
 ```
 
-### Option 1: Run Docker Build During Maven Package
+### Build Activation
 
-The Docker build can be triggered automatically during the Maven package phase:
+The Docker build can be activated in two ways:
 
+**Option 1: Using environment variables (recommended)**
+- Set `DOCKER_ID`, `AWS_ACCOUNT_ID`, or `AZURE_REGISTRY_NAME`
+- Maven profiles automatically detect these and enable the build
+- No need for `-Dskip.docker.build=false`
+
+**Option 2: Using Maven property**
+- Add `-Dskip.docker.build=false` to your Maven command
+- Use when you want explicit control or testing
+
+### Building from Tika Root
+
+**Build tika-grpc and dependencies only:**
 ```bash
-cd tika-grpc
-mvn package -Dskip.docker.build=false
+DOCKER_ID=myusername \
+  mvn clean install -DskipTests -pl :tika-grpc -am
 ```
 
-Or from the project root:
+**Build entire project:**
 ```bash
-mvn clean install -DskipTests -Dskip.docker.build=false
+DOCKER_ID=myusername \
+  mvn clean install -DskipTests
 ```
 
-**Note:** By default, `skip.docker.build=true` to avoid running Docker builds during normal development.
+### Building from tika-grpc Directory
 
 #### Controlling Docker Build with Environment Variables
 
-All docker-build.sh environment variables are passed through from your shell:
+All docker-build.sh environment variables are passed through from your shell. When these variables are set, the Maven profiles automatically activate the Docker build.
 
+**Build and push to Docker Hub:**
 ```bash
-# Build and push to Docker Hub
-MULTI_ARCH=false DOCKER_ID=ndipiazza PROJECT_NAME=tika-grpc RELEASE_IMAGE_TAG=4.0.0-SNAPSHOT \
-  mvn clean package -Dskip.docker.build=false
+DOCKER_ID=myusername \
+  mvn package
 ```
 
+**Build multi-arch and push to Docker Hub:**
 ```bash
-# Build multi-arch and push to Docker Hub
-MULTI_ARCH=true DOCKER_ID=myusername PROJECT_NAME=tika-grpc \
-  mvn clean package -Dskip.docker.build=false
+MULTI_ARCH=true DOCKER_ID=myusername \
+  mvn package
 ```
 
+**Build and push to AWS ECR:**
 ```bash
-# Build and push to AWS ECR
 AWS_ACCOUNT_ID=123456789012 AWS_REGION=us-east-1 \
-  mvn clean package -Dskip.docker.build=false
+  mvn package
 ```
 
+**Build and push to Azure Container Registry:**
 ```bash
-# Build and push to Azure Container Registry
 AZURE_REGISTRY_NAME=myregistry \
-  mvn clean package -Dskip.docker.build=false
+  mvn package
 ```
+
+**Note:** When environment variables are set, you don't need `-Dskip.docker.build=false`. The Maven profiles detect the variables and automatically enable the build.
 
 ### Option 2: Run the Docker Build Script Manually
 
@@ -87,22 +103,27 @@ export TIKA_VERSION=4.0.0-SNAPSHOT
 
 ### Examples
 
-**Maven build with Docker Hub (recommended):**
+**Build with Docker Hub using environment variable:**
 ```bash
-MULTI_ARCH=false DOCKER_ID=ndipiazza PROJECT_NAME=tika-grpc RELEASE_IMAGE_TAG=4.0.0-SNAPSHOT \
-  mvn clean package -Dskip.docker.build=false
+DOCKER_ID=myusername \
+  mvn package
 ```
 
-**Maven build with multi-arch:**
+**Build multi-arch with Docker Hub:**
 ```bash
-MULTI_ARCH=true DOCKER_ID=ndipiazza PROJECT_NAME=tika-grpc \
-  mvn clean package -Dskip.docker.build=false
+MULTI_ARCH=true DOCKER_ID=myusername \
+  mvn package
 ```
 
-**Maven build with AWS ECR:**
+**Build with AWS ECR:**
 ```bash
 AWS_ACCOUNT_ID=123456789012 AWS_REGION=us-east-1 \
-  mvn clean package -Dskip.docker.build=false
+  mvn package
+```
+
+**Build with explicit property (for testing/development):**
+```bash
+mvn package -Dskip.docker.build=false -DDOCKER_ID=myusername
 ```
 
 **Manual script build and tag for Docker Hub:**

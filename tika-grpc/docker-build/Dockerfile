@@ -1,10 +1,10 @@
-FROM ubuntu:latest
+FROM ubuntu:22.04
 COPY libs/ /tika/libs/
 COPY plugins/ /tika/plugins/
 COPY config/ /tika/config/
 COPY bin/ /tika/bin
 ARG JRE='openjdk-17-jre-headless'
-ARG VERSION='4.0.0-SNAPSHOT'
+ARG VERSION
 ARG TIKA_GRPC_MAX_INBOUND_MESSAGE_SIZE=104857600
 ARG TIKA_GRPC_MAX_OUTBOUND_MESSAGE_SIZE=104857600
 ARG TIKA_GRPC_NUM_THREADS=4

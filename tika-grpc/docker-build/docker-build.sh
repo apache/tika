@@ -1,6 +1,12 @@
 #!/bin/bash
 # This script is intended to be run from Maven exec plugin during the package phase of maven build
 
+# Check if Docker is installed
+if ! command -v docker &> /dev/null; then
+    echo "ERROR: Docker is not installed or not in PATH. Please install Docker first."
+    exit 1
+fi
+
 if [ -z "${TIKA_VERSION}" ]; then
     echo "Environment variable TIKA_VERSION is required, and should match the maven project version of Tika"
     exit 1
@@ -39,7 +45,7 @@ for dir in tika-pipes/tika-pipes-plugins/*/; do
     if [ -f "$zip_file" ]; then
         cp -v -r "$zip_file" "${OUT_DIR}/plugins"
     else
-        echo "Plugin file $zip_file does not exist, skipping."
+        echo "WARNING: Plugin file $zip_file does not exist, skipping."
     fi
 done
 
@@ -71,12 +77,18 @@ echo "Running docker build from directory: $(pwd)"
 
 IMAGE_TAGS=()
 if [[ -n "${AWS_ACCOUNT_ID}" ]]; then
-    aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+    if ! aws ecr get-login-password --region "${AWS_REGION}" | docker login --username AWS --password-stdin "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"; then
+        echo "ERROR: Failed to authenticate with AWS ECR"
+        exit 1
+    fi
     IMAGE_TAGS+=("-t ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${PROJECT_NAME}:${RELEASE_IMAGE_TAG}")
 fi
 
 if [[ -n "${AZURE_REGISTRY_NAME}" ]]; then
-    az acr login --name ${AZURE_REGISTRY_NAME}
+    if ! az acr login --name "${AZURE_REGISTRY_NAME}"; then
+        echo "ERROR: Failed to authenticate with Azure Container Registry"
+        exit 1
+    fi
     IMAGE_TAGS+=("-t ${AZURE_REGISTRY_NAME}.azurecr.io/${PROJECT_NAME}:${RELEASE_IMAGE_TAG}")
 fi
 
@@ -93,15 +105,17 @@ tag="${IMAGE_TAGS[*]}"
 if [ "${MULTI_ARCH}" == "true" ]; then
   echo "Building multi arch image"
   docker buildx create --name tikabuilder
+  # Pin binfmt to a specific digest for security
   # see https://askubuntu.com/questions/1339558/cant-build-dockerfile-for-arm64-due-to-libc-bin-segmentation-fault/1398147#1398147
-  docker run --rm --privileged tonistiigi/binfmt --install amd64
-  docker run --rm --privileged tonistiigi/binfmt --install arm64
+  docker run --rm --privileged tonistiigi/binfmt:latest@sha256:8de6f2decb92e9001d094534bf8a92880c175bd5dfb4a9d8579f26f09821cfa2 --install amd64
+  docker run --rm --privileged tonistiigi/binfmt:latest@sha256:8de6f2decb92e9001d094534bf8a92880c175bd5dfb4a9d8579f26f09821cfa2 --install arm64
   docker buildx build \
       --builder=tikabuilder . \
       ${tag} \
       --platform linux/amd64,linux/arm64 \
       --push
   docker buildx stop tikabuilder
+  docker buildx rm tikabuilder
 else
   echo "Building single arch image"
   # build single arch

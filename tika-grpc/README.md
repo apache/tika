@@ -25,44 +25,65 @@ The tika-grpc module includes Docker build support. See [docker-build/README.md]
 
 #### Quick Start - Docker Build
 
-**Option 1: Build with Maven (recommended)**
-
+**Prerequisites:**
+First, build Tika from the project root to ensure all dependencies (plugins, parsers) are available:
 ```bash
-cd tika-grpc
+cd <tika-root>
+mvn clean install -DskipTests
+```
+
+**Build with environment variable activation (recommended):**
+
+From tika-grpc directory:
+```bash
+DOCKER_ID=myusername mvn package
+```
+
+Or from project root (builds tika-grpc and dependencies only):
+```bash
+DOCKER_ID=myusername mvn package -pl :tika-grpc -am
+```
+
+**Build with explicit property:**
+```bash
 mvn package -Dskip.docker.build=false
 ```
 
-Or from the project root:
-```bash
-mvn clean install -DskipTests -Dskip.docker.build=false
-```
-
-**Option 2: Run the build script manually**
-
+**Manual script execution:**
 ```bash
 export TIKA_VERSION=4.0.0-SNAPSHOT
+export DOCKER_ID=myusername
 ./docker-build/docker-build.sh
 ```
 
 #### Build and Push to Docker Hub
 
 ```bash
-MULTI_ARCH=false DOCKER_ID=myusername PROJECT_NAME=tika-grpc RELEASE_IMAGE_TAG=4.0.0-SNAPSHOT \
-  mvn clean package -Dskip.docker.build=false
+DOCKER_ID=myusername \
+  mvn package
 ```
+
+#### Build Multi-Arch
+
+```bash
+MULTI_ARCH=true DOCKER_ID=myusername \
+  mvn package
+```
+
+**Note:** Multi-arch builds automatically push to configured registries. Ensure you're authenticated before building.
 
 #### Build and Push to AWS ECR
 
 ```bash
 AWS_ACCOUNT_ID=123456789012 AWS_REGION=us-east-1 \
-  mvn clean package -Dskip.docker.build=false
+  mvn package
 ```
 
 #### Build and Push to Azure Container Registry
 
 ```bash
 AZURE_REGISTRY_NAME=myregistry \
-  mvn clean package -Dskip.docker.build=false
+  mvn package
 ```
 
 For more build options and configuration details, see [docker-build/README.md](docker-build/README.md).
