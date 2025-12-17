@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.List;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -38,6 +39,7 @@ import org.apache.tika.extractor.SkipEmbeddedDocumentSelector;
 import org.apache.tika.metadata.filter.AttachmentCountingListFilter;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
+import org.apache.tika.metadata.filter.MockUpperCaseFilter;
 import org.apache.tika.parser.ParseContext;
 
 /**
@@ -300,7 +302,7 @@ public class TestParseContextSerialization {
     }
 
     @Test
-    public void testMetadataList() throws Exception {
+    public void testMetadataListConfigContainer() throws Exception {
         ConfigContainer configContainer = new ConfigContainer();
         configContainer.set("metadata-filters", """
             [
@@ -310,6 +312,25 @@ public class TestParseContextSerialization {
         """);
         ParseContext parseContext = new ParseContext();
         parseContext.set(ConfigContainer.class, configContainer);
+
+        ObjectMapper mapper = createMapper();
+        String json = mapper.writeValueAsString(parseContext);
+
+        ParseContext deser = mapper.readValue(json, ParseContext.class);
+        MetadataFilter resolvedFilter = deser.get(MetadataFilter.class);
+        assertNotNull(resolvedFilter, "MetadataFilter should be resolved");
+        assertEquals(CompositeMetadataFilter.class, resolvedFilter.getClass());
+        CompositeMetadataFilter deserFilter = (CompositeMetadataFilter) resolvedFilter;
+        assertEquals(AttachmentCountingListFilter.class, deserFilter.getFilters().get(0).getClass());
+    }
+
+
+    @Test
+    public void testMetadataListPOJO() throws Exception {
+        CompositeMetadataFilter metadataFilter = new CompositeMetadataFilter(List.of(new AttachmentCountingListFilter(), new MockUpperCaseFilter()));
+
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(MetadataFilter.class, metadataFilter);
 
         ObjectMapper mapper = createMapper();
         String json = mapper.writeValueAsString(parseContext);
