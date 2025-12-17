@@ -41,10 +41,10 @@ import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.renderer.CompositeRenderer;
 import org.apache.tika.renderer.Renderer;
-import org.apache.tika.serialization.JsonMetadata;
-import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
+import org.apache.tika.serialization.JsonMetadata;
+import org.apache.tika.serialization.JsonMetadataList;
 
 /**
  * Main entry point for loading Tika components from JSON configuration.
