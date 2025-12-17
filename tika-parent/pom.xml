@@ -312,8 +312,8 @@
     <spotless.header.file>${maven.multiModuleProjectDirectory}/tika-parent/license-header.txt</spotless.header.file>
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.60.0</google.cloud.version>
-    <aws2.version>2.40.8</aws2.version>
+    <google.cloud.version>2.61.0</google.cloud.version>
+    <aws2.version>2.40.10</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -403,7 +403,7 @@
     <jwarc.version>0.32.0</jwarc.version>
     <kafka.version>4.1.1</kafka.version>
     <libpst.version>0.9.3</libpst.version>
-    <log4j2.version>2.25.2</log4j2.version>
+    <log4j2.version>2.25.3</log4j2.version>
     <!-- can't update to 10, needs jdk21 -->
     <lucene.version>9.12.3</lucene.version>
     <maven.plugin.annotations.version>3.15.2</maven.plugin.annotations.version>
