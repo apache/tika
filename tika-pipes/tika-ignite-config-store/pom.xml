@@ -47,6 +47,10 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.pf4j</groupId>
+      <artifactId>pf4j</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.apache.ignite</groupId>
       <artifactId>ignite-core</artifactId>
       <version>${ignite.version}</version>
