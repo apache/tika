@@ -35,6 +35,17 @@ import org.apache.tika.plugins.ExtensionConfig;
 public interface ConfigStore {
 
     /**
+     * Initializes the configuration store.
+     * This method should be called once before using the store.
+     * Implementations may use this to establish connections, initialize caches, etc.
+     *
+     * @throws Exception if initialization fails
+     */
+    default void init() throws Exception {
+        // Default implementation does nothing
+    }
+
+    /**
      * Stores a configuration.
      *
      * @param id the configuration ID (must not be null)
