@@ -16,56 +16,87 @@
  */
 package org.apache.tika.pipes.core.config;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.pf4j.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.plugins.ExtensionConfig;
+import org.apache.tika.plugins.TikaExtensionFactory;
+
 /**
- * Factory for creating ConfigStore instances based on configuration.
+ * Factory interface for creating ConfigStore instances.
+ * Implementations should be annotated with @Extension to be discovered by PF4J.
  */
-public class ConfigStoreFactory {
+public interface ConfigStoreFactory extends TikaExtensionFactory<ConfigStore> {
     
-    private static final Logger LOG = LoggerFactory.getLogger(ConfigStoreFactory.class);
-    
+    Logger LOG = LoggerFactory.getLogger(ConfigStoreFactory.class);
+
     /**
-     * Creates a ConfigStore instance based on the specified type.
+     * Creates a ConfigStore instance based on configuration.
      *
-     * @param type the type of ConfigStore to create ("memory", "ignite", or a fully qualified class name)
+     * @param pluginManager the plugin manager
+     * @param configStoreType the type of ConfigStore to create
+     * @param extensionConfig optional configuration for the store
      * @return a ConfigStore instance
-     * @throws RuntimeException if the store type is invalid or cannot be instantiated
+     * @throws TikaConfigException if the store cannot be created
      */
-    public static ConfigStore createConfigStore(String type) {
-        if (type == null || type.isEmpty() || "memory".equalsIgnoreCase(type)) {
+    static ConfigStore createConfigStore(PluginManager pluginManager, String configStoreType, 
+                                         ExtensionConfig extensionConfig) 
+            throws TikaConfigException {
+        if (configStoreType == null || configStoreType.isEmpty() || "memory".equalsIgnoreCase(configStoreType)) {
             LOG.info("Creating InMemoryConfigStore");
-            return new InMemoryConfigStore();
+            InMemoryConfigStore store = new InMemoryConfigStore();
+            if (extensionConfig != null) {
+                store.setExtensionConfig(extensionConfig);
+            }
+            return store;
         }
         
-        if ("ignite".equalsIgnoreCase(type)) {
+        // Load all ConfigStoreFactory extensions
+        List<ConfigStoreFactory> factories = pluginManager.getExtensions(ConfigStoreFactory.class);
+        Map<String, ConfigStoreFactory> factoryMap = new HashMap<>();
+        for (ConfigStoreFactory factory : factories) {
+            factoryMap.put(factory.getName(), factory);
+        }
+        
+        // Try to find factory by name
+        ConfigStoreFactory factory = factoryMap.get(configStoreType);
+        if (factory != null) {
+            LOG.info("Creating ConfigStore using factory: {}", factory.getName());
             try {
-                LOG.info("Creating IgniteConfigStore");
-                Class<?> igniteClass = Class.forName("org.apache.tika.pipes.ignite.IgniteConfigStore");
-                return (ConfigStore) igniteClass.getDeclaredConstructor().newInstance();
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(
-                    "IgniteConfigStore not found. Add tika-ignite-config-store dependency to use Ignite store.", e);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to instantiate IgniteConfigStore", e);
+                ExtensionConfig config = extensionConfig != null ? extensionConfig : 
+                    new ExtensionConfig(configStoreType, configStoreType, "{}");
+                return factory.buildExtension(config);
+            } catch (IOException e) {
+                throw new TikaConfigException("Failed to create ConfigStore: " + configStoreType, e);
             }
         }
         
         // Try to load as a fully qualified class name
         try {
-            LOG.info("Creating ConfigStore from class: {}", type);
-            Class<?> storeClass = Class.forName(type);
+            LOG.info("Creating ConfigStore from class: {}", configStoreType);
+            Class<?> storeClass = Class.forName(configStoreType);
             if (!ConfigStore.class.isAssignableFrom(storeClass)) {
-                throw new RuntimeException(
-                    "Class " + type + " does not implement ConfigStore interface");
+                throw new TikaConfigException(
+                    "Class " + configStoreType + " does not implement ConfigStore interface");
             }
-            return (ConfigStore) storeClass.getDeclaredConstructor().newInstance();
+            ConfigStore store = (ConfigStore) storeClass.getDeclaredConstructor().newInstance();
+            if (extensionConfig != null) {
+                ((InMemoryConfigStore) store).setExtensionConfig(extensionConfig);
+            }
+            return store;
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException(
-                "Unknown ConfigStore type: " + type + ". Use 'memory', 'ignite', or a fully qualified class name.", e);
+            throw new TikaConfigException(
+                "Unknown ConfigStore type: " + configStoreType + 
+                ". Available types: memory, " + String.join(", ", factoryMap.keySet()), e);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to instantiate ConfigStore: " + type, e);
+            throw new TikaConfigException("Failed to instantiate ConfigStore: " + configStoreType, e);
         }
     }
 }

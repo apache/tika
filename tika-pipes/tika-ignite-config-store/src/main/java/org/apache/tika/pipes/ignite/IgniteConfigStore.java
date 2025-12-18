@@ -56,6 +56,7 @@ public class IgniteConfigStore implements ConfigStore {
     private CacheMode cacheMode = CacheMode.REPLICATED;
     private String igniteInstanceName = DEFAULT_INSTANCE_NAME;
     private boolean autoClose = true;
+    private ExtensionConfig extensionConfig;
 
     /**
      * Default constructor.
@@ -65,12 +66,28 @@ public class IgniteConfigStore implements ConfigStore {
     }
 
     /**
+     * Constructor with ExtensionConfig (used by factory).
+     *
+     * @param extensionConfig the extension configuration
+     */
+    public IgniteConfigStore(ExtensionConfig extensionConfig) {
+        this.extensionConfig = extensionConfig;
+        // TODO: Parse configuration from extensionConfig.json() if needed
+        // For now, using defaults
+    }
+
+    /**
      * Constructor with custom cache name.
      *
      * @param cacheName the name of the Ignite cache to use
      */
     public IgniteConfigStore(String cacheName) {
         this.cacheName = cacheName;
+    }
+
+    @Override
+    public ExtensionConfig getExtensionConfig() {
+        return extensionConfig;
     }
 
     @Override
