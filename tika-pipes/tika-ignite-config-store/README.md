@@ -67,7 +67,25 @@ store.init();
 
 ### Integration with Tika Pipes
 
-The `IgniteConfigStore` can be used as a drop-in replacement for the default `InMemoryConfigStore` in clustered Tika Pipes deployments:
+The `IgniteConfigStore` can be used in Tika Pipes gRPC server via JSON configuration:
+
+```json
+{
+  "pipes": {
+    "configStoreType": "ignite",
+    "configStoreParams": {
+      "cacheName": "my-tika-cache",
+      "cacheMode": "REPLICATED",
+      "igniteInstanceName": "MyTikaCluster",
+      "autoClose": true
+    }
+  },
+  "fetchers": [...],
+  "emitters": [...]
+}
+```
+
+Or programmatically:
 
 ```java
 // In your Tika Pipes server setup
@@ -80,6 +98,21 @@ EmitterManager emitterManager = new EmitterManager(configStore);
 ```
 
 ## Configuration Options
+
+### JSON Configuration Parameters
+
+All parameters in `configStoreParams` are optional and have sensible defaults:
+
+| Property | Description | Default | Values |
+|----------|-------------|---------|--------|
+| `cacheName` | Name of the Ignite cache | `tika-config-store` | Any string |
+| `cacheMode` | Cache replication mode | `REPLICATED` | `REPLICATED` or `PARTITIONED` |
+| `igniteInstanceName` | Name of the Ignite instance | `TikaIgniteConfigStore` | Any string |
+| `autoClose` | Whether to automatically close Ignite on close() | `true` | `true` or `false` |
+
+### Java API
+
+When using the Java API directly:
 
 | Property | Description | Default |
 |----------|-------------|---------|
