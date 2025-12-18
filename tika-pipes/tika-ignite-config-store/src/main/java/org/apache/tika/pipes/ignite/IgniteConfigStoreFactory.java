@@ -41,6 +41,12 @@ public class IgniteConfigStoreFactory implements ConfigStoreFactory {
     @Override
     public ConfigStore buildExtension(ExtensionConfig extensionConfig) 
             throws IOException, TikaConfigException {
-        return new IgniteConfigStore(extensionConfig);
+        try {
+            return new IgniteConfigStore(extensionConfig);
+        } catch (TikaConfigException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new TikaConfigException("Failed to create IgniteConfigStore", e);
+        }
     }
 }

@@ -1,6 +1,12 @@
 {
   "pipes": {
-    "configStoreType": "ignite"
+    "configStoreType": "ignite",
+    "configStoreParams": {
+      "cacheName": "my-tika-cache",
+      "cacheMode": "REPLICATED",
+      "igniteInstanceName": "MyTikaCluster",
+      "autoClose": true
+    }
   },
   "fetchers": [
     {

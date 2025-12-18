@@ -93,6 +93,12 @@ public class PipesConfig {
      * Options: "memory" (default), "ignite"
      */
     private String configStoreType = "memory";
+    
+    /**
+     * JSON configuration parameters for the ConfigStore.
+     * The structure depends on the configStoreType selected.
+     */
+    private String configStoreParams = "{}";
 
     /**
      * Loads PipesConfig from the "pipes" section of the JSON configuration.
@@ -361,5 +367,13 @@ public class PipesConfig {
 
     public void setConfigStoreType(String configStoreType) {
         this.configStoreType = configStoreType;
+    }
+
+    public String getConfigStoreParams() {
+        return configStoreParams;
+    }
+
+    public void setConfigStoreParams(String configStoreParams) {
+        this.configStoreParams = configStoreParams;
     }
 }

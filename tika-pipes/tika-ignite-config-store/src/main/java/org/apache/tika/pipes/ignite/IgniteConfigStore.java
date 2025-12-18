@@ -27,7 +27,9 @@ import org.apache.ignite.configuration.IgniteConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.core.config.ConfigStore;
+import org.apache.tika.pipes.ignite.config.IgniteConfigStoreConfig;
 import org.apache.tika.plugins.ExtensionConfig;
 
 /**
@@ -70,10 +72,15 @@ public class IgniteConfigStore implements ConfigStore {
      *
      * @param extensionConfig the extension configuration
      */
-    public IgniteConfigStore(ExtensionConfig extensionConfig) {
+    public IgniteConfigStore(ExtensionConfig extensionConfig) throws TikaConfigException {
         this.extensionConfig = extensionConfig;
-        // TODO: Parse configuration from extensionConfig.json() if needed
-        // For now, using defaults
+        
+        // Parse configuration from JSON
+        IgniteConfigStoreConfig config = IgniteConfigStoreConfig.load(extensionConfig.json());
+        this.cacheName = config.getCacheName();
+        this.cacheMode = config.getCacheModeEnum();
+        this.igniteInstanceName = config.getIgniteInstanceName();
+        this.autoClose = config.isAutoClose();
     }
 
     /**

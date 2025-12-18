@@ -110,11 +110,16 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         }
 
         // Create ConfigStore based on PipesConfig setting using plugin system
-        org.apache.tika.pipes.core.config.ConfigStore configStore = 
+        String configStoreType = pipesConfig.getConfigStoreType();
+        String configStoreParams = pipesConfig.getConfigStoreParams();
+        org.apache.tika.plugins.ExtensionConfig storeConfig = new org.apache.tika.plugins.ExtensionConfig(
+            configStoreType, configStoreType, configStoreParams);
+        
+        org.apache.tika.pipes.core.config.ConfigStore configStore =
             org.apache.tika.pipes.core.config.ConfigStoreFactory.createConfigStore(
                 pluginManager, 
-                pipesConfig.getConfigStoreType(),
-                null);
+                configStoreType,
+                storeConfig);
         
         fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig, true, configStore);
     }
