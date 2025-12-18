@@ -230,6 +230,12 @@
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
+      <artifactId>tika-ignite-config-store</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-pipes-file-system</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>

@@ -1,0 +1,23 @@
+{
+  "pipes": {
+    "configStoreType": "ignite"
+  },
+  "fetchers": [
+    {
+      "id": "fs",
+      "name": "file-system",
+      "params": {
+        "basePath": "/tmp/input"
+      }
+    }
+  ],
+  "emitters": [
+    {
+      "id": "fs",
+      "name": "file-system",
+      "params": {
+        "basePath": "/tmp/output"
+      }
+    }
+  ]
+}
