@@ -474,15 +474,11 @@ public class PipesServer implements AutoCloseable {
             // User doesn't want container documents digested
             this.digester = null;
         }
-        if (this.digester != null) {
-            // If the user hasn't configured an embedded document extractor, set up the
-            // RUnpackExtractorFactory
-            if (autoDetectParser.getAutoDetectParserConfig()
-                    .getEmbeddedDocumentExtractorFactory() == null) {
-                autoDetectParser
-                        .getAutoDetectParserConfig().setEmbeddedDocumentExtractorFactory(
-                                new RUnpackExtractorFactory());
-            }
+
+        // If the user hasn't configured an embedded document extractor, set up the
+        // RUnpackExtractorFactory
+        if (autoDetectParser.getAutoDetectParserConfig().getEmbeddedDocumentExtractorFactory() == null) {
+                autoDetectParser.getAutoDetectParserConfig().setEmbeddedDocumentExtractorFactory(new RUnpackExtractorFactory());
         }
         this.detector = this.autoDetectParser.getDetector();
         this.rMetaParser = new RecursiveParserWrapper(autoDetectParser);
