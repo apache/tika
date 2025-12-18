@@ -68,6 +68,11 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
                                       ConfigStore configStore) {
         this.pluginManager = pluginManager;
         this.configStore = configStore;
+        try {
+            configStore.init();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to initialize ConfigStore", e);
+        }
         componentConfigs.forEach(configStore::put);
         this.allowRuntimeModifications = allowRuntimeModifications;
     }
