@@ -230,7 +230,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
-      <artifactId>tika-ignite-config-store</artifactId>
+      <artifactId>tika-pipes-ignite</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>

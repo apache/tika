@@ -38,7 +38,6 @@
     <module>tika-pipes-plugins</module>
     <module>tika-pipes-fork-parser</module>
     <module>tika-async-cli</module>
-    <module>tika-ignite-config-store</module>
     <module>tika-pipes-integration-tests</module>
   </modules>
   <dependencies>
