@@ -169,7 +169,7 @@ class ParseHandler {
 
     public List<Metadata> parseConcatenated(FetchEmitTuple fetchEmitTuple,
                                              HandlerConfig handlerConfig, TikaInputStream stream,
-                                             Metadata metadata, ParseContext parseContext) throws InterruptedException {
+                                             Metadata metadata, ParseContext parseContext) {
 
         ContentHandlerFactory contentHandlerFactory =
                 new BasicContentHandlerFactory(handlerConfig.getType(),
@@ -193,9 +193,7 @@ class ParseHandler {
         String containerException = null;
         long start = System.currentTimeMillis();
         preParse(fetchEmitTuple, stream, metadata, parseContext);
-        //queue better be empty. we deserve an exception if not
-        intermediateResult.add(metadata);
-        countDownLatch.await();
+        //TODO -- add intermediate
         try {
             autoDetectParser.parse(stream, handler, metadata, parseContext);
         } catch (SAXException e) {
