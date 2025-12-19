@@ -25,7 +25,7 @@ import org.apache.tika.exception.TikaConfigException;
 /**
  * Configuration for IgniteConfigStore.
  * 
- * <p>Example JSON configuration:
+ * Example JSON configuration:
  * <pre>
  * {
  *   "cacheName": "my-tika-cache",
@@ -68,22 +68,11 @@ public class IgniteConfigStoreConfig {
         return cacheMode;
     }
 
-    /**
-     * Sets the cache mode.
-     * 
-     * @param cacheMode either "REPLICATED" or "PARTITIONED"
-     * @return this config
-     */
     public IgniteConfigStoreConfig setCacheMode(String cacheMode) {
         this.cacheMode = cacheMode;
         return this;
     }
 
-    /**
-     * Gets the CacheMode enum value.
-     * 
-     * @return CacheMode.REPLICATED or CacheMode.PARTITIONED
-     */
     public CacheMode getCacheModeEnum() {
         if ("PARTITIONED".equalsIgnoreCase(cacheMode)) {
             return CacheMode.PARTITIONED;

@@ -60,22 +60,12 @@ public class IgniteConfigStore implements ConfigStore {
     private boolean autoClose = true;
     private ExtensionConfig extensionConfig;
 
-    /**
-     * Default constructor.
-     * Call {@link #init()} before using the store.
-     */
     public IgniteConfigStore() {
     }
 
-    /**
-     * Constructor with ExtensionConfig (used by factory).
-     *
-     * @param extensionConfig the extension configuration
-     */
     public IgniteConfigStore(ExtensionConfig extensionConfig) throws TikaConfigException {
         this.extensionConfig = extensionConfig;
         
-        // Parse configuration from JSON
         IgniteConfigStoreConfig config = IgniteConfigStoreConfig.load(extensionConfig.json());
         this.cacheName = config.getCacheName();
         this.cacheMode = config.getCacheModeEnum();
@@ -83,11 +73,6 @@ public class IgniteConfigStore implements ConfigStore {
         this.autoClose = config.isAutoClose();
     }
 
-    /**
-     * Constructor with custom cache name.
-     *
-     * @param cacheName the name of the Ignite cache to use
-     */
     public IgniteConfigStore(String cacheName) {
         this.cacheName = cacheName;
     }
@@ -166,10 +151,6 @@ public class IgniteConfigStore implements ConfigStore {
         return cache.size();
     }
 
-    /**
-     * Closes the Ignite instance and releases resources.
-     * Only call this when you're completely done with the store.
-     */
     public void close() {
         if (ignite != null && autoClose) {
             LOG.info("Closing IgniteConfigStore");
@@ -179,38 +160,18 @@ public class IgniteConfigStore implements ConfigStore {
         }
     }
 
-    /**
-     * Sets the cache name.
-     *
-     * @param cacheName the cache name
-     */
     public void setCacheName(String cacheName) {
         this.cacheName = cacheName;
     }
 
-    /**
-     * Sets the cache mode.
-     *
-     * @param cacheMode the cache mode (PARTITIONED or REPLICATED)
-     */
     public void setCacheMode(CacheMode cacheMode) {
         this.cacheMode = cacheMode;
     }
 
-    /**
-     * Sets the Ignite instance name.
-     *
-     * @param igniteInstanceName the instance name
-     */
     public void setIgniteInstanceName(String igniteInstanceName) {
         this.igniteInstanceName = igniteInstanceName;
     }
 
-    /**
-     * Sets whether to automatically close Ignite on close().
-     *
-     * @param autoClose true to auto-close, false to leave running
-     */
     public void setAutoClose(boolean autoClose) {
         this.autoClose = autoClose;
     }
