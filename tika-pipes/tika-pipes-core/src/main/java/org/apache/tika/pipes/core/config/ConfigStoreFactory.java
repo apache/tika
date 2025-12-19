@@ -64,7 +64,7 @@ public interface ConfigStoreFactory extends TikaExtensionFactory<ConfigStore> {
         if (factory != null) {
             return configStoreByConfigByFactoryName(configStoreType, extensionConfig, factory);
         }
-        return configStoreByFullyQualitifedClassName(configStoreType, extensionConfig, factoryMap);
+        return configStoreByFullyQualifiedClassName(configStoreType, extensionConfig, factoryMap);
     }
 
     private static ConfigStore configStoreByConfigByFactoryName(String configStoreType, ExtensionConfig extensionConfig, ConfigStoreFactory factory) throws TikaConfigException {
@@ -78,7 +78,7 @@ public interface ConfigStoreFactory extends TikaExtensionFactory<ConfigStore> {
         }
     }
 
-    private static ConfigStore configStoreByFullyQualitifedClassName(String configStoreType, ExtensionConfig extensionConfig, Map<String, ConfigStoreFactory> factoryMap) throws TikaConfigException {
+    private static ConfigStore configStoreByFullyQualifiedClassName(String configStoreType, ExtensionConfig extensionConfig, Map<String, ConfigStoreFactory> factoryMap) throws TikaConfigException {
         try {
             LOG.info("Creating ConfigStore from class: {}", configStoreType);
             Class<?> storeClass = Class.forName(configStoreType);
