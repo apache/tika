@@ -43,10 +43,26 @@ import org.apache.tika.exception.TikaConfigException;
  *   <li>Optional explicit context key for ParseContext</li>
  * </ul>
  * <p>
- * Modules that can't use @TikaComponent (due to dependency constraints) can provide
- * their own META-INF/tika/*.idx files to register components.
+ * Also includes built-in aliases for external dependencies that cannot be
+ * annotated with @TikaComponent.
  */
 public class ComponentRegistry {
+
+    /**
+     * Built-in aliases for external dependencies.
+     * Maps component names to fully qualified class names.
+     */
+    private static final Map<String, String> BUILTIN_ALIASES = createBuiltinAliases();
+
+    private static Map<String, String> createBuiltinAliases() {
+        Map<String, String> aliases = new HashMap<>();
+        // HandlerConfig is in tika-pipes-api which can't depend on tika-core for @TikaComponent
+        aliases.put("handler-config", "org.apache.tika.pipes.api.HandlerConfig");
+        // EmbeddedDocumentBytesConfig is in tika-pipes-core which can't depend on tika-core for @TikaComponent
+        aliases.put("embedded-document-bytes-config",
+                "org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig");
+        return Collections.unmodifiableMap(aliases);
+    }
 
     private final Map<String, ComponentInfo> components;
     private final Map<Class<?>, String> classToName;  // Reverse lookup
@@ -149,7 +165,23 @@ public class ComponentRegistry {
             throw new TikaConfigException("Failed to load component index: " + resourcePath, e);
         }
 
+        // Load built-in aliases for external dependencies
+        loadBuiltinAliases(result);
+
         return result;
+    }
+
+    private void loadBuiltinAliases(Map<String, ComponentInfo> result) {
+        for (Map.Entry<String, String> alias : BUILTIN_ALIASES.entrySet()) {
+            try {
+                Class<?> clazz = Class.forName(alias.getValue(), false, classLoader);
+                boolean selfConfiguring = SelfConfiguring.class.isAssignableFrom(clazz);
+                result.put(alias.getKey(), new ComponentInfo(clazz, selfConfiguring, null));
+            } catch (ClassNotFoundException e) {
+                // External dependency not on classpath - skip this alias
+                // This is expected behavior, not an error
+            }
+        }
     }
 
     private void loadFromUrl(URL url, Map<String, ComponentInfo> result) throws TikaConfigException {

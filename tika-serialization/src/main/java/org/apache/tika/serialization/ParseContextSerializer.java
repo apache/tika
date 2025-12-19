@@ -29,7 +29,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ConfigContainer;
+import org.apache.tika.config.loader.ComponentRegistry;
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.ParseContext;
 
 /**
@@ -55,12 +57,27 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
     private static final Logger LOG = LoggerFactory.getLogger(ParseContextSerializer.class);
     public static final String PARSE_CONTEXT = "parseContext";
 
-    // Full mapper with polymorphic type handling (includes WrapperObjectSerializer)
     private static final ObjectMapper MAPPER = TikaObjectMapperFactory.getMapper();
 
-    // Plain mapper without WrapperObjectSerializer - for types with friendly names
-    // where the wrapper is added at the field name level by this serializer
-    private static final ObjectMapper PLAIN_MAPPER = new ObjectMapper();
+    // Lazily loaded registry for looking up friendly names
+    private static volatile ComponentRegistry registry;
+
+    private static ComponentRegistry getRegistry() {
+        if (registry == null) {
+            synchronized (ParseContextSerializer.class) {
+                if (registry == null) {
+                    try {
+                        registry = new ComponentRegistry("other-configs",
+                                ParseContextSerializer.class.getClassLoader());
+                    } catch (TikaConfigException e) {
+                        LOG.warn("Failed to load component registry for serialization", e);
+                        // Return null - objects without friendly names won't be serialized
+                    }
+                }
+            }
+        }
+        return registry;
+    }
 
     @Override
     public void serialize(ParseContext parseContext, JsonGenerator jsonGenerator,
@@ -81,6 +98,7 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
 
         // Then, serialize objects from ParseContext that have registered friendly names
         // or are stored under Tika type keys (for polymorphic custom subclasses)
+        ComponentRegistry reg = getRegistry();
         Map<String, Object> contextMap = parseContext.getContextMap();
         for (Map.Entry<String, Object> entry : contextMap.entrySet()) {
             // Skip ConfigContainer - already handled above
@@ -94,8 +112,7 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
             }
 
             // Try to get friendly name for this object's class
-            // Use ComponentNameResolver to ensure consistency with TikaObjectMapperFactory's registries
-            String friendlyName = ComponentNameResolver.getFriendlyName(value.getClass());
+            String friendlyName = (reg != null) ? reg.getFriendlyName(value.getClass()) : null;
 
             // Determine key: prefer friendly name, fall back to FQCN for Tika types
             String key;
@@ -112,18 +129,17 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
 
             if (!writtenKeys.contains(key)) {
                 jsonGenerator.writeFieldName(key);
-                if (friendlyName != null) {
-                    // Type has friendly name - use plain mapper to write properties directly
-                    // (key already serves as the type identifier)
-                    PLAIN_MAPPER.writeValue(jsonGenerator, value);
-                } else {
-                    // No friendly name - add wrapper with FQCN and use MAPPER for
-                    // polymorphic type handling of nested types
-                    jsonGenerator.writeStartObject();
-                    jsonGenerator.writeFieldName(value.getClass().getName());
-                    MAPPER.writeValue(jsonGenerator, value);
-                    jsonGenerator.writeEndObject();
+                // Write wrapper object format with type info for polymorphic deserialization
+                // Format: {"concrete-class-name": {properties...}}
+                jsonGenerator.writeStartObject();
+                String typeName = (friendlyName != null) ? friendlyName :
+                        ComponentNameResolver.getFriendlyName(value.getClass());
+                if (typeName == null) {
+                    typeName = value.getClass().getName();
                 }
+                jsonGenerator.writeFieldName(typeName);
+                MAPPER.writeValue(jsonGenerator, value);
+                jsonGenerator.writeEndObject();
                 writtenKeys.add(key);
             }
         }

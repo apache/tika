@@ -17,10 +17,8 @@
 package org.apache.tika.serialization;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.tika.config.loader.ComponentInfo;
 import org.apache.tika.config.loader.ComponentRegistry;
 import org.apache.tika.exception.TikaConfigException;
 
@@ -86,39 +84,5 @@ public final class ComponentNameResolver {
             }
         }
         return null;
-    }
-
-    /**
-     * Checks if a component with the given name is registered in any registry.
-     *
-     * @param name the component name to check
-     * @return true if the component is registered
-     */
-    public static boolean hasComponent(String name) {
-        for (ComponentRegistry registry : REGISTRIES.values()) {
-            if (registry.hasComponent(name)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Gets the component info for a given friendly name.
-     *
-     * @param name the friendly name to look up
-     * @return Optional containing the ComponentInfo, or empty if not found
-     */
-    public static Optional<ComponentInfo> getComponentInfo(String name) {
-        for (ComponentRegistry registry : REGISTRIES.values()) {
-            if (registry.hasComponent(name)) {
-                try {
-                    return Optional.of(registry.getComponentInfo(name));
-                } catch (TikaConfigException e) {
-                    // continue to next registry
-                }
-            }
-        }
-        return Optional.empty();
     }
 }
