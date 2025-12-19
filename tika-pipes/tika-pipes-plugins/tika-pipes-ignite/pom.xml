@@ -31,6 +31,7 @@
 
   <properties>
     <ignite.version>2.16.0</ignite.version>
+    <h2.version>1.4.197</h2.version>
     <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-pipes-core,tika-serialization,tika-plugins-core</plugin.excluded.artifactIds>
     <plugin.excluded.groupIds>org.apache.logging.log4j,org.slf4j</plugin.excluded.groupIds>
   </properties>
@@ -86,6 +87,18 @@
           <artifactId>spring-context</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>${h2.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-core</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
@@ -148,6 +161,21 @@
           <annotationProcessors>
             <annotationProcessor>org.pf4j.processor.ExtensionAnnotationProcessor</annotationProcessor>
           </annotationProcessors>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <argLine>
+            --add-opens java.base/java.nio=ALL-UNNAMED
+            --add-opens java.base/java.util=ALL-UNNAMED
+            --add-opens java.base/java.lang=ALL-UNNAMED
+            --add-opens java.base/java.io=ALL-UNNAMED
+            --add-opens java.base/sun.nio.ch=ALL-UNNAMED
+            --add-opens java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED
+            --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
+          </argLine>
         </configuration>
       </plugin>
     </plugins>

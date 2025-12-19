@@ -53,7 +53,7 @@ public class IgniteConfigStore implements ConfigStore {
     private static final String DEFAULT_INSTANCE_NAME = "TikaIgniteConfigStore";
 
     private Ignite ignite;
-    private IgniteCache<String, ExtensionConfig> cache;
+    private IgniteCache<String, ExtensionConfigDTO> cache;
     private String cacheName = DEFAULT_CACHE_NAME;
     private CacheMode cacheMode = CacheMode.REPLICATED;
     private String igniteInstanceName = DEFAULT_INSTANCE_NAME;
@@ -113,7 +113,7 @@ public class IgniteConfigStore implements ConfigStore {
 
         ignite = Ignition.start(cfg);
 
-        CacheConfiguration<String, ExtensionConfig> cacheCfg = new CacheConfiguration<>(cacheName);
+        CacheConfiguration<String, ExtensionConfigDTO> cacheCfg = new CacheConfiguration<>(cacheName);
         cacheCfg.setCacheMode(cacheMode);
         cacheCfg.setBackups(cacheMode == CacheMode.PARTITIONED ? 1 : 0);
 
@@ -126,7 +126,7 @@ public class IgniteConfigStore implements ConfigStore {
         if (cache == null) {
             throw new IllegalStateException("IgniteConfigStore not initialized. Call init() first.");
         }
-        cache.put(id, config);
+        cache.put(id, new ExtensionConfigDTO(config));
     }
 
     @Override
@@ -134,7 +134,8 @@ public class IgniteConfigStore implements ConfigStore {
         if (cache == null) {
             throw new IllegalStateException("IgniteConfigStore not initialized. Call init() first.");
         }
-        return cache.get(id);
+        ExtensionConfigDTO dto = cache.get(id);
+        return dto != null ? dto.toExtensionConfig() : null;
     }
 
     @Override
@@ -150,7 +151,7 @@ public class IgniteConfigStore implements ConfigStore {
         if (cache == null) {
             throw new IllegalStateException("IgniteConfigStore not initialized. Call init() first.");
         }
-        return Set.copyOf(cache.query(new org.apache.ignite.cache.query.ScanQuery<String, ExtensionConfig>())
+        return Set.copyOf(cache.query(new org.apache.ignite.cache.query.ScanQuery<String, ExtensionConfigDTO>())
                 .getAll()
                 .stream()
                 .map(entry -> entry.getKey())
