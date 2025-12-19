@@ -58,27 +58,27 @@ public interface ConfigStoreFactory extends TikaExtensionFactory<ConfigStore> {
             return store;
         }
         
-        // Load all ConfigStoreFactory extensions
-        List<ConfigStoreFactory> factories = pluginManager.getExtensions(ConfigStoreFactory.class);
-        Map<String, ConfigStoreFactory> factoryMap = new HashMap<>();
-        for (ConfigStoreFactory factory : factories) {
-            factoryMap.put(factory.getName(), factory);
-        }
-        
-        // Try to find factory by name
+        Map<String, ConfigStoreFactory> factoryMap = loadAllConfigStoreFactoryExtensions(pluginManager);
+
         ConfigStoreFactory factory = factoryMap.get(configStoreType);
         if (factory != null) {
-            LOG.info("Creating ConfigStore using factory: {}", factory.getName());
-            try {
-                ExtensionConfig config = extensionConfig != null ? extensionConfig : 
-                    new ExtensionConfig(configStoreType, configStoreType, "{}");
-                return factory.buildExtension(config);
-            } catch (IOException e) {
-                throw new TikaConfigException("Failed to create ConfigStore: " + configStoreType, e);
-            }
+            return configStoreByConfigByFactoryName(configStoreType, extensionConfig, factory);
         }
-        
-        // Try to load as a fully qualified class name
+        return configStoreByFullyQualitifedClassName(configStoreType, extensionConfig, factoryMap);
+    }
+
+    private static ConfigStore configStoreByConfigByFactoryName(String configStoreType, ExtensionConfig extensionConfig, ConfigStoreFactory factory) throws TikaConfigException {
+        LOG.info("Creating ConfigStore using factory: {}", factory.getName());
+        try {
+            ExtensionConfig config = extensionConfig != null ? extensionConfig :
+                new ExtensionConfig(configStoreType, configStoreType, "{}");
+            return factory.buildExtension(config);
+        } catch (IOException e) {
+            throw new TikaConfigException("Failed to create ConfigStore: " + configStoreType, e);
+        }
+    }
+
+    private static ConfigStore configStoreByFullyQualitifedClassName(String configStoreType, ExtensionConfig extensionConfig, Map<String, ConfigStoreFactory> factoryMap) throws TikaConfigException {
         try {
             LOG.info("Creating ConfigStore from class: {}", configStoreType);
             Class<?> storeClass = Class.forName(configStoreType);
@@ -93,10 +93,19 @@ public interface ConfigStoreFactory extends TikaExtensionFactory<ConfigStore> {
             return store;
         } catch (ClassNotFoundException e) {
             throw new TikaConfigException(
-                "Unknown ConfigStore type: " + configStoreType + 
+                "Unknown ConfigStore type: " + configStoreType +
                 ". Available types: memory, " + String.join(", ", factoryMap.keySet()), e);
         } catch (Exception e) {
             throw new TikaConfigException("Failed to instantiate ConfigStore: " + configStoreType, e);
         }
+    }
+
+    private static Map<String, ConfigStoreFactory> loadAllConfigStoreFactoryExtensions(PluginManager pluginManager) {
+        List<ConfigStoreFactory> factories = pluginManager.getExtensions(ConfigStoreFactory.class);
+        Map<String, ConfigStoreFactory> factoryMap = new HashMap<>();
+        for (ConfigStoreFactory factory : factories) {
+            factoryMap.put(factory.getName(), factory);
+        }
+        return factoryMap;
     }
 }
