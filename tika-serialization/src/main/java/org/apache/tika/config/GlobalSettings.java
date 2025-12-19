@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * <p>Example JSON:
  * <pre>
  * {
+ *   "maxJsonStringFieldLength": 50000000,
  *   "xml-reader-utils": {
  *     "maxEntityExpansions": 1000,
  *     "maxNumReuses": 100,
@@ -34,6 +35,20 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * </pre>
  */
 public class GlobalSettings {
+
+    /**
+     * Static maximum length for JSON string fields.
+     * Default: 20,000,000 (Jackson's default)
+     * This is static because it's a global setting that affects all JSON parsing.
+     */
+    private static Integer maxJsonStringFieldLength = 20_000_000;
+
+    /**
+     * Instance field for deserialization from JSON.
+     * The value is copied to the static field when set.
+     */
+    @JsonProperty("maxJsonStringFieldLength")
+    private Integer instanceMaxJsonStringFieldLength = 20_000_000;
 
     /**
      * Service loader configuration for handling initialization problems.
@@ -46,6 +61,48 @@ public class GlobalSettings {
      */
     @JsonProperty("xml-reader-utils")
     private XmlReaderUtilsConfig xmlReaderUtils;
+
+    /**
+     * Gets the static maximum JSON string field length.
+     *
+     * @return the max length, or null if not set
+     */
+    public static Integer getMaxJsonStringFieldLength() {
+        return maxJsonStringFieldLength;
+    }
+
+    /**
+     * Sets the static maximum JSON string field length.
+     * This affects all JSON parsing globally.
+     *
+     * @param length the max length to set
+     */
+    public static void setMaxJsonStringFieldLength(Integer length) {
+        maxJsonStringFieldLength = length;
+    }
+
+    /**
+     * Instance getter for deserialization.
+     * Returns the instance value which may differ from the static value.
+     *
+     * @return the instance max length
+     */
+    public Integer getInstanceMaxJsonStringFieldLength() {
+        return instanceMaxJsonStringFieldLength;
+    }
+
+    /**
+     * Instance setter for deserialization.
+     * Automatically updates the static field when set.
+     *
+     * @param length the max length to set
+     */
+    public void setInstanceMaxJsonStringFieldLength(Integer length) {
+        this.instanceMaxJsonStringFieldLength = length;
+        if (length != null) {
+            setMaxJsonStringFieldLength(length);
+        }
+    }
 
     public ServiceLoaderConfig getServiceLoader() {
         return serviceLoader;

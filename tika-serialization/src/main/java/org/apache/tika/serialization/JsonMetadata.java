@@ -26,69 +26,22 @@ import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
+import org.apache.tika.config.GlobalSettings;
 import org.apache.tika.metadata.Metadata;
 
 public class JsonMetadata {
 
     static volatile boolean PRETTY_PRINT = false;
 
-    /**
-     * Default stream read constraints for metadata serialization.
-     */
-    private static final StreamReadConstraints DEFAULT_CONSTRAINTS = StreamReadConstraints
-            .builder()
-            .maxNestingDepth(10)
-            .maxStringLength(20_000_000)
-            .maxNumberLength(500)
-            .build();
-
-    private static volatile StreamReadConstraints streamReadConstraints = DEFAULT_CONSTRAINTS;
-    private static volatile ObjectMapper OBJECT_MAPPER;
-    private static volatile ObjectMapper PRETTY_SERIALIZER;
+    private static ObjectMapper OBJECT_MAPPER;
+    private static final ObjectMapper PRETTY_SERIALIZER;
 
     static {
-        rebuildObjectMappers();
-    }
-
-    private static void rebuildObjectMappers() {
-        JsonFactory factory = new JsonFactory();
-        factory.setStreamReadConstraints(streamReadConstraints);
-
-        ObjectMapper mapper = new ObjectMapper(factory);
-        SimpleModule baseModule = new SimpleModule();
-        baseModule.addDeserializer(Metadata.class, new MetadataDeserializer());
-        baseModule.addSerializer(Metadata.class, new MetadataSerializer());
-        mapper.registerModule(baseModule);
-        OBJECT_MAPPER = mapper;
-
-        ObjectMapper prettyMapper = new ObjectMapper(factory);
+        OBJECT_MAPPER = buildObjectMapper(StreamReadConstraints.DEFAULT_MAX_STRING_LEN);
+        PRETTY_SERIALIZER = new ObjectMapper();
         SimpleModule prettySerializerModule = new SimpleModule();
         prettySerializerModule.addSerializer(Metadata.class, new MetadataSerializer(true));
-        prettyMapper.registerModule(prettySerializerModule);
-        PRETTY_SERIALIZER = prettyMapper;
-    }
-
-    /**
-     * Sets the stream read constraints for JSON parsing of metadata.
-     * This affects all subsequent calls to {@link #fromJson(Reader)}.
-     * <p>
-     * Typically called by TikaLoader during initialization based on the
-     * "metadata-list" configuration section.
-     *
-     * @param constraints the constraints to use
-     */
-    public static synchronized void setStreamReadConstraints(StreamReadConstraints constraints) {
-        streamReadConstraints = constraints;
-        rebuildObjectMappers();
-    }
-
-    /**
-     * Gets the current stream read constraints.
-     *
-     * @return the current constraints
-     */
-    public static StreamReadConstraints getStreamReadConstraints() {
-        return streamReadConstraints;
+        PRETTY_SERIALIZER.registerModule(prettySerializerModule);
     }
 
     /**
@@ -109,20 +62,46 @@ public class JsonMetadata {
     }
 
     /**
-     * Read metadata from reader. This does not close the reader.
+     * Read metadata from reader.
+     * <p>
+     * This does not close the reader.
+     * <p>
+     * This will reset the OBJECT_MAPPER if the max string length differs from that in TikaConfig.
      *
      * @param reader reader to read from
-     * @return Metadata or null if reader is null
+     * @return Metadata or null if nothing could be read from the reader
      * @throws IOException in case of parse failure or IO failure with Reader
      */
     public static Metadata fromJson(Reader reader) throws IOException {
         if (reader == null) {
             return null;
         }
+        if (OBJECT_MAPPER
+                .getFactory()
+                .streamReadConstraints()
+                .getMaxStringLength() != GlobalSettings.getMaxJsonStringFieldLength()) {
+            OBJECT_MAPPER = buildObjectMapper(GlobalSettings.getMaxJsonStringFieldLength());
+        }
         return OBJECT_MAPPER.readValue(reader, Metadata.class);
     }
 
     public static void setPrettyPrinting(boolean prettyPrint) {
         PRETTY_PRINT = prettyPrint;
+    }
+
+    static ObjectMapper buildObjectMapper(int maxStringLen) {
+        JsonFactory factory = new JsonFactory();
+        factory.setStreamReadConstraints(StreamReadConstraints
+                .builder()
+                .maxNestingDepth(10)
+                .maxStringLength(maxStringLen)
+                .maxNumberLength(500)
+                .build());
+        ObjectMapper objectMapper = new ObjectMapper(factory);
+        SimpleModule baseModule = new SimpleModule();
+        baseModule.addDeserializer(Metadata.class, new MetadataDeserializer());
+        baseModule.addSerializer(Metadata.class, new MetadataSerializer());
+        objectMapper.registerModule(baseModule);
+        return objectMapper;
     }
 }

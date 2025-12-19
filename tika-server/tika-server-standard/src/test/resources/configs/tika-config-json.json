@@ -1,5 +1,3 @@
 {
-  "metadata-list": {
-    "maxStringLength": 50000000
-  }
+  "maxJsonStringFieldLength": 50000000
 }

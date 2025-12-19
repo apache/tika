@@ -103,7 +103,7 @@ public class TikaJsonConfig {
      */
     private static final Set<String> KNOWN_KEYS = Set.of(
             // Globals
-            "metadata-list",
+            "maxJsonStringFieldLength",
             "service-loader",
             "xml-reader-utils",
             // Core Tika component keys
