@@ -49,7 +49,7 @@ import org.apache.tika.exception.TikaConfigException;
 public class ComponentRegistry {
 
     private final Map<String, ComponentInfo> components;
-    private final Map<String, String> classNameToFriendlyName;  // Reverse lookup by class name
+    private final Map<Class<?>, String> classToName;  // Reverse lookup
     private final ClassLoader classLoader;
 
     /**
@@ -64,10 +64,10 @@ public class ComponentRegistry {
             throws TikaConfigException {
         this.classLoader = classLoader;
         this.components = loadComponents(indexFileName);
-        // Build reverse lookup by class name (not Class object) to handle classloader differences
-        this.classNameToFriendlyName = new HashMap<>();
+        // Build reverse lookup
+        this.classToName = new HashMap<>();
         for (Map.Entry<String, ComponentInfo> entry : components.entrySet()) {
-            classNameToFriendlyName.put(entry.getValue().componentClass().getName(), entry.getKey());
+            classToName.put(entry.getValue().componentClass(), entry.getKey());
         }
     }
 
@@ -120,13 +120,12 @@ public class ComponentRegistry {
 
     /**
      * Looks up a component's friendly name by its class.
-     * Uses class name (not Class object) for lookup to handle classloader differences.
      *
      * @param clazz the component class
      * @return the friendly name, or null if not registered
      */
     public String getFriendlyName(Class<?> clazz) {
-        return classNameToFriendlyName.get(clazz.getName());
+        return classToName.get(clazz);
     }
 
     private Map<String, ComponentInfo> loadComponents(String indexFileName)
