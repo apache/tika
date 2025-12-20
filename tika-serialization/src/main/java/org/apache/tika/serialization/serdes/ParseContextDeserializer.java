@@ -17,6 +17,7 @@
 package org.apache.tika.serialization.serdes;
 
 import static org.apache.tika.serialization.serdes.ParseContextSerializer.PARSE_CONTEXT;
+import static org.apache.tika.serialization.serdes.ParseContextSerializer.TYPED;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -26,25 +27,34 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.serialization.ConfigDeserializer;
+import org.apache.tika.serialization.ComponentNameResolver;
 
 /**
  * Deserializes ParseContext from JSON.
  * <p>
- * Each field in the JSON object is stored as a JSON config in the ParseContext.
- * Resolution to typed objects happens later via {@link ConfigDeserializer}.
+ * Handles two types of entries:
+ * <ul>
+ *   <li>"typed" section: Deserialized directly to typed objects in the context map</li>
+ *   <li>Other entries: Stored as JSON configs for lazy resolution</li>
+ * </ul>
  * <p>
  * Example input:
  * <pre>
  * {
- *   "pdf-parser": {"ocrStrategy": "AUTO"},
- *   "handler-config": {"type": "XML", "parseMode": "RMETA"}
+ *   "typed": {
+ *     "handler-config": {"type": "XML", "parseMode": "RMETA"}
+ *   },
+ *   "metadata-filters": ["mock-upper-case-filter"]
  * }
  * </pre>
  */
 public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ParseContextDeserializer.class);
 
     @Override
     public ParseContext deserialize(JsonParser jsonParser, DeserializationContext ctxt)
@@ -56,12 +66,12 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
     /**
      * Deserializes a ParseContext from a JsonNode.
      * <p>
-     * Each field is stored as a JSON config string in the ParseContext's jsonConfigs map.
-     * The configs can later be resolved to typed objects via {@link ConfigDeserializer}.
+     * The "typed" section is deserialized directly to typed objects in the context map.
+     * All other fields are stored as JSON config strings for lazy resolution.
      *
      * @param jsonNode the JSON node containing the ParseContext data
-     * @param mapper   the ObjectMapper for serializing field values back to JSON strings
-     * @return the deserialized ParseContext with jsonConfigs populated
+     * @param mapper   the ObjectMapper for deserializing typed objects
+     * @return the deserialized ParseContext
      * @throws IOException if deserialization fails
      */
     public static ParseContext readParseContext(JsonNode jsonNode, ObjectMapper mapper)
@@ -78,16 +88,55 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
             return parseContext;
         }
 
-        // Store each field as a JSON config
         Iterator<String> fieldNames = contextNode.fieldNames();
         while (fieldNames.hasNext()) {
             String name = fieldNames.next();
             JsonNode value = contextNode.get(name);
-            // Store the JSON string for later resolution
-            String json = mapper.writeValueAsString(value);
-            parseContext.setJsonConfig(name, json);
+
+            if (TYPED.equals(name)) {
+                // Deserialize typed objects directly to context map
+                deserializeTypedObjects(value, parseContext, mapper);
+            } else {
+                // Store as JSON config for lazy resolution
+                String json = mapper.writeValueAsString(value);
+                parseContext.setJsonConfig(name, json);
+            }
         }
 
         return parseContext;
+    }
+
+    /**
+     * Deserializes the "typed" section into typed objects in the context map.
+     */
+    @SuppressWarnings("unchecked")
+    private static void deserializeTypedObjects(JsonNode typedNode, ParseContext parseContext,
+                                                 ObjectMapper mapper) throws IOException {
+        if (!typedNode.isObject()) {
+            return;
+        }
+
+        Iterator<String> fieldNames = typedNode.fieldNames();
+        while (fieldNames.hasNext()) {
+            String componentName = fieldNames.next();
+            JsonNode configNode = typedNode.get(componentName);
+
+            try {
+                // Look up the class for this component name
+                Class<?> configClass = ComponentNameResolver.resolveClass(
+                        componentName, ParseContextDeserializer.class.getClassLoader());
+
+                // Deserialize and add to context
+                Object config = mapper.treeToValue(configNode, configClass);
+                parseContext.set((Class) configClass, config);
+
+                LOG.debug("Deserialized typed object '{}' -> {}", componentName, configClass.getName());
+            } catch (ClassNotFoundException e) {
+                LOG.warn("Could not find class for typed component '{}', storing as JSON config",
+                        componentName);
+                // Fall back to storing as JSON config
+                parseContext.setJsonConfig(componentName, mapper.writeValueAsString(configNode));
+            }
+        }
     }
 }

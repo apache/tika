@@ -152,7 +152,7 @@ public class ParseContextUtils {
                     // Determine the context key
                     Class<?> contextKey = determineContextKey(info, friendlyName);
 
-                    // Deserialize and cache
+                    // Deserialize and cache in resolvedConfigs, also add to context
                     Object instance = MAPPER.readValue(jsonConfig.json(), info.componentClass());
                     context.setResolvedConfig(friendlyName, instance);
                     context.set((Class) contextKey, instance);
