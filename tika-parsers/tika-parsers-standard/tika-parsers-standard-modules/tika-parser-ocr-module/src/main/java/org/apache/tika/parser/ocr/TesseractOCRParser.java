@@ -58,7 +58,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
-import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.JsonConfig;
@@ -299,10 +298,8 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     }
 
     private TesseractOCRConfig getConfig(ParseContext parseContext) throws TikaConfigException, IOException {
-        // Check for ConfigContainer with component-specific runtime config
-        ConfigContainer configContainer =
-                parseContext.get(org.apache.tika.config.ConfigContainer.class);
-        if (configContainer != null && configContainer.get("tesseract-ocr-parser").isPresent()) {
+        // Check for JSON config with component-specific runtime config
+        if (parseContext.hasJsonConfig("tesseract-ocr-parser")) {
             // First validate that no paths are being set by deserializing into RuntimeConfig
             // The RuntimeConfig setters will throw TikaConfigException if JSON contains path fields
             TesseractOCRConfig.RuntimeConfig runtimeConfig = ParseContextConfig.getConfig(
@@ -553,7 +550,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
      * Reads the contents of the given stream and write it to the given XHTML
      * content handler. The stream is closed once fully processed.
      *
-     * @param stream Stream where is the result of ocr
+     * @param tis Stream where is the result of ocr
      * @param xhtml  XHTML content handler
      * @throws SAXException if the XHTML SAX events could not be handled
      * @throws IOException  if an input error occurred

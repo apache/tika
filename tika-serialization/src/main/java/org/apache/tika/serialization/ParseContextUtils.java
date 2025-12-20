@@ -26,7 +26,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.loader.ComponentInfo;
 import org.apache.tika.config.loader.ComponentInstantiator;
@@ -53,7 +52,7 @@ import org.apache.tika.parser.ParseContext;
  * </pre>
  * <p>
  * Components that implement {@link org.apache.tika.config.SelfConfiguring} are skipped
- * during resolution - they read their own config from ConfigContainer at runtime.
+ * during resolution - they read their own config from jsonConfigs at runtime.
  */
 public class ParseContextUtils {
 
@@ -87,13 +86,13 @@ public class ParseContextUtils {
     private record ArrayConfigInfo(Class<?> contextKey, Class<?> componentInterface) {}
 
     /**
-     * Resolves all friendly-named components from ConfigContainer and adds them to ParseContext.
+     * Resolves all JSON configs from ParseContext and adds them to the resolved cache.
      * <p>
-     * Iterates through all entries in ConfigContainer, looks up the friendly name in ComponentRegistry,
-     * deserializes the JSON, and adds the instance to ParseContext.
+     * Iterates through all entries in jsonConfigs, looks up the friendly name in ComponentRegistry,
+     * deserializes the JSON, and caches the instance in resolvedConfigs.
      * <p>
      * Components that implement {@link org.apache.tika.config.SelfConfiguring} are skipped -
-     * they read their own config from ConfigContainer at runtime.
+     * they read their own config at runtime via {@link ConfigDeserializer}.
      * <p>
      * The ParseContext key is determined by:
      * <ol>
@@ -101,9 +100,6 @@ public class ParseContextUtils {
      *   <li>Auto-detected from {@link #KNOWN_CONTEXT_INTERFACES} (if component implements one)</li>
      *   <li>The component's own class (default)</li>
      * </ol>
-     * <p>
-     * After resolution, resolved configs are removed from the ConfigContainer. If the
-     * ConfigContainer becomes empty, it is removed from the ParseContext.
      *
      * @param context the ParseContext to populate
      * @param classLoader the ClassLoader to use for loading component classes
@@ -113,20 +109,18 @@ public class ParseContextUtils {
             return;
         }
 
-        ConfigContainer container = context.get(ConfigContainer.class);
-        if (container == null) {
+        Map<String, JsonConfig> jsonConfigs = context.getJsonConfigs();
+        if (jsonConfigs.isEmpty()) {
             return;
         }
 
-        List<String> resolvedKeys = new ArrayList<>();
-
         // First, process known array configs (e.g., "metadata-filters")
         // These don't depend on the other-configs registry
-        for (String friendlyName : new ArrayList<>(container.getKeys())) {
+        for (String friendlyName : new ArrayList<>(jsonConfigs.keySet())) {
             if (ARRAY_CONFIGS.containsKey(friendlyName)) {
-                JsonConfig jsonConfig = container.get(friendlyName, null);
-                if (jsonConfig != null && resolveArrayConfig(friendlyName, jsonConfig, context, classLoader)) {
-                    resolvedKeys.add(friendlyName);
+                JsonConfig jsonConfig = jsonConfigs.get(friendlyName);
+                if (jsonConfig != null) {
+                    resolveArrayConfig(friendlyName, jsonConfig, context, classLoader);
                 }
             }
         }
@@ -135,14 +129,12 @@ public class ParseContextUtils {
         try {
             ComponentRegistry registry = new ComponentRegistry("other-configs", classLoader);
 
-            for (String friendlyName : container.getKeys()) {
-                // Skip already resolved array configs
-                if (resolvedKeys.contains(friendlyName)) {
-                    continue;
-                }
+            for (Map.Entry<String, JsonConfig> entry : jsonConfigs.entrySet()) {
+                String friendlyName = entry.getKey();
+                JsonConfig jsonConfig = entry.getValue();
 
-                JsonConfig jsonConfig = container.get(friendlyName, null);
-                if (jsonConfig == null) {
+                // Skip already resolved configs (including array configs)
+                if (context.getResolvedConfig(friendlyName) != null) {
                     continue;
                 }
 
@@ -160,10 +152,10 @@ public class ParseContextUtils {
                     // Determine the context key
                     Class<?> contextKey = determineContextKey(info, friendlyName);
 
-                    // Deserialize and add to ParseContext
+                    // Deserialize and cache
                     Object instance = MAPPER.readValue(jsonConfig.json(), info.componentClass());
+                    context.setResolvedConfig(friendlyName, instance);
                     context.set((Class) contextKey, instance);
-                    resolvedKeys.add(friendlyName);
 
                     LOG.debug("Resolved '{}' -> {} with key {}",
                             friendlyName, info.componentClass().getName(), contextKey.getName());
@@ -178,16 +170,6 @@ public class ParseContextUtils {
         } catch (TikaConfigException e) {
             // other-configs registry not available - that's okay, array configs were still processed
             LOG.debug("other-configs registry not available: {}", e.getMessage());
-        }
-
-        // Remove resolved configs from the container
-        for (String key : resolvedKeys) {
-            container.remove(key);
-        }
-
-        // If the container is now empty, remove it from the ParseContext
-        if (container.isEmpty()) {
-            context.set(ConfigContainer.class, null);
         }
     }
 
@@ -289,6 +271,7 @@ public class ParseContextUtils {
             if (!components.isEmpty()) {
                 Object composite = createComposite(configName, components, configInfo);
                 if (composite != null) {
+                    context.setResolvedConfig(configName, composite);
                     context.set((Class) configInfo.contextKey(), composite);
                     LOG.debug("Resolved '{}' -> {} with {} components",
                             configName, composite.getClass().getSimpleName(), components.size());

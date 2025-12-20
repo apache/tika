@@ -33,8 +33,12 @@ import org.apache.tika.sax.ContentHandlerDecoratorFactory;
  * when parsing data that is extremely compressible and resembles a ZIP
  * bomb. Null values will be ignored and will not affect the default values
  * in SecureContentHandler.
+ * <p>
+ * This is a config POJO. It uses standard Jackson deserialization for its
+ * primitive fields, but component fields (like embeddedDocumentExtractorFactory)
+ * use compact format.
  */
-@TikaComponent
+@TikaComponent(spi = false)
 public class AutoDetectParserConfig implements Serializable {
 
     private static ContentHandlerDecoratorFactory NOOP_CONTENT_HANDLER_DECORATOR_FACTORY =

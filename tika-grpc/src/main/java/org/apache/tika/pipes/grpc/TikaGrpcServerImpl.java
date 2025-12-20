@@ -49,7 +49,6 @@ import org.apache.tika.ListFetchersRequest;
 import org.apache.tika.SaveFetcherReply;
 import org.apache.tika.SaveFetcherRequest;
 import org.apache.tika.TikaGrpc;
-import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -160,9 +159,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             ParseContext parseContext = new ParseContext();
             String additionalFetchConfigJson = request.getAdditionalFetchConfigJson();
             if (StringUtils.isNotBlank(additionalFetchConfigJson)) {
-                ConfigContainer configContainer = new ConfigContainer();
-                configContainer.set(request.getFetcherId(), request.getAdditionalFetchConfigJson());
-                parseContext.set(ConfigContainer.class, configContainer);
+                parseContext.setJsonConfig(request.getFetcherId(), additionalFetchConfigJson);
             }
             PipesResult pipesResult = pipesClient.process(new FetchEmitTuple(request.getFetchKey(), new FetchKey(fetcher.getExtensionConfig().id(), request.getFetchKey()),
                     new EmitKey(), tikaMetadata, parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));

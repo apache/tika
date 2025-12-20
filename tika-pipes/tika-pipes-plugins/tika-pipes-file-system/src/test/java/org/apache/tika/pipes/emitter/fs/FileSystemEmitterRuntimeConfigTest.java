@@ -34,14 +34,13 @@ import java.util.Locale;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.plugins.ExtensionConfig;
 
 /**
- * Tests runtime configuration of FileSystemEmitter via ConfigContainer and ParseContext.
+ * Tests runtime configuration of FileSystemEmitter via ParseContext's jsonConfigs.
  */
 public class FileSystemEmitterRuntimeConfigTest {
 
@@ -77,11 +76,9 @@ public class FileSystemEmitterRuntimeConfigTest {
         String runtimeConfig = String.format(Locale.ROOT,
                 "{\"basePath\":\"%s\", \"onExists\":\"REPLACE\"}",
                 dir2.toString().replace("\\", "\\\\"));
-        ConfigContainer configContainer = new ConfigContainer();
-        configContainer.set("test-emitter", runtimeConfig);
 
         ParseContext context2 = new ParseContext();
-        context2.set(ConfigContainer.class, configContainer);
+        context2.setJsonConfig("test-emitter", runtimeConfig);
 
         // Emit with runtime config - should throw exception
         List<Metadata> metadataList2 = new ArrayList<>();
@@ -121,11 +118,9 @@ public class FileSystemEmitterRuntimeConfigTest {
         // Override at runtime to add .json extension
         // Note: basePath is NOT included for security reasons
         String runtimeConfig = "{\"fileExtension\":\"json\", \"onExists\":\"REPLACE\"}";
-        ConfigContainer configContainer = new ConfigContainer();
-        configContainer.set("test-emitter", runtimeConfig);
 
         ParseContext context2 = new ParseContext();
-        context2.set(ConfigContainer.class, configContainer);
+        context2.setJsonConfig("test-emitter", runtimeConfig);
 
         // Emit with runtime config
         List<Metadata> metadataList2 = new ArrayList<>();
@@ -164,11 +159,9 @@ public class FileSystemEmitterRuntimeConfigTest {
         // Override at runtime to use SKIP
         // Note: basePath is NOT included for security reasons
         String runtimeConfig = "{\"onExists\":\"SKIP\"}";
-        ConfigContainer configContainer = new ConfigContainer();
-        configContainer.set("test-emitter", runtimeConfig);
 
         ParseContext context2 = new ParseContext();
-        context2.set(ConfigContainer.class, configContainer);
+        context2.setJsonConfig("test-emitter", runtimeConfig);
 
         // Emit with runtime config (SKIP) - should not replace existing file
         InputStream inputStream2 = new ByteArrayInputStream("new content".getBytes(StandardCharsets.UTF_8));
@@ -180,7 +173,7 @@ public class FileSystemEmitterRuntimeConfigTest {
     }
 
     @Test
-    public void testConfigContainerNotPresent(@TempDir Path tempDir) throws Exception {
+    public void testJsonConfigNotPresent(@TempDir Path tempDir) throws Exception {
         // Create emitter with default config
         String defaultConfig = String.format(Locale.ROOT,
                 "{\"basePath\":\"%s\", \"onExists\":\"REPLACE\"}",
@@ -188,14 +181,14 @@ public class FileSystemEmitterRuntimeConfigTest {
         ExtensionConfig pluginConfig = new ExtensionConfig("test-emitter", "test", defaultConfig);
         FileSystemEmitter emitter = FileSystemEmitter.build(pluginConfig);
 
-        // Emit with ParseContext that has no ConfigContainer - should use default config
+        // Emit with ParseContext that has no jsonConfigs - should use default config
         List<Metadata> metadataList = new ArrayList<>();
         Metadata m = new Metadata();
         m.set(TikaCoreProperties.TIKA_CONTENT, "test content");
         metadataList.add(m);
 
         ParseContext context = new ParseContext();
-        // Don't set ConfigContainer in context
+        // Don't set jsonConfigs in context
 
         emitter.emit("test.json", metadataList, context);
 
@@ -204,7 +197,7 @@ public class FileSystemEmitterRuntimeConfigTest {
     }
 
     @Test
-    public void testConfigContainerWithDifferentId(@TempDir Path tempDir) throws Exception {
+    public void testJsonConfigWithDifferentId(@TempDir Path tempDir) throws Exception {
         // Create emitter with default config
         String defaultConfig = String.format(Locale.ROOT,
                 "{\"basePath\":\"%s\", \"onExists\":\"REPLACE\"}",
@@ -212,18 +205,16 @@ public class FileSystemEmitterRuntimeConfigTest {
         ExtensionConfig pluginConfig = new ExtensionConfig("test-emitter", "test", defaultConfig);
         FileSystemEmitter emitter = FileSystemEmitter.build(pluginConfig);
 
-        // Create ConfigContainer with config for a different emitter ID
+        // Create jsonConfigs with config for a different emitter ID
         Path otherDir = tempDir.resolve("other");
         Files.createDirectories(otherDir);
 
-        ConfigContainer configContainer = new ConfigContainer();
         String runtimeConfig = String.format(Locale.ROOT,
                 "{\"basePath\":\"%s\", \"onExists\":\"REPLACE\"}",
                 otherDir.toString().replace("\\", "\\\\"));
-        configContainer.set("different-emitter", runtimeConfig);
 
         ParseContext context = new ParseContext();
-        context.set(ConfigContainer.class, configContainer);
+        context.setJsonConfig("different-emitter", runtimeConfig);
 
         // Emit - should use default config since runtime config is for different ID
         List<Metadata> metadataList = new ArrayList<>();

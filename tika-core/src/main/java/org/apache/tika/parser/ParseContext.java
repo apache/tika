@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.tika.config.ConfigContainer;
+import org.apache.tika.config.JsonConfig;
 
 /**
  * Parse context. Used to pass context information to Tika parsers.
@@ -37,9 +37,22 @@ public class ParseContext implements Serializable {
     private static final long serialVersionUID = -5921436862145826534L;
 
     /**
-     * Map of objects in this context
+     * Map of typed objects in this context, keyed by class name.
      */
     private final Map<String, Object> context = new HashMap<>();
+
+    /**
+     * Map of JSON configs, keyed by component name (e.g., "pdf-parser").
+     * This is the source of truth for round-trip serialization.
+     * Using JsonConfig interface allows for future extension with metadata.
+     */
+    private final Map<String, JsonConfig> jsonConfigs = new HashMap<>();
+
+    /**
+     * Cache of resolved objects from jsonConfigs, keyed by component name.
+     * This is ignored during serialization to preserve round-trip fidelity.
+     */
+    private final transient Map<String, Object> resolvedConfigs = new HashMap<>();
 
     /**
      * Adds the given value to the context as an implementation of the given
@@ -87,33 +100,109 @@ public class ParseContext implements Serializable {
     }
 
     /**
-     * Adds a configuration by friendly name for serialization.
+     * Sets a JSON configuration by component name.
      * <p>
-     * This is a convenience method for adding configs that will be serialized
-     * and resolved at runtime. The config is stored in a {@link ConfigContainer}
-     * and will be resolved to an actual object via the component registry.
+     * This stores the JSON config for later resolution. The JSON will be
+     * deserialized when requested via the component registry in tika-serialization.
      * <p>
      * Example:
      * <pre>
-     * parseContext.addConfig("tika-task-timeout", "{\"timeoutMillis\": 5000}");
-     * parseContext.addConfig("handler-config", "{\"type\": \"XML\", \"parseMode\": \"RMETA\"}");
+     * parseContext.setJsonConfig("pdf-parser", () -&gt; "{\"ocrStrategy\": \"AUTO\"}");
+     * parseContext.setJsonConfig("handler-config", () -&gt; "{\"type\": \"XML\"}");
      * </pre>
      *
-     * @param key  the friendly name of the config (e.g., "tika-task-timeout", "handler-config")
+     * @param name   the component name (e.g., "pdf-parser", "handler-config")
+     * @param config the JSON configuration
+     * @since Apache Tika 4.0
+     */
+    public void setJsonConfig(String name, JsonConfig config) {
+        if (config != null) {
+            jsonConfigs.put(name, config);
+        } else {
+            jsonConfigs.remove(name);
+            resolvedConfigs.remove(name);
+        }
+    }
+
+    /**
+     * Sets a JSON configuration by component name using a raw JSON string.
+     * <p>
+     * Convenience method that wraps the string in a JsonConfig.
+     *
+     * @param name the component name (e.g., "pdf-parser", "handler-config")
      * @param json the JSON configuration string
      * @since Apache Tika 4.0
      */
-    public void addConfig(String key, String json) {
-        ConfigContainer container = get(ConfigContainer.class);
-        if (container == null) {
-            container = new ConfigContainer();
-            set(ConfigContainer.class, container);
+    public void setJsonConfig(String name, String json) {
+        setJsonConfig(name, json != null ? () -> json : null);
+    }
+
+    /**
+     * Gets a JSON configuration by component name.
+     *
+     * @param name the component name
+     * @return the JsonConfig, or null if not found
+     * @since Apache Tika 4.0
+     */
+    public JsonConfig getJsonConfig(String name) {
+        return jsonConfigs.get(name);
+    }
+
+    /**
+     * Returns all JSON configurations for serialization.
+     *
+     * @return unmodifiable map of component name to JsonConfig
+     * @since Apache Tika 4.0
+     */
+    public Map<String, JsonConfig> getJsonConfigs() {
+        return Collections.unmodifiableMap(jsonConfigs);
+    }
+
+    /**
+     * Gets a resolved configuration object from the cache.
+     * <p>
+     * This is used by tika-serialization after deserializing a JSON config.
+     * The resolved object is cached here to avoid repeated deserialization.
+     *
+     * @param name the component name
+     * @return the resolved object, or null if not cached
+     * @since Apache Tika 4.0
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T getResolvedConfig(String name) {
+        return (T) resolvedConfigs.get(name);
+    }
+
+    /**
+     * Caches a resolved configuration object.
+     * <p>
+     * Called by tika-serialization after deserializing a JSON config.
+     *
+     * @param name   the component name
+     * @param config the resolved configuration object
+     * @since Apache Tika 4.0
+     */
+    public void setResolvedConfig(String name, Object config) {
+        if (config != null) {
+            resolvedConfigs.put(name, config);
+        } else {
+            resolvedConfigs.remove(name);
         }
-        container.set(key, json);
+    }
+
+    /**
+     * Checks if a JSON configuration exists for the given component name.
+     *
+     * @param name the component name
+     * @return true if a JSON config exists
+     * @since Apache Tika 4.0
+     */
+    public boolean hasJsonConfig(String name) {
+        return jsonConfigs.containsKey(name);
     }
 
     public boolean isEmpty() {
-        return context.isEmpty();
+        return context.isEmpty() && jsonConfigs.isEmpty();
     }
 
 
@@ -141,16 +230,24 @@ public class ParseContext implements Serializable {
         }
 
         ParseContext that = (ParseContext) o;
-        return context.equals(that.context);
+        if (!context.equals(that.context)) {
+            return false;
+        }
+        return jsonConfigs.equals(that.jsonConfigs);
     }
 
     @Override
     public int hashCode() {
-        return context.hashCode();
+        int result = context.hashCode();
+        result = 31 * result + jsonConfigs.hashCode();
+        return result;
     }
 
     @Override
     public String toString() {
-        return "ParseContext{" + "context=" + context + '}';
+        return "ParseContext{" +
+                "context=" + context +
+                ", jsonConfigs=" + jsonConfigs +
+                '}';
     }
 }

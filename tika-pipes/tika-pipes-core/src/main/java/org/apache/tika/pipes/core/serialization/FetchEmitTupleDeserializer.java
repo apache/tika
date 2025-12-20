@@ -26,7 +26,7 @@ import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.ID;
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.METADATA_KEY;
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.ON_PARSE_EXCEPTION;
-import static org.apache.tika.serialization.ParseContextSerializer.PARSE_CONTEXT;
+import static org.apache.tika.serialization.serdes.ParseContextSerializer.PARSE_CONTEXT;
 
 import java.io.IOException;
 import java.util.Map;
@@ -42,8 +42,8 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
-import org.apache.tika.serialization.ParseContextDeserializer;
 import org.apache.tika.serialization.ParseContextUtils;
+import org.apache.tika.serialization.serdes.ParseContextDeserializer;
 
 public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple> {
 
@@ -61,7 +61,7 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
         Metadata metadata = readMetadata(root);
         JsonNode parseContextNode = root.get(PARSE_CONTEXT);
         ParseContext parseContext = parseContextNode == null ? new ParseContext() : ParseContextDeserializer.readParseContext(parseContextNode);
-        // Resolve all friendly-named components from ConfigContainer to actual objects
+        // Resolve all friendly-named components from jsonConfigs to actual objects
         ParseContextUtils.resolveAll(parseContext, FetchEmitTupleDeserializer.class.getClassLoader());
         FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = readOnParseException(root);
 

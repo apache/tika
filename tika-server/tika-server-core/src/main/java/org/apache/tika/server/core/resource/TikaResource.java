@@ -78,7 +78,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
 import org.apache.tika.sax.RichTextContentHandler;
 import org.apache.tika.sax.boilerpipe.BoilerpipeContentHandler;
-import org.apache.tika.serialization.ParseContextDeserializer;
+import org.apache.tika.serialization.serdes.ParseContextDeserializer;
 import org.apache.tika.serialization.ParseContextUtils;
 import org.apache.tika.server.core.InputStreamFactory;
 import org.apache.tika.server.core.ServerStatus;
