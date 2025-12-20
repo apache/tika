@@ -49,10 +49,9 @@ public class TestKafkaPipesIterator {
         configNode.put("bootstrapServers", ""); // use one
         configNode.put("groupId", ""); // find one
 
-        ObjectNode baseConfigNode = MAPPER.createObjectNode();
-        baseConfigNode.put("fetcherId", "kafka");
-        baseConfigNode.put("emitterId", "test-emitter");
-        configNode.set("baseConfig", baseConfigNode);
+        // Add fetcherId and emitterId at root level (not nested in baseConfig)
+        configNode.put("fetcherId", "kafka");
+        configNode.put("emitterId", "test-emitter");
 
         ExtensionConfig extensionConfig = new ExtensionConfig("test-kafka", "kafka-pipes-iterator",
                 MAPPER.writeValueAsString(configNode));

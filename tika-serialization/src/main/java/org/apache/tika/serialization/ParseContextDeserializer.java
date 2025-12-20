@@ -113,6 +113,7 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
             Class<?> contextKey = null;  // The key to use when adding to ParseContext
             if (keyClass == null) {
                 Optional<ComponentInfo> infoOpt = ComponentNameResolver.getComponentInfo(fieldName);
+                LOG.info("Looking up '{}' in registry, found: {}", fieldName, infoOpt.isPresent());
                 if (infoOpt.isPresent()) {
                     ComponentInfo info = infoOpt.get();
                     keyClass = info.componentClass();
@@ -139,18 +140,28 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
                     // Non-SelfConfiguring - deserialize directly into ParseContext
                     try {
                         // Check if fieldValue is a wrapper object format: {"concrete-class": {props}}
+                        // Only treat as wrapper format if the single field name is a resolvable type
                         Object value;
                         if (fieldValue.isObject() && fieldValue.size() == 1) {
                             String typeName = fieldValue.fieldNames().next();
-                            JsonNode configNode = fieldValue.get(typeName);
-                            // Try to resolve the concrete class
-                            try {
-                                Class<?> concreteClass = ComponentNameResolver.resolveClass(typeName,
-                                        ParseContextDeserializer.class.getClassLoader());
-                                value = MAPPER.treeToValue(configNode, concreteClass);
-                            } catch (ClassNotFoundException ex) {
-                                // Fall back to key class
-                                value = MAPPER.treeToValue(configNode, keyClass);
+                            // Check if typeName is resolvable as a component/class before treating
+                            // as wrapper format. This prevents {"password": "value"} from being
+                            // misinterpreted as wrapper format with type "password".
+                            if (ComponentNameResolver.hasComponent(typeName) ||
+                                    typeName.contains(".")) {
+                                JsonNode configNode = fieldValue.get(typeName);
+                                // Try to resolve the concrete class
+                                try {
+                                    Class<?> concreteClass = ComponentNameResolver.resolveClass(typeName,
+                                            ParseContextDeserializer.class.getClassLoader());
+                                    value = MAPPER.treeToValue(configNode, concreteClass);
+                                } catch (ClassNotFoundException ex) {
+                                    // Fall back to deserializing the whole fieldValue with key class
+                                    value = MAPPER.treeToValue(fieldValue, keyClass);
+                                }
+                            } else {
+                                // Single field but not a type name - deserialize as properties
+                                value = MAPPER.treeToValue(fieldValue, keyClass);
                             }
                         } else {
                             // Not wrapper format, deserialize directly

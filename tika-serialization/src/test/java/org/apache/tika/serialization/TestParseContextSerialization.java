@@ -43,6 +43,8 @@ import org.apache.tika.metadata.filter.IncludeFieldMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.filter.MockUpperCaseFilter;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.PasswordProvider;
+import org.apache.tika.parser.SimplePasswordProvider;
 
 /**
  * Tests for ParseContext serialization/deserialization.
@@ -372,5 +374,29 @@ public class TestParseContextSerialization {
         // The selector should skip all embedded documents (return false)
         assertFalse(selector.select(new org.apache.tika.metadata.Metadata()),
                 "SkipEmbeddedDocumentSelector should return false for all documents");
+    }
+
+    @Test
+    public void testSimplePasswordProviderDeserialization() throws Exception {
+        // Test that SimplePasswordProvider with contextKey=PasswordProvider.class
+        // is stored in ParseContext with the contextKey
+        String json = """
+                {
+                  "simple-password-provider": {
+                    "password": "secret123"
+                  }
+                }
+                """;
+
+        ObjectMapper mapper = createMapper();
+        ParseContext deserialized = mapper.readValue(json, ParseContext.class);
+
+        // Should be accessible via PasswordProvider.class (the contextKey)
+        PasswordProvider provider = deserialized.get(PasswordProvider.class);
+        assertNotNull(provider, "PasswordProvider should be found via contextKey");
+        assertTrue(provider instanceof SimplePasswordProvider,
+                "Should be SimplePasswordProvider instance");
+        assertEquals("secret123", provider.getPassword(null),
+                "Password should match the configured value");
     }
 }

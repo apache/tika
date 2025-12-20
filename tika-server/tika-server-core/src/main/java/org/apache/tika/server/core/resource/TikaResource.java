@@ -149,11 +149,16 @@ public class TikaResource {
         JsonNode root = mapper.readTree(configJson);
         // Use root directly - the JSON should contain parser configs at the top level
         ParseContext configuredContext = ParseContextDeserializer.readParseContext(root);
+        LOG.info("After readParseContext, configuredContext has {} entries: {}",
+                configuredContext.getContextMap().size(), configuredContext.getContextMap().keySet());
         ParseContextUtils.resolveAll(configuredContext, Thread.currentThread().getContextClassLoader());
+        LOG.info("After resolveAll, configuredContext has {} entries: {}",
+                configuredContext.getContextMap().size(), configuredContext.getContextMap().keySet());
         for (Map.Entry<String, Object> entry : configuredContext.getContextMap().entrySet()) {
             try {
                 Class<?> clazz = Class.forName(entry.getKey());
                 context.set((Class) clazz, entry.getValue());
+                LOG.info("Merged entry {} into context", entry.getKey());
             } catch (ClassNotFoundException e) {
                 LOG.warn("Could not load class for parseContext entry: {}", entry.getKey());
             }

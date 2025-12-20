@@ -110,6 +110,11 @@ public final class ComponentNameResolver {
      * @return Optional containing the ComponentInfo, or empty if not found
      */
     public static Optional<ComponentInfo> getComponentInfo(String name) {
+        if (REGISTRIES.isEmpty()) {
+            System.err.println("ComponentNameResolver: WARNING - No registries loaded! Looking for: " + name);
+        } else {
+            System.err.println("ComponentNameResolver: Looking up '" + name + "' in " + REGISTRIES.size() + " registries: " + REGISTRIES.keySet());
+        }
         for (ComponentRegistry registry : REGISTRIES.values()) {
             if (registry.hasComponent(name)) {
                 try {
