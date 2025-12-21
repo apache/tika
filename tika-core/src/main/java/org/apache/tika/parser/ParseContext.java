@@ -51,8 +51,9 @@ public class ParseContext implements Serializable {
     /**
      * Cache of resolved objects from jsonConfigs, keyed by component name.
      * This is ignored during serialization to preserve round-trip fidelity.
+     * Note: Not final because Java serialization bypasses constructor initialization.
      */
-    private final transient Map<String, Object> resolvedConfigs = new HashMap<>();
+    private transient Map<String, Object> resolvedConfigs = new HashMap<>();
 
     /**
      * Adds the given value to the context as an implementation of the given
@@ -120,7 +121,9 @@ public class ParseContext implements Serializable {
             jsonConfigs.put(name, config);
         } else {
             jsonConfigs.remove(name);
-            resolvedConfigs.remove(name);
+            if (resolvedConfigs != null) {
+                resolvedConfigs.remove(name);
+            }
         }
     }
 
@@ -178,6 +181,9 @@ public class ParseContext implements Serializable {
      */
     @SuppressWarnings("unchecked")
     public <T> T getResolvedConfig(String name) {
+        if (resolvedConfigs == null) {
+            return null;
+        }
         return (T) resolvedConfigs.get(name);
     }
 
@@ -191,6 +197,9 @@ public class ParseContext implements Serializable {
      * @since Apache Tika 4.0
      */
     public void setResolvedConfig(String name, Object config) {
+        if (resolvedConfigs == null) {
+            resolvedConfigs = new HashMap<>();
+        }
         if (config != null) {
             resolvedConfigs.put(name, config);
         } else {

@@ -62,6 +62,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.Tika;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -78,8 +79,8 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
 import org.apache.tika.sax.RichTextContentHandler;
 import org.apache.tika.sax.boilerpipe.BoilerpipeContentHandler;
-import org.apache.tika.serialization.serdes.ParseContextDeserializer;
 import org.apache.tika.serialization.ParseContextUtils;
+import org.apache.tika.serialization.serdes.ParseContextDeserializer;
 import org.apache.tika.server.core.InputStreamFactory;
 import org.apache.tika.server.core.ServerStatus;
 import org.apache.tika.server.core.TikaServerConfig;
@@ -148,8 +149,17 @@ public class TikaResource {
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(configJson);
         // Use root directly - the JSON should contain parser configs at the top level
-        ParseContext configuredContext = ParseContextDeserializer.readParseContext(root);
+        ParseContext configuredContext = ParseContextDeserializer.readParseContext(root, mapper);
+
+        // Copy jsonConfigs first (for SelfConfiguring parsers like PDFParser)
+        for (Map.Entry<String, JsonConfig> entry : configuredContext.getJsonConfigs().entrySet()) {
+            context.setJsonConfig(entry.getKey(), entry.getValue());
+        }
+
+        // Then resolve all configs to typed objects
         ParseContextUtils.resolveAll(configuredContext, Thread.currentThread().getContextClassLoader());
+
+        // Copy resolved typed objects from contextMap
         for (Map.Entry<String, Object> entry : configuredContext.getContextMap().entrySet()) {
             try {
                 Class<?> clazz = Class.forName(entry.getKey());

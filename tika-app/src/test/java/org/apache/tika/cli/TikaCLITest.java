@@ -38,8 +38,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -237,7 +235,7 @@ public class TikaCLITest {
     public void testJsonMetadataPrettyPrintOutput() throws Exception {
         String json = getParamOutContent("--json", "-r", resourcePrefix + "testJsonMultipleInts.html");
 
-        assertTrue(json.contains("org.apache.tika.parser.CompositeParser\", \"org.apache.tika.parser.html.JSoupParser"));
+        assertTrue(json.contains("org.apache.tika.parser.DefaultParser\", \"org.apache.tika.parser.html.JSoupParser"));
         //test pretty-print alphabetic sort of keys
         int enc = json.indexOf("\"Content-Encoding\"");
         int fb = json.indexOf("fb:admins");
@@ -413,22 +411,23 @@ public class TikaCLITest {
         final Set<String> names = new HashSet<>();
         Files.walkFileTree(extractDir, new FileVisitor<Path>() {
             @Override
-            public @NotNull FileVisitResult preVisitDirectory(Path path, @NotNull BasicFileAttributes basicFileAttributes) throws IOException {
+            public FileVisitResult preVisitDirectory(Path path, BasicFileAttributes basicFileAttributes) throws IOException {
                 return FileVisitResult.CONTINUE;
             }
 
-            public @NotNull FileVisitResult visitFile(Path path, @NotNull BasicFileAttributes basicFileAttributes) throws IOException {
+            @Override
+            public FileVisitResult visitFile(Path path, BasicFileAttributes basicFileAttributes) throws IOException {
                 names.add(extractDir.relativize(path).toString().replace('\\', '/'));
                 return FileVisitResult.CONTINUE;
             }
 
             @Override
-            public @NotNull FileVisitResult visitFileFailed(Path path, @NotNull IOException e) throws IOException {
+            public FileVisitResult visitFileFailed(Path path, IOException e) throws IOException {
                 return FileVisitResult.CONTINUE;
             }
 
             @Override
-            public @NotNull FileVisitResult postVisitDirectory(Path path, @Nullable IOException e) throws IOException {
+            public FileVisitResult postVisitDirectory(Path path, IOException e) throws IOException {
                 return FileVisitResult.CONTINUE;
             }
         });
