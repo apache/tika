@@ -60,9 +60,7 @@ import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.renderer.Renderer;
-import org.apache.tika.serialization.serdes.DefaultDetectorDeserializer;
 import org.apache.tika.serialization.serdes.DefaultDetectorSerializer;
-import org.apache.tika.serialization.serdes.DefaultParserDeserializer;
 import org.apache.tika.serialization.serdes.DefaultParserSerializer;
 
 /**
@@ -277,23 +275,24 @@ public class TikaModule extends SimpleModule {
             try {
                 Object instance;
 
-                // Handle DefaultParser and DefaultDetector with dedicated deserializers
+                // DefaultParser and DefaultDetector must be loaded via TikaLoader for proper dependency injection
                 if (clazz == DefaultParser.class) {
-                    instance = deserializeWithNode(new DefaultParserDeserializer(), cleanedConfig, mapper);
+                    throw new IOException("DefaultParser must be loaded via TikaLoader, not directly " +
+                            "via Jackson deserialization. Use TikaLoader.load() to load configuration.");
                 } else if (clazz == DefaultDetector.class) {
-                    instance = deserializeWithNode(new DefaultDetectorDeserializer(), cleanedConfig, mapper);
+                    throw new IOException("DefaultDetector must be loaded via TikaLoader, not directly " +
+                            "via Jackson deserialization. Use TikaLoader.load() to load configuration.");
                 } else if (cleanedConfig == null || cleanedConfig.isEmpty()) {
                     // If no config, use default constructor
                     instance = clazz.getDeclaredConstructor().newInstance();
                 } else if (SelfConfiguring.class.isAssignableFrom(clazz)) {
-                    // SelfConfiguring components must use JsonConfig constructor
+                    // SelfConfiguring components: prefer JsonConfig constructor if available
                     Constructor<?> jsonConfigCtor = findJsonConfigConstructor(clazz);
                     if (jsonConfigCtor != null) {
                         String json = mapper.writeValueAsString(cleanedConfig);
                         instance = jsonConfigCtor.newInstance((JsonConfig) () -> json);
                     } else {
-                        throw new IOException("SelfConfiguring component '" + typeName +
-                                "' must have a constructor that accepts JsonConfig, but none was found.");
+                        instance = clazz.getDeclaredConstructor().newInstance();
                     }
                 } else {
                     // Non-SelfConfiguring: use Jackson bean deserialization
