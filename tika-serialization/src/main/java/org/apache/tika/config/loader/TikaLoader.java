@@ -35,15 +35,18 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.tika.config.GlobalSettings;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.detect.CompositeDetector;
+import org.apache.tika.detect.CompositeEncodingDetector;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.DefaultEncodingDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.language.translate.DefaultTranslator;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.filter.NoOpFilter;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
@@ -114,9 +117,17 @@ public class TikaLoader {
 
         ComponentConfig.builder("encoding-detectors", EncodingDetector.class)
                 .loadAsList()
-                .wrapWith(list -> list.isEmpty()
-                        ? new DefaultEncodingDetector()
-                        : new org.apache.tika.detect.CompositeEncodingDetector((List<EncodingDetector>) list))
+                .wrapWith(list -> {
+                    if (list.isEmpty()) {
+                        return new DefaultEncodingDetector();
+                    } else if (list.size() == 1 && list.get(0) instanceof CompositeEncodingDetector) {
+                        // Don't double-wrap if single item is already a CompositeEncodingDetector
+                        // (e.g., DefaultEncodingDetector with exclusions)
+                        return (EncodingDetector) list.get(0);
+                    } else {
+                        return new org.apache.tika.detect.CompositeEncodingDetector((List<EncodingDetector>) list);
+                    }
+                })
                 .defaultProvider(DefaultEncodingDetector::new)
                 .register();
 
@@ -136,6 +147,7 @@ public class TikaLoader {
         ComponentConfig.builder("translator", Translator.class)
                 .loadAsList()
                 .wrapWith(list -> list.isEmpty() ? null : (Translator) list.get(0))
+                .defaultProvider(DefaultTranslator::new)
                 .register();
     }
 
@@ -158,8 +170,11 @@ public class TikaLoader {
     // Pending configs for deferred creation of DefaultParser/DefaultDetector/DefaultEncodingDetector
     // These are created in post-processing to avoid double-creation
     private JsonNode pendingDefaultParserConfig;
+    private int pendingDefaultParserIndex = -1;
     private JsonNode pendingDefaultDetectorConfig;
+    private int pendingDefaultDetectorIndex = -1;
     private JsonNode pendingDefaultEncodingDetectorConfig;
+    private int pendingDefaultEncodingDetectorIndex = -1;
 
     private TikaLoader(TikaJsonConfig config, ClassLoader classLoader) {
         this.config = config;
@@ -599,7 +614,14 @@ public class TikaLoader {
         // If empty and has default, use default
         if (componentList.isEmpty()) {
             if (componentConfig.hasDefault()) {
-                return componentConfig.getDefault();
+                T defaultComponent = componentConfig.getDefault();
+                // For Parser defaults, configure dependencies (encoding detector, renderer)
+                if (componentClass == Parser.class && defaultComponent instanceof Parser) {
+                    List<Parser> singletonList = new ArrayList<>();
+                    singletonList.add((Parser) defaultComponent);
+                    configureParserDependencies(singletonList);
+                }
+                return defaultComponent;
             }
             // For components that wrap empty lists
             if (componentConfig.hasListWrapper()) {
@@ -693,21 +715,29 @@ public class TikaLoader {
         }
 
         List<T> components = new ArrayList<>();
+        int index = 0;
         for (Map.Entry<String, JsonNode> entry : entries) {
             String typeName = entry.getKey();
             JsonNode configNode = entry.getValue();
 
             // Defer DefaultParser/DefaultDetector/DefaultEncodingDetector creation to post-processing
+            // Track the index where it was defined to preserve ordering
             if ("default-parser".equals(typeName) && componentClass == Parser.class) {
                 pendingDefaultParserConfig = configNode;
+                pendingDefaultParserIndex = index;
+                index++;
                 continue;
             }
             if ("default-detector".equals(typeName) && componentClass == Detector.class) {
                 pendingDefaultDetectorConfig = configNode;
+                pendingDefaultDetectorIndex = index;
+                index++;
                 continue;
             }
             if ("default-encoding-detector".equals(typeName) && componentClass == EncodingDetector.class) {
                 pendingDefaultEncodingDetectorConfig = configNode;
+                pendingDefaultEncodingDetectorIndex = index;
+                index++;
                 continue;
             }
 
@@ -719,6 +749,7 @@ public class TikaLoader {
                 // Deserialize using Jackson (TikaModule handles type resolution)
                 T component = objectMapper.treeToValue(wrapperNode, componentClass);
                 components.add(component);
+                index++;
             } catch (Exception e) {
                 throw new TikaConfigException(
                         "Failed to load " + componentClass.getSimpleName() + ": " + typeName, e);
@@ -733,6 +764,8 @@ public class TikaLoader {
     /**
      * Creates DefaultParser (if configured) with config exclusions + auto-exclusions.
      * Auto-exclusions are the explicit parser types to prevent duplicates.
+     * Inserts at the original position to preserve ordering.
+     * Also applies mime filtering (_mime-include/_mime-exclude) if configured.
      * <p>
      * Note: EncodingDetector and Renderer are configured later in configureParserDependencies.
      */
@@ -752,19 +785,49 @@ public class TikaLoader {
         }
 
         // Create DefaultParser with all exclusions
-        List<Parser> result = new ArrayList<>(parsers);
-        result.add(new DefaultParser(
+        Parser defaultParser = new DefaultParser(
                 getMediaTypeRegistry(),
                 new ServiceLoader(classLoader),
-                exclusions));
+                exclusions);
+
+        // Apply mime filtering if configured
+        Set<MediaType> includeTypes = extractMimeTypes(pendingDefaultParserConfig, "_mime-include");
+        Set<MediaType> excludeTypes = extractMimeTypes(pendingDefaultParserConfig, "_mime-exclude");
+        if (!includeTypes.isEmpty() || !excludeTypes.isEmpty()) {
+            defaultParser = ParserDecorator.withMimeFilters(defaultParser, includeTypes, excludeTypes);
+        }
+
+        // Insert at original position to preserve ordering
+        List<Parser> result = new ArrayList<>(parsers);
+        int insertIndex = Math.min(pendingDefaultParserIndex, result.size());
+        result.add(insertIndex, defaultParser);
 
         pendingDefaultParserConfig = null;
+        pendingDefaultParserIndex = -1;
         return result;
+    }
+
+    /**
+     * Extracts mime types from a config node field.
+     */
+    private Set<MediaType> extractMimeTypes(JsonNode configNode, String fieldName) {
+        Set<MediaType> types = new HashSet<>();
+        if (configNode == null || !configNode.has(fieldName)) {
+            return types;
+        }
+        JsonNode arrayNode = configNode.get(fieldName);
+        if (arrayNode.isArray()) {
+            for (JsonNode typeNode : arrayNode) {
+                types.add(MediaType.parse(typeNode.asText()));
+            }
+        }
+        return types;
     }
 
     /**
      * Creates DefaultDetector (if configured) with config exclusions + auto-exclusions.
      * Auto-exclusions are the explicit detector types to prevent duplicates.
+     * Inserts at the original position to preserve ordering.
      */
     @SuppressWarnings("unchecked")
     private List<Detector> applyDetectorAutoExclusions(List<Detector> detectors) throws IOException {
@@ -782,19 +845,25 @@ public class TikaLoader {
         }
 
         // Create DefaultDetector with all exclusions
-        List<Detector> result = new ArrayList<>(detectors);
-        result.add(new DefaultDetector(
+        DefaultDetector defaultDetector = new DefaultDetector(
                 getMimeTypes(),
                 new ServiceLoader(classLoader),
-                exclusions));
+                exclusions);
+
+        // Insert at original position to preserve ordering
+        List<Detector> result = new ArrayList<>(detectors);
+        int insertIndex = Math.min(pendingDefaultDetectorIndex, result.size());
+        result.add(insertIndex, defaultDetector);
 
         pendingDefaultDetectorConfig = null;
+        pendingDefaultDetectorIndex = -1;
         return result;
     }
 
     /**
      * Creates DefaultEncodingDetector (if configured) with config exclusions + auto-exclusions.
      * Auto-exclusions are the explicit encoding detector types to prevent duplicates.
+     * Inserts at the original position to preserve ordering.
      */
     @SuppressWarnings("unchecked")
     private List<EncodingDetector> applyEncodingDetectorAutoExclusions(List<EncodingDetector> encodingDetectors)
@@ -814,12 +883,17 @@ public class TikaLoader {
         }
 
         // Create DefaultEncodingDetector with all exclusions
-        List<EncodingDetector> result = new ArrayList<>(encodingDetectors);
-        result.add(new DefaultEncodingDetector(
+        DefaultEncodingDetector defaultEncodingDetector = new DefaultEncodingDetector(
                 new ServiceLoader(classLoader),
-                exclusions));
+                exclusions);
+
+        // Insert at original position to preserve ordering
+        List<EncodingDetector> result = new ArrayList<>(encodingDetectors);
+        int insertIndex = Math.min(pendingDefaultEncodingDetectorIndex, result.size());
+        result.add(insertIndex, defaultEncodingDetector);
 
         pendingDefaultEncodingDetectorConfig = null;
+        pendingDefaultEncodingDetectorIndex = -1;
         return result;
     }
 

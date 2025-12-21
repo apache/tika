@@ -62,16 +62,26 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
 
         for (Map.Entry<String, Object> entry : contextMap.entrySet()) {
             String className = entry.getKey();
-            String componentName = findComponentName(className);
-            if (componentName != null) {
-                if (!hasTypedObjects) {
-                    gen.writeFieldName(TYPED);
-                    gen.writeStartObject();
-                    hasTypedObjects = true;
-                }
-                gen.writeFieldName(componentName);
-                gen.writeRawValue(mapper.writeValueAsString(entry.getValue()));
+            Object value = entry.getValue();
+
+            // Skip null values
+            if (value == null) {
+                continue;
             }
+
+            // Try to find a friendly component name, otherwise use FQCN
+            String keyName = findComponentName(className);
+            if (keyName == null) {
+                keyName = className;
+            }
+
+            if (!hasTypedObjects) {
+                gen.writeFieldName(TYPED);
+                gen.writeStartObject();
+                hasTypedObjects = true;
+            }
+            gen.writeFieldName(keyName);
+            gen.writeRawValue(mapper.writeValueAsString(value));
         }
 
         if (hasTypedObjects) {

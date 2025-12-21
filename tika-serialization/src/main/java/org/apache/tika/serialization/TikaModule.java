@@ -56,10 +56,12 @@ import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.writefilter.MetadataWriteFilterFactory;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.renderer.Renderer;
+import org.apache.tika.sax.ContentHandlerDecoratorFactory;
 import org.apache.tika.serialization.serdes.DefaultDetectorSerializer;
 import org.apache.tika.serialization.serdes.DefaultParserSerializer;
 
@@ -100,6 +102,7 @@ public class TikaModule extends SimpleModule {
         COMPACT_FORMAT_INTERFACES.add(DigesterFactory.class);
         COMPACT_FORMAT_INTERFACES.add(EmbeddedDocumentExtractorFactory.class);
         COMPACT_FORMAT_INTERFACES.add(MetadataWriteFilterFactory.class);
+        COMPACT_FORMAT_INTERFACES.add(ContentHandlerDecoratorFactory.class);
     }
 
     /**
@@ -282,6 +285,9 @@ public class TikaModule extends SimpleModule {
                 } else if (clazz == DefaultDetector.class) {
                     throw new IOException("DefaultDetector must be loaded via TikaLoader, not directly " +
                             "via Jackson deserialization. Use TikaLoader.load() to load configuration.");
+                } else if (clazz == MimeTypes.class) {
+                    // MimeTypes must use the singleton to have all type definitions loaded
+                    instance = MimeTypes.getDefaultMimeTypes();
                 } else if (cleanedConfig == null || cleanedConfig.isEmpty()) {
                     // If no config, use default constructor
                     instance = clazz.getDeclaredConstructor().newInstance();

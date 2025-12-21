@@ -121,20 +121,37 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
             String componentName = fieldNames.next();
             JsonNode configNode = typedNode.get(componentName);
 
-            try {
-                // Look up the class for this component name
-                Class<?> configClass = ComponentNameResolver.resolveClass(
-                        componentName, ParseContextDeserializer.class.getClassLoader());
+            Class<?> configClass = null;
 
-                // Deserialize and add to context
+            // First, try component registry lookup (for friendly names like "pdf-parser-config")
+            try {
+                configClass = ComponentNameResolver.resolveClass(
+                        componentName, ParseContextDeserializer.class.getClassLoader());
+            } catch (ClassNotFoundException e) {
+                // Not in registry, try as FQCN
+            }
+
+            // If not found in registry, try as fully qualified class name
+            if (configClass == null) {
+                try {
+                    configClass = Class.forName(componentName);
+                } catch (ClassNotFoundException e) {
+                    LOG.warn("Could not find class for typed component '{}', storing as JSON config",
+                            componentName);
+                    // Fall back to storing as JSON config
+                    parseContext.setJsonConfig(componentName, mapper.writeValueAsString(configNode));
+                    continue;
+                }
+            }
+
+            // Deserialize and add to context
+            try {
                 Object config = mapper.treeToValue(configNode, configClass);
                 parseContext.set((Class) configClass, config);
-
                 LOG.debug("Deserialized typed object '{}' -> {}", componentName, configClass.getName());
-            } catch (ClassNotFoundException e) {
-                LOG.warn("Could not find class for typed component '{}', storing as JSON config",
-                        componentName);
-                // Fall back to storing as JSON config
+            } catch (Exception e) {
+                LOG.warn("Failed to deserialize typed component '{}' as {}, storing as JSON config",
+                        componentName, configClass.getName(), e);
                 parseContext.setJsonConfig(componentName, mapper.writeValueAsString(configNode));
             }
         }
