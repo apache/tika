@@ -323,15 +323,15 @@ public class TikaLoaderTest {
     }
 
     // TODO: TIKA-SERIALIZATION-FOLLOWUP - Implement validation for common typos
-    @Disabled("TIKA-SERIALIZATION-FOLLOWUP: Validation for _excludes typo not yet implemented")
+    @Disabled("TIKA-SERIALIZATION-FOLLOWUP: Validation for excludes typo not yet implemented")
     @Test
     public void testExcludesInsteadOfExcludeThrowsException() throws Exception {
-        // Create a config with the common mistake: "_excludes" instead of "_exclude"
+        // Create a config with the common mistake: "excludes" instead of "exclude"
         String invalidConfig = "{\n" +
                 "  \"parsers\": [\n" +
                 "    {\n" +
                 "      \"default-parser\": {\n" +
-                "        \"_excludes\": [\"pdf-parser\"]\n" +
+                "        \"excludes\": [\"pdf-parser\"]\n" +
                 "      }\n" +
                 "    }\n" +
                 "  ]\n" +
@@ -349,10 +349,10 @@ public class TikaLoaderTest {
                 throw new AssertionError("Expected TikaConfigException to be thrown");
             } catch (org.apache.tika.exception.TikaConfigException e) {
                 // Expected - verify the error message is helpful
-                assertTrue(e.getMessage().contains("_excludes"),
-                        "Error message should mention '_excludes'");
-                assertTrue(e.getMessage().contains("_exclude"),
-                        "Error message should mention the correct field '_exclude'");
+                assertTrue(e.getMessage().contains("excludes"),
+                        "Error message should mention 'excludes'");
+                assertTrue(e.getMessage().contains("exclude"),
+                        "Error message should mention the correct field 'exclude'");
                 assertTrue(e.getMessage().contains("singular"),
                         "Error message should explain it should be singular");
             }

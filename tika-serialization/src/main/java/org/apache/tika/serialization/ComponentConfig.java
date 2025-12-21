@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.apache.tika.config.loader.ComponentLoader;
+
 /**
  * Configuration for how to load a top-level component from JSON.
  * <p>
@@ -29,6 +31,7 @@ import java.util.function.Supplier;
  *   <li>Whether to load as a list or single object</li>
  *   <li>How to wrap a list into a composite object (e.g., List&lt;Parser&gt; → CompositeParser)</li>
  *   <li>What default to return if the field is absent</li>
+ *   <li>Optional custom loader for complex components</li>
  * </ul>
  *
  * @param <T> the component type (e.g., Parser, Detector)
@@ -40,6 +43,7 @@ public class ComponentConfig<T> {
     private final boolean loadAsList;
     private final Function<List<?>, T> listWrapper;
     private final Supplier<T> defaultProvider;
+    private final ComponentLoader<T> customLoader;
 
     private ComponentConfig(Builder<T> builder) {
         this.jsonField = builder.jsonField;
@@ -47,6 +51,7 @@ public class ComponentConfig<T> {
         this.loadAsList = builder.loadAsList;
         this.listWrapper = builder.listWrapper;
         this.defaultProvider = builder.defaultProvider;
+        this.customLoader = builder.customLoader;
     }
 
     public String getJsonField() {
@@ -82,6 +87,20 @@ public class ComponentConfig<T> {
     }
 
     /**
+     * Returns true if this component has a custom loader.
+     */
+    public boolean hasCustomLoader() {
+        return customLoader != null;
+    }
+
+    /**
+     * Gets the custom loader for this component.
+     */
+    public ComponentLoader<T> getCustomLoader() {
+        return customLoader;
+    }
+
+    /**
      * Creates a new builder for ComponentConfig.
      *
      * @param jsonField the JSON field name (e.g., "parsers")
@@ -101,6 +120,7 @@ public class ComponentConfig<T> {
         private boolean loadAsList = false;
         private Function<List<?>, T> listWrapper;
         private Supplier<T> defaultProvider;
+        private ComponentLoader<T> customLoader;
 
         Builder(String jsonField, Class<T> componentClass) {
             this.jsonField = jsonField;
@@ -133,6 +153,20 @@ public class ComponentConfig<T> {
          */
         public Builder<T> defaultProvider(Supplier<T> provider) {
             this.defaultProvider = provider;
+            return this;
+        }
+
+        /**
+         * Configure a custom loader for complex components that need
+         * special handling (SPI fallback, dependency injection, etc.).
+         * <p>
+         * When a custom loader is set, it takes precedence over the
+         * default list-based loading.
+         *
+         * @param loader the custom loader
+         */
+        public Builder<T> customLoader(ComponentLoader<T> loader) {
+            this.customLoader = loader;
             return this;
         }
 

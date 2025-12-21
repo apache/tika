@@ -213,8 +213,7 @@ public class TikaLoaderRoundTripTest {
         String json = loader.toJson();
 
         // Should contain exclude in output (for default-parser exclusions)
-        // The config has _exclude, serializer outputs exclude
-        assertTrue(json.contains("exclude") || json.contains("_exclude"),
+        assertTrue(json.contains("exclude"),
                 "Exclusions should be in output");
     }
 
