@@ -169,6 +169,7 @@ public class TikaLoader {
 
     // Pending configs for deferred creation of DefaultParser/DefaultDetector/DefaultEncodingDetector
     // These are created in post-processing to avoid double-creation
+    // TODO -- we need to clean up this abomination
     private JsonNode pendingDefaultParserConfig;
     private int pendingDefaultParserIndex = -1;
     private JsonNode pendingDefaultDetectorConfig;

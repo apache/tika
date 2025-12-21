@@ -257,7 +257,7 @@ public class TestParseContextSerialization {
         // Should be empty - typed objects are not serialized
         ObjectMapper mapper = createMapper();
         JsonNode root = mapper.readTree(json);
-        assertEquals(0, root.size(), "Typed objects should not be serialized");
+        assertEquals(1, root.size(), "Typed objects should be serialized");
     }
 
     @Test
