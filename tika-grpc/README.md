@@ -15,6 +15,8 @@ This server will manage a pool of Tika Pipes clients.
 
 When developing plugins, you can use pf4j's development mode to load plugins directly from their `target/classes` directories without needing to package them as ZIP files. This significantly speeds up the development cycle.
 
+**Configuration Location:** The `plugin-roots` setting is specified in your **Tika configuration JSON file** (commonly named `tika-config.json`, `dev-config.json`, or similar).
+
 ### Enabling Development Mode
 
 Set one of the following:
