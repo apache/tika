@@ -391,7 +391,7 @@
     -->
     <jetty.version>11.0.26</jetty.version>
     <jetty.http2.version>11.0.26</jetty.http2.version>
-    <jhighlight.version>1.1.0</jhighlight.version>
+    <jhighlight.version>1.1.1</jhighlight.version>
     <jna.version>5.18.1</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
     <jsoup.version>1.21.2</jsoup.version>
