@@ -346,6 +346,37 @@ When developing plugins, you can use pf4j's development mode to load plugins dir
 
 **Configuration Location:** The `plugin-roots` setting is specified in your **Tika configuration JSON file** (commonly named `tika-config.json`, `dev-config.json`, or similar).
 
+### Quick Start with Maven Dev Profile
+
+The easiest way to run tika-grpc in development mode:
+
+```bash
+# 1. Build all plugins once
+cd tika-pipes/tika-pipes-plugins
+mvn clean compile
+cd ../../tika-grpc
+
+# 2. Run tika-grpc with dev profile (auto-enables development mode)
+mvn compile exec:java -Pdev
+```
+
+This will:
+- Automatically enable `tika.plugin.dev.mode=true`
+- Load plugins from `tika-pipes-plugins/*/target/classes` directories
+- Start gRPC server on port 50052
+- Use the `dev-config.json` configuration
+
+**Customizing the dev profile:**
+
+Edit `tika-grpc/dev-config.json` to modify:
+- Which plugins to load
+- Fetcher/emitter configurations  
+- Port number (default: 50052)
+
+### Manual Development Mode Setup
+
+If you prefer to run without the dev profile:
+
 ### Enabling Development Mode
 
 Set one of the following:

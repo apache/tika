@@ -118,6 +118,9 @@ public class TikaPluginManager extends DefaultPluginManager {
     public static TikaPluginManager load(TikaJsonConfig tikaJsonConfig)
             throws TikaConfigException, IOException {
 
+        // Configure pf4j runtime mode before creating the manager
+        configurePf4jRuntimeMode();
+        
         JsonNode root = tikaJsonConfig.getRootNode();
         JsonNode pluginRoots = root.get("plugin-roots");
         if (pluginRoots == null) {
@@ -146,18 +149,23 @@ public class TikaPluginManager extends DefaultPluginManager {
 
     public TikaPluginManager(List<Path> pluginRoots) throws IOException {
         super(pluginRoots);
-        // Must configure runtime mode immediately after super() but before loading plugins
-        configureRuntimeMode();
-        // Note: init() should NOT call loadPlugins() - let the caller do that explicitly
-        // This is because in DEPLOYMENT mode we need to unzip first
+        
+        // Log the runtime mode
+        if (getRuntimeMode() == RuntimeMode.DEVELOPMENT) {
+            LOG.info("TikaPluginManager running in DEVELOPMENT mode");
+        }
+        
+        // Initialize (unzip plugins if in deployment mode)
         init();
     }
     
-    private void configureRuntimeMode() {
-        RuntimeMode mode = isDevelopmentMode() ? RuntimeMode.DEVELOPMENT : RuntimeMode.DEPLOYMENT;
-        this.runtimeMode = mode;
-        if (mode == RuntimeMode.DEVELOPMENT) {
-            LOG.info("TikaPluginManager running in DEVELOPMENT mode");
+    /**
+     * Set pf4j's runtime mode system property based on Tika's dev mode setting.
+     * This must be called before creating TikaPluginManager instance.
+     */
+    private static void configurePf4jRuntimeMode() {
+        if (isDevelopmentMode()) {
+            System.setProperty("pf4j.mode", RuntimeMode.DEVELOPMENT.toString());
         }
     }
     
@@ -209,6 +217,21 @@ public class TikaPluginManager extends DefaultPluginManager {
         }
         // In deployment mode, use the default behavior
         return super.createPluginRepository();
+    }
+    
+    /**
+     * Override to use PropertiesPluginDescriptorFinder in development mode.
+     * In development mode, plugins are in target/classes with plugin.properties,
+     * not packaged JARs with META-INF/MANIFEST.MF.
+     */
+    @Override
+    protected org.pf4j.PluginDescriptorFinder createPluginDescriptorFinder() {
+        if (getRuntimeMode() == RuntimeMode.DEVELOPMENT) {
+            // In development mode, use properties-based finder
+            return new org.pf4j.PropertiesPluginDescriptorFinder();
+        }
+        // In deployment mode, use default manifest-based finder
+        return super.createPluginDescriptorFinder();
     }
 
     private void init() throws IOException {

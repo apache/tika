@@ -483,4 +483,35 @@
       </plugin>
     </plugins>
   </build>
+  
+  <profiles>
+    <!-- Development profile for running tika-grpc with plugin development mode -->
+    <profile>
+      <id>dev</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>${maven.exec.version}</version>
+            <configuration>
+              <mainClass>org.apache.tika.pipes.grpc.TikaGrpcServer</mainClass>
+              <systemProperties>
+                <systemProperty>
+                  <key>tika.plugin.dev.mode</key>
+                  <value>true</value>
+                </systemProperty>
+              </systemProperties>
+              <arguments>
+                <argument>-c</argument>
+                <argument>${project.basedir}/dev-config.json</argument>
+                <argument>-p</argument>
+                <argument>50052</argument>
+              </arguments>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
