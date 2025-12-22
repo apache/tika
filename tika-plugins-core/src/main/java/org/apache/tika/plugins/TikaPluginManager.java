@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pf4j.DefaultExtensionFinder;
 import org.pf4j.DefaultPluginManager;
 import org.pf4j.ExtensionFinder;
+import org.pf4j.RuntimeMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +45,9 @@ import org.apache.tika.exception.TikaConfigException;
 public class TikaPluginManager extends DefaultPluginManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaPluginManager.class);
+    
+    private static final String DEV_MODE_PROPERTY = "tika.plugin.dev.mode";
+    private static final String DEV_MODE_ENV = "TIKA_PLUGIN_DEV_MODE";
 
     //we're only using this to convert a single path or a list of paths to a list
     //we don't need all the functionality of the polymorphic objectmapper in tika-serialization
@@ -142,7 +146,28 @@ public class TikaPluginManager extends DefaultPluginManager {
 
     public TikaPluginManager(List<Path> pluginRoots) throws IOException {
         super(pluginRoots);
+        configureRuntimeMode();
         init();
+    }
+    
+    private void configureRuntimeMode() {
+        RuntimeMode mode = isDevelopmentMode() ? RuntimeMode.DEVELOPMENT : RuntimeMode.DEPLOYMENT;
+        this.runtimeMode = mode;
+        if (mode == RuntimeMode.DEVELOPMENT) {
+            LOG.info("TikaPluginManager running in DEVELOPMENT mode");
+        }
+    }
+    
+    private static boolean isDevelopmentMode() {
+        String sysProp = System.getProperty(DEV_MODE_PROPERTY);
+        if (sysProp != null) {
+            return Boolean.parseBoolean(sysProp);
+        }
+        String envVar = System.getenv(DEV_MODE_ENV);
+        if (envVar != null) {
+            return Boolean.parseBoolean(envVar);
+        }
+        return false;
     }
 
     /**
@@ -163,8 +188,12 @@ public class TikaPluginManager extends DefaultPluginManager {
     }
 
     private void init() throws IOException {
-        for (Path root : pluginsRoots) {
-            unzip(root);
+        if (getRuntimeMode() == RuntimeMode.DEPLOYMENT) {
+            for (Path root : pluginsRoots) {
+                unzip(root);
+            }
+        } else {
+            LOG.debug("Skipping ZIP extraction in DEVELOPMENT mode");
         }
     }
 
