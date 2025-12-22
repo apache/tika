@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.ResourceLoggingClassLoader;
@@ -51,6 +53,7 @@ import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.mock.MockParser;
 import org.apache.tika.parser.multiple.FallbackParser;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.w3c.dom.Document;
 
 /**
  * Tests for the Tika Config, which don't require real parsers /
@@ -467,5 +470,19 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
         assertNull(config.getMaximumCompressionRatio());
         assertNull(config.getMaximumDepth());
         assertNull(config.getMaximumPackageEntryDepth());
+    }
+
+    @Test void testTika4586() throws Exception {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        InputStream stream = TikaConfig.class.getResourceAsStream("TIKA-866-valid.xml");
+        DocumentBuilder db = dbf.newDocumentBuilder();
+        Document parsed = db.parse(stream);
+
+        try {
+            new TikaConfig(parsed); // if TIKA-4586, this throws an exception.
+        } catch (Exception e) {
+            fail("TikaConfig(Document) constructor threw an exception",e);
+        }
+
     }
 }
