@@ -31,10 +31,11 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
-
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.junit.jupiter.api.Test;
+import org.w3c.dom.Document;
 
 import org.apache.tika.ResourceLoggingClassLoader;
 import org.apache.tika.exception.TikaConfigException;
@@ -53,7 +54,7 @@ import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.mock.MockParser;
 import org.apache.tika.parser.multiple.FallbackParser;
 import org.apache.tika.utils.XMLReaderUtils;
-import org.w3c.dom.Document;
+
 
 /**
  * Tests for the Tika Config, which don't require real parsers /
