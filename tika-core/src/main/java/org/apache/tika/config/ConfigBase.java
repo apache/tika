@@ -141,7 +141,8 @@ public abstract class ConfigBase {
                                              Element properties)
             throws TikaConfigException, IOException {
 
-        if (!properties.getLocalName().equals("properties")) {
+        if (!("properties".equals(properties.getNodeName()) ||
+            "properties".equals(properties.getLocalName()))) {
             throw new TikaConfigException("expect properties as root node");
         }
         NodeList children = properties.getChildNodes();
@@ -151,7 +152,8 @@ public abstract class ConfigBase {
             if (child.getNodeType() != 1) {
                 continue;
             }
-            if (compositeElementName.equals(child.getLocalName())) {
+            if (compositeElementName.equals(child.getNodeName()) ||
+                compositeElementName.equals(child.getLocalName())) {
                 List<T> components = loadComposite(child, itemName, itemClass);
                 Constructor constructor = null;
                 try {
