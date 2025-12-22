@@ -122,6 +122,173 @@ You can load multiple plugins simultaneously by listing all their `target/classe
 }
 ```
 
+### IntelliJ IDEA Setup - Loading All Plugins
+
+For IntelliJ IDEA development, you can load ALL available plugins at once. Here's a complete configuration example:
+
+#### 1. Create a development configuration JSON file
+
+Create `dev-config.json` in your project root with all plugin class directories:
+
+```json
+{
+  "plugin-roots": [
+    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-az-blob/target/classes",
+    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-csv/target/classes",
+    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-file-system/target/classes",
+    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-gcs/target/classes",
+    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-http/target/classes",
+    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-ignite/target/classes",
+    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-jdbc/target/classes",
+    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-json/target/classes",
+    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-kafka/target/classes",
+    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-microsoft-graph/target/classes",
+    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-opensearch/target/classes",
+    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-s3/target/classes",
+    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-solr/target/classes"
+  ],
+  "fetchers": [
+    {
+      "fs": {
+        "myFetcher": {
+          "basePath": "/tmp/input"
+        }
+      }
+    }
+  ]
+}
+```
+
+**Note:** If using absolute paths instead of `${project.basedir}`, replace with your actual Tika project path:
+
+```json
+{
+  "plugin-roots": [
+    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-az-blob/target/classes",
+    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-csv/target/classes",
+    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-file-system/target/classes",
+    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-gcs/target/classes",
+    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-http/target/classes",
+    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-ignite/target/classes",
+    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-jdbc/target/classes",
+    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-json/target/classes",
+    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-kafka/target/classes",
+    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-microsoft-graph/target/classes",
+    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-opensearch/target/classes",
+    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-s3/target/classes",
+    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-solr/target/classes"
+  ]
+}
+```
+
+#### 2. Configure IntelliJ Run Configuration
+
+1. **Go to:** Run → Edit Configurations
+2. **Add New Configuration:** Click `+` → Application (or your existing run configuration)
+3. **Set Main Class:** Your application's main class (e.g., `org.apache.tika.grpc.TikaGrpcServer`)
+4. **VM Options:** Add development mode flag:
+   ```
+   -Dtika.plugin.dev.mode=true
+   ```
+5. **Program Arguments:** Point to your config file:
+   ```
+   --config dev-config.json
+   ```
+6. **Environment Variables:** (Alternative to VM option)
+   ```
+   TIKA_PLUGIN_DEV_MODE=true
+   ```
+7. **Working Directory:** Set to your Tika project root
+   ```
+   $PROJECT_DIR$
+   ```
+
+#### 3. Build All Plugins Once
+
+Before running in IntelliJ, compile all plugins:
+
+```bash
+# From Tika project root
+cd tika-pipes/tika-pipes-plugins
+mvn clean compile
+```
+
+Or use IntelliJ's Maven tool window:
+- Open **Maven** tool window (View → Tool Windows → Maven)
+- Expand **tika-pipes-plugins**
+- Right-click → Lifecycle → **compile**
+
+#### 4. Run in IntelliJ
+
+Click the **Run** button with your configured run configuration. You should see in the console:
+
+```
+INFO  TikaPluginManager running in DEVELOPMENT mode
+INFO  PF4J version 3.14.0 in 'development' mode
+INFO  Plugin 'tika-pipes-file-system-plugin@4.0.0-SNAPSHOT' resolved
+INFO  Plugin 'tika-pipes-s3-plugin@4.0.0-SNAPSHOT' resolved
+INFO  Plugin 'tika-pipes-kafka-plugin@4.0.0-SNAPSHOT' resolved
+...
+```
+
+#### 5. Hot Reload During Development
+
+When you modify plugin code:
+
+1. **Make your changes** in the plugin source code
+2. **Build just that module:** In IntelliJ, right-click the module → Build Module
+3. **Restart your run configuration** - changes are immediately picked up
+
+No need to rebuild ZIPs or the entire project!
+
+### Shell Script to Generate Config with All Plugins
+
+You can also generate the configuration dynamically:
+
+```bash
+#!/bin/bash
+# generate-dev-config.sh
+
+TIKA_ROOT="/path/to/your/tika"  # Update this path
+
+cat > dev-config.json << 'EOF'
+{
+  "plugin-roots": [
+EOF
+
+# Add all plugin class directories
+for plugin in $(ls -d $TIKA_ROOT/tika-pipes/tika-pipes-plugins/*/target/classes 2>/dev/null); do
+    echo "    \"$plugin\"," >> dev-config.json
+done
+
+# Remove trailing comma from last entry
+sed -i '$ s/,$//' dev-config.json
+
+cat >> dev-config.json << 'EOF'
+  ],
+  "fetchers": [
+    {
+      "fs": {
+        "defaultFetcher": {
+          "basePath": "/tmp"
+        }
+      }
+    }
+  ]
+}
+EOF
+
+echo "Generated dev-config.json with all available plugins"
+```
+
+Run it:
+```bash
+chmod +x generate-dev-config.sh
+./generate-dev-config.sh
+```
+
+
+
 ### Switching Back to Production Mode
 
 For production deployments, use packaged ZIP files:
