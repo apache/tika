@@ -146,7 +146,10 @@ public class TikaPluginManager extends DefaultPluginManager {
 
     public TikaPluginManager(List<Path> pluginRoots) throws IOException {
         super(pluginRoots);
+        // Must configure runtime mode immediately after super() but before loading plugins
         configureRuntimeMode();
+        // Note: init() should NOT call loadPlugins() - let the caller do that explicitly
+        // This is because in DEPLOYMENT mode we need to unzip first
         init();
     }
     
@@ -185,6 +188,27 @@ public class TikaPluginManager extends DefaultPluginManager {
         // Return a DefaultExtensionFinder without any classpath-scanning finders.
         // This will only discover extensions within the loaded plugin JARs.
         return new DefaultExtensionFinder(this);
+    }
+    
+    /**
+     * Override to prevent scanning subdirectories in development mode.
+     * In development mode, the default DevelopmentPluginRepository scans for subdirectories,
+     * but we want each path in plugin-roots to be treated as a complete plugin directory.
+     */
+    @Override
+    protected org.pf4j.PluginRepository createPluginRepository() {
+        if (getRuntimeMode() == RuntimeMode.DEVELOPMENT) {
+            // In development mode, return a repository that treats each path as a plugin
+            return new org.pf4j.BasePluginRepository(getPluginsRoots()) {
+                @Override
+                public List<Path> getPluginPaths() {
+                    // Don't scan subdirectories - each configured path IS a plugin
+                    return new java.util.ArrayList<>(pluginsRoots);
+                }
+            };
+        }
+        // In deployment mode, use the default behavior
+        return super.createPluginRepository();
     }
 
     private void init() throws IOException {
