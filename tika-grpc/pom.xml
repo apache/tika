@@ -488,6 +488,69 @@
     <!-- Development profile for running tika-grpc with plugin development mode -->
     <profile>
       <id>dev</id>
+      <dependencies>
+        <!-- Include plugin dependencies so their classes are available at runtime -->
+        <dependency>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-pipes-file-system</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-pipes-csv</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-pipes-json</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-pipes-jdbc</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-pipes-kafka</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-pipes-gcs</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-pipes-opensearch</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-pipes-ignite</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-pipes-solr</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-pipes-az-blob</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-pipes-microsoft-graph</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-pipes-s3</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
       <build>
         <plugins>
           <plugin>
@@ -503,10 +566,8 @@
                 </systemProperty>
               </systemProperties>
               <arguments>
-                <argument>-c</argument>
-                <argument>${project.basedir}/dev-config.json</argument>
-                <argument>-p</argument>
-                <argument>50052</argument>
+                <argument>--config</argument>
+                <argument>${config.file}</argument>
               </arguments>
             </configuration>
           </plugin>
