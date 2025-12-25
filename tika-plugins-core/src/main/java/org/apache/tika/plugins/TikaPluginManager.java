@@ -148,7 +148,15 @@ public class TikaPluginManager extends DefaultPluginManager {
     }
 
     public TikaPluginManager(List<Path> pluginRoots) throws IOException {
-        super(pluginRoots);
+        this(pluginRoots, true);
+    }
+    
+    /**
+     * Internal constructor that allows skipping runtime mode configuration.
+     * Used by tests and factory methods that have already configured the mode.
+     */
+    private TikaPluginManager(List<Path> pluginRoots, boolean configureMode) throws IOException {
+        super(configureMode ? configurePf4jRuntimeModeAndGetRoots(pluginRoots) : pluginRoots);
         
         if (getRuntimeMode() == RuntimeMode.DEVELOPMENT) {
             LOG.info("TikaPluginManager running in DEVELOPMENT mode");
@@ -158,12 +166,24 @@ public class TikaPluginManager extends DefaultPluginManager {
     }
     
     /**
+     * Helper method to configure PF4J runtime mode and return the plugin roots.
+     * This allows mode configuration before super() is called.
+     */
+    private static List<Path> configurePf4jRuntimeModeAndGetRoots(List<Path> pluginRoots) {
+        configurePf4jRuntimeMode();
+        return pluginRoots;
+    }
+    
+    /**
      * Set pf4j's runtime mode system property based on Tika's dev mode setting.
      * This must be called before creating TikaPluginManager instance.
      */
     private static void configurePf4jRuntimeMode() {
         if (isDevelopmentMode()) {
             System.setProperty("pf4j.mode", RuntimeMode.DEVELOPMENT.toString());
+        } else {
+            // Explicitly set to deployment mode to ensure clean state
+            System.setProperty("pf4j.mode", RuntimeMode.DEPLOYMENT.toString());
         }
     }
     
