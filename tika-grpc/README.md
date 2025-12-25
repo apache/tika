@@ -144,23 +144,154 @@ tika-pipes-s3/target/classes/
 
 ### IntelliJ IDEA Setup
 
-For IntelliJ IDEA development:
+For IntelliJ IDEA development, here's a complete workflow for developing plugins:
 
-1. **Create a Run Configuration:**
-   - Main class: `org.apache.tika.pipes.grpc.TikaGrpcServer`
-   - VM options: `-Dtika.plugin.dev.mode=true`
-   - Program arguments: `--config dev-tika-config.json`
-   - Working directory: `$PROJECT_DIR$/tika-grpc`
+#### Initial Setup
 
-2. **Build all plugins once:**
-   ```bash
-   cd tika-pipes/tika-pipes-plugins
-   mvn clean compile
+1. **Import the Tika project** as a Maven project in IntelliJ
+
+2. **Build all plugins once** (required before first run):
+   - Open the Maven tool window: View → Tool Windows → Maven
+   - Navigate to: **tika-pipes-plugins** (the parent module)
+   - Right-click → Lifecycle → **compile**
+   - Or use terminal:
+     ```bash
+     cd tika-pipes/tika-pipes-plugins
+     mvn clean compile
+     ```
+
+3. **Create a Run Configuration** for tika-grpc:
+   - Go to: Run → Edit Configurations
+   - Click `+` → Application
+   - **Name:** Tika gRPC Server (Dev Mode)
+   - **Main class:** `org.apache.tika.pipes.grpc.TikaGrpcServer`
+   - **VM options:** `-Dtika.plugin.dev.mode=true`
+   - **Program arguments:** `--config dev-tika-config.json`
+   - **Working directory:** `$PROJECT_DIR$/tika-grpc`
+   - **Use classpath of module:** `tika-grpc`
+   - Click OK
+
+4. **Run the configuration** - You should see output like:
+   ```
+   INFO  TikaPluginManager running in DEVELOPMENT mode
+   INFO  PF4J version 3.14.0 in 'development' mode
+   INFO  Plugin 'tika-pipes-file-system-plugin@4.0.0-SNAPSHOT' resolved
+   INFO  Plugin 'tika-pipes-s3-plugin@4.0.0-SNAPSHOT' resolved
+   ...
+   INFO  Server started, listening on 50052
    ```
 
-3. **Run** the configuration - plugins will load from `target/classes`
+#### Development Workflow: Making Plugin Changes
 
-4. **Hot reload:** After making changes, right-click the module → Build Module, then restart
+**Scenario:** You want to modify the S3 Fetcher plugin
+
+1. **Navigate to the plugin code:**
+   ```
+   tika-pipes/tika-pipes-plugins/tika-pipes-s3/src/main/java/
+   ```
+
+2. **Make your code changes** in the plugin source files
+   - Edit fetcher, emitter, or iterator classes
+   - Modify configuration handling
+   - Add new features
+
+3. **Build just the modified plugin module:**
+   - In Project view, right-click on **tika-pipes-s3** module
+   - Select **Build Module 'tika-pipes-s3.main'**
+   - Or use terminal:
+     ```bash
+     cd tika-pipes/tika-pipes-plugins/tika-pipes-s3
+     mvn compile
+     ```
+   - Build time: ~5-10 seconds (much faster than full rebuild!)
+
+4. **Restart the tika-grpc server:**
+   - **You MUST restart** for changes to take effect
+   - Click the stop button (red square) in IntelliJ
+   - Click run button (green arrow) to restart
+   - PF4J loads plugins at startup - no hot reload without restart
+
+5. **Verify your changes:**
+   - Check the server logs for successful plugin loading
+   - Test your changes via gRPC client
+   - Make additional changes and repeat steps 3-4 as needed
+
+#### Tips for Faster Development
+
+**Use IntelliJ's Build shortcuts:**
+- `Ctrl+F9` (Windows/Linux) or `Cmd+F9` (Mac) - Build project/module
+- Configure to build only changed files for even faster iteration
+
+**Debug mode:**
+- Use "Debug" instead of "Run" to set breakpoints in plugin code
+- Step through plugin initialization and execution
+- Inspect variables and plugin state
+
+**Multiple terminal windows:**
+- Terminal 1: Run `./run-dev.sh` 
+- Terminal 2: Quick builds with `mvn compile` in plugin directory
+- Restart server with Ctrl+C and up-arrow to re-run
+
+**Keyboard shortcut for restart:**
+- Set up: Preferences → Keymap → Search for "Rerun"
+- Assign a hotkey to "Rerun 'Tika gRPC Server (Dev Mode)'"
+- Quick restart: One keystroke instead of mouse clicking
+
+#### Common Issues and Solutions
+
+**"ClassNotFoundException" after changes:**
+- Make sure you ran **Build Module** on the changed plugin
+- Check that `target/classes` was updated (look at file timestamps)
+- Do a clean compile: `mvn clean compile`
+
+**Changes not visible after restart:**
+- Verify you built the correct module (check module name in IntelliJ)
+- Ensure the config file points to the right `target/classes` directory
+- Check that development mode is enabled (look for "DEVELOPMENT mode" in logs)
+
+**Server won't start:**
+- Build ALL plugins first: `cd tika-pipes/tika-pipes-plugins && mvn compile`
+- Check that `dev-tika-config.json` exists in the working directory
+- Verify working directory is set to `$PROJECT_DIR$/tika-grpc`
+
+**Want to see what changed:**
+- Before restarting, add a log statement to verify your change
+- Check the plugin's version in startup logs
+- Use debugger to set breakpoint in modified code
+
+#### Alternative: Maven Exec from IntelliJ
+
+Instead of creating an Application run configuration, you can also run the Maven goal directly:
+
+1. **Open Maven tool window**
+2. **Navigate to:** tika-grpc → Profiles → dev (check the checkbox)
+3. **Navigate to:** tika-grpc → Plugins → exec → exec:java
+4. **Right-click exec:java** → Run
+5. **To use custom config:** Edit the run configuration and add:
+   ```
+   -Dconfig.file=my-config.json
+   ```
+
+Same workflow applies: make changes → build module → restart Maven goal
+
+### Why You Must Restart
+
+**PF4J plugin loading happens at server startup:**
+- `TikaPluginManager.loadPlugins()` discovers and loads plugins from directories
+- Creates `PluginClassLoader` instances for each plugin
+- Instantiates plugin classes and calls `start()` methods
+- This happens **once** when the server starts
+
+**No hot reload support (yet):**
+- PF4J doesn't automatically detect changed class files
+- ClassLoaders are not refreshed during runtime
+- Server must be restarted to reload plugin code
+
+**Fast iteration cycle:**
+- Compile plugin: ~5-10 seconds
+- Restart server: ~10-15 seconds  
+- Total: ~20-25 seconds per change
+- Much faster than packaging ZIPs (2-3 minutes) or full rebuild (5+ minutes)
 
 ### Switching Back to Production Mode
 
