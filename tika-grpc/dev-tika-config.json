@@ -5,7 +5,6 @@
     "../tika-pipes/tika-pipes-plugins/tika-pipes-file-system/target/classes",
     "../tika-pipes/tika-pipes-plugins/tika-pipes-gcs/target/classes",
     "../tika-pipes/tika-pipes-plugins/tika-pipes-http/target/classes",
-    "../tika-pipes/tika-pipes-plugins/tika-pipes-ignite/target/classes",
     "../tika-pipes/tika-pipes-plugins/tika-pipes-jdbc/target/classes",
     "../tika-pipes/tika-pipes-plugins/tika-pipes-json/target/classes",
     "../tika-pipes/tika-pipes-plugins/tika-pipes-kafka/target/classes",
