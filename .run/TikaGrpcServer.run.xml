@@ -2,7 +2,7 @@
   <configuration default="false" name="TikaGrpcServer" type="Application" factoryName="Application" nameIsGenerated="true">
     <option name="MAIN_CLASS_NAME" value="org.apache.tika.pipes.grpc.TikaGrpcServer" />
     <module name="tika-grpc" />
-    <option name="PROGRAM_PARAMETERS" value="--config test-config.json" />
+    <option name="PROGRAM_PARAMETERS" value="--config dev-tika-config.json" />
     <option name="VM_PARAMETERS" value="-Dtika.plugin.dev.mode=true" />
     <option name="WORKING_DIRECTORY" value="$MODULE_WORKING_DIR$" />
     <extension name="coverage">
