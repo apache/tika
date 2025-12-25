@@ -4,9 +4,9 @@
 # Usage:
 #   ./run-dev.sh [config-file]
 #
-# If no config file is specified, defaults to test-dev-config.json
+# If no config file is specified, defaults to dev-tika-config.json
 
-CONFIG_FILE="${1:-test-dev-config.json}"
+CONFIG_FILE="${1:-dev-tika-config.json}"
 
 echo "🚀 Starting Tika gRPC Server in Development Mode"
 echo "================================================"
