@@ -227,7 +227,6 @@ public class TikaPluginManager extends DefaultPluginManager {
     @Override
     protected org.pf4j.PluginDescriptorFinder createPluginDescriptorFinder() {
         if (getRuntimeMode() == RuntimeMode.DEVELOPMENT) {
-            // In development mode, use properties-based finder
             return new org.pf4j.PropertiesPluginDescriptorFinder();
         }
         // In deployment mode, use default manifest-based finder
