@@ -150,12 +150,10 @@ public class TikaPluginManager extends DefaultPluginManager {
     public TikaPluginManager(List<Path> pluginRoots) throws IOException {
         super(pluginRoots);
         
-        // Log the runtime mode
         if (getRuntimeMode() == RuntimeMode.DEVELOPMENT) {
             LOG.info("TikaPluginManager running in DEVELOPMENT mode");
         }
         
-        // Initialize (unzip plugins if in deployment mode)
         init();
     }
     
@@ -215,7 +213,6 @@ public class TikaPluginManager extends DefaultPluginManager {
                 }
             };
         }
-        // In deployment mode, use the default behavior
         return super.createPluginRepository();
     }
     
@@ -229,7 +226,6 @@ public class TikaPluginManager extends DefaultPluginManager {
         if (getRuntimeMode() == RuntimeMode.DEVELOPMENT) {
             return new org.pf4j.PropertiesPluginDescriptorFinder();
         }
-        // In deployment mode, use default manifest-based finder
         return super.createPluginDescriptorFinder();
     }
 
