@@ -26,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.module.jsonSchema.JsonSchema;
 import com.fasterxml.jackson.module.jsonSchema.JsonSchemaGenerator;
 import com.google.rpc.Status;
@@ -68,11 +69,9 @@ import org.apache.tika.plugins.TikaPluginManager;
 
 class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     private static final Logger LOG = LoggerFactory.getLogger(TikaGrpcServerImpl.class);
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    static {
-        //TODO with Jackson 3.0 we'll have to use MapperBuilder
-        OBJECT_MAPPER.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
-    }
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
+            .defaultPropertyInclusion(JsonInclude.Value.construct(JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL))
+            .build();
     public static final JsonSchemaGenerator JSON_SCHEMA_GENERATOR = new JsonSchemaGenerator(OBJECT_MAPPER);
 
     PipesConfig pipesConfig;
