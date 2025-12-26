@@ -31,7 +31,6 @@
 
   <properties>
     <ignite.version>2.16.0</ignite.version>
-    <h2.version>1.4.197</h2.version>
     <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-pipes-core,tika-serialization,tika-plugins-core</plugin.excluded.artifactIds>
     <plugin.excluded.groupIds>org.apache.logging.log4j,org.slf4j</plugin.excluded.groupIds>
   </properties>
@@ -180,8 +179,4 @@
       </plugin>
     </plugins>
   </build>
-
-  <scm>
-    <tag>3.0.0-rc1</tag>
-  </scm>
 </project>

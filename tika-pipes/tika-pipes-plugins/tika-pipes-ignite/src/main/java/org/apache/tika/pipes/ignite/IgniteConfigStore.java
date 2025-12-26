@@ -59,6 +59,7 @@ public class IgniteConfigStore implements ConfigStore {
     private String igniteInstanceName = DEFAULT_INSTANCE_NAME;
     private boolean autoClose = true;
     private ExtensionConfig extensionConfig;
+    private boolean closed = false;
 
     public IgniteConfigStore() {
     }
@@ -84,6 +85,9 @@ public class IgniteConfigStore implements ConfigStore {
 
     @Override
     public void init() throws Exception {
+        if (closed) {
+            throw new IllegalStateException("Cannot reinitialize IgniteConfigStore after it has been closed");
+        }
         if (ignite != null) {
             LOG.warn("IgniteConfigStore already initialized");
             return;
@@ -139,7 +143,7 @@ public class IgniteConfigStore implements ConfigStore {
         return Set.copyOf(cache.query(new org.apache.ignite.cache.query.ScanQuery<String, ExtensionConfigDTO>())
                 .getAll()
                 .stream()
-                .map(entry -> entry.getKey())
+                .map(javax.cache.Cache.Entry::getKey)
                 .toList());
     }
 
@@ -157,6 +161,7 @@ public class IgniteConfigStore implements ConfigStore {
             ignite.close();
             ignite = null;
             cache = null;
+            closed = true;
         }
     }
 

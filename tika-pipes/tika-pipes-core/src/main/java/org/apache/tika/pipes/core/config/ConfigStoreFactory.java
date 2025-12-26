@@ -88,10 +88,28 @@ public interface ConfigStoreFactory extends TikaExtensionFactory<ConfigStore> {
                 throw new TikaConfigException(
                     "Class " + configStoreType + " does not implement ConfigStore interface");
             }
-            ConfigStore store = (ConfigStore) storeClass.getDeclaredConstructor().newInstance();
+            
+            // Try constructor with ExtensionConfig parameter first
+            ConfigStore store;
             if (extensionConfig != null) {
+                try {
+                    store = (ConfigStore) storeClass
+                            .getDeclaredConstructor(ExtensionConfig.class)
+                            .newInstance(extensionConfig);
+                    return store;
+                } catch (NoSuchMethodException e) {
+                    // Fall through to no-arg constructor
+                }
+            }
+            
+            // Use no-arg constructor
+            store = (ConfigStore) storeClass.getDeclaredConstructor().newInstance();
+            
+            // Set extension config if the store implements the method
+            if (extensionConfig != null && store instanceof InMemoryConfigStore) {
                 ((InMemoryConfigStore) store).setExtensionConfig(extensionConfig);
             }
+            
             return store;
         } catch (ClassNotFoundException e) {
             throw new TikaConfigException(

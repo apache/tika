@@ -74,10 +74,21 @@ public class IgniteConfigStoreConfig {
     }
 
     public CacheMode getCacheModeEnum() {
+        if (cacheMode == null || cacheMode.trim().isEmpty()) {
+            return CacheMode.REPLICATED;
+        }
+        
         if ("PARTITIONED".equalsIgnoreCase(cacheMode)) {
             return CacheMode.PARTITIONED;
         }
-        return CacheMode.REPLICATED;
+        
+        if ("REPLICATED".equalsIgnoreCase(cacheMode)) {
+            return CacheMode.REPLICATED;
+        }
+        
+        throw new IllegalArgumentException(
+                "Unsupported cacheMode: '" + cacheMode
+                        + "'. Supported values are PARTITIONED and REPLICATED.");
     }
 
     public String getIgniteInstanceName() {
