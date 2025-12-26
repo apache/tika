@@ -62,6 +62,8 @@ import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.core.PipesClient;
 import org.apache.tika.pipes.core.PipesConfig;
+import org.apache.tika.pipes.core.config.ConfigStore;
+import org.apache.tika.pipes.core.config.ConfigStoreFactory;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.plugins.TikaPluginManager;
@@ -109,19 +111,21 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             pluginManager = new org.pf4j.DefaultPluginManager();
         }
 
-        // Create ConfigStore based on PipesConfig setting using plugin system
+        ConfigStore configStore = createConfigStore();
+
+        fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig, true, configStore);
+    }
+
+    private ConfigStore createConfigStore() throws TikaConfigException {
         String configStoreType = pipesConfig.getConfigStoreType();
         String configStoreParams = pipesConfig.getConfigStoreParams();
-        org.apache.tika.plugins.ExtensionConfig storeConfig = new org.apache.tika.plugins.ExtensionConfig(
+        ExtensionConfig storeConfig = new ExtensionConfig(
             configStoreType, configStoreType, configStoreParams);
-        
-        org.apache.tika.pipes.core.config.ConfigStore configStore =
-            org.apache.tika.pipes.core.config.ConfigStoreFactory.createConfigStore(
-                pluginManager, 
+
+        return ConfigStoreFactory.createConfigStore(
+                pluginManager,
                 configStoreType,
                 storeConfig);
-        
-        fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig, true, configStore);
     }
 
     @Override

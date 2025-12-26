@@ -536,7 +536,6 @@
           <artifactId>tika-pipes-ignite</artifactId>
           <version>${project.version}</version>
         </dependency>
-        <!-- Ignite plugin dependencies needed in dev mode -->
         <dependency>
           <groupId>org.apache.ignite</groupId>
           <artifactId>ignite-core</artifactId>
@@ -591,7 +590,6 @@
                 <argument>--config</argument>
                 <argument>${config.file}</argument>
               </arguments>
-              <!-- Add JVM arguments for Ignite Java 9+ module access -->
               <additionalJvmArgs>
                 <additionalJvmArg>--add-opens=java.base/java.nio=ALL-UNNAMED</additionalJvmArg>
                 <additionalJvmArg>--add-opens=java.base/sun.nio.ch=ALL-UNNAMED</additionalJvmArg>
