@@ -18,3 +18,4 @@ nb-configuration.xml
 .*.swp
 
 tika-pipes/tika-pipes-plugins/tika-pipes-ignite/ignite
+tika-grpc/ignite
