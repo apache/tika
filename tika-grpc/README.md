@@ -11,11 +11,33 @@ This server will manage a pool of Tika Pipes clients.
     * Delete
 * Fetch + Parse a given Fetch Item
 
+## Quick Start - Development Mode
+
+The fastest way to run tika-grpc in development mode with plugin hot-reloading:
+
+```bash
+# 1. Build Tika and all plugins (from tika project root)
+mvn clean install -DskipTests
+
+# 2. Run in development mode (from tika-grpc directory)
+cd tika-grpc
+./run-dev.sh
+```
+
+This will:
+- Automatically enable `tika.plugin.dev.mode=true`
+- Load plugins from `../tika-pipes/tika-pipes-plugins/*/target/classes` directories
+- Start gRPC server on port 50052
+- Use the `dev-tika-config.json` configuration
+
+You can also specify a custom config file:
+```bash
+./run-dev.sh my-custom-config.json
+```
+
 ## Plugin Development Mode
 
 When developing plugins, you can use pf4j's development mode to load plugins directly from their `target/classes` directories without needing to package them as ZIP files. This significantly speeds up the development cycle.
-
-**Configuration Location:** The `plugin-roots` setting is specified in your **Tika configuration JSON file** (commonly named `tika-config.json`, `dev-config.json`, or similar).
 
 ### Enabling Development Mode
 
@@ -31,26 +53,41 @@ Set one of the following:
 export TIKA_PLUGIN_DEV_MODE=true
 ```
 
+**Maven Dev Profile:** (Recommended)
+```bash
+mvn exec:java -Pdev -Dconfig.file=dev-tika-config.json
+```
+
 ### Configuration Example
 
-In your Tika configuration JSON, point `plugin-roots` to the unpackaged plugin directories:
+The `dev-tika-config.json` file shows how to configure plugin-roots with relative paths:
 
 ```json
 {
   "plugin-roots": [
-    "/path/to/tika/tika-pipes/tika-pipes-plugins/tika-pipes-s3/target/classes",
-    "/path/to/tika/tika-pipes/tika-pipes-plugins/tika-pipes-file-system/target/classes",
-    "/path/to/tika/tika-pipes/tika-pipes-plugins/tika-pipes-kafka/target/classes"
+    "../tika-pipes/tika-pipes-plugins/tika-pipes-file-system/target/classes",
+    "../tika-pipes/tika-pipes-plugins/tika-pipes-http/target/classes",
+    "../tika-pipes/tika-pipes-plugins/tika-pipes-s3/target/classes"
   ],
   "fetchers": [
     {
-      "s3": {
-        "myS3Fetcher": {
-          "region": "us-east-1",
-          "bucket": "my-bucket"
+      "fs": {
+        "myFetcher": {
+          "basePath": "/tmp/input"
         }
       }
     }
+  ]
+}
+```
+
+**Note:** Paths are relative to the `tika-grpc` directory (where you run the server from). You can also use absolute paths if preferred:
+
+```json
+{
+  "plugin-roots": [
+    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-s3/target/classes",
+    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-file-system/target/classes"
   ]
 }
 ```
@@ -63,35 +100,30 @@ In your Tika configuration JSON, point `plugin-roots` to the unpackaged plugin d
    mvn clean compile
    ```
 
-2. **Enable development mode** via system property or environment variable:
+2. **Run in development mode** using the convenience script:
    ```bash
-   export TIKA_PLUGIN_DEV_MODE=true
+   cd tika-grpc
+   ./run-dev.sh
    ```
 
-3. **Configure plugin-roots** to point to `target/classes` directories in your config JSON
+3. **Make code changes** to your plugin
 
-4. **Run your application** - plugins will be loaded directly from the class directories:
-   ```bash
-   java -jar tika-grpc-server.jar --config my-config.json
-   ```
-
-5. **Make code changes** to your plugin
-
-6. **Recompile just the changed plugin** (much faster than full rebuild):
+4. **Recompile just the changed plugin** (much faster than full rebuild):
    ```bash
    cd tika-pipes/tika-pipes-plugins/tika-pipes-s3
    mvn compile
    ```
 
-7. **Restart your application** - changes are immediately picked up
+5. **Restart the server** - changes are immediately picked up
 
 ### What Happens in Development Mode
 
 - **ZIP extraction is skipped** - TikaPluginManager doesn't try to unzip plugins
 - **Plugins loaded from directories** - pf4j loads classes directly from `target/classes`
-- **Each plugin directory must contain** `plugin.properties` in the root (already present after `mvn compile`)
+- **Each plugin directory must contain** `plugin.properties` in the root (automatically present after `mvn compile`)
+- **Dependencies are available** - The dev profile includes all plugin modules as dependencies
 
-### Example Directory Structure
+### Expected Directory Structure
 
 When pointing to `target/classes`, pf4j expects this structure:
 
@@ -110,199 +142,169 @@ tika-pipes-s3/target/classes/
                         └── S3FetcherFactory.class
 ```
 
-### Multiple Plugins During Development
+### IntelliJ IDEA Setup
 
-You can load multiple plugins simultaneously by listing all their `target/classes` directories:
+For IntelliJ IDEA development, here's a complete workflow for developing plugins:
 
-```json
-{
-  "plugin-roots": [
-    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-s3/target/classes",
-    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-kafka/target/classes",
-    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-opensearch/target/classes"
-  ]
-}
-```
+#### Initial Setup
 
-### IntelliJ IDEA Setup - Loading All Plugins
+1. **Import the Tika project** as a Maven project in IntelliJ
 
-For IntelliJ IDEA development, you can load ALL available plugins at once. Here's a complete configuration example:
+2. **Build all plugins once** (required before first run):
+   - Open the Maven tool window: View → Tool Windows → Maven
+   - Navigate to: **tika-pipes-plugins** (the parent module)
+   - Right-click → Lifecycle → **compile**
+   - Or use terminal:
+     ```bash
+     cd tika-pipes/tika-pipes-plugins
+     mvn clean compile
+     ```
 
-#### 1. Create a development configuration JSON file
+3. **Create a Run Configuration** for tika-grpc:
+   - Go to: Run → Edit Configurations
+   - Click `+` → Application
+   - **Name:** Tika gRPC Server (Dev Mode)
+   - **Main class:** `org.apache.tika.pipes.grpc.TikaGrpcServer`
+   - **VM options:** `-Dtika.plugin.dev.mode=true`
+   - **Program arguments:** `--config dev-tika-config.json`
+   - **Working directory:** `$PROJECT_DIR$/tika-grpc`
+   - **Use classpath of module:** `tika-grpc`
+   - Click OK
 
-Create `dev-config.json` in your project root with all plugin class directories:
-
-```json
-{
-  "plugin-roots": [
-    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-az-blob/target/classes",
-    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-csv/target/classes",
-    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-file-system/target/classes",
-    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-gcs/target/classes",
-    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-http/target/classes",
-    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-ignite/target/classes",
-    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-jdbc/target/classes",
-    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-json/target/classes",
-    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-kafka/target/classes",
-    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-microsoft-graph/target/classes",
-    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-opensearch/target/classes",
-    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-s3/target/classes",
-    "${project.basedir}/tika-pipes/tika-pipes-plugins/tika-pipes-solr/target/classes"
-  ],
-  "fetchers": [
-    {
-      "fs": {
-        "myFetcher": {
-          "basePath": "/tmp/input"
-        }
-      }
-    }
-  ]
-}
-```
-
-**Note:** If using absolute paths instead of `${project.basedir}`, replace with your actual Tika project path:
-
-```json
-{
-  "plugin-roots": [
-    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-az-blob/target/classes",
-    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-csv/target/classes",
-    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-file-system/target/classes",
-    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-gcs/target/classes",
-    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-http/target/classes",
-    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-ignite/target/classes",
-    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-jdbc/target/classes",
-    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-json/target/classes",
-    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-kafka/target/classes",
-    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-microsoft-graph/target/classes",
-    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-opensearch/target/classes",
-    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-s3/target/classes",
-    "/home/user/tika/tika-pipes/tika-pipes-plugins/tika-pipes-solr/target/classes"
-  ]
-}
-```
-
-#### 2. Configure IntelliJ Run Configuration
-
-1. **Go to:** Run → Edit Configurations
-2. **Add New Configuration:** Click `+` → Application (or your existing run configuration)
-3. **Set Main Class:** Your application's main class (e.g., `org.apache.tika.grpc.TikaGrpcServer`)
-4. **VM Options:** Add development mode flag:
+4. **Run the configuration** - You should see output like:
    ```
-   -Dtika.plugin.dev.mode=true
-   ```
-5. **Program Arguments:** Point to your config file:
-   ```
-   --config dev-config.json
-   ```
-6. **Environment Variables:** (Alternative to VM option)
-   ```
-   TIKA_PLUGIN_DEV_MODE=true
-   ```
-7. **Working Directory:** Set to your Tika project root
-   ```
-   $PROJECT_DIR$
+   INFO  TikaPluginManager running in DEVELOPMENT mode
+   INFO  PF4J version 3.14.0 in 'development' mode
+   INFO  Plugin 'tika-pipes-file-system-plugin@4.0.0-SNAPSHOT' resolved
+   INFO  Plugin 'tika-pipes-s3-plugin@4.0.0-SNAPSHOT' resolved
+   ...
+   INFO  Server started, listening on 50052
    ```
 
-#### 3. Build All Plugins Once
+#### Development Workflow: Making Plugin Changes
 
-Before running in IntelliJ, compile all plugins:
+**Scenario:** You want to modify the S3 Fetcher plugin
 
-```bash
-# From Tika project root
-cd tika-pipes/tika-pipes-plugins
-mvn clean compile
-```
+1. **Navigate to the plugin code:**
+   ```
+   tika-pipes/tika-pipes-plugins/tika-pipes-s3/src/main/java/
+   ```
 
-Or use IntelliJ's Maven tool window:
-- Open **Maven** tool window (View → Tool Windows → Maven)
-- Expand **tika-pipes-plugins**
-- Right-click → Lifecycle → **compile**
+2. **Make your code changes** in the plugin source files
+   - Edit fetcher, emitter, or iterator classes
+   - Modify configuration handling
+   - Add new features
 
-#### 4. Run in IntelliJ
+3. **Build just the modified plugin module:**
+   - In Project view, right-click on **tika-pipes-s3** module
+   - Select **Build Module 'tika-pipes-s3.main'**
+   - Or use terminal:
+     ```bash
+     cd tika-pipes/tika-pipes-plugins/tika-pipes-s3
+     mvn compile
+     ```
+   - Build time: ~5-10 seconds (much faster than full rebuild!)
 
-Click the **Run** button with your configured run configuration. You should see in the console:
+4. **Restart the tika-grpc server:**
+   - **You MUST restart** for changes to take effect
+   - Click the stop button (red square) in IntelliJ
+   - Click run button (green arrow) to restart
+   - PF4J loads plugins at startup - no hot reload without restart
 
-```
-INFO  TikaPluginManager running in DEVELOPMENT mode
-INFO  PF4J version 3.14.0 in 'development' mode
-INFO  Plugin 'tika-pipes-file-system-plugin@4.0.0-SNAPSHOT' resolved
-INFO  Plugin 'tika-pipes-s3-plugin@4.0.0-SNAPSHOT' resolved
-INFO  Plugin 'tika-pipes-kafka-plugin@4.0.0-SNAPSHOT' resolved
-...
-```
+5. **Verify your changes:**
+   - Check the server logs for successful plugin loading
+   - Test your changes via gRPC client
+   - Make additional changes and repeat steps 3-4 as needed
 
-#### 5. Hot Reload During Development
+#### Tips for Faster Development
 
-When you modify plugin code:
+**Use IntelliJ's Build shortcuts:**
+- `Ctrl+F9` (Windows/Linux) or `Cmd+F9` (Mac) - Build project/module
+- Configure to build only changed files for even faster iteration
 
-1. **Make your changes** in the plugin source code
-2. **Build just that module:** In IntelliJ, right-click the module → Build Module
-3. **Restart your run configuration** - changes are immediately picked up
+**Debug mode:**
+- Use "Debug" instead of "Run" to set breakpoints in plugin code
+- Step through plugin initialization and execution
+- Inspect variables and plugin state
 
-No need to rebuild ZIPs or the entire project!
+**Multiple terminal windows:**
+- Terminal 1: Run `./run-dev.sh` 
+- Terminal 2: Quick builds with `mvn compile` in plugin directory
+- Restart server with Ctrl+C and up-arrow to re-run
 
-### Shell Script to Generate Config with All Plugins
+**Keyboard shortcut for restart:**
+- Set up: Preferences → Keymap → Search for "Rerun"
+- Assign a hotkey to "Rerun 'Tika gRPC Server (Dev Mode)'"
+- Quick restart: One keystroke instead of mouse clicking
 
-You can also generate the configuration dynamically:
+#### Common Issues and Solutions
 
-```bash
-#!/bin/bash
-# generate-dev-config.sh
+**"ClassNotFoundException" after changes:**
+- Make sure you ran **Build Module** on the changed plugin
+- Check that `target/classes` was updated (look at file timestamps)
+- Do a clean compile: `mvn clean compile`
 
-TIKA_ROOT="/path/to/your/tika"  # Update this path
+**Changes not visible after restart:**
+- Verify you built the correct module (check module name in IntelliJ)
+- Ensure the config file points to the right `target/classes` directory
+- Check that development mode is enabled (look for "DEVELOPMENT mode" in logs)
 
-cat > dev-config.json << 'EOF'
-{
-  "plugin-roots": [
-EOF
+**Server won't start:**
+- Build ALL plugins first: `cd tika-pipes/tika-pipes-plugins && mvn compile`
+- Check that `dev-tika-config.json` exists in the working directory
+- Verify working directory is set to `$PROJECT_DIR$/tika-grpc`
 
-# Add all plugin class directories
-for plugin in $(ls -d $TIKA_ROOT/tika-pipes/tika-pipes-plugins/*/target/classes 2>/dev/null); do
-    echo "    \"$plugin\"," >> dev-config.json
-done
+**Want to see what changed:**
+- Before restarting, add a log statement to verify your change
+- Check the plugin's version in startup logs
+- Use debugger to set breakpoint in modified code
 
-# Remove trailing comma from last entry
-sed -i '$ s/,$//' dev-config.json
+#### Alternative: Maven Exec from IntelliJ
 
-cat >> dev-config.json << 'EOF'
-  ],
-  "fetchers": [
-    {
-      "fs": {
-        "defaultFetcher": {
-          "basePath": "/tmp"
-        }
-      }
-    }
-  ]
-}
-EOF
+Instead of creating an Application run configuration, you can also run the Maven goal directly:
 
-echo "Generated dev-config.json with all available plugins"
-```
+1. **Open Maven tool window**
+2. **Navigate to:** tika-grpc → Profiles → dev (check the checkbox)
+3. **Navigate to:** tika-grpc → Plugins → exec → exec:java
+4. **Right-click exec:java** → Run
+5. **To use custom config:** Edit the run configuration and add:
+   ```
+   -Dconfig.file=my-config.json
+   ```
 
-Run it:
-```bash
-chmod +x generate-dev-config.sh
-./generate-dev-config.sh
-```
+Same workflow applies: make changes → build module → restart Maven goal
 
+### Why You Must Restart
 
+**PF4J plugin loading happens at server startup:**
+- `TikaPluginManager.loadPlugins()` discovers and loads plugins from directories
+- Creates `PluginClassLoader` instances for each plugin
+- Instantiates plugin classes and calls `start()` methods
+- This happens **once** when the server starts
+
+**No hot reload support (yet):**
+- PF4J doesn't automatically detect changed class files
+- ClassLoaders are not refreshed during runtime
+- Server must be restarted to reload plugin code
+
+**Fast iteration cycle:**
+- Compile plugin: ~5-10 seconds
+- Restart server: ~10-15 seconds  
+- Total: ~20-25 seconds per change
+- Much faster than packaging ZIPs (2-3 minutes) or full rebuild (5+ minutes)
 
 ### Switching Back to Production Mode
 
 For production deployments, use packaged ZIP files:
 
-1. **Remove or set development mode to false**:
+1. **Remove or set development mode to false:**
    ```bash
    unset TIKA_PLUGIN_DEV_MODE
    # OR
    export TIKA_PLUGIN_DEV_MODE=false
    ```
 
-2. **Build plugin ZIPs**:
+2. **Build plugin ZIPs:**
    ```bash
    cd tika-pipes/tika-pipes-plugins
    mvn clean package
@@ -335,8 +337,11 @@ For production deployments, use packaged ZIP files:
 - Restart the application
 - Check that you're editing the correct plugin module
 
+**ClassNotFoundException errors?**
+- Make sure you built all plugins first with `mvn clean install -DskipTests`
+- The dev profile includes all plugin dependencies, but they must be compiled first
+
 ### References
 
 - [pf4j Development Mode Documentation](https://pf4j.org/doc/development-mode.html)
 - [JIRA TIKA-4587](https://issues.apache.org/jira/browse/TIKA-4587) - Development mode implementation
-
