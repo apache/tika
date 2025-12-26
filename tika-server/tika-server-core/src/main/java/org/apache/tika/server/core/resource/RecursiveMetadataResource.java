@@ -72,9 +72,7 @@ public class RecursiveMetadataResource {
         BasicContentHandlerFactory.HANDLER_TYPE type = handlerConfig.getType();
         RecursiveParserWrapperHandler handler =
                 new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(type, handlerConfig.getWriteLimit(), handlerConfig.isThrowOnWriteLimitReached(), context),
-                        handlerConfig.getMaxEmbeddedResources(), TikaResource
-                        .getTikaLoader()
-                        .loadMetadataFilters());
+                        handlerConfig.getMaxEmbeddedResources());
         try {
             TikaResource.parse(wrapper, LOG, "/rmeta", tis, handler, metadata, context);
         } catch (TikaServerParseException e) {
@@ -179,9 +177,7 @@ public class RecursiveMetadataResource {
         BasicContentHandlerFactory.HANDLER_TYPE type = handlerConfig.getType();
         RecursiveParserWrapperHandler handler =
                 new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(type, handlerConfig.getWriteLimit(), handlerConfig.isThrowOnWriteLimitReached(), context),
-                        handlerConfig.getMaxEmbeddedResources(), TikaResource
-                        .getTikaLoader()
-                        .loadMetadataFilters());
+                        handlerConfig.getMaxEmbeddedResources());
         try {
             TikaResource.parse(wrapper, LOG, "/rmeta/config", tis, handler, metadata, context);
         } catch (TikaServerParseException e) {

@@ -553,8 +553,7 @@ public class TikaCLI {
     private void handleRecursiveJson(URL url, OutputStream output) throws IOException, SAXException, TikaException {
         Metadata metadata = new Metadata();
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
-        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(getContentHandlerFactory(type), -1,
-                tikaLoader.loadMetadataFilters());
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(getContentHandlerFactory(type), -1);
         try (TikaInputStream tis = TikaInputStream.get(url, metadata)) {
             wrapper.parse(tis, handler, metadata, context);
         }
