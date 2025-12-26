@@ -31,6 +31,8 @@
 
   <properties>
     <ignite.version>2.16.0</ignite.version>
+    <!-- Ignite 2.16.0 requires H2 1.4.x - not compatible with 2.x -->
+    <h2.version>1.4.197</h2.version>
     <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-pipes-core,tika-serialization,tika-plugins-core</plugin.excluded.artifactIds>
     <plugin.excluded.groupIds>org.apache.logging.log4j,org.slf4j</plugin.excluded.groupIds>
   </properties>
