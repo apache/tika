@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pf4j.DefaultExtensionFinder;
 import org.pf4j.DefaultPluginManager;
 import org.pf4j.ExtensionFinder;
+import org.pf4j.RuntimeMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +45,9 @@ import org.apache.tika.exception.TikaConfigException;
 public class TikaPluginManager extends DefaultPluginManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaPluginManager.class);
+    
+    private static final String DEV_MODE_PROPERTY = "tika.plugin.dev.mode";
+    private static final String DEV_MODE_ENV = "TIKA_PLUGIN_DEV_MODE";
 
     //we're only using this to convert a single path or a list of paths to a list
     //we don't need all the functionality of the polymorphic objectmapper in tika-serialization
@@ -114,6 +118,9 @@ public class TikaPluginManager extends DefaultPluginManager {
     public static TikaPluginManager load(TikaJsonConfig tikaJsonConfig)
             throws TikaConfigException, IOException {
 
+        // Configure pf4j runtime mode before creating the manager
+        configurePf4jRuntimeMode();
+        
         JsonNode root = tikaJsonConfig.getRootNode();
         JsonNode pluginRoots = root.get("plugin-roots");
         if (pluginRoots == null) {
@@ -141,8 +148,55 @@ public class TikaPluginManager extends DefaultPluginManager {
     }
 
     public TikaPluginManager(List<Path> pluginRoots) throws IOException {
-        super(pluginRoots);
+        this(pluginRoots, true);
+    }
+    
+    /**
+     * Internal constructor that allows skipping runtime mode configuration.
+     * Used by tests and factory methods that have already configured the mode.
+     */
+    private TikaPluginManager(List<Path> pluginRoots, boolean configureMode) throws IOException {
+        super(configureMode ? configurePf4jRuntimeModeAndGetRoots(pluginRoots) : pluginRoots);
+        
+        if (getRuntimeMode() == RuntimeMode.DEVELOPMENT) {
+            LOG.info("TikaPluginManager running in DEVELOPMENT mode");
+        }
+        
         init();
+    }
+    
+    /**
+     * Helper method to configure PF4J runtime mode and return the plugin roots.
+     * This allows mode configuration before super() is called.
+     */
+    private static List<Path> configurePf4jRuntimeModeAndGetRoots(List<Path> pluginRoots) {
+        configurePf4jRuntimeMode();
+        return pluginRoots;
+    }
+    
+    /**
+     * Set pf4j's runtime mode system property based on Tika's dev mode setting.
+     * This must be called before creating TikaPluginManager instance.
+     */
+    private static void configurePf4jRuntimeMode() {
+        if (isDevelopmentMode()) {
+            System.setProperty("pf4j.mode", RuntimeMode.DEVELOPMENT.toString());
+        } else {
+            // Explicitly set to deployment mode to ensure clean state
+            System.setProperty("pf4j.mode", RuntimeMode.DEPLOYMENT.toString());
+        }
+    }
+    
+    private static boolean isDevelopmentMode() {
+        String sysProp = System.getProperty(DEV_MODE_PROPERTY);
+        if (sysProp != null) {
+            return Boolean.parseBoolean(sysProp);
+        }
+        String envVar = System.getenv(DEV_MODE_ENV);
+        if (envVar != null) {
+            return Boolean.parseBoolean(envVar);
+        }
+        return false;
     }
 
     /**
@@ -161,10 +215,47 @@ public class TikaPluginManager extends DefaultPluginManager {
         // This will only discover extensions within the loaded plugin JARs.
         return new DefaultExtensionFinder(this);
     }
+    
+    /**
+     * Override to prevent scanning subdirectories in development mode.
+     * In development mode, the default DevelopmentPluginRepository scans for subdirectories,
+     * but we want each path in plugin-roots to be treated as a complete plugin directory.
+     */
+    @Override
+    protected org.pf4j.PluginRepository createPluginRepository() {
+        if (getRuntimeMode() == RuntimeMode.DEVELOPMENT) {
+            // In development mode, return a repository that treats each path as a plugin
+            return new org.pf4j.BasePluginRepository(getPluginsRoots()) {
+                @Override
+                public List<Path> getPluginPaths() {
+                    // Don't scan subdirectories - each configured path IS a plugin
+                    return new java.util.ArrayList<>(pluginsRoots);
+                }
+            };
+        }
+        return super.createPluginRepository();
+    }
+    
+    /**
+     * Override to use PropertiesPluginDescriptorFinder in development mode.
+     * In development mode, plugins are in target/classes with plugin.properties,
+     * not packaged JARs with META-INF/MANIFEST.MF.
+     */
+    @Override
+    protected org.pf4j.PluginDescriptorFinder createPluginDescriptorFinder() {
+        if (getRuntimeMode() == RuntimeMode.DEVELOPMENT) {
+            return new org.pf4j.PropertiesPluginDescriptorFinder();
+        }
+        return super.createPluginDescriptorFinder();
+    }
 
     private void init() throws IOException {
-        for (Path root : pluginsRoots) {
-            unzip(root);
+        if (getRuntimeMode() == RuntimeMode.DEPLOYMENT) {
+            for (Path root : pluginsRoots) {
+                unzip(root);
+            }
+        } else {
+            LOG.debug("Skipping ZIP extraction in DEVELOPMENT mode");
         }
     }
 
