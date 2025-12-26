@@ -88,3 +88,5 @@ AZURE_REGISTRY_NAME=myregistry \
 
 For more build options and configuration details, see [docker-build/README.md](docker-build/README.md).
 
+**Note:** For production deployments using official Apache releases (once Tika 4.0.0 is released), use the [tika-grpc-docker](https://github.com/apache/tika-grpc-docker) repository which builds from GPG-signed release artifacts.
+

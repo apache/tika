@@ -2,10 +2,27 @@
 
 This directory contains the Docker build configuration for Apache Tika gRPC server.
 
+## ⚠️ Important: Relationship with tika-grpc-docker Repository
+
+This Maven-based Docker build is intended for:
+- **Development and testing** of unreleased features and branches
+- **Building from source** before official releases exist
+- **Custom builds** with local modifications for testing
+
+For **official Apache releases** (once Tika 4.0.0 is released), use the separate [tika-grpc-docker](https://github.com/apache/tika-grpc-docker) repository, which:
+- Downloads GPG-signed release JARs from Apache distribution mirrors
+- Verifies GPG signatures before building Docker images
+- Follows Apache release best practices
+- Provides the canonical way to build verified, production-ready images
+
+**When to use which:**
+- Use **this build** (tika-grpc/docker-build): Development, testing unreleased features, custom builds
+- Use **tika-grpc-docker**: Production deployments, official releases, verified builds
+
 ## Overview
 
 The Docker image includes:
-- Tika gRPC server JAR
+- Tika gRPC server JAR (built from source)
 - All Tika Pipes plugins (fetchers, emitters, iterators)
 - Parser packages (standard, extended, ML)
 - OCR support (Tesseract with multiple languages)
