@@ -345,3 +345,383 @@ For production deployments, use packaged ZIP files:
 
 - [pf4j Development Mode Documentation](https://pf4j.org/doc/development-mode.html)
 - [JIRA TIKA-4587](https://issues.apache.org/jira/browse/TIKA-4587) - Development mode implementation
+
+## Docker and Kubernetes Deployment
+
+### Docker Image
+
+The official Tika gRPC Docker images are published to Docker Hub at `apache/tika-grpc`.
+
+**Pull the latest image:**
+```bash
+docker pull apache/tika-grpc:latest
+```
+
+**Run with default configuration:**
+```bash
+docker run -p 50052:50052 apache/tika-grpc:latest
+```
+
+**Run with custom configuration:**
+```bash
+docker run -p 50052:50052 \
+  -v $(pwd)/my-config.json:/config/tika-config.json \
+  apache/tika-grpc:latest --config /config/tika-config.json
+```
+
+### Kubernetes Deployment
+
+#### Single Instance Deployment
+
+For simple deployments without distributed configuration:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tika-grpc
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: tika-grpc
+  template:
+    metadata:
+      labels:
+        app: tika-grpc
+    spec:
+      containers:
+      - name: tika-grpc
+        image: apache/tika-grpc:latest
+        ports:
+        - containerPort: 50052
+          name: grpc
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        volumeMounts:
+        - name: config
+          mountPath: /config
+      volumes:
+      - name: config
+        configMap:
+          name: tika-grpc-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tika-grpc
+spec:
+  selector:
+    app: tika-grpc
+  ports:
+  - port: 50052
+    targetPort: 50052
+    name: grpc
+  type: ClusterIP
+```
+
+#### Deployment with Apache Ignite ConfigStore
+
+For distributed deployments with shared configuration using Apache Ignite:
+
+**1. Create ConfigMap with Tika configuration:**
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tika-grpc-config
+data:
+  tika-config.json: |
+    {
+      "pipes": {
+        "configStoreType": "ignite",
+        "configStoreParams": "{\"cacheName\":\"tika-config-cache\",\"cacheMode\":\"REPLICATED\",\"igniteInstanceName\":\"TikaCluster\"}"
+      },
+      "fetchers": [
+        {
+          "s3": {
+            "myS3Fetcher": {
+              "region": "us-east-1",
+              "bucket": "my-bucket"
+            }
+          }
+        }
+      ],
+      "emitters": [
+        {
+          "s3": {
+            "myS3Emitter": {
+              "region": "us-east-1",
+              "bucket": "my-output-bucket"
+            }
+          }
+        }
+      ]
+    }
+```
+
+**2. Create StatefulSet for Ignite cluster discovery:**
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: tika-grpc-ignite
+  labels:
+    app: tika-grpc
+spec:
+  clusterIP: None  # Headless service for Ignite discovery
+  selector:
+    app: tika-grpc
+  ports:
+  - port: 47100
+    name: ignite-comm
+  - port: 47500
+    name: ignite-disco
+  - port: 50052
+    name: grpc
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: tika-grpc
+spec:
+  serviceName: tika-grpc-ignite
+  replicas: 3
+  selector:
+    matchLabels:
+      app: tika-grpc
+  template:
+    metadata:
+      labels:
+        app: tika-grpc
+    spec:
+      containers:
+      - name: tika-grpc
+        image: apache/tika-grpc:latest
+        ports:
+        - containerPort: 50052
+          name: grpc
+        - containerPort: 47100
+          name: ignite-comm
+        - containerPort: 47500
+          name: ignite-disco
+        env:
+        - name: JAVA_OPTS
+          value: >-
+            -Xmx2g
+            -Xms2g
+            --add-opens=java.base/java.nio=ALL-UNNAMED
+            --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+            --add-opens=java.base/java.lang=ALL-UNNAMED
+            --add-opens=java.base/java.util=ALL-UNNAMED
+            --add-opens=java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED
+        - name: IGNITE_KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: IGNITE_KUBERNETES_SERVICE_NAME
+          value: "tika-grpc-ignite"
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        readinessProbe:
+          exec:
+            command:
+            - grpc_health_probe
+            - -addr=:50052
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          exec:
+            command:
+            - grpc_health_probe
+            - -addr=:50052
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: config
+        configMap:
+          name: tika-grpc-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tika-grpc
+spec:
+  selector:
+    app: tika-grpc
+  ports:
+  - port: 50052
+    targetPort: 50052
+    name: grpc
+  type: LoadBalancer  # Or ClusterIP for internal-only access
+```
+
+**3. RBAC permissions for Kubernetes API access (Ignite discovery):**
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tika-grpc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tika-grpc
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["endpoints"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tika-grpc
+subjects:
+- kind: ServiceAccount
+  name: tika-grpc
+roleRef:
+  kind: Role
+  name: tika-grpc
+  apiGroup: rbac.authorization.k8s.io
+```
+
+Then update the StatefulSet to use the service account:
+
+```yaml
+spec:
+  template:
+    spec:
+      serviceAccountName: tika-grpc
+      containers:
+      # ... rest of container spec
+```
+
+### Ignite Cluster Configuration
+
+When using Apache Ignite ConfigStore in Kubernetes, the Ignite nodes automatically discover each other using Kubernetes API. Here's how it works:
+
+1. **Headless Service** (`clusterIP: None`) allows each pod to have its own DNS entry
+2. **StatefulSet** ensures predictable pod names: `tika-grpc-0`, `tika-grpc-1`, `tika-grpc-2`
+3. **Environment Variables** tell Ignite how to discover other nodes:
+   - `IGNITE_KUBERNETES_NAMESPACE`: Current namespace
+   - `IGNITE_KUBERNETES_SERVICE_NAME`: Service name for discovery
+4. **RBAC** grants permission to query Kubernetes API for pod discovery
+
+**Key Ports:**
+- **50052**: gRPC API for Tika operations
+- **47100**: Ignite communication port
+- **47500**: Ignite discovery port
+
+**Benefits of Ignite ConfigStore in Kubernetes:**
+- **Shared Configuration**: All pods share fetcher/emitter configurations
+- **Configuration Updates**: Update config on one pod, all pods see the change
+- **High Availability**: Config survives pod restarts
+- **Automatic Discovery**: Pods automatically find each other
+
+### Horizontal Pod Autoscaling
+
+Scale based on CPU/memory or custom metrics:
+
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: tika-grpc
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: tika-grpc
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+```
+
+### Monitoring and Observability
+
+**Prometheus metrics endpoint:**
+
+Add to the StatefulSet:
+```yaml
+annotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8081"
+  prometheus.io/path: "/metrics"
+```
+
+**Logging:**
+
+Configure structured JSON logging for better observability:
+```yaml
+env:
+- name: LOG_LEVEL
+  value: "INFO"
+- name: LOG_FORMAT
+  value: "json"
+```
+
+### Best Practices
+
+1. **Resource Limits**: Always set memory/CPU requests and limits
+2. **Readiness/Liveness Probes**: Use gRPC health checks
+3. **Pod Disruption Budget**: Ensure high availability during updates
+4. **Network Policies**: Restrict access to gRPC and Ignite ports
+5. **Persistent Storage**: For file-based fetchers/emitters, use PersistentVolumeClaims
+6. **Configuration Management**: Use ConfigMaps/Secrets for sensitive data
+7. **Ignite Memory**: Allocate sufficient heap for Ignite cache (typically 2-4GB)
+
+### Troubleshooting
+
+**Pods can't discover each other:**
+- Check RBAC permissions
+- Verify headless service exists
+- Check environment variables are set
+- Review Ignite logs: `kubectl logs tika-grpc-0 | grep Ignite`
+
+**Out of Memory errors:**
+- Increase JVM heap size via `JAVA_OPTS`
+- Increase pod memory limits
+- Adjust Ignite data region sizes
+
+**Slow gRPC responses:**
+- Scale horizontally with HPA
+- Check resource utilization
+- Review parser performance
+- Consider adding caching layer
+
+### References
+
+- [Apache Ignite Kubernetes Documentation](https://ignite.apache.org/docs/latest/installation/kubernetes/amazon-eks-deployment)
+- [Kubernetes StatefulSets](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)
+- [gRPC Health Checking Protocol](https://github.com/grpc/grpc/blob/master/doc/health-checking.md)
