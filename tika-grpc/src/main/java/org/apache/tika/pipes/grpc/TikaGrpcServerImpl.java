@@ -63,6 +63,8 @@ import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.core.PipesClient;
 import org.apache.tika.pipes.core.PipesConfig;
+import org.apache.tika.pipes.core.config.ConfigStore;
+import org.apache.tika.pipes.core.config.ConfigStoreFactory;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.plugins.TikaPluginManager;
@@ -108,7 +110,21 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             pluginManager = new org.pf4j.DefaultPluginManager();
         }
 
-        fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig, true);
+        ConfigStore configStore = createConfigStore();
+
+        fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig, true, configStore);
+    }
+
+    private ConfigStore createConfigStore() throws TikaConfigException {
+        String configStoreType = pipesConfig.getConfigStoreType();
+        String configStoreParams = pipesConfig.getConfigStoreParams();
+        ExtensionConfig storeConfig = new ExtensionConfig(
+            configStoreType, configStoreType, configStoreParams);
+
+        return ConfigStoreFactory.createConfigStore(
+                pluginManager,
+                configStoreType,
+                storeConfig);
     }
 
     @Override

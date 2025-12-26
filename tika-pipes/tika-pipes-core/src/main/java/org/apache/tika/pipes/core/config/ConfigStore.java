@@ -19,6 +19,7 @@ package org.apache.tika.pipes.core.config;
 import java.util.Set;
 
 import org.apache.tika.plugins.ExtensionConfig;
+import org.apache.tika.plugins.TikaExtension;
 
 /**
  * Interface for storing and retrieving component configurations.
@@ -32,7 +33,18 @@ import org.apache.tika.plugins.ExtensionConfig;
  * <b>Performance considerations:</b> The {@link #keySet()} method should be an inexpensive operation
  * as it may be called in error message generation and other scenarios where performance matters.
  */
-public interface ConfigStore {
+public interface ConfigStore extends TikaExtension {
+
+    /**
+     * Initializes the configuration store.
+     * This method should be called once before using the store.
+     * Implementations may use this to establish connections, initialize caches, etc.
+     *
+     * @throws Exception if initialization fails
+     */
+    default void init() throws Exception {
+        // Default implementation does nothing
+    }
 
     /**
      * Stores a configuration.

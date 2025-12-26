@@ -1491,19 +1491,19 @@
             <version>${puppycrawl.version}</version>
           </dependency>
         </dependencies>
+        <configuration>
+          <configLocation>${maven.multiModuleProjectDirectory}/tika-parent/checkstyle.xml</configLocation>
+          <consoleOutput>false</consoleOutput>
+          <includeTestSourceDirectory>true</includeTestSourceDirectory>
+          <testSourceDirectories>${project.basedir}/src/test/java</testSourceDirectories>
+          <violationSeverity>warn</violationSeverity>
+          <failOnViolation>true</failOnViolation>
+          <failsOnError>true</failsOnError>
+        </configuration>
         <executions>
           <execution>
             <id>validate</id>
             <phase>process-classes</phase>
-            <configuration>
-              <configLocation>checkstyle.xml</configLocation>
-              <consoleOutput>false</consoleOutput>
-              <includeTestSourceDirectory>true</includeTestSourceDirectory>
-              <testSourceDirectories>${project.basedir}/src/test/java</testSourceDirectories>
-              <violationSeverity>warn</violationSeverity>
-              <failOnViolation>true</failOnViolation>
-              <failsOnError>true</failsOnError>
-            </configuration>
             <goals>
               <goal>check</goal>
             </goals>

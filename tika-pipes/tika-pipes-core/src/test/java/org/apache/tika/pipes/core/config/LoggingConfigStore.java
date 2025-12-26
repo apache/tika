@@ -35,6 +35,12 @@ public class LoggingConfigStore implements ConfigStore {
 
     private static final Logger LOG = LoggerFactory.getLogger(LoggingConfigStore.class);
     private final Map<String, ExtensionConfig> store = new HashMap<>();
+    private ExtensionConfig extensionConfig;
+    
+    @Override
+    public ExtensionConfig getExtensionConfig() {
+        return extensionConfig;
+    }
     
     @Override
     public void put(String id, ExtensionConfig config) {

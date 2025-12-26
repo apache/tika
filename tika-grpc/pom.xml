@@ -230,6 +230,12 @@
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
+      <artifactId>tika-pipes-ignite</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-pipes-file-system</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
@@ -483,7 +489,7 @@
       </plugin>
     </plugins>
   </build>
-  
+
   <profiles>
     <!-- Development profile for running tika-grpc with plugin development mode -->
     <profile>
@@ -531,6 +537,21 @@
           <version>${project.version}</version>
         </dependency>
         <dependency>
+          <groupId>org.apache.ignite</groupId>
+          <artifactId>ignite-core</artifactId>
+          <version>2.16.0</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.ignite</groupId>
+          <artifactId>ignite-indexing</artifactId>
+          <version>2.16.0</version>
+        </dependency>
+        <dependency>
+          <groupId>com.h2database</groupId>
+          <artifactId>h2</artifactId>
+          <version>1.4.197</version>
+        </dependency>
+        <dependency>
           <groupId>org.apache.tika</groupId>
           <artifactId>tika-pipes-solr</artifactId>
           <version>${project.version}</version>
@@ -569,6 +590,13 @@
                 <argument>--config</argument>
                 <argument>${config.file}</argument>
               </arguments>
+              <additionalJvmArgs>
+                <additionalJvmArg>--add-opens=java.base/java.nio=ALL-UNNAMED</additionalJvmArg>
+                <additionalJvmArg>--add-opens=java.base/sun.nio.ch=ALL-UNNAMED</additionalJvmArg>
+                <additionalJvmArg>--add-opens=java.base/java.lang=ALL-UNNAMED</additionalJvmArg>
+                <additionalJvmArg>--add-opens=java.base/java.util=ALL-UNNAMED</additionalJvmArg>
+                <additionalJvmArg>--add-opens=java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED</additionalJvmArg>
+              </additionalJvmArgs>
             </configuration>
           </plugin>
         </plugins>

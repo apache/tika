@@ -37,6 +37,7 @@
     <module>tika-pipes-file-system</module>
     <module>tika-pipes-gcs</module>
     <module>tika-pipes-http</module>
+    <module>tika-pipes-ignite</module>
     <module>tika-pipes-jdbc</module>
     <module>tika-pipes-json</module>
     <module>tika-pipes-kafka</module>

@@ -16,3 +16,6 @@ nb-configuration.xml
 *.tmp-inception
 *.snap
 .*.swp
+
+tika-pipes/tika-pipes-plugins/tika-pipes-ignite/ignite
+tika-grpc/ignite
