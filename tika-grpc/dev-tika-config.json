@@ -5,6 +5,7 @@
     "../tika-pipes/tika-pipes-plugins/tika-pipes-file-system/target/classes",
     "../tika-pipes/tika-pipes-plugins/tika-pipes-gcs/target/classes",
     "../tika-pipes/tika-pipes-plugins/tika-pipes-http/target/classes",
+    "../tika-pipes/tika-pipes-plugins/tika-pipes-ignite/target/classes",
     "../tika-pipes/tika-pipes-plugins/tika-pipes-jdbc/target/classes",
     "../tika-pipes/tika-pipes-plugins/tika-pipes-json/target/classes",
     "../tika-pipes/tika-pipes-plugins/tika-pipes-kafka/target/classes",
@@ -13,6 +14,10 @@
     "../tika-pipes/tika-pipes-plugins/tika-pipes-s3/target/classes",
     "../tika-pipes/tika-pipes-plugins/tika-pipes-solr/target/classes"
   ],
+  "pipes": {
+    "configStoreType": "ignite",
+    "configStoreParams": "{\"cacheName\":\"tika-config-cache\",\"cacheMode\":\"REPLICATED\",\"igniteInstanceName\":\"TikaGrpcIgnite\",\"autoClose\":true}"
+  },
   "fetchers": [
     {
       "fs": {
