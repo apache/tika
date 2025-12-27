@@ -2,7 +2,7 @@
   "encoding-detectors": [
     {
       "default-encoding-detector":{
-        "_exclude": [
+        "exclude": [
           "icu4j-encoding-detector"
         ]
       }

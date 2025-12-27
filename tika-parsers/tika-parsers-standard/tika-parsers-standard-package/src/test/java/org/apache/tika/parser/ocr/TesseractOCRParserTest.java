@@ -33,7 +33,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
@@ -300,11 +299,9 @@ public class TesseractOCRParserTest extends TikaTest {
         otherConfig.put("k2", "b2");
         runtimeUpdates.put("otherTesseractConfig", otherConfig);
 
-        // Store runtime config in ConfigContainer
+        // Store runtime config in ParseContext
         ParseContext context = new ParseContext();
-        ConfigContainer configContainer = new ConfigContainer();
-        configContainer.set("tesseract-ocr-parser", mapper.writeValueAsString(runtimeUpdates));
-        context.set(ConfigContainer.class, configContainer);
+        context.setJsonConfig("tesseract-ocr-parser", mapper.writeValueAsString(runtimeUpdates));
 
         // Merge configs using ParseContextConfig
         TesseractOCRConfig mergedConfig = ParseContextConfig.getConfig(
@@ -334,9 +331,7 @@ public class TesseractOCRParserTest extends TikaTest {
         configWithTesseractPath.put("tesseractPath", "/some/path");
 
         ParseContext context = new ParseContext();
-        ConfigContainer configContainer = new ConfigContainer();
-        configContainer.set("tesseract-ocr-parser", mapper.writeValueAsString(configWithTesseractPath));
-        context.set(ConfigContainer.class, configContainer);
+        context.setJsonConfig("tesseract-ocr-parser", mapper.writeValueAsString(configWithTesseractPath));
 
         IOException exception = assertThrows(IOException.class, () -> {
             ParseContextConfig.getConfig(
@@ -351,9 +346,7 @@ public class TesseractOCRParserTest extends TikaTest {
         Map<String, Object> configWithTessdataPath = new HashMap<>();
         configWithTessdataPath.put("tessdataPath", "/some/path");
 
-        configContainer = new ConfigContainer();
-        configContainer.set("tesseract-ocr-parser", mapper.writeValueAsString(configWithTessdataPath));
-        context.set(ConfigContainer.class, configContainer);
+        context.setJsonConfig("tesseract-ocr-parser", mapper.writeValueAsString(configWithTessdataPath));
 
         exception = assertThrows(IOException.class, () -> {
             ParseContextConfig.getConfig(
@@ -368,9 +361,7 @@ public class TesseractOCRParserTest extends TikaTest {
         Map<String, Object> configWithImageMagickPath = new HashMap<>();
         configWithImageMagickPath.put("imageMagickPath", "/some/path");
 
-        configContainer = new ConfigContainer();
-        configContainer.set("tesseract-ocr-parser", mapper.writeValueAsString(configWithImageMagickPath));
-        context.set(ConfigContainer.class, configContainer);
+        context.setJsonConfig("tesseract-ocr-parser", mapper.writeValueAsString(configWithImageMagickPath));
 
         exception = assertThrows(IOException.class, () -> {
             ParseContextConfig.getConfig(
@@ -386,9 +377,7 @@ public class TesseractOCRParserTest extends TikaTest {
         validRuntimeConfig.put("language", "fra");
         validRuntimeConfig.put("skipOcr", true);
 
-        configContainer = new ConfigContainer();
-        configContainer.set("tesseract-ocr-parser", mapper.writeValueAsString(validRuntimeConfig));
-        context.set(ConfigContainer.class, configContainer);
+        context.setJsonConfig("tesseract-ocr-parser", mapper.writeValueAsString(validRuntimeConfig));
 
         // This should not throw
         TesseractOCRConfig.RuntimeConfig runtimeConfig = ParseContextConfig.getConfig(

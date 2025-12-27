@@ -2,7 +2,7 @@
   "detectors": [
     {
       "default-detector": {
-        "_exclude": ["default-zip-container-detector"]
+        "exclude": ["default-zip-container-detector"]
       }
     }
   ]

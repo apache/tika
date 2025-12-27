@@ -31,6 +31,8 @@ import java.util.regex.Pattern;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.ConfigDeserializer;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -43,15 +45,40 @@ public class RegexCaptureParser implements Parser {
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.TEXT_PLAIN);
 
-    private Map<String, Pattern> captureMap = new HashMap<>();
-    private Map<String, Pattern> matchMap = new HashMap<>();
+    private final RegexCaptureParserConfig config;
+    private final Map<String, Pattern> captureMap;
+    private final Map<String, Pattern> matchMap;
+    private final boolean writeContent;
+
+    public RegexCaptureParser() {
+        this(new RegexCaptureParserConfig());
+    }
+
+    public RegexCaptureParser(RegexCaptureParserConfig config) {
+        this.config = config;
+        this.captureMap = new HashMap<>();
+        for (Map.Entry<String, String> e : config.getCaptureMap().entrySet()) {
+            this.captureMap.put(e.getKey(), Pattern.compile(e.getValue()));
+        }
+        this.matchMap = new HashMap<>();
+        for (Map.Entry<String, String> e : config.getMatchMap().entrySet()) {
+            this.matchMap.put(e.getKey(), Pattern.compile(e.getValue()));
+        }
+        this.writeContent = config.isWriteContent();
+    }
+
+    public RegexCaptureParser(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, RegexCaptureParserConfig.class));
+    }
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
-    private boolean writeContent = false;
+    public RegexCaptureParserConfig getConfig() {
+        return config;
+    }
 
     @Override
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
@@ -99,25 +126,5 @@ public class RegexCaptureParser implements Parser {
                 }
             }
         }
-    }
-
-    public void setCaptureMap(Map<String, String> map) {
-        for (Map.Entry<String, String> e : map.entrySet()) {
-            String field = e.getKey();
-            Pattern pattern = Pattern.compile(e.getValue());
-            captureMap.put(field, pattern);
-        }
-    }
-
-    public void setMatchMap(Map<String, String> map) {
-        for (Map.Entry<String, String> e : map.entrySet()) {
-            String field = e.getKey();
-            Pattern pattern = Pattern.compile(e.getValue());
-            matchMap.put(field, pattern);
-        }
-    }
-
-    public void setWriteContent(boolean writeContent) {
-        this.writeContent = writeContent;
     }
 }

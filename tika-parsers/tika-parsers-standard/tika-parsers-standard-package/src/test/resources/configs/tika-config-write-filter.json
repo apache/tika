@@ -13,11 +13,12 @@
       }
     },
     "metadataWriteFilterFactory": {
-      "@class": "org.apache.tika.metadata.writefilter.StandardWriteFilterFactory",
-      "includeFields": [
-        "X-TIKA-CONTENT",
-        "dc:creator"
-      ]
+      "standard-write-filter-factory": {
+        "includeFields": [
+         "X-TIKA-CONTENT",
+          "dc:creator"
+        ]
+      }
     },
     "throwOnZeroBytes": false
   }

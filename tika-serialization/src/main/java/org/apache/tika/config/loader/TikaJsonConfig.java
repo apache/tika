@@ -71,10 +71,10 @@ import org.apache.tika.exception.TikaConfigException;
  *   "parsers": [
  *     { "pdf-parser": { "_mime-include": ["application/pdf"], "ocrStrategy": "AUTO", ... } },
  *     { "html-parser": { ... } },
- *     { "default-parser": { "_exclude": ["some-parser"] } }
+ *     { "default-parser": { "exclude": ["some-parser"] } }
  *     { "pdf-parser": { "_mime-include": ["application/pdf"], "ocrStrategy": "AUTO" } },
  *     "html-parser",                    // String shorthand for no-config components
- *     { "default-parser": { "_exclude": ["ocr-parser"] } }
+ *     { "default-parser": { "exclude": ["ocr-parser"] } }
  *   ],
  *   "detectors": [
  *     "poifs-container-detector",       // String shorthand

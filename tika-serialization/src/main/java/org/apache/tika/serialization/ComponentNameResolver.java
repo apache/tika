@@ -16,8 +16,10 @@
  */
 package org.apache.tika.serialization;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.tika.config.loader.ComponentInfo;
@@ -30,10 +32,16 @@ import org.apache.tika.exception.TikaConfigException;
  * Supports friendly names like "pdf-parser" as well as fully qualified class names.
  * Registries must be registered via {@link #registerRegistry(String, ComponentRegistry)}
  * before use.
+ * <p>
+ * Also stores {@link ComponentConfig} registrations for top-level component loading.
  */
 public final class ComponentNameResolver {
 
     private static final Map<String, ComponentRegistry> REGISTRIES = new ConcurrentHashMap<>();
+
+    // Component configuration storage (keyed by JSON field name and by component class)
+    private static final Map<String, ComponentConfig<?>> FIELD_TO_CONFIG = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, ComponentConfig<?>> CLASS_TO_CONFIG = new ConcurrentHashMap<>();
 
     private ComponentNameResolver() {
         // Utility class
@@ -120,5 +128,79 @@ public final class ComponentNameResolver {
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * Checks if any registered component implements or extends the given abstract type.
+     * <p>
+     * This is used by TikaModule to determine if an abstract type (interface or abstract class)
+     * should use compact component serialization.
+     *
+     * @param abstractType the abstract type to check
+     * @return true if at least one registered component is assignable to this type
+     */
+    public static boolean hasImplementationsOf(Class<?> abstractType) {
+        for (ComponentRegistry registry : REGISTRIES.values()) {
+            for (ComponentInfo info : registry.getAllComponents().values()) {
+                if (abstractType.isAssignableFrom(info.componentClass())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    // ==================== Component Config Methods ====================
+
+    /**
+     * Registers a ComponentConfig for top-level component loading.
+     *
+     * @param config the component configuration
+     */
+    public static <T> void registerComponentConfig(ComponentConfig<T> config) {
+        FIELD_TO_CONFIG.put(config.getJsonField(), config);
+        CLASS_TO_CONFIG.put(config.getComponentClass(), config);
+    }
+
+    /**
+     * Gets component configuration by JSON field name.
+     *
+     * @param jsonField the JSON field name (e.g., "parsers")
+     * @return the component config, or null if not registered
+     */
+    public static ComponentConfig<?> getComponentConfig(String jsonField) {
+        return FIELD_TO_CONFIG.get(jsonField);
+    }
+
+    /**
+     * Gets component configuration by component class.
+     *
+     * @param componentClass the component class (e.g., Parser.class)
+     * @return the component config, or null if not registered
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> ComponentConfig<T> getComponentConfig(Class<T> componentClass) {
+        return (ComponentConfig<T>) CLASS_TO_CONFIG.get(componentClass);
+    }
+
+    /**
+     * Checks if a component config is registered for the given JSON field.
+     */
+    public static boolean hasComponentConfig(String jsonField) {
+        return FIELD_TO_CONFIG.containsKey(jsonField);
+    }
+
+    /**
+     * Checks if a component config is registered for the given class.
+     */
+    public static boolean hasComponentConfig(Class<?> componentClass) {
+        return CLASS_TO_CONFIG.containsKey(componentClass);
+    }
+
+    /**
+     * Gets all registered component JSON field names.
+     */
+    public static Set<String> getComponentFields() {
+        return Collections.unmodifiableSet(FIELD_TO_CONFIG.keySet());
     }
 }

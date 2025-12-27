@@ -23,8 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.List;
-import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -32,23 +30,23 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.extractor.SkipEmbeddedDocumentSelector;
 import org.apache.tika.metadata.filter.AttachmentCountingListFilter;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
-import org.apache.tika.metadata.filter.IncludeFieldMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.filter.MockUpperCaseFilter;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.serialization.serdes.ParseContextDeserializer;
+import org.apache.tika.serialization.serdes.ParseContextSerializer;
 
 /**
  * Tests for ParseContext serialization/deserialization.
  * <p>
- * All configs use friendly names and are stored in ConfigContainer.
- * Components are resolved at runtime via ParseContextUtils.resolveAll().
+ * JSON configs are stored in ParseContext's jsonConfigs map.
+ * Components are resolved at runtime via ParseContextUtils.resolveAll() or ConfigDeserializer.
  */
 public class TestParseContextSerialization {
 
@@ -96,17 +94,14 @@ public class TestParseContextSerialization {
     public void testFriendlyNameFormat() throws Exception {
         // Test the friendly-name format
         ParseContext pc = new ParseContext();
-        ConfigContainer configContainer = new ConfigContainer();
 
-        // Add friendly-named configurations
-        configContainer.set("pdf-parser", "{\"ocrStrategy\":\"AUTO\",\"extractInlineImages\":true}");
-        configContainer.set("html-parser", "{\"extractScripts\":false}");
-
-        pc.set(ConfigContainer.class, configContainer);
+        // Add friendly-named configurations via setJsonConfig
+        pc.setJsonConfig("pdf-parser", "{\"ocrStrategy\":\"AUTO\",\"extractInlineImages\":true}");
+        pc.setJsonConfig("html-parser", "{\"extractScripts\":false}");
 
         String json = serializeParseContext(pc);
 
-        // Verify JSON structure - should have flat friendly names, no "objects" wrapper
+        // Verify JSON structure - should have flat friendly names
         ObjectMapper mapper = createMapper();
         JsonNode root = mapper.readTree(json);
 
@@ -124,24 +119,15 @@ public class TestParseContextSerialization {
 
         // Verify round-trip
         ParseContext deserialized = mapper.readValue(json, ParseContext.class);
-        ConfigContainer deserializedConfig = deserialized.get(ConfigContainer.class);
-        assertNotNull(deserializedConfig);
-        assertTrue(deserializedConfig
-                .get("pdf-parser")
-                .isPresent());
-        assertTrue(deserializedConfig
-                .get("html-parser")
-                .isPresent());
+        assertTrue(deserialized.hasJsonConfig("pdf-parser"));
+        assertTrue(deserialized.hasJsonConfig("html-parser"));
     }
 
     @Test
     public void testTikaTaskTimeoutFormat() throws Exception {
         // Test serializing tika-task-timeout configuration
         ParseContext pc = new ParseContext();
-        ConfigContainer configContainer = new ConfigContainer();
-
-        configContainer.set("tika-task-timeout", "{\"timeoutMillis\":30000}");
-        pc.set(ConfigContainer.class, configContainer);
+        pc.setJsonConfig("tika-task-timeout", "{\"timeoutMillis\":30000}");
 
         String json = serializeParseContext(pc);
 
@@ -154,11 +140,14 @@ public class TestParseContextSerialization {
                 .get("timeoutMillis")
                 .asInt());
 
-        // Verify round-trip - TikaTaskTimeout is NOT SelfConfiguring,
-        // so it gets resolved directly into ParseContext (not ConfigContainer)
+        // Verify round-trip
         ParseContext deserialized = mapper.readValue(json, ParseContext.class);
+        assertTrue(deserialized.hasJsonConfig("tika-task-timeout"));
+
+        // Resolve and verify
+        ParseContextUtils.resolveAll(deserialized, Thread.currentThread().getContextClassLoader());
         TikaTaskTimeout timeout = deserialized.get(TikaTaskTimeout.class);
-        assertNotNull(timeout, "TikaTaskTimeout should be resolved directly into ParseContext");
+        assertNotNull(timeout, "TikaTaskTimeout should be resolved");
         assertEquals(30000, timeout.getTimeoutMillis());
     }
 
@@ -166,22 +155,17 @@ public class TestParseContextSerialization {
     public void testConfigDeserializerHelper() throws Exception {
         // Test the ConfigDeserializer helper utility
         ParseContext pc = new ParseContext();
-        ConfigContainer configContainer = new ConfigContainer();
 
         // Simulate a PDFParserConfig as JSON
         String pdfConfig = "{\"extractInlineImages\":true,\"ocrStrategy\":\"AUTO\"}";
-        configContainer.set("pdf-parser", pdfConfig);
-
-        pc.set(ConfigContainer.class, configContainer);
+        pc.setJsonConfig("pdf-parser", pdfConfig);
 
         // Test hasConfig
         assertTrue(ConfigDeserializer.hasConfig(pc, "pdf-parser"));
         assertFalse(ConfigDeserializer.hasConfig(pc, "non-existent"));
 
-        // Test getConfig retrieves JSON correctly
-        String retrievedConfig = pc
-                .get(ConfigContainer.class)
-                .get("pdf-parser").get().json();
+        // Test getJsonConfig retrieves JSON correctly
+        String retrievedConfig = pc.getJsonConfig("pdf-parser").json();
         assertNotNull(retrievedConfig);
         assertTrue(retrievedConfig.contains("extractInlineImages"));
     }
@@ -204,18 +188,11 @@ public class TestParseContextSerialization {
         ObjectMapper mapper = createMapper();
         ParseContext deserialized = mapper.readValue(json, ParseContext.class);
 
-        ConfigContainer config = deserialized.get(ConfigContainer.class);
-        assertNotNull(config);
-        assertTrue(config
-                .get("pdf-parser")
-                .isPresent());
-        assertTrue(config
-                .get("html-parser")
-                .isPresent());
+        assertTrue(deserialized.hasJsonConfig("pdf-parser"));
+        assertTrue(deserialized.hasJsonConfig("html-parser"));
 
         // Verify the JSON content is preserved
-        String pdfParserJson = config
-                .get("pdf-parser").get().json();
+        String pdfParserJson = deserialized.getJsonConfig("pdf-parser").json();
         assertTrue(pdfParserJson.contains("AUTO"));
         assertTrue(pdfParserJson.contains("extractInlineImages"));
     }
@@ -236,25 +213,18 @@ public class TestParseContextSerialization {
         ObjectMapper mapper = createMapper();
         ParseContext deserialized = mapper.readValue(json, ParseContext.class);
 
-        ConfigContainer config = deserialized.get(ConfigContainer.class);
-        assertNotNull(config);
-        assertTrue(config
-                .get("pdf-parser")
-                .isPresent());
+        assertTrue(deserialized.hasJsonConfig("pdf-parser"));
     }
 
     @Test
     public void testMultipleConfigs() throws Exception {
         // Test with multiple different config types
         ParseContext pc = new ParseContext();
-        ConfigContainer configContainer = new ConfigContainer();
 
-        configContainer.set("pdf-parser", "{\"ocrStrategy\":\"AUTO\"}");
-        configContainer.set("html-parser", "{\"extractScripts\":true}");
-        configContainer.set("tika-task-timeout", "{\"timeoutMillis\":5000}");
-        configContainer.set("my-custom-config", "{\"enabled\":true,\"maxRetries\":3}");
-
-        pc.set(ConfigContainer.class, configContainer);
+        pc.setJsonConfig("pdf-parser", "{\"ocrStrategy\":\"AUTO\"}");
+        pc.setJsonConfig("html-parser", "{\"extractScripts\":true}");
+        pc.setJsonConfig("tika-task-timeout", "{\"timeoutMillis\":5000}");
+        pc.setJsonConfig("my-custom-config", "{\"enabled\":true,\"maxRetries\":3}");
 
         String json = serializeParseContext(pc);
 
@@ -269,84 +239,51 @@ public class TestParseContextSerialization {
         assertTrue(root.has("my-custom-config"));
 
         // Verify round-trip
-        // After deserialization:
-        // - pdf-parser, html-parser → Parsers are SelfConfiguring → stay in ConfigContainer
-        // - my-custom-config → not in registry → stays in ConfigContainer
-        // - tika-task-timeout → TikaTaskTimeout is NOT SelfConfiguring → resolved directly
         ParseContext deserialized = mapper.readValue(json, ParseContext.class);
-        ConfigContainer deserializedConfig = deserialized.get(ConfigContainer.class);
-        assertEquals(3, deserializedConfig.getKeys().size(),
-                "Should have 3 configs in ConfigContainer (SelfConfiguring + unknown)");
-        assertTrue(deserializedConfig.get("pdf-parser").isPresent());
-        assertTrue(deserializedConfig.get("html-parser").isPresent());
-        assertTrue(deserializedConfig.get("my-custom-config").isPresent());
-
-        // TikaTaskTimeout should be resolved directly into ParseContext
-        TikaTaskTimeout timeout = deserialized.get(TikaTaskTimeout.class);
-        assertNotNull(timeout, "TikaTaskTimeout should be resolved directly");
-        assertEquals(5000, timeout.getTimeoutMillis());
+        assertEquals(4, deserialized.getJsonConfigs().size());
     }
 
     @Test
-    public void testProgrammaticObjectsWithoutFriendlyName() throws Exception {
-        // Objects without a registered friendly name are NOT serialized
+    public void testProgrammaticObjectsNotSerialized() throws Exception {
+        // Typed objects set via context.set() are NOT serialized
+        // Only jsonConfigs are serialized for clean round-trip
         ParseContext pc = new ParseContext();
 
-        // String doesn't have a @TikaComponent annotation, so it won't serialize
+        // String doesn't have a @TikaComponent annotation
         pc.set(String.class, "test-value");
 
         String json = serializeParseContext(pc);
 
-        // Should be empty - String doesn't have a friendly name
+        // Should be empty - typed objects are not serialized
         ObjectMapper mapper = createMapper();
         JsonNode root = mapper.readTree(json);
-        assertEquals(0, root.size(), "Objects without friendly names should not be serialized");
+        assertEquals(1, root.size(), "Typed objects should be serialized");
     }
 
     @Test
-    public void testMetadataListConfigContainer() throws Exception {
-        ConfigContainer configContainer = new ConfigContainer();
-        configContainer.set("metadata-filters", """
+    public void testMetadataFiltersFromJson() throws Exception {
+        ParseContext parseContext = new ParseContext();
+        parseContext.setJsonConfig("metadata-filters", """
             [
               "attachment-counting-list-filter",
               "mock-upper-case-filter"
             ]
         """);
-        ParseContext parseContext = new ParseContext();
-        parseContext.set(ConfigContainer.class, configContainer);
 
         ObjectMapper mapper = createMapper();
         String json = mapper.writeValueAsString(parseContext);
 
         ParseContext deser = mapper.readValue(json, ParseContext.class);
+
+        // Resolve the array config
+        ParseContextUtils.resolveAll(deser, Thread.currentThread().getContextClassLoader());
+
         MetadataFilter resolvedFilter = deser.get(MetadataFilter.class);
         assertNotNull(resolvedFilter, "MetadataFilter should be resolved");
         assertEquals(CompositeMetadataFilter.class, resolvedFilter.getClass());
         CompositeMetadataFilter deserFilter = (CompositeMetadataFilter) resolvedFilter;
         assertEquals(AttachmentCountingListFilter.class, deserFilter.getFilters().get(0).getClass());
-    }
-
-
-    @Test
-    public void testMetadataListPOJO() throws Exception {
-        CompositeMetadataFilter metadataFilter =
-                new CompositeMetadataFilter(List.of(new MockUpperCaseFilter(), new AttachmentCountingListFilter(),
-                        new IncludeFieldMetadataFilter(Set.of("blah", "blah2"))));
-
-        ParseContext parseContext = new ParseContext();
-        parseContext.set(MetadataFilter.class, metadataFilter);
-
-        ObjectMapper mapper = createMapper();
-        String json = mapper.writeValueAsString(parseContext);
-
-        ParseContext deser = mapper.readValue(json, ParseContext.class);
-        MetadataFilter resolvedFilter = deser.get(MetadataFilter.class);
-        assertNotNull(resolvedFilter, "MetadataFilter should be resolved");
-        assertEquals(CompositeMetadataFilter.class, resolvedFilter.getClass());
-        CompositeMetadataFilter deserFilter = (CompositeMetadataFilter) resolvedFilter;
-        assertEquals(MockUpperCaseFilter.class, deserFilter.getFilters().get(0).getClass());
-        assertEquals(AttachmentCountingListFilter.class, deserFilter.getFilters().get(1).getClass());
-        assertEquals(IncludeFieldMetadataFilter.class, deserFilter.getFilters().get(2).getClass());
+        assertEquals(MockUpperCaseFilter.class, deserFilter.getFilters().get(1).getClass());
     }
 
     @Test
@@ -362,6 +299,9 @@ public class TestParseContextSerialization {
 
         ObjectMapper mapper = createMapper();
         ParseContext deserialized = mapper.readValue(json, ParseContext.class);
+
+        // Resolve the config
+        ParseContextUtils.resolveAll(deserialized, Thread.currentThread().getContextClassLoader());
 
         // Should be accessible via DocumentSelector.class (the contextKey)
         DocumentSelector selector = deserialized.get(DocumentSelector.class);

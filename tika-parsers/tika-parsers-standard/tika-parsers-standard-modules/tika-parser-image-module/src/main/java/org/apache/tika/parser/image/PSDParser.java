@@ -30,6 +30,8 @@ import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.ConfigDeserializer;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
@@ -69,6 +71,16 @@ public class PSDParser implements Parser {
     private static final int MAX_BLOCKS = 10000;
 
     private int maxDataLengthBytes = MAX_DATA_LENGTH_BYTES;
+
+    public PSDParser() {
+    }
+
+    public PSDParser(JsonConfig jsonConfig) {
+        PSDParserConfig config = ConfigDeserializer.buildConfig(jsonConfig, PSDParserConfig.class);
+        if (config != null && config.maxDataLengthBytes > 0) {
+            this.maxDataLengthBytes = config.maxDataLengthBytes;
+        }
+    }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -270,5 +282,12 @@ public class PSDParser implements Parser {
             // Will be null padded
             return new String(data, 0, data.length - 1, US_ASCII);
         }
+    }
+
+    /**
+     * Configuration class for PSDParser.
+     */
+    public static class PSDParserConfig {
+        public int maxDataLengthBytes;
     }
 }

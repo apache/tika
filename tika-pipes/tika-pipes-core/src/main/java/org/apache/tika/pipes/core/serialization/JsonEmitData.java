@@ -26,8 +26,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
-import org.apache.tika.serialization.MetadataSerializer;
-import org.apache.tika.serialization.ParseContextSerializer;
+import org.apache.tika.serialization.serdes.MetadataSerializer;
+import org.apache.tika.serialization.serdes.ParseContextSerializer;
 
 public class JsonEmitData {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();

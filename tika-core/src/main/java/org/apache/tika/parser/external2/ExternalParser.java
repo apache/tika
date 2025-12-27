@@ -33,9 +33,10 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.ConfigDeserializer;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.config.TikaTaskTimeout;
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -72,21 +73,40 @@ public class ExternalParser implements Parser {
 
     private static final Logger LOG = LoggerFactory.getLogger(ExternalParser.class);
 
-    private Set<MediaType> supportedTypes = new HashSet<>();
+    private final ExternalParserConfig config;
 
-    private List<String> commandLine = new ArrayList<>();
+    // Cached values derived from config
+    private final Set<MediaType> supportedTypes;
+    private final List<String> commandLine;
+    private final Parser outputParser;
 
-    private Parser outputParser = EmptyParser.INSTANCE;
+    /**
+     * Default constructor - not typically useful since ExternalParser requires configuration.
+     */
+    public ExternalParser() {
+        this(new ExternalParserConfig());
+    }
 
-    private boolean returnStdout = false;
+    /**
+     * Programmatic constructor with typed config.
+     */
+    public ExternalParser(ExternalParserConfig config) {
+        this.config = config;
+        this.supportedTypes = new HashSet<>();
+        for (String s : config.getSupportedTypes()) {
+            this.supportedTypes.add(MediaType.parse(s));
+        }
+        this.commandLine = new ArrayList<>(config.getCommandLine());
+        this.outputParser = config.getOutputParser() != null ?
+                config.getOutputParser() : EmptyParser.INSTANCE;
+    }
 
-    private boolean returnStderr = true;
-
-    private long timeoutMs = DEFAULT_TIMEOUT_MS;
-
-    private int maxStdErr = 10000;
-
-    private int maxStdOut = 10000;
+    /**
+     * JSON config constructor - used for deserialization.
+     */
+    public ExternalParser(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, ExternalParserConfig.class));
+    }
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -120,14 +140,14 @@ public class ExternalParser implements Parser {
                 }
             }
             FileProcessResult result = null;
-            long localTimeoutMillis = TikaTaskTimeout.getTimeoutMillis(context, timeoutMs);
+            long localTimeoutMillis = TikaTaskTimeout.getTimeoutMillis(context, config.getTimeoutMs());
             if (outputFileInCommandline) {
                 result = ProcessUtils.execute(new ProcessBuilder(thisCommandLine),
-                        localTimeoutMillis, maxStdOut, maxStdErr);
+                        localTimeoutMillis, config.getMaxStdOut(), config.getMaxStdErr());
             } else {
                 outFile = Files.createTempFile("tika-external2-", "");
                 result = ProcessUtils.execute(new ProcessBuilder(thisCommandLine),
-                        localTimeoutMillis, outFile, maxStdErr);
+                        localTimeoutMillis, outFile, config.getMaxStdErr());
             }
             metadata.set(ExternalProcess.IS_TIMEOUT, result.isTimeout());
             metadata.set(ExternalProcess.EXIT_VALUE, result.getExitValue());
@@ -138,10 +158,10 @@ public class ExternalParser implements Parser {
             metadata.set(ExternalProcess.STD_ERR_IS_TRUNCATED,
                     result.isStderrTruncated());
 
-            if (returnStdout) {
+            if (config.isReturnStdout()) {
                 metadata.set(ExternalProcess.STD_OUT, result.getStdout());
             }
-            if (returnStderr) {
+            if (config.isReturnStderr()) {
                 metadata.set(ExternalProcess.STD_ERR, result.getStderr());
             }
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
@@ -190,95 +210,16 @@ public class ExternalParser implements Parser {
     }
 
     /**
-     * This is set during initialization from a tika-config.
-     * Any calls after initialization will result in a {@link IllegalStateException}.
-     *
-     * @param supportedTypes
+     * Returns the output parser used to parse the external process output.
      */
-    public void setSupportedTypes(List<String> supportedTypes) {
-        if (this.supportedTypes.size() > 0) {
-            throw new IllegalStateException("can't set supportedTypes after initialization");
-        }
-        for (String s : supportedTypes) {
-            this.supportedTypes.add(MediaType.parse(s));
-        }
-    }
-
-    public void setTimeoutMs(long timeoutMs) {
-        this.timeoutMs = timeoutMs;
-    }
-
-    public void setMaxStdErr(int maxStdErr) {
-        this.maxStdErr = maxStdErr;
-    }
-
-    public void setMaxStdOut(int maxStdOut) {
-        this.maxStdOut = maxStdOut;
-    }
-
-    /**
-     * Use this to specify the full commandLine.  The commandline must
-     * include at least {@link ExternalParser#INPUT_FILE_TOKEN}.
-     * If the external process writes to an output file, specify
-     * {@link ExternalParser#OUTPUT_FILE_TOKEN}.
-     *
-     * @param commandLine
-     */
-    public void setCommandLine(List<String> commandLine) {
-        this.commandLine = commandLine;
-    }
-
-
-    /**
-     * If set to true, this will return the stdout in the metadata
-     * via {@link org.apache.tika.metadata.ExternalProcess#STD_OUT}.
-     * Default is <code>false</code> because this should normally
-     * be handled by the outputParser
-     *
-     * @param returnStdout
-     */
-    public void setReturnStdout(boolean returnStdout) {
-        this.returnStdout = returnStdout;
-    }
-
-    /**
-     * If set to true, this will return the stderr in the metadata
-     * via {@link org.apache.tika.metadata.ExternalProcess#STD_ERR}.
-     * Default is <code>true</code>
-     * @param returnStderr
-     */
-    public void setReturnStderr(boolean returnStderr) {
-        this.returnStderr = returnStderr;
-    }
-
-    /**
-     * This parser is called on the output of the process.
-     * If the process writes to an output file, specified by
-     * {@link ExternalParser#OUTPUT_FILE_TOKEN}, this parser will parse that file,
-     * otherwise it will parse the UTF-8 encoded bytes from the process' STD_OUT.
-     * @param parser
-     */
-    public void setOutputParser(Parser parser) {
-        this.outputParser = parser;
-    }
-
     public Parser getOutputParser() {
         return outputParser;
     }
 
-    public void checkInitialization()
-            throws TikaConfigException {
-        if (supportedTypes.size() == 0) {
-            throw new TikaConfigException("supportedTypes size must be > 0");
-        }
-        if (commandLine.isEmpty()) {
-            throw new TikaConfigException("commandLine is empty?!");
-        }
-
-        if (outputParser == EmptyParser.INSTANCE) {
-            LOG.debug("no parser selected for the output; contents will be " +
-                    "written to the content handler");
-        }
+    /**
+     * Returns the configuration for this parser.
+     */
+    public ExternalParserConfig getConfig() {
+        return config;
     }
-
 }

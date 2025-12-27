@@ -100,9 +100,9 @@ public class TikaParsersTest extends CXFTestBase {
             String text = getStringFromInputStream((InputStream) response.getEntity());
             assertContains("Composite", text);
 
-            assertContains("<h3>OpusParser", text);
-            assertContains("<h3>PackageParser", text);
-            assertContains("<h3>OOXMLParser", text);
+            assertContains("<h4>OpusParser", text);
+            assertContains("<h4>PackageParser", text);
+            assertContains("<h4>OOXMLParser", text);
 
             assertContains(OpusParser.class.getName(), text);
             assertContains(PackageParser.class.getName(), text);
@@ -145,7 +145,9 @@ public class TikaParsersTest extends CXFTestBase {
             assertEquals(Boolean.TRUE, json.get("composite"));
 
             // At least 20 child parsers which aren't composite, except for CompositeExternalParser
-            List<Object> children = (List) json.get("children");
+            List<Object> wrapper = (List) json.get("children");
+            Map<String, Object> firstItem = (Map) wrapper.get(0);
+            List<Object> children = (List) firstItem.get("children");
             assertTrue(children.size() >= 2);
             boolean hasOpus = false, hasOOXML = false, hasZip = false;
             int nonComposite = 0;

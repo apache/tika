@@ -6,36 +6,36 @@
     "maximumDepth": 1000,
     "maximumPackageEntryDepth": 1000,
     "metadataWriteFilterFactory": {
-      "@class": "org.apache.tika.metadata.writefilter.StandardWriteFilterFactory",
-      "includeFields": [
-      ],
-      "excludeFields": [
-      ],
-      "maxKeySize": 1024,
-      "maxFieldSize": 102400,
-      "maxTotalEstimatedBytes": 10485760,
-      "maxValuesPerField": 10,
-      "includeEmpty": false
+      "standard-write-filter-factory": {
+        "includeFields": [
+        ],
+        "excludeFields": [
+        ],
+        "maxKeySize": 1024,
+        "maxFieldSize": 102400,
+        "maxTotalEstimatedBytes": 10485760,
+        "maxValuesPerField": 10,
+        "includeEmpty": false
+      }
     },
     "embeddedDocumentExtractorFactory": {
-      "@class": "org.apache.tika.extractor.RUnpackExtractorFactory",
-      "writeFileNameToContent": true,
-      "embeddedBytesIncludeMimeTypes": [
-        "text/pdf"
-      ],
-      "embeddedBytesExcludeMimeTypes": [
-        "rtf/application"
-      ],
-      "embeddedBytesIncludeEmbeddedResourceTypes": [
-        "appended"
-      ],
-      "embeddedBytesExcludeEmbeddedResourceTypes": [
-      ],
-      "maxEmbeddedBytesForExtraction": 10737418240
+      "runpack-extractor-factory": {
+        "writeFileNameToContent": true,
+        "embeddedBytesIncludeMimeTypes": [
+          "text/pdf"
+        ],
+        "embeddedBytesExcludeMimeTypes": [
+          "rtf/application"
+        ],
+        "embeddedBytesIncludeEmbeddedResourceTypes": [
+          "appended"
+        ],
+        "embeddedBytesExcludeEmbeddedResourceTypes": [
+        ],
+        "maxEmbeddedBytesForExtraction": 10737418240
+      }
     },
-    "contentHandlerDecoratorFactory": {
-      "@class": "org.apache.tika.sax.UpcasingContentHandlerDecoratorFactory"
-    },
+    "contentHandlerDecoratorFactory": "upcasing-content-handler-decorator-factory",
     "skipContainerDocumentDigest": false,
     "digesterFactory": {
       "commons-digester-factory": {}

@@ -16,296 +16,144 @@
  */
 package org.apache.tika.config.loader;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.io.IOException;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.RenderingParser;
 import org.apache.tika.renderer.Renderer;
 
 /**
- * Loader for parsers with support for decoration (mime type filtering).
+ * Loader for parsers with support for:
+ * <ul>
+ *   <li>SPI fallback via "default-parser" marker with exclusions</li>
+ *   <li>Mime type filtering decorations (_mime-include, _mime-exclude)</li>
+ *   <li>EncodingDetector and Renderer dependency injection</li>
+ * </ul>
  */
-public class ParserLoader {
+public class ParserLoader extends AbstractSpiComponentLoader<Parser> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ParserLoader.class);
-
-    private final ClassLoader classLoader;
-    private final ObjectMapper objectMapper;
-    private final EncodingDetector encodingDetector;
-    private final Renderer renderer;
-
-    /**
-     * Holds parsed config data before decoration is applied.
-     */
-    private static class ParsedParserConfig {
-        final String name;
-        final Parser parser;
-        final FrameworkConfig.ParserDecoration decoration;
-
-        ParsedParserConfig(String name, Parser parser,
-                           FrameworkConfig.ParserDecoration decoration) {
-            this.name = name;
-            this.parser = parser;
-            this.decoration = decoration;
-        }
+    public ParserLoader() {
+        super("parsers", "default-parser", Parser.class);
     }
 
-    public ParserLoader(ClassLoader classLoader, ObjectMapper objectMapper,
-                        EncodingDetector encodingDetector, Renderer renderer) {
-        this.classLoader = classLoader;
-        this.objectMapper = objectMapper;
-        this.encodingDetector = encodingDetector;
-        this.renderer = renderer;
-    }
-
-    /**
-     * Loads parsers from JSON config and builds a CompositeParser.
-     *
-     * @param config the Tika JSON configuration
-     * @return the composite parser
-     * @throws TikaConfigException if loading fails
-     */
-    public CompositeParser load(TikaJsonConfig config) throws TikaConfigException {
-        //TODO -- need to handle multiparsers at some point
-        //TODO -- add special handling for external parsers?
-        List<Parser> parserList = new ArrayList<>();
-
-        // Load configured parsers
-        if (config.hasComponentSection("parsers")) {
-            List<Map.Entry<String, JsonNode>> parsers = config.getArrayComponents("parsers");
-
-            // Check if "default-parser" is in the list and extract exclusions and decorations
-            boolean hasDefaultParser = false;
-            Set<Class<?>> excludedParserClasses = new HashSet<>();
-            FrameworkConfig.ParserDecoration defaultParserDecoration = null;
-
-            for (Map.Entry<String, JsonNode> entry : parsers) {
-                if ("default-parser".equals(entry.getKey())) {
-                    hasDefaultParser = true;
-
-                    // Parse exclusions from default-parser config
-                    JsonNode configNode = entry.getValue();
-
-                    // Check for common mistake: using "_excludes" instead of "_exclude"
-                    if (configNode != null && configNode.has("_excludes")) {
-                        throw new TikaConfigException(
-                            "Invalid configuration for default-parser: found '_excludes' but the correct " +
-                            "field name is '_exclude' (singular). Please change '_excludes' to '_exclude' " +
-                            "in your configuration.");
-                    }
-
-                    if (configNode != null && configNode.has("_exclude")) {
-                        JsonNode excludeNode = configNode.get("_exclude");
-                        if (excludeNode.isArray()) {
-                            for (JsonNode excludeName : excludeNode) {
-                                if (excludeName.isTextual()) {
-                                    String parserName = excludeName.asText();
-                                    try {
-                                        Class<?> parserClass = resolveClass(parserName);
-                                        excludedParserClasses.add(parserClass);
-                                        LOG.debug("Excluding parser from SPI: {}", parserName);
-                                    } catch (Exception e) {
-                                        LOG.warn("Unknown parser in default-parser exclude list: {}", parserName);
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Extract decoration (mimeInclude/mimeExclude) for default-parser
-                    if (configNode != null) {
-                        try {
-                            FrameworkConfig frameworkConfig = FrameworkConfig.extract(configNode, objectMapper);
-                            defaultParserDecoration = frameworkConfig.getDecoration();
-                        } catch (Exception e) {
-                            LOG.warn("Failed to extract decoration from default-parser: {}", e.getMessage());
-                        }
-                    }
-                    break;
-                }
-            }
-
-            // First pass: parse configs and instantiate parsers
-            // Skip "default-parser" - it's a special marker for SPI fallback, not a real parser
-            Map<String, ParsedParserConfig> parsedConfigs = new LinkedHashMap<>();
-            for (Map.Entry<String, JsonNode> entry : parsers) {
-                String name = entry.getKey();
-
-                // Skip the special "default-parser" marker
-                if ("default-parser".equals(name)) {
-                    continue;
-                }
-
-                JsonNode configNode = entry.getValue();
-                ParsedParserConfig parsed = loadConfiguredParser(name, configNode);
-                parsedConfigs.put(name, parsed);
-            }
-
-            // Track configured parser classes (before decoration) to avoid SPI duplicates
-            Set<Class<?>> configuredParserClasses = new HashSet<>();
-            for (ParsedParserConfig parsed : parsedConfigs.values()) {
-                configuredParserClasses.add(parsed.parser.getClass());
-            }
-
-            // Add excluded parsers to the configured set so they won't be loaded from SPI
-            configuredParserClasses.addAll(excludedParserClasses);
-
-            // Second pass: apply decorations that may reference other parsers
-            for (ParsedParserConfig parsed : parsedConfigs.values()) {
-                Parser parser = parsed.parser;
-
-                // Apply decorations if present
-                if (parsed.decoration != null) {
-                    // Apply mime type filtering
-                    if (parsed.decoration.hasFiltering()) {
-                        parser = applyMimeFiltering(parser, parsed.decoration);
-                    }
-                }
-
-                parserList.add(parser);
-            }
-
-            // Add SPI-discovered parsers only if "default-parser" is in config
-            // If "default-parser" is present, use SPI fallback for unlisted parsers
-            // If "default-parser" is NOT present, only load explicitly configured parsers
-            if (hasDefaultParser) {
-                List<Parser> spiParsers = loadSpiParsers(configuredParserClasses);
-
-                // Apply decoration to SPI parsers if specified on default-parser
-                if (defaultParserDecoration != null && defaultParserDecoration.hasFiltering()) {
-                    // Wrap SPI parsers in a CompositeParser and apply decoration
-                    Parser spiComposite = new CompositeParser(TikaLoader.getMediaTypeRegistry(), spiParsers);
-                    spiComposite = applyMimeFiltering(spiComposite, defaultParserDecoration);
-                    parserList.add(spiComposite);
-                } else {
-                    parserList.addAll(spiParsers);
-                }
-                LOG.debug("Loading SPI parsers because 'default-parser' is in config");
-            } else {
-                LOG.debug("Skipping SPI parsers - 'default-parser' not in config");
-            }
-        } else {
-            // No configured parsers - load all from SPI
-            List<Parser> spiParsers = loadSpiParsers(Collections.emptySet());
-            parserList.addAll(spiParsers);
-        }
-
-        return new CompositeParser(TikaLoader.getMediaTypeRegistry(), parserList);
-    }
-
-    private ParsedParserConfig loadConfiguredParser(String name, JsonNode configNode)
-            throws TikaConfigException {
+    @Override
+    protected Parser loadComponent(String name, JsonNode configNode,
+                                    LoaderContext context) throws TikaConfigException {
         try {
-            // Extract framework config (decorations like mimeInclude/mimeExclude)
-            FrameworkConfig frameworkConfig = FrameworkConfig.extract(configNode, objectMapper);
+            // Extract framework config (decorations like _mime-include/_mime-exclude)
+            FrameworkConfig framework = FrameworkConfig.extract(
+                    configNode, context.getObjectMapper());
 
-            // Use Jackson with mixins to deserialize - the TypeIdResolver handles name resolution
-            Parser parser = deserializeParser(name, frameworkConfig.getComponentConfigNode());
+            // Instantiate the parser
+            Parser parser = context.instantiate(name, framework.getComponentConfigNode());
 
-            // Post-process: inject EncodingDetector for AbstractEncodingDetectorParser
-            if (parser instanceof AbstractEncodingDetectorParser) {
-                ((AbstractEncodingDetectorParser) parser).setEncodingDetector(encodingDetector);
+            // Apply mime filtering decorations if present
+            if (framework.getDecoration() != null && framework.getDecoration().hasFiltering()) {
+                parser = applyMimeFiltering(parser, framework.getDecoration());
             }
 
-            // Post-process: inject Renderer for RenderingParser
-            if (parser instanceof RenderingParser && renderer != null) {
-                ((RenderingParser) parser).setRenderer(renderer);
-            }
-
-            return new ParsedParserConfig(name, parser, frameworkConfig.getDecoration());
-
-        } catch (TikaConfigException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new TikaConfigException("Failed to load parser '" + name + "'", e);
+            return parser;
+        } catch (IOException e) {
+            throw new TikaConfigException("Failed to load parser: " + name, e);
         }
     }
 
-    /**
-     * Deserializes a parser, trying JsonConfig constructor first, then Jackson bean deserialization.
-     */
-    private Parser deserializeParser(String name, JsonNode configNode) throws TikaConfigException {
-        return ComponentInstantiator.instantiate(name, configNode, objectMapper, classLoader);
+    @Override
+    protected Parser createDefaultComposite(Set<Class<? extends Parser>> exclusions,
+                                             LoaderContext context) {
+        return new DefaultParser(
+                TikaLoader.getMediaTypeRegistry(),
+                new ServiceLoader(context.getClassLoader()),
+                exclusions);
     }
 
-    /**
-     * Resolves a name to a class, trying friendly name lookup first then FQCN.
-     */
-    private Class<?> resolveClass(String name) throws ClassNotFoundException {
-        return org.apache.tika.serialization.ComponentNameResolver
-                .resolveClass(name, classLoader);
-    }
-
-    private Parser applyMimeFiltering(Parser parser, FrameworkConfig.ParserDecoration decoration) {
-        List<String> includes = decoration.getMimeInclude();
-        List<String> excludes = decoration.getMimeExclude();
-
-        if (!includes.isEmpty()) {
-            Set<MediaType> includeTypes = new HashSet<>();
-            for (String mimeStr : includes) {
-                includeTypes.add(MediaType.parse(mimeStr));
-            }
-            parser = ParserDecorator.withTypes(parser, includeTypes);
+    @Override
+    protected Parser decorateDefaultComposite(Parser parser, JsonNode configNode,
+                                               LoaderContext context) throws TikaConfigException {
+        if (configNode == null) {
+            return parser;
         }
 
-        if (!excludes.isEmpty()) {
-            Set<MediaType> excludeTypes = new HashSet<>();
-            for (String mimeStr : excludes) {
-                excludeTypes.add(MediaType.parse(mimeStr));
+        try {
+            FrameworkConfig framework = FrameworkConfig.extract(
+                    configNode, context.getObjectMapper());
+
+            if (framework.getDecoration() != null && framework.getDecoration().hasFiltering()) {
+                return applyMimeFiltering(parser, framework.getDecoration());
             }
-            parser = ParserDecorator.withoutTypes(parser, excludeTypes);
+        } catch (IOException e) {
+            throw new TikaConfigException("Failed to apply mime filtering to default-parser", e);
         }
 
         return parser;
     }
 
-    private List<Parser> loadSpiParsers(Set<Class<?>> excludeClasses) {
-        List<Parser> result = new ArrayList<>();
-        ServiceLoader<Parser> serviceLoader = ServiceLoader.load(Parser.class, classLoader);
+    @Override
+    protected Parser wrapInComposite(List<Parser> parsers, LoaderContext context) {
+        return new CompositeParser(TikaLoader.getMediaTypeRegistry(), parsers);
+    }
 
-        Iterator<Parser> iterator = serviceLoader.iterator();
-        while (iterator.hasNext()) {
-            try {
-                Parser parser = iterator.next();
+    @Override
+    protected Parser postProcess(Parser parser, LoaderContext context)
+            throws TikaConfigException {
+        // Inject EncodingDetector and Renderer into parsers that need them
+        EncodingDetector encodingDetector = context.getEncodingDetector();
+        Renderer renderer = context.getRenderer();
+        injectDependenciesRecursively(parser, encodingDetector, renderer);
+        return parser;
+    }
 
-                // Skip if this parser class was already loaded from config
-                if (excludeClasses.contains(parser.getClass())) {
-                    LOG.debug("Skipping SPI parser {} - already configured",
-                            parser.getClass().getName());
-                    continue;
-                }
-                if (AbstractEncodingDetectorParser.class.isAssignableFrom(parser.getClass())) {
-                    ((AbstractEncodingDetectorParser)parser).setEncodingDetector(encodingDetector);
-                }
-                if (parser instanceof RenderingParser && renderer != null) {
-                    ((RenderingParser) parser).setRenderer(renderer);
-                }
-                result.add(parser);
-            } catch (Exception e) {
-                // Log and skip problematic SPI providers
-                LOG.warn("Failed to load SPI parser: {}", e.getMessage(), e);
+    /**
+     * Recursively inject dependencies into a parser and its children.
+     */
+    private void injectDependenciesRecursively(Parser parser, EncodingDetector encodingDetector,
+                                                Renderer renderer) {
+        if (encodingDetector != null && parser instanceof AbstractEncodingDetectorParser aedp) {
+            aedp.setEncodingDetector(encodingDetector);
+        }
+        if (renderer != null && parser instanceof RenderingParser rp) {
+            rp.setRenderer(renderer);
+        }
+        if (parser instanceof CompositeParser cp) {
+            for (Parser child : cp.getAllComponentParsers()) {
+                injectDependenciesRecursively(child, encodingDetector, renderer);
             }
+        } else if (parser instanceof ParserDecorator pd) {
+            injectDependenciesRecursively(pd.getWrappedParser(), encodingDetector, renderer);
+        }
+    }
+
+    /**
+     * Apply mime type filtering to a parser.
+     * Uses ParserDecorator.withMimeFilters() which creates a MimeFilteringDecorator
+     * that the serializer knows how to handle for round-trip support.
+     */
+    private Parser applyMimeFiltering(Parser parser,
+                                       FrameworkConfig.ParserDecoration decoration) {
+        Set<MediaType> includeTypes = new HashSet<>();
+        Set<MediaType> excludeTypes = new HashSet<>();
+
+        for (String mimeStr : decoration.getMimeInclude()) {
+            includeTypes.add(MediaType.parse(mimeStr));
         }
 
-        return result;
+        for (String mimeStr : decoration.getMimeExclude()) {
+            excludeTypes.add(MediaType.parse(mimeStr));
+        }
+
+        return ParserDecorator.withMimeFilters(parser, includeTypes, excludeTypes);
     }
 }

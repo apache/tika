@@ -44,7 +44,7 @@ public class ExternalParserTest extends TikaTest {
                 "file", "--version"
         }));
         TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "TIKA-3557.json"));
-        CompositeParser p = (CompositeParser) loader.loadParsers();
+        CompositeParser p = (CompositeParser) loader.get(Parser.class);
         assertEquals(1, p.getAllComponentParsers().size());
         Parser parser = p.getAllComponentParsers().get(0);
         // When _mime-include is used, the parser is wrapped in a ParserDecorator
@@ -71,7 +71,7 @@ public class ExternalParserTest extends TikaTest {
     public void testConfigBasic() throws Exception {
         assumeTrue(org.apache.tika.parser.external.ExternalParser.check(new String[]{"file", "--version"}));
         TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "TIKA-3557-no-output-parser.json"));
-        CompositeParser p = (CompositeParser) loader.loadParsers();
+        CompositeParser p = (CompositeParser) loader.get(Parser.class);
         assertEquals(1, p.getAllComponentParsers().size());
         Parser parser = p.getAllComponentParsers().get(0);
         // When _mime-include is used, the parser is wrapped in a ParserDecorator

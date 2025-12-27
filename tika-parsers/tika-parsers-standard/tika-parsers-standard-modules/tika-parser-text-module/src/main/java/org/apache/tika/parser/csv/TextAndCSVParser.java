@@ -70,7 +70,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * {@link org.apache.commons.csv.CSVParser} is lost.
  * </p>
  */
-@TikaComponent
+@TikaComponent(name = "text-and-csv-parser")
 public class TextAndCSVParser extends AbstractEncodingDetectorParser {
 
     static final MediaType CSV = MediaType.text("csv");

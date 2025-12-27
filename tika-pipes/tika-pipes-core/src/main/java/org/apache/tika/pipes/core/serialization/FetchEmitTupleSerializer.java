@@ -16,7 +16,7 @@
  */
 package org.apache.tika.pipes.core.serialization;
 
-import static org.apache.tika.serialization.ParseContextSerializer.PARSE_CONTEXT;
+import static org.apache.tika.serialization.serdes.ParseContextSerializer.PARSE_CONTEXT;
 
 import java.io.IOException;
 import java.util.Locale;

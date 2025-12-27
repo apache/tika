@@ -52,7 +52,7 @@ public class StandardWriteFilterTest extends TikaTest {
         AutoDetectParser parser = (AutoDetectParser) loader.loadAutoDetectParser();
         AutoDetectParserConfig config = parser.getAutoDetectParserConfig();
         MetadataWriteFilterFactory factory = config.getMetadataWriteFilterFactory();
-        assertEquals(360, ((StandardWriteFilterFactory) factory).getMaxTotalEstimatedBytes());
+        assertEquals(150, ((StandardWriteFilterFactory) factory).getMaxTotalEstimatedBytes());
         String mock = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
                 "<mock>";
         for (int i = 0; i < 20; i++) {
@@ -68,8 +68,8 @@ public class StandardWriteFilterTest extends TikaTest {
         metadata = metadataList.get(0);
 
         String[] creators = metadata.getValues("dc:creator");
-        assertEquals(3, creators.length);
-        assertEquals("01234", creators[2]);
+        assertEquals(2, creators.length);
+        assertEquals("012345678901", creators[1]);
         assertContainsCount(" hello ", metadata.get(TikaCoreProperties.TIKA_CONTENT), 30);
         assertTruncated(metadata);
     }

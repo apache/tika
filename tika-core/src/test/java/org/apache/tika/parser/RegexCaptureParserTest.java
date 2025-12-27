@@ -39,10 +39,13 @@ public class RegexCaptureParserTest {
                 "Title: the quick brown fox\n" +
                 "Author: jumped over\n" +
                 "Created: 10/20/2024";
-        RegexCaptureParser parser = new RegexCaptureParser();
+
         Map<String, String> regexes = new HashMap<>();
         regexes.put("title", "^Title: ([^\r\n]+)");
-        parser.setCaptureMap(regexes);
+
+        RegexCaptureParserConfig config = new RegexCaptureParserConfig();
+        config.setCaptureMap(regexes);
+        RegexCaptureParser parser = new RegexCaptureParser(config);
 
         try (TikaInputStream tis =
                      TikaInputStream.get(output.getBytes(StandardCharsets.UTF_8))) {

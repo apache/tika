@@ -222,7 +222,7 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
     private String getJsonStringWithTimeout(String fileName, long timeoutMillis) throws IOException {
         ParseContext parseContext = new ParseContext();
         parseContext.set(HandlerConfig.class, DEFAULT_HANDLER_CONFIG);
-        parseContext.addConfig("tika-task-timeout", "{\"timeoutMillis\":" + timeoutMillis + "}");
+        parseContext.setJsonConfig("tika-task-timeout", "{\"timeoutMillis\":" + timeoutMillis + "}");
 
         FetchEmitTuple t = new FetchEmitTuple(fileName,
                 new FetchKey(CXFTestBase.FETCHER_ID, fileName),

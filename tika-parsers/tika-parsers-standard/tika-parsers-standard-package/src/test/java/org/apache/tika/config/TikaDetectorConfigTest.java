@@ -113,29 +113,33 @@ public class TikaDetectorConfigTest extends TikaTest {
 
     private void assertDetectors(CompositeDetector detector, boolean shouldHavePOIFS,
                                  boolean shouldHaveZip) {
-        boolean hasZip = false;
-        boolean hasPOIFS = false;
-        for (Detector d : detector.getDetectors()) {
-            if (d instanceof DefaultZipContainerDetector) {
-                if (shouldHaveZip) {
-                    hasZip = true;
-                } else {
-                    fail("Shouldn't have the ZipContainerDetector from config");
-                }
-            }
-            if (d instanceof POIFSContainerDetector) {
-                if (shouldHavePOIFS) {
-                    hasPOIFS = true;
-                } else {
-                    fail("Shouldn't have the POIFSContainerDetector from config");
-                }
-            }
-        }
-        if (shouldHavePOIFS) {
-            assertTrue(hasPOIFS, "Should have the POIFSContainerDetector");
-        }
+        boolean hasZip = hasDetectorRecursively(detector, DefaultZipContainerDetector.class);
+        boolean hasPOIFS = hasDetectorRecursively(detector, POIFSContainerDetector.class);
+
         if (shouldHaveZip) {
             assertTrue(hasZip, "Should have the ZipContainerDetector");
+        } else if (hasZip) {
+            fail("Shouldn't have the ZipContainerDetector from config");
         }
+
+        if (shouldHavePOIFS) {
+            assertTrue(hasPOIFS, "Should have the POIFSContainerDetector");
+        } else if (hasPOIFS) {
+            fail("Shouldn't have the POIFSContainerDetector from config");
+        }
+    }
+
+    private boolean hasDetectorRecursively(Detector detector, Class<? extends Detector> targetClass) {
+        if (targetClass.isInstance(detector)) {
+            return true;
+        }
+        if (detector instanceof CompositeDetector) {
+            for (Detector child : ((CompositeDetector) detector).getDetectors()) {
+                if (hasDetectorRecursively(child, targetClass)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

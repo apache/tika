@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.DefaultEncodingDetector;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.mime.MediaType;
@@ -38,6 +39,7 @@ import org.apache.tika.utils.ServiceLoaderUtils;
  *
  * @since Apache Tika 0.8
  */
+@TikaComponent(spi = false)
 public class DefaultParser extends CompositeParser {
 
     /**
@@ -45,12 +47,16 @@ public class DefaultParser extends CompositeParser {
      */
     private static final long serialVersionUID = 3612324825403757520L;
     private transient final ServiceLoader loader;
+    private final Collection<Class<? extends Parser>> excludedClasses;
 
     public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader,
                          Collection<Class<? extends Parser>> excludeParsers,
                          EncodingDetector encodingDetector, Renderer renderer) {
         super(registry, getDefaultParsers(loader, encodingDetector, renderer, excludeParsers));
         this.loader = loader;
+        this.excludedClasses = excludeParsers != null ?
+                Collections.unmodifiableCollection(new ArrayList<>(excludeParsers)) :
+                Collections.emptySet();
     }
 
     public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader,
@@ -59,6 +65,9 @@ public class DefaultParser extends CompositeParser {
                 getDefaultParsers(loader, new DefaultEncodingDetector(loader),
                         new CompositeRenderer(loader), excludeParsers));
         this.loader = loader;
+        this.excludedClasses = excludeParsers != null ?
+                Collections.unmodifiableCollection(new ArrayList<>(excludeParsers)) :
+                Collections.emptySet();
     }
 
     public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader,
@@ -174,5 +183,15 @@ public class DefaultParser extends CompositeParser {
             parsers.addAll(loader.loadDynamicServiceProviders(Parser.class));
         }
         return parsers;
+    }
+
+    /**
+     * Returns the classes that were explicitly excluded when constructing this parser.
+     * Used for round-trip serialization to preserve exclusion configuration.
+     *
+     * @return unmodifiable collection of excluded parser classes, never null
+     */
+    public Collection<Class<? extends Parser>> getExcludedClasses() {
+        return excludedClasses;
     }
 }

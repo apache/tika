@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.metadata.Metadata;
@@ -108,24 +107,22 @@ public class PipesClientTest {
 
     @Test
     public void testMetadataFilterFromJsonConfig(@TempDir Path tmp) throws Exception {
-        // Test that metadata filters specified as JSON array in ConfigContainer
+        // Test that metadata filters specified as JSON array in jsonConfigs
         // are properly resolved and applied during pipe processing.
         // This tests the full serialization/deserialization flow.
         ParseContext parseContext = new ParseContext();
-        ConfigContainer configContainer = new ConfigContainer();
-        configContainer.set("metadata-filters", """
+        parseContext.setJsonConfig("metadata-filters", """
             [
               "mock-upper-case-filter"
             ]
         """);
-        parseContext.set(ConfigContainer.class, configContainer);
 
         // Resolve the config to actual MetadataFilter instances
         ParseContextUtils.resolveAll(parseContext, PipesClientTest.class.getClassLoader());
 
         // Verify the filter was resolved
         MetadataFilter resolvedFilter = parseContext.get(MetadataFilter.class);
-        Assertions.assertNotNull(resolvedFilter, "MetadataFilter should be resolved from ConfigContainer");
+        Assertions.assertNotNull(resolvedFilter, "MetadataFilter should be resolved from jsonConfigs");
         assertEquals(CompositeMetadataFilter.class, resolvedFilter.getClass());
 
         PipesClient pipesClient = init(tmp, testDoc);
@@ -144,14 +141,12 @@ public class PipesClientTest {
     public void testMultipleMetadataFiltersFromJsonConfig(@TempDir Path tmp) throws Exception {
         // Test multiple filters specified as JSON array
         ParseContext parseContext = new ParseContext();
-        ConfigContainer configContainer = new ConfigContainer();
-        configContainer.set("metadata-filters", """
+        parseContext.setJsonConfig("metadata-filters", """
             [
               "attachment-counting-list-filter",
               "mock-upper-case-filter"
             ]
         """);
-        parseContext.set(ConfigContainer.class, configContainer);
 
         // Resolve the config to actual MetadataFilter instances
         ParseContextUtils.resolveAll(parseContext, PipesClientTest.class.getClassLoader());

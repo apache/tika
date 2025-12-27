@@ -22,6 +22,9 @@ import org.apache.tika.parser.ParseContext;
 
 /**
  * Configuration class for specifying parse task timeout.
+ * <p>
+ * This is a config POJO (not a component like Parser/Detector), so it uses
+ * standard Jackson format rather than compact component format:
  * <pre>
  * {
  *   "parse-context": {

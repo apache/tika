@@ -88,7 +88,7 @@ public class TestMetadataFilter extends TikaTest {
         metadata.set("author", "author");
         metadata.set("content", "content");
 
-        metadata = filterOne(loader.loadMetadataFilters(), metadata);
+        metadata = filterOne(loader.get(MetadataFilter.class), metadata);
 
         assertEquals(2, metadata.size());
         assertEquals("title", metadata.get("title"));
@@ -103,7 +103,7 @@ public class TestMetadataFilter extends TikaTest {
         metadata.set("author", "author");
         metadata.set("content", "content");
 
-        metadata = filterOne(loader.loadMetadataFilters(), metadata);
+        metadata = filterOne(loader.get(MetadataFilter.class), metadata);
         assertEquals(1, metadata.size());
         assertEquals("content", metadata.get("content"));
     }
@@ -119,7 +119,7 @@ public class TestMetadataFilter extends TikaTest {
         metadata.set("author", "author");
         metadata.set("content", "content");
 
-        metadata = filterOne(loader.loadMetadataFilters(), metadata);
+        metadata = filterOne(loader.get(MetadataFilter.class), metadata);
 
         assertEquals(2, metadata.size());
         assertArrayEquals(expectedTitles, metadata.getValues("title"));
@@ -152,7 +152,7 @@ public class TestMetadataFilter extends TikaTest {
         metadata.set(Metadata.CONTENT_TYPE, MediaType.image("jpeg").toString());
         metadata.set("author", "author");
 
-        MetadataFilter filter = loader.loadMetadataFilters();
+        MetadataFilter filter = loader.get(MetadataFilter.class);
         metadata = filterOne(filter, metadata);
         assertEquals(0, metadata.size());
 
@@ -172,7 +172,7 @@ public class TestMetadataFilter extends TikaTest {
         metadata.set("author", "author");
         metadata.set("a", "a-value");
 
-        MetadataFilter filter = loader.loadMetadataFilters();
+        MetadataFilter filter = loader.get(MetadataFilter.class);
         metadata = filterOne(filter, metadata);
         assertEquals("quick brown fox", metadata.get("content"));
         assertEquals("a-value", metadata.get("b"));
@@ -200,7 +200,7 @@ public class TestMetadataFilter extends TikaTest {
         metadata.set(TikaCoreProperties.TIKA_CONTENT, "quick brown fox");
         metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
 
-        MetadataFilter filter = loader.loadMetadataFilters();
+        MetadataFilter filter = loader.get(MetadataFilter.class);
         metadata = filterOne(filter, metadata);
         assertEquals("quick brown fox", metadata.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("text/html", metadata.get("mime"));
@@ -214,7 +214,7 @@ public class TestMetadataFilter extends TikaTest {
         metadata.set(TikaCoreProperties.TIKA_CONTENT, "quick brown fox");
         metadata.set(Metadata.CONTENT_TYPE, "text/html");
 
-        MetadataFilter filter = loader.loadMetadataFilters();
+        MetadataFilter filter = loader.get(MetadataFilter.class);
         metadata = filterOne(filter, metadata);
         assertEquals("quick brown fox", metadata.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("text/html", metadata.get("mime"));
@@ -228,7 +228,7 @@ public class TestMetadataFilter extends TikaTest {
         metadata.set(TikaCoreProperties.TIKA_CONTENT, "quick brown fox");
         metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
 
-        MetadataFilter filter = loader.loadMetadataFilters();
+        MetadataFilter filter = loader.get(MetadataFilter.class);
         metadata = filterOne(filter, metadata);
         assertEquals("quick brown fox", metadata.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("text/html", metadata.get(Metadata.CONTENT_TYPE));
@@ -251,7 +251,7 @@ public class TestMetadataFilter extends TikaTest {
         metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.INLINE.name());
         metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
 
-        MetadataFilter filter = loader.loadMetadataFilters();
+        MetadataFilter filter = loader.get(MetadataFilter.class);
         metadata = filterOne(filter, metadata);
         assertEquals(0, metadata.names().length);
 
