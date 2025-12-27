@@ -70,6 +70,8 @@ import org.apache.tika.pipes.core.EmitStrategy;
 import org.apache.tika.pipes.core.EmitStrategyConfig;
 import org.apache.tika.pipes.core.PipesClient;
 import org.apache.tika.pipes.core.PipesConfig;
+import org.apache.tika.pipes.core.config.ConfigStore;
+import org.apache.tika.pipes.core.config.ConfigStoreFactory;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.plugins.TikaPluginManager;
@@ -454,10 +456,14 @@ public class PipesServer implements AutoCloseable {
         TikaJsonConfig tikaJsonConfig = tikaLoader.getConfig();
         TikaPluginManager tikaPluginManager = TikaPluginManager.load(tikaJsonConfig);
 
-        //TODO allowed named configurations in tika config
-        this.fetcherManager = FetcherManager.load(tikaPluginManager, tikaJsonConfig);
-        // Always initialize emitters to support runtime overrides via ParseContext
-        this.emitterManager = EmitterManager.load(tikaPluginManager, tikaJsonConfig);
+        // Create ConfigStore using the same configuration as TikaGrpcServerImpl
+        // This allows fetchers saved via gRPC to be available to PipesServer
+        ConfigStore configStore = createConfigStore(pipesConfig, tikaPluginManager);
+
+        // Load FetcherManager with ConfigStore to enable runtime modifications
+        this.fetcherManager = FetcherManager.load(tikaPluginManager, tikaJsonConfig, true, configStore);
+        // Always initialize emitters to support runtime overrides via ParseContext  
+        this.emitterManager = EmitterManager.load(tikaPluginManager, tikaJsonConfig, true, configStore);
         this.autoDetectParser = (AutoDetectParser) tikaLoader.loadAutoDetectParser();
         // Get the digester for pre-parse digesting of container documents.
         // If user configured skipContainerDocumentDigest=false (the default), PipesServer
@@ -484,6 +490,18 @@ public class PipesServer implements AutoCloseable {
         this.rMetaParser = new RecursiveParserWrapper(autoDetectParser);
     }
 
+    private ConfigStore createConfigStore(PipesConfig pipesConfig, TikaPluginManager tikaPluginManager) throws TikaException {
+        if (pipesConfig.getConfigStore() != null) {
+            ConfigStoreFactory factory = tikaPluginManager.getPluginManager()
+                    .getExtensions(ConfigStoreFactory.class).stream()
+                    .filter(f -> f.getClass().getName().equals(pipesConfig.getConfigStore().getFactoryClass()))
+                    .findFirst()
+                    .orElseThrow(() -> new TikaException("Could not find ConfigStoreFactory: " + 
+                            pipesConfig.getConfigStore().getFactoryClass()));
+            return factory.build(pipesConfig.getConfigStore().getParams());
+        }
+        return null;
+    }
 
     private void write(PROCESSING_STATUS processingStatus, PipesResult pipesResult) {
         try {
