@@ -135,6 +135,37 @@ public class TikaPluginManager extends DefaultPluginManager {
     }
 
     /**
+     * Loads plugin manager from a comma-separated string of paths.
+     *
+     * @param pathsString comma-separated list of plugin root directories
+     * @return the plugin manager
+     * @throws TikaConfigException if configuration is invalid
+     * @throws IOException if reading or plugin initialization fails
+     */
+    public static TikaPluginManager loadFromPaths(String pathsString) 
+            throws TikaConfigException, IOException {
+        if (pathsString == null || pathsString.trim().isEmpty()) {
+            throw new TikaConfigException("plugin-roots must not be empty");
+        }
+        
+        configurePf4jRuntimeMode();
+        
+        List<Path> roots = new java.util.ArrayList<>();
+        for (String path : pathsString.split(",")) {
+            String trimmed = path.trim();
+            if (!trimmed.isEmpty()) {
+                roots.add(java.nio.file.Paths.get(trimmed));
+            }
+        }
+        
+        if (roots.isEmpty()) {
+            throw new TikaConfigException("plugin-roots must not be empty");
+        }
+        
+        return new TikaPluginManager(roots);
+    }
+
+    /**
      * Loads plugin manager from a configuration file.
      *
      * @param configPath the path to the JSON configuration file

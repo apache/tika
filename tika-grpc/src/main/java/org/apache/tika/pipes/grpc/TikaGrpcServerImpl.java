@@ -83,6 +83,10 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     PluginManager pluginManager;
 
     TikaGrpcServerImpl(String tikaConfigPath) throws TikaConfigException, IOException {
+        this(tikaConfigPath, null);
+    }
+
+    TikaGrpcServerImpl(String tikaConfigPath, String pluginRootsOverride) throws TikaConfigException, IOException {
         File tikaConfigFile = new File(tikaConfigPath);
         if (!tikaConfigFile.exists()) {
             throw new TikaConfigException("Tika config file does not exist: " + tikaConfigPath);
@@ -102,7 +106,13 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         pipesClient = new PipesClient(pipesConfig, configPath);
         
         try {
-            pluginManager = TikaPluginManager.load(tikaJsonConfig);
+            if (pluginRootsOverride != null && !pluginRootsOverride.trim().isEmpty()) {
+                // Use command-line plugin roots
+                pluginManager = TikaPluginManager.loadFromPaths(pluginRootsOverride);
+            } else {
+                // Use plugin roots from config file
+                pluginManager = TikaPluginManager.load(tikaJsonConfig);
+            }
             pluginManager.loadPlugins();
             pluginManager.startPlugins();
         } catch (TikaConfigException e) {
