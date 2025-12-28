@@ -84,6 +84,9 @@ public class IgniteStoreServer implements AutoCloseable {
         cfg.setClientMode(false); // Server mode
         cfg.setPeerClassLoadingEnabled(true);
         
+        // Set work directory to /tmp to avoid permission issues
+        cfg.setWorkDirectory(System.getProperty("ignite.work.dir", "/tmp/ignite-work"));
+        
         ignite = Ignition.start(cfg);
         
         CacheConfiguration<String, ExtensionConfigDTO> cacheCfg = 
