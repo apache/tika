@@ -154,40 +154,15 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             String cacheMode = params.has("cacheMode") ? params.get("cacheMode").asText() : "REPLICATED";
             String instanceName = params.has("igniteInstanceName") ? params.get("igniteInstanceName").asText() : "TikaIgniteServer";
             
-            // Find the Ignite plugin's classloader
-            ClassLoader igniteClassLoader = null;
-            for (org.pf4j.PluginWrapper plugin : pluginManager.getPlugins()) {
-                if (plugin.getPluginId().contains("ignite") || 
-                    plugin.getDescriptor().getPluginClass().contains("ignite")) {
-                    igniteClassLoader = plugin.getPluginClassLoader();
-                    LOG.info("Found Ignite plugin: {}", plugin.getPluginId());
-                    break;
-                }
-            }
+            // Direct instantiation - no reflection needed
+            org.apache.ignite.cache.CacheMode mode = org.apache.ignite.cache.CacheMode.valueOf(cacheMode);
+            org.apache.tika.pipes.ignite.server.IgniteStoreServer server = 
+                new org.apache.tika.pipes.ignite.server.IgniteStoreServer(cacheName, mode, instanceName);
             
-            if (igniteClassLoader == null) {
-                LOG.warn("Ignite plugin not found - skipping embedded server startup");
-                return;
-            }
-            
-            // Load classes from plugin classloader
-            Class<?> serverClass = Class.forName("org.apache.tika.pipes.ignite.server.IgniteStoreServer", 
-                true, igniteClassLoader);
-            Class<?> cacheModeClass = Class.forName("org.apache.ignite.cache.CacheMode", 
-                true, igniteClassLoader);
-            Object cacheModeEnum = Enum.valueOf((Class<Enum>) cacheModeClass, cacheMode);
-            
-            Object server = serverClass
-                .getConstructor(String.class, cacheModeClass, String.class)
-                .newInstance(cacheName, cacheModeEnum, instanceName);
-            
-            serverClass.getMethod("startAsync").invoke(server);
+            server.startAsync();
             
             LOG.info("Embedded Ignite server started successfully");
             
-        } catch (ClassNotFoundException e) {
-            LOG.warn("Ignite server class not found - skipping embedded server startup. " +
-                    "Make sure tika-pipes-ignite plugin is loaded.");
         } catch (Exception e) {
             LOG.error("Failed to start embedded Ignite server", e);
             throw new RuntimeException("Failed to start Ignite server", e);
