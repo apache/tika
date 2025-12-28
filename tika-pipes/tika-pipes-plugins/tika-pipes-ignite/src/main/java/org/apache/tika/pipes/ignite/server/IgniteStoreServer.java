@@ -84,8 +84,8 @@ public class IgniteStoreServer implements AutoCloseable {
         cfg.setClientMode(false); // Server mode
         cfg.setPeerClassLoadingEnabled(true);
         
-        // Set work directory to /tmp to avoid permission issues
-        cfg.setWorkDirectory(System.getProperty("ignite.work.dir", "/tmp/ignite-work"));
+        // Set work directory to /var/cache/tika to match Tika's cache location
+        cfg.setWorkDirectory(System.getProperty("ignite.work.dir", "/var/cache/tika/ignite-work"));
         
         ignite = Ignition.start(cfg);
         

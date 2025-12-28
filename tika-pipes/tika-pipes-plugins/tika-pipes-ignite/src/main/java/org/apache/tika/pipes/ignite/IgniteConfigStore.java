@@ -100,8 +100,8 @@ public class IgniteConfigStore implements ConfigStore {
         cfg.setIgniteInstanceName(igniteInstanceName + "-Client");
         cfg.setClientMode(true);  // Client mode - connects to embedded server
         
-        // Set work directory to /tmp to avoid permission issues
-        cfg.setWorkDirectory(System.getProperty("ignite.work.dir", "/tmp/ignite-work"));
+        // Set work directory to /var/cache/tika to match Tika's cache location
+        cfg.setWorkDirectory(System.getProperty("ignite.work.dir", "/var/cache/tika/ignite-work"));
 
         ignite = Ignition.start(cfg);
 
