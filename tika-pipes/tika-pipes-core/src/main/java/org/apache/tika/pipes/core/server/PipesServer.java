@@ -71,6 +71,8 @@ import org.apache.tika.pipes.core.EmitStrategy;
 import org.apache.tika.pipes.core.EmitStrategyConfig;
 import org.apache.tika.pipes.core.PipesClient;
 import org.apache.tika.pipes.core.PipesConfig;
+import org.apache.tika.pipes.core.config.ConfigStore;
+import org.apache.tika.pipes.core.config.ConfigStoreFactory;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.plugins.ExtensionConfig;
@@ -472,10 +474,12 @@ public class PipesServer implements AutoCloseable {
         TikaJsonConfig tikaJsonConfig = tikaLoader.getConfig();
         TikaPluginManager tikaPluginManager = TikaPluginManager.load(tikaJsonConfig);
 
-        //TODO allowed named configurations in tika config
-        this.fetcherManager = FetcherManager.load(tikaPluginManager, tikaJsonConfig);
-        // Always initialize emitters to support runtime overrides via ParseContext
-        this.emitterManager = EmitterManager.load(tikaPluginManager, tikaJsonConfig);
+        // Create ConfigStore if specified in pipesConfig
+        ConfigStore configStore = createConfigStore(pipesConfig, tikaPluginManager);
+
+        // Load managers with ConfigStore to enable runtime modifications
+        this.fetcherManager = FetcherManager.load(tikaPluginManager, tikaJsonConfig, true, configStore);
+        this.emitterManager = EmitterManager.load(tikaPluginManager, tikaJsonConfig, true, configStore);
         this.autoDetectParser = (AutoDetectParser) tikaLoader.loadAutoDetectParser();
         // Get the digester for pre-parse digesting of container documents.
         // If user configured skipContainerDocumentDigest=false (the default), PipesServer
@@ -500,6 +504,24 @@ public class PipesServer implements AutoCloseable {
         }
         this.detector = this.autoDetectParser.getDetector();
         this.rMetaParser = new RecursiveParserWrapper(autoDetectParser);
+    }
+
+    private ConfigStore createConfigStore(PipesConfig pipesConfig, TikaPluginManager tikaPluginManager) throws TikaException {
+        String configStoreType = pipesConfig.getConfigStoreType();
+        String configStoreParams = pipesConfig.getConfigStoreParams();
+        
+        if (configStoreType == null || "memory".equals(configStoreType)) {
+            // Use default in-memory store (no persistence)
+            return null;
+        }
+        
+        ExtensionConfig storeConfig = new ExtensionConfig(
+            configStoreType, configStoreType, configStoreParams);
+        
+        return ConfigStoreFactory.createConfigStore(
+                tikaPluginManager,
+                configStoreType,
+                storeConfig);
     }
 
 
