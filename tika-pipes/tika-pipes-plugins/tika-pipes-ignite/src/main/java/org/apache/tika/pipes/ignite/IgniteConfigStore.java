@@ -155,6 +155,15 @@ public class IgniteConfigStore implements ConfigStore {
         return cache.size();
     }
 
+    @Override
+    public ExtensionConfig remove(String id) {
+        if (cache == null) {
+            throw new IllegalStateException("IgniteConfigStore not initialized. Call init() first.");
+        }
+        ExtensionConfigDTO removed = cache.getAndRemove(id);
+        return removed != null ? removed.toExtensionConfig() : null;
+    }
+
     public void close() {
         if (ignite != null && autoClose) {
             LOG.info("Closing IgniteConfigStore");

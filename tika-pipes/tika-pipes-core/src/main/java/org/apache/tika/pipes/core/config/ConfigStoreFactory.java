@@ -58,6 +58,19 @@ public interface ConfigStoreFactory extends TikaExtensionFactory<ConfigStore> {
             return store;
         }
         
+        // Handle file type directly since it's in core (not a plugin)
+        if ("file".equalsIgnoreCase(configStoreType)) {
+            LOG.info("Creating FileBasedConfigStore");
+            FileBasedConfigStoreFactory factory = new FileBasedConfigStoreFactory();
+            try {
+                ExtensionConfig config = extensionConfig != null ? extensionConfig :
+                    new ExtensionConfig(configStoreType, configStoreType, "{}");
+                return factory.buildExtension(config);
+            } catch (IOException e) {
+                throw new TikaConfigException("Failed to create FileBasedConfigStore", e);
+            }
+        }
+        
         Map<String, ConfigStoreFactory> factoryMap = loadAllConfigStoreFactoryExtensions(pluginManager);
 
         ConfigStoreFactory factory = factoryMap.get(configStoreType);
