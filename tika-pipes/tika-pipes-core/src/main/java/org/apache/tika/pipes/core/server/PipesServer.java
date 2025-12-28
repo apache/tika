@@ -154,6 +154,7 @@ public class PipesServer implements AutoCloseable {
     private RecursiveParserWrapper rMetaParser;
     private FetcherManager fetcherManager;
     private EmitterManager emitterManager;
+    private ConfigStore configStore;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final ExecutorCompletionService<PipesResult> executorCompletionService = new ExecutorCompletionService<>(executorService);
     private final EmitStrategy emitStrategy;
@@ -326,6 +327,14 @@ public class PipesServer implements AutoCloseable {
                     handleListEmitters();
                 } else if (request == PipesClient.COMMANDS.GET_EMITTER.getByte()) {
                     handleGetEmitter();
+                } else if (request == PipesClient.COMMANDS.SAVE_PIPES_ITERATOR.getByte()) {
+                    handleSavePipesIterator();
+                } else if (request == PipesClient.COMMANDS.DELETE_PIPES_ITERATOR.getByte()) {
+                    handleDeletePipesIterator();
+                } else if (request == PipesClient.COMMANDS.LIST_PIPES_ITERATORS.getByte()) {
+                    handleListPipesIterators();
+                } else if (request == PipesClient.COMMANDS.GET_PIPES_ITERATOR.getByte()) {
+                    handleGetPipesIterator();
                 } else {
                     String msg = String.format(Locale.ROOT,
                             "pipesClientId=%s: Unexpected byte 0x%02x in command position. " +
@@ -475,7 +484,7 @@ public class PipesServer implements AutoCloseable {
         TikaPluginManager tikaPluginManager = TikaPluginManager.load(tikaJsonConfig);
 
         // Create ConfigStore if specified in pipesConfig
-        ConfigStore configStore = createConfigStore(pipesConfig, tikaPluginManager);
+        this.configStore = createConfigStore(pipesConfig, tikaPluginManager);
 
         // Load managers with ConfigStore to enable runtime modifications
         this.fetcherManager = FetcherManager.load(tikaPluginManager, tikaJsonConfig, true, configStore);
@@ -863,5 +872,137 @@ public class PipesServer implements AutoCloseable {
             exit(1);
         }
     }
+
+    // ========== PipesIterator Command Handlers ==========
+    // Note: PipesIterators are primarily used on the client side to generate FetchEmitTuples.
+    // Unlike Fetchers and Emitters, they are not component managers in PipesServer.
+    // These handlers provide basic ConfigStore operations for consistency.
+    
+    private void handleSavePipesIterator() {
+        try {
+            // Read ExtensionConfig
+            int len = input.readInt();
+            byte[] bytes = new byte[len];
+            input.readFully(bytes);
+            
+            ExtensionConfig config;
+            try (ObjectInputStream ois = new ObjectInputStream(new UnsynchronizedByteArrayInputStream(bytes))) {
+                config = (ExtensionConfig) ois.readObject();
+            } catch (ClassNotFoundException e) {
+                throw new IOException("Failed to deserialize ExtensionConfig", e);
+            }
+            
+            // Save to ConfigStore
+            configStore.put(PIPES_ITERATOR_PREFIX + config.id(), config);
+            
+            // Send success response
+            output.writeByte(0); // success
+            byte[] msgBytes = "OK".getBytes(StandardCharsets.UTF_8);
+            output.writeInt(msgBytes.length);
+            output.write(msgBytes);
+            output.flush();
+            
+            LOG.debug("pipesClientId={}: saved pipes iterator '{}'", pipesClientId, config.id());
+            
+        } catch (Exception e) {
+            LOG.error("pipesClientId={}: error saving pipes iterator", pipesClientId, e);
+            try {
+                output.writeByte(1); // error
+                byte[] msgBytes = e.getMessage().getBytes(StandardCharsets.UTF_8);
+                output.writeInt(msgBytes.length);
+                output.write(msgBytes);
+                output.flush();
+            } catch (IOException ioException) {
+                LOG.error("pipesClientId={}: error sending error response", pipesClientId, ioException);
+            }
+        }
+    }
+    
+    private void handleDeletePipesIterator() {
+        try {
+            // Read iterator ID
+            int len = input.readInt();
+            byte[] bytes = new byte[len];
+            input.readFully(bytes);
+            String iteratorId = new String(bytes, StandardCharsets.UTF_8);
+            
+            // Delete from ConfigStore
+            configStore.remove(PIPES_ITERATOR_PREFIX + iteratorId);
+            
+            // Send success response
+            output.writeByte(0); // success
+            byte[] msgBytes = "OK".getBytes(StandardCharsets.UTF_8);
+            output.writeInt(msgBytes.length);
+            output.write(msgBytes);
+            output.flush();
+            
+            LOG.debug("pipesClientId={}: deleted pipes iterator '{}'", pipesClientId, iteratorId);
+            
+        } catch (Exception e) {
+            LOG.error("pipesClientId={}: error deleting pipes iterator", pipesClientId, e);
+            try {
+                output.writeByte(1); // error
+                byte[] msgBytes = e.getMessage().getBytes(StandardCharsets.UTF_8);
+                output.writeInt(msgBytes.length);
+                output.write(msgBytes);
+                output.flush();
+            } catch (IOException ioException) {
+                LOG.error("pipesClientId={}: error sending error response", pipesClientId, ioException);
+            }
+        }
+    }
+    
+    private void handleListPipesIterators() {
+        try {
+            // This is a placeholder - list operation not fully implemented
+            // Would need to iterate ConfigStore keys with PIPES_ITERATOR_PREFIX
+            output.writeByte(0); // success
+            byte[] msgBytes = "[]".getBytes(StandardCharsets.UTF_8);
+            output.writeInt(msgBytes.length);
+            output.write(msgBytes);
+            output.flush();
+            LOG.debug("pipesClientId={}: list pipes iterators (placeholder)", pipesClientId);
+        } catch (IOException e) {
+            LOG.error("pipesClientId={}: error listing pipes iterators", pipesClientId, e);
+            exit(1);
+        }
+    }
+    
+    private void handleGetPipesIterator() {
+        try {
+            // Read iterator ID
+            int len = input.readInt();
+            byte[] bytes = new byte[len];
+            input.readFully(bytes);
+            String iteratorId = new String(bytes, StandardCharsets.UTF_8);
+            
+            // Get from ConfigStore
+            ExtensionConfig config = configStore.get(PIPES_ITERATOR_PREFIX + iteratorId);
+            
+            if (config == null) {
+                output.writeByte(0); // not found
+                output.flush();
+            } else {
+                output.writeByte(1); // found
+                
+                // Serialize config
+                UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
+                try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {
+                    oos.writeObject(config);
+                }
+                byte[] configBytes = bos.toByteArray();
+                output.writeInt(configBytes.length);
+                output.write(configBytes);
+                output.flush();
+            }
+            LOG.debug("pipesClientId={}: get pipes iterator '{}' = {}", pipesClientId, iteratorId, (config != null ? "found" : "not found"));
+            
+        } catch (IOException e) {
+            LOG.error("pipesClientId={}: error getting pipes iterator", pipesClientId, e);
+            exit(1);
+        }
+    }
+    
+    private static final String PIPES_ITERATOR_PREFIX = "pipesIterator:";
 
 }

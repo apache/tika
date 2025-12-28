@@ -39,16 +39,22 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.DeleteFetcherReply;
 import org.apache.tika.DeleteFetcherRequest;
+import org.apache.tika.DeletePipesIteratorReply;
+import org.apache.tika.DeletePipesIteratorRequest;
 import org.apache.tika.FetchAndParseReply;
 import org.apache.tika.FetchAndParseRequest;
 import org.apache.tika.GetFetcherConfigJsonSchemaReply;
 import org.apache.tika.GetFetcherConfigJsonSchemaRequest;
 import org.apache.tika.GetFetcherReply;
 import org.apache.tika.GetFetcherRequest;
+import org.apache.tika.GetPipesIteratorReply;
+import org.apache.tika.GetPipesIteratorRequest;
 import org.apache.tika.ListFetchersReply;
 import org.apache.tika.ListFetchersRequest;
 import org.apache.tika.SaveFetcherReply;
 import org.apache.tika.SaveFetcherRequest;
+import org.apache.tika.SavePipesIteratorReply;
+import org.apache.tika.SavePipesIteratorRequest;
 import org.apache.tika.TikaGrpc;
 import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.config.loader.TikaJsonConfig;
@@ -380,6 +386,101 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         } catch (Exception e) {
             LOG.error("Failed to delete fetcher: {}", id, e);
             return false;
+        }
+    }
+    
+    // ========== PipesIterator RPC Methods ==========
+    
+    @Override
+    public void savePipesIterator(SavePipesIteratorRequest request,
+                                  StreamObserver<SavePipesIteratorReply> responseObserver) {
+        try {
+            String iteratorId = request.getIteratorId();
+            String iteratorClass = request.getIteratorClass();
+            String iteratorConfigJson = request.getIteratorConfigJson();
+            
+            LOG.info("Saving pipes iterator: id={}, class={}", iteratorId, iteratorClass);
+            
+            ExtensionConfig config = new ExtensionConfig(iteratorId, iteratorClass, iteratorConfigJson);
+            
+            // Save via PipesClient so it propagates to the forked PipesServer
+            pipesClient.savePipesIterator(config);
+            
+            SavePipesIteratorReply reply = SavePipesIteratorReply.newBuilder()
+                    .setMessage("Pipes iterator saved successfully")
+                    .build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+            
+            LOG.info("Successfully saved pipes iterator: {}", iteratorId);
+            
+        } catch (Exception e) {
+            LOG.error("Failed to save pipes iterator", e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                    .withDescription("Failed to save pipes iterator: " + e.getMessage())
+                    .withCause(e)
+                    .asRuntimeException());
+        }
+    }
+    
+    @Override
+    public void getPipesIterator(GetPipesIteratorRequest request,
+                                 StreamObserver<GetPipesIteratorReply> responseObserver) {
+        try {
+            String iteratorId = request.getIteratorId();
+            LOG.info("Getting pipes iterator: {}", iteratorId);
+            
+            ExtensionConfig config = pipesClient.getPipesIteratorConfig(iteratorId);
+            
+            if (config == null) {
+                responseObserver.onError(io.grpc.Status.NOT_FOUND
+                        .withDescription("Pipes iterator not found: " + iteratorId)
+                        .asRuntimeException());
+                return;
+            }
+            
+            GetPipesIteratorReply reply = GetPipesIteratorReply.newBuilder()
+                    .setIteratorId(config.id())
+                    .setIteratorClass(config.name())
+                    .setIteratorConfigJson(config.json())
+                    .build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+            
+            LOG.info("Successfully retrieved pipes iterator: {}", iteratorId);
+            
+        } catch (Exception e) {
+            LOG.error("Failed to get pipes iterator", e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                    .withDescription("Failed to get pipes iterator: " + e.getMessage())
+                    .withCause(e)
+                    .asRuntimeException());
+        }
+    }
+    
+    @Override
+    public void deletePipesIterator(DeletePipesIteratorRequest request,
+                                    StreamObserver<DeletePipesIteratorReply> responseObserver) {
+        try {
+            String iteratorId = request.getIteratorId();
+            LOG.info("Deleting pipes iterator: {}", iteratorId);
+            
+            pipesClient.deletePipesIterator(iteratorId);
+            
+            DeletePipesIteratorReply reply = DeletePipesIteratorReply.newBuilder()
+                    .setMessage("Pipes iterator deleted successfully")
+                    .build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+            
+            LOG.info("Successfully deleted pipes iterator: {}", iteratorId);
+            
+        } catch (Exception e) {
+            LOG.error("Failed to delete pipes iterator", e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                    .withDescription("Failed to delete pipes iterator: " + e.getMessage())
+                    .withCause(e)
+                    .asRuntimeException());
         }
     }
 }

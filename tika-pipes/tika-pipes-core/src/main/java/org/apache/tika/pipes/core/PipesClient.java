@@ -83,7 +83,8 @@ public class PipesClient implements Closeable {
     public enum COMMANDS {
         PING, ACK, NEW_REQUEST, SHUT_DOWN, 
         SAVE_FETCHER, DELETE_FETCHER, LIST_FETCHERS, GET_FETCHER,
-        SAVE_EMITTER, DELETE_EMITTER, LIST_EMITTERS, GET_EMITTER;
+        SAVE_EMITTER, DELETE_EMITTER, LIST_EMITTERS, GET_EMITTER,
+        SAVE_PIPES_ITERATOR, DELETE_PIPES_ITERATOR, LIST_PIPES_ITERATORS, GET_PIPES_ITERATOR;
 
         public byte getByte() {
             return (byte) (ordinal() + 1);
@@ -862,6 +863,117 @@ public class PipesClient implements Closeable {
             serverTuple.output.write(idBytes);
             serverTuple.output.flush();
             
+            byte found = serverTuple.input.readByte();
+            if (found == 0) {
+                return null;
+            }
+            
+            int len = serverTuple.input.readInt();
+            byte[] bytes = new byte[len];
+            serverTuple.input.readFully(bytes);
+            
+            try (ObjectInputStream ois = new ObjectInputStream(new UnsynchronizedByteArrayInputStream(bytes))) {
+                return (ExtensionConfig) ois.readObject();
+            } catch (ClassNotFoundException e) {
+                throw new IOException("Failed to deserialize ExtensionConfig", e);
+            }
+        }
+    }
+
+    // ========== PipesIterator Management API ==========
+
+    /**
+     * Save (create or update) a PipesIterator configuration.
+     * The iterator will be available immediately for use in subsequent operations.
+     * 
+     * @param config the iterator configuration containing name, plugin ID, and parameters
+     * @throws IOException if communication with the server fails
+     * @throws TikaException if the server returns an error (e.g., invalid configuration)
+     * @throws InterruptedException if the operation is interrupted
+     */
+    public void savePipesIterator(ExtensionConfig config) throws IOException, TikaException, InterruptedException {
+        maybeInit();
+        synchronized (lock) {
+            serverTuple.output.write(COMMANDS.SAVE_PIPES_ITERATOR.getByte());
+            serverTuple.output.flush();
+            
+            // Serialize the ExtensionConfig
+            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
+            try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {
+                oos.writeObject(config);
+            }
+            byte[] bytes = bos.toByteArray();
+            serverTuple.output.writeInt(bytes.length);
+            serverTuple.output.write(bytes);
+            serverTuple.output.flush();
+            
+            // Read response
+            byte status = serverTuple.input.readByte();
+            int msgLen = serverTuple.input.readInt();
+            byte[] msgBytes = new byte[msgLen];
+            serverTuple.input.readFully(msgBytes);
+            String message = new String(msgBytes, StandardCharsets.UTF_8);
+            
+            if (status != 0) { // 0 = success, 1 = error
+                throw new TikaException("Failed to save pipes iterator: " + message);
+            }
+            LOG.debug("pipesClientId={}: saved pipes iterator '{}'", pipesClientId, config.id());
+        }
+    }
+
+    /**
+     * Delete a PipesIterator configuration by its ID.
+     * 
+     * @param iteratorId the iterator ID to delete
+     * @throws IOException if communication with the server fails
+     * @throws TikaException if the server returns an error (e.g., iterator not found)
+     * @throws InterruptedException if the operation is interrupted
+     */
+    public void deletePipesIterator(String iteratorId) throws IOException, TikaException, InterruptedException {
+        maybeInit();
+        synchronized (lock) {
+            serverTuple.output.write(COMMANDS.DELETE_PIPES_ITERATOR.getByte());
+            serverTuple.output.flush();
+            
+            byte[] idBytes = iteratorId.getBytes(StandardCharsets.UTF_8);
+            serverTuple.output.writeInt(idBytes.length);
+            serverTuple.output.write(idBytes);
+            serverTuple.output.flush();
+            
+            // Read response
+            byte status = serverTuple.input.readByte();
+            int msgLen = serverTuple.input.readInt();
+            byte[] msgBytes = new byte[msgLen];
+            serverTuple.input.readFully(msgBytes);
+            String message = new String(msgBytes, StandardCharsets.UTF_8);
+            
+            if (status != 0) {
+                throw new TikaException("Failed to delete pipes iterator: " + message);
+            }
+            LOG.debug("pipesClientId={}: deleted pipes iterator '{}'", pipesClientId, iteratorId);
+        }
+    }
+
+    /**
+     * Get the configuration for a specific PipesIterator.
+     * 
+     * @param iteratorId the iterator ID
+     * @return the iterator configuration, or null if not found
+     * @throws IOException if communication with the server fails
+     * @throws InterruptedException if the operation is interrupted
+     */
+    public ExtensionConfig getPipesIteratorConfig(String iteratorId) throws IOException, InterruptedException {
+        maybeInit();
+        synchronized (lock) {
+            serverTuple.output.write(COMMANDS.GET_PIPES_ITERATOR.getByte());
+            serverTuple.output.flush();
+            
+            byte[] idBytes = iteratorId.getBytes(StandardCharsets.UTF_8);
+            serverTuple.output.writeInt(idBytes.length);
+            serverTuple.output.write(idBytes);
+            serverTuple.output.flush();
+            
+            // Read response
             byte found = serverTuple.input.readByte();
             if (found == 0) {
                 return null;

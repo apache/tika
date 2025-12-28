@@ -59,6 +59,19 @@ service Tika   {
     Get the Fetcher Config schema for a given fetcher class.
   */
   rpc GetFetcherConfigJsonSchema(GetFetcherConfigJsonSchemaRequest) returns (GetFetcherConfigJsonSchemaReply) {}
+  
+  /* 
+    Save a pipes iterator to the iterator store.   
+  */
+  rpc SavePipesIterator(SavePipesIteratorRequest) returns (SavePipesIteratorReply) {}
+  /* 
+    Get a pipes iterator's data from the iterator store.   
+  */
+  rpc GetPipesIterator(GetPipesIteratorRequest) returns (GetPipesIteratorReply) {}
+  /* 
+    Delete a pipes iterator from the iterator store.   
+  */
+  rpc DeletePipesIterator(DeletePipesIteratorRequest) returns (DeletePipesIteratorReply) {}
 }
 
 message SaveFetcherRequest {
@@ -142,4 +155,44 @@ message GetFetcherConfigJsonSchemaRequest {
 message GetFetcherConfigJsonSchemaReply {
   // The json schema that describes the fetcher config in string format.
   string fetcher_config_json_schema = 1;
+}
+
+// ========== PipesIterator Messages ==========
+
+message SavePipesIteratorRequest {
+  // A unique identifier for each pipes iterator. If this already exists, operation will overwrite existing.
+  string iterator_id = 1;
+  // The full java class name of the pipes iterator class.
+  string iterator_class = 2;
+  // JSON string of the pipes iterator config object.
+  string iterator_config_json = 3;
+}
+
+message SavePipesIteratorReply {
+  // Status message
+  string message = 1;
+}
+
+message GetPipesIteratorRequest {
+  // The pipes iterator ID to retrieve
+  string iterator_id = 1;
+}
+
+message GetPipesIteratorReply {
+  // The pipes iterator ID
+  string iterator_id = 1;
+  // The full java class name of the pipes iterator
+  string iterator_class = 2;
+  // JSON string of the pipes iterator config object
+  string iterator_config_json = 3;
+}
+
+message DeletePipesIteratorRequest {
+  // The pipes iterator ID to delete
+  string iterator_id = 1;
+}
+
+message DeletePipesIteratorReply {
+  // Status message
+  string message = 1;
 }
