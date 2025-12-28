@@ -97,17 +97,22 @@ public class IgniteConfigStore implements ConfigStore {
                 cacheName, cacheMode, igniteInstanceName);
 
         IgniteConfiguration cfg = new IgniteConfiguration();
-        cfg.setIgniteInstanceName(igniteInstanceName);
-        cfg.setClientMode(false);
+        cfg.setIgniteInstanceName(igniteInstanceName + "-Client");
+        cfg.setClientMode(true);  // Client mode - connects to embedded server
 
         ignite = Ignition.start(cfg);
 
-        CacheConfiguration<String, ExtensionConfigDTO> cacheCfg = new CacheConfiguration<>(cacheName);
-        cacheCfg.setCacheMode(cacheMode);
-        cacheCfg.setBackups(cacheMode == CacheMode.PARTITIONED ? 1 : 0);
-
-        cache = ignite.getOrCreateCache(cacheCfg);
-        LOG.info("IgniteConfigStore initialized successfully");
+        // Get cache (it should already exist on the server)
+        cache = ignite.cache(cacheName);
+        if (cache == null) {
+            // If not found, create it (shouldn't happen if server started first)
+            LOG.warn("Cache {} not found on server, creating it", cacheName);
+            CacheConfiguration<String, ExtensionConfigDTO> cacheCfg = new CacheConfiguration<>(cacheName);
+            cacheCfg.setCacheMode(cacheMode);
+            cacheCfg.setBackups(cacheMode == CacheMode.PARTITIONED ? 1 : 0);
+            cache = ignite.getOrCreateCache(cacheCfg);
+        }
+        LOG.info("IgniteConfigStore initialized successfully as client");
     }
 
     @Override
