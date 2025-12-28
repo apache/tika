@@ -96,6 +96,9 @@ public class IgniteConfigStore implements ConfigStore {
         LOG.info("Initializing IgniteConfigStore with cache: {}, mode: {}, instance: {}",
                 cacheName, cacheMode, igniteInstanceName);
 
+        // Disable Ignite's Object Input Filter autoconfiguration to avoid conflicts
+        System.setProperty("IGNITE_ENABLE_OBJECT_INPUT_FILTER_AUTOCONFIGURATION", "false");
+
         IgniteConfiguration cfg = new IgniteConfiguration();
         cfg.setIgniteInstanceName(igniteInstanceName + "-Client");
         cfg.setClientMode(true);  // Client mode - connects to embedded server
