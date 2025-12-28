@@ -225,7 +225,12 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         try {
             String factoryName = findFactoryNameForClass(request.getFetcherClass());
             ExtensionConfig config = new ExtensionConfig(request.getFetcherId(), factoryName, request.getFetcherConfigJson());
+            
+            // Save to gRPC server's fetcher manager (for schema queries, etc.)
             fetcherManager.saveFetcher(config);
+            
+            // Also save to PipesClient so it propagates to the forked PipesServer
+            pipesClient.saveFetcher(config);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -331,7 +336,18 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     }
 
     private boolean deleteFetcher(String id) {
-        LOG.warn("Deleting fetchers is not supported in the current implementation");
-        return false;
+        try {
+            // Delete from gRPC server's fetcher manager
+            fetcherManager.deleteFetcher(id);
+            
+            // Also delete from PipesClient so it propagates to the forked PipesServer
+            pipesClient.deleteFetcher(id);
+            
+            LOG.info("Successfully deleted fetcher: {}", id);
+            return true;
+        } catch (Exception e) {
+            LOG.error("Failed to delete fetcher: {}", id, e);
+            return false;
+        }
     }
 }
