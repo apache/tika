@@ -154,9 +154,27 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             String cacheMode = params.has("cacheMode") ? params.get("cacheMode").asText() : "REPLICATED";
             String instanceName = params.has("igniteInstanceName") ? params.get("igniteInstanceName").asText() : "TikaIgniteServer";
             
-            // Dynamically load and start server (avoid compile-time dependency)
-            Class<?> serverClass = Class.forName("org.apache.tika.pipes.ignite.server.IgniteStoreServer");
-            Class<?> cacheModeClass = Class.forName("org.apache.ignite.cache.CacheMode");
+            // Find the Ignite plugin's classloader
+            ClassLoader igniteClassLoader = null;
+            for (org.pf4j.PluginWrapper plugin : pluginManager.getPlugins()) {
+                if (plugin.getPluginId().contains("ignite") || 
+                    plugin.getDescriptor().getPluginClass().contains("ignite")) {
+                    igniteClassLoader = plugin.getPluginClassLoader();
+                    LOG.info("Found Ignite plugin: {}", plugin.getPluginId());
+                    break;
+                }
+            }
+            
+            if (igniteClassLoader == null) {
+                LOG.warn("Ignite plugin not found - skipping embedded server startup");
+                return;
+            }
+            
+            // Load classes from plugin classloader
+            Class<?> serverClass = Class.forName("org.apache.tika.pipes.ignite.server.IgniteStoreServer", 
+                true, igniteClassLoader);
+            Class<?> cacheModeClass = Class.forName("org.apache.ignite.cache.CacheMode", 
+                true, igniteClassLoader);
             Object cacheModeEnum = Enum.valueOf((Class<Enum>) cacheModeClass, cacheMode);
             
             Object server = serverClass
