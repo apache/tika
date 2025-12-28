@@ -174,4 +174,24 @@ public class EmitterManager extends AbstractComponentManager<Emitter, EmitterFac
     public void saveEmitter(ExtensionConfig config) throws TikaConfigException, IOException {
         saveComponent(config);
     }
+
+    /**
+     * Deletes an emitter configuration by ID.
+     *
+     * @param emitterId the emitter ID to delete
+     * @throws TikaConfigException if runtime modifications are not allowed or emitter not found
+     */
+    public void deleteEmitter(String emitterId) throws TikaConfigException {
+        deleteComponent(emitterId);
+    }
+
+    /**
+     * Gets the configuration for a specific emitter by ID.
+     *
+     * @param emitterId the emitter ID
+     * @return the emitter configuration, or null if not found
+     */
+    public ExtensionConfig getConfig(String emitterId) {
+        return getComponentConfig(emitterId);
+    }
 }

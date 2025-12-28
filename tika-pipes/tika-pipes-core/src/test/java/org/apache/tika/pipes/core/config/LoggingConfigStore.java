@@ -83,4 +83,12 @@ public class LoggingConfigStore implements ConfigStore {
             return store.size();
         }
     }
+
+    @Override
+    public ExtensionConfig remove(String id) {
+        LOG.debug("ConfigStore: Removing config with id={}", id);
+        synchronized (store) {
+            return store.remove(id);
+        }
+    }
 }

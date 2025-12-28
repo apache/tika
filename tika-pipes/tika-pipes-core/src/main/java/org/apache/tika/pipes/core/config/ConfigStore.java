@@ -88,4 +88,13 @@ public interface ConfigStore extends TikaExtension {
      * @return the number of configurations
      */
     int size();
+
+    /**
+     * Removes a configuration by ID.
+     *
+     * @param id the configuration ID (must not be null)
+     * @return the removed configuration, or null if not found
+     * @throws NullPointerException if id is null
+     */
+    ExtensionConfig remove(String id);
 }
