@@ -58,7 +58,7 @@ public interface ConfigStoreFactory extends TikaExtensionFactory<ConfigStore> {
             return store;
         }
         
-        // Handle file type directly since it's in core (not a plugin)
+        // Handle built-in types directly (not plugins)
         if ("file".equalsIgnoreCase(configStoreType)) {
             LOG.info("Creating FileBasedConfigStore");
             FileBasedConfigStoreFactory factory = new FileBasedConfigStoreFactory();
@@ -68,6 +68,21 @@ public interface ConfigStoreFactory extends TikaExtensionFactory<ConfigStore> {
                 return factory.buildExtension(config);
             } catch (IOException e) {
                 throw new TikaConfigException("Failed to create FileBasedConfigStore", e);
+            }
+        }
+        
+        if ("ignite".equalsIgnoreCase(configStoreType)) {
+            LOG.info("Creating IgniteConfigStore");
+            try {
+                Class<?> factoryClass = Class.forName("org.apache.tika.pipes.ignite.IgniteConfigStoreFactory");
+                ConfigStoreFactory factory = (ConfigStoreFactory) factoryClass.getDeclaredConstructor().newInstance();
+                ExtensionConfig config = extensionConfig != null ? extensionConfig :
+                    new ExtensionConfig(configStoreType, configStoreType, "{}");
+                return factory.buildExtension(config);
+            } catch (ClassNotFoundException e) {
+                throw new TikaConfigException("Ignite ConfigStore requested but tika-pipes-ignite not on classpath", e);
+            } catch (Exception e) {
+                throw new TikaConfigException("Failed to create IgniteConfigStore", e);
             }
         }
         
