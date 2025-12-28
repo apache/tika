@@ -79,6 +79,9 @@ public class IgniteStoreServer implements AutoCloseable {
         LOG.info("Starting Ignite server: instance={}, cache={}, mode={}", 
             instanceName, cacheName, cacheMode);
         
+        // Disable Ignite's Object Input Filter autoconfiguration to avoid conflicts
+        System.setProperty("IGNITE_ENABLE_OBJECT_INPUT_FILTER_AUTOCONFIGURATION", "false");
+        
         IgniteConfiguration cfg = new IgniteConfiguration();
         cfg.setIgniteInstanceName(instanceName);
         cfg.setClientMode(false); // Server mode
