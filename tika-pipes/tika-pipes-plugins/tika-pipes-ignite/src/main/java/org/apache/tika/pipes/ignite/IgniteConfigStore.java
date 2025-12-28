@@ -60,6 +60,7 @@ public class IgniteConfigStore implements ConfigStore {
     private boolean autoClose = true;
     private ExtensionConfig extensionConfig;
     private boolean closed = false;
+    private boolean clientMode = true;  // Default to client mode
 
     public IgniteConfigStore() {
     }
@@ -100,8 +101,8 @@ public class IgniteConfigStore implements ConfigStore {
         System.setProperty("IGNITE_ENABLE_OBJECT_INPUT_FILTER_AUTOCONFIGURATION", "false");
 
         IgniteConfiguration cfg = new IgniteConfiguration();
-        cfg.setIgniteInstanceName(igniteInstanceName + "-Client");
-        cfg.setClientMode(true);  // Client mode - connects to embedded server
+        cfg.setIgniteInstanceName(igniteInstanceName + (clientMode ? "-Client" : ""));
+        cfg.setClientMode(clientMode);
         cfg.setPeerClassLoadingEnabled(false);  // Disable to avoid classloader conflicts
         
         // Set work directory to /var/cache/tika to match Tika's cache location
@@ -200,5 +201,9 @@ public class IgniteConfigStore implements ConfigStore {
 
     public void setAutoClose(boolean autoClose) {
         this.autoClose = autoClose;
+    }
+
+    public void setClientMode(boolean clientMode) {
+        this.clientMode = clientMode;
     }
 }
