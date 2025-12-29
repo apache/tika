@@ -18,8 +18,6 @@ package org.apache.tika.pipes.ignite;
 
 import java.io.IOException;
 
-import org.pf4j.Extension;
-
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.core.config.ConfigStore;
 import org.apache.tika.pipes.core.config.ConfigStoreFactory;
@@ -28,7 +26,6 @@ import org.apache.tika.plugins.ExtensionConfig;
 /**
  * Factory for creating Ignite-based ConfigStore instances.
  */
-@Extension
 public class IgniteConfigStoreFactory implements ConfigStoreFactory {
 
     private static final String NAME = "ignite";
