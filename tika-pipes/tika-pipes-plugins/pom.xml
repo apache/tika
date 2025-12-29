@@ -32,6 +32,7 @@
   <packaging>pom</packaging>
 
   <modules>
+    <module>tika-pipes-atlassian-jwt</module>
     <module>tika-pipes-az-blob</module>
     <module>tika-pipes-csv</module>
     <module>tika-pipes-file-system</module>
