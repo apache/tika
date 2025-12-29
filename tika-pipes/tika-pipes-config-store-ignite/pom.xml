@@ -32,7 +32,7 @@
   <properties>
     <ignite.version>2.17.0</ignite.version>
     <!-- Ignite 2.16.0 requires H2 1.4.x - not compatible with 2.x -->
-    <h2.version>1.4.197</h2.version>
+    <h2.version>2.4.240</h2.version>
   </properties>
 
   <dependencies>
