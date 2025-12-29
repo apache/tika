@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -129,7 +130,7 @@ public class AtlassianJwtGenerator {
         }
         
         String canonicalQueryString = generateCanonicalQueryString(url.getQuery());
-        String canonicalRequest = httpMethod.toUpperCase() + "&" + path + "&" + canonicalQueryString;
+        String canonicalRequest = httpMethod.toUpperCase(Locale.ROOT) + "&" + path + "&" + canonicalQueryString;
         
         return canonicalRequest;
     }
