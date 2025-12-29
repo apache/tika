@@ -16,14 +16,14 @@
  */
 package org.apache.tika.pipes.ignite;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.ignite.Ignite;
-import org.apache.ignite.IgniteCache;
-import org.apache.ignite.Ignition;
-import org.apache.ignite.cache.CacheMode;
-import org.apache.ignite.configuration.CacheConfiguration;
-import org.apache.ignite.configuration.IgniteConfiguration;
+import org.apache.ignite.client.IgniteClient;
+import org.apache.ignite.table.KeyValueView;
+import org.apache.ignite.table.Table;
+import org.apache.ignite.table.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,29 +33,33 @@ import org.apache.tika.pipes.ignite.config.IgniteConfigStoreConfig;
 import org.apache.tika.plugins.ExtensionConfig;
 
 /**
- * Apache Ignite-based implementation of {@link ConfigStore}.
- * Provides distributed configuration storage for Tika Pipes clustering.
+ * Apache Ignite 3.x-based implementation of {@link ConfigStore}.
+ * Provides distributed configuration storage for Tika Pipes clustering using Calcite SQL engine.
  * <p>
  * This implementation is thread-safe and suitable for multi-instance deployments
  * where configurations need to be shared across multiple servers.
  * <p>
  * Configuration options:
  * <ul>
- *   <li>cacheName - Name of the Ignite cache (default: "tika-config-store")</li>
- *   <li>cacheMode - Cache replication mode: PARTITIONED or REPLICATED (default: REPLICATED)</li>
+ *   <li>tableName - Name of the Ignite table (default: "tika_config_store")</li>
+ *   <li>replicas - Replication factor (default: 2)</li>
+ *   <li>partitions - Number of partitions (default: 10)</li>
  *   <li>igniteInstanceName - Name of the Ignite instance (default: "TikaIgniteConfigStore")</li>
  * </ul>
+ * 
+ * Note: This uses Ignite 3.x with built-in Apache Calcite SQL engine (no H2 dependency).
  */
 public class IgniteConfigStore implements ConfigStore {
 
     private static final Logger LOG = LoggerFactory.getLogger(IgniteConfigStore.class);
-    private static final String DEFAULT_CACHE_NAME = "tika-config-store";
+    private static final String DEFAULT_TABLE_NAME = "tika_config_store";
     private static final String DEFAULT_INSTANCE_NAME = "TikaIgniteConfigStore";
 
     private Ignite ignite;
-    private IgniteCache<String, ExtensionConfigDTO> cache;
-    private String cacheName = DEFAULT_CACHE_NAME;
-    private CacheMode cacheMode = CacheMode.REPLICATED;
+    private KeyValueView<String, ExtensionConfigDTO> kvView;
+    private String tableName = DEFAULT_TABLE_NAME;
+    private int replicas = 2;
+    private int partitions = 10;
     private String igniteInstanceName = DEFAULT_INSTANCE_NAME;
     private boolean autoClose = true;
     private ExtensionConfig extensionConfig;
@@ -69,14 +73,15 @@ public class IgniteConfigStore implements ConfigStore {
         this.extensionConfig = extensionConfig;
         
         IgniteConfigStoreConfig config = IgniteConfigStoreConfig.load(extensionConfig.json());
-        this.cacheName = config.getCacheName();
-        this.cacheMode = config.getCacheModeEnum();
+        this.tableName = config.getTableName();
+        this.replicas = config.getReplicas();
+        this.partitions = config.getPartitions();
         this.igniteInstanceName = config.getIgniteInstanceName();
         this.autoClose = config.isAutoClose();
     }
 
-    public IgniteConfigStore(String cacheName) {
-        this.cacheName = cacheName;
+    public IgniteConfigStore(String tableName) {
+        this.tableName = tableName;
     }
 
     @Override
@@ -94,105 +99,157 @@ public class IgniteConfigStore implements ConfigStore {
             return;
         }
 
-        LOG.info("Initializing IgniteConfigStore with cache: {}, mode: {}, instance: {}",
-                cacheName, cacheMode, igniteInstanceName);
+        LOG.info("Initializing IgniteConfigStore with table: {}, replicas: {}, partitions: {}, instance: {}",
+                tableName, replicas, partitions, igniteInstanceName);
 
-        // Disable Ignite's Object Input Filter autoconfiguration to avoid conflicts
-        System.setProperty("IGNITE_ENABLE_OBJECT_INPUT_FILTER_AUTOCONFIGURATION", "false");
+        // In Ignite 3.x, we connect as a client to an existing cluster
+        // The server must be started separately via IgniteStoreServer
+        try {
+            // Connect to Ignite cluster as client
+            ignite = IgniteClient.builder()
+                    .addresses("127.0.0.1:10800")  // Default client port
+                    .build();
 
-        IgniteConfiguration cfg = new IgniteConfiguration();
-        cfg.setIgniteInstanceName(igniteInstanceName + (clientMode ? "-Client" : ""));
-        cfg.setClientMode(clientMode);
-        cfg.setPeerClassLoadingEnabled(false);  // Disable to avoid classloader conflicts
-        
-        // Set work directory to /var/cache/tika to match Tika's cache location
-        cfg.setWorkDirectory(System.getProperty("ignite.work.dir", "/var/cache/tika/ignite-work"));
+            LOG.info("Connected to Ignite cluster as client");
 
-        ignite = Ignition.start(cfg);
+            // Get or create table
+            Table table = ignite.tables().table(tableName);
+            if (table == null) {
+                LOG.warn("Table {} not found on server. It should be created by IgniteStoreServer.", tableName);
+                throw new IllegalStateException("Table " + tableName + " not found. Ensure IgniteStoreServer is running.");
+            }
 
-        // Get cache (it should already exist on the server)
-        cache = ignite.cache(cacheName);
-        if (cache == null) {
-            // If not found, create it (shouldn't happen if server started first)
-            LOG.warn("Cache {} not found on server, creating it", cacheName);
-            CacheConfiguration<String, ExtensionConfigDTO> cacheCfg = new CacheConfiguration<>(cacheName);
-            cacheCfg.setCacheMode(cacheMode);
-            cacheCfg.setBackups(cacheMode == CacheMode.PARTITIONED ? 1 : 0);
-            cache = ignite.getOrCreateCache(cacheCfg);
+            // Get key-value view for simple get/put operations
+            kvView = table.keyValueView(String.class, ExtensionConfigDTO.class);
+            
+            LOG.info("IgniteConfigStore initialized successfully as client");
+        } catch (Exception e) {
+            LOG.error("Failed to initialize IgniteConfigStore", e);
+            throw new TikaConfigException("Failed to connect to Ignite cluster. Ensure IgniteStoreServer is running.", e);
         }
-        LOG.info("IgniteConfigStore initialized successfully as client");
     }
 
     @Override
     public void put(String id, ExtensionConfig config) {
-        if (cache == null) {
+        if (kvView == null) {
             throw new IllegalStateException("IgniteConfigStore not initialized. Call init() first.");
         }
-        cache.put(id, new ExtensionConfigDTO(config));
+        try {
+            kvView.put(null, id, new ExtensionConfigDTO(config));
+        } catch (Exception e) {
+            LOG.error("Failed to put config with id: {}", id, e);
+            throw new RuntimeException("Failed to put config", e);
+        }
     }
 
     @Override
     public ExtensionConfig get(String id) {
-        if (cache == null) {
+        if (kvView == null) {
             throw new IllegalStateException("IgniteConfigStore not initialized. Call init() first.");
         }
-        ExtensionConfigDTO dto = cache.get(id);
-        return dto != null ? dto.toExtensionConfig() : null;
+        try {
+            ExtensionConfigDTO dto = kvView.get(null, id);
+            return dto != null ? dto.toExtensionConfig() : null;
+        } catch (Exception e) {
+            LOG.error("Failed to get config with id: {}", id, e);
+            throw new RuntimeException("Failed to get config", e);
+        }
     }
 
     @Override
     public boolean containsKey(String id) {
-        if (cache == null) {
+        if (kvView == null) {
             throw new IllegalStateException("IgniteConfigStore not initialized. Call init() first.");
         }
-        return cache.containsKey(id);
+        try {
+            return kvView.get(null, id) != null;
+        } catch (Exception e) {
+            LOG.error("Failed to check if key exists: {}", id, e);
+            throw new RuntimeException("Failed to check key", e);
+        }
     }
 
     @Override
     public Set<String> keySet() {
-        if (cache == null) {
+        if (kvView == null) {
             throw new IllegalStateException("IgniteConfigStore not initialized. Call init() first.");
         }
-        return Set.copyOf(cache.query(new org.apache.ignite.cache.query.ScanQuery<String, ExtensionConfigDTO>())
-                .getAll()
-                .stream()
-                .map(javax.cache.Cache.Entry::getKey)
-                .toList());
+        try {
+            // Use SQL query to get all keys
+            var sql = ignite.sql();
+            var resultSet = sql.execute(null, "SELECT id FROM " + tableName);
+            
+            Set<String> keys = new HashSet<>();
+            while (resultSet.hasNext()) {
+                Tuple tuple = resultSet.next();
+                keys.add(tuple.stringValue("id"));
+            }
+            return keys;
+        } catch (Exception e) {
+            LOG.error("Failed to get keySet", e);
+            throw new RuntimeException("Failed to get keySet", e);
+        }
     }
 
     @Override
     public int size() {
-        if (cache == null) {
+        if (kvView == null) {
             throw new IllegalStateException("IgniteConfigStore not initialized. Call init() first.");
         }
-        return cache.size();
+        try {
+            // Use SQL query to count rows
+            var sql = ignite.sql();
+            var resultSet = sql.execute(null, "SELECT COUNT(*) as cnt FROM " + tableName);
+            
+            if (resultSet.hasNext()) {
+                Tuple tuple = resultSet.next();
+                return tuple.intValue("cnt");
+            }
+            return 0;
+        } catch (Exception e) {
+            LOG.error("Failed to get size", e);
+            throw new RuntimeException("Failed to get size", e);
+        }
     }
 
     @Override
     public ExtensionConfig remove(String id) {
-        if (cache == null) {
+        if (kvView == null) {
             throw new IllegalStateException("IgniteConfigStore not initialized. Call init() first.");
         }
-        ExtensionConfigDTO removed = cache.getAndRemove(id);
-        return removed != null ? removed.toExtensionConfig() : null;
+        try {
+            ExtensionConfigDTO removed = kvView.getAndRemove(null, id);
+            return removed != null ? removed.toExtensionConfig() : null;
+        } catch (Exception e) {
+            LOG.error("Failed to remove config with id: {}", id, e);
+            throw new RuntimeException("Failed to remove config", e);
+        }
     }
 
     public void close() {
         if (ignite != null && autoClose) {
             LOG.info("Closing IgniteConfigStore");
-            ignite.close();
+            try {
+                ((AutoCloseable) ignite).close();
+            } catch (Exception e) {
+                LOG.error("Error closing Ignite", e);
+            }
             ignite = null;
-            cache = null;
+            kvView = null;
             closed = true;
         }
     }
 
-    public void setCacheName(String cacheName) {
-        this.cacheName = cacheName;
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
     }
 
-    public void setCacheMode(CacheMode cacheMode) {
-        this.cacheMode = cacheMode;
+    public void setReplicas(int replicas) {
+        this.replicas = replicas;
+    }
+
+    public void setPartitions(int partitions) {
+        this.partitions = partitions;
     }
 
     public void setIgniteInstanceName(String igniteInstanceName) {

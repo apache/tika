@@ -25,28 +25,48 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.apache.tika.pipes.ignite.server.IgniteStoreServer;
 import org.apache.tika.plugins.ExtensionConfig;
 
 public class IgniteConfigStoreTest {
 
     @TempDir
-    private Path tempDir;
+    private static Path tempDir;
     
+    private static IgniteStoreServer server;
     private IgniteConfigStore store;
 
-    @BeforeEach
-    public void setUp() throws Exception {
+    @BeforeAll
+    public static void setUpServer() throws Exception {
         // Set the work directory for Ignite to use the temp directory
         System.setProperty("ignite.work.dir", tempDir.toString());
         
+        // Start the Ignite server once for all tests
+        server = new IgniteStoreServer();
+        server.startAsync();
+        
+        // Give server more time to fully start
+        Thread.sleep(10000);
+    }
+    
+    @AfterAll
+    public static void tearDownServer() {
+        if (server != null) {
+            server.close();
+        }
+    }
+
+    @BeforeEach
+    public void setUp() throws Exception {
         store = new IgniteConfigStore();
-        store.setIgniteInstanceName("TestIgniteInstance-" + System.currentTimeMillis());
-        store.setClientMode(false);  // Run as server for tests
+        store.setClientMode(true);  // Connect as client to the server
         store.init();
     }
 
@@ -199,8 +219,8 @@ public class IgniteConfigStoreTest {
 
     @Test
     public void testCustomCacheName() throws Exception {
-        IgniteConfigStore customStore = new IgniteConfigStore("custom-cache");
-        customStore.setIgniteInstanceName("CustomInstance-" + System.currentTimeMillis());
+        IgniteConfigStore customStore = new IgniteConfigStore("custom_table");
+        customStore.setClientMode(true);
         
         try {
             customStore.init();
