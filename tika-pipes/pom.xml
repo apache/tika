@@ -35,6 +35,7 @@
     <module>tika-httpclient-commons</module>
     <module>tika-pipes-reporter-commons</module>
     <module>tika-pipes-iterator-commons</module>
+    <module>tika-pipes-ignite</module>
     <module>tika-pipes-plugins</module>
     <module>tika-pipes-fork-parser</module>
     <module>tika-async-cli</module>
