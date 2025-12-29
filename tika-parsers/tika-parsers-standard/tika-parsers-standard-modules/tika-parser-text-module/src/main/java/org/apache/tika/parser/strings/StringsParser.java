@@ -34,7 +34,9 @@ import org.apache.commons.io.IOUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Initializable;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.FileCommandDetector;
 import org.apache.tika.exception.TikaConfigException;
@@ -67,7 +69,7 @@ public class StringsParser implements Parser, Initializable {
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.OCTET_STREAM);
 
-    private final StringsConfig defaultStringsConfig = new StringsConfig();
+    private StringsConfig defaultStringsConfig = new StringsConfig();
 
     private String filePath = "";
 
@@ -77,6 +79,13 @@ public class StringsParser implements Parser, Initializable {
     private boolean hasEncodingOption = false;//whether or not the strings app allows -e
 
     private String stringsPath = "";
+
+    public StringsParser() {
+    }
+
+    public StringsParser(JsonConfig jsonConfig) {
+        defaultStringsConfig = ConfigDeserializer.buildConfig(jsonConfig, StringsConfig.class);
+    }
 
     public static String getStringsProg() {
         return SystemUtils.IS_OS_WINDOWS ? "strings.exe" : "strings";

@@ -25,7 +25,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.parser.ParseContext;
 
@@ -79,9 +78,7 @@ public class ConfigDeserializerTest {
 
         // Create ParseContext with user config that overrides some values
         ParseContext context = new ParseContext();
-        ConfigContainer configContainer = new ConfigContainer();
-        configContainer.set("test-config", "{\"name\":\"override\",\"value\":200}");
-        context.set(ConfigContainer.class, configContainer);
+        context.setJsonConfig("test-config", "{\"name\":\"override\",\"value\":200}");
 
         // Get merged config
         TestConfig mergedConfig = ConfigDeserializer.getConfig(context, "test-config", TestConfig.class, defaultConfig);
@@ -111,17 +108,13 @@ public class ConfigDeserializerTest {
 
         // First request with one override
         ParseContext context1 = new ParseContext();
-        ConfigContainer configContainer1 = new ConfigContainer();
-        configContainer1.set("test-config", "{\"value\":100}");
-        context1.set(ConfigContainer.class, configContainer1);
+        context1.setJsonConfig("test-config", "{\"value\":100}");
 
         TestConfig config1 = ConfigDeserializer.getConfig(context1, "test-config", TestConfig.class, sharedDefault);
 
         // Second request with different override
         ParseContext context2 = new ParseContext();
-        ConfigContainer configContainer2 = new ConfigContainer();
-        configContainer2.set("test-config", "{\"name\":\"request2\",\"enabled\":false}");
-        context2.set(ConfigContainer.class, configContainer2);
+        context2.setJsonConfig("test-config", "{\"name\":\"request2\",\"enabled\":false}");
 
         TestConfig config2 = ConfigDeserializer.getConfig(context2, "test-config", TestConfig.class, sharedDefault);
 
@@ -148,9 +141,7 @@ public class ConfigDeserializerTest {
     @Test
     public void testNoDefaultConfig() throws Exception {
         ParseContext context = new ParseContext();
-        ConfigContainer configContainer = new ConfigContainer();
-        configContainer.set("test-config", "{\"name\":\"test\",\"value\":123}");
-        context.set(ConfigContainer.class, configContainer);
+        context.setJsonConfig("test-config", "{\"name\":\"test\",\"value\":123}");
 
         TestConfig config = ConfigDeserializer.getConfig(context, "test-config", TestConfig.class, null);
 
@@ -166,7 +157,7 @@ public class ConfigDeserializerTest {
         defaultConfig.setName("default");
         defaultConfig.setValue(999);
 
-        // No ConfigContainer in ParseContext
+        // No JSON config in ParseContext
         ParseContext context = new ParseContext();
 
         TestConfig config = ConfigDeserializer.getConfig(context, "test-config", TestConfig.class, defaultConfig);
@@ -178,12 +169,12 @@ public class ConfigDeserializerTest {
     }
 
     @Test
-    public void testNoConfigContainer() throws Exception {
+    public void testNoJsonConfig() throws Exception {
         TestConfig defaultConfig = new TestConfig();
         defaultConfig.setName("default");
 
         ParseContext context = new ParseContext();
-        // No ConfigContainer set
+        // No JSON config set
 
         TestConfig config = ConfigDeserializer.getConfig(context, "test-config", TestConfig.class, defaultConfig);
 
@@ -193,10 +184,8 @@ public class ConfigDeserializerTest {
     @Test
     public void testHasConfig() throws Exception {
         ParseContext context = new ParseContext();
-        ConfigContainer configContainer = new ConfigContainer();
-        configContainer.set("parser-a", "{\"key\":\"value\"}");
-        configContainer.set("parser-b", "{\"key\":\"value\"}");
-        context.set(ConfigContainer.class, configContainer);
+        context.setJsonConfig("parser-a", "{\"key\":\"value\"}");
+        context.setJsonConfig("parser-b", "{\"key\":\"value\"}");
 
         assertTrue(ConfigDeserializer.hasConfig(context, "parser-a"));
         assertTrue(ConfigDeserializer.hasConfig(context, "parser-b"));
@@ -204,7 +193,7 @@ public class ConfigDeserializerTest {
     }
 
     @Test
-    public void testHasConfigNoContainer() throws Exception {
+    public void testHasConfigNoJsonConfigs() throws Exception {
         ParseContext context = new ParseContext();
 
         assertFalse(ConfigDeserializer.hasConfig(context, "parser-a"));
@@ -227,9 +216,7 @@ public class ConfigDeserializerTest {
     @Test
     public void testGetConfigWithoutDefault() throws Exception {
         ParseContext context = new ParseContext();
-        ConfigContainer configContainer = new ConfigContainer();
-        configContainer.set("test-config", "{\"name\":\"test\"}");
-        context.set(ConfigContainer.class, configContainer);
+        context.setJsonConfig("test-config", "{\"name\":\"test\"}");
 
         TestConfig config = ConfigDeserializer.getConfig(context, "test-config", TestConfig.class);
 
@@ -256,9 +243,7 @@ public class ConfigDeserializerTest {
         defaultConfig.setValue(100);
 
         ParseContext context = new ParseContext();
-        ConfigContainer configContainer = new ConfigContainer();
-        configContainer.set("test-parser", "{\"name\":\"override\",\"value\":200}");
-        context.set(ConfigContainer.class, configContainer);
+        context.setJsonConfig("test-parser", "{\"name\":\"override\",\"value\":200}");
 
         // Use the wrapper
         TestConfig config = ParseContextConfig.getConfig(context, "test-parser", TestConfig.class, defaultConfig);
@@ -289,15 +274,14 @@ public class ConfigDeserializerTest {
     @Test
     public void testParseContextConfigWrapperIsAvailable() {
         // Verify ConfigDeserializer is detected as available in this test environment
-        assertTrue(ParseContextConfig.isConfigDeserializerAvailable(), "ConfigDeserializer should be available when tika-serialization is on classpath");
+        assertTrue(ParseContextConfig.isConfigDeserializerAvailable(),
+                "ConfigDeserializer should be available when tika-serialization is on classpath");
     }
 
     @Test
     public void testParseContextConfigWrapperHasConfig() {
         ParseContext context = new ParseContext();
-        ConfigContainer configContainer = new ConfigContainer();
-        configContainer.set("parser-a", "{\"key\":\"value\"}");
-        context.set(ConfigContainer.class, configContainer);
+        context.setJsonConfig("parser-a", "{\"key\":\"value\"}");
 
         assertTrue(ParseContextConfig.hasConfig(context, "parser-a"));
         assertFalse(ParseContextConfig.hasConfig(context, "parser-b"));

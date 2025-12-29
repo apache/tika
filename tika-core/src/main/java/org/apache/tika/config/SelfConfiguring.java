@@ -18,12 +18,12 @@ package org.apache.tika.config;
 
 /**
  * Marker interface indicating that a component reads its own configuration
- * from {@link ConfigContainer} inside the {@link org.apache.tika.parser.ParseContext} at runtime.
+ * from {@link org.apache.tika.parser.ParseContext}'s jsonConfigs at runtime.
  * <p>
  * Components implementing this interface will NOT be automatically resolved
  * by ParseContextUtils. Instead, the JSON configuration will remain in
- * ConfigContainer, and the component is responsible for reading and applying
- * its own configuration during execution.
+ * ParseContext's jsonConfigs, and the component is responsible for reading
+ * and applying its own configuration during execution.
  * <p>
  * This is typically used by parsers and other components that need fine-grained
  * control over how their configuration is loaded and merged with defaults.
@@ -36,7 +36,7 @@ package org.apache.tika.config;
  *     private final PDFParserConfig defaultConfig;
  *
  *     public void parse(..., ParseContext context) {
- *         // Component reads its own config from ConfigContainer
+ *         // Component reads its own config from ParseContext
  *         PDFParserConfig config = ParseContextConfig.getConfig(
  *             context, "pdf-parser", PDFParserConfig.class, defaultConfig);
  *         // use config...
@@ -48,7 +48,6 @@ package org.apache.tika.config;
  * automatically deserialized and added to ParseContext by ParseContextUtils.
  *
  * @since Apache Tika 4.0
- * @see ConfigContainer
  * @see ParseContextConfig
  */
 public interface SelfConfiguring {

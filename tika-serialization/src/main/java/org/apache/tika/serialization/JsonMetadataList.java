@@ -28,6 +28,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.serialization.serdes.MetadataDeserializer;
+import org.apache.tika.serialization.serdes.MetadataSerializer;
 
 public class JsonMetadataList {
 

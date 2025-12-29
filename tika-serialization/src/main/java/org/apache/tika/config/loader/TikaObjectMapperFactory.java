@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.serialization.ComponentNameResolver;
-import org.apache.tika.serialization.TikaAbstractTypeMixins;
+import org.apache.tika.serialization.TikaModule;
 
 /**
  * Factory for creating ObjectMappers configured for Tika serialization.
@@ -85,8 +85,12 @@ public class TikaObjectMapperFactory {
         // Load component registries for name resolution
         loadComponentRegistries();
 
-        // Register deserializers for abstract types using wrapper object format
-        TikaAbstractTypeMixins.registerDeserializers(mapper);
+        // Register TikaModule for compact serialization/deserialization of registered components
+        TikaModule tikaModule = new TikaModule();
+        mapper.registerModule(tikaModule);
+
+        // Set the shared mapper for TikaModule's deserializers
+        TikaModule.setSharedMapper(mapper);
 
         return mapper;
     }

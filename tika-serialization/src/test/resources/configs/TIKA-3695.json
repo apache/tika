@@ -7,7 +7,8 @@
     "outputThreshold": 6789,
     "metadataWriteFilterFactory": {
       "standard-write-filter-factory": {
-        "maxTotalEstimatedBytes": 360
+        "maxTotalEstimatedBytes": 150,
+        "includeFields": ["dc:creator"]
       }
     }
   }
