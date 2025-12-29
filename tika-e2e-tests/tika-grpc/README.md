@@ -139,10 +139,6 @@ Test logs are output to console. Docker container logs are also captured and dis
 - GovDocs1 files are downloaded from digitalcorpora.org
 - Downloaded files are cached in `target/govdocs1/`
 
-## Related JIRA
-
-- [TIKA-4600](https://issues.apache.org/jira/browse/TIKA-4600) - Add E2E tests for tika-grpc
-
 ## License
 
 Licensed under the Apache License, Version 2.0. See the main Tika LICENSE.txt file for details.

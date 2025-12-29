@@ -11,8 +11,6 @@ This module contains standalone end-to-end (E2E) tests for various Apache Tika d
 ## Test Modules
 
 - **tika-grpc** - E2E tests for tika-grpc server
-- **tika-server** - E2E tests for tika-server (REST API) _(coming soon)_
-- **tika-cli** - E2E tests for tika CLI _(coming soon)_
 
 ## Prerequisites
 
@@ -54,15 +52,7 @@ The E2E tests are kept separate from the main build because they:
 
 ## Integration with CI/CD
 
-These tests can be integrated into the release pipeline as a separate step. See [TIKA-4603](https://issues.apache.org/jira/browse/TIKA-4603) for the integration roadmap.
-
-## Related JIRA Tickets
-
-- [TIKA-4599](https://issues.apache.org/jira/browse/TIKA-4599) - Add E2E tests for Tika (parent ticket)
-- [TIKA-4600](https://issues.apache.org/jira/browse/TIKA-4600) - Add E2E tests for tika-grpc
-- [TIKA-4601](https://issues.apache.org/jira/browse/TIKA-4601) - Add E2E tests for tika-server
-- [TIKA-4602](https://issues.apache.org/jira/browse/TIKA-4602) - Add E2E tests for tika CLI
-- [TIKA-4603](https://issues.apache.org/jira/browse/TIKA-4603) - Integrate E2E tests into release pipeline
+These tests can be integrated into the release pipeline as a separate step.
 
 ## License
 
