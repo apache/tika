@@ -23,20 +23,30 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Path;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.plugins.ExtensionConfig;
 
 public class IgniteConfigStoreTest {
 
+    @TempDir
+    private Path tempDir;
+    
     private IgniteConfigStore store;
 
     @BeforeEach
     public void setUp() throws Exception {
+        // Set the work directory for Ignite to use the temp directory
+        System.setProperty("ignite.work.dir", tempDir.toString());
+        
         store = new IgniteConfigStore();
         store.setIgniteInstanceName("TestIgniteInstance-" + System.currentTimeMillis());
+        store.setClientMode(false);  // Run as server for tests
         store.init();
     }
 

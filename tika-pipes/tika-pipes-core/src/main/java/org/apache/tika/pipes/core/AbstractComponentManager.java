@@ -310,6 +310,47 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
     }
 
     /**
+     * Deletes a component configuration by ID.
+     * Clears the cached instance and removes the configuration.
+     *
+     * @param componentId the component ID to delete
+     * @throws TikaConfigException if runtime modifications are not allowed or component not found
+     */
+    public synchronized void deleteComponent(String componentId) throws TikaConfigException {
+        if (!allowRuntimeModifications) {
+            throw new TikaConfigException(
+                    "Runtime modifications are not allowed. " + getClass().getSimpleName() +
+                    " must be loaded with allowRuntimeModifications=true to use delete" +
+                    getComponentName().substring(0, 1).toUpperCase(Locale.ROOT) + getComponentName().substring(1) + "()");
+        }
+
+        if (componentId == null) {
+            throw new IllegalArgumentException("Component ID cannot be null");
+        }
+
+        if (!configStore.containsKey(componentId)) {
+            throw new TikaConfigException(
+                    getComponentName().substring(0, 1).toUpperCase(Locale.ROOT) + 
+                    getComponentName().substring(1) + " with ID '" + componentId + "' not found");
+        }
+
+        // Clear cache and remove config
+        componentCache.remove(componentId);
+        configStore.remove(componentId);
+        LOG.debug("Deleted {} config: id={}", getComponentName(), componentId);
+    }
+
+    /**
+     * Gets the configuration for a specific component by ID.
+     *
+     * @param componentId the component ID
+     * @return the component configuration, or null if not found
+     */
+    public ExtensionConfig getComponentConfig(String componentId) {
+        return configStore.get(componentId);
+    }
+
+    /**
      * Returns the set of supported component IDs.
      */
     public Set<String> getSupported() {

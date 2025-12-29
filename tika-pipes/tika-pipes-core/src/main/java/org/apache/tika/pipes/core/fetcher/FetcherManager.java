@@ -173,4 +173,24 @@ public class FetcherManager extends AbstractComponentManager<Fetcher, FetcherFac
     public void saveFetcher(ExtensionConfig config) throws TikaConfigException, IOException {
         saveComponent(config);
     }
+
+    /**
+     * Deletes a fetcher configuration by ID.
+     *
+     * @param fetcherId the fetcher ID to delete
+     * @throws TikaConfigException if runtime modifications are not allowed or fetcher not found
+     */
+    public void deleteFetcher(String fetcherId) throws TikaConfigException {
+        deleteComponent(fetcherId);
+    }
+
+    /**
+     * Gets the configuration for a specific fetcher by ID.
+     *
+     * @param fetcherId the fetcher ID
+     * @return the fetcher configuration, or null if not found
+     */
+    public ExtensionConfig getConfig(String fetcherId) {
+        return getComponentConfig(fetcherId);
+    }
 }

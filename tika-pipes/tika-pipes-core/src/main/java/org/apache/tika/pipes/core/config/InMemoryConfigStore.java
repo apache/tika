@@ -63,4 +63,9 @@ public class InMemoryConfigStore implements ConfigStore {
     public int size() {
         return store.size();
     }
+
+    @Override
+    public ExtensionConfig remove(String id) {
+        return store.remove(id);
+    }
 }
