@@ -91,10 +91,26 @@ public class IgniteStoreServer implements AutoCloseable {
                 LOG.info("Created work directory: {}", workDir);
             }
             
-            // Start the server node directly
+            // Create minimal HOCON config file for Ignite 3.x
+            Path configPath = workDir.resolve("ignite-config.conf");
+            if (!Files.exists(configPath)) {
+                String config = String.format(Locale.ROOT,
+                    "ignite {\n" +
+                    "  network: {\n" +
+                    "    port: 3344,\n" +
+                    "    nodeFinder: {\n" +
+                    "      netClusterNodes: [ \"localhost:3344\" ]\n" +
+                    "    }\n" +
+                    "  }\n" +
+                    "}\n");
+                Files.writeString(configPath, config);
+                LOG.info("Created Ignite config: {}", configPath);
+            }
+            
+            // Start the server node
             // Note: In Ignite 3.x embedded mode, the server manages its own initialization
             LOG.info("Starting Ignite node: {} at {}", nodeName, workDir);
-            ignite = IgniteServer.start(nodeName, workDir, null);
+            ignite = IgniteServer.start(nodeName, configPath, workDir);
             LOG.info("Ignite server started successfully");
             
             // Wait a bit for the cluster to be ready
