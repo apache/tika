@@ -19,6 +19,7 @@ package org.apache.tika.pipes.ignite.server;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Locale;
 
 import org.apache.ignite.IgniteServer;
 import org.apache.ignite.table.Table;
@@ -123,7 +124,7 @@ public class IgniteStoreServer implements AutoCloseable {
             LOG.info("Creating table: {} with replicas={}, partitions={}", tableName, replicas, partitions);
             
             // Create table using SQL
-            String createTableSql = String.format(
+            String createTableSql = String.format(Locale.ROOT,
                 "CREATE TABLE IF NOT EXISTS %s (" +
                 "  id VARCHAR PRIMARY KEY," +
                 "  contextKey VARCHAR," +
@@ -131,16 +132,16 @@ public class IgniteStoreServer implements AutoCloseable {
                 "  factoryName VARCHAR," +
                 "  json VARCHAR(10000)" +
                 ") WITH PRIMARY_ZONE='%s_ZONE'",
-                tableName, tableName.toUpperCase()
+                tableName, tableName.toUpperCase(Locale.ROOT)
             );
             
             // First create a distribution zone
-            String createZoneSql = String.format(
+            String createZoneSql = String.format(Locale.ROOT,
                 "CREATE ZONE IF NOT EXISTS %s_ZONE WITH " +
                 "REPLICAS=%d, " +
                 "PARTITIONS=%d, " +
                 "STORAGE_PROFILES='default'",
-                tableName.toUpperCase(), replicas, partitions
+                tableName.toUpperCase(Locale.ROOT), replicas, partitions
             );
             
             LOG.info("Creating distribution zone with SQL: {}", createZoneSql);
