@@ -232,7 +232,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
-      <artifactId>tika-pipes-ignite</artifactId>
+      <artifactId>tika-pipes-config-store-ignite</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -317,13 +317,6 @@
                 <artifactItem>
                   <groupId>org.apache.tika</groupId>
                   <artifactId>tika-pipes-gcs</artifactId>
-                  <version>${project.version}</version>
-                  <type>zip</type>
-                  <overWrite>true</overWrite>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>org.apache.tika</groupId>
-                  <artifactId>tika-pipes-ignite</artifactId>
                   <version>${project.version}</version>
                   <type>zip</type>
                   <overWrite>true</overWrite>
@@ -611,7 +604,7 @@
         </dependency>
         <dependency>
           <groupId>org.apache.tika</groupId>
-          <artifactId>tika-pipes-ignite</artifactId>
+          <artifactId>tika-pipes-config-store-ignite</artifactId>
           <version>${project.version}</version>
         </dependency>
         <dependency>
