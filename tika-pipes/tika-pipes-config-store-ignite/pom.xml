@@ -30,10 +30,33 @@
   <packaging>jar</packaging>
 
   <properties>
-    <ignite.version>2.17.0</ignite.version>
-    <!-- Ignite 2.16.0 requires H2 1.4.x - not compatible with 2.x -->
-    <h2.version>1.4.197</h2.version>
+    <ignite.version>3.1.0</ignite.version>
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-stdlib</artifactId>
+        <version>2.2.0</version>
+      </dependency>
+      <dependency>
+        <groupId>info.picocli</groupId>
+        <artifactId>picocli</artifactId>
+        <version>4.7.5</version>
+      </dependency>
+      <dependency>
+        <groupId>io.micronaut</groupId>
+        <artifactId>micronaut-inject</artifactId>
+        <version>3.10.4</version>
+      </dependency>
+      <dependency>
+        <groupId>org.yaml</groupId>
+        <artifactId>snakeyaml</artifactId>
+        <version>2.4</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <dependency>
@@ -57,37 +80,41 @@
     </dependency>
     <dependency>
       <groupId>org.apache.ignite</groupId>
-      <artifactId>ignite-core</artifactId>
+      <artifactId>ignite-api</artifactId>
       <version>${ignite.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.ignite</groupId>
-      <artifactId>ignite-indexing</artifactId>
-      <version>${ignite.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.ignite</groupId>
-      <artifactId>ignite-spring</artifactId>
+      <artifactId>ignite-runner</artifactId>
       <version>${ignite.version}</version>
       <exclusions>
         <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>spring-core</artifactId>
+          <groupId>org.apache.ignite</groupId>
+          <artifactId>ignite-rest</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>spring-beans</artifactId>
+          <groupId>org.apache.ignite</groupId>
+          <artifactId>ignite-rest-api</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.springframework</groupId>
-          <artifactId>spring-context</artifactId>
+          <groupId>org.apache.ignite</groupId>
+          <artifactId>ignite-metrics-exporter-otlp</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.micronaut.picocli</groupId>
+          <artifactId>micronaut-picocli</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-      <version>${h2.version}</version>
+      <groupId>org.apache.ignite</groupId>
+      <artifactId>ignite-sql-engine</artifactId>
+      <version>${ignite.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.ignite</groupId>
+      <artifactId>ignite-table</artifactId>
+      <version>${ignite.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
