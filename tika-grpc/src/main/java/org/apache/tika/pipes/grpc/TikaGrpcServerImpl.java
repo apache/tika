@@ -155,14 +155,15 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
             com.fasterxml.jackson.databind.JsonNode params = mapper.readTree(config.json());
             
-            String cacheName = params.has("cacheName") ? params.get("cacheName").asText() : "tika-config-store";
-            String cacheMode = params.has("cacheMode") ? params.get("cacheMode").asText() : "REPLICATED";
+            String tableName = params.has("tableName") ? params.get("tableName").asText() : 
+                              params.has("cacheName") ? params.get("cacheName").asText() : "tika_config_store";
+            int replicas = params.has("replicas") ? params.get("replicas").asInt() : 2;
+            int partitions = params.has("partitions") ? params.get("partitions").asInt() : 10;
             String instanceName = params.has("igniteInstanceName") ? params.get("igniteInstanceName").asText() : "TikaIgniteServer";
             
-            // Direct instantiation - no reflection needed
-            org.apache.ignite.cache.CacheMode mode = org.apache.ignite.cache.CacheMode.valueOf(cacheMode);
+            // Create server with Ignite 3.x parameters
             org.apache.tika.pipes.ignite.server.IgniteStoreServer server = 
-                new org.apache.tika.pipes.ignite.server.IgniteStoreServer(cacheName, mode, instanceName);
+                new org.apache.tika.pipes.ignite.server.IgniteStoreServer(tableName, replicas, partitions, instanceName);
             
             server.startAsync();
             
