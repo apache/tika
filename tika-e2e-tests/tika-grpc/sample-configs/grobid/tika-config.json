@@ -1,0 +1,23 @@
+{
+  "async": {
+    "staleFetcherTimeoutSeconds": 600,
+    "staleFetcherDelaySeconds": 60
+  },
+  "pipes": {
+    "numClients": 2,
+    "forkedJvmArgs": [
+      "-Xmx1g",
+      "-XX:ParallelGCThreads=2"
+    ],
+    "timeoutMillis": 60000,
+    "maxForEmitBatchBytes": -1
+  },
+  "parsers": [
+    {
+      "class": "org.apache.tika.parser.journal.JournalParser",
+      "supportedMimeTypes": [
+        "application/pdf"
+      ]
+    }
+  ]
+}
