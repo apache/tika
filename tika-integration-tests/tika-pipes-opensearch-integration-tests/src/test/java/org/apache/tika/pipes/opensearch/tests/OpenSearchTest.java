@@ -72,7 +72,9 @@ public class OpenSearchTest {
 
     @BeforeAll
     public static void setUp() {
-        CONTAINER = new OpensearchContainer<>(OPENSEARCH_IMAGE).withSecurityEnabled();
+        CONTAINER = new OpensearchContainer<>(OPENSEARCH_IMAGE).withSecurityEnabled()
+                .withEnv("cluster.routing.allocation.disk.threshold_enabled", "false");
+
         CONTAINER.start();
         HttpClientFactory httpClientFactory = new HttpClientFactory();
         httpClientFactory.setUserName(CONTAINER.getUsername());
