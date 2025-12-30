@@ -28,6 +28,16 @@ import org.apache.tika.plugins.ExtensionConfig;
 public class InMemoryConfigStore implements ConfigStore {
 
     private final ConcurrentHashMap<String, ExtensionConfig> store = new ConcurrentHashMap<>();
+    private ExtensionConfig extensionConfig;
+
+    @Override
+    public ExtensionConfig getExtensionConfig() {
+        return extensionConfig;
+    }
+
+    public void setExtensionConfig(ExtensionConfig extensionConfig) {
+        this.extensionConfig = extensionConfig;
+    }
 
     @Override
     public void put(String id, ExtensionConfig config) {
@@ -52,5 +62,10 @@ public class InMemoryConfigStore implements ConfigStore {
     @Override
     public int size() {
         return store.size();
+    }
+
+    @Override
+    public ExtensionConfig remove(String id) {
+        return store.remove(id);
     }
 }

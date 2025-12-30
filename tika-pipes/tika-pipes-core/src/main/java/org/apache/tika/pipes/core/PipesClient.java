@@ -40,10 +40,12 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -55,6 +57,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.TikaTaskTimeout;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -64,6 +67,7 @@ import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.server.IntermediateResult;
 import org.apache.tika.pipes.core.server.PipesServer;
+import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
@@ -77,7 +81,10 @@ import org.apache.tika.utils.StringUtils;
 public class PipesClient implements Closeable {
 
     public enum COMMANDS {
-        PING, ACK, NEW_REQUEST, SHUT_DOWN;
+        PING, ACK, NEW_REQUEST, SHUT_DOWN, 
+        SAVE_FETCHER, DELETE_FETCHER, LIST_FETCHERS, GET_FETCHER,
+        SAVE_EMITTER, DELETE_EMITTER, LIST_EMITTERS, GET_EMITTER,
+        SAVE_PIPES_ITERATOR, DELETE_PIPES_ITERATOR, LIST_PIPES_ITERATORS, GET_PIPES_ITERATOR;
 
         public byte getByte() {
             return (byte) (ordinal() + 1);
@@ -601,5 +608,389 @@ public class PipesClient implements Closeable {
         LOG.debug("applying timeout from parseContext: {}ms", tikaTaskTimeout.getTimeoutMillis());
         return tikaTaskTimeout.getTimeoutMillis();
     }
+
+    // ========== Fetcher Management API ==========
+
+    /**
+     * Save (create or update) a fetcher configuration.
+     * The fetcher will be available immediately for use in subsequent fetch operations.
+     * 
+     * @param config the fetcher configuration containing name, plugin ID, and parameters
+     * @throws IOException if communication with the server fails
+     * @throws TikaException if the server returns an error (e.g., invalid configuration)
+     * @throws InterruptedException if the operation is interrupted
+     */
+    public void saveFetcher(ExtensionConfig config) throws IOException, TikaException, InterruptedException {
+        maybeInit();
+        synchronized (lock) {
+            serverTuple.output.write(COMMANDS.SAVE_FETCHER.getByte());
+            serverTuple.output.flush();
+            
+            // Serialize the ExtensionConfig
+            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
+            try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {
+                oos.writeObject(config);
+            }
+            byte[] bytes = bos.toByteArray();
+            serverTuple.output.writeInt(bytes.length);
+            serverTuple.output.write(bytes);
+            serverTuple.output.flush();
+            
+            // Read response
+            byte status = serverTuple.input.readByte();
+            int msgLen = serverTuple.input.readInt();
+            byte[] msgBytes = new byte[msgLen];
+            serverTuple.input.readFully(msgBytes);
+            String message = new String(msgBytes, StandardCharsets.UTF_8);
+            
+            if (status != 0) { // 0 = success, 1 = error
+                throw new TikaException("Failed to save fetcher: " + message);
+            }
+            LOG.debug("pipesClientId={}: saved fetcher '{}'", pipesClientId, config.id());
+        }
+    }
+
+    /**
+     * Delete a fetcher by its name/ID.
+     * 
+     * @param fetcherId the fetcher name/ID to delete
+     * @throws IOException if communication with the server fails
+     * @throws TikaException if the server returns an error (e.g., fetcher not found)
+     * @throws InterruptedException if the operation is interrupted
+     */
+    public void deleteFetcher(String fetcherId) throws IOException, TikaException, InterruptedException {
+        maybeInit();
+        synchronized (lock) {
+            serverTuple.output.write(COMMANDS.DELETE_FETCHER.getByte());
+            serverTuple.output.flush();
+            
+            byte[] idBytes = fetcherId.getBytes(StandardCharsets.UTF_8);
+            serverTuple.output.writeInt(idBytes.length);
+            serverTuple.output.write(idBytes);
+            serverTuple.output.flush();
+            
+            // Read response
+            byte status = serverTuple.input.readByte();
+            int msgLen = serverTuple.input.readInt();
+            byte[] msgBytes = new byte[msgLen];
+            serverTuple.input.readFully(msgBytes);
+            String message = new String(msgBytes, StandardCharsets.UTF_8);
+            
+            if (status != 0) {
+                throw new TikaException("Failed to delete fetcher: " + message);
+            }
+            LOG.debug("pipesClientId={}: deleted fetcher '{}'", pipesClientId, fetcherId);
+        }
+    }
+
+    /**
+     * List all available fetcher IDs (both static from config and dynamically added).
+     * 
+     * @return set of fetcher IDs
+     * @throws IOException if communication with the server fails
+     * @throws InterruptedException if the operation is interrupted
+     */
+    public Set<String> listFetchers() throws IOException, InterruptedException {
+        maybeInit();
+        synchronized (lock) {
+            serverTuple.output.write(COMMANDS.LIST_FETCHERS.getByte());
+            serverTuple.output.flush();
+            
+            // Read response
+            int count = serverTuple.input.readInt();
+            Set<String> fetcherIds = new HashSet<>(count);
+            for (int i = 0; i < count; i++) {
+                int len = serverTuple.input.readInt();
+                byte[] bytes = new byte[len];
+                serverTuple.input.readFully(bytes);
+                fetcherIds.add(new String(bytes, StandardCharsets.UTF_8));
+            }
+            LOG.debug("pipesClientId={}: listed {} fetchers", pipesClientId, count);
+            return fetcherIds;
+        }
+    }
+
+    /**
+     * Get the configuration for a specific fetcher.
+     * 
+     * @param fetcherId the fetcher ID
+     * @return the fetcher configuration, or null if not found
+     * @throws IOException if communication with the server fails
+     * @throws InterruptedException if the operation is interrupted
+     */
+    public ExtensionConfig getFetcherConfig(String fetcherId) throws IOException, InterruptedException {
+        maybeInit();
+        synchronized (lock) {
+            serverTuple.output.write(COMMANDS.GET_FETCHER.getByte());
+            serverTuple.output.flush();
+            
+            byte[] idBytes = fetcherId.getBytes(StandardCharsets.UTF_8);
+            serverTuple.output.writeInt(idBytes.length);
+            serverTuple.output.write(idBytes);
+            serverTuple.output.flush();
+            
+            // Read response
+            byte found = serverTuple.input.readByte();
+            if (found == 0) {
+                return null;
+            }
+            
+            int len = serverTuple.input.readInt();
+            byte[] bytes = new byte[len];
+            serverTuple.input.readFully(bytes);
+            
+            try (ObjectInputStream ois = new ObjectInputStream(new UnsynchronizedByteArrayInputStream(bytes))) {
+                return (ExtensionConfig) ois.readObject();
+            } catch (ClassNotFoundException e) {
+                throw new IOException("Failed to deserialize ExtensionConfig", e);
+            }
+        }
+    }
+
+    // ========== Emitter Management API ==========
+
+    /**
+     * Save (create or update) an emitter configuration.
+     * The emitter will be available immediately for use in subsequent emit operations.
+     * 
+     * @param config the emitter configuration containing name, plugin ID, and parameters
+     * @throws IOException if communication with the server fails
+     * @throws TikaException if the server returns an error (e.g., invalid configuration)
+     * @throws InterruptedException if the operation is interrupted
+     */
+    public void saveEmitter(ExtensionConfig config) throws IOException, TikaException, InterruptedException {
+        maybeInit();
+        synchronized (lock) {
+            serverTuple.output.write(COMMANDS.SAVE_EMITTER.getByte());
+            serverTuple.output.flush();
+            
+            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
+            try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {
+                oos.writeObject(config);
+            }
+            byte[] bytes = bos.toByteArray();
+            serverTuple.output.writeInt(bytes.length);
+            serverTuple.output.write(bytes);
+            serverTuple.output.flush();
+            
+            byte status = serverTuple.input.readByte();
+            int msgLen = serverTuple.input.readInt();
+            byte[] msgBytes = new byte[msgLen];
+            serverTuple.input.readFully(msgBytes);
+            String message = new String(msgBytes, StandardCharsets.UTF_8);
+            
+            if (status != 0) {
+                throw new TikaException("Failed to save emitter: " + message);
+            }
+            LOG.debug("pipesClientId={}: saved emitter '{}'", pipesClientId, config.id());
+        }
+    }
+
+    /**
+     * Delete an emitter by its name/ID.
+     * 
+     * @param emitterId the emitter name/ID to delete
+     * @throws IOException if communication with the server fails
+     * @throws TikaException if the server returns an error (e.g., emitter not found)
+     * @throws InterruptedException if the operation is interrupted
+     */
+    public void deleteEmitter(String emitterId) throws IOException, TikaException, InterruptedException {
+        maybeInit();
+        synchronized (lock) {
+            serverTuple.output.write(COMMANDS.DELETE_EMITTER.getByte());
+            serverTuple.output.flush();
+            
+            byte[] idBytes = emitterId.getBytes(StandardCharsets.UTF_8);
+            serverTuple.output.writeInt(idBytes.length);
+            serverTuple.output.write(idBytes);
+            serverTuple.output.flush();
+            
+            byte status = serverTuple.input.readByte();
+            int msgLen = serverTuple.input.readInt();
+            byte[] msgBytes = new byte[msgLen];
+            serverTuple.input.readFully(msgBytes);
+            String message = new String(msgBytes, StandardCharsets.UTF_8);
+            
+            if (status != 0) {
+                throw new TikaException("Failed to delete emitter: " + message);
+            }
+            LOG.debug("pipesClientId={}: deleted emitter '{}'", pipesClientId, emitterId);
+        }
+    }
+
+    /**
+     * List all available emitter IDs (both static from config and dynamically added).
+     * 
+     * @return set of emitter IDs
+     * @throws IOException if communication with the server fails
+     * @throws InterruptedException if the operation is interrupted
+     */
+    public Set<String> listEmitters() throws IOException, InterruptedException {
+        maybeInit();
+        synchronized (lock) {
+            serverTuple.output.write(COMMANDS.LIST_EMITTERS.getByte());
+            serverTuple.output.flush();
+            
+            int count = serverTuple.input.readInt();
+            Set<String> emitterIds = new HashSet<>(count);
+            for (int i = 0; i < count; i++) {
+                int len = serverTuple.input.readInt();
+                byte[] bytes = new byte[len];
+                serverTuple.input.readFully(bytes);
+                emitterIds.add(new String(bytes, StandardCharsets.UTF_8));
+            }
+            LOG.debug("pipesClientId={}: listed {} emitters", pipesClientId, count);
+            return emitterIds;
+        }
+    }
+
+    /**
+     * Get the configuration for a specific emitter.
+     * 
+     * @param emitterId the emitter ID
+     * @return the emitter configuration, or null if not found
+     * @throws IOException if communication with the server fails
+     * @throws InterruptedException if the operation is interrupted
+     */
+    public ExtensionConfig getEmitterConfig(String emitterId) throws IOException, InterruptedException {
+        maybeInit();
+        synchronized (lock) {
+            serverTuple.output.write(COMMANDS.GET_EMITTER.getByte());
+            serverTuple.output.flush();
+            
+            byte[] idBytes = emitterId.getBytes(StandardCharsets.UTF_8);
+            serverTuple.output.writeInt(idBytes.length);
+            serverTuple.output.write(idBytes);
+            serverTuple.output.flush();
+            
+            byte found = serverTuple.input.readByte();
+            if (found == 0) {
+                return null;
+            }
+            
+            int len = serverTuple.input.readInt();
+            byte[] bytes = new byte[len];
+            serverTuple.input.readFully(bytes);
+            
+            try (ObjectInputStream ois = new ObjectInputStream(new UnsynchronizedByteArrayInputStream(bytes))) {
+                return (ExtensionConfig) ois.readObject();
+            } catch (ClassNotFoundException e) {
+                throw new IOException("Failed to deserialize ExtensionConfig", e);
+            }
+        }
+    }
+
+    // ========== PipesIterator Management API ==========
+
+    /**
+     * Save (create or update) a PipesIterator configuration.
+     * The iterator will be available immediately for use in subsequent operations.
+     * 
+     * @param config the iterator configuration containing name, plugin ID, and parameters
+     * @throws IOException if communication with the server fails
+     * @throws TikaException if the server returns an error (e.g., invalid configuration)
+     * @throws InterruptedException if the operation is interrupted
+     */
+    public void savePipesIterator(ExtensionConfig config) throws IOException, TikaException, InterruptedException {
+        maybeInit();
+        synchronized (lock) {
+            serverTuple.output.write(COMMANDS.SAVE_PIPES_ITERATOR.getByte());
+            serverTuple.output.flush();
+            
+            // Serialize the ExtensionConfig
+            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
+            try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {
+                oos.writeObject(config);
+            }
+            byte[] bytes = bos.toByteArray();
+            serverTuple.output.writeInt(bytes.length);
+            serverTuple.output.write(bytes);
+            serverTuple.output.flush();
+            
+            // Read response
+            byte status = serverTuple.input.readByte();
+            int msgLen = serverTuple.input.readInt();
+            byte[] msgBytes = new byte[msgLen];
+            serverTuple.input.readFully(msgBytes);
+            String message = new String(msgBytes, StandardCharsets.UTF_8);
+            
+            if (status != 0) { // 0 = success, 1 = error
+                throw new TikaException("Failed to save pipes iterator: " + message);
+            }
+            LOG.debug("pipesClientId={}: saved pipes iterator '{}'", pipesClientId, config.id());
+        }
+    }
+
+    /**
+     * Delete a PipesIterator configuration by its ID.
+     * 
+     * @param iteratorId the iterator ID to delete
+     * @throws IOException if communication with the server fails
+     * @throws TikaException if the server returns an error (e.g., iterator not found)
+     * @throws InterruptedException if the operation is interrupted
+     */
+    public void deletePipesIterator(String iteratorId) throws IOException, TikaException, InterruptedException {
+        maybeInit();
+        synchronized (lock) {
+            serverTuple.output.write(COMMANDS.DELETE_PIPES_ITERATOR.getByte());
+            serverTuple.output.flush();
+            
+            byte[] idBytes = iteratorId.getBytes(StandardCharsets.UTF_8);
+            serverTuple.output.writeInt(idBytes.length);
+            serverTuple.output.write(idBytes);
+            serverTuple.output.flush();
+            
+            // Read response
+            byte status = serverTuple.input.readByte();
+            int msgLen = serverTuple.input.readInt();
+            byte[] msgBytes = new byte[msgLen];
+            serverTuple.input.readFully(msgBytes);
+            String message = new String(msgBytes, StandardCharsets.UTF_8);
+            
+            if (status != 0) {
+                throw new TikaException("Failed to delete pipes iterator: " + message);
+            }
+            LOG.debug("pipesClientId={}: deleted pipes iterator '{}'", pipesClientId, iteratorId);
+        }
+    }
+
+    /**
+     * Get the configuration for a specific PipesIterator.
+     * 
+     * @param iteratorId the iterator ID
+     * @return the iterator configuration, or null if not found
+     * @throws IOException if communication with the server fails
+     * @throws InterruptedException if the operation is interrupted
+     */
+    public ExtensionConfig getPipesIteratorConfig(String iteratorId) throws IOException, InterruptedException {
+        maybeInit();
+        synchronized (lock) {
+            serverTuple.output.write(COMMANDS.GET_PIPES_ITERATOR.getByte());
+            serverTuple.output.flush();
+            
+            byte[] idBytes = iteratorId.getBytes(StandardCharsets.UTF_8);
+            serverTuple.output.writeInt(idBytes.length);
+            serverTuple.output.write(idBytes);
+            serverTuple.output.flush();
+            
+            // Read response
+            byte found = serverTuple.input.readByte();
+            if (found == 0) {
+                return null;
+            }
+            
+            int len = serverTuple.input.readInt();
+            byte[] bytes = new byte[len];
+            serverTuple.input.readFully(bytes);
+            
+            try (ObjectInputStream ois = new ObjectInputStream(new UnsynchronizedByteArrayInputStream(bytes))) {
+                return (ExtensionConfig) ois.readObject();
+            } catch (ClassNotFoundException e) {
+                throw new IOException("Failed to deserialize ExtensionConfig", e);
+            }
+        }
+    }
+
+    private final Object[] lock = new Object[0];
 
 }

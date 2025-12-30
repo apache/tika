@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,15 +69,16 @@ public class ProfilerBatchTest {
         ExtractProfileRunner.main(args);
     }
 
-    @AfterEach
-    public void tearDown() throws IOException {
+    @AfterAll
+    public static void tearDown() throws IOException {
         try {
-            CONN.close();
+            if (CONN != null) {
+                CONN.close();
+            }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            // ignore
         }
         FileUtils.deleteDirectory(DB_DIR.toFile());
-
     }
 
     @BeforeEach

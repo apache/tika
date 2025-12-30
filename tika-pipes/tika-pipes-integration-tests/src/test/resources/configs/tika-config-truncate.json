@@ -56,9 +56,10 @@
       "mock-digester-factory": {}
     },
     "embeddedDocumentExtractorFactory": {
-      "@class": "org.apache.tika.extractor.RUnpackExtractorFactory",
-      "writeFileNameToContent": false,
-      "maxEmbeddedBytesForExtraction": 10
+      "runpack-extractor-factory": {
+        "writeFileNameToContent": false,
+        "maxEmbeddedBytesForExtraction": 10
+      }
     },
     "throwOnZeroBytes": false
   },

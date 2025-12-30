@@ -29,7 +29,7 @@ public class MetadataListFilterTest extends TikaTest {
     @Test
     public void testBasic() throws Exception {
         TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "metadatafilter-config.json"));
-        CompositeMetadataFilter compositeMetadataListFilter = (CompositeMetadataFilter) loader.loadMetadataFilters();
+        CompositeMetadataFilter compositeMetadataListFilter = (CompositeMetadataFilter) loader.get(MetadataFilter.class);
         assertEquals(1, compositeMetadataListFilter.getFilters().size());
         assertTrue(compositeMetadataListFilter.getFilters().get(0) instanceof AttachmentCountingListFilter);
     }

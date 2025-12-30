@@ -16,19 +16,28 @@
  */
 package org.apache.tika.config.loader;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Path;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.apache.tika.config.GlobalSettings;
+import org.apache.tika.detect.CompositeDetector;
+import org.apache.tika.detect.CompositeEncodingDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.language.translate.DefaultTranslator;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
@@ -41,6 +50,8 @@ import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.renderer.CompositeRenderer;
 import org.apache.tika.renderer.Renderer;
+import org.apache.tika.serialization.ComponentConfig;
+import org.apache.tika.serialization.ComponentNameResolver;
 import org.apache.tika.serialization.JsonMetadata;
 import org.apache.tika.serialization.JsonMetadataList;
 
@@ -76,20 +87,62 @@ import org.apache.tika.serialization.JsonMetadataList;
  */
 public class TikaLoader {
 
+    // Static registration of component configurations
+    static {
+        registerComponentConfigs();
+    }
+
+    private static void registerComponentConfigs() {
+        // Complex components with custom loaders
+        ComponentConfig.builder("parsers", Parser.class)
+                .customLoader(new ParserLoader())
+                .register();
+
+        ComponentConfig.builder("detectors", Detector.class)
+                .customLoader(new DetectorLoader())
+                .register();
+
+        ComponentConfig.builder("encoding-detectors", EncodingDetector.class)
+                .customLoader(new EncodingDetectorLoader())
+                .register();
+
+        // Simple components with default list-based loading
+        ComponentConfig.builder("metadata-filters", MetadataFilter.class)
+                .loadAsList()
+                .wrapWith(list -> list.isEmpty()
+                        ? NoOpFilter.NOOP_FILTER
+                        : new CompositeMetadataFilter((List<MetadataFilter>) list))
+                .defaultProvider(() -> NoOpFilter.NOOP_FILTER)
+                .register();
+
+        ComponentConfig.builder("renderers", Renderer.class)
+                .loadAsList()
+                .wrapWith(list -> new CompositeRenderer((List<Renderer>) list))
+                .register();
+
+        ComponentConfig.builder("translator", Translator.class)
+                .loadAsList()
+                .wrapWith(list -> list.isEmpty() ? null : (Translator) list.get(0))
+                .defaultProvider(DefaultTranslator::new)
+                .register();
+    }
+
     private final TikaJsonConfig config;
     private final ClassLoader classLoader;
     private final ObjectMapper objectMapper;
 
-    // Cached instances (lazy loaded)
+    // Cache of loaded components (keyed by component class)
+    private final Map<Class<?>, Object> componentCache = new ConcurrentHashMap<>();
+
+    // Static instances
     private static MimeTypes mimeTypes;
     private static TikaLoader defaultLoader;
-    private Parser parsers;
+
+    // Lazy-initialized loader context
+    private LoaderContext loaderContext;
+
+    // Special cached instances that aren't standard components
     private Parser autoDetectParser;
-    private Detector detectors;
-    private EncodingDetector encodingDetectors;
-    private MetadataFilter metadataFilter;
-    private Renderer renderers;
-    private Translator translator;
     private ConfigLoader configLoader;
     private GlobalSettings globalSettings;
 
@@ -173,136 +226,74 @@ public class TikaLoader {
 
     /**
      * Loads and returns all parsers.
+     * Syntactic sugar for {@code get(Parser.class)}.
      * Results are cached - subsequent calls return the same instance.
-     * <p>
-     * Note: This method ensures EncodingDetectors are loaded first,
-     * as some parsers require them during construction (e.g., AbstractEncodingDetectorParser
-     * requires an EncodingDetector).
      *
      * @return the parser (typically a CompositeParser internally)
      * @throws TikaConfigException if loading fails
      */
-    public synchronized Parser loadParsers() throws TikaConfigException {
-        if (parsers == null) {
-            // Load EncodingDetectors first - some parsers need them during construction
-            EncodingDetector encodingDetector = loadEncodingDetectors();
-
-            // Load Renderers - some parsers need them during construction
-            Renderer renderer = loadRenderers();
-
-            ParserLoader loader = new ParserLoader(classLoader, objectMapper, encodingDetector, renderer);
-            parsers = loader.load(config);
-        }
-        return parsers;
+    public Parser loadParsers() throws TikaConfigException {
+        return get(Parser.class);
     }
 
     /**
      * Loads and returns all detectors.
-     * Supports "default-detector" marker for SPI fallback with optional exclusions.
-     * If "detectors" section exists:
-     *   - If "default-detector" is present: loads configured detectors + SPI detectors (minus exclusions)
-     *   - If "default-detector" is absent: loads only configured detectors (no SPI)
-     * If "detectors" section missing: uses SPI to discover all detectors.
+     * Syntactic sugar for {@code get(Detector.class)}.
      * Results are cached - subsequent calls return the same instance.
      *
      * @return the detector (typically a CompositeDetector internally)
      * @throws TikaConfigException if loading fails
      */
-    public synchronized Detector loadDetectors() throws TikaConfigException {
-        if (detectors == null) {
-            DetectorLoader loader = new DetectorLoader(classLoader, objectMapper);
-            detectors = loader.load(config);
-        }
-        return detectors;
+    public Detector loadDetectors() throws TikaConfigException {
+        return get(Detector.class);
     }
 
     /**
      * Loads and returns all encoding detectors.
-     * Supports "default-encoding-detector" marker for SPI fallback with optional exclusions.
-     * If "encoding-detectors" section exists:
-     *   - If "default-encoding-detector" is present: loads configured detectors + SPI detectors (minus exclusions)
-     *   - If "default-encoding-detector" is absent: loads only configured detectors (no SPI)
-     * If "encoding-detectors" section missing: uses SPI to discover encoding detectors.
+     * Syntactic sugar for {@code get(EncodingDetector.class)}.
      * Results are cached - subsequent calls return the same instance.
      *
      * @return the encoding detector (typically a CompositeEncodingDetector internally)
      * @throws TikaConfigException if loading fails
      */
-    public synchronized EncodingDetector loadEncodingDetectors() throws TikaConfigException {
-        if (encodingDetectors == null) {
-            EncodingDetectorLoader loader = new EncodingDetectorLoader(classLoader, objectMapper);
-            encodingDetectors = loader.load(config);
-        }
-        return encodingDetectors;
+    public EncodingDetector loadEncodingDetectors() throws TikaConfigException {
+        return get(EncodingDetector.class);
     }
 
     /**
      * Loads and returns all metadata filters.
-     * Metadata filters are opt-in only - they are NOT loaded from SPI by default.
-     * If "metadata-filters" section exists in config, uses only those listed.
-     * If section missing, returns an empty filter (no SPI fallback).
+     * Syntactic sugar for {@code get(MetadataFilter.class)}.
      * Results are cached - subsequent calls return the same instance.
      *
      * @return the metadata filter (typically a CompositeMetadataFilter internally)
      * @throws TikaConfigException if loading fails
      */
-    public synchronized MetadataFilter loadMetadataFilters() throws TikaConfigException {
-        if (metadataFilter == null) {
-            List<MetadataFilter> filterList;
-
-            // Check if metadata-filters section exists in config
-            if (config.hasComponentSection("metadata-filters")) {
-                // Load explicitly configured filters (no SPI fallback)
-                CompositeComponentLoader<MetadataFilter> loader = new CompositeComponentLoader<>(
-                        MetadataFilter.class, "metadata-filters", classLoader, objectMapper);
-                filterList = loader.loadFromArray(config);
-            } else {
-                // No config section - metadata filters are opt-in only, don't load from SPI
-                filterList = Collections.emptyList();
-            }
-            if (filterList.isEmpty()) {
-                metadataFilter = NoOpFilter.NOOP_FILTER;
-            } else {
-                metadataFilter = new CompositeMetadataFilter(filterList);
-            }
-        }
-        return metadataFilter;
+    public MetadataFilter loadMetadataFilters() throws TikaConfigException {
+        return get(MetadataFilter.class);
     }
 
     /**
      * Loads and returns all renderers.
-     * If "renderers" section exists in config, uses only those listed (no SPI fallback).
-     * If section missing, uses SPI to discover renderers.
+     * Syntactic sugar for {@code get(Renderer.class)}.
      * Results are cached - subsequent calls return the same instance.
      *
      * @return the renderer (typically a CompositeRenderer internally)
      * @throws TikaConfigException if loading fails
      */
-    public synchronized Renderer loadRenderers() throws TikaConfigException {
-        if (renderers == null) {
-            CompositeComponentLoader<Renderer> loader = new CompositeComponentLoader<>(
-                    Renderer.class, "renderers", classLoader, objectMapper);
-            List<Renderer> rendererList = loader.loadFromArray(config);
-            renderers = new CompositeRenderer(rendererList);
-        }
-        return renderers;
+    public Renderer loadRenderers() throws TikaConfigException {
+        return get(Renderer.class);
     }
 
     /**
      * Loads and returns the translator.
-     * If "translator" section exists in config, uses that translator.
-     * If section missing, uses SPI to discover translator.
+     * Syntactic sugar for {@code get(Translator.class)}.
      * Results are cached - subsequent calls return the same instance.
      *
      * @return the translator
      * @throws TikaConfigException if loading fails
      */
-    public synchronized Translator loadTranslator() throws TikaConfigException {
-        if (translator == null) {
-            TranslatorLoader loader = new TranslatorLoader(classLoader, objectMapper);
-            translator = loader.load(config);
-        }
-        return translator;
+    public Translator loadTranslator() throws TikaConfigException {
+        return get(Translator.class);
     }
 
     /**
@@ -493,5 +484,234 @@ public class TikaLoader {
      */
     public GlobalSettings getGlobalSettings() {
         return globalSettings;
+    }
+
+    // ==================== Generic Component Access ====================
+
+    /**
+     * Gets a component by its class type.
+     * Components are loaded lazily and cached.
+     *
+     * @param componentClass the component class (e.g., Parser.class, Detector.class)
+     * @return the loaded component
+     * @throws TikaConfigException if loading fails
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T get(Class<T> componentClass) throws TikaConfigException {
+        // Check cache first
+        if (componentCache.containsKey(componentClass)) {
+            return (T) componentCache.get(componentClass);
+        }
+
+        // Get component config from registry
+        ComponentConfig<T> componentConfig = ComponentNameResolver.getComponentConfig(componentClass);
+        if (componentConfig == null) {
+            throw new IllegalArgumentException(
+                    "No component registered for class: " + componentClass.getName());
+        }
+
+        // Load the component
+        T component = loadComponent(componentConfig);
+
+        // Cache and return
+        if (component != null) {
+            componentCache.put(componentClass, component);
+        }
+        return component;
+    }
+
+    /**
+     * Gets a component by its JSON field name.
+     * Components are loaded lazily and cached.
+     *
+     * @param jsonField the JSON field name (e.g., "parsers", "detectors")
+     * @return the loaded component
+     * @throws TikaConfigException if loading fails
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T get(String jsonField) throws TikaConfigException {
+        // Get component config from registry by field name
+        ComponentConfig<?> componentConfig = ComponentNameResolver.getComponentConfig(jsonField);
+        if (componentConfig == null) {
+            throw new IllegalArgumentException("No component registered for field: " + jsonField);
+        }
+
+        // Delegate to get by class (which handles caching)
+        return (T) get(componentConfig.getComponentClass());
+    }
+
+    /**
+     * Load a component using its configuration.
+     * Delegates to custom loader if available, otherwise uses default list-based loading.
+     */
+    private <T> T loadComponent(ComponentConfig<T> componentConfig) throws TikaConfigException {
+        if (componentConfig.hasCustomLoader()) {
+            // Use custom loader for complex components
+            return componentConfig.getCustomLoader().load(config, getLoaderContext());
+        } else {
+            // Use default list-based loading for simple components
+            return loadDefaultComponent(componentConfig);
+        }
+    }
+
+    /**
+     * Default loading for simple components.
+     * No special handling - just deserialize, wrap, done.
+     */
+    private <T> T loadDefaultComponent(ComponentConfig<T> componentConfig) throws TikaConfigException {
+        List<T> components = loadComponentList(
+                componentConfig.getJsonField(),
+                componentConfig.getComponentClass());
+
+        if (components.isEmpty()) {
+            return componentConfig.hasDefault()
+                    ? componentConfig.getDefault()
+                    : null;
+        }
+
+        return componentConfig.hasListWrapper()
+                ? componentConfig.wrapList(components)
+                : components.get(0);
+    }
+
+    /**
+     * Get the loader context, creating it lazily.
+     */
+    private synchronized LoaderContext getLoaderContext() {
+        if (loaderContext == null) {
+            loaderContext = new LoaderContext(classLoader, objectMapper, this::get);
+        }
+        return loaderContext;
+    }
+
+    // ==================== Component List Loading ====================
+
+    /**
+     * Loads a list of components from the JSON configuration.
+     *
+     * @param jsonField the JSON field name (e.g., "parsers", "detectors")
+     * @param componentClass the component class
+     * @return list of loaded components (may be empty, never null)
+     */
+    private <T> List<T> loadComponentList(String jsonField, Class<T> componentClass)
+            throws TikaConfigException {
+        List<Map.Entry<String, JsonNode>> entries = config.getArrayComponents(jsonField);
+
+        if (entries.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<T> components = new ArrayList<>();
+        for (Map.Entry<String, JsonNode> entry : entries) {
+            String typeName = entry.getKey();
+            JsonNode configNode = entry.getValue();
+
+            try {
+                // Create wrapper node: { "type-name": {...config...} }
+                ObjectNode wrapperNode = objectMapper.createObjectNode();
+                wrapperNode.set(typeName, configNode);
+
+                // Deserialize using Jackson (TikaModule handles type resolution)
+                T component = objectMapper.treeToValue(wrapperNode, componentClass);
+                components.add(component);
+            } catch (Exception e) {
+                throw new TikaConfigException(
+                        "Failed to load " + componentClass.getSimpleName() + ": " + typeName, e);
+            }
+        }
+
+        return components;
+    }
+
+    // ==================== Serialization ====================
+
+    /**
+     * Saves the current configuration to a JSON file (pretty-printed).
+     */
+    public void save(File file) throws IOException {
+        objectMapper.writerWithDefaultPrettyPrinter().writeValue(file, buildOutputNode());
+    }
+
+    /**
+     * Saves the current configuration to an output stream (pretty-printed).
+     */
+    public void save(OutputStream outputStream) throws IOException {
+        objectMapper.writerWithDefaultPrettyPrinter().writeValue(outputStream, buildOutputNode());
+    }
+
+    /**
+     * Converts the current configuration to a JSON string (pretty-printed).
+     */
+    public String toJson() throws IOException {
+        return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(buildOutputNode());
+    }
+
+    private ObjectNode buildOutputNode() throws IOException {
+        ObjectNode output = objectMapper.createObjectNode();
+
+        // Serialize loaded components from cache
+        if (componentCache.containsKey(Parser.class)) {
+            output.set("parsers", serializeComponent(componentCache.get(Parser.class), "parsers"));
+        } else if (config.hasArrayComponents("parsers")) {
+            output.set("parsers", config.getRootNode().get("parsers"));
+        }
+
+        if (componentCache.containsKey(Detector.class)) {
+            output.set("detectors", serializeComponent(componentCache.get(Detector.class), "detectors"));
+        } else if (config.hasArrayComponents("detectors")) {
+            output.set("detectors", config.getRootNode().get("detectors"));
+        }
+
+        if (componentCache.containsKey(EncodingDetector.class)) {
+            output.set("encoding-detectors", serializeComponent(componentCache.get(EncodingDetector.class), "encoding-detectors"));
+        } else if (config.hasArrayComponents("encoding-detectors")) {
+            output.set("encoding-detectors", config.getRootNode().get("encoding-detectors"));
+        }
+
+        Object metadataFilter = componentCache.get(MetadataFilter.class);
+        if (metadataFilter != null && metadataFilter != NoOpFilter.NOOP_FILTER) {
+            output.set("metadata-filters", serializeComponent(metadataFilter, "metadata-filters"));
+        } else if (config.hasArrayComponents("metadata-filters")) {
+            output.set("metadata-filters", config.getRootNode().get("metadata-filters"));
+        }
+
+        if (componentCache.containsKey(Renderer.class)) {
+            output.set("renderers", serializeComponent(componentCache.get(Renderer.class), "renderers"));
+        } else if (config.hasArrayComponents("renderers")) {
+            output.set("renderers", config.getRootNode().get("renderers"));
+        }
+
+        // Preserve auto-detect-parser config if present
+        JsonNode adpNode = config.getRootNode().get("auto-detect-parser");
+        if (adpNode != null && !adpNode.isNull()) {
+            output.set("auto-detect-parser", adpNode);
+        }
+
+        return output;
+    }
+
+    private JsonNode serializeComponent(Object component, String jsonField) throws IOException {
+        Object toSerialize = unwrapForSerialization(component);
+        if (toSerialize == null) {
+            return objectMapper.createArrayNode();
+        }
+        return objectMapper.valueToTree(toSerialize);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object unwrapForSerialization(Object component) {
+        if (component instanceof CompositeParser cp) {
+            Map<org.apache.tika.mime.MediaType, Parser> parserMap = cp.getParsers();
+            // Get unique parsers from the map
+            return new ArrayList<>(new HashSet<>(parserMap.values()));
+        } else if (component instanceof CompositeDetector cd) {
+            return cd.getDetectors();
+        } else if (component instanceof CompositeMetadataFilter cmf) {
+            return cmf.getFilters();
+        } else if (component instanceof CompositeEncodingDetector ced) {
+            return ced.getDetectors();
+        }
+        // For types without accessor methods (like CompositeRenderer), return as-is
+        return component;
     }
 }

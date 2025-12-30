@@ -118,9 +118,10 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                 .get(0)
                 .getValues(TikaCoreProperties.TIKA_PARSED_BY);
         //make sure the CompressorParser doesn't show up here
-        assertEquals(2, parsedBy.length);
+        assertEquals(3, parsedBy.length);
         assertEquals("org.apache.tika.parser.CompositeParser", parsedBy[0]);
-        assertEquals("org.apache.tika.parser.microsoft.ooxml.OOXMLParser", parsedBy[1]);
+        assertEquals("org.apache.tika.parser.DefaultParser", parsedBy[1]);
+        assertEquals("org.apache.tika.parser.microsoft.ooxml.OOXMLParser", parsedBy[2]);
 
         //test that the rest is as it should be
         assertEquals(12, metadataList.size());

@@ -254,7 +254,7 @@ public class PDFParser implements Parser, RenderingParser {
     private PDFParserConfig getConfig(ParseContext parseContext) throws TikaException, IOException {
         // ParseContextConfig.getConfig() handles:
         // 1. Check for PDFParserConfig already in ParseContext (fast path for embedded docs)
-        // 2. Check ConfigContainer for "pdf-parser" and deserialize if present
+        // 2. Check jsonConfigs for "pdf-parser" and deserialize if present
         // 3. Set deserialized config in ParseContext for future lookups
         // 4. Return defaultConfig if no runtime config found
         return ParseContextConfig.getConfig(

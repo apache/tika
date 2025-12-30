@@ -46,7 +46,7 @@ public class ParseContextConfigTest {
     }
 
     @Test
-    public void testNoConfigContainer() throws Exception {
+    public void testNoJsonConfig() throws Exception {
         ParseContext context = new ParseContext();
         TestConfig defaultConfig = new TestConfig();
         defaultConfig.setName("my-default");
@@ -68,11 +68,9 @@ public class ParseContextConfigTest {
     }
 
     @Test
-    public void testConfigContainerWithoutMatchingKey() throws Exception {
+    public void testJsonConfigWithoutMatchingKey() throws Exception {
         ParseContext context = new ParseContext();
-        ConfigContainer configContainer = new ConfigContainer();
-        configContainer.set("other-parser", "{\"name\":\"other\"}");
-        context.set(ConfigContainer.class, configContainer);
+        context.setJsonConfig("other-parser", "{\"name\":\"other\"}");
 
         TestConfig defaultConfig = new TestConfig();
         defaultConfig.setName("my-default");
@@ -87,9 +85,7 @@ public class ParseContextConfigTest {
     @Test
     public void testHasConfigTrue() {
         ParseContext context = new ParseContext();
-        ConfigContainer configContainer = new ConfigContainer();
-        configContainer.set("test-parser", "{\"name\":\"test\"}");
-        context.set(ConfigContainer.class, configContainer);
+        context.setJsonConfig("test-parser", "{\"name\":\"test\"}");
 
         assertTrue(ParseContextConfig.hasConfig(context, "test-parser"));
     }
@@ -97,15 +93,13 @@ public class ParseContextConfigTest {
     @Test
     public void testHasConfigFalse() {
         ParseContext context = new ParseContext();
-        ConfigContainer configContainer = new ConfigContainer();
-        configContainer.set("other-parser", "{\"name\":\"test\"}");
-        context.set(ConfigContainer.class, configContainer);
+        context.setJsonConfig("other-parser", "{\"name\":\"test\"}");
 
         assertFalse(ParseContextConfig.hasConfig(context, "test-parser"));
     }
 
     @Test
-    public void testHasConfigNoContainer() {
+    public void testHasConfigNoJsonConfigs() {
         ParseContext context = new ParseContext();
 
         assertFalse(ParseContextConfig.hasConfig(context, "test-parser"));
