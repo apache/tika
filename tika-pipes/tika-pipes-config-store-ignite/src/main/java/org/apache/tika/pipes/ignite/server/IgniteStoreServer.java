@@ -22,16 +22,14 @@ import java.nio.file.Paths;
 import java.util.Locale;
 
 import org.apache.ignite.IgniteServer;
+import org.apache.ignite.InitParameters;
 import org.apache.ignite.table.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Embedded Ignite 3.x server that hosts the distributed table.
- * This runs as a background thread within the tika-grpc process.
- * Tika gRPC and forked PipesServer instances connect as clients.
- * 
- * Note: Uses Ignite 3.x with Calcite SQL engine (no H2).
+ * Simplified Ignite 3.x embedded server.
+ * Based on Apache Ignite 3 examples - starts synchronously.
  */
 public class IgniteStoreServer implements AutoCloseable {
     
@@ -39,132 +37,102 @@ public class IgniteStoreServer implements AutoCloseable {
     private static final String DEFAULT_TABLE_NAME = "tika_config_store";
     private static final String DEFAULT_NODE_NAME = "TikaIgniteServer";
     
-    private IgniteServer ignite;
+    private IgniteServer node;
     private final String tableName;
-    private final int replicas;
-    private final int partitions;
     private final String nodeName;
     private final Path workDir;
     
     public IgniteStoreServer() {
-        this(DEFAULT_TABLE_NAME, 2, 10, DEFAULT_NODE_NAME);
+        this(DEFAULT_TABLE_NAME, DEFAULT_NODE_NAME);
     }
     
-    public IgniteStoreServer(String tableName, int replicas, int partitions, String nodeName) {
+    public IgniteStoreServer(String tableName, String nodeName) {
         this.tableName = tableName;
-        this.replicas = replicas;
-        this.partitions = partitions;
         this.nodeName = nodeName;
         this.workDir = Paths.get(System.getProperty("ignite.work.dir", "/var/cache/tika/ignite-work"));
     }
     
     /**
-     * Start the Ignite server node in a background daemon thread.
+     * Start the Ignite server synchronously.
      */
-    public void startAsync() {
-        Thread serverThread = new Thread(() -> {
-            try {
-                start();
-            } catch (Exception e) {
-                LOG.error("Failed to start Ignite server", e);
-            }
-        }, "IgniteServerThread");
-        serverThread.setDaemon(true);
-        serverThread.start();
+    public void start() throws Exception {
+        LOG.info("Starting Ignite 3.x server: node={}, table={}, workDir={}", 
+            nodeName, tableName, workDir);
         
-        // Wait for server to initialize
-        try {
-            Thread.sleep(5000);  // Give it more time for Ignite 3.x initialization
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+        // Clean and recreate work directory for fresh start
+        if (Files.exists(workDir)) {
+            LOG.info("Cleaning existing work directory");
+            deleteDirectory(workDir);
         }
+        
+        // Ensure work directory exists
+        Files.createDirectories(workDir);
+        LOG.info("Created work directory: {}", workDir);
+        
+        // Create config file
+        Path configPath = workDir.resolve("ignite-config.conf");
+        String config = 
+            "ignite {\n" +
+            "  network {\n" +
+            "    port = 3344\n" +
+            "    nodeFinder {\n" +
+            "      netClusterNodes = [ \"localhost:3344\" ]\n" +
+            "    }\n" +
+            "  }\n" +
+            "  clientConnector {\n" +
+            "    port = 10800\n" +
+            "  }\n" +
+            "}\n";
+        Files.writeString(configPath, config);
+        LOG.info("Created Ignite config: {}", configPath);
+        
+        // Start the server node
+        LOG.info("Starting Ignite node: {}", nodeName);
+        node = IgniteServer.start(nodeName, configPath, workDir);
+        LOG.info("Ignite server started");
+        
+        // Initialize the cluster
+        LOG.info("Initializing cluster");
+        InitParameters initParameters = InitParameters.builder()
+                .clusterName("tika-cluster")
+                .metaStorageNodes(node)
+                .build();
+        
+        node.initClusterAsync(initParameters).get();
+        LOG.info("Cluster initialized");
+        
+        // Wait for cluster to be ready
+        Thread.sleep(2000);
+        
+        // Create table
+        createTable();
+        
+        LOG.info("Ignite server is ready");
     }
     
-    private void start() throws Exception {
-        LOG.info("Starting Ignite 3.x server: node={}, table={}, replicas={}, partitions={}", 
-            nodeName, tableName, replicas, partitions);
-        
+    private void createTable() {
         try {
-            // Ensure work directory exists
-            if (!Files.exists(workDir)) {
-                Files.createDirectories(workDir);
-                LOG.info("Created work directory: {}", workDir);
-            }
-            
-            // Create minimal HOCON config file for Ignite 3.x
-            Path configPath = workDir.resolve("ignite-config.conf");
-            if (!Files.exists(configPath)) {
-                String config = String.format(Locale.ROOT,
-                    "ignite {\n" +
-                    "  network: {\n" +
-                    "    port: 3344,\n" +
-                    "    nodeFinder: {\n" +
-                    "      netClusterNodes: [ \"localhost:3344\" ]\n" +
-                    "    }\n" +
-                    "  }\n" +
-                    "}\n");
-                Files.writeString(configPath, config);
-                LOG.info("Created Ignite config: {}", configPath);
-            }
-            
-            // Start the server node
-            // Note: In Ignite 3.x embedded mode, the server manages its own initialization
-            LOG.info("Starting Ignite node: {} at {}", nodeName, workDir);
-            ignite = IgniteServer.start(nodeName, configPath, workDir);
-            LOG.info("Ignite server started successfully");
-            
-            // Wait a bit for the cluster to be ready
-            Thread.sleep(3000);
-            
-            // Create table if it doesn't exist
-            createTableIfNeeded();
-            
-            LOG.info("Ignite server is ready");
-        } catch (Exception e) {
-            LOG.error("Failed to start Ignite server", e);
-            throw e;
-        }
-    }
-    
-    private void createTableIfNeeded() {
-        try {
-            // Get the API interface from the server
-            org.apache.ignite.Ignite api = ignite.api();
-            
-            Table existingTable = api.tables().table(tableName);
+            // Check if table exists
+            Table existingTable = node.api().tables().table(tableName);
             if (existingTable != null) {
                 LOG.info("Table {} already exists", tableName);
                 return;
             }
             
-            LOG.info("Creating table: {} with replicas={}, partitions={}", tableName, replicas, partitions);
+            LOG.info("Creating table: {}", tableName);
             
-            // Create table using SQL
+            // Create table using SQL (Ignite 3.x uses default zone)
             String createTableSql = String.format(Locale.ROOT,
                 "CREATE TABLE IF NOT EXISTS %s (" +
                 "  id VARCHAR PRIMARY KEY," +
-                "  contextKey VARCHAR," +
-                "  entityType VARCHAR," +
-                "  factoryName VARCHAR," +
+                "  name VARCHAR," +
                 "  json VARCHAR(10000)" +
-                ") WITH PRIMARY_ZONE='%s_ZONE'",
-                tableName, tableName.toUpperCase(Locale.ROOT)
+                ")",
+                tableName
             );
-            
-            // First create a distribution zone
-            String createZoneSql = String.format(Locale.ROOT,
-                "CREATE ZONE IF NOT EXISTS %s_ZONE WITH " +
-                "REPLICAS=%d, " +
-                "PARTITIONS=%d, " +
-                "STORAGE_PROFILES='default'",
-                tableName.toUpperCase(Locale.ROOT), replicas, partitions
-            );
-            
-            LOG.info("Creating distribution zone with SQL: {}", createZoneSql);
-            api.sql().execute(null, createZoneSql);
             
             LOG.info("Creating table with SQL: {}", createTableSql);
-            api.sql().execute(null, createTableSql);
+            node.api().sql().execute(null, createTableSql);
             
             LOG.info("Table {} created successfully", tableName);
         } catch (Exception e) {
@@ -174,19 +142,29 @@ public class IgniteStoreServer implements AutoCloseable {
     }
     
     public boolean isRunning() {
-        return ignite != null;
+        return node != null;
+    }
+    
+    private void deleteDirectory(Path dir) throws Exception {
+        if (Files.exists(dir)) {
+            Files.walk(dir)
+                .sorted((a, b) -> b.compareTo(a)) // Reverse order to delete files before dirs
+                .forEach(path -> {
+                    try {
+                        Files.delete(path);
+                    } catch (Exception e) {
+                        LOG.warn("Failed to delete {}", path, e);
+                    }
+                });
+        }
     }
     
     @Override
     public void close() {
-        if (ignite != null) {
+        if (node != null) {
             LOG.info("Stopping Ignite server: {}", nodeName);
-            try {
-                ((AutoCloseable) ignite).close();
-            } catch (Exception e) {
-                LOG.error("Error stopping Ignite server", e);
-            }
-            ignite = null;
+            node.shutdown();
+            node = null;
         }
     }
 }

@@ -64,7 +64,6 @@ public class IgniteConfigStore implements ConfigStore {
     private boolean autoClose = true;
     private ExtensionConfig extensionConfig;
     private boolean closed = false;
-    private boolean clientMode = true;  // Default to client mode
 
     public IgniteConfigStore() {
     }
@@ -135,7 +134,9 @@ public class IgniteConfigStore implements ConfigStore {
             throw new IllegalStateException("IgniteConfigStore not initialized. Call init() first.");
         }
         try {
-            kvView.put(null, id, new ExtensionConfigDTO(config));
+            // Create DTO with only value fields (name, json) - id is the key
+            ExtensionConfigDTO dto = new ExtensionConfigDTO(config.name(), config.json());
+            kvView.put(null, id, dto);
         } catch (Exception e) {
             LOG.error("Failed to put config with id: {}", id, e);
             throw new RuntimeException("Failed to put config", e);
@@ -149,7 +150,8 @@ public class IgniteConfigStore implements ConfigStore {
         }
         try {
             ExtensionConfigDTO dto = kvView.get(null, id);
-            return dto != null ? dto.toExtensionConfig() : null;
+            // Reconstruct ExtensionConfig with the id (key) and DTO fields (value)
+            return dto != null ? new ExtensionConfig(id, dto.getName(), dto.getJson()) : null;
         } catch (Exception e) {
             LOG.error("Failed to get config with id: {}", id, e);
             throw new RuntimeException("Failed to get config", e);
@@ -203,7 +205,8 @@ public class IgniteConfigStore implements ConfigStore {
             
             if (resultSet.hasNext()) {
                 Tuple tuple = resultSet.next();
-                return tuple.intValue("cnt");
+                // COUNT(*) returns LONG (INT64), not INT32
+                return (int) tuple.longValue("cnt");
             }
             return 0;
         } catch (Exception e) {
@@ -219,7 +222,8 @@ public class IgniteConfigStore implements ConfigStore {
         }
         try {
             ExtensionConfigDTO removed = kvView.getAndRemove(null, id);
-            return removed != null ? removed.toExtensionConfig() : null;
+            // Reconstruct ExtensionConfig with the id and DTO fields
+            return removed != null ? new ExtensionConfig(id, removed.getName(), removed.getJson()) : null;
         } catch (Exception e) {
             LOG.error("Failed to remove config with id: {}", id, e);
             throw new RuntimeException("Failed to remove config", e);
@@ -258,9 +262,5 @@ public class IgniteConfigStore implements ConfigStore {
 
     public void setAutoClose(boolean autoClose) {
         this.autoClose = autoClose;
-    }
-
-    public void setClientMode(boolean clientMode) {
-        this.clientMode = clientMode;
     }
 }
