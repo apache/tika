@@ -231,7 +231,7 @@ public class AutoDetectParser extends CompositeParser {
 
     private void maybeSpool(TikaInputStream tis, AutoDetectParserConfig autoDetectParserConfig,
                             Metadata metadata) throws IOException {
-        if (tis.hasFile()) {
+        if (tis.hasFile() || tis.getOpenContainer() != null) {
             return;
         }
         if (autoDetectParserConfig.getSpoolToDisk() == null) {

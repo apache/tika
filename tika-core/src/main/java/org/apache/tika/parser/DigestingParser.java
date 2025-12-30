@@ -16,9 +16,11 @@
  */
 package org.apache.tika.parser;
 
-
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -61,7 +63,16 @@ public class DigestingParser extends ParserDecorator {
         try {
 
             if (embeddedStreamTranslator.shouldTranslate(tis, metadata)) {
-                try (TikaInputStream translated = TikaInputStream.get(embeddedStreamTranslator.translate(tis, metadata))) {
+                Path translatedBytes = tmp.createTempFile();
+                if (tis.getOpenContainer() == null) {
+                    //if there's no open container, then translate the bytes
+                    try (InputStream is = TikaInputStream.get(tis.getPath())) {
+                        Files.copy(embeddedStreamTranslator.translate(is, metadata), translatedBytes, StandardCopyOption.REPLACE_EXISTING);
+                    }
+                } else {
+                    Files.copy(embeddedStreamTranslator.translate(tis, metadata), translatedBytes, StandardCopyOption.REPLACE_EXISTING);
+                }
+                try (TikaInputStream translated = TikaInputStream.get(translatedBytes)) {
                     digester.digest(translated, metadata, context);
                 }
             } else {

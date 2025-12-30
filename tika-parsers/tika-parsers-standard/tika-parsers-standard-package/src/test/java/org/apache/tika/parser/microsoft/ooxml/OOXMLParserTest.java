@@ -17,6 +17,7 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.List;
@@ -28,7 +29,10 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.digestutils.CommonsDigester;
 import org.apache.tika.parser.microsoft.EMFParser;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 
@@ -141,5 +145,19 @@ public class OOXMLParserTest extends TikaTest {
         assertEquals(2, metadataList.size());
         assertContains("Example of a table",
                 metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testDigestTranslator() throws Exception {
+        Parser parser = TikaTest.AUTO_DETECT_PARSER;
+        Parser digestingParser = new DigestingParser(parser, new CommonsDigester(100000, "sha256"), false);
+        List<Metadata> metadataList = getRecursiveMetadata("testMSChart-govdocs-428996.pptx", digestingParser);
+        assertEquals(4, metadataList.size());
+        for (Metadata m : metadataList) {
+            assertNotNull(m.get("X-TIKA:digest:SHA256"));
+            //there was a zero-byte file exception thrown on the ole.bin file
+            //before TIKA-4607
+            assertNull(m.get(TikaCoreProperties.EMBEDDED_EXCEPTION));
+        }
     }
 }
