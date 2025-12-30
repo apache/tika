@@ -140,14 +140,18 @@ public class TestMetadataFilter extends TikaTest {
         MetadataFilter filter = new RemoveByMimeMetadataFilter(set("image/jpeg", "application/pdf"));
 
         // jpeg should be removed
-        List<Metadata> result = filter.filter(List.of(jpegMetadata));
-        assertEquals(0, result.size());
+        List<Metadata> jpegList = new ArrayList<>();
+        jpegList.add(jpegMetadata);
+        filter.filter(jpegList);
+        assertEquals(0, jpegList.size());
 
         // text/plain should be kept
-        result = filter.filter(List.of(plainMetadata));
-        assertEquals(1, result.size());
-        assertEquals(2, result.get(0).size());
-        assertEquals("author", result.get(0).get("author"));
+        List<Metadata> plainList = new ArrayList<>();
+        plainList.add(plainMetadata);
+        filter.filter(plainList);
+        assertEquals(1, plainList.size());
+        assertEquals(2, plainList.get(0).size());
+        assertEquals("author", plainList.get(0).get("author"));
     }
 
     @Test
@@ -165,14 +169,18 @@ public class TestMetadataFilter extends TikaTest {
         MetadataFilter filter = loader.get(MetadataFilter.class);
 
         // jpeg should be removed
-        List<Metadata> result = filter.filter(List.of(jpegMetadata));
-        assertEquals(0, result.size());
+        List<Metadata> jpegList = new ArrayList<>();
+        jpegList.add(jpegMetadata);
+        filter.filter(jpegList);
+        assertEquals(0, jpegList.size());
 
         // text/plain should be kept and upper-cased by mock-upper-case-filter
-        result = filter.filter(List.of(plainMetadata));
-        assertEquals(1, result.size());
-        assertEquals(2, result.get(0).size());
-        assertEquals("AUTHOR", result.get(0).get("author"));
+        List<Metadata> plainList = new ArrayList<>();
+        plainList.add(plainMetadata);
+        filter.filter(plainList);
+        assertEquals(1, plainList.size());
+        assertEquals(2, plainList.get(0).size());
+        assertEquals("AUTHOR", plainList.get(0).get("author"));
     }
 
     @Test

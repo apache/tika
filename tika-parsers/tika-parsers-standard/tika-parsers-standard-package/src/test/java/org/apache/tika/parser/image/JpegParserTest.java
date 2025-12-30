@@ -50,7 +50,7 @@ public class JpegParserTest extends TikaTest {
             wrapper.parse(TikaInputStream.get(is), handler, new Metadata(), new ParseContext());
         }
         List<Metadata> metadataList = handler.getMetadataList();
-        metadataList = metadataFilter.filter(metadataList);
+        metadataFilter.filter(metadataList);
         Metadata metadata = metadataList.get(0);
         // Geo tags should be there with 5dp, and not rounded
         assertEquals("51.575762", metadata.get(Metadata.LATITUDE));
