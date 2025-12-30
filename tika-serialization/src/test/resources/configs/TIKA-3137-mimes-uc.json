@@ -1,7 +1,7 @@
 {
   "metadata-filters": [
     {
-      "clear-by-mime-metadata-filter": {
+      "remove-by-mime-metadata-filter": {
         "mimes": ["image/jpeg", "application/pdf"]
       }
     },

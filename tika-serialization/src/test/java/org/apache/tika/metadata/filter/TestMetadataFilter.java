@@ -128,40 +128,51 @@ public class TestMetadataFilter extends TikaTest {
     }
 
     @Test
-    public void testMimeClearingFilter() throws Exception {
-        Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, MediaType.image("jpeg").toString());
-        metadata.set("author", "author");
+    public void testMimeRemovingFilter() throws Exception {
+        Metadata jpegMetadata = new Metadata();
+        jpegMetadata.set(Metadata.CONTENT_TYPE, MediaType.image("jpeg").toString());
+        jpegMetadata.set("author", "author");
 
-        MetadataFilter filter = new ClearByMimeMetadataFilter(set("image/jpeg", "application/pdf"));
-        metadata = filterOne(filter, metadata);
-        assertEquals(0, metadata.size());
+        Metadata plainMetadata = new Metadata();
+        plainMetadata.set(Metadata.CONTENT_TYPE, MediaType.text("plain").toString());
+        plainMetadata.set("author", "author");
 
-        metadata.set(Metadata.CONTENT_TYPE, MediaType.text("plain").toString());
-        metadata.set("author", "author");
-        metadata = filterOne(filter, metadata);
-        assertEquals(2, metadata.size());
-        assertEquals("author", metadata.get("author"));
+        MetadataFilter filter = new RemoveByMimeMetadataFilter(set("image/jpeg", "application/pdf"));
 
+        // jpeg should be removed
+        List<Metadata> result = filter.filter(List.of(jpegMetadata));
+        assertEquals(0, result.size());
+
+        // text/plain should be kept
+        result = filter.filter(List.of(plainMetadata));
+        assertEquals(1, result.size());
+        assertEquals(2, result.get(0).size());
+        assertEquals("author", result.get(0).get("author"));
     }
 
     @Test
-    public void testMimeClearingFilterConfig() throws Exception {
+    public void testMimeRemovingFilterConfig() throws Exception {
         TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "TIKA-3137-mimes-uc.json"));
 
-        Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, MediaType.image("jpeg").toString());
-        metadata.set("author", "author");
+        Metadata jpegMetadata = new Metadata();
+        jpegMetadata.set(Metadata.CONTENT_TYPE, MediaType.image("jpeg").toString());
+        jpegMetadata.set("author", "author");
+
+        Metadata plainMetadata = new Metadata();
+        plainMetadata.set(Metadata.CONTENT_TYPE, MediaType.text("plain").toString());
+        plainMetadata.set("author", "author");
 
         MetadataFilter filter = loader.get(MetadataFilter.class);
-        metadata = filterOne(filter, metadata);
-        assertEquals(0, metadata.size());
 
-        metadata.set(Metadata.CONTENT_TYPE, MediaType.text("plain").toString());
-        metadata.set("author", "author");
-        metadata = filterOne(filter, metadata);
-        assertEquals(2, metadata.size());
-        assertEquals("AUTHOR", metadata.get("author"));
+        // jpeg should be removed
+        List<Metadata> result = filter.filter(List.of(jpegMetadata));
+        assertEquals(0, result.size());
+
+        // text/plain should be kept and upper-cased by mock-upper-case-filter
+        result = filter.filter(List.of(plainMetadata));
+        assertEquals(1, result.size());
+        assertEquals(2, result.get(0).size());
+        assertEquals("AUTHOR", result.get(0).get("author"));
     }
 
     @Test
