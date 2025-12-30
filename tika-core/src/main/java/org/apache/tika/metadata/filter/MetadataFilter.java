@@ -25,13 +25,12 @@ import org.apache.tika.metadata.Metadata;
 public abstract class MetadataFilter implements Serializable {
 
     /**
-     * For efficiency's sake, the original metadata list and data therein may be modified.
-     * Users are responsible for doing a defensive copy before calling filter if mutability
-     * would be problematic.
+     * Filters the metadata list in place. The list and the metadata objects within it
+     * may be modified. Callers must pass a mutable list and should make a defensive
+     * copy before calling if the original data must be preserved.
      *
-     * @param metadataList
-     * @return
-     * @throws TikaException
+     * @param metadataList the list to filter (must be mutable)
+     * @throws TikaException if filtering fails
      */
-    public abstract List<Metadata> filter(List<Metadata> metadataList) throws TikaException;
+    public abstract void filter(List<Metadata> metadataList) throws TikaException;
 }

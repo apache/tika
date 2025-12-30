@@ -16,6 +16,7 @@
  */
 package org.apache.tika.sax;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -102,14 +103,16 @@ public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrappe
             throws SAXException {
         super.endEmbeddedDocument(contentHandler, metadata);
         addContent(contentHandler, metadata);
+        List<Metadata> singleItemList = new ArrayList<>();
+        singleItemList.add(metadata);
         try {
-            metadataFilter.filter(List.of(metadata));
+            metadataFilter.filter(singleItemList);
         } catch (TikaException e) {
             throw new SAXException(e);
         }
 
-        if (metadata.size() > 0) {
-            metadataList.add(ParserUtils.cloneMetadata(metadata));
+        if (!singleItemList.isEmpty() && singleItemList.get(0).size() > 0) {
+            metadataList.add(ParserUtils.cloneMetadata(singleItemList.get(0)));
         }
     }
 
@@ -122,13 +125,15 @@ public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrappe
     public void endDocument(ContentHandler contentHandler, Metadata metadata) throws SAXException {
         super.endDocument(contentHandler, metadata);
         addContent(contentHandler, metadata);
+        List<Metadata> singleItemList = new ArrayList<>();
+        singleItemList.add(metadata);
         try {
-            metadataFilter.filter(List.of(metadata));
+            metadataFilter.filter(singleItemList);
         } catch (TikaException e) {
             throw new SAXException(e);
         }
-        if (metadata.size() > 0) {
-            metadataList.add(0, ParserUtils.cloneMetadata(metadata));
+        if (!singleItemList.isEmpty() && singleItemList.get(0).size() > 0) {
+            metadataList.add(0, ParserUtils.cloneMetadata(singleItemList.get(0)));
         }
         writeFinalEmbeddedPaths();
     }

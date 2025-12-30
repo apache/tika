@@ -87,9 +87,9 @@ public class RecursiveMetadataResource {
             LOG.error("something went seriously wrong", e);
         }
         MetadataFilter metadataFilter = context.get(MetadataFilter.class, getTikaLoader().loadMetadataFilters());
-        //note that the filter may modify the contents of handler's metadata list.
-        //do a deep copy if that's problematic.
-        return metadataFilter.filter(handler.getMetadataList());
+        List<Metadata> metadataList = handler.getMetadataList();
+        metadataFilter.filter(metadataList);
+        return metadataList;
     }
 
     static HandlerConfig buildHandlerConfig(MultivaluedMap<String, String> httpHeaders, String handlerTypeName, HandlerConfig.PARSE_MODE parseMode) {
@@ -192,7 +192,9 @@ public class RecursiveMetadataResource {
             LOG.error("something went seriously wrong", e);
         }
         MetadataFilter metadataFilter = context.get(MetadataFilter.class, getTikaLoader().loadMetadataFilters());
-        return new MetadataList(metadataFilter.filter(handler.getMetadataList()));
+        List<Metadata> metadataList = handler.getMetadataList();
+        metadataFilter.filter(metadataList);
+        return new MetadataList(metadataList);
     }
 
     /**

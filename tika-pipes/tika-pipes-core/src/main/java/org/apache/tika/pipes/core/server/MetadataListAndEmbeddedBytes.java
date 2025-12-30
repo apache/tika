@@ -40,7 +40,7 @@ class MetadataListAndEmbeddedBytes {
         }
 
         public void filter(MetadataFilter filter) throws TikaException {
-            metadataList = filter.filter(metadataList);
+            filter.filter(metadataList);
         }
 
         public EmbeddedDocumentBytesHandler getEmbeddedDocumentBytesHandler() {

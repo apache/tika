@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -264,6 +265,9 @@ public class TestMetadataFilter extends TikaTest {
     }
 
     private static Metadata filterOne(MetadataFilter filter, Metadata singleMetadata) throws TikaException {
-        return filter.filter(List.of(singleMetadata)).get(0);
+        List<Metadata> list = new ArrayList<>();
+        list.add(singleMetadata);
+        filter.filter(list);
+        return list.get(0);
     }
 }

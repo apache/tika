@@ -29,11 +29,10 @@ import org.apache.tika.metadata.Metadata;
 public abstract class MetadataFilterBase extends MetadataFilter {
 
     @Override
-    public List<Metadata> filter(List<Metadata> metadataList) throws TikaException {
+    public void filter(List<Metadata> metadataList) throws TikaException {
         for (Metadata m : metadataList) {
             filter(m);
         }
-        return metadataList;
     }
 
     protected abstract void filter(Metadata metadata);

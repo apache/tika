@@ -386,7 +386,7 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
             StringWriter jsonBuffer = new StringWriter();
             JsonMetadataList.setPrettyPrinting(true);
             List<Metadata> metadataList = recursiveParserWrapperHandler.getMetadataList();
-            metadataList = tikaConfig.loadMetadataFilters().filter(metadataList);
+            tikaConfig.loadMetadataFilters().filter(metadataList);
             JsonMetadataList.toJson(metadataList, jsonBuffer);
             setText(json, jsonBuffer.toString());
         }
