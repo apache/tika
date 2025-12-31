@@ -24,16 +24,17 @@ import java.util.Set;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
 /**
- * This class clears the entire metadata object if the
+ * This class removes the entire metadata object if the
  * mime matches the mime filter.  The idea is that you might not want
  * to store/transmit metadata for images or specific file types.
  */
 @TikaComponent
-public class ClearByMimeMetadataFilter extends MetadataFilterBase {
+public class RemoveByMimeMetadataFilter extends MetadataFilter {
 
     /**
      * Configuration class for JSON deserialization.
@@ -44,11 +45,11 @@ public class ClearByMimeMetadataFilter extends MetadataFilterBase {
 
     private final Set<String> mimes;
 
-    public ClearByMimeMetadataFilter() {
+    public RemoveByMimeMetadataFilter() {
         this(new HashSet<>());
     }
 
-    public ClearByMimeMetadataFilter(Set<String> mimes) {
+    public RemoveByMimeMetadataFilter(Set<String> mimes) {
         this.mimes = mimes;
     }
 
@@ -57,7 +58,7 @@ public class ClearByMimeMetadataFilter extends MetadataFilterBase {
      *
      * @param config the configuration
      */
-    public ClearByMimeMetadataFilter(Config config) {
+    public RemoveByMimeMetadataFilter(Config config) {
         this.mimes = new HashSet<>(config.mimes);
     }
 
@@ -67,25 +68,27 @@ public class ClearByMimeMetadataFilter extends MetadataFilterBase {
      *
      * @param jsonConfig JSON configuration
      */
-    public ClearByMimeMetadataFilter(JsonConfig jsonConfig) {
+    public RemoveByMimeMetadataFilter(JsonConfig jsonConfig) {
         this(ConfigDeserializer.buildConfig(jsonConfig, Config.class));
     }
 
     @Override
-    protected void filter(Metadata metadata) {
+    public void filter(List<Metadata> metadataList) throws TikaException {
+        metadataList.removeIf(this::shouldRemove);
+    }
+
+    private boolean shouldRemove(Metadata metadata) {
         String mimeString = metadata.get(Metadata.CONTENT_TYPE);
         if (mimeString == null) {
-            return;
+            return false;
         }
         MediaType mt = MediaType.parse(mimeString);
-        if (mt != null) {
-            mimeString = mt.getBaseType().toString();
+        if (mt == null) {
+            return false;
         }
-        if (mimes.contains(mimeString)) {
-            for (String n : metadata.names()) {
-                metadata.remove(n);
-            }
-        }
+        mimeString = mt.getBaseType().toString();
+
+        return mimes.contains(mimeString);
     }
 
     /**

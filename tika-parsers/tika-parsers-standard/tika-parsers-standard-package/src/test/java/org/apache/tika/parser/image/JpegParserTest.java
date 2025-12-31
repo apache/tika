@@ -45,12 +45,12 @@ public class JpegParserTest extends TikaTest {
 
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p);
         RecursiveParserWrapperHandler handler =
-                new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1), 1000, metadataFilter);
+                new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1), 1000);
         try (InputStream is = getResourceAsStream("/test-documents/testJPEG_GEO_2.jpg")) {
             wrapper.parse(TikaInputStream.get(is), handler, new Metadata(), new ParseContext());
         }
         List<Metadata> metadataList = handler.getMetadataList();
-
+        metadataFilter.filter(metadataList);
         Metadata metadata = metadataList.get(0);
         // Geo tags should be there with 5dp, and not rounded
         assertEquals("51.575762", metadata.get(Metadata.LATITUDE));

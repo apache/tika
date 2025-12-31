@@ -27,6 +27,8 @@ Release 4.0.0-BETA1 - ???
 
    * API changes in the EmbeddedStreamTranslator (TIKA-4518).
 
+   * Removed DigestingParser (TIKA-4607).
+
   OTHER CHANGES
 
    * Fix concurrency bug in TikaToXMP (TIKA-4393)

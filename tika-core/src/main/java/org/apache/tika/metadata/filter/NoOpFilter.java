@@ -33,7 +33,7 @@ public class NoOpFilter extends MetadataFilter {
 
 
     @Override
-    public List<Metadata> filter(List<Metadata> metadataList) throws TikaException {
-        return metadataList;
+    public void filter(List<Metadata> metadataList) throws TikaException {
+        // no-op
     }
 }

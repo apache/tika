@@ -308,6 +308,7 @@
     <puppycrawl.version>12.3.0</puppycrawl.version>
     <rat.version>0.17</rat.version>
     <scm.version>2.2.1</scm.version>
+    <checkstyle.configLocation>${maven.multiModuleProjectDirectory}/tika-parent/checkstyle.xml</checkstyle.configLocation>
     <spotless.goal>apply</spotless.goal>
     <spotless.header.file>${maven.multiModuleProjectDirectory}/tika-parent/license-header.txt</spotless.header.file>
     <!-- dependency versions -->
@@ -1514,7 +1515,7 @@
           </dependency>
         </dependencies>
         <configuration>
-          <configLocation>${maven.multiModuleProjectDirectory}/tika-parent/checkstyle.xml</configLocation>
+          <configLocation>${checkstyle.configLocation}</configLocation>
           <consoleOutput>false</consoleOutput>
           <includeTestSourceDirectory>true</includeTestSourceDirectory>
           <testSourceDirectories>${project.basedir}/src/test/java</testSourceDirectories>
@@ -1631,7 +1632,9 @@
       <properties>
         <!-- Override the Spotless goal when this profile is active -->
         <spotless.goal>check</spotless.goal>
+        <!-- use session.executionRootDirectory in ci -->
         <spotless.header.file>${session.executionRootDirectory}/tika-parent/license-header.txt</spotless.header.file>
+        <checkstyle.configLocation>${session.executionRootDirectory}/tika-parent/checkstyle.xml</checkstyle.configLocation>
       </properties>
     </profile>
     <profile>

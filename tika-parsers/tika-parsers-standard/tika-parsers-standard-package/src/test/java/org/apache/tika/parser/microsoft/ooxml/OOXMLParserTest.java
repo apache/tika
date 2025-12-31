@@ -17,6 +17,7 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.List;
@@ -25,10 +26,12 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.microsoft.EMFParser;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 
@@ -141,5 +144,17 @@ public class OOXMLParserTest extends TikaTest {
         assertEquals(2, metadataList.size());
         assertContains("Example of a table",
                 metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testDigestTranslator() throws Exception {
+        Parser parser = TikaLoader.load(getConfigPath(OOXMLParserTest.class, "tika-config-digests.json")).loadAutoDetectParser();
+        List<Metadata> metadataList = getRecursiveMetadata("testMSChart-govdocs-428996.pptx", parser);
+        assertEquals(4, metadataList.size());
+        debug(metadataList);
+        for (Metadata m : metadataList) {
+            assertNotNull(m.get("X-TIKA:digest:SHA256:BASE32"));
+            assertNull(m.get(TikaCoreProperties.EMBEDDED_EXCEPTION));
+        }
     }
 }
