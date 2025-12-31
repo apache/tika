@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -127,40 +128,59 @@ public class TestMetadataFilter extends TikaTest {
     }
 
     @Test
-    public void testMimeClearingFilter() throws Exception {
-        Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, MediaType.image("jpeg").toString());
-        metadata.set("author", "author");
+    public void testMimeRemovingFilter() throws Exception {
+        Metadata jpegMetadata = new Metadata();
+        jpegMetadata.set(Metadata.CONTENT_TYPE, MediaType.image("jpeg").toString());
+        jpegMetadata.set("author", "author");
 
-        MetadataFilter filter = new ClearByMimeMetadataFilter(set("image/jpeg", "application/pdf"));
-        metadata = filterOne(filter, metadata);
-        assertEquals(0, metadata.size());
+        Metadata plainMetadata = new Metadata();
+        plainMetadata.set(Metadata.CONTENT_TYPE, MediaType.text("plain").toString());
+        plainMetadata.set("author", "author");
 
-        metadata.set(Metadata.CONTENT_TYPE, MediaType.text("plain").toString());
-        metadata.set("author", "author");
-        metadata = filterOne(filter, metadata);
-        assertEquals(2, metadata.size());
-        assertEquals("author", metadata.get("author"));
+        MetadataFilter filter = new RemoveByMimeMetadataFilter(set("image/jpeg", "application/pdf"));
 
+        // jpeg should be removed
+        List<Metadata> jpegList = new ArrayList<>();
+        jpegList.add(jpegMetadata);
+        filter.filter(jpegList);
+        assertEquals(0, jpegList.size());
+
+        // text/plain should be kept
+        List<Metadata> plainList = new ArrayList<>();
+        plainList.add(plainMetadata);
+        filter.filter(plainList);
+        assertEquals(1, plainList.size());
+        assertEquals(2, plainList.get(0).size());
+        assertEquals("author", plainList.get(0).get("author"));
     }
 
     @Test
-    public void testMimeClearingFilterConfig() throws Exception {
+    public void testMimeRemovingFilterConfig() throws Exception {
         TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "TIKA-3137-mimes-uc.json"));
 
-        Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, MediaType.image("jpeg").toString());
-        metadata.set("author", "author");
+        Metadata jpegMetadata = new Metadata();
+        jpegMetadata.set(Metadata.CONTENT_TYPE, MediaType.image("jpeg").toString());
+        jpegMetadata.set("author", "author");
+
+        Metadata plainMetadata = new Metadata();
+        plainMetadata.set(Metadata.CONTENT_TYPE, MediaType.text("plain").toString());
+        plainMetadata.set("author", "author");
 
         MetadataFilter filter = loader.get(MetadataFilter.class);
-        metadata = filterOne(filter, metadata);
-        assertEquals(0, metadata.size());
 
-        metadata.set(Metadata.CONTENT_TYPE, MediaType.text("plain").toString());
-        metadata.set("author", "author");
-        metadata = filterOne(filter, metadata);
-        assertEquals(2, metadata.size());
-        assertEquals("AUTHOR", metadata.get("author"));
+        // jpeg should be removed
+        List<Metadata> jpegList = new ArrayList<>();
+        jpegList.add(jpegMetadata);
+        filter.filter(jpegList);
+        assertEquals(0, jpegList.size());
+
+        // text/plain should be kept and upper-cased by mock-upper-case-filter
+        List<Metadata> plainList = new ArrayList<>();
+        plainList.add(plainMetadata);
+        filter.filter(plainList);
+        assertEquals(1, plainList.size());
+        assertEquals(2, plainList.get(0).size());
+        assertEquals("AUTHOR", plainList.get(0).get("author"));
     }
 
     @Test
@@ -264,6 +284,9 @@ public class TestMetadataFilter extends TikaTest {
     }
 
     private static Metadata filterOne(MetadataFilter filter, Metadata singleMetadata) throws TikaException {
-        return filter.filter(List.of(singleMetadata)).get(0);
+        List<Metadata> list = new ArrayList<>();
+        list.add(singleMetadata);
+        filter.filter(list);
+        return list.get(0);
     }
 }

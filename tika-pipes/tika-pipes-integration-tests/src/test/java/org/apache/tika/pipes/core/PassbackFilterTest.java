@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -100,17 +99,17 @@ public class PassbackFilterTest {
 
     private static class MyPassbackFilter extends PassbackFilter {
         @Override
-        public List<Metadata> filter(List<Metadata> metadataList) throws TikaException {
-            List<Metadata> ret = new ArrayList<>();
+        public void filter(List<Metadata> metadataList) throws TikaException {
+            // Remove items without RESOURCE_NAME_KEY and transform remaining ones
+            metadataList.removeIf(m -> StringUtils.isBlank(m.get(TikaCoreProperties.RESOURCE_NAME_KEY)));
             for (Metadata m : metadataList) {
                 String val = m.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-                if (!StringUtils.isBlank(val)) {
-                    Metadata retM = new Metadata();
-                    retM.add(TikaCoreProperties.RESOURCE_NAME_KEY, val.toUpperCase(Locale.ROOT));
-                    ret.add(retM);
+                // Clear all fields and only keep RESOURCE_NAME_KEY (uppercased)
+                for (String name : m.names()) {
+                    m.remove(name);
                 }
+                m.set(TikaCoreProperties.RESOURCE_NAME_KEY, val.toUpperCase(Locale.ROOT));
             }
-            return ret;
         }
     }
 

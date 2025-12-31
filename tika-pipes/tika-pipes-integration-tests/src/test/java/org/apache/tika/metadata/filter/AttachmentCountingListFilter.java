@@ -28,13 +28,12 @@ public class AttachmentCountingListFilter extends MetadataFilter {
     private Integer count = 0;
 
     @Override
-    public List<Metadata> filter(List<Metadata> metadataList) throws TikaException {
+    public void filter(List<Metadata> metadataList) throws TikaException {
         if (metadataList == null || metadataList.isEmpty()) {
-            return metadataList;
+            return;
         }
         metadataList.get(0).set("X-TIKA:attachment_count", Integer.toString(metadataList.size() - 1));
         count += metadataList.size();
-        return metadataList;
     }
 
     public Integer getCount() {

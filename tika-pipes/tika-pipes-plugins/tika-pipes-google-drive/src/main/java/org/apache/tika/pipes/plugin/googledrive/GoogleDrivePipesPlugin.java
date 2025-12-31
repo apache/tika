@@ -14,26 +14,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.metadata.filter;
+package org.apache.tika.pipes.plugin.googledrive;
 
-import java.util.List;
+import org.pf4j.Plugin;
+import org.pf4j.PluginWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
+public class GoogleDrivePipesPlugin extends Plugin {
+    private static final Logger LOG = LoggerFactory.getLogger(GoogleDrivePipesPlugin.class);
 
-/**
- * Base class for iterating a call to {@link #filter(Metadata)} on a list
- * of metadata objects. This should be used on context-free metadata filters that
- * do not require knowledge of more than a single metadata object at a time
- */
-public abstract class MetadataFilterBase extends MetadataFilter {
-
-    @Override
-    public void filter(List<Metadata> metadataList) throws TikaException {
-        for (Metadata m : metadataList) {
-            filter(m);
-        }
+    public GoogleDrivePipesPlugin(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
-    protected abstract void filter(Metadata metadata);
+    @Override
+    public void start() {
+        LOG.info("Starting Google Drive Pipes Plugin");
+        super.start();
+    }
+
+    @Override
+    public void stop() {
+        LOG.info("Stopping Google Drive Pipes Plugin");
+        super.stop();
+    }
+
+    @Override
+    public void delete() {
+        LOG.info("Deleting Google Drive Pipes Plugin");
+        super.delete();
+    }
 }

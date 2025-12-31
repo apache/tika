@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,15 +34,10 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.loader.TikaLoader;
-import org.apache.tika.digest.DigestDef;
-import org.apache.tika.digest.Digester;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.filter.MetadataFilter;
-import org.apache.tika.parser.digestutils.CommonsDigester;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
@@ -296,7 +290,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test_recursive_embedded_npe.docx");
         list = getMetadata(metadata,
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
-                false, null);
+                false, false);
 
         //Composite parser swallows caught TikaExceptions, IOExceptions and SAXExceptions
         //and just doesn't bother to report that there was an exception.
@@ -354,7 +348,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test_recursive_embedded.docx");
         List<Metadata> list = getMetadata(metadata,
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
-                true, new CommonsDigester(100000, DigestDef.Algorithm.MD5));
+                true, true);
 
         String md5Key = "X-TIKA:digest:MD5";
         assertEquals("59f626e09a8c16ab6dbc2800c685f772", list.get(0).get(md5Key));
@@ -392,58 +386,18 @@ public class RecursiveParserWrapperTest extends TikaTest {
         }
 
     }
-
-    @Test
-    public void testIncludeFilter() throws Exception {
-        //TIKA-3137
-        ParseContext context = new ParseContext();
-        Metadata metadata = new Metadata();
-        TikaLoader tikaLoader = TikaLoaderHelper.getLoader("TIKA-3137-include.json");
-        Parser p = tikaLoader.loadAutoDetectParser();
-        MetadataFilter metadataFilter = tikaLoader.loadMetadataFilters();
-        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p, true);
-        String path = "/test-documents/test_recursive_embedded.docx";
-        ContentHandlerFactory contentHandlerFactory =
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1);
-
-        RecursiveParserWrapperHandler handler =
-                new RecursiveParserWrapperHandler(contentHandlerFactory, -1,
-                        metadataFilter);
-        try (TikaInputStream tis = getResourceAsStream(path)) {
-            wrapper.parse(tis, handler, metadata, context);
-        }
-        List<Metadata> metadataList = handler.getMetadataList();
-        assertEquals(5, metadataList.size());
-
-        Set<String> expectedKeys = new HashSet<>();
-        expectedKeys.add("X-TIKA:content");
-        expectedKeys.add("extended-properties:Application");
-        expectedKeys.add("Content-Type");
-        for (Metadata m : metadataList) {
-            if (m.get(Metadata.CONTENT_TYPE).equals("image/emf")) {
-                fail("emf should have been filtered out");
-            }
-            if (m.get(Metadata.CONTENT_TYPE).startsWith("text/plain")) {
-                fail("text/plain should have been filtered out");
-            }
-            assertTrue(m.names().length >= 2);
-            for (String n : m.names()) {
-                if (!expectedKeys.contains(n)) {
-                    fail("didn't expect " + n);
-                }
-            }
-        }
-    }
-
-    @SuppressWarnings("deprecation")
+    
     private List<Metadata> getMetadata(Metadata metadata,
                                        ContentHandlerFactory contentHandlerFactory,
                                        boolean catchEmbeddedExceptions,
-                                       Digester digester) throws Exception {
+                                       boolean digest) throws Exception {
         ParseContext context = new ParseContext();
-        Parser wrapped = AUTO_DETECT_PARSER;
-        if (digester != null) {
-            wrapped = new DigestingParser(wrapped, digester, false);
+        Parser wrapped;
+        if (digest) {
+            wrapped = TikaLoaderHelper.getLoader("tika-config-md5-digest.json")
+                    .loadAutoDetectParser();
+        } else {
+            wrapped = AUTO_DETECT_PARSER;
         }
         RecursiveParserWrapper wrapper =
                 new RecursiveParserWrapper(wrapped, catchEmbeddedExceptions);
@@ -468,7 +422,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
     private List<Metadata> getMetadata(Metadata metadata,
                                        ContentHandlerFactory contentHandlerFactory)
             throws Exception {
-        return getMetadata(metadata, contentHandlerFactory, true, null);
+        return getMetadata(metadata, contentHandlerFactory, true, false);
     }
 
     private static class CloseCountingInputStream extends ProxyInputStream {
