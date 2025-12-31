@@ -27,6 +27,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -501,14 +502,13 @@ public class TikaResource {
             throws IOException, TikaException {
         Metadata metadata = new Metadata();
         parseToMetadata(getInputStream(att.getObject(InputStream.class), metadata, httpHeaders, info), metadata, preparePostHeaderMap(att, httpHeaders), info, handlerTypeName);
-        List<Metadata> ret = TikaResource
-                .getTikaLoader()
-                .loadMetadataFilters()
-                .filter(List.of(metadata));
-        if (ret == null || ret.isEmpty()) {
+        List<Metadata> metadataList = new ArrayList<>();
+        metadataList.add(metadata);
+        TikaResource.getTikaLoader().loadMetadataFilters().filter(metadataList);
+        if (metadataList.isEmpty()) {
             return new Metadata();
         }
-        return ret.get(0);
+        return metadataList.get(0);
     }
 
     @PUT
@@ -519,13 +519,13 @@ public class TikaResource {
             throws IOException, TikaException {
         Metadata metadata = new Metadata();
         parseToMetadata(getInputStream(is, metadata, httpHeaders, info), metadata, httpHeaders.getRequestHeaders(), info, handlerTypeName);
-        List<Metadata> ret = TikaResource
-                .getTikaLoader().loadMetadataFilters()
-                .filter(List.of(metadata));
-        if (ret == null || ret.isEmpty()) {
+        List<Metadata> metadataList = new ArrayList<>();
+        metadataList.add(metadata);
+        TikaResource.getTikaLoader().loadMetadataFilters().filter(metadataList);
+        if (metadataList.isEmpty()) {
             return new Metadata();
         }
-        return metadata;
+        return metadataList.get(0);
     }
 
     private void parseToMetadata(TikaInputStream tis, Metadata metadata, MultivaluedMap<String, String> httpHeaders, UriInfo info, String handlerTypeName)

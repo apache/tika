@@ -560,8 +560,7 @@ public class TikaCLI {
         JsonMetadataList.setPrettyPrinting(prettyPrint);
         try (Writer writer = getOutputWriter(output, encoding)) {
             List<Metadata> metadataList = handler.getMetadataList();
-            metadataList = tikaLoader
-                    .loadMetadataFilters().filter(metadataList);
+            tikaLoader.loadMetadataFilters().filter(metadataList);
             JsonMetadataList.toJson(metadataList, writer);
         }
     }

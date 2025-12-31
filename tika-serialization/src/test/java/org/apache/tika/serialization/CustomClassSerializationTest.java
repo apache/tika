@@ -64,7 +64,7 @@ public class CustomClassSerializationTest {
         }
 
         @Override
-        public java.util.List<Metadata> filter(java.util.List<Metadata> metadataList) {
+        public void filter(java.util.List<Metadata> metadataList) {
             for (Metadata metadata : metadataList) {
                 for (String name : metadata.names()) {
                     String[] values = metadata.getValues(name);
@@ -74,7 +74,6 @@ public class CustomClassSerializationTest {
                     }
                 }
             }
-            return metadataList;
         }
 
         @Override

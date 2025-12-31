@@ -73,10 +73,8 @@ public class RemoveByMimeMetadataFilter extends MetadataFilter {
     }
 
     @Override
-    public List<Metadata> filter(List<Metadata> metadataList) throws TikaException {
-        List<Metadata> result = new ArrayList<>(metadataList);
-        result.removeIf(this::shouldRemove);
-        return result;
+    public void filter(List<Metadata> metadataList) throws TikaException {
+        metadataList.removeIf(this::shouldRemove);
     }
 
     private boolean shouldRemove(Metadata metadata) {

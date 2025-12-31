@@ -53,7 +53,7 @@ public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrappe
      * Create a handler with no limit on the number of embedded resources
      */
     public RecursiveParserWrapperHandler(ContentHandlerFactory contentHandlerFactory) {
-        super(contentHandlerFactory, -1);
+        this(contentHandlerFactory, -1);
     }
 
     /**

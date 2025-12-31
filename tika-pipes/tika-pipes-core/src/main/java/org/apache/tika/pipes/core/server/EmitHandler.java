@@ -124,16 +124,15 @@ class EmitHandler {
         }
         PassbackFilter passbackFilter = parseContext.get(PassbackFilter.class);
         if (passbackFilter != null) {
-            List<Metadata> filtered = null;
             try {
-                filtered = passbackFilter.filter(parseData.metadataList);
+                passbackFilter.filter(parseData.metadataList);
             } catch (TikaException e) {
                 LOG.warn("problem filtering for pass back", e);
             }
             if (StringUtils.isBlank(parseExceptionStack)) {
-                return new PipesResult(PipesResult.RESULT_STATUS.EMIT_SUCCESS_PASSBACK, new EmitDataImpl(emitKey.getEmitKey(), filtered));
+                return new PipesResult(PipesResult.RESULT_STATUS.EMIT_SUCCESS_PASSBACK, new EmitDataImpl(emitKey.getEmitKey(), parseData.metadataList));
             } else {
-                return new PipesResult(PipesResult.RESULT_STATUS.EMIT_SUCCESS_PARSE_EXCEPTION, new EmitDataImpl(emitKey.getEmitKey(), filtered), parseExceptionStack);
+                return new PipesResult(PipesResult.RESULT_STATUS.EMIT_SUCCESS_PARSE_EXCEPTION, new EmitDataImpl(emitKey.getEmitKey(), parseData.metadataList), parseExceptionStack);
             }
 
         }
