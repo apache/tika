@@ -49,12 +49,18 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
     public static final String PARSE_CONTEXT = "parseContext";
     public static final String TYPED = "typed";
 
+    // Plain mapper for serializing values without TikaModule's component wrapping
+    private static final ObjectMapper PLAIN_MAPPER = new ObjectMapper();
+
+    static {
+        // Allow serialization of classes with no properties
+        PLAIN_MAPPER.disable(com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS);
+    }
+
     @Override
     public void serialize(ParseContext parseContext, JsonGenerator gen,
                          SerializerProvider serializers) throws IOException {
         gen.writeStartObject();
-
-        ObjectMapper mapper = (ObjectMapper) gen.getCodec();
 
         // First, serialize typed objects from the context map under "typed" key
         Map<String, Object> contextMap = parseContext.getContextMap();
@@ -85,7 +91,7 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
                 hasTypedObjects = true;
             }
             gen.writeFieldName(keyName);
-            gen.writeRawValue(mapper.writeValueAsString(value));
+            gen.writeRawValue(PLAIN_MAPPER.writeValueAsString(value));
         }
 
         if (hasTypedObjects) {

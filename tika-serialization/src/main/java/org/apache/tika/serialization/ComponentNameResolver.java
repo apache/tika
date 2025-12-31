@@ -205,16 +205,23 @@ public final class ComponentNameResolver {
     }
 
     /**
-     * Gets the contextKey for a class from its TikaComponent annotation.
+     * Gets the contextKey for a class from the component registry.
+     * The contextKey is recorded in the .idx file by the annotation processor.
      *
      * @param clazz the class to check
-     * @return the contextKey class if specified, or null if not annotated or no contextKey
+     * @return the contextKey class if specified, or null if not registered or no contextKey
      */
     public static Class<?> getContextKey(Class<?> clazz) {
-        org.apache.tika.config.TikaComponent annotation =
-                clazz.getAnnotation(org.apache.tika.config.TikaComponent.class);
-        if (annotation != null && annotation.contextKey() != void.class) {
-            return annotation.contextKey();
+        for (ComponentRegistry registry : REGISTRIES.values()) {
+            String friendlyName = registry.getFriendlyName(clazz);
+            if (friendlyName != null) {
+                try {
+                    ComponentInfo info = registry.getComponentInfo(friendlyName);
+                    return info.contextKey();
+                } catch (TikaConfigException e) {
+                    // continue to next registry
+                }
+            }
         }
         return null;
     }

@@ -24,25 +24,22 @@ import java.io.Writer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.serialization.serdes.MetadataSerializer;
-import org.apache.tika.serialization.serdes.ParseContextDeserializer;
-import org.apache.tika.serialization.serdes.ParseContextSerializer;
 
 public class JsonFetchEmitTuple {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER;
 
     static {
-        SimpleModule module = new SimpleModule();
-        module.addDeserializer(FetchEmitTuple.class, new FetchEmitTupleDeserializer());
-        module.addSerializer(FetchEmitTuple.class, new FetchEmitTupleSerializer());
-        module.addSerializer(Metadata.class, new MetadataSerializer());
-        module.addSerializer(ParseContext.class, new ParseContextSerializer());
-        module.addDeserializer(ParseContext.class, new ParseContextDeserializer());
-        OBJECT_MAPPER.registerModule(module);
+        // Use TikaObjectMapperFactory which provides TikaModule with Metadata/ParseContext serializers
+        OBJECT_MAPPER = TikaObjectMapperFactory.createMapper();
+
+        // Add FetchEmitTuple-specific serializers
+        SimpleModule fetchEmitModule = new SimpleModule();
+        fetchEmitModule.addDeserializer(FetchEmitTuple.class, new FetchEmitTupleDeserializer());
+        fetchEmitModule.addSerializer(FetchEmitTuple.class, new FetchEmitTupleSerializer());
+        OBJECT_MAPPER.registerModule(fetchEmitModule);
     }
 
     public static FetchEmitTuple fromJson(Reader reader) throws IOException {
