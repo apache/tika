@@ -27,7 +27,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -39,8 +38,6 @@ import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
-import org.apache.tika.digest.DigestDef;
-import org.apache.tika.digest.Digester;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.exception.ZeroByteFileException;
@@ -50,7 +47,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.digestutils.CommonsDigester;
 import org.apache.tika.parser.external.CompositeExternalParser;
 import org.apache.tika.parser.ogg.FlacParser;
 import org.apache.tika.parser.ogg.OpusParser;
@@ -563,7 +559,6 @@ public class AutoDetectParserTest extends TikaTest {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void testDigestingOpenContainers() throws Exception {
         //TIKA-4533 -- this tests both that a very large embedded OLE doc doesn't cause a zip bomb
@@ -580,15 +575,5 @@ public class AutoDetectParserTest extends TikaTest {
         assertEquals(expectedSha, metadataList.get(2).get("X-TIKA:digest:SHA256"));
         assertNull(metadataList.get(2).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
         assertEquals(2049290L, Long.parseLong(metadataList.get(2).get(Metadata.CONTENT_LENGTH)));
-
-        Digester digester = new CommonsDigester(10000, DigestDef.Algorithm.SHA256);
-
-        //now test that we get the same digest if we wrap the auto detect parser vs configuring it
-        autoDetectParser = new AutoDetectParser();
-        Parser digestingParser = new DigestingParser(autoDetectParser, digester, true);
-        metadataList = getRecursiveMetadata("testLargeOLEDoc.doc", digestingParser, new ParseContext());
-        assertEquals(expectedSha, metadataList.get(2).get("X-TIKA:digest:SHA256").toLowerCase(Locale.US));
-        assertEquals(2049290L, Long.parseLong(metadataList.get(2).get(Metadata.CONTENT_LENGTH)));
-
     }
 }
