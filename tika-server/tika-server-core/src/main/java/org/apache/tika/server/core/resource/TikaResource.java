@@ -26,6 +26,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -61,6 +62,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.Tika;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -78,8 +80,8 @@ import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
 import org.apache.tika.sax.RichTextContentHandler;
 import org.apache.tika.sax.boilerpipe.BoilerpipeContentHandler;
-import org.apache.tika.serialization.ParseContextDeserializer;
 import org.apache.tika.serialization.ParseContextUtils;
+import org.apache.tika.serialization.serdes.ParseContextDeserializer;
 import org.apache.tika.server.core.InputStreamFactory;
 import org.apache.tika.server.core.ServerStatus;
 import org.apache.tika.server.core.TikaServerConfig;
@@ -148,20 +150,22 @@ public class TikaResource {
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(configJson);
         // Use root directly - the JSON should contain parser configs at the top level
-        ParseContext configuredContext = ParseContextDeserializer.readParseContext(root);
-        LOG.info("After readParseContext, configuredContext has {} entries: {}",
-                configuredContext.getContextMap().size(), configuredContext.getContextMap().keySet());
+        ParseContext configuredContext = ParseContextDeserializer.readParseContext(root, mapper);
         ParseContextUtils.resolveAll(configuredContext, Thread.currentThread().getContextClassLoader());
-        LOG.info("After resolveAll, configuredContext has {} entries: {}",
-                configuredContext.getContextMap().size(), configuredContext.getContextMap().keySet());
+        // Copy resolved context entries
         for (Map.Entry<String, Object> entry : configuredContext.getContextMap().entrySet()) {
             try {
                 Class<?> clazz = Class.forName(entry.getKey());
                 context.set((Class) clazz, entry.getValue());
-                LOG.info("Merged entry {} into context", entry.getKey());
+                LOG.debug("Merged contextMap entry {} into context", entry.getKey());
             } catch (ClassNotFoundException e) {
                 LOG.warn("Could not load class for parseContext entry: {}", entry.getKey());
             }
+        }
+        // Copy jsonConfigs for lazy resolution by parsers (e.g., pdf-parser config)
+        for (Map.Entry<String, JsonConfig> entry : configuredContext.getJsonConfigs().entrySet()) {
+            context.setJsonConfig(entry.getKey(), entry.getValue().json());
+            LOG.debug("Merged jsonConfig entry {} into context", entry.getKey());
         }
     }
 
@@ -497,14 +501,13 @@ public class TikaResource {
             throws IOException, TikaException {
         Metadata metadata = new Metadata();
         parseToMetadata(getInputStream(att.getObject(InputStream.class), metadata, httpHeaders, info), metadata, preparePostHeaderMap(att, httpHeaders), info, handlerTypeName);
-        List<Metadata> ret = TikaResource
-                .getTikaLoader()
-                .loadMetadataFilters()
-                .filter(List.of(metadata));
-        if (ret == null || ret.isEmpty()) {
+        List<Metadata> metadataList = new ArrayList<>();
+        metadataList.add(metadata);
+        TikaResource.getTikaLoader().loadMetadataFilters().filter(metadataList);
+        if (metadataList.isEmpty()) {
             return new Metadata();
         }
-        return ret.get(0);
+        return metadataList.get(0);
     }
 
     @PUT
@@ -515,13 +518,13 @@ public class TikaResource {
             throws IOException, TikaException {
         Metadata metadata = new Metadata();
         parseToMetadata(getInputStream(is, metadata, httpHeaders, info), metadata, httpHeaders.getRequestHeaders(), info, handlerTypeName);
-        List<Metadata> ret = TikaResource
-                .getTikaLoader().loadMetadataFilters()
-                .filter(List.of(metadata));
-        if (ret == null || ret.isEmpty()) {
+        List<Metadata> metadataList = new ArrayList<>();
+        metadataList.add(metadata);
+        TikaResource.getTikaLoader().loadMetadataFilters().filter(metadataList);
+        if (metadataList.isEmpty()) {
             return new Metadata();
         }
-        return metadata;
+        return metadataList.get(0);
     }
 
     private void parseToMetadata(TikaInputStream tis, Metadata metadata, MultivaluedMap<String, String> httpHeaders, UriInfo info, String handlerTypeName)

@@ -60,7 +60,6 @@ import org.mockito.Mockito;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.client.HttpClientFactory;
-import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
@@ -206,9 +205,7 @@ class HttpFetcherTest extends TikaTest {
         headersMap.put("fromFetchRequestHeader1", List.of("fromFetchRequestValue1"));
         headersMap.put("fromFetchRequestHeader2", List.of("fromFetchRequestValue2", "fromFetchRequestValue3"));
         additionalHttpFetcherConfig.getHttpRequestHeaders().setMap(headersMap);
-        ConfigContainer configContainer = new ConfigContainer();
-        configContainer.set(HttpFetcher.class, new ObjectMapper().writeValueAsString(additionalHttpFetcherConfig));
-        parseContext.set(ConfigContainer.class, configContainer);
+        parseContext.setJsonConfig("http-fetcher", new ObjectMapper().writeValueAsString(additionalHttpFetcherConfig));
 
         httpFetcher.getHttpFetcherConfig().setHttpRequestHeaders(new HttpHeaders());
         HashMap<String, Collection<String>> headersMapFromConfig = new HashMap<>();

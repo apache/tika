@@ -184,15 +184,15 @@ public class TikaGrpcServerTest {
             assertEquals(FileSystemFetcher.class.getName(), getFetcherReply.getFetcherClass());
         }
 
-        // delete fetchers - note: delete is not currently supported
+        // delete fetchers
         for (int i = 0; i < NUM_FETCHERS_TO_CREATE; ++i) {
             String fetcherId = createFetcherId(i);
             DeleteFetcherReply deleteFetcherReply = blockingStub.deleteFetcher(DeleteFetcherRequest
                     .newBuilder()
                     .setFetcherId(fetcherId)
                     .build());
-            // Delete is not supported, so this will return false
-            Assertions.assertFalse(deleteFetcherReply.getSuccess());
+            // Delete is now supported and should succeed
+            Assertions.assertTrue(deleteFetcherReply.getSuccess());
         }
     }
 

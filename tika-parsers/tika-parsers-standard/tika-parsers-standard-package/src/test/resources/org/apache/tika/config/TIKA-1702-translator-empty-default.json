@@ -1,5 +1,5 @@
 {
-  "translator": {
-    "empty-translator": {}
-  }
+  "translator": [
+    "empty-translator"
+  ]
 }

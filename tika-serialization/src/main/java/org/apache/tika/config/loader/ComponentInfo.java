@@ -21,7 +21,7 @@ package org.apache.tika.config.loader;
  *
  * @param componentClass the component's class
  * @param selfConfiguring whether the component implements SelfConfiguring
- *                        (reads its own config from ConfigContainer)
+ *                        (reads its own config from ParseContext's jsonConfigs)
  * @param contextKey the class to use as the key when adding to ParseContext,
  *                   or null to auto-detect based on known interfaces
  */

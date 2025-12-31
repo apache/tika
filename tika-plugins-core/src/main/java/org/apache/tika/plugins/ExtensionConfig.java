@@ -16,6 +16,8 @@
  */
 package org.apache.tika.plugins;
 
+import java.io.Serializable;
+
 import org.apache.tika.config.JsonConfig;
 
 /**
@@ -25,6 +27,6 @@ import org.apache.tika.config.JsonConfig;
  * @param name       the plugin type name
  * @param json       the raw JSON configuration string for the plugin to parse
  */
-public record ExtensionConfig(String id, String name, String json) implements JsonConfig {
+public record ExtensionConfig(String id, String name, String json) implements JsonConfig, Serializable {
 
 }

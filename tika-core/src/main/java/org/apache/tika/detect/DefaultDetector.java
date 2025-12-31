@@ -16,12 +16,14 @@
  */
 package org.apache.tika.detect;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import javax.imageio.spi.ServiceRegistry;
 
 import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.utils.ServiceLoaderUtils;
 
@@ -37,6 +39,7 @@ import org.apache.tika.utils.ServiceLoaderUtils;
  *
  * @since Apache Tika 0.9
  */
+@TikaComponent(spi = false)
 public class DefaultDetector extends CompositeDetector {
 
     /**
@@ -44,11 +47,15 @@ public class DefaultDetector extends CompositeDetector {
      */
     private static final long serialVersionUID = -8170114575326908027L;
     private transient final ServiceLoader loader;
+    private final Collection<Class<? extends Detector>> excludedClasses;
 
     public DefaultDetector(MimeTypes types, ServiceLoader loader,
                            Collection<Class<? extends Detector>> excludeDetectors) {
         super(types.getMediaTypeRegistry(), getDefaultDetectors(types, loader, excludeDetectors));
         this.loader = loader;
+        this.excludedClasses = excludeDetectors != null ?
+                Collections.unmodifiableCollection(new ArrayList<>(excludeDetectors)) :
+                Collections.emptySet();
     }
 
     public DefaultDetector(MimeTypes types, ServiceLoader loader) {
@@ -124,4 +131,13 @@ public class DefaultDetector extends CompositeDetector {
         }
     }
 
+    /**
+     * Returns the classes that were explicitly excluded when constructing this detector.
+     * Used for round-trip serialization to preserve exclusion configuration.
+     *
+     * @return unmodifiable collection of excluded detector classes, never null
+     */
+    public Collection<Class<? extends Detector>> getExcludedClasses() {
+        return excludedClasses;
+    }
 }

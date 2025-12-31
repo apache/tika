@@ -32,10 +32,12 @@
   <packaging>pom</packaging>
 
   <modules>
+    <module>tika-pipes-atlassian-jwt</module>
     <module>tika-pipes-az-blob</module>
     <module>tika-pipes-csv</module>
     <module>tika-pipes-file-system</module>
     <module>tika-pipes-gcs</module>
+    <module>tika-pipes-google-drive</module>
     <module>tika-pipes-http</module>
     <module>tika-pipes-jdbc</module>
     <module>tika-pipes-json</module>

@@ -2,8 +2,6 @@
   "auto-detect-parser": {
     "spoolToDisk": 1000,
     "outputThreshold": 1000,
-    "contentHandlerDecoratorFactory": {
-      "@class": "org.apache.tika.sax.DoublingContentHandlerDecoratorFactory"
-    }
+    "contentHandlerDecoratorFactory": "doubling-content-handler-decorator-factory"
   }
 }

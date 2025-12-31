@@ -34,7 +34,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -62,7 +61,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.client.HttpClientFactory;
-import org.apache.tika.config.ConfigContainer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -205,16 +203,14 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
     }
 
     private HttpFetcherConfig getAdditionalHttpFetcherConfig(ParseContext parseContext) throws JsonProcessingException {
-        HttpFetcherConfig additionalHttpFetcherConfig = null;
-        ConfigContainer configContainer = parseContext.get(ConfigContainer.class);
-        if (configContainer == null) {
-            return null;
+        // Check for JSON config in ParseContext (new pattern)
+        if (parseContext.hasJsonConfig("http-fetcher")) {
+            JsonConfig jsonConfig = parseContext.getJsonConfig("http-fetcher");
+            if (jsonConfig != null) {
+                return OM.readValue(jsonConfig.json(), HttpFetcherConfig.class);
+            }
         }
-        Optional<JsonConfig> jsonOpt = configContainer.get(HttpFetcher.class);
-        if (jsonOpt.isPresent()) {
-            additionalHttpFetcherConfig = OM.readValue(jsonOpt.get().json(), HttpFetcherConfig.class);
-        }
-        return additionalHttpFetcherConfig;
+        return null;
     }
 
     @Override

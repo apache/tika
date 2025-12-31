@@ -212,7 +212,7 @@ public class TikaPipesTest extends CXFTestBase {
     public void testPDFConfig() throws Exception {
         ParseContext parseContext = new ParseContext();
         // Configure PDFParser via JSON config (pdf-parser is self-configuring)
-        parseContext.addConfig("pdf-parser", "{\"sortByPosition\": true}");
+        parseContext.setJsonConfig("pdf-parser", "{\"sortByPosition\": true}");
 
         FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey(FETCHER_ID, TEST_TWO_BOXES_PDF),
                 new EmitKey(EMITTER_JSON_ID, ""), new Metadata(), parseContext);

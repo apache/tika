@@ -308,17 +308,18 @@
     <puppycrawl.version>12.3.0</puppycrawl.version>
     <rat.version>0.17</rat.version>
     <scm.version>2.2.1</scm.version>
+    <checkstyle.configLocation>${maven.multiModuleProjectDirectory}/tika-parent/checkstyle.xml</checkstyle.configLocation>
     <spotless.goal>apply</spotless.goal>
     <spotless.header.file>${maven.multiModuleProjectDirectory}/tika-parent/license-header.txt</spotless.header.file>
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.61.0</google.cloud.version>
-    <aws2.version>2.40.10</aws2.version>
+    <aws2.version>2.40.16</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
     -->
-    <asm.version>9.9</asm.version>
+    <asm.version>9.9.1</asm.version>
     <azure.version>1.3.3</azure.version>
     <biz.aqute.version>7.1.0</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
@@ -391,7 +392,7 @@
     -->
     <jetty.version>11.0.26</jetty.version>
     <jetty.http2.version>11.0.26</jetty.http2.version>
-    <jhighlight.version>1.1.0</jhighlight.version>
+    <jhighlight.version>1.1.1</jhighlight.version>
     <jna.version>5.18.1</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
     <jsoup.version>1.21.2</jsoup.version>
@@ -400,7 +401,7 @@
     <junit5.version>6.1.0-M1</junit5.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
     <junrar.version>7.5.7</junrar.version>
-    <jwarc.version>0.32.0</jwarc.version>
+    <jwarc.version>0.33.0</jwarc.version>
     <kafka.version>4.1.1</kafka.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.25.3</log4j2.version>
@@ -443,7 +444,7 @@
     <testcontainersv1.version>1.21.4</testcontainersv1.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
     <tukaani.version>1.11</tukaani.version>
-    <twelvemonkeys.version>3.12.0</twelvemonkeys.version>
+    <twelvemonkeys.version>3.13.0</twelvemonkeys.version>
     <uimafit.version>3.6.1</uimafit.version>
     <uimaj.core.version>3.6.1</uimaj.core.version>
     <uimaj.cpe.version>3.6.1</uimaj.cpe.version>
@@ -455,7 +456,7 @@
     <zstd.version>1.5.7-6</zstd.version>
     <nimbus-jose-jwt.version>10.6</nimbus-jose-jwt.version>
     <javacpp.version>1.5.12</javacpp.version>
-    <maven.exec.version>3.6.2</maven.exec.version>
+    <maven.exec.version>3.6.3</maven.exec.version>
 
     <!-- needs to exist even if empty due to problems with jacoco-maven-plugin -->
     <addmod/>
@@ -1491,19 +1492,19 @@
             <version>${puppycrawl.version}</version>
           </dependency>
         </dependencies>
+        <configuration>
+          <configLocation>${checkstyle.configLocation}</configLocation>
+          <consoleOutput>false</consoleOutput>
+          <includeTestSourceDirectory>true</includeTestSourceDirectory>
+          <testSourceDirectories>${project.basedir}/src/test/java</testSourceDirectories>
+          <violationSeverity>warn</violationSeverity>
+          <failOnViolation>true</failOnViolation>
+          <failsOnError>true</failsOnError>
+        </configuration>
         <executions>
           <execution>
             <id>validate</id>
             <phase>process-classes</phase>
-            <configuration>
-              <configLocation>checkstyle.xml</configLocation>
-              <consoleOutput>false</consoleOutput>
-              <includeTestSourceDirectory>true</includeTestSourceDirectory>
-              <testSourceDirectories>${project.basedir}/src/test/java</testSourceDirectories>
-              <violationSeverity>warn</violationSeverity>
-              <failOnViolation>true</failOnViolation>
-              <failsOnError>true</failsOnError>
-            </configuration>
             <goals>
               <goal>check</goal>
             </goals>
@@ -1609,7 +1610,9 @@
       <properties>
         <!-- Override the Spotless goal when this profile is active -->
         <spotless.goal>check</spotless.goal>
+        <!-- use session.executionRootDirectory in ci -->
         <spotless.header.file>${session.executionRootDirectory}/tika-parent/license-header.txt</spotless.header.file>
+        <checkstyle.configLocation>${session.executionRootDirectory}/tika-parent/checkstyle.xml</checkstyle.configLocation>
       </properties>
     </profile>
     <profile>

@@ -68,6 +68,8 @@ import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.parser.xml.XMLProfiler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.apache.tika.serialization.serdes.ParseContextDeserializer;
+import org.apache.tika.serialization.serdes.ParseContextSerializer;
 import org.apache.tika.utils.StringUtils;
 
 public class PDFParserTest extends TikaTest {
@@ -591,8 +593,8 @@ public class PDFParserTest extends TikaTest {
         // Serialize using ParseContextSerializer
         com.fasterxml.jackson.databind.ObjectMapper mapper = TikaObjectMapperFactory.getMapper();
         com.fasterxml.jackson.databind.module.SimpleModule module = new com.fasterxml.jackson.databind.module.SimpleModule();
-        module.addSerializer(ParseContext.class, new org.apache.tika.serialization.ParseContextSerializer());
-        module.addDeserializer(ParseContext.class, new org.apache.tika.serialization.ParseContextDeserializer());
+        module.addSerializer(ParseContext.class, new ParseContextSerializer());
+        module.addDeserializer(ParseContext.class, new ParseContextDeserializer());
         mapper.registerModule(module);
 
         String json = mapper.writeValueAsString(parseContext);

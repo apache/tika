@@ -20,11 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.StringWriter;
-import java.io.Writer;
 import java.util.Locale;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.junit.jupiter.api.Test;
@@ -33,29 +30,20 @@ import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.serialization.serdes.ParseContextDeserializer;
+import org.apache.tika.serialization.serdes.ParseContextSerializer;
 
 /**
- * Tests that users can serialize their own custom classes in ParseContext
- * by adding a META-INF/tika-serialization-allowlist.txt file to their JAR.
- *
- * <p>Custom classes MUST implement Serializable because the Pipes parser
- * uses Java serialization to pass ParseContext between processes.</p>
- *
- * <p>To enable JSON serialization of custom classes:</p>
- * <ol>
- *   <li>Implement Serializable</li>
- *   <li>Provide a no-arg constructor</li>
- *   <li>Follow JavaBean conventions (getters/setters)</li>
- *   <li>Add your package prefix to META-INF/tika-serialization-allowlist.txt</li>
- * </ol>
+ * Tests that custom classes can be serialized/deserialized via JSON configs.
+ * <p>
+ * With the jsonConfigs approach, serialization works via JSON strings stored
+ * in ParseContext. Custom classes are deserialized at runtime.
  */
 public class CustomClassSerializationTest {
 
     /**
      * Example custom metadata filter that uppercases all values.
      * This simulates a user's custom class (e.g., in package com.acme).
-     *
-     * <p>Note: Extends Serializable MetadataFilter - this is REQUIRED for use with Pipes parser.</p>
      */
     public static class MyUpperCasingMetadataFilter extends MetadataFilter {
         private String prefix = "";
@@ -76,7 +64,7 @@ public class CustomClassSerializationTest {
         }
 
         @Override
-        public java.util.List<Metadata> filter(java.util.List<Metadata> metadataList) {
+        public void filter(java.util.List<Metadata> metadataList) {
             for (Metadata metadata : metadataList) {
                 for (String name : metadata.names()) {
                     String[] values = metadata.getValues(name);
@@ -86,7 +74,6 @@ public class CustomClassSerializationTest {
                     }
                 }
             }
-            return metadataList;
         }
 
         @Override
@@ -113,49 +100,51 @@ public class CustomClassSerializationTest {
     }
 
     @Test
-    public void testCustomMetadataFilterSerialization() throws Exception {
-        // Create a custom metadata filter
-        MyUpperCasingMetadataFilter customFilter = new MyUpperCasingMetadataFilter("TEST_");
-
-        // Put it in ParseContext - store as MetadataFilter (the abstract base type)
+    public void testJsonConfigRoundTrip() throws Exception {
+        // Create a ParseContext with JSON config
         ParseContext pc = new ParseContext();
-        pc.set(MetadataFilter.class, (MetadataFilter) customFilter);
+        pc.setJsonConfig("my-filter", "{\"prefix\":\"TEST_\"}");
 
         // Serialize
         ObjectMapper mapper = createMapper();
-        String json;
-        try (Writer writer = new StringWriter()) {
-            try (JsonGenerator jsonGenerator = mapper
-                    .getFactory()
-                    .createGenerator(writer)) {
-                ParseContextSerializer serializer = new ParseContextSerializer();
-                serializer.serialize(pc, jsonGenerator, null);
-            }
-            json = writer.toString();
-        }
+        String json = mapper.writeValueAsString(pc);
 
-        // Verify JSON contains type information
-        assertTrue(json.contains("MyUpperCasingMetadataFilter"),
-                "JSON should contain the custom class name");
+        // Verify JSON contains the config
+        assertTrue(json.contains("my-filter"), "JSON should contain the config key");
+        assertTrue(json.contains("TEST_"), "JSON should contain the prefix value");
 
         // Deserialize
         ParseContext deserialized = mapper.readValue(json, ParseContext.class);
-        MetadataFilter deserializedFilter = deserialized.get(MetadataFilter.class);
 
-        // Verify polymorphic deserialization worked - we get back the concrete type
-        assertNotNull(deserializedFilter, "MetadataFilter should not be null");
-        assertTrue(deserializedFilter instanceof MyUpperCasingMetadataFilter,
-                "Filter should be MyUpperCasingMetadataFilter (polymorphic deserialization)");
+        // Verify the JSON config is preserved
+        assertTrue(deserialized.hasJsonConfig("my-filter"));
+        String deserializedJson = deserialized.getJsonConfig("my-filter").json();
+        assertTrue(deserializedJson.contains("TEST_"));
+    }
 
-        MyUpperCasingMetadataFilter typedFilter = (MyUpperCasingMetadataFilter) deserializedFilter;
-        assertEquals("TEST_", typedFilter.getPrefix(), "Prefix should be preserved");
+    @Test
+    public void testCustomClassDeserialization() throws Exception {
+        // Test that a custom class can be deserialized from JSON
+        // This is done via ConfigDeserializer.getConfig() which uses Jackson
+        ParseContext pc = new ParseContext();
+        pc.setJsonConfig("my-filter", "{\"prefix\":\"CUSTOM_\"}");
 
-        // Verify it works
+        // Use ConfigDeserializer to get and deserialize the config
+        // This simulates what a custom component would do
+        ObjectMapper mapper = createMapper();
+        String jsonConfig = pc.getJsonConfig("my-filter").json();
+
+        MyUpperCasingMetadataFilter filter = mapper.readValue(jsonConfig, MyUpperCasingMetadataFilter.class);
+
+        assertNotNull(filter);
+        assertEquals("CUSTOM_", filter.getPrefix());
+
+        // Verify the filter works
         Metadata metadata = new Metadata();
         metadata.add("test", "value");
         java.util.List<Metadata> metadataList = new java.util.ArrayList<>();
         metadataList.add(metadata);
-        typedFilter.filter(metadataList);
-        assertEquals("TEST_VALUE", metadata.get("test"), "Filter should uppercase with prefix");
+        filter.filter(metadataList);
+        assertEquals("CUSTOM_VALUE", metadata.get("test"));
     }
 }
