@@ -42,9 +42,9 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>tika-bundle-standard/dependency-reduced-pom.xml</exclude> <!-- generated -->
-          </excludes>
+          <inputExcludes>
+            <inputExclude>tika-bundle-standard/dependency-reduced-pom.xml</inputExclude> <!-- generated -->
+          </inputExcludes>
         </configuration>
       </plugin>
     </plugins>

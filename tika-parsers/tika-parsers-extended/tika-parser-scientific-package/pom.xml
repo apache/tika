@@ -63,9 +63,9 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>**/resources/*tesseract.txt</exclude>
-          </excludes>
+          <inputExcludes>
+            <inputExclude>**/resources/*tesseract.txt</inputExclude>
+          </inputExcludes>
         </configuration>
       </plugin>
     </plugins>

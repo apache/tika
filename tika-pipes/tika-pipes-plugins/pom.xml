@@ -87,10 +87,10 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>tika-emitter-fs/target/**</exclude>
-            <exclude>tika-pipes-csv/src/test/resources/test-simple.csv</exclude>
-          </excludes>
+          <inputExcludes>
+            <inputExclude>tika-emitter-fs/target/**</inputExclude>
+            <inputExclude>tika-pipes-csv/src/test/resources/test-simple.csv</inputExclude>
+          </inputExcludes>
         </configuration>
       </plugin>
     </plugins>

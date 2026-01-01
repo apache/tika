@@ -109,12 +109,12 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>src/main/resources/common_tokens/*</exclude>
-            <exclude>src/main/resources/*.json</exclude>
-            <exclude>src/test/resources/common_tokens/*</exclude>
-            <exclude>src/test/resources/test-dirs/**</exclude>
-          </excludes>
+          <inputExcludes>
+            <inputExclude>src/main/resources/common_tokens/*</inputExclude>
+            <inputExclude>src/main/resources/*.json</inputExclude>
+            <inputExclude>src/test/resources/common_tokens/*</inputExclude>
+            <inputExclude>src/test/resources/test-dirs/**</inputExclude>
+          </inputExcludes>
         </configuration>
       </plugin>
       <plugin>

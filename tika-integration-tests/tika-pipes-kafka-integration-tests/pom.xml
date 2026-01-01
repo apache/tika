@@ -89,9 +89,9 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>src/test/resources/kafka/*.json</exclude>
-          </excludes>
+          <inputExcludes>
+            <inputExclude>src/test/resources/kafka/*.json</inputExclude>
+          </inputExcludes>
         </configuration>
       </plugin>
       <plugin>

@@ -86,9 +86,9 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>src/test/resources/solr/*.json</exclude>
-          </excludes>
+          <inputExcludes>
+            <inputExclude>src/test/resources/solr/*.json</inputExclude>
+          </inputExcludes>
         </configuration>
       </plugin>
       <plugin>

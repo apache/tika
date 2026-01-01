@@ -143,11 +143,11 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>src/main/resources/tikaserver-version.properties</exclude>
-            <exclude>src/test/resources/test-documents/*</exclude>
-            <exclude>src/TODO</exclude>
-          </excludes>
+          <inputExcludes>
+            <inputExclude>src/main/resources/tikaserver-version.properties</inputExclude>
+            <inputExclude>src/test/resources/test-documents/*</inputExclude>
+            <inputExclude>src/TODO</inputExclude>
+          </inputExcludes>
         </configuration>
       </plugin>
       <plugin>
