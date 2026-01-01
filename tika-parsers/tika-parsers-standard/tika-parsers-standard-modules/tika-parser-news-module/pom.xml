@@ -46,9 +46,9 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>src/test/resources/test-documents/testATOM.atom</exclude>
-          </excludes>
+          <inputExcludes>
+            <inputExclude>src/test/resources/test-documents/testATOM.atom</inputExclude>
+          </inputExcludes>
         </configuration>
       </plugin>
       <plugin>

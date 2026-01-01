@@ -53,12 +53,12 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>tika-parser-scientific-module/src/test/resources/**</exclude> <!-- already checked -->
-            <exclude>tika-parser-scientific-package/**</exclude> <!-- already checked -->
-            <exclude>tika-parser-tagsoup-module/target/**</exclude> <!-- already checked -->
-            <exclude>tika-parser-tagsoup-package/target/**</exclude> <!-- already checked -->
-          </excludes>
+          <inputExcludes>
+            <inputExclude>tika-parser-scientific-module/src/test/resources/**</inputExclude> <!-- already checked -->
+            <inputExclude>tika-parser-scientific-package/**</inputExclude> <!-- already checked -->
+            <inputExclude>tika-parser-tagsoup-module/target/**</inputExclude> <!-- already checked -->
+            <inputExclude>tika-parser-tagsoup-package/target/**</inputExclude> <!-- already checked -->
+          </inputExcludes>
         </configuration>
       </plugin>
     </plugins>

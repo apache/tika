@@ -113,10 +113,10 @@ May the gods of dependency management fix this in the future.
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>src/test/resources/test-documents/**</exclude>
-            <exclude>src/test/resources/ground-truth/**</exclude>
-          </excludes>
+          <inputExcludes>
+            <inputExclude>src/test/resources/test-documents/**</inputExclude>
+            <inputExclude>src/test/resources/ground-truth/**</inputExclude>
+          </inputExcludes>
         </configuration>
       </plugin>
       <plugin>

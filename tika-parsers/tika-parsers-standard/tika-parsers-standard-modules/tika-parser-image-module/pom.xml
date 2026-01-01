@@ -94,9 +94,9 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>src/main/resources/**/properties</exclude>
-          </excludes>
+          <inputExcludes>
+            <inputExclude>src/main/resources/**/properties</inputExclude>
+          </inputExcludes>
         </configuration>
       </plugin>
     </plugins>

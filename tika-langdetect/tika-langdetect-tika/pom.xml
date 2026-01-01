@@ -50,9 +50,9 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>src/test/resources/org/apache/tika/langdetect/tika/**</exclude>
-          </excludes>
+          <inputExcludes>
+            <inputExclude>src/test/resources/org/apache/tika/langdetect/tika/**</inputExclude>
+          </inputExcludes>
         </configuration>
       </plugin>
       <plugin>

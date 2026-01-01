@@ -423,10 +423,10 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>src/test/resources/certs/**</exclude>
-            <exclude>README.md</exclude>
-          </excludes>
+          <inputExcludes>
+            <inputExclude>src/test/resources/certs/**</inputExclude>
+            <inputExclude>README.md</inputExclude>
+          </inputExcludes>
         </configuration>
       </plugin>
       <plugin>

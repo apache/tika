@@ -94,9 +94,9 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>**/test-documents/**</exclude>
-          </excludes>
+          <inputExcludes>
+            <inputExclude>**/test-documents/**</inputExclude>
+          </inputExcludes>
         </configuration>
       </plugin>
       <plugin>
