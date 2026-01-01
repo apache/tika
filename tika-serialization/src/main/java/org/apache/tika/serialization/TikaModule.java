@@ -53,17 +53,24 @@ import org.apache.tika.digest.DigesterFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.language.translate.Translator;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.writefilter.MetadataWriteFilterFactory;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.DefaultParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.sax.ContentHandlerDecoratorFactory;
+import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.serialization.serdes.DefaultDetectorSerializer;
 import org.apache.tika.serialization.serdes.DefaultParserSerializer;
+import org.apache.tika.serialization.serdes.MetadataDeserializer;
+import org.apache.tika.serialization.serdes.MetadataSerializer;
+import org.apache.tika.serialization.serdes.ParseContextDeserializer;
+import org.apache.tika.serialization.serdes.ParseContextSerializer;
 
 /**
  * Jackson module that provides compact serialization for Tika components.
@@ -103,6 +110,7 @@ public class TikaModule extends SimpleModule {
         COMPACT_FORMAT_INTERFACES.add(EmbeddedDocumentExtractorFactory.class);
         COMPACT_FORMAT_INTERFACES.add(MetadataWriteFilterFactory.class);
         COMPACT_FORMAT_INTERFACES.add(ContentHandlerDecoratorFactory.class);
+        COMPACT_FORMAT_INTERFACES.add(ContentHandlerFactory.class);
     }
 
     /**
@@ -120,6 +128,14 @@ public class TikaModule extends SimpleModule {
 
     public TikaModule() {
         super("TikaModule");
+
+        // Register Metadata serializers
+        addSerializer(Metadata.class, new MetadataSerializer());
+        addDeserializer(Metadata.class, new MetadataDeserializer());
+
+        // Register ParseContext serializers
+        addSerializer(ParseContext.class, new ParseContextSerializer());
+        addDeserializer(ParseContext.class, new ParseContextDeserializer());
     }
 
     /**

@@ -34,10 +34,8 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.api.HandlerConfig;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
-import org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig;
 import org.apache.tika.pipes.pipesiterator.PipesIteratorBase;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.utils.StringUtils;
@@ -78,16 +76,15 @@ public class JDBCPipesIterator extends PipesIteratorBase {
             throw new TikaConfigException("select must not be empty");
         }
 
-        PipesIteratorBaseConfig baseConfig = config.getBaseConfig();
-        String fetcherName = baseConfig.fetcherId();
-        String emitterName = baseConfig.emitterId();
+        String fetcherName = config.getFetcherId();
+        String emitterName = config.getEmitterId();
 
         if (StringUtils.isBlank(fetcherName) && !StringUtils.isBlank(config.getFetchKeyColumn())) {
-            throw new TikaConfigException("If you specify a 'fetchKeyColumn', you must specify a 'fetcherPluginId'");
+            throw new TikaConfigException("If you specify a 'fetchKeyColumn', you must specify a 'fetcherId'");
         }
 
         if (StringUtils.isBlank(emitterName) && !StringUtils.isBlank(config.getEmitKeyColumn())) {
-            throw new TikaConfigException("If you specify an 'emitKeyColumn', you must specify an 'emitterPluginId'");
+            throw new TikaConfigException("If you specify an 'emitKeyColumn', you must specify an 'emitterId'");
         }
 
         if (StringUtils.isBlank(emitterName) && StringUtils.isBlank(fetcherName)) {
@@ -120,13 +117,11 @@ public class JDBCPipesIterator extends PipesIteratorBase {
 
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
-        PipesIteratorBaseConfig baseConfig = config.getBaseConfig();
-        String fetcherPluginId = baseConfig.fetcherId();
-        String emitterName = baseConfig.emitterId();
+        String fetcherId = config.getFetcherId();
+        String emitterId = config.getEmitterId();
         FetchEmitKeyIndices fetchEmitKeyIndices = null;
         List<String> headers = new ArrayList<>();
         int rowCount = 0;
-        HandlerConfig handlerConfig = baseConfig.handlerConfig();
         LOGGER.debug("select: {}", config.getSelect());
         try (Statement st = db.createStatement()) {
             if (config.getFetchSize() > 0) {
@@ -139,10 +134,10 @@ public class JDBCPipesIterator extends PipesIteratorBase {
                 while (rs.next()) {
                     if (headers.size() == 0) {
                         fetchEmitKeyIndices = loadHeaders(rs.getMetaData(), headers);
-                        checkFetchEmitValidity(fetcherPluginId, emitterName, fetchEmitKeyIndices, headers);
+                        checkFetchEmitValidity(fetcherId, emitterId, fetchEmitKeyIndices, headers);
                     }
                     try {
-                        processRow(fetcherPluginId, emitterName, headers, fetchEmitKeyIndices, rs, handlerConfig, baseConfig);
+                        processRow(fetcherId, emitterId, headers, fetchEmitKeyIndices, rs);
                     } catch (SQLException e) {
                         LOGGER.warn("Failed to insert: " + rs, e);
                     }
@@ -164,7 +159,7 @@ public class JDBCPipesIterator extends PipesIteratorBase {
         }
     }
 
-    private void checkFetchEmitValidity(String fetcherPluginId, String emitterName, FetchEmitKeyIndices fetchEmitKeyIndices, List<String> headers) throws IOException {
+    private void checkFetchEmitValidity(String fetcherId, String emitterId, FetchEmitKeyIndices fetchEmitKeyIndices, List<String> headers) throws IOException {
         if (!StringUtils.isBlank(config.getFetchKeyColumn()) && fetchEmitKeyIndices.fetchKeyIndex < 0) {
             throw new IOException(new TikaConfigException("Couldn't find fetchkey column: " + config.getFetchKeyColumn()));
         }
@@ -180,9 +175,8 @@ public class JDBCPipesIterator extends PipesIteratorBase {
         }
     }
 
-    private void processRow(String fetcherPluginId, String emitterName, List<String> headers,
-                            FetchEmitKeyIndices fetchEmitKeyIndices, ResultSet rs,
-                            HandlerConfig handlerConfig, PipesIteratorBaseConfig baseConfig)
+    private void processRow(String fetcherId, String emitterId, List<String> headers,
+                            FetchEmitKeyIndices fetchEmitKeyIndices, ResultSet rs)
             throws SQLException, TimeoutException, InterruptedException {
         Metadata metadata = new Metadata();
         String fetchKey = "";
@@ -233,9 +227,8 @@ public class JDBCPipesIterator extends PipesIteratorBase {
             }
         }
         ParseContext parseContext = new ParseContext();
-        parseContext.set(HandlerConfig.class, handlerConfig);
-        tryToAdd(new FetchEmitTuple(id, new FetchKey(fetcherPluginId, fetchKey, fetchStartRange, fetchEndRange), new EmitKey(emitterName, emitKey), metadata, parseContext,
-                baseConfig.onParseException()));
+        tryToAdd(new FetchEmitTuple(id, new FetchKey(fetcherId, fetchKey, fetchStartRange, fetchEndRange), new EmitKey(emitterId, emitKey), metadata, parseContext,
+                FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
     }
 
     private String toString(ResultSet rs) throws SQLException {

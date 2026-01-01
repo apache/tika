@@ -22,10 +22,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig;
-import org.apache.tika.pipes.api.pipesiterator.PipesIteratorConfig;
+import org.apache.tika.pipes.pipesiterator.PipesIteratorConfig;
 
-public class AZBlobPipesIteratorConfig implements PipesIteratorConfig {
+public class AZBlobPipesIteratorConfig extends PipesIteratorConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -45,7 +44,6 @@ public class AZBlobPipesIteratorConfig implements PipesIteratorConfig {
     private String container;
     private String prefix = "";
     private long timeoutMillis = 360000;
-    private PipesIteratorBaseConfig baseConfig = null;
 
     public String getSasToken() {
         return sasToken;
@@ -68,32 +66,28 @@ public class AZBlobPipesIteratorConfig implements PipesIteratorConfig {
     }
 
     @Override
-    public PipesIteratorBaseConfig getBaseConfig() {
-        return baseConfig;
-    }
-
-    @Override
-    public final boolean equals(Object o) {
+    public boolean equals(Object o) {
         if (!(o instanceof AZBlobPipesIteratorConfig that)) {
             return false;
         }
-
+        if (!super.equals(o)) {
+            return false;
+        }
         return timeoutMillis == that.timeoutMillis &&
                 Objects.equals(sasToken, that.sasToken) &&
                 Objects.equals(endpoint, that.endpoint) &&
                 Objects.equals(container, that.container) &&
-                Objects.equals(prefix, that.prefix) &&
-                Objects.equals(baseConfig, that.baseConfig);
+                Objects.equals(prefix, that.prefix);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hashCode(sasToken);
+        int result = super.hashCode();
+        result = 31 * result + Objects.hashCode(sasToken);
         result = 31 * result + Objects.hashCode(endpoint);
         result = 31 * result + Objects.hashCode(container);
         result = 31 * result + Objects.hashCode(prefix);
         result = 31 * result + Long.hashCode(timeoutMillis);
-        result = 31 * result + Objects.hashCode(baseConfig);
         return result;
     }
 }

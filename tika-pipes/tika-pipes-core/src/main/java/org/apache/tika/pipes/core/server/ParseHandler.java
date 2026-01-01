@@ -44,7 +44,7 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.api.HandlerConfig;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
@@ -61,17 +61,22 @@ class ParseHandler {
     private final CountDownLatch countDownLatch;
     private final AutoDetectParser autoDetectParser;
     private final RecursiveParserWrapper recursiveParserWrapper;
+    private final ContentHandlerFactory defaultContentHandlerFactory;
+    private final ParseMode defaultParseMode;
 
 
     ParseHandler(Detector detector, Digester digester, ArrayBlockingQueue<Metadata> intermediateResult,
                  CountDownLatch countDownLatch, AutoDetectParser autoDetectParser,
-                 RecursiveParserWrapper recursiveParserWrapper) {
+                 RecursiveParserWrapper recursiveParserWrapper, ContentHandlerFactory defaultContentHandlerFactory,
+                 ParseMode defaultParseMode) {
         this.detector = detector;
         this.digester = digester;
         this.intermediateResult = intermediateResult;
         this.countDownLatch = countDownLatch;
         this.autoDetectParser = autoDetectParser;
         this.recursiveParserWrapper = recursiveParserWrapper;
+        this.defaultContentHandlerFactory = defaultContentHandlerFactory;
+        this.defaultParseMode = defaultParseMode;
     }
 
     PipesWorker.ParseDataOrPipesResult parseWithStream(FetchEmitTuple fetchEmitTuple, TikaInputStream stream, Metadata metadata, ParseContext parseContext)
@@ -79,17 +84,36 @@ class ParseHandler {
 
         List<Metadata> metadataList;
         //this adds the EmbeddedDocumentByteStore to the parsecontext
-        HandlerConfig handlerConfig = parseContext.get(HandlerConfig.class);
-        if (handlerConfig.getParseMode() == HandlerConfig.PARSE_MODE.RMETA) {
+        ParseMode parseMode = getParseMode(parseContext);
+        ContentHandlerFactory contentHandlerFactory = getContentHandlerFactory(parseContext);
+        if (parseMode == ParseMode.RMETA) {
             metadataList =
-                    parseRecursive(fetchEmitTuple, handlerConfig, stream, metadata, parseContext);
+                    parseRecursive(fetchEmitTuple, contentHandlerFactory, stream, metadata, parseContext);
         } else {
-            metadataList = parseConcatenated(fetchEmitTuple, handlerConfig, stream, metadata,
+            metadataList = parseConcatenated(fetchEmitTuple, contentHandlerFactory, stream, metadata,
                     parseContext);
         }
 
         return new PipesWorker.ParseDataOrPipesResult(new MetadataListAndEmbeddedBytes(metadataList,
                 parseContext.get(EmbeddedDocumentBytesHandler.class)), null);
+    }
+
+    private ParseMode getParseMode(ParseContext parseContext) {
+        ParseMode mode = parseContext.get(ParseMode.class);
+        if (mode != null) {
+            return mode;
+        }
+        // Fall back to default loaded from TikaLoader
+        return defaultParseMode;
+    }
+
+    private ContentHandlerFactory getContentHandlerFactory(ParseContext parseContext) {
+        ContentHandlerFactory factory = parseContext.get(ContentHandlerFactory.class);
+        if (factory != null) {
+            return factory;
+        }
+        // Fall back to default loaded from TikaLoader
+        return defaultContentHandlerFactory;
     }
 
 
@@ -133,14 +157,16 @@ class ParseHandler {
     }
 
     public List<Metadata> parseRecursive(FetchEmitTuple fetchEmitTuple,
-                                              HandlerConfig handlerConfig, TikaInputStream stream,
+                                              ContentHandlerFactory contentHandlerFactory, TikaInputStream stream,
                                               Metadata metadata, ParseContext parseContext) throws InterruptedException {
         //Intentionally do not add the metadata filter here!
         //We need to let stacktraces percolate
+        int maxEmbeddedResources = -1;
+        if (contentHandlerFactory instanceof BasicContentHandlerFactory) {
+            maxEmbeddedResources = ((BasicContentHandlerFactory) contentHandlerFactory).getMaxEmbeddedResources();
+        }
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(handlerConfig.getType(),
-                        handlerConfig.getWriteLimit(), handlerConfig.isThrowOnWriteLimitReached(),
-                        parseContext), handlerConfig.getMaxEmbeddedResources());
+                contentHandlerFactory, maxEmbeddedResources);
 
         long start = System.currentTimeMillis();
 
@@ -168,25 +194,24 @@ class ParseHandler {
     }
 
     public List<Metadata> parseConcatenated(FetchEmitTuple fetchEmitTuple,
-                                             HandlerConfig handlerConfig, TikaInputStream stream,
+                                             ContentHandlerFactory contentHandlerFactory, TikaInputStream stream,
                                              Metadata metadata, ParseContext parseContext) throws InterruptedException {
 
-        ContentHandlerFactory contentHandlerFactory =
-                new BasicContentHandlerFactory(handlerConfig.getType(),
-                        handlerConfig.getWriteLimit(), handlerConfig.isThrowOnWriteLimitReached(),
-                        parseContext);
-
-        ContentHandler handler = contentHandlerFactory.getNewContentHandler();
+        ContentHandler handler = contentHandlerFactory.createHandler();
+        int maxEmbedded = -1;
+        if (contentHandlerFactory instanceof BasicContentHandlerFactory) {
+            maxEmbedded = ((BasicContentHandlerFactory) contentHandlerFactory).getMaxEmbeddedResources();
+        }
+        final int finalMaxEmbedded = maxEmbedded;
         parseContext.set(DocumentSelector.class, new DocumentSelector() {
-            final int maxEmbedded = handlerConfig.getMaxEmbeddedResources();
             int embedded = 0;
 
             @Override
             public boolean select(Metadata metadata) {
-                if (maxEmbedded < 0) {
+                if (finalMaxEmbedded < 0) {
                     return true;
                 }
-                return embedded++ < maxEmbedded;
+                return embedded++ < finalMaxEmbedded;
             }
         });
 

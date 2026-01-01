@@ -46,10 +46,8 @@ import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.api.HandlerConfig;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
-import org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig;
 import org.apache.tika.pipes.pipesiterator.PipesIteratorBase;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.utils.StringUtils;
@@ -125,12 +123,10 @@ public class S3PipesIterator extends PipesIteratorBase {
 
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
-        PipesIteratorBaseConfig baseConfig = config.getBaseConfig();
-        String fetcherPluginId = baseConfig.fetcherId();
-        String emitterName = baseConfig.emitterId();
+        String fetcherId = config.getFetcherId();
+        String emitterId = config.getEmitterId();
         long start = System.currentTimeMillis();
         int count = 0;
-        HandlerConfig handlerConfig = baseConfig.handlerConfig();
         final Matcher fileNameMatcher;
         if (fileNamePattern != null) {
             fileNameMatcher = fileNamePattern.matcher("");
@@ -149,9 +145,8 @@ public class S3PipesIterator extends PipesIteratorBase {
             long elapsed = System.currentTimeMillis() - start;
             LOGGER.debug("adding ({}) {} in {} ms", count, key, elapsed);
             ParseContext parseContext = new ParseContext();
-            parseContext.set(HandlerConfig.class, handlerConfig);
-            tryToAdd(new FetchEmitTuple(key, new FetchKey(fetcherPluginId, key), new EmitKey(emitterName, key), new Metadata(), parseContext,
-                    baseConfig.onParseException()));
+            tryToAdd(new FetchEmitTuple(key, new FetchKey(fetcherId, key), new EmitKey(emitterId, key), new Metadata(), parseContext,
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
             count++;
         }
         long elapsed = System.currentTimeMillis() - start;

@@ -16,9 +16,6 @@
  */
 package org.apache.tika.sax;
 
-import java.io.OutputStream;
-import java.nio.charset.Charset;
-
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.config.TikaComponent;
@@ -36,17 +33,7 @@ public class UppercasingContentHandlerFactory implements ContentHandlerFactory {
     private static final long serialVersionUID = 1L;
 
     @Override
-    public ContentHandler getNewContentHandler() {
+    public ContentHandler createHandler() {
         return new UppercasingContentHandler(new ToTextContentHandler());
-    }
-
-    @Override
-    public ContentHandler getNewContentHandler(OutputStream os, Charset charset) {
-        try {
-            return new UppercasingContentHandler(new ToTextContentHandler(os, charset.name()));
-        } catch (java.io.UnsupportedEncodingException e) {
-            // Should never happen since we're using a valid Charset
-            throw new RuntimeException("Unexpected encoding error", e);
-        }
     }
 }

@@ -20,9 +20,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.tika.pipes.api.HandlerConfig;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.ContentHandlerFactory;
 
 /**
  * Configuration for {@link PipesForkParser}.
@@ -33,13 +34,15 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
 public class PipesForkParserConfig {
 
     private final PipesConfig pipesConfig;
-    private HandlerConfig handlerConfig;
+    private ContentHandlerFactory contentHandlerFactory;
+    private ParseMode parseMode = ParseMode.RMETA;
     private String fetcherName = PipesForkParser.DEFAULT_FETCHER_NAME;
     private Path pluginsDir;
 
     public PipesForkParserConfig() {
         this.pipesConfig = new PipesConfig();
-        this.handlerConfig = new HandlerConfig();
+        this.contentHandlerFactory = new BasicContentHandlerFactory(
+                BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1);
         // Default to single client for simple fork parser use case
         this.pipesConfig.setNumClients(1);
     }
@@ -54,23 +57,32 @@ public class PipesForkParserConfig {
     }
 
     /**
-     * Get the handler configuration that specifies how content should be handled.
+     * Get the content handler factory that specifies how content should be handled.
      *
-     * @return the handler configuration
+     * @return the content handler factory
      */
-    public HandlerConfig getHandlerConfig() {
-        return handlerConfig;
+    public ContentHandlerFactory getContentHandlerFactory() {
+        return contentHandlerFactory;
     }
 
     /**
-     * Set the handler configuration.
+     * Set the content handler factory.
      *
-     * @param handlerConfig the handler configuration
+     * @param contentHandlerFactory the content handler factory
      * @return this config for chaining
      */
-    public PipesForkParserConfig setHandlerConfig(HandlerConfig handlerConfig) {
-        this.handlerConfig = handlerConfig;
+    public PipesForkParserConfig setContentHandlerFactory(ContentHandlerFactory contentHandlerFactory) {
+        this.contentHandlerFactory = contentHandlerFactory;
         return this;
+    }
+
+    /**
+     * Get the parse mode.
+     *
+     * @return the parse mode
+     */
+    public ParseMode getParseMode() {
+        return parseMode;
     }
 
     /**
@@ -80,7 +92,7 @@ public class PipesForkParserConfig {
      * @return this config for chaining
      */
     public PipesForkParserConfig setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE type) {
-        this.handlerConfig.setType(type);
+        this.contentHandlerFactory = new BasicContentHandlerFactory(type, -1);
         return this;
     }
 
@@ -90,8 +102,8 @@ public class PipesForkParserConfig {
      * @param parseMode the parse mode
      * @return this config for chaining
      */
-    public PipesForkParserConfig setParseMode(HandlerConfig.PARSE_MODE parseMode) {
-        this.handlerConfig.setParseMode(parseMode);
+    public PipesForkParserConfig setParseMode(ParseMode parseMode) {
+        this.parseMode = parseMode;
         return this;
     }
 
@@ -102,7 +114,9 @@ public class PipesForkParserConfig {
      * @return this config for chaining
      */
     public PipesForkParserConfig setWriteLimit(int writeLimit) {
-        this.handlerConfig.setWriteLimit(writeLimit);
+        if (contentHandlerFactory instanceof BasicContentHandlerFactory bcf) {
+            this.contentHandlerFactory = new BasicContentHandlerFactory(bcf.getType(), writeLimit);
+        }
         return this;
     }
 
@@ -113,7 +127,9 @@ public class PipesForkParserConfig {
      * @return this config for chaining
      */
     public PipesForkParserConfig setMaxEmbeddedResources(int maxEmbeddedResources) {
-        this.handlerConfig.setMaxEmbeddedResources(maxEmbeddedResources);
+        if (contentHandlerFactory instanceof BasicContentHandlerFactory bcf) {
+            bcf.setMaxEmbeddedResources(maxEmbeddedResources);
+        }
         return this;
     }
 

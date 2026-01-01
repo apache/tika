@@ -47,6 +47,7 @@ public class TikaObjectMapperFactory {
             "renderers",
             "translators",
             "digester-factories",
+            "content-handler-factories",
             "other-configs"
     };
 

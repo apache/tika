@@ -49,19 +49,25 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
     public static final String PARSE_CONTEXT = "parseContext";
     public static final String TYPED = "typed";
 
+    // Plain mapper for serializing values without TikaModule's component wrapping
+    private static final ObjectMapper PLAIN_MAPPER = new ObjectMapper();
+
+    static {
+        // Allow serialization of classes with no properties
+        PLAIN_MAPPER.disable(com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS);
+    }
+
     @Override
     public void serialize(ParseContext parseContext, JsonGenerator gen,
                          SerializerProvider serializers) throws IOException {
         gen.writeStartObject();
-
-        ObjectMapper mapper = (ObjectMapper) gen.getCodec();
 
         // First, serialize typed objects from the context map under "typed" key
         Map<String, Object> contextMap = parseContext.getContextMap();
         boolean hasTypedObjects = false;
 
         for (Map.Entry<String, Object> entry : contextMap.entrySet()) {
-            String className = entry.getKey();
+            String keyClassName = entry.getKey();
             Object value = entry.getValue();
 
             // Skip null values
@@ -69,10 +75,14 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
                 continue;
             }
 
-            // Try to find a friendly component name, otherwise use FQCN
-            String keyName = findComponentName(className);
+            // Use the actual value's class for serialization, not the key class (which may be an interface)
+            // This ensures we can deserialize back to the concrete class
+            String valueClassName = value.getClass().getName();
+
+            // Try to find a friendly component name for the value's class, otherwise use FQCN
+            String keyName = findComponentName(valueClassName);
             if (keyName == null) {
-                keyName = className;
+                keyName = valueClassName;
             }
 
             if (!hasTypedObjects) {
@@ -81,7 +91,7 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
                 hasTypedObjects = true;
             }
             gen.writeFieldName(keyName);
-            gen.writeRawValue(mapper.writeValueAsString(value));
+            gen.writeRawValue(PLAIN_MAPPER.writeValueAsString(value));
         }
 
         if (hasTypedObjects) {

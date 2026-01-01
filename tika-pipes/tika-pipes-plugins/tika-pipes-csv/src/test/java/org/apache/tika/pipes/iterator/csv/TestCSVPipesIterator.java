@@ -114,11 +114,9 @@ public class TestCSVPipesIterator {
             jsonConfig.put("idColumn", idColumn);
         }
 
-        // Add baseConfig
-        ObjectNode baseConfig = OBJECT_MAPPER.createObjectNode();
-        baseConfig.put("fetcherId", fetcherName);
-        baseConfig.put("emitterId", emitterName);
-        jsonConfig.set("baseConfig", baseConfig);
+        // Add fetcherId and emitterId at root level (not nested in baseConfig)
+        jsonConfig.put("fetcherId", fetcherName);
+        jsonConfig.put("emitterId", emitterName);
 
         ExtensionConfig extensionConfig = new ExtensionConfig("test-csv-iterator", "csv-pipes-iterator",
                 OBJECT_MAPPER.writeValueAsString(jsonConfig));

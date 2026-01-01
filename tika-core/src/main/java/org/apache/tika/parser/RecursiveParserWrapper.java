@@ -141,7 +141,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
                 new EmbeddedParserDecorator(getWrappedParser(), "/", "/", parserState);
         context.set(Parser.class, decorator);
         ContentHandler localHandler =
-                parserState.recursiveParserWrapperHandler.getNewContentHandler();
+                parserState.recursiveParserWrapperHandler.createHandler();
         long started = System.currentTimeMillis();
         parserState.recursiveParserWrapperHandler.startDocument();
         int writeLimit = -1;
@@ -241,7 +241,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
             metadata.set(TikaCoreProperties.EMBEDDED_ID, parserState.embeddedCount);
             //get a fresh handler
             ContentHandler localHandler =
-                    parserState.recursiveParserWrapperHandler.getNewContentHandler();
+                    parserState.recursiveParserWrapperHandler.createHandler();
             parserState.recursiveParserWrapperHandler.startEmbeddedDocument(localHandler, metadata);
 
             Parser preContextParser = context.get(Parser.class);

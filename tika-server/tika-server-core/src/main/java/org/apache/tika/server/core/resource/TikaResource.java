@@ -17,7 +17,6 @@
 package org.apache.tika.server.core.resource;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig.DEFAULT_HANDLER_CONFIG;
 import static org.apache.tika.server.core.resource.RecursiveMetadataResource.DEFAULT_HANDLER_TYPE;
 import static org.apache.tika.server.core.resource.RecursiveMetadataResource.HANDLER_TYPE_PARAM;
 
@@ -77,6 +76,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
 import org.apache.tika.sax.RichTextContentHandler;
 import org.apache.tika.sax.boilerpipe.BoilerpipeContentHandler;
@@ -151,23 +151,21 @@ public class TikaResource {
         JsonNode root = mapper.readTree(configJson);
         // Use root directly - the JSON should contain parser configs at the top level
         ParseContext configuredContext = ParseContextDeserializer.readParseContext(root, mapper);
-
-        // Copy jsonConfigs first (for SelfConfiguring parsers like PDFParser)
-        for (Map.Entry<String, JsonConfig> entry : configuredContext.getJsonConfigs().entrySet()) {
-            context.setJsonConfig(entry.getKey(), entry.getValue());
-        }
-
-        // Then resolve all configs to typed objects
         ParseContextUtils.resolveAll(configuredContext, Thread.currentThread().getContextClassLoader());
-
-        // Copy resolved typed objects from contextMap
+        // Copy resolved context entries
         for (Map.Entry<String, Object> entry : configuredContext.getContextMap().entrySet()) {
             try {
                 Class<?> clazz = Class.forName(entry.getKey());
                 context.set((Class) clazz, entry.getValue());
+                LOG.debug("Merged contextMap entry {} into context", entry.getKey());
             } catch (ClassNotFoundException e) {
                 LOG.warn("Could not load class for parseContext entry: {}", entry.getKey());
             }
+        }
+        // Copy jsonConfigs for lazy resolution by parsers (e.g., pdf-parser config)
+        for (Map.Entry<String, JsonConfig> entry : configuredContext.getJsonConfigs().entrySet()) {
+            context.setJsonConfig(entry.getKey(), entry.getValue().json());
+            LOG.debug("Merged jsonConfig entry {} into context", entry.getKey());
         }
     }
 
@@ -352,7 +350,8 @@ public class TikaResource {
                 throw new IllegalArgumentException("'throwOnWriteLimitReached' must be either 'true' or 'false'");
             }
         }
-        return DEFAULT_HANDLER_CONFIG.isThrowOnWriteLimitReached();
+        // Default: throw on write limit reached
+        return true;
     }
 
     public static long getTaskTimeout(ParseContext parseContext) {
@@ -542,9 +541,14 @@ public class TikaResource {
             writeLimit = Integer.parseInt(httpHeaders.getFirst("writeLimit"));
         }
 
-        BasicContentHandlerFactory.HANDLER_TYPE type = BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE);
-        BasicContentHandlerFactory fact = new BasicContentHandlerFactory(type, writeLimit, throwOnWriteLimitReached, context);
-        ContentHandler contentHandler = fact.getNewContentHandler();
+        // Check if a ContentHandlerFactory was provided in ParseContext (e.g., from config JSON)
+        ContentHandlerFactory fact = context.get(ContentHandlerFactory.class);
+        if (fact == null) {
+            // Fall back to creating one from HTTP headers
+            BasicContentHandlerFactory.HANDLER_TYPE type = BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE);
+            fact = new BasicContentHandlerFactory(type, writeLimit, throwOnWriteLimitReached, context);
+        }
+        ContentHandler contentHandler = fact.createHandler();
 
         try {
             parse(parser, LOG, info.getPath(), tis, contentHandler, metadata, context);

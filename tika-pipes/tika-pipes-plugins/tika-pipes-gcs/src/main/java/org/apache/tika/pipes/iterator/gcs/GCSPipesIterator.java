@@ -30,10 +30,8 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.api.HandlerConfig;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
-import org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig;
 import org.apache.tika.pipes.pipesiterator.PipesIteratorBase;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.utils.StringUtils;
@@ -71,12 +69,10 @@ public class GCSPipesIterator extends PipesIteratorBase {
 
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
-        PipesIteratorBaseConfig baseConfig = config.getBaseConfig();
-        String fetcherPluginId = baseConfig.fetcherId();
-        String emitterName = baseConfig.emitterId();
+        String fetcherId = config.getFetcherId();
+        String emitterId = config.getEmitterId();
         long start = System.currentTimeMillis();
         int count = 0;
-        HandlerConfig handlerConfig = baseConfig.handlerConfig();
 
         Page<Blob> blobs = null;
         String prefix = config.getPrefix();
@@ -96,9 +92,8 @@ public class GCSPipesIterator extends PipesIteratorBase {
             LOGGER.debug("adding ({}) {} in {} ms", count, blob.getName(), elapsed);
             //TODO -- allow user specified metadata as the "id"?
             ParseContext parseContext = new ParseContext();
-            parseContext.set(HandlerConfig.class, handlerConfig);
-            tryToAdd(new FetchEmitTuple(blob.getName(), new FetchKey(fetcherPluginId, blob.getName()), new EmitKey(emitterName, blob.getName()), new Metadata(), parseContext,
-                    baseConfig.onParseException()));
+            tryToAdd(new FetchEmitTuple(blob.getName(), new FetchKey(fetcherId, blob.getName()), new EmitKey(emitterId, blob.getName()), new Metadata(), parseContext,
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
             count++;
         }
         long elapsed = System.currentTimeMillis() - start;

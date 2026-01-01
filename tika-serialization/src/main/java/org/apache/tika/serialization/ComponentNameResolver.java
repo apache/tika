@@ -203,4 +203,26 @@ public final class ComponentNameResolver {
     public static Set<String> getComponentFields() {
         return Collections.unmodifiableSet(FIELD_TO_CONFIG.keySet());
     }
+
+    /**
+     * Gets the contextKey for a class from the component registry.
+     * The contextKey is recorded in the .idx file by the annotation processor.
+     *
+     * @param clazz the class to check
+     * @return the contextKey class if specified, or null if not registered or no contextKey
+     */
+    public static Class<?> getContextKey(Class<?> clazz) {
+        for (ComponentRegistry registry : REGISTRIES.values()) {
+            String friendlyName = registry.getFriendlyName(clazz);
+            if (friendlyName != null) {
+                try {
+                    ComponentInfo info = registry.getComponentInfo(friendlyName);
+                    return info.contextKey();
+                } catch (TikaConfigException e) {
+                    // continue to next registry
+                }
+            }
+        }
+        return null;
+    }
 }

@@ -33,13 +33,14 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.api.HandlerConfig;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesParser;
+import org.apache.tika.sax.ContentHandlerFactory;
 
 /**
  * A ForkParser implementation backed by {@link PipesParser}.
@@ -86,7 +87,8 @@ import org.apache.tika.pipes.core.PipesParser;
  * Example usage:
  * <pre>
  * PipesForkParserConfig config = new PipesForkParserConfig();
- * config.setHandlerConfig(new HandlerConfig(HANDLER_TYPE.TEXT, PARSE_MODE.RMETA, -1, -1, true));
+ * config.setHandlerType(HANDLER_TYPE.TEXT);
+ * config.setParseMode(ParseMode.RMETA);
  *
  * try (PipesForkParser parser = new PipesForkParser(config)) {
  *     // Parse from a file
@@ -204,8 +206,9 @@ public class PipesForkParser implements Closeable {
         FetchKey fetchKey = new FetchKey(config.getFetcherName(), absolutePath);
         EmitKey emitKey = new EmitKey("", id); // Empty emitter name since we're using PASSBACK_ALL
 
-        // Add handler config to parse context so server knows how to handle content
-        parseContext.set(HandlerConfig.class, config.getHandlerConfig());
+        // Add content handler factory and parse mode to parse context
+        parseContext.set(ContentHandlerFactory.class, config.getContentHandlerFactory());
+        parseContext.set(ParseMode.class, config.getParseMode());
 
         FetchEmitTuple tuple = new FetchEmitTuple(id, fetchKey, emitKey, metadata, parseContext);
 

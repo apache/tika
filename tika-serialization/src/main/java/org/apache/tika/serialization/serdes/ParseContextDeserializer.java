@@ -21,6 +21,7 @@ import static org.apache.tika.serialization.serdes.ParseContextSerializer.TYPED;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Optional;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -30,6 +31,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.loader.ComponentInfo;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.serialization.ComponentNameResolver;
 
@@ -122,19 +124,22 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
             JsonNode configNode = typedNode.get(componentName);
 
             Class<?> configClass = null;
+            Class<?> contextKeyClass = null;
 
             // First, try component registry lookup (for friendly names like "pdf-parser-config")
-            try {
-                configClass = ComponentNameResolver.resolveClass(
-                        componentName, ParseContextDeserializer.class.getClassLoader());
-            } catch (ClassNotFoundException e) {
-                // Not in registry, try as FQCN
+            Optional<ComponentInfo> infoOpt = ComponentNameResolver.getComponentInfo(componentName);
+            if (infoOpt.isPresent()) {
+                ComponentInfo info = infoOpt.get();
+                configClass = info.componentClass();
+                contextKeyClass = info.contextKey();
             }
 
             // If not found in registry, try as fully qualified class name
             if (configClass == null) {
                 try {
                     configClass = Class.forName(componentName);
+                    // Check if the class has a contextKey via its annotation
+                    contextKeyClass = ComponentNameResolver.getContextKey(configClass);
                 } catch (ClassNotFoundException e) {
                     LOG.warn("Could not find class for typed component '{}', storing as JSON config",
                             componentName);
@@ -144,11 +149,15 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
                 }
             }
 
+            // Use contextKey if available, otherwise use the config class itself
+            Class<?> parseContextKey = (contextKeyClass != null) ? contextKeyClass : configClass;
+
             // Deserialize and add to context
             try {
                 Object config = mapper.treeToValue(configNode, configClass);
-                parseContext.set((Class) configClass, config);
-                LOG.debug("Deserialized typed object '{}' -> {}", componentName, configClass.getName());
+                parseContext.set((Class) parseContextKey, config);
+                LOG.debug("Deserialized typed object '{}' -> {} (contextKey={})",
+                        componentName, configClass.getName(), parseContextKey.getName());
             } catch (Exception e) {
                 LOG.warn("Failed to deserialize typed component '{}' as {}, storing as JSON config",
                         componentName, configClass.getName(), e);

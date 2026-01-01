@@ -34,8 +34,8 @@ import java.lang.annotation.Target;
  *   <li>Component index files (META-INF/tika/{type}.idx) for name-based lookup</li>
  * </ul>
  *
- * <p>This annotation is only used at compile time by the annotation processor.
- * It is retained in .class files for tooling but not loaded by the runtime JVM.
+ * <p>This annotation is processed at compile time by the annotation processor.
+ * The contextKey is recorded in the .idx file for runtime resolution.
  *
  * <p>Example usage:
  * <pre>

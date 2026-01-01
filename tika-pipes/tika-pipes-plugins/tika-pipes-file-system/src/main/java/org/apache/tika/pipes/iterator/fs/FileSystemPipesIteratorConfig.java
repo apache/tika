@@ -23,10 +23,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig;
-import org.apache.tika.pipes.api.pipesiterator.PipesIteratorConfig;
+import org.apache.tika.pipes.pipesiterator.PipesIteratorConfig;
 
-public class FileSystemPipesIteratorConfig implements PipesIteratorConfig {
+public class FileSystemPipesIteratorConfig extends PipesIteratorConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -44,7 +43,6 @@ public class FileSystemPipesIteratorConfig implements PipesIteratorConfig {
 
     private Path basePath = null;
     private boolean countTotal = true;
-    private PipesIteratorBaseConfig baseConfig = null;
 
     public Path getBasePath() {
         return basePath;
@@ -55,24 +53,21 @@ public class FileSystemPipesIteratorConfig implements PipesIteratorConfig {
     }
 
     @Override
-    public PipesIteratorBaseConfig getBaseConfig() {
-        return baseConfig;
-    }
-
-    @Override
-    public final boolean equals(Object o) {
+    public boolean equals(Object o) {
         if (!(o instanceof FileSystemPipesIteratorConfig that)) {
             return false;
         }
-
-        return countTotal == that.countTotal && Objects.equals(basePath, that.basePath) && Objects.equals(baseConfig, that.baseConfig);
+        if (!super.equals(o)) {
+            return false;
+        }
+        return countTotal == that.countTotal && Objects.equals(basePath, that.basePath);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hashCode(basePath);
+        int result = super.hashCode();
+        result = 31 * result + Objects.hashCode(basePath);
         result = 31 * result + Boolean.hashCode(countTotal);
-        result = 31 * result + Objects.hashCode(baseConfig);
         return result;
     }
 }

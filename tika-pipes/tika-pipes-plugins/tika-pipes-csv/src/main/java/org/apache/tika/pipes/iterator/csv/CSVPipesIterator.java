@@ -34,7 +34,6 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.api.HandlerConfig;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.pipesiterator.PipesIteratorBase;
@@ -91,8 +90,8 @@ public class CSVPipesIterator extends PipesIteratorBase {
 
     @Override
     protected void enqueue() throws InterruptedException, IOException, TimeoutException {
-        String fetcherPluginId = config.getBaseConfig().fetcherId();
-        String emitterName = config.getBaseConfig().emitterId();
+        String fetcherId = config.getFetcherId();
+        String emitterId = config.getEmitterId();
         try (Reader reader = Files.newBufferedReader(config.getCsvPath(), charset)) {
             Iterable<CSVRecord> records = CSVFormat.EXCEL.parse(reader);
             List<String> headers = new ArrayList<>();
@@ -103,17 +102,16 @@ public class CSVPipesIterator extends PipesIteratorBase {
             }
 
             try {
-                checkFetchEmitValidity(fetcherPluginId, emitterName, fetchEmitKeyIndices, headers);
+                checkFetchEmitValidity(fetcherId, emitterId, fetchEmitKeyIndices, headers);
             } catch (TikaConfigException e) {
                 throw new IOException(e);
             }
-            HandlerConfig handlerConfig = config.getBaseConfig().handlerConfig();
             for (CSVRecord record : records) {
                 String id = record.get(fetchEmitKeyIndices.idIndex);
                 String fetchKey = record.get(fetchEmitKeyIndices.fetchKeyIndex);
                 String emitKey = record.get(fetchEmitKeyIndices.emitKeyIndex);
-                if (StringUtils.isBlank(fetchKey) && !StringUtils.isBlank(fetcherPluginId)) {
-                    LOGGER.debug("Fetcher specified ({}), but no fetchkey was found in ({})", fetcherPluginId, record);
+                if (StringUtils.isBlank(fetchKey) && !StringUtils.isBlank(fetcherId)) {
+                    LOGGER.debug("Fetcher specified ({}), but no fetchkey was found in ({})", fetcherId, record);
                 }
                 if (StringUtils.isBlank(emitKey)) {
                     throw new IOException("emitKey must not be blank in :" + record);
@@ -121,27 +119,26 @@ public class CSVPipesIterator extends PipesIteratorBase {
 
                 Metadata metadata = loadMetadata(fetchEmitKeyIndices, headers, record);
                 ParseContext parseContext = new ParseContext();
-                parseContext.set(HandlerConfig.class, handlerConfig);
-                tryToAdd(new FetchEmitTuple(id, new FetchKey(fetcherPluginId, fetchKey), new EmitKey(emitterName, emitKey), metadata, parseContext,
-                        config.getBaseConfig().onParseException()));
+                tryToAdd(new FetchEmitTuple(id, new FetchKey(fetcherId, fetchKey), new EmitKey(emitterId, emitKey), metadata, parseContext,
+                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
             }
         }
     }
 
-    private void checkFetchEmitValidity(String fetcherPluginId, String emitterName, FetchEmitKeyIndices fetchEmitKeyIndices, List<String> headers) throws TikaConfigException {
+    private void checkFetchEmitValidity(String fetcherId, String emitterId, FetchEmitKeyIndices fetchEmitKeyIndices, List<String> headers) throws TikaConfigException {
         String fetchKeyColumn = config.getFetchKeyColumn();
         String emitKeyColumn = config.getEmitKeyColumn();
         String idColumn = config.getIdColumn();
 
-        if (StringUtils.isBlank(emitterName)) {
-            throw new TikaConfigException("must specify at least an emitterName");
+        if (StringUtils.isBlank(emitterId)) {
+            throw new TikaConfigException("must specify at least an emitterId");
         }
 
-        if (StringUtils.isBlank(fetcherPluginId) && !StringUtils.isBlank(fetchKeyColumn)) {
-            throw new TikaConfigException("If specifying a 'fetchKeyColumn', " + "you must also specify a 'fetcherPluginId'");
+        if (StringUtils.isBlank(fetcherId) && !StringUtils.isBlank(fetchKeyColumn)) {
+            throw new TikaConfigException("If specifying a 'fetchKeyColumn', " + "you must also specify a 'fetcherId'");
         }
 
-        if (StringUtils.isBlank(fetcherPluginId)) {
+        if (StringUtils.isBlank(fetcherId)) {
             LOGGER.info("No fetcher specified. This will be metadata only");
         }
 

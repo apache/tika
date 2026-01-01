@@ -77,6 +77,8 @@ public class TikaComponentProcessor extends AbstractProcessor {
         SERVICE_INTERFACES.put("org.apache.tika.renderer.Renderer", "renderers");
         SERVICE_INTERFACES.put("org.apache.tika.metadata.filter.MetadataFilter", "metadata-filters");
         SERVICE_INTERFACES.put("org.apache.tika.digest.DigesterFactory", "digester-factories");
+        SERVICE_INTERFACES.put("org.apache.tika.sax.ContentHandlerFactory",
+                "content-handler-factories");
     }
 
     private Messager messager;

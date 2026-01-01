@@ -14,8 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.api.pipesiterator;
+package org.apache.tika.server.core.resource;
 
-public interface PipesIteratorConfig {
-    PipesIteratorBaseConfig getBaseConfig();
+import org.apache.tika.pipes.api.ParseMode;
+import org.apache.tika.sax.BasicContentHandlerFactory;
+
+/**
+ * Server-internal configuration for request handlers.
+ * This holds configuration parsed from HTTP headers for a single request
+ * for the BasicContentHandlerFactory kinds of elements.
+ */
+public record ServerHandlerConfig(
+        BasicContentHandlerFactory.HANDLER_TYPE type,
+        ParseMode parseMode,
+        int writeLimit,
+        int maxEmbeddedResources,
+        boolean throwOnWriteLimitReached
+) {
 }

@@ -26,19 +26,30 @@ import java.util.Locale;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.parser.ParseContext;
 
 /**
- * Basic factory for creating common types of ContentHandlers
+ * Basic factory for creating common types of ContentHandlers.
+ * <p>
+ * Implements {@link StreamingContentHandlerFactory} to support both in-memory
+ * content extraction and streaming output to an OutputStream.
  */
-public class BasicContentHandlerFactory implements ContentHandlerFactory, WriteLimiter {
+@TikaComponent(contextKey = ContentHandlerFactory.class)
+public class BasicContentHandlerFactory implements StreamingContentHandlerFactory, WriteLimiter {
 
-    private final HANDLER_TYPE type;
-    private final int writeLimit;
+    private HANDLER_TYPE type = HANDLER_TYPE.TEXT;
+    private int writeLimit = -1;
+    private boolean throwOnWriteLimitReached = true;
+    private int maxEmbeddedResources = -1;
+    private transient ParseContext parseContext;
 
-    private final boolean throwOnWriteLimitReached;
-
-    private final ParseContext parseContext;
+    /**
+     * No-arg constructor for bean-style configuration (e.g., Jackson deserialization).
+     * Creates a factory with TEXT handler type, unlimited write, and throwOnWriteLimitReached=true.
+     */
+    public BasicContentHandlerFactory() {
+    }
 
     /**
      * Create a BasicContentHandlerFactory with {@link #throwOnWriteLimitReached} is true
@@ -70,7 +81,29 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory, WriteL
             throw new IllegalArgumentException("parse context must not be null if " +
                     "throwOnWriteLimitReached is false");
         }
+    }
 
+    /**
+     * Full constructor with all parameters including maxEmbeddedResources.
+     *
+     * @param type basic type of handler
+     * @param writeLimit maximum number of characters to store; -1 for unlimited
+     * @param throwOnWriteLimitReached whether to throw when write limit is reached
+     * @param maxEmbeddedResources maximum number of embedded resources to process; -1 for unlimited
+     * @param parseContext to store warnings if throwOnWriteLimitReached is false
+     */
+    public BasicContentHandlerFactory(HANDLER_TYPE type, int writeLimit,
+                                      boolean throwOnWriteLimitReached, int maxEmbeddedResources,
+                                      ParseContext parseContext) {
+        this.type = type;
+        this.writeLimit = writeLimit;
+        this.throwOnWriteLimitReached = throwOnWriteLimitReached;
+        this.maxEmbeddedResources = maxEmbeddedResources;
+        this.parseContext = parseContext;
+        if (throwOnWriteLimitReached == false && parseContext == null) {
+            throw new IllegalArgumentException("parse context must not be null if " +
+                    "throwOnWriteLimitReached is false");
+        }
     }
 
     /**
@@ -108,7 +141,7 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory, WriteL
     }
 
     @Override
-    public ContentHandler getNewContentHandler() {
+    public ContentHandler createHandler() {
 
         if (type == HANDLER_TYPE.BODY) {
             return new BodyContentHandler(
@@ -139,7 +172,7 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory, WriteL
     }
 
     @Override
-    public ContentHandler getNewContentHandler(OutputStream os, Charset charset) {
+    public ContentHandler createHandler(OutputStream os, Charset charset) {
 
         if (type == HANDLER_TYPE.IGNORE) {
             return new DefaultHandler();
@@ -192,6 +225,14 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory, WriteL
     }
 
     /**
+     * Sets the handler type.
+     * @param type the handler type
+     */
+    public void setType(HANDLER_TYPE type) {
+        this.type = type;
+    }
+
+    /**
      * Common handler types for content.
      */
     public enum HANDLER_TYPE {
@@ -203,8 +244,72 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory, WriteL
         return writeLimit;
     }
 
+    /**
+     * Sets the write limit.
+     * @param writeLimit max characters to extract; -1 for unlimited
+     */
+    public void setWriteLimit(int writeLimit) {
+        this.writeLimit = writeLimit;
+    }
+
     @Override
     public boolean isThrowOnWriteLimitReached() {
         return throwOnWriteLimitReached;
+    }
+
+    /**
+     * Sets whether to throw an exception when write limit is reached.
+     * @param throwOnWriteLimitReached true to throw, false to silently stop
+     */
+    public void setThrowOnWriteLimitReached(boolean throwOnWriteLimitReached) {
+        this.throwOnWriteLimitReached = throwOnWriteLimitReached;
+    }
+
+    /**
+     * Gets the maximum number of embedded resources to process.
+     * @return max embedded resources; -1 for unlimited
+     */
+    public int getMaxEmbeddedResources() {
+        return maxEmbeddedResources;
+    }
+
+    /**
+     * Sets the maximum number of embedded resources to process.
+     * @param maxEmbeddedResources max embedded resources; -1 for unlimited
+     */
+    public void setMaxEmbeddedResources(int maxEmbeddedResources) {
+        this.maxEmbeddedResources = maxEmbeddedResources;
+    }
+
+    /**
+     * Sets the parse context for storing warnings when throwOnWriteLimitReached is false.
+     * @param parseContext the parse context
+     */
+    public void setParseContext(ParseContext parseContext) {
+        this.parseContext = parseContext;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        BasicContentHandlerFactory that = (BasicContentHandlerFactory) o;
+        return writeLimit == that.writeLimit &&
+                throwOnWriteLimitReached == that.throwOnWriteLimitReached &&
+                maxEmbeddedResources == that.maxEmbeddedResources &&
+                type == that.type;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = type != null ? type.hashCode() : 0;
+        result = 31 * result + writeLimit;
+        result = 31 * result + (throwOnWriteLimitReached ? 1 : 0);
+        result = 31 * result + maxEmbeddedResources;
+        return result;
     }
 }

@@ -48,10 +48,9 @@ public class TestAZBlobPipesIterator {
         configNode.put("endpoint", ""); // use one
         configNode.put("sasToken", ""); // find one
 
-        ObjectNode baseConfigNode = MAPPER.createObjectNode();
-        baseConfigNode.put("fetcherId", "az-blob");
-        baseConfigNode.put("emitterId", "test-emitter");
-        configNode.set("baseConfig", baseConfigNode);
+        // Add fetcherId and emitterId at root level (not nested in baseConfig)
+        configNode.put("fetcherId", "az-blob");
+        configNode.put("emitterId", "test-emitter");
 
         ExtensionConfig extensionConfig = new ExtensionConfig("test-az-blob", "az-blob-pipes-iterator",
                 MAPPER.writeValueAsString(configNode));
