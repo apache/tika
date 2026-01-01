@@ -73,9 +73,9 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>opennlp_langdetect_model_20190626.bin</exclude>
-          </excludes>
+          <inputExcludes>
+            <inputExclude>opennlp_langdetect_model_20190626.bin</inputExclude>
+          </inputExcludes>
         </configuration>
       </plugin>
       <plugin>

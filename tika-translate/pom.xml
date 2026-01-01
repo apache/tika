@@ -151,10 +151,10 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>src/main/java/org/apache/tika/parser/txt/Charset*.java</exclude>
-            <exclude>src/test/resources/test-documents/**</exclude>
-          </excludes>
+          <inputExcludes>
+            <inputExclude>src/main/java/org/apache/tika/parser/txt/Charset*.java</inputExclude>
+            <inputExclude>src/test/resources/test-documents/**</inputExclude>
+          </inputExcludes>
         </configuration>
       </plugin>
       <plugin>

@@ -1523,12 +1523,12 @@
             <groupId>org.apache.rat</groupId>
             <artifactId>apache-rat-plugin</artifactId>
             <configuration>
-              <excludes>
-                <exclude>nb-configuration.xml</exclude> <!-- local netbeans -->
-                <exclude>nbactions.xml</exclude> <!-- local netbeans -->
-                <exclude>**/test-documents/**</exclude>
-                <exclude>**/target/**</exclude> <!-- generated files -->
-              </excludes>
+              <inputExcludes>
+                <inputExclude>nb-configuration.xml</inputExclude> <!-- local netbeans -->
+                <inputExclude>nbactions.xml</inputExclude> <!-- local netbeans -->
+                <inputExclude>**/test-documents/**</inputExclude>
+                <inputExclude>**/target/**</inputExclude> <!-- generated files -->
+              </inputExcludes>
             </configuration>
             <executions>
               <execution>

@@ -57,12 +57,13 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>tika-pipes-integration-tests/src/test/resources/test-documents/file-list.txt</exclude>
-            <exclude>tika-pipes-integration-tests/src/test/resources/test-documents/testOverlappingText.pdf</exclude>
-            <exclude>tika-pipes-plugins/tika-pipes-csv/src/test/resources/test-simple.csv</exclude>
-            <exclude>tika-pipes-core/src/test/resources/test-documents/**</exclude> <!-- already checked -->
-          </excludes>
+          <inputExcludes>
+            <inputExclude>tika-pipes-integration-tests/src/test/resources/test-documents/file-list.txt</inputExclude>
+            <inputExclude>tika-pipes-integration-tests/src/test/resources/test-documents/testOverlappingText.pdf</inputExclude>
+            <inputExclude>tika-pipes-plugins/tika-pipes-csv/src/test/resources/test-simple.csv</inputExclude>
+            <inputExclude>tika-pipes-core/src/test/resources/test-documents/**</inputExclude> <!-- already checked -->
+            <inputExclude>**/*.md</inputExclude> <!-- markdown files -->
+          </inputExcludes>
         </configuration>
       </plugin>
       <plugin>
