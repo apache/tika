@@ -57,6 +57,7 @@
     <module>tika-example</module>
     <module>tika-java7</module>
     <module>tika-handlers</module>
+    <module>tika-e2e-tests</module>
   </modules>
 
   <profiles>

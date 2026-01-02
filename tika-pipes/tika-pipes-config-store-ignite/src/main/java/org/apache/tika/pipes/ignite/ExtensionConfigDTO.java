@@ -18,45 +18,23 @@ package org.apache.tika.pipes.ignite;
 
 import java.io.Serializable;
 
-import org.apache.tika.plugins.ExtensionConfig;
-
 /**
- * Serializable wrapper for ExtensionConfig to work with Ignite's binary serialization.
- * Since ExtensionConfig is a Java record with final fields, it cannot be directly
- * serialized by Ignite. This DTO provides mutable fields that Ignite can work with.
+ * Serializable wrapper for ExtensionConfig value fields for Ignite 3.x KeyValueView.
+ * The 'id' is the KEY in the KeyValueView and is NOT included in this DTO.
+ * Only the VALUE fields (name, json) are included here.
  */
 public class ExtensionConfigDTO implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private String id;
     private String name;
     private String json;
 
     public ExtensionConfigDTO() {
     }
 
-    public ExtensionConfigDTO(String id, String name, String json) {
-        this.id = id;
+    public ExtensionConfigDTO(String name, String json) {
         this.name = name;
         this.json = json;
-    }
-
-    public ExtensionConfigDTO(ExtensionConfig config) {
-        this.id = config.id();
-        this.name = config.name();
-        this.json = config.json();
-    }
-
-    public ExtensionConfig toExtensionConfig() {
-        return new ExtensionConfig(id, name, json);
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     public String getName() {
