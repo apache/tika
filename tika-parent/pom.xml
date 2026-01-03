@@ -305,7 +305,7 @@
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.shade.version>3.6.1</maven.shade.version>
     <maven.project.info.reports.version>3.9.0</maven.project.info.reports.version>
-    <puppycrawl.version>12.3.0</puppycrawl.version>
+    <puppycrawl.version>12.3.1</puppycrawl.version>
     <rat.version>0.17</rat.version>
     <scm.version>2.2.1</scm.version>
     <checkstyle.configLocation>${maven.multiModuleProjectDirectory}/tika-parent/checkstyle.xml</checkstyle.configLocation>
@@ -314,7 +314,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.61.0</google.cloud.version>
-    <aws2.version>2.40.16</aws2.version>
+    <aws2.version>2.41.1</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -395,7 +395,7 @@
     <jhighlight.version>1.1.1</jhighlight.version>
     <jna.version>5.18.1</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
-    <jsoup.version>1.21.2</jsoup.version>
+    <jsoup.version>1.22.1</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit4.version>4.13.2</junit4.version>
     <junit5.version>6.1.0-M1</junit5.version>
