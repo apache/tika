@@ -352,6 +352,7 @@
     <freemarker.version>2.3.34</freemarker.version>
     <geoapi.version>3.0.2</geoapi.version>
     <gson.version>2.13.2</gson.version>
+    <grpc.version>1.78.0</grpc.version>
     <guava.version>33.5.0-jre</guava.version>
     <h2.version>2.4.240</h2.version>
     <hdf5.version>1.14.3-1.5.10</hdf5.version>
@@ -512,6 +513,13 @@
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-bom</artifactId>
         <version>${jetty.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.grpc</groupId>
+        <artifactId>grpc-bom</artifactId>
+        <version>${grpc.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
