@@ -67,7 +67,7 @@
       <dependency>
         <groupId>io.grpc</groupId>
         <artifactId>grpc-context</artifactId>
-        <version>1.69.0</version>
+        <version>1.78.0</version>
       </dependency>
       <dependency>
         <groupId>com.google.j2objc</groupId>
