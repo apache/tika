@@ -283,6 +283,25 @@ public class TestMetadataFilter extends TikaTest {
         assertEquals(2, metadata.names().length);
     }
 
+    /**
+     * Test that TikaModule correctly instantiates components that only have a JsonConfig
+     * constructor (no no-arg constructor). This verifies the fix for TIKA-4582.
+     */
+    @Test
+    public void testJsonConfigOnlyFilter() throws Exception {
+        TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "TIKA-4582-json-config-only.json"));
+        Metadata metadata = new Metadata();
+        metadata.set("title", "my title");
+        metadata.set("author", "my author");
+
+        MetadataFilter filter = loader.get(MetadataFilter.class);
+        metadata = filterOne(filter, metadata);
+
+        assertEquals(2, metadata.size());
+        assertEquals("TEST_my title", metadata.get("title"));
+        assertEquals("TEST_my author", metadata.get("author"));
+    }
+
     private static Metadata filterOne(MetadataFilter filter, Metadata singleMetadata) throws TikaException {
         List<Metadata> list = new ArrayList<>();
         list.add(singleMetadata);

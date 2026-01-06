@@ -227,12 +227,9 @@ public class TikaModule extends SimpleModule {
      */
     private static class TikaComponentDeserializer extends JsonDeserializer<Object> {
         private final Class<?> expectedType;
-        // Plain mapper for property updates (avoids infinite recursion with registered types)
-        private final ObjectMapper plainMapper;
 
         TikaComponentDeserializer(Class<?> expectedType) {
             this.expectedType = expectedType;
-            this.plainMapper = new ObjectMapper();
         }
 
         @Override
@@ -307,19 +304,17 @@ public class TikaModule extends SimpleModule {
                 } else if (cleanedConfig == null || cleanedConfig.isEmpty()) {
                     // If no config, use default constructor
                     instance = clazz.getDeclaredConstructor().newInstance();
-                } else if (SelfConfiguring.class.isAssignableFrom(clazz)) {
-                    // SelfConfiguring components: prefer JsonConfig constructor if available
+                } else {
+                    // Try JsonConfig constructor first (works for any component)
                     Constructor<?> jsonConfigCtor = findJsonConfigConstructor(clazz);
                     if (jsonConfigCtor != null) {
                         String json = mapper.writeValueAsString(cleanedConfig);
                         instance = jsonConfigCtor.newInstance((JsonConfig) () -> json);
                     } else {
+                        // Fall back to no-arg constructor + Jackson bean deserialization
                         instance = clazz.getDeclaredConstructor().newInstance();
+                        mapper.readerForUpdating(instance).readValue(cleanedConfig);
                     }
-                } else {
-                    // Non-SelfConfiguring: use Jackson bean deserialization
-                    instance = clazz.getDeclaredConstructor().newInstance();
-                    plainMapper.readerForUpdating(instance).readValue(cleanedConfig);
                 }
 
                 // Call initialize() on Initializable components
