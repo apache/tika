@@ -229,7 +229,8 @@ public class ComponentRegistryIntegrationTest {
     }
 
     /**
-     * Reads an index file in the format: name=fully.qualified.ClassName
+     * Reads an index file in the format: name=fully.qualified.ClassName[:key=contextKeyClass]
+     * Returns a map of component name -> class name (without the :key= suffix).
      */
     private Map<String, String> readIndexFile(InputStream stream) throws Exception {
         Map<String, String> index = new HashMap<>();
@@ -243,7 +244,14 @@ public class ComponentRegistryIntegrationTest {
                 }
                 String[] parts = line.split("=", 2);
                 if (parts.length == 2) {
-                    index.put(parts[0].trim(), parts[1].trim());
+                    String name = parts[0].trim();
+                    String value = parts[1].trim();
+                    // Strip optional :key=contextKeyClass suffix
+                    int colonIndex = value.indexOf(':');
+                    if (colonIndex > 0) {
+                        value = value.substring(0, colonIndex);
+                    }
+                    index.put(name, value);
                 }
             }
         }
