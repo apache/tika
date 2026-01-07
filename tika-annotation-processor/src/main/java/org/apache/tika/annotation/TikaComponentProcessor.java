@@ -142,9 +142,22 @@ public class TikaComponentProcessor extends AbstractProcessor {
         List<String> serviceInterfaces = findServiceInterfaces(element);
 
         // Build the index entry value (className or className:key=X)
+        // Auto-detect contextKey from service interface if not explicitly specified
         String indexValue = className;
         if (contextKey != null) {
+            // Explicit contextKey specified
             indexValue = className + ":key=" + contextKey;
+        } else if (serviceInterfaces.size() == 1) {
+            // Auto-detect contextKey from single service interface
+            indexValue = className + ":key=" + serviceInterfaces.get(0);
+            messager.printMessage(Diagnostic.Kind.NOTE,
+                    "Auto-detected contextKey=" + serviceInterfaces.get(0) + " for " + className);
+        } else if (serviceInterfaces.size() > 1) {
+            // Multiple interfaces - warn that contextKey should be specified
+            messager.printMessage(Diagnostic.Kind.WARNING,
+                    "Class " + className + " implements multiple service interfaces: " +
+                    serviceInterfaces + ". Consider specifying @TikaComponent(contextKey=...) " +
+                    "to select which one to use as ParseContext key.", element);
         }
 
         if (serviceInterfaces.isEmpty()) {

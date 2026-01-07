@@ -35,7 +35,7 @@ import org.apache.tika.parser.ParseContext;
  * Implements {@link StreamingContentHandlerFactory} to support both in-memory
  * content extraction and streaming output to an OutputStream.
  */
-@TikaComponent(contextKey = ContentHandlerFactory.class)
+@TikaComponent
 public class BasicContentHandlerFactory implements StreamingContentHandlerFactory, WriteLimiter {
 
     private HANDLER_TYPE type = HANDLER_TYPE.TEXT;

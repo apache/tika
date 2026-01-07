@@ -41,6 +41,8 @@ import org.apache.tika.metadata.filter.MockUpperCaseFilter;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.SimplePasswordProvider;
+import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.serialization.serdes.ParseContextDeserializer;
 import org.apache.tika.serialization.serdes.ParseContextSerializer;
 
@@ -341,5 +343,90 @@ public class TestParseContextSerialization {
                 "Should be SimplePasswordProvider instance");
         assertEquals("secret123", provider.getPassword(null),
                 "Password should match the configured value");
+    }
+
+    /**
+     * Test that BasicContentHandlerFactory can be configured via JSON, serialized,
+     * deserialized, and resolved via ParseContextUtils.resolveAll().
+     * This verifies the fix for TIKA-4582 where ContentHandlerFactory was not being
+     * resolved because it wasn't in the "other-configs" registry.
+     */
+    @Test
+    public void testContentHandlerFactoryRoundTrip() throws Exception {
+        // Create ParseContext with BasicContentHandlerFactory configuration
+        String json = """
+                {
+                  "basic-content-handler-factory": {
+                    "type": "XML",
+                    "writeLimit": 50000
+                  }
+                }
+                """;
+
+        ObjectMapper mapper = createMapper();
+        ParseContext deserialized = mapper.readValue(json, ParseContext.class);
+
+        // Verify JSON config is present
+        assertTrue(deserialized.hasJsonConfig("basic-content-handler-factory"),
+                "Should have basic-content-handler-factory JSON config");
+
+        // Resolve the config - this should now work with ComponentNameResolver
+        ParseContextUtils.resolveAll(deserialized, Thread.currentThread().getContextClassLoader());
+
+        // Should be accessible via ContentHandlerFactory.class (the contextKey)
+        ContentHandlerFactory factory = deserialized.get(ContentHandlerFactory.class);
+        assertNotNull(factory, "ContentHandlerFactory should be resolved");
+        assertTrue(factory instanceof BasicContentHandlerFactory,
+                "Should be BasicContentHandlerFactory instance");
+
+        // Verify the configuration was applied
+        BasicContentHandlerFactory basicFactory = (BasicContentHandlerFactory) factory;
+        assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.XML, basicFactory.getType(),
+                "Handler type should be XML");
+        assertEquals(50000, basicFactory.getWriteLimit(),
+                "Write limit should be 50000");
+    }
+
+    /**
+     * Test full round-trip: create ParseContext with ContentHandlerFactory,
+     * serialize to JSON, deserialize back, resolve, and verify.
+     */
+    @Test
+    public void testContentHandlerFactoryFullRoundTrip() throws Exception {
+        // Create original ParseContext with JSON config
+        ParseContext original = new ParseContext();
+        original.setJsonConfig("basic-content-handler-factory", """
+                {
+                    "type": "HTML",
+                    "writeLimit": 10000,
+                    "throwOnWriteLimitReached": false
+                }
+                """);
+
+        // Serialize
+        ObjectMapper mapper = createMapper();
+        String json = mapper.writeValueAsString(original);
+
+        // Verify JSON structure
+        JsonNode root = mapper.readTree(json);
+        assertTrue(root.has("basic-content-handler-factory"),
+                "Serialized JSON should have basic-content-handler-factory");
+
+        // Deserialize
+        ParseContext deserialized = mapper.readValue(json, ParseContext.class);
+        assertTrue(deserialized.hasJsonConfig("basic-content-handler-factory"),
+                "Deserialized should have JSON config");
+
+        // Resolve
+        ParseContextUtils.resolveAll(deserialized, Thread.currentThread().getContextClassLoader());
+
+        // Verify resolution
+        ContentHandlerFactory factory = deserialized.get(ContentHandlerFactory.class);
+        assertNotNull(factory, "ContentHandlerFactory should be resolved after round-trip");
+
+        BasicContentHandlerFactory basicFactory = (BasicContentHandlerFactory) factory;
+        assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.HTML, basicFactory.getType());
+        assertEquals(10000, basicFactory.getWriteLimit());
+        assertFalse(basicFactory.isThrowOnWriteLimitReached());
     }
 }
