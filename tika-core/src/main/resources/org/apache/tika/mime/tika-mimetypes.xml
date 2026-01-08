@@ -363,6 +363,14 @@
 
   <mime-type type="application/x-tika-unix-dump"/>
 
+  <mime-type type="application/x-ntfs">
+    <comment>NTFS Disk Image</comment>
+    <glob pattern="*.img"/>
+    <magic priority="50">
+      <match offset="3" value="NTFS" type="string"/>
+    </magic>
+  </mime-type>
+
   <mime-type type="application/java-serialized-object">
     <glob pattern="*.ser"/>
   </mime-type>
