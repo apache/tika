@@ -33,7 +33,6 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPMM;
@@ -50,9 +49,9 @@ public class XmpboxExtractorTest extends TikaTest {
     @Test // parsing fails because of bad date "2010-07-28T11:02:12.000CEST" = UTC+02:00
     public void testParseJpeg() throws IOException, TikaException {
         Metadata metadata = new Metadata();
-        try (TikaInputStream tis = getResourceAsStream("/test-documents/testJPEG_commented.jpg")) {
+        try (InputStream is = getResourceAsStream("/test-documents/testJPEG_commented.jpg")) {
             UnsynchronizedByteArrayOutputStream xmpraw = UnsynchronizedByteArrayOutputStream.builder().get();
-            boolean parsed = scanner.parse(tis, xmpraw);
+            boolean parsed = scanner.parse(is, xmpraw);
             assertTrue(parsed);
 
             // set some values before extraction to see that they are overridden
@@ -89,14 +88,14 @@ public class XmpboxExtractorTest extends TikaTest {
     @Test
     public void testParseJpegPhotoshop() throws IOException, TikaException {
         Metadata metadata = new Metadata();
-        try (TikaInputStream tis = getResourceAsStream(
+        try (InputStream is = getResourceAsStream(
                 "/test-documents/testJPEG_commented_pspcs2mac.jpg")) {
             UnsynchronizedByteArrayOutputStream xmpraw = UnsynchronizedByteArrayOutputStream.builder().get();
-            boolean parsed = scanner.parse(tis, xmpraw);
+            boolean parsed = scanner.parse(is, xmpraw);
             assertTrue(parsed);
 
-            try (InputStream is = xmpraw.toInputStream()) {
-                XMPMetadataExtractor.parse(is, metadata);
+            try (InputStream is2 = xmpraw.toInputStream()) {
+                XMPMetadataExtractor.parse(is2, metadata);
             }
 
             // DublinCore fields
@@ -114,14 +113,14 @@ public class XmpboxExtractorTest extends TikaTest {
     @Test
     public void testParseJpegXnviewmp() throws IOException, TikaException {
         Metadata metadata = new Metadata();
-        try (TikaInputStream tis = getResourceAsStream(
+        try (InputStream is = getResourceAsStream(
                 "/test-documents/testJPEG_commented_xnviewmp026.jpg")) {
             UnsynchronizedByteArrayOutputStream xmpraw = UnsynchronizedByteArrayOutputStream.builder().get();
-            boolean parsed = scanner.parse(tis, xmpraw);
+            boolean parsed = scanner.parse(is, xmpraw);
             assertTrue(parsed);
 
-            try (InputStream is = xmpraw.toInputStream()) {
-                XMPMetadataExtractor.parse(is, metadata);
+            try (InputStream is2 = xmpraw.toInputStream()) {
+                XMPMetadataExtractor.parse(is2, metadata);
             }
 
             assertEquals("Bird site in north eastern Sk\u00E5ne, Sweden.\n(new line)",
@@ -138,21 +137,21 @@ public class XmpboxExtractorTest extends TikaTest {
         Metadata metadata = new Metadata();
         int maxHistory = XMPMetadataExtractor.getMaxXMPMMHistory();
         try {
-            try (TikaInputStream tis = getResourceAsStream("/test-documents/testXMP.xmp")) {
+            try (InputStream is = getResourceAsStream("/test-documents/testXMP.xmp")) {
                 UnsynchronizedByteArrayOutputStream xmpraw = UnsynchronizedByteArrayOutputStream.builder().get();
-                boolean parsed = scanner.parse(tis, xmpraw);
+                boolean parsed = scanner.parse(is, xmpraw);
                 assertTrue(parsed);
 
-                try (InputStream is = xmpraw.toInputStream()) {
-                    XMPMetadataExtractor.parse(is, metadata);
+                try (InputStream is2 = xmpraw.toInputStream()) {
+                    XMPMetadataExtractor.parse(is2, metadata);
                 }
 
                 assertEquals(7, metadata.getValues(XMPMM.HISTORY_EVENT_INSTANCEID).length);
                 
                 XMPMetadataExtractor.setMaxXMPMMHistory(5);
                 metadata = new Metadata();
-                try (InputStream is = xmpraw.toInputStream()) {
-                    XMPMetadataExtractor.parse(is, metadata);
+                try (InputStream is2 = xmpraw.toInputStream()) {
+                    XMPMetadataExtractor.parse(is2, metadata);
                 }
 
                 assertEquals(5, metadata.getValues(XMPMM.HISTORY_EVENT_INSTANCEID).length);
