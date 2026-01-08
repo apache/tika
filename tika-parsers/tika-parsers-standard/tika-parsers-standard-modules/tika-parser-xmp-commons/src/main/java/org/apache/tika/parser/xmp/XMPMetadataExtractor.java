@@ -184,7 +184,7 @@ public class XMPMetadataExtractor {
                     String action = stevt.getAction();
                     Calendar when = stevt.getWhen();
                     String softwareAgent = stevt.getSoftwareAgent();
-                    if (instanceId != null && !instanceId.isBlank())
+                    if (instanceId != null && instanceId.trim().length() > 0)
                     {
                         // for absent data elements, pass in empty strings so
                         // that parallel arrays will have matching offsets for absent data
