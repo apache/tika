@@ -40,7 +40,6 @@
     from the tika-parsers component.
   </description>
   <url>https://tika.apache.org/</url>
-  <!-- pax doesn't yet work with junit4; checkstyle forbids junit4. -->
   <properties>
     <checkstyle.skip>true</checkstyle.skip>
   </properties>

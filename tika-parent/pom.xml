@@ -398,8 +398,7 @@
     <json.simple.version>1.1.1</json.simple.version>
     <jsoup.version>1.22.1</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
-    <junit4.version>4.13.2</junit4.version>
-    <junit5.version>6.1.0-M1</junit5.version>
+    <junit6.version>6.1.0-M1</junit6.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
     <junrar.version>7.5.7</junrar.version>
     <jwarc.version>0.33.0</jwarc.version>
@@ -442,7 +441,6 @@
     <sqlite.version>3.51.1.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>2.0.3</testcontainers.version>
-    <testcontainersv1.version>1.21.4</testcontainersv1.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
     <tukaani.version>1.11</tukaani.version>
     <twelvemonkeys.version>3.13.0</twelvemonkeys.version>
@@ -547,7 +545,7 @@
       <dependency>
         <groupId>org.junit</groupId>
         <artifactId>junit-bom</artifactId>
-        <version>${junit5.version}</version>
+        <version>${junit6.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -591,16 +589,15 @@
         <artifactId>jsoup</artifactId>
         <version>${jsoup.version}</version>
       </dependency>
-      <!-- missing in testcontainers-bom 2.* -->
       <dependency>
         <groupId>org.testcontainers</groupId>
-        <artifactId>junit-jupiter</artifactId>
-        <version>${testcontainersv1.version}</version>
+        <artifactId>testcontainers-junit-jupiter</artifactId>
+        <version>${testcontainers.version}</version>
       </dependency>
       <dependency>
         <groupId>org.testcontainers</groupId>
-        <artifactId>kafka</artifactId>
-        <version>${testcontainersv1.version}</version>
+        <artifactId>testcontainers-kafka</artifactId>
+        <version>${testcontainers.version}</version>
       </dependency>
 
       <dependency>
@@ -829,19 +826,14 @@
         <version>2.14.0</version>
       </dependency>
       <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <version>${junit4.version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-api</artifactId>
-        <version>${junit5.version}</version>
+        <version>${junit6.version}</version>
       </dependency>
       <dependency>
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-engine</artifactId>
-        <version>${junit5.version}</version>
+        <version>${junit6.version}</version>
       </dependency>
       <dependency>
         <groupId>net.java.dev.jna</groupId>
