@@ -1386,6 +1386,15 @@ public class TestMimeTypes {
         assertTypeByName("audio/x-aac", "x.aac");
     }
 
+    /**
+     * TIKA-4582: MP3 files with ID3 tags should not be misdetected as AAC.
+     * This test file contains random audio data that happens to match the AAC ADTS sync pattern.
+     */
+    @Test
+    public void testMP3Detection() throws Exception {
+        assertTypeByData("audio/mpeg", "testMP3_id3_false_aac.mp3");
+    }
+
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
     }
