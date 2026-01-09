@@ -152,6 +152,7 @@ public class OOXMLParserTest extends TikaTest {
         Parser parser = TikaTest.AUTO_DETECT_PARSER;
         Parser digestingParser = new DigestingParser(parser, new CommonsDigester(100000, "sha256"), false);
         List<Metadata> metadataList = getRecursiveMetadata("testMSChart-govdocs-428996.pptx", digestingParser);
+
         assertEquals(4, metadataList.size());
         for (Metadata m : metadataList) {
             assertNotNull(m.get("X-TIKA:digest:SHA256"));
@@ -159,5 +160,9 @@ public class OOXMLParserTest extends TikaTest {
             //before TIKA-4607
             assertNull(m.get(TikaCoreProperties.EMBEDDED_EXCEPTION));
         }
+
+        assertEquals("/oleObject1.bin", metadataList.get(2).get(TikaCoreProperties.FINAL_EMBEDDED_RESOURCE_PATH));
+        assertEquals("application/vnd.ms-graph", metadataList.get(2).get(Metadata.CONTENT_TYPE));
+        assertEquals("4cfadec808582492aeb5f1ae0f391dadbd3402affeef3e5488b4f6a07537aea5", metadataList.get(2).get("X-TIKA:digest:SHA256"));
     }
 }

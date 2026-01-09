@@ -22,6 +22,7 @@ import java.io.InputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
@@ -72,14 +73,18 @@ public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
                 try {
                     Ole10Native ole = Ole10Native.createFromEmbeddedOleObject(poifs);
                     if (ole.getDataSize() > 0) {
-                        name = ole.getLabel();
+                        if (StringUtils.isAllBlank(name)) {
+                            name = ole.getLabel();
+                        }
                         data = ole.getDataBuffer();
                     }
                 } catch (Ole10NativeException ex) {
                     LOG.warn("Skipping invalid part", ex);
                 }
             } else {
-                name += '.' + type.getExtension();
+                if (! StringUtils.isAllBlank(type.getExtension()) && ! StringUtils.isAllBlank(name) && !name.contains(".")) {
+                    name += '.' + type.getExtension();
+                }
             }
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
             return UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get();
