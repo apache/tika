@@ -599,14 +599,11 @@ public class POIFSContainerDetector implements Detector {
     private Set<String> getTopLevelNames(TikaInputStream stream) throws IOException {
         // Force the document stream to a (possibly temporary) file
         // so we don't modify the current position of the stream.
-        //If the markLimit is < 0, this will spool the entire file
-        //to disk if there is not an underlying file.
-        Path file = stream.getPath(markLimit);
+        Path file = stream.getPath();
 
-        //if the stream was longer than markLimit, don't detect
         if (file == null) {
-            LOG.warn("File length exceeds marklimit. Skipping detection on this file. " +
-                    "If you need precise detection, consider increasing the marklimit or setting it to -1");
+            // ReadOnceTikaInputStream doesn't support getPath()
+            LOG.warn("Stream does not support file access; skipping POIFS detection");
             return Collections.emptySet();
         }
 

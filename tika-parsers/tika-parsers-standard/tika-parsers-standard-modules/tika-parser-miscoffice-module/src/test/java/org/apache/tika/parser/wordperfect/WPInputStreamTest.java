@@ -19,6 +19,7 @@ package org.apache.tika.parser.wordperfect;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.EOFException;
+import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
@@ -121,7 +122,7 @@ public class WPInputStreamTest {
         }
     }
 
-    private WPInputStream emptyWPStream() {
+    private WPInputStream emptyWPStream() throws IOException {
         return new WPInputStream(TikaInputStream.get(new byte[0]));
     }
 }

@@ -32,7 +32,7 @@ import org.apache.commons.io.input.CloseShieldInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.utils.RereadableInputStream;
+import org.apache.tika.io.TikaInputStream;
 
 public class ZipSalvager {
 
@@ -55,14 +55,11 @@ public class ZipSalvager {
     public static void salvageCopy(InputStream brokenZip, File salvagedZip,
                                    boolean allowStoredEntries) throws IOException {
 
+        TikaInputStream tis = TikaInputStream.get(brokenZip);
         try {
-            if (!(brokenZip instanceof RereadableInputStream)) {
-                brokenZip = new RereadableInputStream(brokenZip, 50000, true);
-            }
-
             try (ZipArchiveOutputStream outputStream = new ZipArchiveOutputStream(salvagedZip);
                     ZipArchiveInputStream zipArchiveInputStream = new ZipArchiveInputStream(
-                            CloseShieldInputStream.wrap(brokenZip), "UTF8", false,
+                            CloseShieldInputStream.wrap(tis), "UTF8", false,
                             allowStoredEntries)) {
                 ZipArchiveEntry zae = zipArchiveInputStream.getNextEntry();
                 try {
@@ -83,8 +80,8 @@ public class ZipSalvager {
                 //now retry
                 if (allowStoredEntries == false &&
                         e.getFeature() == UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR) {
-                    ((RereadableInputStream) brokenZip).rewind();
-                    salvageCopy(brokenZip, salvagedZip, true);
+                    tis.rewind();
+                    salvageCopy(tis, salvagedZip, true);
                 } else {
                     throw e;
                 }
@@ -92,7 +89,7 @@ public class ZipSalvager {
                 LOG.warn("problem fixing zip", e);
             }
         } finally {
-            brokenZip.close();
+            tis.close();
         }
     }
 
