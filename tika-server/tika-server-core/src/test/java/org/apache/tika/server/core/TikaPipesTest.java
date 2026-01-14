@@ -44,6 +44,7 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -86,6 +87,8 @@ public class TikaPipesTest extends CXFTestBase {
 
     private static String[] VALUE_ARRAY = new String[]{"my-value-1", "my-value-2", "my-value-3"};
 
+    private PipesResource pipesResource;
+
     @BeforeAll
     public static void setUpBeforeClass() throws Exception {
         TMP_DIR = Files.createTempDirectory("tika-pipes-test-");
@@ -117,6 +120,16 @@ public class TikaPipesTest extends CXFTestBase {
         FileUtils.deleteDirectory(TMP_DIR.toFile());
     }
 
+    @Override
+    @AfterEach
+    public void tearDown() throws Exception {
+        if (pipesResource != null) {
+            pipesResource.close();
+            pipesResource = null;
+        }
+        super.tearDown();
+    }
+
     @BeforeEach
     public void setUpEachTest() throws Exception {
         if (Files.exists(TMP_OUTPUT_FILE)) {
@@ -132,7 +145,8 @@ public class TikaPipesTest extends CXFTestBase {
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         List<ResourceProvider> rCoreProviders = new ArrayList<>();
         try {
-            rCoreProviders.add(new SingletonResourceProvider(new PipesResource(TIKA_CONFIG_PATH)));
+            pipesResource = new PipesResource(TIKA_CONFIG_PATH);
+            rCoreProviders.add(new SingletonResourceProvider(pipesResource));
         } catch (IOException | TikaConfigException e) {
             throw new RuntimeException(e);
         }
