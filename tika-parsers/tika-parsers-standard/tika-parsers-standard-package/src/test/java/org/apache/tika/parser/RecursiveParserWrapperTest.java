@@ -167,7 +167,6 @@ public class RecursiveParserWrapperTest extends TikaTest {
             wrapper.parse(tis, handler, metadata, context);
         }
         List<Metadata> list = handler.getMetadataList();
-        debug(list);
         assertTrue(writeLimit >= getContentLength(list),
                 "writeLimit=" + writeLimit + " contentLength=" + getContentLength(list));
     }

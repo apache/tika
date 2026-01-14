@@ -22,14 +22,16 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.apache.commons.io.IOUtils;
+
 /**
- * Backing strategy for raw InputStream inputs.
+ * Input source that caches bytes from a raw InputStream.
  * <p>
  * Uses {@link CachingInputStream} to cache bytes as they are read,
  * enabling mark/reset/seek operations. If the cache exceeds a threshold,
  * it spills to a temporary file via {@link StreamCache}.
  */
-class StreamBackedStrategy implements InputStreamBackingStrategy {
+class CachingSource extends InputStream implements TikaInputSource {
 
     private final TemporaryResources tmp;
     private CachingInputStream cachingStream;
@@ -39,7 +41,7 @@ class StreamBackedStrategy implements InputStreamBackingStrategy {
     private Path spilledPath;
     private InputStream fileStream;
 
-    StreamBackedStrategy(InputStream source, TemporaryResources tmp, long length) {
+    CachingSource(InputStream source, TemporaryResources tmp, long length) {
         this.tmp = tmp;
         this.length = length;
         StreamCache cache = new StreamCache(tmp);
@@ -66,11 +68,12 @@ class StreamBackedStrategy implements InputStreamBackingStrategy {
     }
 
     @Override
-    public long skip(long n, byte[] skipBuffer) throws IOException {
+    public long skip(long n) throws IOException {
         if (fileStream != null) {
-            return IOUtils.skip(fileStream, n, skipBuffer);
+            return IOUtils.skip(fileStream, n);
         }
-        return IOUtils.skip(cachingStream, n, skipBuffer);
+        //this is safe because cachingStream already does a read instead of trusting the skip
+        return cachingStream.skip(n);
     }
 
     @Override
@@ -81,8 +84,6 @@ class StreamBackedStrategy implements InputStreamBackingStrategy {
         return cachingStream.available();
     }
 
-    private static final byte[] SKIP_BUFFER = new byte[4096];
-
     @Override
     public void seekTo(long position) throws IOException {
         if (fileStream != null) {
@@ -90,11 +91,7 @@ class StreamBackedStrategy implements InputStreamBackingStrategy {
             fileStream.close();
             fileStream = new BufferedInputStream(Files.newInputStream(spilledPath));
             if (position > 0) {
-                long skipped = IOUtils.skip(fileStream, position, SKIP_BUFFER);
-                if (skipped != position) {
-                    throw new IOException("Failed to seek to position " + position +
-                            ", only skipped " + skipped + " bytes");
-                }
+                IOUtils.skipFully(fileStream, position);
             }
         } else {
             cachingStream.seekTo(position);
@@ -121,11 +118,7 @@ class StreamBackedStrategy implements InputStreamBackingStrategy {
             // Open file stream at current position
             fileStream = new BufferedInputStream(Files.newInputStream(spilledPath));
             if (currentPosition > 0) {
-                long skipped = IOUtils.skip(fileStream, currentPosition, SKIP_BUFFER);
-                if (skipped != currentPosition) {
-                    throw new IOException("Failed to seek to position " + currentPosition +
-                            ", only skipped " + skipped + " bytes");
-                }
+                IOUtils.skipFully(fileStream, currentPosition);
             }
 
             // Update length from file size

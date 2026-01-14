@@ -28,7 +28,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 /**
  * Utility methods for content detection.
  */
-public class DetectUtils {
+public class DetectHelper {
 
     /**
      * Creates a TikaInputStream suitable for detection-only purposes by reading
@@ -41,6 +41,9 @@ public class DetectUtils {
      * <p>
      * This is useful when you want to perform detection on a limited portion of
      * a large file without spooling the entire file to disk.
+     * <p>
+     * <b>NOTE</b>The downside is that you may lose precision in detection!
+     * This should only be used if you are performing detection only with no parsing.
      *
      * @param stream    the input stream to read from (will NOT be closed)
      * @param maxLength the maximum number of bytes to read

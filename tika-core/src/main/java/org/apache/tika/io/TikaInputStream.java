@@ -32,6 +32,7 @@ import java.nio.file.Paths;
 import java.sql.Blob;
 import java.sql.SQLException;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.TaggedInputStream;
 
 import org.apache.tika.metadata.Metadata;
@@ -43,9 +44,9 @@ import org.apache.tika.utils.StringUtils;
  * <p>
  * This implementation uses backing strategies to handle different input types:
  * <ul>
- *   <li>{@link ByteArrayBackedStrategy} for byte[] inputs - no caching needed</li>
- *   <li>{@link FileBackedStrategy} for Path/File inputs - direct file access</li>
- *   <li>{@link StreamBackedStrategy} for InputStream inputs - caches bytes as read</li>
+ *   <li>{@link ByteArraySource} for byte[] inputs - no caching needed</li>
+ *   <li>{@link FileSource} for Path/File inputs - direct file access</li>
+ *   <li>{@link CachingSource} for InputStream inputs - caches bytes as read</li>
  * </ul>
  *
  * @since Apache Tika 0.8
@@ -57,14 +58,10 @@ public class TikaInputStream extends TaggedInputStream {
 
     protected TemporaryResources tmp;
 
-    // The backing strategy handles read, seek, and file access
-    private InputStreamBackingStrategy strategy;
-
     private long position = 0;
     private long mark = -1;
     private Object openContainer;
     private int consecutiveEOFs = 0;
-    private byte[] skipBuffer;
     private int closeShieldDepth = 0;
     private String suffix = null;
     private long overrideLength = -1;  // For getFromContainer() to set explicit length
@@ -77,17 +74,23 @@ public class TikaInputStream extends TaggedInputStream {
     protected TikaInputStream(InputStream stream, long length) {
         super(stream);
         this.tmp = null;
-        this.strategy = null;
     }
 
     /**
      * Strategy-based constructor.
+     * TikaInputSource extends InputStream, so we pass it directly to super().
      */
-    private TikaInputStream(InputStreamBackingStrategy strategy, TemporaryResources tmp, String suffix) {
-        super(new StrategyInputStream(strategy));
-        this.strategy = strategy;
+    private TikaInputStream(TikaInputSource inputSource, TemporaryResources tmp, String suffix) {
+        super((InputStream) inputSource);
         this.tmp = tmp;
         this.suffix = suffix;
+    }
+
+    /**
+     * Returns the backing TikaInputSource, or null if using protected constructor.
+     */
+    private TikaInputSource inputSource() {
+        return in instanceof TikaInputSource ? (TikaInputSource) in : null;
     }
 
     // ========== Static Factory Methods ==========
@@ -100,8 +103,8 @@ public class TikaInputStream extends TaggedInputStream {
             return (TikaInputStream) stream;
         }
         String ext = getExtension(metadata);
-        InputStreamBackingStrategy strategy = new StreamBackedStrategy(stream, tmp, -1);
-        return new TikaInputStream(strategy, tmp, ext);
+        TikaInputSource inputSource = new CachingSource(stream, tmp, -1);
+        return new TikaInputStream(inputSource, tmp, ext);
     }
 
     public static TikaInputStream get(InputStream stream) {
@@ -112,13 +115,6 @@ public class TikaInputStream extends TaggedInputStream {
         return get(stream, new TemporaryResources(), metadata);
     }
 
-    public static TikaInputStream cast(InputStream stream) {
-        if (stream instanceof TikaInputStream) {
-            return (TikaInputStream) stream;
-        }
-        return null;
-    }
-
     public static TikaInputStream get(byte[] data) throws IOException {
         return get(data, new Metadata());
     }
@@ -127,8 +123,8 @@ public class TikaInputStream extends TaggedInputStream {
         metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(data.length));
         String ext = getExtension(metadata);
         TemporaryResources tmp = new TemporaryResources();
-        InputStreamBackingStrategy strategy = new ByteArrayBackedStrategy(data);
-        return new TikaInputStream(strategy, tmp, ext);
+        TikaInputSource inputSource = new ByteArraySource(data);
+        return new TikaInputStream(inputSource, tmp, ext);
     }
 
     public static TikaInputStream get(Path path) throws IOException {
@@ -142,8 +138,8 @@ public class TikaInputStream extends TaggedInputStream {
         metadata.set(Metadata.CONTENT_LENGTH, Long.toString(Files.size(path)));
         String ext = FilenameUtils.getSuffixFromPath(path.getFileName().toString());
         TemporaryResources tmp = new TemporaryResources();
-        InputStreamBackingStrategy strategy = new FileBackedStrategy(path);
-        return new TikaInputStream(strategy, tmp, ext);
+        TikaInputSource inputSource = new FileSource(path);
+        return new TikaInputStream(inputSource, tmp, ext);
     }
 
     public static TikaInputStream get(Path path, Metadata metadata, TemporaryResources tmp)
@@ -154,8 +150,8 @@ public class TikaInputStream extends TaggedInputStream {
         }
         metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
         String ext = FilenameUtils.getSuffixFromPath(path.getFileName().toString());
-        InputStreamBackingStrategy strategy = new FileBackedStrategy(path);
-        return new TikaInputStream(strategy, tmp, ext);
+        TikaInputSource inputSource = new FileSource(path);
+        return new TikaInputStream(inputSource, tmp, ext);
     }
 
     public static TikaInputStream get(File file) throws IOException {
@@ -183,9 +179,9 @@ public class TikaInputStream extends TaggedInputStream {
         } else {
             String ext = getExtension(metadata);
             TemporaryResources tmp = new TemporaryResources();
-            InputStreamBackingStrategy strategy = new StreamBackedStrategy(
+            TikaInputSource inputSource = new CachingSource(
                     new BufferedInputStream(blob.getBinaryStream()), tmp, length);
-            return new TikaInputStream(strategy, tmp, ext);
+            return new TikaInputStream(inputSource, tmp, ext);
         }
     }
 
@@ -244,9 +240,9 @@ public class TikaInputStream extends TaggedInputStream {
 
         String ext = getExtension(metadata);
         TemporaryResources tmp = new TemporaryResources();
-        InputStreamBackingStrategy strategy = new StreamBackedStrategy(
+        TikaInputSource inputSource = new CachingSource(
                 new BufferedInputStream(connection.getInputStream()), tmp, length);
-        return new TikaInputStream(strategy, tmp, ext);
+        return new TikaInputStream(inputSource, tmp, ext);
     }
 
     public static TikaInputStream getFromContainer(Object openContainer, long length, Metadata metadata)
@@ -268,14 +264,22 @@ public class TikaInputStream extends TaggedInputStream {
 
     // ========== InputStream Methods ==========
 
+    /**
+     * Skips up to {@code n} bytes. Returns the actual number of bytes skipped,
+     * which may be less than requested if the end of stream is reached.
+     * <p>
+     * This method does NOT throw {@link java.io.EOFException} if fewer bytes
+     * are available. Callers must check the return value to determine how many
+     * bytes were actually skipped.
+     *
+     * @param n the number of bytes to skip
+     * @return the actual number of bytes skipped (may be less than {@code n})
+     */
     @Override
-    public long skip(long ln) throws IOException {
-        if (skipBuffer == null) {
-            skipBuffer = new byte[4096];
-        }
-        long n = IOUtils.skip(in, ln, skipBuffer);
-        position += n;
-        return n;
+    public long skip(long n) throws IOException {
+        long skipped = IOUtils.skip(in, n);
+        position += skipped;
+        return skipped;
     }
 
     @Override
@@ -295,10 +299,11 @@ public class TikaInputStream extends TaggedInputStream {
             throw new IOException("Resetting to invalid mark");
         }
 
-        if (strategy != null) {
-            strategy.seekTo(mark);
+        TikaInputSource source = inputSource();
+        if (source != null) {
+            source.seekTo(mark);
         } else {
-            throw new IOException("Cannot reset: no strategy available");
+            throw new IOException("Cannot reset: no TikaInputSource available");
         }
 
         position = mark;
@@ -313,12 +318,10 @@ public class TikaInputStream extends TaggedInputStream {
         }
         mark = -1;
 
-        if (strategy != null) {
-            tmp.addResource(strategy);
-        } else {
+        if (tmp != null) {
             tmp.addResource(in);
+            tmp.close();
         }
-        tmp.close();
     }
 
     @Override
@@ -371,14 +374,16 @@ public class TikaInputStream extends TaggedInputStream {
     }
 
     public boolean hasFile() {
-        return strategy != null && strategy.hasPath();
+        TikaInputSource source = inputSource();
+        return source != null && source.hasPath();
     }
 
     public Path getPath() throws IOException {
-        if (strategy == null) {
-            throw new IOException("No strategy available");
+        TikaInputSource source = inputSource();
+        if (source == null) {
+            throw new IOException("No TikaInputSource available");
         }
-        return strategy.getPath(tmp, suffix);
+        return source.getPath(tmp, suffix);
     }
 
     public File getFile() throws IOException {
@@ -395,21 +400,23 @@ public class TikaInputStream extends TaggedInputStream {
         if (overrideLength >= 0) {
             return true;
         }
-        return strategy != null && strategy.getLength() != -1;
+        TikaInputSource source = inputSource();
+        return source != null && source.getLength() != -1;
     }
 
     public long getLength() throws IOException {
         if (overrideLength >= 0) {
             return overrideLength;
         }
-        if (strategy == null) {
+        TikaInputSource source = inputSource();
+        if (source == null) {
             return -1;
         }
-        long len = strategy.getLength();
+        long len = source.getLength();
         if (len == -1) {
             // Force spill to get length
             getPath();
-            len = strategy.getLength();
+            len = source.getLength();
         }
         return len;
     }

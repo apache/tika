@@ -740,12 +740,12 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
             throws Exception {
         try (InputStream is = getResourceAsStream("/test-documents/" + fileName)) {
             Metadata metadata = new Metadata();
-            try (TikaInputStream tis = DetectUtils.getStreamForDetectionOnly(is, maxBytes, metadata)) {
+            try (TikaInputStream tis = DetectHelper.getStreamForDetectionOnly(is, maxBytes, metadata)) {
                 MediaType detected = detector.detect(tis, metadata, new ParseContext());
                 assertEquals(MediaType.parse(expectedType), detected,
                         "Detection failed for " + fileName + " with maxBytes=" + maxBytes);
                 assertEquals(expectTruncated,
-                        DetectUtils.isContentTruncatedForDetection(metadata),
+                        DetectHelper.isContentTruncatedForDetection(metadata),
                         "Truncation flag mismatch for " + fileName + " with maxBytes=" + maxBytes);
             }
         }
@@ -761,9 +761,9 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         // Create a truncated stream and verify the flag is set
         try (InputStream is = getResourceAsStream("/test-documents/testWORD.doc")) {
             Metadata metadata = new Metadata();
-            try (TikaInputStream tis = DetectUtils.getStreamForDetectionOnly(is, 512, metadata)) {
+            try (TikaInputStream tis = DetectHelper.getStreamForDetectionOnly(is, 512, metadata)) {
                 // The flag should be set since the file is larger than 512 bytes
-                assertTrue(DetectUtils.isContentTruncatedForDetection(metadata),
+                assertTrue(DetectHelper.isContentTruncatedForDetection(metadata),
                         "Expected truncation flag to be set for small buffer");
             }
         }
@@ -772,9 +772,9 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         try (InputStream is = getResourceAsStream("/test-documents/testTXT.txt")) {
             // testTXT.txt is small, so 100KB should be more than enough
             Metadata metadata = new Metadata();
-            try (TikaInputStream tis = DetectUtils.getStreamForDetectionOnly(is, 100 * 1024, metadata)) {
+            try (TikaInputStream tis = DetectHelper.getStreamForDetectionOnly(is, 100 * 1024, metadata)) {
                 // The flag should NOT be set since we read the whole file
-                assertEquals(false, DetectUtils.isContentTruncatedForDetection(metadata),
+                assertEquals(false, DetectHelper.isContentTruncatedForDetection(metadata),
                         "Expected truncation flag to NOT be set for full file");
             }
         }

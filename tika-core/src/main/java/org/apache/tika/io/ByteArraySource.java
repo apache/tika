@@ -17,43 +17,49 @@
 package org.apache.tika.io;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Backing strategy for byte array inputs.
+ * Input source backed by a byte array.
  * <p>
  * Data is already in memory and natively seekable via array indexing.
  * No caching is needed. A temp file is only created if {@link #getPath}
  * is explicitly called.
+ * <p>
+ * Would prefer to extend UnsynchronizedByteArrayInputStream, but we need direct
+ * access to the internals.
  */
-class ByteArrayBackedStrategy implements InputStreamBackingStrategy {
+class ByteArraySource extends InputStream implements TikaInputSource {
 
     private final byte[] data;
+    private final int length;
     private int position;
     private Path spilledPath;
 
-    ByteArrayBackedStrategy(byte[] data) {
+    ByteArraySource(byte[] data) {
         this.data = data;
+        this.length = data.length;
         this.position = 0;
         this.spilledPath = null;
     }
 
     @Override
-    public int read() throws IOException {
-        if (position >= data.length) {
+    public int read() {
+        if (position >= length) {
             return -1;
         }
         return data[position++] & 0xFF;
     }
 
     @Override
-    public int read(byte[] b, int off, int len) throws IOException {
-        if (position >= data.length) {
+    public int read(byte[] b, int off, int len) {
+        if (position >= length) {
             return -1;
         }
-        int available = data.length - position;
+        int available = length - position;
         int toRead = Math.min(len, available);
         System.arraycopy(data, position, b, off, toRead);
         position += toRead;
@@ -61,27 +67,26 @@ class ByteArrayBackedStrategy implements InputStreamBackingStrategy {
     }
 
     @Override
-    public long skip(long n, byte[] skipBuffer) throws IOException {
-        // For byte arrays, we can skip directly by advancing position
+    public long skip(long n) {
         if (n <= 0) {
             return 0;
         }
-        long available = data.length - position;
-        long skipped = Math.min(n, available);
-        position += (int) skipped;
-        return skipped;
+        int available = length - position;
+        int toSkip = (int) Math.min(n, available);
+        position += toSkip;
+        return toSkip;
     }
 
     @Override
-    public int available() throws IOException {
-        return data.length - position;
+    public int available() {
+        return length - position;
     }
 
     @Override
     public void seekTo(long newPosition) throws IOException {
-        if (newPosition < 0 || newPosition > data.length) {
+        if (newPosition < 0 || newPosition > length) {
             throw new IOException("Invalid seek position: " + newPosition +
-                    " (length: " + data.length + ")");
+                    " (length: " + length + ")");
         }
         this.position = (int) newPosition;
     }
@@ -97,7 +102,7 @@ class ByteArrayBackedStrategy implements InputStreamBackingStrategy {
             // Spill to temp file on first call
             spilledPath = tmp.createTempFile(suffix);
             try (OutputStream out = Files.newOutputStream(spilledPath)) {
-                out.write(data);
+                out.write(data, 0, length);
             }
         }
         return spilledPath;
@@ -105,12 +110,6 @@ class ByteArrayBackedStrategy implements InputStreamBackingStrategy {
 
     @Override
     public long getLength() {
-        return data.length;
-    }
-
-    @Override
-    public void close() throws IOException {
-        // Nothing to close - byte array doesn't need cleanup
-        // Temp file cleanup is handled by TemporaryResources
+        return length;
     }
 }

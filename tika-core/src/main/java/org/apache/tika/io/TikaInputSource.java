@@ -21,47 +21,23 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 /**
- * Package-private interface for TikaInputStream backing strategies.
- * Encapsulates read, seek, and file access behaviors for different
- * input source types (byte arrays, files, streams).
+ * Package-private interface for TikaInputStream input sources.
+ * <p>
+ * Implementations must also extend {@link java.io.InputStream} (or a subclass).
+ * This interface defines the additional methods beyond InputStream that
+ * TikaInputStream needs.
  */
-interface InputStreamBackingStrategy extends Closeable {
-
-    /**
-     * Reads a single byte.
-     * @return the byte read, or -1 if end of stream
-     */
-    int read() throws IOException;
-
-    /**
-     * Reads bytes into a buffer.
-     * @return number of bytes read, or -1 if end of stream
-     */
-    int read(byte[] b, int off, int len) throws IOException;
-
-    /**
-     * Skips bytes using read operations (not the underlying stream's skip).
-     * This ensures bytes are properly cached for strategies that need it.
-     * @param n number of bytes to skip
-     * @param skipBuffer buffer to use for reading during skip
-     * @return actual number of bytes skipped
-     */
-    long skip(long n, byte[] skipBuffer) throws IOException;
-
-    /**
-     * Returns an estimate of available bytes.
-     */
-    int available() throws IOException;
+interface TikaInputSource extends Closeable {
 
     /**
      * Seeks to a specific position in the stream.
-     * Can only seek to positions that have already been read (for stream-backed)
-     * or any valid position (for byte array and file-backed).
+     * Can only seek to positions that have already been read (for CachingSource)
+     * or any valid position (for ByteArraySource and FileSource).
      */
     void seekTo(long position) throws IOException;
 
     /**
-     * Returns true if this strategy has a file path available.
+     * Returns true if this source has a file path available.
      */
     boolean hasPath();
 

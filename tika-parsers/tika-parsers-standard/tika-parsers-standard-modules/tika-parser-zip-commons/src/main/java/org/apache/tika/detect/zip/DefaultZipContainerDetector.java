@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.TikaComponent;
-import org.apache.tika.detect.DetectUtils;
+import org.apache.tika.detect.DetectHelper;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -176,8 +176,8 @@ public class DefaultZipContainerDetector implements Detector {
             // If content is truncated for detection, use streaming detection
             // since file-based detection with ZipFile requires the central directory
             // which is at the end of the file
-            if (DetectUtils.isContentTruncatedForDetection(metadata)) {
-                int contentLength = DetectUtils.getDetectionContentLength(metadata);
+            if (DetectHelper.isContentTruncatedForDetection(metadata)) {
+                int contentLength = DetectHelper.getDetectionContentLength(metadata);
                 tis.mark(contentLength > 0 ? contentLength : MIN_BUFFER_SIZE);
                 try {
                     return detectStreaming(tis, metadata, false);

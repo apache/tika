@@ -22,21 +22,23 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.apache.commons.io.IOUtils;
+
 /**
- * Backing strategy for file-based inputs.
+ * Input source backed by a file.
  * <p>
  * Data is already on disk. No caching is needed.
  * {@link #getPath} returns the existing path immediately.
  * Mark/reset works by reopening the file and skipping to the marked position.
  */
-class FileBackedStrategy implements InputStreamBackingStrategy {
+class FileSource extends InputStream implements TikaInputSource {
 
     private final Path path;
     private final long length;
     private InputStream currentStream;
     private long position;
 
-    FileBackedStrategy(Path path) throws IOException {
+    FileSource(Path path) throws IOException {
         this.path = path;
         this.length = Files.size(path);
         this.currentStream = new BufferedInputStream(Files.newInputStream(path));
@@ -62,8 +64,8 @@ class FileBackedStrategy implements InputStreamBackingStrategy {
     }
 
     @Override
-    public long skip(long n, byte[] skipBuffer) throws IOException {
-        long skipped = IOUtils.skip(currentStream, n, skipBuffer);
+    public long skip(long n) throws IOException {
+        long skipped = IOUtils.skip(currentStream, n);
         position += skipped;
         return skipped;
     }
@@ -72,8 +74,6 @@ class FileBackedStrategy implements InputStreamBackingStrategy {
     public int available() throws IOException {
         return currentStream.available();
     }
-
-    private static final byte[] SKIP_BUFFER = new byte[4096];
 
     @Override
     public void seekTo(long newPosition) throws IOException {
@@ -91,11 +91,7 @@ class FileBackedStrategy implements InputStreamBackingStrategy {
 
         // Skip to the new position
         if (newPosition > 0) {
-            long skipped = IOUtils.skip(currentStream, newPosition, SKIP_BUFFER);
-            if (skipped != newPosition) {
-                throw new IOException("Failed to seek to position " + newPosition +
-                        ", only skipped " + skipped + " bytes");
-            }
+            IOUtils.skipFully(currentStream, newPosition);
         }
         this.position = newPosition;
     }
