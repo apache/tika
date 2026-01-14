@@ -198,8 +198,10 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                             TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name());
 
                     if (embeddedExtractor.shouldParseEmbedded(thumbnailMetadata)) {
-                        embeddedExtractor.parseEmbedded(TikaInputStream.get(tStream),
-                                new EmbeddedContentHandler(handler), thumbnailMetadata, context, false);
+                        try (TikaInputStream tis = TikaInputStream.get(tStream)) {
+                            embeddedExtractor.parseEmbedded(tis,
+                                    new EmbeddedContentHandler(handler), thumbnailMetadata, context, false);
+                        }
                     }
                 }
             }

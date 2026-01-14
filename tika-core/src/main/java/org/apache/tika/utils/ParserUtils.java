@@ -18,11 +18,8 @@ package org.apache.tika.utils;
 
 import static org.apache.tika.metadata.TikaCoreProperties.EMBEDDED_EXCEPTION;
 
-import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.tika.io.TemporaryResources;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -104,45 +101,5 @@ public class ParserUtils {
         String trace = ExceptionUtils.getStackTrace(failure);
         metadata.add(EMBEDDED_EXCEPTION, trace);
         metadata.add(EMBEDDED_PARSER, getParserClassname(parser));
-    }
-
-    /**
-     * Ensures that the Stream will be able to be re-read, by buffering to
-     * a temporary file if required.
-     * Streams that are automatically OK include {@link TikaInputStream}s
-     * created from Files or InputStreamFactories.
-     */
-    public static TikaInputStream ensureStreamReReadable(TikaInputStream stream, TemporaryResources tmp,
-                                                     Metadata metadata)
-            throws IOException {
-        // If it's factory based, it's ok
-        if (stream.getInputStreamFactory() != null) {
-            return stream;
-        }
-
-        // Ensure it's file based
-        stream.getFile();
-        // Prepare for future re-reads
-        stream.mark(-1);
-        return stream;
-    }
-
-    /**
-     * Resets the given {@link TikaInputStream} (checked by
-     * {@link #ensureStreamReReadable(TikaInputStream, TemporaryResources, Metadata)})
-     * so that it can be re-read again.
-     */
-    public static TikaInputStream streamResetForReRead(TikaInputStream stream, TemporaryResources tmp)
-            throws IOException {
-        // Factory based?
-        if (stream.getInputStreamFactory() != null) {
-            // Just get a fresh one each time from the factory
-            return TikaInputStream.get(stream.getInputStreamFactory(), tmp);
-        }
-
-        // File based, reset stream to beginning of File
-        stream.reset();
-        stream.mark(-1);
-        return stream;
     }
 }

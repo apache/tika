@@ -42,8 +42,6 @@ import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.ConfigDeserializer;
-import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
@@ -61,12 +59,6 @@ import org.apache.tika.parser.microsoft.OfficeParser;
 @TikaComponent
 public class POIFSContainerDetector implements Detector {
 
-    /**
-     * Configuration class for JSON deserialization.
-     */
-    public static class Config {
-        public int markLimit = -1;
-    }
 
     /**
      * The OLE base file format
@@ -263,33 +255,12 @@ public class POIFSContainerDetector implements Detector {
 
     private static final Logger LOG = LoggerFactory.getLogger(POIFSContainerDetector.class);
 
-
-    private int markLimit = -1;
-
     /**
      * Default constructor for SPI loading.
      */
     public POIFSContainerDetector() {
     }
 
-    /**
-     * Constructor with explicit Config object.
-     *
-     * @param config the configuration
-     */
-    public POIFSContainerDetector(Config config) {
-        this.markLimit = config.markLimit;
-    }
-
-    /**
-     * Constructor for JSON configuration.
-     * Requires Jackson on the classpath.
-     *
-     * @param jsonConfig JSON configuration
-     */
-    public POIFSContainerDetector(JsonConfig jsonConfig) {
-        this(ConfigDeserializer.buildConfig(jsonConfig, Config.class));
-    }
 
     /**
      * Internal detection of the specific kind of OLE2 document, based on the
@@ -582,31 +553,14 @@ public class POIFSContainerDetector implements Detector {
         return names;
     }
 
-    /**
-     * If a TikaInputStream is passed in to {@link #detect(InputStream, Metadata, ParseContext)},
-     * and there is not an underlying file, this detector will spool up to {@link #markLimit}
-     * to disk.  If the stream was read in entirety (e.g. the spooled file is not truncated),
-     * this detector will open the file with POI and perform detection.
-     * If the spooled file is truncated, the detector will return {@link #OLE} (or
-     * {@link MediaType#OCTET_STREAM} if there's no OLE header).
-     *
-     * @param markLimit
-     */
-    public void setMarkLimit(int markLimit) {
-        this.markLimit = markLimit;
-    }
 
     private Set<String> getTopLevelNames(TikaInputStream stream) throws IOException {
         // Force the document stream to a (possibly temporary) file
         // so we don't modify the current position of the stream.
-        //If the markLimit is < 0, this will spool the entire file
-        //to disk if there is not an underlying file.
-        Path file = stream.getPath(markLimit);
+        Path file = stream.getPath();
 
-        //if the stream was longer than markLimit, don't detect
         if (file == null) {
-            LOG.warn("File length exceeds marklimit. Skipping detection on this file. " +
-                    "If you need precise detection, consider increasing the marklimit or setting it to -1");
+            LOG.warn("Stream does not support file access; skipping POIFS detection");
             return Collections.emptySet();
         }
 
@@ -671,7 +625,6 @@ public class POIFSContainerDetector implements Detector {
             input.reset();
         }
     }
-
 
     public static Set<String> tryOpenContainerOnTikaInputStream(TikaInputStream tis, Metadata metadata) {
         // If this is a TikaInputStream wrapping an already

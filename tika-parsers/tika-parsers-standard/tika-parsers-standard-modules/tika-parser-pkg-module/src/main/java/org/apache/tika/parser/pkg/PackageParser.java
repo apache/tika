@@ -102,8 +102,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
     private static final long serialVersionUID = -5331043266963888708L;
     private static final Set<MediaType> SUPPORTED_TYPES =
             MediaType.set(ZIP, JAR, AR, ARJ, CPIO, DUMP, TAR, SEVENZ);
-    // the mark limit used for stream
-    private static final int MARK_LIMIT = 100 * 1024 * 1024; // 100M
+
     // The number of bytes of entry name to detect charset properly
     private static final int MIN_BYTES_FOR_DETECTING_CHARSET = 100;
 
@@ -283,7 +282,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
             // Most archive formats work on streams, but a few need files
             if (sne.getFormat().equals(ArchiveStreamFactory.SEVEN_Z)) {
                 // Rework as a file, and wrap
-                tis.reset();
+                tis.rewind();
 
                 // Seven Zip suports passwords, was one given?
                 String password = null;
@@ -322,7 +321,6 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         xhtml.startDocument();
 
         // mark before we start parsing entries for potential reset
-        tis.mark(MARK_LIMIT);
         //needed for mutable int by ref, not for thread safety.
         //this keeps track of how many entries were processed.
         AtomicInteger entryCnt = new AtomicInteger();
@@ -333,8 +331,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
             if (zfe.getFeature() == Feature.DATA_DESCRIPTOR) {
                 // Close archive input stream and create a new one that could handle data descriptor
                 ais.close();
-                // An exception would be thrown if MARK_LIMIT is not big enough
-                tis.reset();
+                tis.rewind();
                 ais = new ZipArchiveInputStream(tis, encoding, true, true);
                 parseEntries(ais, metadata, extractor, xhtml, true, entryCnt, context);
             }
@@ -465,8 +462,6 @@ public class PackageParser extends AbstractEncodingDetectorParser {
 
             // Recurse into the entry if desired
             if (extractor.shouldParseEmbedded(entrydata)) {
-                // For detectors to work, we need a mark/reset supporting
-                // InputStream, which ArchiveInputStream isn't, so wrap
                 TemporaryResources tmp = new TemporaryResources();
                 try {
                     TikaInputStream tis = TikaInputStream.get(archive, tmp, entrydata);

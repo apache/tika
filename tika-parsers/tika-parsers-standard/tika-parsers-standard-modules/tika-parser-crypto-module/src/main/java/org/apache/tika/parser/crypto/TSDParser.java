@@ -61,7 +61,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.RereadableInputStream;
 
 /**
  * Tika parser for Time Stamped Data Envelope (application/timestamped-data)
@@ -95,21 +94,19 @@ public class TSDParser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         //Try to parse TSD file
-        try (RereadableInputStream ris = new RereadableInputStream(tis, 2048, true)) {
-            Metadata TSDAndEmbeddedMetadata = new Metadata();
+        Metadata TSDAndEmbeddedMetadata = new Metadata();
 
-            List<TSDMetas> tsdMetasList = this.extractMetas(ris);
-            this.buildMetas(tsdMetasList,
-                    metadata != null && metadata.size() > 0 ? TSDAndEmbeddedMetadata : metadata);
+        List<TSDMetas> tsdMetasList = this.extractMetas(tis);
+        this.buildMetas(tsdMetasList,
+                metadata != null && metadata.size() > 0 ? TSDAndEmbeddedMetadata : metadata);
 
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-            xhtml.startDocument();
-            ris.rewind();
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
+        tis.rewind();
 
-            //Try to parse embedded file in TSD file
-            this.parseTSDContent(ris, xhtml, TSDAndEmbeddedMetadata, context);
-            xhtml.endDocument();
-        }
+        //Try to parse embedded file in TSD file
+        this.parseTSDContent(tis, xhtml, TSDAndEmbeddedMetadata, context);
+        xhtml.endDocument();
     }
 
     private List<TSDMetas> extractMetas(InputStream tis) throws SAXException {

@@ -288,9 +288,12 @@ public class AutoDetectParserTest extends TikaTest {
         }
         zos.finish();
         zos.close();
-        TikaLoader.loadDefault().loadAutoDetectParser()
-                .parse(TikaInputStream.get(baos.toByteArray()), new BodyContentHandler(-1),
-                        new Metadata(), new ParseContext());
+        try (TikaInputStream tis = TikaInputStream.get(baos.toByteArray())) {
+            TikaLoader
+                    .loadDefault()
+                    .loadAutoDetectParser()
+                    .parse(tis, new BodyContentHandler(-1), new Metadata(), new ParseContext());
+        }
     }
 
     /**

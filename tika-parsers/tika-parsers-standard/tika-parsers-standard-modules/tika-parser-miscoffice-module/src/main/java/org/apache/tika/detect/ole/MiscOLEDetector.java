@@ -137,11 +137,8 @@ public class MiscOLEDetector implements Detector {
     private Set<String> getTopLevelNames(TikaInputStream stream) throws IOException {
         // Force the document stream to a (possibly temporary) file
         // so we don't modify the current position of the stream.
-        //If the markLimit is < 0, this will spool the entire file
-        //to disk if there is not an underlying file.
-        Path file = stream.getPath(markLimit);
+        Path file = stream.getPath();
 
-        //if the stream was longer than markLimit, don't detect
         if (file == null) {
             return Collections.emptySet();
         }

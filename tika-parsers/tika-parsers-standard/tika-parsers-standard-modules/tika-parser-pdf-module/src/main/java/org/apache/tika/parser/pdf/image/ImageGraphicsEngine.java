@@ -448,10 +448,10 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         //TODO: what else can we extract from the PDImage without rendering?
         ZeroByteFileException.IgnoreZeroByteFileException before =
                 parseContext.get(ZeroByteFileException.IgnoreZeroByteFileException.class);
-        try {
+        try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
             parseContext.set(ZeroByteFileException.IgnoreZeroByteFileException.class,
                     ZeroByteFileException.IGNORE_ZERO_BYTE_FILE_EXCEPTION);
-            embeddedDocumentExtractor.parseEmbedded(TikaInputStream.get(new byte[0]),
+            embeddedDocumentExtractor.parseEmbedded(tis,
                     new EmbeddedContentHandler(xhtml), metadata, parseContext, false);
         } finally {
             //replace whatever was there before

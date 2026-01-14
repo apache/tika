@@ -363,7 +363,7 @@ public class StandardHtmlEncodingDetectorTest {
 
     private InputStream throwAfter(String html) {
         byte[] contents = html.getBytes(StandardCharsets.UTF_8);
-        InputStream contentsInStream = TikaInputStream.get(contents);
+        InputStream contentsInStream = new java.io.ByteArrayInputStream(contents);
         InputStream errorThrowing = new InputStream() {
             @Override
             public int read() throws IOException {
