@@ -76,8 +76,14 @@ public class IntegrationTestBase extends TikaTest {
     @AfterEach
     public void tearDown() throws Exception {
         if (process != null) {
-            process.destroyForcibly();
-            process.waitFor(30, TimeUnit.SECONDS);
+            // Try graceful shutdown first (SIGTERM) to allow shutdown hooks to run
+            process.destroy();
+            boolean exited = process.waitFor(5, TimeUnit.SECONDS);
+            if (!exited) {
+                // Fall back to forceful shutdown (SIGKILL)
+                process.destroyForcibly();
+                process.waitFor(30, TimeUnit.SECONDS);
+            }
             if (process.isAlive()) {
                 throw new RuntimeException("process still alive!");
             }

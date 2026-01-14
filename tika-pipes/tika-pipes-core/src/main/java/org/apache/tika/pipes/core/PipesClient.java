@@ -102,6 +102,7 @@ public class PipesClient implements Closeable {
     private final PipesConfig pipesConfig;
     private final Path tikaConfigPath;
     private final int pipesClientId;
+    private final Thread shutdownHook;
     private ServerTuple serverTuple;
     private int filesProcessed = 0;
 
@@ -109,6 +110,14 @@ public class PipesClient implements Closeable {
         this.pipesConfig = pipesConfig;
         this.tikaConfigPath = tikaConfigPath;
         this.pipesClientId = CLIENT_COUNTER.getAndIncrement();
+        this.shutdownHook = new Thread(this::cleanupOnShutdown, "PipesClient-shutdown-" + pipesClientId);
+        Runtime.getRuntime().addShutdownHook(shutdownHook);
+    }
+
+    private void cleanupOnShutdown() {
+        if (serverTuple != null && serverTuple.tmpDir != null) {
+            deleteDir(serverTuple.tmpDir);
+        }
     }
 
     public int getFilesProcessed() {
@@ -137,6 +146,11 @@ public class PipesClient implements Closeable {
 
     @Override
     public void close() throws IOException {
+        try {
+            Runtime.getRuntime().removeShutdownHook(shutdownHook);
+        } catch (IllegalStateException e) {
+            // JVM is already shutting down, ignore
+        }
         try {
             shutItAllDown();
         } catch (InterruptedException e) {
