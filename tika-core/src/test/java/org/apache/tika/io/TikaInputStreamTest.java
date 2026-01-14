@@ -35,18 +35,24 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
 import java.util.Locale;
 import java.util.Random;
 
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
 public class TikaInputStreamTest {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TikaInputStreamTest.class);
 
     @TempDir
     Path tempDir;
@@ -370,69 +376,72 @@ public class TikaInputStreamTest {
 
     // ========== Randomized Tests ==========
 
-    @Test
-    public void testRandomizedStreamBackedZeroLength() throws Exception {
-        runRandomizedTest(0, false);
-    }
+    // --- ByteArray Backed Tests ---
 
-    @Test
-    public void testRandomizedStreamBackedSmall() throws Exception {
-        runRandomizedTest(100, false);
-    }
+    @RepeatedTest(50)
+    public void testRandomizedSizeAndTypes() throws Exception {
+        int minSz = 0;
+        int maxSz = 2 * 1024 * 1024;
 
-    @Test
-    public void testRandomizedStreamBackedMedium() throws Exception {
-        runRandomizedTest(8192, false);
-    }
-
-    @Test
-    public void testRandomizedStreamBackedLarge() throws Exception {
-        runRandomizedTest(100_000, false);
-    }
-
-    @Test
-    public void testRandomizedStreamBackedVeryLarge() throws Exception {
-        runRandomizedTest(2 * 1024 * 1024, false);
-    }
-
-    @Test
-    public void testRandomizedFileBackedZeroLength() throws Exception {
-        runRandomizedTest(0, true);
-    }
-
-    @Test
-    public void testRandomizedFileBackedSmall() throws Exception {
-        runRandomizedTest(100, true);
-    }
-
-    @Test
-    public void testRandomizedFileBackedMedium() throws Exception {
-        runRandomizedTest(8192, true);
-    }
-
-    @Test
-    public void testRandomizedFileBackedLarge() throws Exception {
-        runRandomizedTest(100_000, true);
-    }
-
-    @RepeatedTest(10)
-    public void testRandomizedOperationsStreamBacked() throws Exception {
-        Random sizeRandom = new Random();
-        int[] sizes = {0, 50, 1000, 8192, 50_000, 1024 * 1024 + 100};
-        int size = sizes[sizeRandom.nextInt(sizes.length)];
-        runRandomizedOperationsTest(size, false);
-    }
-
-    @RepeatedTest(10)
-    public void testRandomizedOperationsFileBacked() throws Exception {
-        Random sizeRandom = new Random();
-        int[] sizes = {0, 50, 1000, 8192, 50_000};
-        int size = sizes[sizeRandom.nextInt(sizes.length)];
-        runRandomizedOperationsTest(size, true);
-    }
-
-    private void runRandomizedTest(int size, boolean fileBacked) throws Exception {
         long seed = System.currentTimeMillis();
+        Random random = new Random(seed);
+        int sz = minSz + random.nextInt(maxSz - minSz + 1);
+        BackingType type = BackingType.values()[random.nextInt(BackingType.values().length)];
+        runRandomizedTest(sz, type, seed);
+    }
+
+    @RepeatedTest(10)
+    public void testRandomizedSizeStepsAndTypes() throws Exception {
+        for (int sz : new int[]{ 0, 100, 8191, 8192, 8193, 100_000, 2 * 1024 * 1024 }) {
+             for (BackingType type : BackingType.values()) {
+               runRandomizedTest(sz, type);
+             }
+        }
+    }
+
+    @RepeatedTest(10)
+    public void testRandomizedOperationsTest() throws Exception {
+        long seed = Instant.now().getEpochSecond();
+        for (int sz : new int[]{ 0, 100, 8191, 8192, 8193, 100_000, 2 * 1024 * 1024 }) {
+            for (BackingType type : BackingType.values()) {
+                runRandomizedOperationsTest(sz, type, seed);
+            }
+        }
+    }
+
+
+
+
+    /**
+     * Backing strategy types for TikaInputStream.
+     */
+    private enum BackingType {
+        BYTE_ARRAY,  // TikaInputStream.get(byte[]) - ByteArrayBackedStrategy
+        FILE,        // TikaInputStream.get(Path) - FileBackedStrategy
+        STREAM       // TikaInputStream.get(InputStream) - StreamBackedStrategy
+    }
+
+    /**
+     * Reproduce a failing randomized test by specifying the backingType and seed.
+     * Enable this test and set the parameters from a failing test's log output.
+     * The size is derived from the seed using the same logic as the original test.
+     */
+    @Disabled("Enable this test to reproduce a specific failure using seed from logs")
+    @Test
+    public void reproduceRandomizedTestFailure() throws Exception {
+        // Set these values from the failing test's log output:
+        BackingType backingType = BackingType.STREAM;
+        long seed = 1768257360409L;
+        int size = 1;
+        runRandomizedOperationsTest(size, backingType, seed);
+    }
+
+    private void runRandomizedTest(int size, BackingType backingType) throws Exception {
+        runRandomizedTest(size, backingType, System.currentTimeMillis());
+    }
+
+    private void runRandomizedTest(int size, BackingType backingType, long seed) throws Exception {
+        LOG.debug("runRandomizedTest: size={}, backingType={}, seed={}", size, backingType, seed);
         Random random = new Random(seed);
 
         byte[] data = new byte[size];
@@ -441,89 +450,94 @@ public class TikaInputStreamTest {
         }
         String expectedDigest = computeDigest(data);
 
-        try (TikaInputStream tis = createTikaInputStream(data, fileBacked)) {
+        try (TikaInputStream tis = createTikaInputStream(data, backingType)) {
             byte[] readData = readAllBytes(tis);
             String actualDigest = computeDigest(readData);
             assertEquals(expectedDigest, actualDigest,
-                    "Digest mismatch for size=" + size + ", fileBacked=" + fileBacked + ", seed=" + seed);
+                    "Digest mismatch for size=" + size + ", backingType=" + backingType + ", seed=" + seed);
             assertEquals(size, readData.length);
         }
 
-        try (TikaInputStream tis = createTikaInputStream(data, fileBacked)) {
+        try (TikaInputStream tis = createTikaInputStream(data, backingType)) {
             byte[] readData = readAllBytes(tis);
             tis.rewind();
             byte[] rereadData = readAllBytes(tis);
             assertArrayEquals(readData, rereadData,
-                    "Data mismatch after rewind for size=" + size + ", fileBacked=" + fileBacked);
+                    "Data mismatch after rewind for size=" + size + ", backingType=" + backingType + ", seed=" + seed);
         }
     }
 
-    private void runRandomizedOperationsTest(int size, boolean fileBacked) throws Exception {
-        long seed = System.currentTimeMillis();
+    private void runRandomizedOperationsTest(int size, BackingType backingType, long seed) throws Exception {
+        LOG.debug("runRandomizedOperationsTest: size={}, backingType={}, seed={}", size, backingType, seed);
+        String ctx = "size=" + size + ", backingType=" + backingType + ", seed=" + seed;
         Random random = new Random(seed);
+        // Skip the first random value (used for size selection in the calling test)
+        random.nextInt();
 
         byte[] data = new byte[size];
         if (size > 0) {
             random.nextBytes(data);
         }
 
-        try (TikaInputStream tis = createTikaInputStream(data, fileBacked)) {
+        try (TikaInputStream tis = createTikaInputStream(data, backingType)) {
             int position = 0;
             int markPosition = -1;
             int numOps = random.nextInt(50) + 10;
 
             for (int op = 0; op < numOps; op++) {
-                int operation = random.nextInt(5);
+                int operation = random.nextInt(9);
 
                 switch (operation) {
-                    case 0:
+                    case 0: // single byte read
                         if (position < size) {
                             int expectedByte = data[position] & 0xFF;
                             int actualByte = tis.read();
                             assertEquals(expectedByte, actualByte,
-                                    "Single byte read mismatch at position " + position +
-                                            ", size=" + size + ", seed=" + seed);
+                                    "Single byte read mismatch at position " + position + ", " + ctx);
                             position++;
                         } else {
-                            assertEquals(-1, tis.read());
+                            assertEquals(-1, tis.read(),
+                                    "Expected EOF at position " + position + ", " + ctx);
                         }
                         break;
 
-                    case 1:
-                        int readLen = random.nextInt(Math.min(1000, size + 100) + 1);
+                    case 1: // bulk read
+                        // Ensure readLen is at least 1 to avoid zero-length buffer reads
+                        int readLen = random.nextInt(Math.min(1000, size + 100)) + 1;
                         byte[] buffer = new byte[readLen];
                         int bytesRead = tis.read(buffer);
                         if (position >= size) {
                             assertTrue(bytesRead <= 0,
-                                    "Expected EOF, got " + bytesRead + " bytes");
+                                    "Expected EOF, got " + bytesRead + " bytes, " + ctx);
                         } else {
                             assertTrue(bytesRead > 0,
-                                    "Expected data, got " + bytesRead);
+                                    "Expected data, got " + bytesRead + ", " + ctx);
                             for (int i = 0; i < bytesRead; i++) {
                                 assertEquals(data[position + i], buffer[i],
-                                        "Bulk read mismatch at offset " + i);
+                                        "Bulk read mismatch at offset " + i + ", " + ctx);
                             }
                             position += bytesRead;
                         }
                         break;
 
-                    case 2:
+                    case 2: // skip
                         long skipAmount = random.nextInt(size + 100);
                         long skipped = tis.skip(skipAmount);
-                        assertTrue(skipped >= 0 && skipped <= skipAmount);
+                        assertTrue(skipped >= 0 && skipped <= skipAmount,
+                                "Skip returned invalid value " + skipped + ", " + ctx);
                         position += (int) skipped;
                         if (position > size) {
                             position = size;
                         }
                         break;
 
-                    case 3:
+                    case 3: // mark
                         int readLimit = random.nextInt(size + 100) + 1;
                         tis.mark(readLimit);
                         markPosition = position;
                         break;
 
-                    case 4:
+                    case 4: // reset
                         if (markPosition >= 0) {
                             tis.reset();
                             position = markPosition;
@@ -531,20 +545,55 @@ public class TikaInputStreamTest {
                         }
                         break;
 
+                    case 5: // rewind
+                        tis.rewind();
+                        position = 0;
+                        markPosition = -1;
+                        break;
+
+                    case 6: // getPath - forces spill to file for stream-backed
+                        Path path = tis.getPath();
+                        assertNotNull(path, "getPath() returned null, " + ctx);
+                        assertTrue(Files.exists(path), "Path doesn't exist, " + ctx);
+                        assertEquals(size, Files.size(path), "File size mismatch, " + ctx);
+                        break;
+
+                    case 7: // peek
+                        int peekLen = random.nextInt(Math.min(100, size + 10)) + 1;
+                        byte[] peekBuf = new byte[peekLen];
+                        int peeked = tis.peek(peekBuf);
+                        if (position >= size) {
+                            assertTrue(peeked <= 0, "Expected EOF on peek, " + ctx);
+                        } else {
+                            assertTrue(peeked > 0, "Expected data on peek, " + ctx);
+                            for (int i = 0; i < peeked; i++) {
+                                assertEquals(data[position + i], peekBuf[i],
+                                        "Peek mismatch at offset " + i + ", " + ctx);
+                            }
+                        }
+                        // position doesn't change after peek, but peek() uses mark/reset
+                        // internally which overwrites any existing mark
+                        markPosition = -1;
+                        break;
+
+                    case 8: // available
+                        int avail = tis.available();
+                        assertTrue(avail >= 0, "available() returned negative, " + ctx);
+                        break;
+
                     default:
                         break;
                 }
                 assertEquals(position, tis.getPosition(),
-                        "Position mismatch after operation " + operation + ", seed=" + seed);
+                        "Position mismatch after operation " + operation + ", " + ctx);
             }
 
             tis.rewind();
-            assertEquals(0, tis.getPosition());
+            assertEquals(0, tis.getPosition(), "Position should be 0 after rewind, " + ctx);
             byte[] finalRead = readAllBytes(tis);
             String expectedDigest = computeDigest(data);
             String actualDigest = computeDigest(finalRead);
-            assertEquals(expectedDigest, actualDigest,
-                    "Final digest mismatch after operations, size=" + size + ", seed=" + seed);
+            assertEquals(expectedDigest, actualDigest, "Final digest mismatch, " + ctx);
         }
     }
 
@@ -623,12 +672,21 @@ public class TikaInputStreamTest {
     // ========== Helper Methods ==========
 
     private TikaInputStream createTikaInputStream(byte[] data, boolean fileBacked) throws IOException {
-        if (fileBacked) {
-            Path file = Files.createTempFile(tempDir, "test_", ".bin");
-            Files.write(file, data);
-            return TikaInputStream.get(file);
-        } else {
-            return TikaInputStream.get(new ByteArrayInputStream(data));
+        return createTikaInputStream(data, fileBacked ? BackingType.FILE : BackingType.STREAM);
+    }
+
+    private TikaInputStream createTikaInputStream(byte[] data, BackingType backingType) throws IOException {
+        switch (backingType) {
+            case BYTE_ARRAY:
+                return TikaInputStream.get(data);
+            case FILE:
+                Path file = Files.createTempFile(tempDir, "test_", ".bin");
+                Files.write(file, data);
+                return TikaInputStream.get(file);
+            case STREAM:
+                return TikaInputStream.get(new ByteArrayInputStream(data));
+            default:
+                throw new IllegalArgumentException("Unknown backing type: " + backingType);
         }
     }
 

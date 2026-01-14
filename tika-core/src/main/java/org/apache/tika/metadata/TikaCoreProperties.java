@@ -152,6 +152,22 @@ public interface TikaCoreProperties {
             Property.internalBoolean(TIKA_META_WARN_PREFIX + "truncated_metadata");
 
     /**
+     * This indicates that only a portion of the file content was provided for detection.
+     * Detectors should check this flag and may adjust their behavior accordingly
+     * (e.g., not returning a detection result that requires reading to end of file).
+     */
+    Property TRUNCATED_CONTENT_FOR_DETECTION =
+            Property.internalBoolean(TIKA_META_PREFIX + "truncated_content_for_detection");
+
+    /**
+     * When content is truncated for detection, this stores the number of bytes
+     * that were actually buffered for detection. This can be used by detectors
+     * to set appropriate mark limits.
+     */
+    Property DETECTION_CONTENT_LENGTH =
+            Property.internalInteger(TIKA_META_PREFIX + "detection_content_length");
+
+    /**
      * Use this to store exceptions caught while trying to read the
      * stream of an embedded resource.  Do not use this if there is
      * a parse exception on the embedded resource.

@@ -66,7 +66,15 @@ public class AutoDetectReader extends BufferedReader {
 
     public AutoDetectReader(InputStream stream, Metadata metadata,
                             EncodingDetector encodingDetector) throws IOException, TikaException {
-        this(getTikaInputStream(stream), detect(getTikaInputStream(stream), metadata, encodingDetector));
+        // IMPORTANT: Only call getTikaInputStream once, then reuse the same instance.
+        // Calling it twice creates two different TikaInputStreams sharing the same underlying
+        // stream, causing the second one's reads to advance the position for both.
+        this(getTikaInputStream(stream), metadata, encodingDetector);
+    }
+
+    private AutoDetectReader(TikaInputStream tis, Metadata metadata,
+                             EncodingDetector encodingDetector) throws IOException, TikaException {
+        this(tis, detect(tis, metadata, encodingDetector));
     }
 
     public AutoDetectReader(InputStream stream, Metadata metadata, ServiceLoader loader)

@@ -156,8 +156,8 @@ class CachingInputStream extends InputStream {
     /**
      * Force all remaining content to be read and cached, then return the file path.
      */
-    Path spillToFile() throws IOException {
-        return cache.toFile(source);
+    Path spillToFile(String suffix) throws IOException {
+        return cache.toFile(source, suffix);
     }
 
     /**
@@ -170,6 +170,15 @@ class CachingInputStream extends InputStream {
     @Override
     public void close() throws IOException {
         source.close();
+        cache.close();
+    }
+
+    /**
+     * Close only the cache, not the underlying source stream.
+     * Used when TikaInputStream spills to file - the source stream
+     * (e.g., an archive stream) may need to remain open.
+     */
+    void closeCacheOnly() throws IOException {
         cache.close();
     }
 

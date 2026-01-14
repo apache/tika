@@ -249,7 +249,9 @@ public abstract class TikaTest {
     }
 
     public TikaInputStream getResourceAsStream(String name) {
-        TikaInputStream tis = TikaInputStream.get(this.getClass().getResourceAsStream(name));
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, FilenameUtils.getName(name));
+        TikaInputStream tis = TikaInputStream.get(this.getClass().getResourceAsStream(name), metadata);
         if (tis == null) {
             fail("Unable to find requested resource " + name);
         }

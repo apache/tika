@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.IOException;
 
 import org.apache.commons.io.input.NullInputStream;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
@@ -45,6 +46,13 @@ public class SecureContentHandlerTest {
     public void setUp() {
         stream = TikaInputStream.get(new NullInputStream(MANY_BYTES));
         handler = new SecureContentHandler(new DefaultHandler(), stream);
+    }
+
+    @AfterEach
+    public void tearDown() throws IOException {
+        if (stream != null) {
+            stream.close();
+        }
     }
 
     @Test

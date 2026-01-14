@@ -140,7 +140,6 @@ public class MiscOLEDetector implements Detector {
         Path file = stream.getPath();
 
         if (file == null) {
-            // ReadOnceTikaInputStream doesn't support getPath()
             return Collections.emptySet();
         }
 

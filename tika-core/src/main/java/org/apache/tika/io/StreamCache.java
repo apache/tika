@@ -116,12 +116,14 @@ class StreamCache implements Closeable {
         memoryBuffer = newBuffer;
     }
 
+    private String suffix;
+
     private void spillToFile() throws IOException {
         if (spillFile != null) {
             return; // Already spilled
         }
 
-        spillFile = tmp.createTempFile((String) null);
+        spillFile = tmp.createTempFile(suffix);
         spillOutputStream = new BufferedOutputStream(Files.newOutputStream(spillFile));
 
         // Write existing memory content to file
@@ -203,7 +205,8 @@ class StreamCache implements Closeable {
     /**
      * Finish writing (drain remaining source bytes) and return the file path.
      */
-    Path toFile(InputStream remainingSource) throws IOException {
+    Path toFile(InputStream remainingSource, String suffix) throws IOException {
+        this.suffix = suffix;
         // Copy remaining bytes from source
         byte[] buffer = new byte[8192];
         int n;

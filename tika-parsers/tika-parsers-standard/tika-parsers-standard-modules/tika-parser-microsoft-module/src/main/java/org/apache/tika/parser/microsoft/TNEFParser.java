@@ -118,8 +118,10 @@ public class TNEFParser implements Parser {
         }
 
         if (embeddedExtractor.shouldParseEmbedded(metadata)) {
-            embeddedExtractor.parseEmbedded(TikaInputStream.get(contents),
-                    new EmbeddedContentHandler(handler), metadata, context, true);
+            try (TikaInputStream tis = TikaInputStream.get(contents)) {
+                embeddedExtractor.parseEmbedded(tis,
+                        new EmbeddedContentHandler(handler), metadata, context, true);
+            }
         }
     }
 }
