@@ -381,6 +381,9 @@ abstract class AbstractPOIFSExtractor {
             EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
             return;
         }
+        if (data == null) {
+            return;
+        }
         try (TikaInputStream tis = TikaInputStream.get(data)) {
             parseEmbedded(dir, tis, xhtml, metadata, outputHtml);
         }
