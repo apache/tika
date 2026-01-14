@@ -371,6 +371,13 @@ public class PDFParserTest extends TikaTest {
         assertContains("igalsh", r.xml);
     }
 
+    // TIKA-4622 / PDFBOX-6145 make sure that annotations aren't missed if no page content stream
+    @Test
+    public void testAnnotationNoContents() throws Exception {
+        XMLResult r = getXML("testPDFFileEmbInAnnotation_noContents.pdf");
+        assertContains("Excel.xlsx", r.xml);
+    }
+
     @Test
     public void testEmbeddedPDFs() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testPDFPackage.pdf");
