@@ -19,7 +19,7 @@ package org.apache.tika.digest;
 /**
  * Factory interface for creating Digester instances.
  * Implementations should be annotated with {@code @TikaComponent} and
- * provide bean properties for configuration (e.g., markLimit, digests).
+ * provide bean properties for configuration (e.g., digests).
  * <p>
  * This is used in {@link org.apache.tika.parser.AutoDetectParserConfig} to
  * configure digesting in the AutoDetectParser.
@@ -29,7 +29,6 @@ package org.apache.tika.digest;
  * "auto-detect-parser": {
  *   "digesterFactory": {
  *     "commons-digester-factory": {
- *       "markLimit": 1000000,
  *       "digests": [
  *         { "algorithm": "MD5" },
  *         { "algorithm": "SHA256", "encoding": "BASE32" }

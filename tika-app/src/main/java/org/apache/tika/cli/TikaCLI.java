@@ -433,7 +433,7 @@ public class TikaCLI {
         } else if (arg.startsWith("--digest=")) {
             String algorithmName = arg.substring("--digest=".length()).toUpperCase(Locale.ROOT);
             DigestDef.Algorithm algorithm = DigestDef.Algorithm.valueOf(algorithmName);
-            digester = new CommonsDigester(MAX_MARK, algorithm);
+            digester = new CommonsDigester(algorithm);
         } else if (arg.startsWith("-e")) {
             encoding = arg.substring("-e".length());
         } else if (arg.startsWith("--encoding=")) {

@@ -3,7 +3,6 @@
     "outputThreshold": 1000000,
     "digesterFactory": {
       "bouncy-castle-digester-factory": {
-        "markLimit": 1000000,
         "digests": [
           { "algorithm": "MD5" },
           { "algorithm": "SHA256" },

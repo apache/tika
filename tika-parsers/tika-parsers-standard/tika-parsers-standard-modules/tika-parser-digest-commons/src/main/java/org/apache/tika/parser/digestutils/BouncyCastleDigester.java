@@ -37,35 +37,35 @@ import org.apache.tika.digest.InputStreamDigester;
  * <p>
  * BouncyCastle supports additional algorithms beyond the standard Java ones,
  * such as SHA3-256, SHA3-384, SHA3-512.
+ * <p>
+ * This digester uses {@link org.apache.tika.io.TikaInputStream#enableRewind()} and
+ * {@link org.apache.tika.io.TikaInputStream#rewind()} to read the entire stream,
+ * compute the digest, and then rewind for subsequent processing.
  */
 public class BouncyCastleDigester extends CompositeDigester {
 
     /**
-     * @param markLimit limit for mark/reset; after this limit is hit, the
-     *                  stream is reset and spooled to disk
-     * @param digests   list of digest definitions (algorithm + encoding pairs)
+     * @param digests list of digest definitions (algorithm + encoding pairs)
      */
-    public BouncyCastleDigester(int markLimit, List<DigestDef> digests) {
-        super(buildDigesters(markLimit, digests));
+    public BouncyCastleDigester(List<DigestDef> digests) {
+        super(buildDigesters(digests));
     }
 
     /**
      * Convenience constructor using Algorithm enum with HEX encoding.
      *
-     * @param markLimit  limit for mark/reset; after this limit is hit, the
-     *                   stream is reset and spooled to disk
      * @param algorithms algorithms to run (uses HEX encoding for all)
      */
-    public BouncyCastleDigester(int markLimit, DigestDef.Algorithm... algorithms) {
-        super(buildDigesters(markLimit, algorithms));
+    public BouncyCastleDigester(DigestDef.Algorithm... algorithms) {
+        super(buildDigesters(algorithms));
     }
 
-    private static Digester[] buildDigesters(int markLimit, List<DigestDef> digests) {
+    private static Digester[] buildDigesters(List<DigestDef> digests) {
         Digester[] digesters = new Digester[digests.size()];
         int i = 0;
         for (DigestDef def : digests) {
             Encoder encoder = getEncoder(def.getEncoding());
-            digesters[i++] = new BCInputStreamDigester(markLimit,
+            digesters[i++] = new BCInputStreamDigester(
                     def.getAlgorithm().getJavaName(),
                     def.getMetadataKey(),
                     encoder);
@@ -73,13 +73,13 @@ public class BouncyCastleDigester extends CompositeDigester {
         return digesters;
     }
 
-    private static Digester[] buildDigesters(int markLimit, DigestDef.Algorithm[] algorithms) {
+    private static Digester[] buildDigesters(DigestDef.Algorithm[] algorithms) {
         Digester[] digesters = new Digester[algorithms.length];
         Encoder encoder = getEncoder(DigestDef.Encoding.HEX);
         int i = 0;
         for (DigestDef.Algorithm algorithm : algorithms) {
             DigestDef def = new DigestDef(algorithm, DigestDef.Encoding.HEX);
-            digesters[i++] = new BCInputStreamDigester(markLimit,
+            digesters[i++] = new BCInputStreamDigester(
                     algorithm.getJavaName(),
                     def.getMetadataKey(),
                     encoder);
@@ -123,9 +123,8 @@ public class BouncyCastleDigester extends CompositeDigester {
 
     private static class BCInputStreamDigester extends InputStreamDigester {
 
-        public BCInputStreamDigester(int markLimit, String algorithm, String algorithmKeyName,
-                                     Encoder encoder) {
-            super(markLimit, algorithm, algorithmKeyName, encoder);
+        public BCInputStreamDigester(String algorithm, String algorithmKeyName, Encoder encoder) {
+            super(algorithm, algorithmKeyName, encoder);
             try {
                 MessageDigest.getInstance(algorithm, getProvider());
             } catch (NoSuchAlgorithmException e) {

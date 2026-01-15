@@ -36,12 +36,14 @@ class ByteArraySource extends InputStream implements TikaInputSource {
 
     private final byte[] data;
     private final int length;
+    private final TemporaryResources tmp;
     private int position;
     private Path spilledPath;
 
-    ByteArraySource(byte[] data) {
+    ByteArraySource(byte[] data, TemporaryResources tmp) {
         this.data = data;
         this.length = data.length;
+        this.tmp = tmp;
         this.position = 0;
         this.spilledPath = null;
     }
@@ -97,7 +99,7 @@ class ByteArraySource extends InputStream implements TikaInputSource {
     }
 
     @Override
-    public Path getPath(TemporaryResources tmp, String suffix) throws IOException {
+    public Path getPath(String suffix) throws IOException {
         if (spilledPath == null) {
             // Spill to temp file on first call
             spilledPath = tmp.createTempFile(suffix);

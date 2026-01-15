@@ -6,7 +6,6 @@
     "throwOnZeroBytes": false,
     "digesterFactory": {
       "commons-digester-factory": {
-        "markLimit": 100000,
         "digests": [
           { "algorithm": "SHA256" }
         ]

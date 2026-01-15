@@ -24,6 +24,9 @@ import java.nio.file.Path;
 
 import org.apache.commons.io.IOUtils;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.utils.StringUtils;
+
 /**
  * Input source that wraps a raw InputStream with optional caching.
  * <p>
@@ -38,6 +41,7 @@ import org.apache.commons.io.IOUtils;
 class CachingSource extends InputStream implements TikaInputSource {
 
     private final TemporaryResources tmp;
+    private final Metadata metadata;
     private long length;
 
     // Passthrough mode: just a BufferedInputStream
@@ -52,9 +56,10 @@ class CachingSource extends InputStream implements TikaInputSource {
     private InputStream fileStream;
     private long filePosition;  // Track position in file mode
 
-    CachingSource(InputStream source, TemporaryResources tmp, long length) {
+    CachingSource(InputStream source, TemporaryResources tmp, long length, Metadata metadata) {
         this.tmp = tmp;
         this.length = length;
+        this.metadata = metadata;
         // Start in passthrough mode
         this.passthroughStream = source instanceof BufferedInputStream
                 ? (BufferedInputStream) source
@@ -222,7 +227,7 @@ class CachingSource extends InputStream implements TikaInputSource {
     }
 
     @Override
-    public Path getPath(TemporaryResources tmp, String suffix) throws IOException {
+    public Path getPath(String suffix) throws IOException {
         if (spilledPath == null) {
             // If still in passthrough mode, enable caching first
             if (cachingStream == null) {
@@ -254,6 +259,12 @@ class CachingSource extends InputStream implements TikaInputSource {
             long fileSize = Files.size(spilledPath);
             if (length == -1 || fileSize > 0) {
                 length = fileSize;
+            }
+
+            // Update metadata if not already set
+            if (metadata != null &&
+                    StringUtils.isBlank(metadata.get(Metadata.CONTENT_LENGTH))) {
+                metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
             }
 
             cachingStream = null;

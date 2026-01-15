@@ -74,7 +74,6 @@ public abstract class CXFTestBase {
                 "outputThreshold": 1000000,
                 "digesterFactory": {
                   "commons-digester-factory": {
-                    "markLimit": 100000,
                     "digests": [
                       { "algorithm": "MD5" }
                     ]

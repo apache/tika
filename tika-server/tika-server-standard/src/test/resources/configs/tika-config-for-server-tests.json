@@ -13,7 +13,6 @@
     "outputThreshold": 1000000,
     "digesterFactory": {
       "commons-digester-factory": {
-        "markLimit": 100000,
         "digests": [
           { "algorithm": "MD5" },
           { "algorithm": "SHA1", "encoding": "BASE32" }

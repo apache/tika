@@ -103,7 +103,7 @@ public class TikaInputStream extends TaggedInputStream {
             return (TikaInputStream) stream;
         }
         String ext = getExtension(metadata);
-        TikaInputSource inputSource = new CachingSource(stream, tmp, -1);
+        TikaInputSource inputSource = new CachingSource(stream, tmp, -1, metadata);
         return new TikaInputStream(inputSource, tmp, ext);
     }
 
@@ -123,7 +123,7 @@ public class TikaInputStream extends TaggedInputStream {
         metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(data.length));
         String ext = getExtension(metadata);
         TemporaryResources tmp = new TemporaryResources();
-        TikaInputSource inputSource = new ByteArraySource(data);
+        TikaInputSource inputSource = new ByteArraySource(data, tmp);
         return new TikaInputStream(inputSource, tmp, ext);
     }
 
@@ -180,7 +180,7 @@ public class TikaInputStream extends TaggedInputStream {
             String ext = getExtension(metadata);
             TemporaryResources tmp = new TemporaryResources();
             TikaInputSource inputSource = new CachingSource(
-                    new BufferedInputStream(blob.getBinaryStream()), tmp, length);
+                    new BufferedInputStream(blob.getBinaryStream()), tmp, length, metadata);
             return new TikaInputStream(inputSource, tmp, ext);
         }
     }
@@ -241,7 +241,7 @@ public class TikaInputStream extends TaggedInputStream {
         String ext = getExtension(metadata);
         TemporaryResources tmp = new TemporaryResources();
         TikaInputSource inputSource = new CachingSource(
-                new BufferedInputStream(connection.getInputStream()), tmp, length);
+                new BufferedInputStream(connection.getInputStream()), tmp, length, metadata);
         return new TikaInputStream(inputSource, tmp, ext);
     }
 
@@ -379,7 +379,7 @@ public class TikaInputStream extends TaggedInputStream {
         if (source == null) {
             throw new IOException("No TikaInputSource available");
         }
-        return source.getPath(tmp, suffix);
+        return source.getPath(suffix);
     }
 
     public File getFile() throws IOException {
