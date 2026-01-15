@@ -230,6 +230,13 @@ public interface TikaCoreProperties {
     Property CONTENT_TYPE_PARSER_OVERRIDE =
             Property.internalText(HttpHeaders.CONTENT_TYPE + "-Parser-Override");
     /**
+     * This is set by DefaultDetector to store the result of MimeTypes (magic byte)
+     * detection. This allows downstream detectors to use it as a hint without
+     * re-running magic detection.
+     */
+    Property CONTENT_TYPE_MAGIC_DETECTED =
+            Property.internalText(HttpHeaders.CONTENT_TYPE + "-Magic-Detected");
+    /**
      * @see DublinCore#FORMAT
      */
     Property FORMAT = DublinCore.FORMAT;

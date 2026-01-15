@@ -71,7 +71,6 @@ public abstract class CXFTestBase {
     public final static String BASIC_CONFIG = """
             {
               "auto-detect-parser": {
-                "spoolToDisk": 1000000,
                 "outputThreshold": 1000000,
                 "digesterFactory": {
                   "commons-digester-factory": {

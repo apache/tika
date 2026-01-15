@@ -53,13 +53,6 @@ public class AutoDetectParserConfig implements Serializable {
     public static AutoDetectParserConfig DEFAULT = new AutoDetectParserConfig();
 
     /**
-     * If this is not null and greater than -1, the AutoDetectParser
-     * will spool the stream to disk if the length of the stream is known
-     * ahead of time.
-     */
-    private Long spoolToDisk = null;
-
-    /**
      * SecureContentHandler -- Desired output threshold in characters.
      */
     private Long outputThreshold = null;
@@ -102,16 +95,14 @@ public class AutoDetectParserConfig implements Serializable {
     /**
      * Creates a SecureContentHandlerConfig using the passed in parameters.
      *
-     * @param spoolToDisk
      * @param outputThreshold          SecureContentHandler - character output threshold.
      * @param maximumCompressionRatio  SecureContentHandler - max compression ratio allowed.
      * @param maximumDepth             SecureContentHandler - maximum XML element nesting level.
      * @param maximumPackageEntryDepth SecureContentHandler - maximum package entry nesting level.
      */
-    public AutoDetectParserConfig(Long spoolToDisk, Long outputThreshold,
+    public AutoDetectParserConfig(Long outputThreshold,
                                   Long maximumCompressionRatio, Integer maximumDepth,
                                   Integer maximumPackageEntryDepth) {
-        this.spoolToDisk = spoolToDisk;
         this.outputThreshold = outputThreshold;
         this.maximumCompressionRatio = maximumCompressionRatio;
         this.maximumDepth = maximumDepth;
@@ -120,14 +111,6 @@ public class AutoDetectParserConfig implements Serializable {
 
     public AutoDetectParserConfig() {
 
-    }
-
-    public Long getSpoolToDisk() {
-        return spoolToDisk;
-    }
-
-    public void setSpoolToDisk(Long spoolToDisk) {
-        this.spoolToDisk = spoolToDisk;
     }
 
     public Long getOutputThreshold() {
@@ -264,7 +247,7 @@ public class AutoDetectParserConfig implements Serializable {
 
     @Override
     public String toString() {
-        return "AutoDetectParserConfig{" + "spoolToDisk=" + spoolToDisk + ", outputThreshold=" +
+        return "AutoDetectParserConfig{" + "outputThreshold=" +
                 outputThreshold + ", maximumCompressionRatio=" + maximumCompressionRatio +
                 ", maximumDepth=" + maximumDepth + ", maximumPackageEntryDepth=" +
                 maximumPackageEntryDepth + ", metadataWriteFilterFactory=" +

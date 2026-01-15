@@ -1,0 +1,211 @@
+= Spooling in Apache Tika
+:toc:
+:toclevels: 3
+:sectnums:
+
+== Background
+
+=== What is Spooling?
+
+Spooling refers to the process of writing an input stream to a temporary file on disk.
+This is necessary for certain file formats that require random access to the underlying
+bytes during detection or parsing.
+
+=== Why Some Formats Benefit from Random Access
+
+Several file formats are most efficiently processed with random access vs streaming:
+
+* **OLE2 (Microsoft Office legacy formats)**: The POI library needs to read the file
+  as a random-access structure to navigate the OLE2 container.
+* **ZIP-based formats**: Container detection requires reading the ZIP central directory,
+  which is located at the end of the file.
+* **Binary Property Lists (bplist)**: Apple's binary plist format requires random access
+  for efficient parsing.
+* **PDF**: While detection works via magic bytes, parsing requires random access for
+  the PDF cross-reference table.
+
+=== Architectural Decision: Decentralized Spooling
+
+==== The Problem with Centralized Spooling
+
+Earlier versions of Tika considered centralizing spooling decisions in `DefaultDetector`.
+The detector would check the detected media type and spool to disk before passing the
+stream to specialized detectors or parsers.
+
+This approach had several drawbacks:
+
+1. **Unnecessary spooling**: PDF files need spooling for _parsing_ but not for _detection_
+   (magic bytes suffice). Centralized detection-time spooling would spool PDFs unnecessarily
+   when only detecting.
+
+2. **Redundant logic**: Specialized detectors like `POIFSContainerDetector` and
+   `DefaultZipContainerDetector` already call `TikaInputStream.getFile()` or `getPath()`
+   when they need random access. They know best when spooling is required.
+
+3. **Coupling**: Centralized spooling couples the detector to knowledge about which
+   formats need random access, duplicating logic that already exists in specialized
+   components.
+
+==== The Solution: Let Components Self-Spool
+
+The current architecture follows a simple principle: **each component that needs random
+access is responsible for obtaining it**.
+
+When a detector or parser needs random access, it calls:
+
+[source,java]
+----
+Path path = TikaInputStream.get(inputStream).getPath();
+// or
+File file = TikaInputStream.get(inputStream).getFile();
+----
+
+`TikaInputStream` handles the spooling transparently:
+
+* If the stream is already backed by a file, it returns that file directly.
+* If the stream is in-memory or network-based, it spools to a temporary file.
+* The temporary file is automatically cleaned up when the stream is closed.
+
+==== Benefits of Decentralized Spooling
+
+1. **Efficiency**: Spooling happens only when actually needed, not preemptively.
+2. **Simplicity**: No central configuration of "which types need spooling."
+3. **Correctness**: Each component knows its own requirements.
+4. **Flexibility**: New formats can be added without modifying central spooling logic.
+
+=== TikaInputStream Backing Strategies
+
+`TikaInputStream` uses configurable backing strategies that handle caching and temporary
+file management. This means:
+
+* Repeated calls to `getFile()` return the same temporary file (no re-spooling).
+* The `rewind()` method efficiently resets the stream for re-reading.
+* Memory-mapped and disk-backed strategies can be selected based on use case.
+
+== User Guide
+
+=== Default Behavior
+
+By default, Tika handles spooling automatically. You don't need to configure anything
+for most use cases. When a detector or parser needs random access to a file, it will
+spool the input stream to a temporary file if necessary.
+
+=== SpoolingStrategy for Fine-Grained Control
+
+For advanced use cases, you can use `SpoolingStrategy` to control spooling behavior.
+This is useful when you want to:
+
+* Restrict which file types are allowed to spool (e.g., for security reasons)
+* Customize spooling behavior based on metadata or stream properties
+
+==== Programmatic Configuration
+
+[source,java]
+----
+import org.apache.tika.io.SpoolingStrategy;
+import org.apache.tika.parser.ParseContext;
+
+// Create a custom spooling strategy
+SpoolingStrategy strategy = new SpoolingStrategy();
+strategy.setSpoolTypes(Set.of(
+    MediaType.application("zip"),
+    MediaType.application("pdf")
+));
+
+// Add to parse context
+ParseContext context = new ParseContext();
+context.set(SpoolingStrategy.class, strategy);
+
+// Parse with the custom context
+parser.parse(inputStream, handler, metadata, context);
+----
+
+==== SpoolingStrategy Methods
+
+[source,java]
+----
+// Check if spooling should occur for a given type
+boolean shouldSpool(TikaInputStream tis, Metadata metadata, MediaType mediaType)
+
+// Configure which types should be spooled
+void setSpoolTypes(Set<MediaType> types)
+
+// Set the media type registry for specialization checking
+void setMediaTypeRegistry(MediaTypeRegistry registry)
+----
+
+==== How Type Matching Works
+
+The `shouldSpool()` method returns `true` if:
+
+1. The stream doesn't already have a backing file (`tis.hasFile()` is false), AND
+2. The media type matches one of the configured spool types
+
+Type matching considers:
+
+* Exact matches (e.g., `application/zip`)
+* Base type matches (e.g., `application/zip` matches `application/zip; charset=utf-8`)
+* Specializations (e.g., `application/vnd.oasis.opendocument.text` is a specialization of `application/zip`)
+
+==== Default Spool Types
+
+The default spool types are:
+
+* `application/zip` - ZIP archives and ZIP-based formats (OOXML, ODF, EPUB, etc.)
+* `application/x-tika-msoffice` - OLE2 Microsoft Office formats
+* `application/x-bplist` - Apple binary property lists
+* `application/pdf` - PDF documents
+
+=== JSON Configuration
+
+SpoolingStrategy can be configured via JSON in your `tika-config.json` file.
+Place the configuration in the `other-configs` section:
+
+[source,json]
+----
+{
+  "other-configs": {
+    "spooling-strategy": {
+      "spoolTypes": [
+        "application/zip",
+        "application/x-tika-msoffice",
+        "application/pdf"
+      ]
+    }
+  }
+}
+----
+
+Load the configuration using `TikaLoader`:
+
+[source,java]
+----
+TikaLoader loader = TikaLoader.load(Path.of("tika-config.json"));
+SpoolingStrategy strategy = loader.configs().load(SpoolingStrategy.class);
+
+// Add to parse context
+ParseContext context = new ParseContext();
+context.set(SpoolingStrategy.class, strategy);
+----
+
+=== Best Practices
+
+1. **Let Tika handle it**: For most applications, the default behavior is optimal.
+   Don't configure spooling unless you have a specific need.
+
+2. **Use TikaInputStream**: Always wrap your input streams with `TikaInputStream`
+   to enable efficient spooling and rewind capabilities.
+
+3. **Close streams properly**: Use try-with-resources to ensure temporary files
+   are cleaned up:
++
+[source,java]
+----
+try (TikaInputStream tis = TikaInputStream.get(inputStream)) {
+    parser.parse(tis, handler, metadata, context);
+}
+----
+
+4. **Consider memory vs. disk tradeoffs**: For very large files, spooling to disk
+   is necessary. For small files processed in bulk, keeping data in memory may be
+   faster. `TikaInputStream` backing strategies can be tuned for your workload.

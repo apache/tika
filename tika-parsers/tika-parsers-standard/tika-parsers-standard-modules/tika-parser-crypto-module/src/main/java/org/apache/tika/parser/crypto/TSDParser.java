@@ -18,7 +18,10 @@ package org.apache.tika.parser.crypto;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -55,8 +58,10 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -167,10 +172,27 @@ public class TSDParser implements Parser {
         EmbeddedDocumentExtractor edx = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
         if (edx.shouldParseEmbedded(metadata)) {
-            try {
+            try (TemporaryResources tmp = new TemporaryResources()) {
                 cmsTimeStampedDataParser = new CMSTimeStampedDataParser(stream);
 
-                try (TikaInputStream inner = TikaInputStream.get(cmsTimeStampedDataParser.getContent())) {
+                // Spool content to temp file, catching any EOF from truncated files
+                Path tempFile = tmp.createTempFile();
+                try (InputStream content = cmsTimeStampedDataParser.getContent();
+                     OutputStream out = Files.newOutputStream(tempFile)) {
+                    byte[] buffer = new byte[8192];
+                    int n;
+                    while ((n = content.read(buffer)) != -1) {
+                        out.write(buffer, 0, n);
+                    }
+                } catch (IOException e) {
+                    // Truncated file - record exception and work with what we got
+                    metadata.set(TikaCoreProperties.EMBEDDED_EXCEPTION,
+                            e.getClass().getName() + ": " + e.getMessage());
+                    LOG.debug("Error reading TSD content (possibly truncated)", e);
+                }
+
+                // Parse whatever we managed to extract
+                try (TikaInputStream inner = TikaInputStream.get(tempFile)) {
                     edx.parseEmbedded(inner, handler, metadata, context, true);
                 }
 
@@ -180,17 +202,13 @@ public class TSDParser implements Parser {
                 WriteLimitReachedException.throwIfWriteLimitReached(ex);
                 LOG.error("Error in TSDParser.parseTSDContent {}", ex.getMessage());
             } finally {
-                this.closeCMSParser(cmsTimeStampedDataParser);
-            }
-        }
-    }
-
-    private void closeCMSParser(CMSTimeStampedDataParser cmsTimeStampedDataParser) {
-        if (cmsTimeStampedDataParser != null) {
-            try {
-                cmsTimeStampedDataParser.close();
-            } catch (IOException ex) {
-                LOG.error("Error in TSDParser.closeCMSParser {}", ex.getMessage());
+                if (cmsTimeStampedDataParser != null) {
+                    try {
+                        cmsTimeStampedDataParser.close();
+                    } catch (IOException e) {
+                        LOG.debug("Error closing CMSTimeStampedDataParser", e);
+                    }
+                }
             }
         }
     }

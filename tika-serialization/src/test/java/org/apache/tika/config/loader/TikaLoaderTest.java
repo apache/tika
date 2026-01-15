@@ -322,42 +322,40 @@ public class TikaLoaderTest {
                 "Should NOT support application/test+optin (opt-in only, not in SPI)");
     }
 
-    // TODO: TIKA-SERIALIZATION-FOLLOWUP - Implement validation for common typos
-    @Disabled("TIKA-SERIALIZATION-FOLLOWUP: Validation for excludes typo not yet implemented")
+    // TODO: TIKA-SERIALIZATION-FOLLOWUP - Jackson may need configuration to fail on unknown properties
+    @Disabled("TIKA-SERIALIZATION-FOLLOWUP")
     @Test
-    public void testExcludesInsteadOfExcludeThrowsException() throws Exception {
-        // Create a config with the common mistake: "excludes" instead of "exclude"
-        String invalidConfig = "{\n" +
-                "  \"parsers\": [\n" +
-                "    {\n" +
-                "      \"default-parser\": {\n" +
-                "        \"excludes\": [\"pdf-parser\"]\n" +
-                "      }\n" +
-                "    }\n" +
-                "  ]\n" +
-                "}";
+    public void testInvalidBeanPropertyThrowsException() throws Exception {
+        // Config with a property that doesn't exist on DefaultDetector
+        String invalidConfig = """
+                {
+                  "detectors": [
+                    {
+                      "default-detector": {
+                        "nonExistentProperty": 12345
+                      }
+                    }
+                  ]
+                }
+                """;
 
-        // Write to a temp file
-        Path tempFile = Files.createTempFile("test-invalid-excludes", ".json");
+        Path tempFile = Files.createTempFile("test-invalid-property", ".json");
         try {
             Files.write(tempFile, invalidConfig.getBytes(StandardCharsets.UTF_8));
 
-            // Attempt to load should throw TikaConfigException
+            TikaLoader loader = TikaLoader.load(tempFile);
             try {
-                TikaLoader loader = TikaLoader.load(tempFile);
-                loader.get(Parser.class);
-                throw new AssertionError("Expected TikaConfigException to be thrown");
+                loader.loadDetectors();
+                throw new AssertionError("Expected TikaConfigException for invalid property");
             } catch (org.apache.tika.exception.TikaConfigException e) {
-                // Expected - verify the error message is helpful
-                assertTrue(e.getMessage().contains("excludes"),
-                        "Error message should mention 'excludes'");
-                assertTrue(e.getMessage().contains("exclude"),
-                        "Error message should mention the correct field 'exclude'");
-                assertTrue(e.getMessage().contains("singular"),
-                        "Error message should explain it should be singular");
+                // Expected - Jackson should fail on unknown property
+                assertTrue(e.getMessage().contains("nonExistentProperty") ||
+                                e.getCause().getMessage().contains("nonExistentProperty"),
+                        "Error should mention the invalid property name");
             }
         } finally {
             Files.deleteIfExists(tempFile);
         }
     }
+
 }

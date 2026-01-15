@@ -44,7 +44,8 @@ public class TSDParserTest extends TikaTest {
         assertEquals(2, list.size());
         assertEquals("application/pdf", list.get(1).get(Metadata.CONTENT_TYPE));
         assertNotNull(list.get(1).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
-        assertContains("org.apache.pdfbox.io.RandomAccessReadBuffer.<init>",
+        // Exception occurs during TSD content extraction (truncated file)
+        assertContains("EOFException",
                 list.get(1).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
     }
 
