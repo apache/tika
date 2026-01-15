@@ -33,7 +33,6 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.detect.microsoft.POIFSContainerDetector;
 import org.apache.tika.detect.ogg.OggDetector;
 import org.apache.tika.detect.zip.DefaultZipContainerDetector;
-import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.resource.TikaDetectors;
 
@@ -64,7 +63,7 @@ public class TikaDetectorsTest extends CXFTestBase {
         assertContains(OggDetector.class.getName(), text);
         assertContains(POIFSContainerDetector.class.getName(), text);
         assertContains(DefaultZipContainerDetector.class.getName(), text);
-        assertContains(MimeTypes.class.getName(), text);
+        // Note: MimeTypes is now handled internally by DefaultDetector, not as a child detector
     }
 
     @Test
@@ -81,12 +80,11 @@ public class TikaDetectorsTest extends CXFTestBase {
 
         assertContains("<h3>OggDetector", text);
         assertContains("<h3>POIFSContainerDetector", text);
-        assertContains("<h3>MimeTypes", text);
+        // Note: MimeTypes is now handled internally by DefaultDetector, not as a child detector
 
         assertContains(OggDetector.class.getName(), text);
         assertContains(POIFSContainerDetector.class.getName(), text);
         assertContains(DefaultZipContainerDetector.class.getName(), text);
-        assertContains(MimeTypes.class.getName(), text);
     }
 
     @Test
@@ -110,10 +108,11 @@ public class TikaDetectorsTest extends CXFTestBase {
         assertEquals("org.apache.tika.detect.DefaultDetector", json.get("name"));
         assertEquals(Boolean.TRUE, json.get("composite"));
 
-        // At least 4 child detectors, none of them composite
+        // At least 3 child detectors, none of them composite
+        // Note: MimeTypes is now handled internally by DefaultDetector, not as a child detector
         List<Object> children = (List) json.get("children");
-        assertTrue(children.size() >= 4);
-        boolean hasOgg = false, hasPOIFS = false, hasZIP = false, hasMime = false;
+        assertTrue(children.size() >= 3);
+        boolean hasOgg = false, hasPOIFS = false, hasZIP = false;
         for (Object o : children) {
             Map<String, Object> d = (Map<String, Object>) o;
             assertTrue(d.containsKey("name"));
@@ -137,16 +136,10 @@ public class TikaDetectorsTest extends CXFTestBase {
                     .equals(name)) {
                 hasZIP = true;
             }
-            if (MimeTypes.class
-                    .getName()
-                    .equals(name)) {
-                hasMime = true;
-            }
         }
         assertTrue(hasOgg);
         assertTrue(hasPOIFS);
         assertTrue(hasZIP);
-        assertTrue(hasMime);
     }
 
 }

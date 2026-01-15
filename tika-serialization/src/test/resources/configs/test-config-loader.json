@@ -21,6 +21,10 @@
       "millis": 30000
     },
 
+    "spooling-strategy": {
+      "spoolTypes": ["application/zip", "application/pdf"]
+    },
+
     "my-feature-settings": {
       "featureName": "test-feature",
       "priority": 10

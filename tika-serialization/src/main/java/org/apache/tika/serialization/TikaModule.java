@@ -129,6 +129,22 @@ public class TikaModule extends SimpleModule {
     public TikaModule() {
         super("TikaModule");
 
+        // Register MediaType serializers (string-based)
+        addSerializer(MediaType.class, new JsonSerializer<MediaType>() {
+            @Override
+            public void serialize(MediaType value, JsonGenerator gen, SerializerProvider serializers)
+                    throws IOException {
+                gen.writeString(value.toString());
+            }
+        });
+        addDeserializer(MediaType.class, new JsonDeserializer<MediaType>() {
+            @Override
+            public MediaType deserialize(JsonParser p, DeserializationContext ctxt)
+                    throws IOException {
+                return MediaType.parse(p.getValueAsString());
+            }
+        });
+
         // Register Metadata serializers
         addSerializer(Metadata.class, new MetadataSerializer());
         addDeserializer(Metadata.class, new MetadataDeserializer());

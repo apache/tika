@@ -30,6 +30,12 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.StringUtils;
 
+// TODO: TIKA-FOLLOWUP - With TikaInputStream.rewind(), markLimit is no longer needed.
+//  The digester can simply read the entire stream, then call tis.rewind().
+//  This would simplify this class and allow removing markLimit from:
+//  - InputStreamDigester, CommonsDigester, BouncyCastleDigester
+//  - CommonsDigesterFactory, BouncyCastleDigesterFactory (setMarkLimit/getMarkLimit)
+//  - All JSON config files that specify markLimit for digesters
 public class InputStreamDigester implements Digester {
 
     private final String algorithm;

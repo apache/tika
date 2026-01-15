@@ -78,7 +78,7 @@ import org.apache.tika.exception.TikaConfigException;
  *   ],
  *   "detectors": [
  *     "poifs-container-detector",       // String shorthand
- *     { "mime-types": { "markLimit": 10000 } }
+ *     { "default-detector": { "spoolTypes": ["application/zip", "application/pdf"] } }
  *   ],
  *
  *   // Pipes components (validated by validateKeys())

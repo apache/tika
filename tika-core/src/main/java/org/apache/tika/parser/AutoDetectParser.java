@@ -30,7 +30,6 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractorFactory;
 import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -151,8 +150,6 @@ public class AutoDetectParser extends CompositeParser {
             metadata.setMetadataWriteFilter(
                     autoDetectParserConfig.getMetadataWriteFilterFactory().newInstance());
         }
-        //figure out if we should spool to disk
-        maybeSpool(tis, autoDetectParserConfig, metadata);
 
         // Compute digests before type detection if configured
         DigestHelper.maybeDigest(tis,
@@ -209,35 +206,6 @@ public class AutoDetectParser extends CompositeParser {
         }
         //else do not decorate
         return handler;
-    }
-
-    private void maybeSpool(TikaInputStream tis, AutoDetectParserConfig autoDetectParserConfig,
-                            Metadata metadata) throws IOException {
-        if (tis.hasFile()) {
-            return;
-        }
-        if (autoDetectParserConfig.getSpoolToDisk() == null) {
-            return;
-        }
-        //whether or not a content-length has been sent in,
-        //if spoolToDisk == 0, spool it
-        if (autoDetectParserConfig.getSpoolToDisk() == 0) {
-            tis.getPath();
-            metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(tis.getLength()));
-            return;
-        }
-        if (metadata.get(Metadata.CONTENT_LENGTH) != null) {
-            long len = -1l;
-            try {
-                len = Long.parseLong(metadata.get(Metadata.CONTENT_LENGTH));
-                if (len > autoDetectParserConfig.getSpoolToDisk()) {
-                    tis.getPath();
-                    metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(tis.getLength()));
-                }
-            } catch (NumberFormatException e) {
-                //swallow...maybe log?
-            }
-        }
     }
 
     private void initializeEmbeddedDocumentExtractor(Metadata metadata, ParseContext context) {

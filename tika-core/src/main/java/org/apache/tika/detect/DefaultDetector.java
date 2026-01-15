@@ -20,9 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.TikaComponent;
@@ -39,7 +37,6 @@ import org.apache.tika.utils.ServiceLoaderUtils;
  * A composite detector that orchestrates the detection pipeline:
  * <ol>
  *   <li>MimeTypes (magic byte) detection</li>
- *   <li>Spooling to temp file if needed for random access formats</li>
  *   <li>Container and other detectors loaded via SPI</li>
  *   <li>TextDetector as fallback for unknown types</li>
  *   <li>Returns the most specific type detected</li>
@@ -50,6 +47,9 @@ import org.apache.tika.utils.ServiceLoaderUtils;
  * If you need to control the order of the Detectors, you should instead
  * construct your own {@link CompositeDetector} and pass in the list
  * of Detectors in the required order.
+ * <p>
+ * Individual detectors that need random access (e.g., for container inspection)
+ * handle their own spooling by calling {@link TikaInputStream#getFile()}.
  *
  * @since Apache Tika 0.9
  */
@@ -62,7 +62,6 @@ public class DefaultDetector extends CompositeDetector {
     private final Collection<Class<? extends Detector>> excludedClasses;
     private final MimeTypes mimeTypes;
     private final TextDetector textDetector;
-    private Set<MediaType> spoolTypes;
 
     public DefaultDetector(MimeTypes types, ServiceLoader loader,
                            Collection<Class<? extends Detector>> excludeDetectors) {
@@ -73,7 +72,6 @@ public class DefaultDetector extends CompositeDetector {
         this.excludedClasses = excludeDetectors != null ?
                 Collections.unmodifiableCollection(new ArrayList<>(excludeDetectors)) :
                 Collections.emptySet();
-        this.spoolTypes = getDefaultSpoolTypes();
     }
 
     public DefaultDetector(MimeTypes types, ServiceLoader loader) {
@@ -94,16 +92,6 @@ public class DefaultDetector extends CompositeDetector {
 
     public DefaultDetector() {
         this(MimeTypes.getDefaultMimeTypes());
-    }
-
-    private static Set<MediaType> getDefaultSpoolTypes() {
-        Set<MediaType> types = new HashSet<>();
-        types.add(MediaType.application("zip"));
-        types.add(MediaType.application("x-tika-msoffice"));
-        types.add(MediaType.application("x-tika-ooxml"));
-        types.add(MediaType.application("pdf"));
-        types.add(MediaType.application("x-bplist"));
-        return types;
     }
 
     /**
@@ -151,50 +139,19 @@ public class DefaultDetector extends CompositeDetector {
         MediaType magicType = mimeTypes.detect(tis, metadata, parseContext);
         metadata.set(TikaCoreProperties.CONTENT_TYPE_MAGIC_DETECTED, magicType.toString());
 
-        // 2. Spool if needed for random access formats
-        if (tis != null && shouldSpool(magicType)) {
-            try {
-                tis.getFile();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        // 3. Run other detectors (container detectors, etc.)
+        // 2. Run other detectors (container detectors, etc.)
+        // Note: Container detectors that need random access handle their own spooling
         MediaType detectedType = super.detect(tis, metadata, parseContext);
 
-        // 4. Text detection - only if still unknown
+        // 3. Text detection - only if still unknown
         MediaType textType = null;
         if (MediaType.OCTET_STREAM.equals(detectedType) &&
                 MediaType.OCTET_STREAM.equals(magicType)) {
             textType = textDetector.detect(tis, metadata, parseContext);
         }
 
-        // 5. Return most specific
+        // 4. Return most specific
         return mostSpecific(magicType, detectedType, textType);
-    }
-
-    private boolean shouldSpool(MediaType type) {
-        if (spoolTypes == null || spoolTypes.isEmpty()) {
-            return false;
-        }
-        // Check exact match
-        if (spoolTypes.contains(type)) {
-            return true;
-        }
-        // Check base type (without parameters)
-        MediaType baseType = type.getBaseType();
-        if (spoolTypes.contains(baseType)) {
-            return true;
-        }
-        // Check if type is a specialization of any spool type
-        MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
-        for (MediaType spoolType : spoolTypes) {
-            if (registry.isSpecializationOf(type, spoolType)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private MediaType mostSpecific(MediaType magicType, MediaType detectedType, MediaType textType) {
@@ -257,25 +214,5 @@ public class DefaultDetector extends CompositeDetector {
      */
     public Collection<Class<? extends Detector>> getExcludedClasses() {
         return excludedClasses;
-    }
-
-    /**
-     * Sets the media types that should be spooled to a temp file before
-     * container detection. This enables random access for formats like
-     * ZIP, OLE, and PDF.
-     *
-     * @param spoolTypes set of media types to spool
-     */
-    public void setSpoolTypes(Set<MediaType> spoolTypes) {
-        this.spoolTypes = spoolTypes;
-    }
-
-    /**
-     * Returns the media types that are spooled to temp files.
-     *
-     * @return set of media types to spool
-     */
-    public Set<MediaType> getSpoolTypes() {
-        return spoolTypes;
     }
 }

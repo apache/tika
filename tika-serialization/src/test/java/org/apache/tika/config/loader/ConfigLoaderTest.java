@@ -31,6 +31,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.io.SpoolingStrategy;
+import org.apache.tika.mime.MediaType;
 
 /**
  * Unit tests for {@link ConfigLoader}.
@@ -209,6 +211,20 @@ public class ConfigLoaderTest {
 
         assertNotNull(timeout);
         assertEquals(30000, timeout.getMillis());
+    }
+
+    @Test
+    public void testLoadSpoolingStrategy() throws Exception {
+        // SpoolingStrategy -> "spooling-strategy"
+        // JSON has "spooling-strategy" with spoolTypes: ["application/zip", "application/pdf"]
+        SpoolingStrategy strategy = configLoader.load(SpoolingStrategy.class);
+
+        assertNotNull(strategy);
+        assertEquals(2, strategy.getSpoolTypes().size());
+        assertTrue(strategy.getSpoolTypes().contains(MediaType.application("zip")));
+        assertTrue(strategy.getSpoolTypes().contains(MediaType.application("pdf")));
+        // Verify default types are NOT present (we replaced the set)
+        assertFalse(strategy.getSpoolTypes().contains(MediaType.application("x-tika-msoffice")));
     }
 
     @Test

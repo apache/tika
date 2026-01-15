@@ -3,7 +3,6 @@
     "default-parser"
   ],
   "auto-detect-parser": {
-    "spoolToDisk": 12345,
     "outputThreshold": 6789,
     "metadataWriteFilterFactory": {
       "standard-write-filter-factory": {

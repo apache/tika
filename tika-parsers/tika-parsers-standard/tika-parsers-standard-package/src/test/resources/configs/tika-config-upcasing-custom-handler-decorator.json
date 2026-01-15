@@ -1,6 +1,5 @@
 {
   "auto-detect-parser": {
-    "spoolToDisk": 1000,
     "outputThreshold": 1000,
     "maximumCompressionRatio": 0.8,
     "maximumDepth": 1000,

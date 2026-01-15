@@ -70,7 +70,7 @@ public class TikaJsonConfigTest {
             {
               "detectors": [
                 "poifs-container-detector",
-                { "mime-types": { "markLimit": 10000 } },
+                { "default-detector": { "spoolTypes": ["application/zip", "application/pdf"] } },
                 "zip-container-detector"
               ]
             }
@@ -85,8 +85,8 @@ public class TikaJsonConfigTest {
         assertEquals("poifs-container-detector", detectors.get(0).getKey());
         assertTrue(detectors.get(0).getValue().isEmpty());
 
-        assertEquals("mime-types", detectors.get(1).getKey());
-        assertEquals(10000, detectors.get(1).getValue().get("markLimit").asInt());
+        assertEquals("default-detector", detectors.get(1).getKey());
+        assertTrue(detectors.get(1).getValue().get("spoolTypes").isArray());
 
         assertEquals("zip-container-detector", detectors.get(2).getKey());
         assertTrue(detectors.get(2).getValue().isEmpty());
