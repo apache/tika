@@ -244,6 +244,9 @@ public abstract class AbstractMultipleParser implements Parser {
     private void parse(TikaInputStream tis, ContentHandler handler,
                        ContentHandlerFactory handlerFactory, Metadata originalMetadata,
                        ParseContext context) throws IOException, SAXException, TikaException {
+        // Enable rewind capability since we rewind between multiple parsers
+        tis.enableRewind();
+
         // Track the metadata between parsers, so we can apply our policy
         Metadata lastMetadata = cloneMetadata(originalMetadata);
         Metadata metadata = lastMetadata;

@@ -112,4 +112,30 @@ class ByteArraySource extends InputStream implements TikaInputSource {
     public long getLength() {
         return length;
     }
+
+    @Override
+    public void enableRewind() {
+        // No-op: byte array is always rewindable
+    }
+
+    // Mark/reset support using position tracking
+    private int markPosition = -1;
+
+    @Override
+    public synchronized void mark(int readlimit) {
+        markPosition = position;
+    }
+
+    @Override
+    public synchronized void reset() throws IOException {
+        if (markPosition < 0) {
+            throw new IOException("Mark not set");
+        }
+        position = markPosition;
+    }
+
+    @Override
+    public boolean markSupported() {
+        return true;
+    }
 }

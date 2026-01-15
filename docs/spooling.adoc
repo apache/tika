@@ -8,43 +8,23 @@
 === What is Spooling?
 
 Spooling refers to the process of writing an input stream to a temporary file on disk.
-This is necessary for certain file formats that require random access to the underlying
-bytes during detection or parsing.
+This benefits certain file formats that can be processed more efficiently with random access
+to the underlying bytes during detection or parsing.
 
 === Why Some Formats Benefit from Random Access
 
 Several file formats are most efficiently processed with random access vs streaming:
 
-* **OLE2 (Microsoft Office legacy formats)**: The POI library needs to read the file
+* **OLE2 (Microsoft Office legacy formats)**: The POI library benefits from reading the file
   as a random-access structure to navigate the OLE2 container.
-* **ZIP-based formats**: Container detection requires reading the ZIP central directory,
-  which is located at the end of the file.
-* **Binary Property Lists (bplist)**: Apple's binary plist format requires random access
+* **ZIP-based formats**: Container detection benefits from reading the ZIP central directory,
+  which is located at the end of the file. Parsing also benefits from random access.
+* **Binary Property Lists (bplist)**: Apple's binary plist format benefits from random access
   for efficient parsing.
-* **PDF**: While detection works via magic bytes, parsing requires random access for
+* **PDF**: While detection works via magic bytes, parsing benefits from random access for
   the PDF cross-reference table.
 
 === Architectural Decision: Decentralized Spooling
-
-==== The Problem with Centralized Spooling
-
-Earlier versions of Tika considered centralizing spooling decisions in `DefaultDetector`.
-The detector would check the detected media type and spool to disk before passing the
-stream to specialized detectors or parsers.
-
-This approach had several drawbacks:
-
-1. **Unnecessary spooling**: PDF files need spooling for _parsing_ but not for _detection_
-   (magic bytes suffice). Centralized detection-time spooling would spool PDFs unnecessarily
-   when only detecting.
-
-2. **Redundant logic**: Specialized detectors like `POIFSContainerDetector` and
-   `DefaultZipContainerDetector` already call `TikaInputStream.getFile()` or `getPath()`
-   when they need random access. They know best when spooling is required.
-
-3. **Coupling**: Centralized spooling couples the detector to knowledge about which
-   formats need random access, duplicating logic that already exists in specialized
-   components.
 
 ==== The Solution: Let Components Self-Spool
 
@@ -60,11 +40,13 @@ Path path = TikaInputStream.get(inputStream).getPath();
 File file = TikaInputStream.get(inputStream).getFile();
 ----
 
-`TikaInputStream` handles the spooling transparently:
+`TikaInputStream` handles the spooling transparently based on how it was initialized:
 
-* If the stream is already backed by a file, it returns that file directly.
-* If the stream is in-memory or network-based, it spools to a temporary file.
-* The temporary file is automatically cleaned up when the stream is closed.
+* **Initialized with `Path`**: The file is used directly for random access. No spooling needed.
+* **Initialized with `byte[]`**: The bytes are kept in memory. Spooling only on demand.
+* **Initialized with `InputStream`**: When `getPath()` or `getFile()` is called, the stream
+  is dynamically buffered to memory first, then spills to a temporary file after a threshold.
+  The temporary file is automatically cleaned up when the stream is closed.
 
 ==== Benefits of Decentralized Spooling
 
@@ -87,7 +69,7 @@ file management. This means:
 === Default Behavior
 
 By default, Tika handles spooling automatically. You don't need to configure anything
-for most use cases. When a detector or parser needs random access to a file, it will
+for most use cases. When a detector or parser benefits from random access to a file, it will
 spool the input stream to a temporary file if necessary.
 
 === SpoolingStrategy for Fine-Grained Control
@@ -95,7 +77,7 @@ spool the input stream to a temporary file if necessary.
 For advanced use cases, you can use `SpoolingStrategy` to control spooling behavior.
 This is useful when you want to:
 
-* Restrict which file types are allowed to spool (e.g., for security reasons)
+* Restrict which file types are allowed to spool (e.g., for performance reasons)
 * Customize spooling behavior based on metadata or stream properties
 
 ==== Programmatic Configuration
@@ -193,8 +175,26 @@ context.set(SpoolingStrategy.class, strategy);
 1. **Let Tika handle it**: For most applications, the default behavior is optimal.
    Don't configure spooling unless you have a specific need.
 
-2. **Use TikaInputStream**: Always wrap your input streams with `TikaInputStream`
-   to enable efficient spooling and rewind capabilities.
+2. **Use TikaInputStream with Path or byte[]**: When you have a file, pass the `Path`
+   directly to `TikaInputStream.get(Path)` rather than wrapping a `FileInputStream`.
+   Similarly, pass `byte[]` directly rather than wrapping a `ByteArrayInputStream`.
+   This allows TikaInputStream to use efficient backing strategies that avoid unnecessary
+   copying or spooling:
++
+[source,java]
+----
+// Good: TikaInputStream knows it has a file, can use random access directly
+TikaInputStream tis = TikaInputStream.get(path);
+
+// Bad: TikaInputStream sees an opaque stream, may spool unnecessarily
+TikaInputStream tis = TikaInputStream.get(new FileInputStream(file));
+
+// Good: TikaInputStream knows it has bytes in memory
+TikaInputStream tis = TikaInputStream.get(bytes);
+
+// Bad: TikaInputStream sees an opaque stream
+TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(bytes));
+----
 
 3. **Close streams properly**: Use try-with-resources to ensure temporary files
    are cleaned up:
@@ -207,5 +207,5 @@ try (TikaInputStream tis = TikaInputStream.get(inputStream)) {
 ----
 
 4. **Consider memory vs. disk tradeoffs**: For very large files, spooling to disk
-   is necessary. For small files processed in bulk, keeping data in memory may be
+   may be needed. For small files processed in bulk, keeping data in memory may be
    faster. `TikaInputStream` backing strategies can be tuned for your workload.
