@@ -27,7 +27,7 @@ import org.apache.tika.digest.DigesterFactory;
 /**
  * Factory for {@link BouncyCastleDigester} with configurable algorithms and encodings.
  * <p>
- * Default: markLimit = 1000000, MD5 with HEX encoding.
+ * Default: MD5 with HEX encoding.
  * <p>
  * BouncyCastle supports additional algorithms beyond the standard Java ones,
  * such as SHA3-256, SHA3-384, SHA3-512.
@@ -37,7 +37,6 @@ import org.apache.tika.digest.DigesterFactory;
  * {
  *   "digesterFactory": {
  *     "bouncy-castle-digester-factory": {
- *       "markLimit": 1000000,
  *       "digests": [
  *         { "algorithm": "MD5" },
  *         { "algorithm": "SHA3_256", "encoding": "BASE32" }
@@ -50,7 +49,6 @@ import org.apache.tika.digest.DigesterFactory;
 @TikaComponent
 public class BouncyCastleDigesterFactory implements DigesterFactory {
 
-    private int markLimit = 1000000;
     private List<DigestDef> digests = new ArrayList<>();
 
     public BouncyCastleDigesterFactory() {
@@ -59,15 +57,7 @@ public class BouncyCastleDigesterFactory implements DigesterFactory {
 
     @Override
     public Digester build() {
-        return new BouncyCastleDigester(markLimit, digests);
-    }
-
-    public int getMarkLimit() {
-        return markLimit;
-    }
-
-    public void setMarkLimit(int markLimit) {
-        this.markLimit = markLimit;
+        return new BouncyCastleDigester(digests);
     }
 
     public List<DigestDef> getDigests() {

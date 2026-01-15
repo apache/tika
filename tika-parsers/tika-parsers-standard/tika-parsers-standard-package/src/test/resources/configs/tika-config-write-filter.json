@@ -4,7 +4,6 @@
     "skipContainerDocumentDigest": true,
     "digesterFactory": {
       "commons-digester-factory": {
-        "markLimit": 100000,
         "digests": [
           { "algorithm": "SHA256", "encoding": "BASE32" },
           { "algorithm": "MD5" }

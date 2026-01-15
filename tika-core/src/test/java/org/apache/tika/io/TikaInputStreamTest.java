@@ -669,6 +669,122 @@ public class TikaInputStreamTest {
         }
     }
 
+    // ========== CachingSource Tests ==========
+
+    @Test
+    public void testCachingSourceUpdatesMetadataOnSpill() throws IOException {
+        byte[] data = bytes("Hello, World!");
+        Metadata metadata = new Metadata();
+        // Don't set CONTENT_LENGTH - let CachingSource set it on spill
+
+        try (TemporaryResources tmp = new TemporaryResources()) {
+            CachingSource source = new CachingSource(
+                    new ByteArrayInputStream(data), tmp, -1, metadata);
+
+            // Read all data
+            byte[] buffer = new byte[data.length];
+            int totalRead = 0;
+            int n;
+            while ((n = source.read(buffer, totalRead, buffer.length - totalRead)) != -1) {
+                totalRead += n;
+                if (totalRead >= buffer.length) break;
+            }
+
+            // Before spill, metadata should not have length
+            assertNull(metadata.get(Metadata.CONTENT_LENGTH));
+
+            // Force spill to file
+            Path path = source.getPath(".tmp");
+            assertNotNull(path);
+            assertTrue(Files.exists(path));
+
+            // After spill, metadata should have length
+            assertEquals("13", metadata.get(Metadata.CONTENT_LENGTH));
+
+            source.close();
+        }
+    }
+
+    @Test
+    public void testCachingSourceDoesNotOverwriteExistingMetadata() throws IOException {
+        byte[] data = bytes("Hello, World!");
+        Metadata metadata = new Metadata();
+        // Pre-set CONTENT_LENGTH
+        metadata.set(Metadata.CONTENT_LENGTH, "999");
+
+        try (TemporaryResources tmp = new TemporaryResources()) {
+            CachingSource source = new CachingSource(
+                    new ByteArrayInputStream(data), tmp, -1, metadata);
+
+            // Read and spill
+            IOUtils.toByteArray(source);
+            source.seekTo(0);
+            Path path = source.getPath(".tmp");
+
+            // Existing value should not be overwritten
+            assertEquals("999", metadata.get(Metadata.CONTENT_LENGTH));
+
+            source.close();
+        }
+    }
+
+    @Test
+    public void testCachingSourceSeekTo() throws IOException {
+        byte[] data = bytes("ABCDEFGHIJ");
+
+        try (TemporaryResources tmp = new TemporaryResources()) {
+            CachingSource source = new CachingSource(
+                    new ByteArrayInputStream(data), tmp, -1, null);
+
+            // Read first 5 bytes
+            byte[] buf = new byte[5];
+            source.read(buf);
+            assertEquals("ABCDE", str(buf));
+
+            // Seek back to position 2
+            source.seekTo(2);
+
+            // Read again
+            buf = new byte[3];
+            source.read(buf);
+            assertEquals("CDE", str(buf));
+
+            source.close();
+        }
+    }
+
+    @Test
+    public void testCachingSourceAfterSpill() throws IOException {
+        byte[] data = bytes("ABCDEFGHIJ");
+
+        try (TemporaryResources tmp = new TemporaryResources()) {
+            CachingSource source = new CachingSource(
+                    new ByteArrayInputStream(data), tmp, -1, null);
+
+            // Read first 5 bytes
+            byte[] buf = new byte[5];
+            source.read(buf);
+            assertEquals("ABCDE", str(buf));
+
+            // Force spill
+            Path path = source.getPath(".tmp");
+            assertTrue(Files.exists(path));
+
+            // Continue reading after spill
+            buf = new byte[5];
+            source.read(buf);
+            assertEquals("FGHIJ", str(buf));
+
+            // Seek back and read again
+            source.seekTo(0);
+            buf = new byte[10];
+            source.read(buf);
+            assertEquals("ABCDEFGHIJ", str(buf));
+
+            source.close();
+        }
+    }
+
     // ========== Helper Methods ==========
 
     private TikaInputStream createTikaInputStream(byte[] data, boolean fileBacked) throws IOException {

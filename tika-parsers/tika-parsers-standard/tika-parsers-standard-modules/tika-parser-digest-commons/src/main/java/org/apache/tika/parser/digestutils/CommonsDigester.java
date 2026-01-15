@@ -32,38 +32,33 @@ import org.apache.tika.digest.InputStreamDigester;
  * Implementation of {@link Digester}
  * that relies on commons.codec.digest.DigestUtils to calculate digest hashes.
  * <p>
- * This digester tries to use the regular mark/reset protocol on the InputStream.
- * However, this wraps an internal BoundedInputStream, and if the InputStream
- * is not fully read, then this will reset the stream and
- * spool the InputStream to disk (via TikaInputStream) and then digest the file.
+ * This digester uses {@link org.apache.tika.io.TikaInputStream#enableRewind()} and
+ * {@link org.apache.tika.io.TikaInputStream#rewind()} to read the entire stream,
+ * compute the digest, and then rewind for subsequent processing.
  */
 public class CommonsDigester extends CompositeDigester {
 
     /**
-     * @param markLimit limit for mark/reset; after this limit is hit, the
-     *                  stream is reset and spooled to disk
-     * @param digests   list of digest definitions (algorithm + encoding pairs)
+     * @param digests list of digest definitions (algorithm + encoding pairs)
      */
-    public CommonsDigester(int markLimit, List<DigestDef> digests) {
-        super(buildDigesters(markLimit, digests));
+    public CommonsDigester(List<DigestDef> digests) {
+        super(buildDigesters(digests));
     }
 
     /**
-     * @param markLimit  limit for mark/reset; after this limit is hit, the
-     *                   stream is reset and spooled to disk
      * @param algorithms algorithms to run (uses HEX encoding for all)
      */
-    public CommonsDigester(int markLimit, DigestDef.Algorithm... algorithms) {
-        super(buildDigesters(markLimit, algorithms));
+    public CommonsDigester(DigestDef.Algorithm... algorithms) {
+        super(buildDigesters(algorithms));
     }
 
-    private static Digester[] buildDigesters(int markLimit, List<DigestDef> digests) {
+    private static Digester[] buildDigesters(List<DigestDef> digests) {
         Digester[] digesters = new Digester[digests.size()];
         int i = 0;
         for (DigestDef def : digests) {
             checkSupported(def.getAlgorithm());
             Encoder encoder = getEncoder(def.getEncoding());
-            digesters[i++] = new InputStreamDigester(markLimit,
+            digesters[i++] = new InputStreamDigester(
                     def.getAlgorithm().getJavaName(),
                     def.getMetadataKey(),
                     encoder);
@@ -71,14 +66,14 @@ public class CommonsDigester extends CompositeDigester {
         return digesters;
     }
 
-    private static Digester[] buildDigesters(int markLimit, DigestDef.Algorithm[] algorithms) {
+    private static Digester[] buildDigesters(DigestDef.Algorithm[] algorithms) {
         Digester[] digesters = new Digester[algorithms.length];
         Encoder encoder = getEncoder(DigestDef.Encoding.HEX);
         int i = 0;
         for (DigestDef.Algorithm algorithm : algorithms) {
             checkSupported(algorithm);
             DigestDef def = new DigestDef(algorithm, DigestDef.Encoding.HEX);
-            digesters[i++] = new InputStreamDigester(markLimit,
+            digesters[i++] = new InputStreamDigester(
                     algorithm.getJavaName(),
                     def.getMetadataKey(),
                     encoder);

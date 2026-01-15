@@ -30,14 +30,11 @@ import org.apache.tika.parser.ParseContext;
 public interface Digester {
     /**
      * Digests a TikaInputStream and sets the appropriate value(s) in the metadata.
-     * The Digester is also responsible for marking and resetting the stream.
+     * The Digester is responsible for calling {@link TikaInputStream#enableRewind()}
+     * and {@link TikaInputStream#rewind()} to ensure the stream can be read by
+     * subsequent processing after digesting.
      * <p>
-     * The given stream is guaranteed to support the
-     * {@link TikaInputStream#markSupported() mark feature} and the detector
-     * is expected to {@link TikaInputStream#mark(int) mark} the stream before
-     * reading any bytes from it, and to {@link TikaInputStream#reset() reset}
-     * the stream before returning. The stream must not be closed by the
-     * detector.
+     * The stream must not be closed by the digester.
      *
      * @param tis          TikaInputStream to digest
      * @param m            Metadata to set the values for

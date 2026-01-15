@@ -27,14 +27,13 @@ import org.apache.tika.digest.DigesterFactory;
 /**
  * Factory for {@link CommonsDigester} with configurable algorithms and encodings.
  * <p>
- * Default: markLimit = 1000000, MD5 with HEX encoding.
+ * Default: MD5 with HEX encoding.
  * <p>
  * Example JSON configuration:
  * <pre>
  * {
  *   "digesterFactory": {
  *     "commons-digester": {
- *       "markLimit": 1000000,
  *       "digests": [
  *         { "algorithm": "MD5" },
  *         { "algorithm": "SHA256", "encoding": "BASE32" }
@@ -47,7 +46,6 @@ import org.apache.tika.digest.DigesterFactory;
 @TikaComponent
 public class CommonsDigesterFactory implements DigesterFactory {
 
-    private int markLimit = 1000000;
     private List<DigestDef> digests = new ArrayList<>();
 
     public CommonsDigesterFactory() {
@@ -56,15 +54,7 @@ public class CommonsDigesterFactory implements DigesterFactory {
 
     @Override
     public Digester build() {
-        return new CommonsDigester(markLimit, digests);
-    }
-
-    public int getMarkLimit() {
-        return markLimit;
-    }
-
-    public void setMarkLimit(int markLimit) {
-        this.markLimit = markLimit;
+        return new CommonsDigester(digests);
     }
 
     public List<DigestDef> getDigests() {

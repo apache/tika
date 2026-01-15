@@ -102,7 +102,7 @@ class FileSource extends InputStream implements TikaInputSource {
     }
 
     @Override
-    public Path getPath(TemporaryResources tmp, String suffix) throws IOException {
+    public Path getPath(String suffix) throws IOException {
         // Already file-backed, just return the path
         return path;
     }

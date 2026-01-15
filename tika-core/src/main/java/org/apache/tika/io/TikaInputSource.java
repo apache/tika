@@ -43,11 +43,10 @@ interface TikaInputSource extends Closeable {
 
     /**
      * Gets the file path, potentially spilling to a temp file if needed.
-     * @param tmp temporary resources for creating temp files
      * @param suffix file suffix for temp files
      * @return the file path
      */
-    Path getPath(TemporaryResources tmp, String suffix) throws IOException;
+    Path getPath(String suffix) throws IOException;
 
     /**
      * Returns the length of the content, or -1 if unknown.

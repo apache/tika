@@ -3,7 +3,6 @@
     "outputThreshold": 1000000,
     "digesterFactory": {
       "commons-digester-factory": {
-        "markLimit": 1000000,
         "digests": [
           { "algorithm": "MD2" },
           { "algorithm": "MD5" },
