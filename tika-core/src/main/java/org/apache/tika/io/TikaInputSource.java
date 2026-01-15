@@ -53,4 +53,17 @@ interface TikaInputSource extends Closeable {
      * Returns the length of the content, or -1 if unknown.
      */
     long getLength();
+
+    /**
+     * Enables full rewind capability.
+     * <p>
+     * For ByteArraySource and FileSource, this is a no-op (always rewindable).
+     * For CachingSource, this switches from passthrough mode to caching mode,
+     * enabling subsequent {@link #seekTo(long)} and rewind operations.
+     * <p>
+     * Must be called when position is 0, otherwise throws IllegalStateException.
+     *
+     * @throws IllegalStateException if position is not 0
+     */
+    void enableRewind();
 }

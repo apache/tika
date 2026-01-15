@@ -244,8 +244,8 @@ public class PackageParser extends AbstractEncodingDetectorParser {
 
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-
-        // TikaInputStream always supports mark
+        // Enable rewind capability since we may need to re-read for 7z or data descriptor handling
+        tis.enableRewind();
 
         TemporaryResources tmp = new TemporaryResources();
         // Shield the TikaInputStream from being closed when we close archive streams.

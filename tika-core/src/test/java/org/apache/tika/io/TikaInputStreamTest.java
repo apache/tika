@@ -218,6 +218,8 @@ public class TikaInputStreamTest {
     public void testGetPathPreservesPosition() throws IOException {
         byte[] data = bytes("Hello, World!");
         try (TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(data))) {
+            tis.enableRewind(); // Enable caching for getPath() support after reading
+
             byte[] buf = new byte[5];
             tis.read(buf);
             assertEquals(5, tis.getPosition());
@@ -275,6 +277,8 @@ public class TikaInputStreamTest {
         new Random(42).nextBytes(data);
 
         try (TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(data))) {
+            tis.enableRewind(); // Enable caching for rewind support
+
             byte[] buffer = new byte[data.length];
             int totalRead = 0;
             int n;
@@ -669,6 +673,158 @@ public class TikaInputStreamTest {
         }
     }
 
+    // ========== enableRewind() Tests ==========
+
+    @Test
+    public void testEnableRewindByteArrayNoOp() throws Exception {
+        // ByteArraySource is always rewindable - enableRewind() is no-op
+        byte[] data = bytes("Hello, World!");
+        try (TikaInputStream tis = TikaInputStream.get(data)) {
+            tis.enableRewind(); // Should be no-op
+
+            byte[] buf = new byte[5];
+            tis.read(buf);
+            assertEquals("Hello", str(buf));
+
+            tis.rewind();
+            assertEquals(0, tis.getPosition());
+
+            buf = new byte[5];
+            tis.read(buf);
+            assertEquals("Hello", str(buf));
+        }
+    }
+
+    @Test
+    public void testEnableRewindFileNoOp() throws Exception {
+        // FileSource is always rewindable - enableRewind() is no-op
+        Path tempFile = createTempFile("Hello, World!");
+        try (TikaInputStream tis = TikaInputStream.get(tempFile)) {
+            tis.enableRewind(); // Should be no-op
+
+            byte[] buf = new byte[5];
+            tis.read(buf);
+            assertEquals("Hello", str(buf));
+
+            tis.rewind();
+            assertEquals(0, tis.getPosition());
+
+            buf = new byte[5];
+            tis.read(buf);
+            assertEquals("Hello", str(buf));
+        }
+    }
+
+    @Test
+    public void testEnableRewindStreamEnablesCaching() throws Exception {
+        // CachingSource starts in passthrough mode, enableRewind() enables caching
+        byte[] data = bytes("Hello, World!");
+        try (TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(data))) {
+            tis.enableRewind(); // Enable caching mode
+
+            byte[] buf = new byte[5];
+            tis.read(buf);
+            assertEquals("Hello", str(buf));
+
+            tis.rewind();
+            assertEquals(0, tis.getPosition());
+
+            buf = new byte[5];
+            tis.read(buf);
+            assertEquals("Hello", str(buf));
+        }
+    }
+
+    @Test
+    public void testEnableRewindAfterReadThrows() throws Exception {
+        // enableRewind() must be called at position 0
+        byte[] data = bytes("Hello, World!");
+        try (TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(data))) {
+            tis.read(); // Read one byte, position is now 1
+            assertEquals(1, tis.getPosition());
+
+            assertThrows(IllegalStateException.class, tis::enableRewind,
+                    "enableRewind() should throw when position != 0");
+        }
+    }
+
+    @Test
+    public void testEnableRewindMultipleCallsNoOp() throws Exception {
+        // Multiple enableRewind() calls should be safe (no-op after first)
+        byte[] data = bytes("Hello, World!");
+        try (TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(data))) {
+            tis.enableRewind();
+            tis.enableRewind(); // Should be no-op
+            tis.enableRewind(); // Should be no-op
+
+            byte[] buf = readAllBytes(tis);
+            assertEquals("Hello, World!", str(buf));
+
+            tis.rewind();
+            buf = readAllBytes(tis);
+            assertEquals("Hello, World!", str(buf));
+        }
+    }
+
+    @Test
+    public void testStreamWithoutEnableRewindCannotRewind() throws Exception {
+        // Without enableRewind(), CachingSource is in passthrough mode
+        // rewind() should fail after reading in passthrough mode
+        byte[] data = bytes("Hello, World!");
+        try (TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(data))) {
+            // Don't call enableRewind()
+
+            byte[] buf = new byte[5];
+            tis.read(buf);
+            assertEquals("Hello", str(buf));
+
+            // rewind() internally calls reset() which calls seekTo()
+            // In passthrough mode, seekTo() fails if not at current position
+            assertThrows(IOException.class, tis::rewind,
+                    "rewind() should fail in passthrough mode after reading");
+        }
+    }
+
+    @Test
+    public void testMarkResetThenEnableRewind() throws Exception {
+        // Test transitioning from passthrough mode (using BufferedInputStream's mark/reset)
+        // to caching mode via enableRewind()
+        byte[] data = bytes("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+        try (TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(data))) {
+            // Passthrough mode - use BufferedInputStream's mark/reset
+            tis.mark(100);
+            byte[] buf = new byte[5];
+            tis.read(buf);
+            assertEquals("ABCDE", str(buf));
+
+            tis.reset();  // Back to 0
+            assertEquals(0, tis.getPosition());
+
+            // Another mark/reset cycle in passthrough mode
+            tis.mark(100);
+            buf = new byte[10];
+            tis.read(buf);
+            assertEquals("ABCDEFGHIJ", str(buf));
+
+            tis.reset();  // Back to 0 again
+            assertEquals(0, tis.getPosition());
+
+            // Now enable rewind (switches to caching mode)
+            tis.enableRewind();
+
+            // Should still work with caching mode
+            buf = new byte[5];
+            tis.read(buf);
+            assertEquals("ABCDE", str(buf));
+
+            tis.rewind();  // Full rewind now works
+            assertEquals(0, tis.getPosition());
+
+            buf = readAllBytes(tis);
+            assertEquals("ABCDEFGHIJKLMNOPQRSTUVWXYZ", str(buf));
+        }
+    }
+
     // ========== Helper Methods ==========
 
     private TikaInputStream createTikaInputStream(byte[] data, boolean fileBacked) throws IOException {
@@ -684,7 +840,9 @@ public class TikaInputStreamTest {
                 Files.write(file, data);
                 return TikaInputStream.get(file);
             case STREAM:
-                return TikaInputStream.get(new ByteArrayInputStream(data));
+                TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(data));
+                tis.enableRewind(); // Enable caching for rewind support in tests
+                return tis;
             default:
                 throw new IllegalArgumentException("Unknown backing type: " + backingType);
         }

@@ -299,12 +299,8 @@ public class TikaInputStream extends TaggedInputStream {
             throw new IOException("Resetting to invalid mark");
         }
 
-        TikaInputSource source = inputSource();
-        if (source != null) {
-            source.seekTo(mark);
-        } else {
-            throw new IOException("Cannot reset: no TikaInputSource available");
-        }
+        // Delegate to underlying stream's reset (handles passthrough and caching modes)
+        super.reset();
 
         position = mark;
         // Don't invalidate mark - allow multiple reset() calls to same mark
@@ -447,11 +443,46 @@ public class TikaInputStream extends TaggedInputStream {
 
     /**
      * Rewind the stream to the beginning.
+     * <p>
+     * For streams created from byte arrays or files, this always works.
+     * For streams created from raw InputStreams, this requires
+     * {@link #enableRewind()} to have been called first.
      */
     public void rewind() throws IOException {
-        mark = 0;
-        reset();
+        TikaInputSource source = inputSource();
+        if (source != null) {
+            source.seekTo(0);
+        } else {
+            throw new IOException("Cannot rewind: no TikaInputSource available");
+        }
+        position = 0;
         mark = -1;
+        consecutiveEOFs = 0;
+    }
+
+    /**
+     * Enables full rewind capability for this stream.
+     * <p>
+     * For streams backed by byte arrays or files, this is a no-op since they
+     * are inherently rewindable. For streams backed by raw InputStreams, this
+     * switches from passthrough mode to caching mode, enabling subsequent
+     * {@link #rewind()}, {@link #mark(int)}/{@link #reset()}, and random access.
+     * <p>
+     * Must be called when position is 0 (before any reading), otherwise
+     * throws IllegalStateException.
+     * <p>
+     * Use this method when you know you'll need to rewind the stream later
+     * (e.g., for detection followed by parsing, or digest calculation).
+     * For streaming-only operations (e.g., HTML parsing), skip this call
+     * to avoid unnecessary caching overhead.
+     *
+     * @throws IllegalStateException if position is not 0
+     */
+    public void enableRewind() {
+        TikaInputSource source = inputSource();
+        if (source != null) {
+            source.enableRewind();
+        }
     }
 
     @Override

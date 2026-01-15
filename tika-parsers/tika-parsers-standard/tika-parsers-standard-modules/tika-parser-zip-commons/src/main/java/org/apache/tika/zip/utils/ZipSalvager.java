@@ -56,6 +56,8 @@ public class ZipSalvager {
                                    boolean allowStoredEntries) throws IOException {
 
         TikaInputStream tis = TikaInputStream.get(brokenZip);
+        // Enable rewind capability for retry on DATA_DESCRIPTOR feature
+        tis.enableRewind();
         try {
             try (ZipArchiveOutputStream outputStream = new ZipArchiveOutputStream(salvagedZip);
                     ZipArchiveInputStream zipArchiveInputStream = new ZipArchiveInputStream(
