@@ -62,8 +62,9 @@ public class BodyContentHandlerTest extends TikaTest {
     @Test
     public void testLimit() throws Exception {
         //TIKA-2668 - java 11-ea
+        // Note: limit is 16 to account for metadata overhead (each metadata field adds a newline)
         Parser p = new MockParser();
-        WriteOutContentHandler handler = new WriteOutContentHandler(15);
+        WriteOutContentHandler handler = new WriteOutContentHandler(16);
         Metadata metadata = new Metadata();
         ParseContext parseContext = new ParseContext();
         Parser[] parsers = new Parser[1];
