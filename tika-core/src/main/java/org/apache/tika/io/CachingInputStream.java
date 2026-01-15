@@ -192,9 +192,24 @@ class CachingInputStream extends InputStream {
         return source.available();
     }
 
+    // Mark/reset support using seekTo
+    private long markPosition = -1;
+
+    @Override
+    public synchronized void mark(int readlimit) {
+        markPosition = position;
+    }
+
+    @Override
+    public synchronized void reset() throws IOException {
+        if (markPosition < 0) {
+            throw new IOException("Mark not set");
+        }
+        seekTo(markPosition);
+    }
+
     @Override
     public boolean markSupported() {
-        // Mark/reset is handled at the TikaInputStream level
-        return false;
+        return true;
     }
 }

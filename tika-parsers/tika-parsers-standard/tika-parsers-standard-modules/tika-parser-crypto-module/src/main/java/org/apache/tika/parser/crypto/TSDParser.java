@@ -97,6 +97,8 @@ public class TSDParser implements Parser {
     @Override
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
+        // Enable rewind capability since we read metadata then rewind to parse content
+        tis.enableRewind();
 
         //Try to parse TSD file
         Metadata TSDAndEmbeddedMetadata = new Metadata();

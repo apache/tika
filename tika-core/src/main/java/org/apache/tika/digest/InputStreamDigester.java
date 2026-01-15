@@ -16,69 +16,37 @@
  */
 package org.apache.tika.digest;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 
-import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.StringUtils;
 
-// TODO: TIKA-FOLLOWUP - With TikaInputStream.rewind(), markLimit is no longer needed.
-//  The digester can simply read the entire stream, then call tis.rewind().
-//  This would simplify this class and allow removing markLimit from:
-//  - InputStreamDigester, CommonsDigester, BouncyCastleDigester
-//  - CommonsDigesterFactory, BouncyCastleDigesterFactory (setMarkLimit/getMarkLimit)
-//  - All JSON config files that specify markLimit for digesters
+/**
+ * Digester that uses {@link TikaInputStream#enableRewind()} and {@link TikaInputStream#rewind()}
+ * to read the entire stream for digesting, then rewind for subsequent processing.
+ */
 public class InputStreamDigester implements Digester {
 
     private final String algorithm;
     private final String metadataKey;
     private final Encoder encoder;
-    private final int markLimit;
 
     /**
-     * @param markLimit   limit in bytes to allow for mark/reset.  If the inputstream is longer
-     *                    than this limit, the stream will be reset and then spooled to a
-     *                    temporary file.
-     *                    Throws IllegalArgumentException if < 0.
      * @param algorithm   name of the digest algorithm to retrieve from the Provider
      * @param metadataKey the full metadata key to use when storing the digest
      *                    (e.g., "X-TIKA:digest:MD5" or "X-TIKA:digest:SHA256:BASE32")
      * @param encoder     encoder to convert the byte array returned from the digester to a
      *                    string
      */
-    public InputStreamDigester(int markLimit, String algorithm, String metadataKey,
-                               Encoder encoder) {
+    public InputStreamDigester(String algorithm, String metadataKey, Encoder encoder) {
         this.algorithm = algorithm;
         this.metadataKey = metadataKey;
         this.encoder = encoder;
-        this.markLimit = markLimit;
-
-        if (markLimit < 0) {
-            throw new IllegalArgumentException("markLimit must be >= 0");
-        }
-    }
-
-    /**
-     * Copied from commons-codec
-     */
-    private static MessageDigest updateDigest(MessageDigest digest, InputStream data,
-                                              Metadata metadata) throws IOException {
-        byte[] buffer = new byte[1024];
-        long total = 0;
-        for (int read = data.read(buffer, 0, 1024); read > -1; read = data.read(buffer, 0, 1024)) {
-            digest.update(buffer, 0, read);
-            total += read;
-        }
-        setContentLength(total, metadata);
-        return digest;
     }
 
     private static void setContentLength(long length, Metadata metadata) {
@@ -113,6 +81,12 @@ public class InputStreamDigester implements Digester {
     }
 
     /**
+     * Digests the TikaInputStream and stores the result in metadata.
+     * <p>
+     * Uses {@link TikaInputStream#enableRewind()} to ensure the stream can be
+     * rewound after digesting, then calls {@link TikaInputStream#rewind()} to
+     * reset the stream for subsequent processing.
+     *
      * @param tis          TikaInputStream to digest
      * @param metadata     metadata in which to store the digest information
      * @param parseContext ParseContext -- not actually used yet, but there for future expansion
@@ -121,66 +95,21 @@ public class InputStreamDigester implements Digester {
     @Override
     public void digest(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
             throws IOException {
-        if (tis.hasFile()) {
-            long sz = tis.getLength();
-            //if the inputstream has a file,
-            //and its size is greater than its mark limit,
-            //just digest the underlying file.
-            if (sz > markLimit) {
-                digestFile(tis.getFile(), sz, metadata);
-                return;
-            }
-        }
+        tis.enableRewind();
 
-        //try the usual mark/reset stuff.
-        //however, if you actually hit the bound,
-        //then stop and spool to file via TikaInputStream
-        BoundedInputStream bis = new BoundedInputStream(markLimit, tis);
-        boolean finishedStream = false;
-        bis.mark(markLimit + 1);
-        finishedStream = digestStream(bis, metadata);
-        bis.reset();
-        if (finishedStream) {
-            return;
-        }
-        //if the stream wasn't finished -- if the stream was longer than the mark limit --
-        //spool to File and digest that.
-        digestFile(tis.getFile(), -1, metadata);
-    }
-
-    private void digestFile(File f, long sz, Metadata m) throws IOException {
-        //only add it if it hasn't been populated already
-        if (StringUtils.isBlank(m.get(Metadata.CONTENT_LENGTH))) {
-            if (sz < 0) {
-                sz = f.length();
-            }
-            setContentLength(sz, m);
-        }
-        try (InputStream is = new FileInputStream(f)) {
-            digestStream(is, m);
-        }
-    }
-
-    /**
-     * @param is       input stream to read from
-     * @param metadata metadata for reporting the digest
-     * @return whether or not this finished the input stream
-     * @throws IOException
-     */
-    private boolean digestStream(InputStream is, Metadata metadata) throws IOException {
-        byte[] digestBytes;
         MessageDigest messageDigest = newMessageDigest();
-
-        updateDigest(messageDigest, is, metadata);
-        digestBytes = messageDigest.digest();
-
-        if (is instanceof BoundedInputStream) {
-            if (((BoundedInputStream) is).hasHitBound()) {
-                return false;
-            }
+        byte[] buffer = new byte[8192];
+        long total = 0;
+        int read;
+        while ((read = tis.read(buffer)) != -1) {
+            messageDigest.update(buffer, 0, read);
+            total += read;
         }
-        metadata.set(metadataKey, encoder.encode(digestBytes));
-        return true;
+
+        setContentLength(total, metadata);
+        metadata.set(metadataKey, encoder.encode(messageDigest.digest()));
+
+        tis.rewind();
     }
 
 }

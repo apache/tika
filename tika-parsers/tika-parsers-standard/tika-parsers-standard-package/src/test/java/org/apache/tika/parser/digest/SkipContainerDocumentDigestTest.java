@@ -47,7 +47,7 @@ public class SkipContainerDocumentDigestTest extends TikaTest {
     public void testDigestContainerAndEmbedded() throws Exception {
         // skipContainerDocumentDigest = false means digest everything
         AutoDetectParserConfig config = new AutoDetectParserConfig();
-        config.digester(new CommonsDigester(100000, DigestDef.Algorithm.MD5));
+        config.digester(new CommonsDigester(DigestDef.Algorithm.MD5));
         config.setSkipContainerDocumentDigest(false);
 
         AutoDetectParser parser = new AutoDetectParser();
@@ -71,7 +71,7 @@ public class SkipContainerDocumentDigestTest extends TikaTest {
     public void testSkipContainerDigestOnly() throws Exception {
         // skipContainerDocumentDigest = true means skip container, digest only embedded
         AutoDetectParserConfig config = new AutoDetectParserConfig();
-        config.digester(new CommonsDigester(100000, DigestDef.Algorithm.MD5));
+        config.digester(new CommonsDigester(DigestDef.Algorithm.MD5));
         config.setSkipContainerDocumentDigest(true);
 
         AutoDetectParser parser = new AutoDetectParser();
@@ -95,7 +95,7 @@ public class SkipContainerDocumentDigestTest extends TikaTest {
     public void testSkipContainerDocumentDigestMarkerInParseContext() throws Exception {
         // Test that the SkipContainerDocumentDigest marker in ParseContext works
         AutoDetectParserConfig config = new AutoDetectParserConfig();
-        config.digester(new CommonsDigester(100000, DigestDef.Algorithm.MD5));
+        config.digester(new CommonsDigester(DigestDef.Algorithm.MD5));
         config.setSkipContainerDocumentDigest(false); // Config says digest all
 
         AutoDetectParser parser = new AutoDetectParser();
@@ -145,7 +145,6 @@ public class SkipContainerDocumentDigestTest extends TikaTest {
     public void testDigestWithFactory() throws Exception {
         // Test using the factory pattern
         CommonsDigesterFactory factory = new CommonsDigesterFactory();
-        factory.setMarkLimit(100000);
 
         AutoDetectParserConfig config = new AutoDetectParserConfig();
         config.setDigesterFactory(factory);
