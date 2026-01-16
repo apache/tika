@@ -61,6 +61,10 @@ under the License.
                                 <parser-examples>${project.basedir}/../tika-parsers/tika-parsers-standard/tika-parsers-standard-package/src/test/resources/config-examples</parser-examples>
                                 <server-examples>${project.basedir}/../tika-server/tika-server-core/src/test/resources/config-examples</server-examples>
                                 <pipes-fs-examples>${project.basedir}/../tika-pipes/tika-pipes-plugins/tika-pipes-file-system/src/test/resources/config-examples</pipes-fs-examples>
+                                <!-- GitHub URLs for linking to source files -->
+                                <github-parser-examples>https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-package/src/test/resources/config-examples</github-parser-examples>
+                                <github-server-examples>https://github.com/apache/tika/blob/main/tika-server/tika-server-core/src/test/resources/config-examples</github-server-examples>
+                                <github-pipes-fs-examples>https://github.com/apache/tika/blob/main/tika-pipes/tika-pipes-plugins/tika-pipes-file-system/src/test/resources/config-examples</github-pipes-fs-examples>
                             </attributes>
                         </configuration>
                     </execution>

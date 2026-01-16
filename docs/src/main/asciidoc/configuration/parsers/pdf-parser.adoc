@@ -25,6 +25,7 @@ This page documents the configuration options for `PDFParser` in Tika 4.x.
 ----
 include::{parser-examples}/pdf-parser-basic.json[]
 ----
+icon:github[] link:{github-parser-examples}/pdf-parser-basic.json[View source on GitHub]
 
 == Full Configuration
 
@@ -35,6 +36,7 @@ Comments indicate the available options for enum fields.
 ----
 include::{parser-examples}/pdf-parser-full.json[]
 ----
+icon:github[] link:{github-parser-examples}/pdf-parser-full.json[View source on GitHub]
 
 == Changes from 3.x
 
