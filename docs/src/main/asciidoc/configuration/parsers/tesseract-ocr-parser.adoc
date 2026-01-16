@@ -1,0 +1,97 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= TesseractOCRParser Configuration
+
+This page documents the configuration options for `TesseractOCRParser` in Tika 4.x.
+
+WARNING: This page is a stub and needs to be completed with accurate configuration options.
+
+== Basic Configuration
+
+[source,json]
+----
+include::{parser-examples}/tesseract-basic.json[]
+----
+
+== Configuration Options
+
+// TODO: Document all TesseractOCRParser configuration options
+// Reference: org.apache.tika.parser.ocr.TesseractOCRParser and TesseractOCRConfig
+
+[cols="2,1,1,4"]
+|===
+|Option |Type |Default |Description
+
+|`language`
+|string
+|eng
+|Tesseract language code(s). Use `+` for multiple languages (e.g., `eng+fra`)
+
+|`pageSegMode`
+|string
+|1
+|Tesseract page segmentation mode
+
+|`timeout`
+|int
+|120
+|Timeout in seconds for OCR processing
+
+|`otherTesseractConfig`
+|map
+|{}
+|Additional Tesseract configuration parameters as key-value pairs
+
+|===
+
+== Tesseract Configuration Map
+
+The `otherTesseractConfig` option allows passing arbitrary Tesseract configuration parameters:
+
+[source,json]
+----
+include::{parser-examples}/tesseract-other-config.json[]
+----
+
+== Changes from 3.x
+
+In Tika 3.x, the `otherTesseractSettings` was a list of space-delimited key-value strings:
+
+[source,xml]
+----
+<!-- 3.x XML format -->
+<param name="otherTesseractSettings" type="list">
+  <string>textord_initialx_ile 0.75</string>
+  <string>textord_noise_hfract 0.15625</string>
+</param>
+----
+
+In Tika 4.x, this is replaced with `otherTesseractConfig` as a proper map:
+
+[source,json]
+----
+// 4.x JSON format
+"otherTesseractConfig": {
+  "textord_initialx_ile": "0.75",
+  "textord_noise_hfract": "0.15625"
+}
+----
+
+The automatic converter handles this transformation.
+
+See xref:../../migration-to-4x/migrating-to-4x.adoc[Migrating to 4.x] for general migration guidance.

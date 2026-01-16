@@ -57,6 +57,10 @@ under the License.
                                 <linkcss>false</linkcss>
                                 <icons>font</icons>
                                 <tika-stable-version>${tika.stable.version}</tika-stable-version>
+                                <!-- Paths to config examples for include directives -->
+                                <parser-examples>${project.basedir}/../tika-parsers/tika-parsers-standard/tika-parsers-standard-package/src/test/resources/config-examples</parser-examples>
+                                <server-examples>${project.basedir}/../tika-server/tika-server-core/src/test/resources/config-examples</server-examples>
+                                <pipes-fs-examples>${project.basedir}/../tika-pipes/tika-pipes-plugins/tika-pipes-file-system/src/test/resources/config-examples</pipes-fs-examples>
                             </attributes>
                         </configuration>
                     </execution>

@@ -1,0 +1,14 @@
+{
+  "parsers": [
+    {
+      "tesseract-ocr-parser": {
+        "language": "eng",
+        "otherTesseractConfig": {
+          "textord_initialx_ile": "0.75",
+          "textord_noise_hfract": "0.15625",
+          "preserve_interword_spaces": "1"
+        }
+      }
+    }
+  ]
+}

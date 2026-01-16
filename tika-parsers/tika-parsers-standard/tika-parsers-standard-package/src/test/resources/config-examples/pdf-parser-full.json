@@ -1,0 +1,12 @@
+{
+  "parsers": [
+    {
+      "pdf-parser": {
+        "extractInlineImages": true,
+        "extractUniqueInlineImagesOnly": true,
+        "sortByPosition": true,
+        "maxMainMemoryBytes": 1000000000
+      }
+    }
+  ]
+}

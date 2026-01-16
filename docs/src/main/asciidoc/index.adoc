@@ -32,7 +32,7 @@ Apache Tika is a content detection and extraction framework written in Java.
 
 == Configuration
 
-* xref:configuration/index.adoc[Configuration] - JSON and XML configuration options
+* xref:configuration/index.adoc[Configuration] - JSON configuration options
 
 == Migration
 
