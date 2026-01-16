@@ -1,0 +1,96 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Apache Tika Roadmap
+
+This page outlines the planned features and improvements for Apache Tika releases.
+
+NOTE: All dates are in Open Source Standard Time which does not always neatly align
+with traditional calendars.
+
+== Release Timeline
+
+[cols="1,3"]
+|===
+|Date |Milestone
+
+|October 2024
+|Release 3.0.0
+
+|October 2024
+|Move main branch to 4.x (Java 17) after 3.0.0 release
+
+|April 2025
+|End support for 2.x (and Java 8)
+
+|January 2026
+|Release 4.0.0
+
+|June 2026
+|End support for 3.x (and Java 11)
+|===
+
+== Version Support Matrix
+
+[cols="1,1,1,2,2"]
+|===
+|Version |Java |Jakarta/javax |Availability |Planned EOL
+
+|2.x
+|8
+|javax
+|Now
+|April 2025
+
+|3.x
+|11
+|jakarta
+|October 2024
+|June 2026 or 6 months after 4.0.0 release
+
+|4.x
+|17
+|jakarta
+|January 2026
+|TBD
+
+|5.x
+|21
+|jakarta
+|TBD
+|TBD
+
+|6.x
+|25
+|jakarta
+|TBD
+|TBD
+|===
+
+== Metadata Changes in 4.x
+
+Tika 4.x implements namespaced metadata keys to prevent overwrites and improve namespace clarity.
+
+See xref:migration-to-4x/metadata-changes-4x.adoc[Metadata Changes in 4.x] for complete details and
+migration examples.
+
+== Long-term Goals
+
+// Add long-term goals as they are defined
+// * Improved streaming support
+// * Enhanced language detection
+// * Better support for modern document formats

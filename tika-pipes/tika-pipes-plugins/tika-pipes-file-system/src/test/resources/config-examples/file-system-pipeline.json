@@ -1,0 +1,27 @@
+{
+  "fetchers": [
+    {
+      "file-system-fetcher": {
+        "id": "input-fetcher",
+        "basePath": "/data/input",
+        "extractFileSystemMetadata": true
+      }
+    }
+  ],
+  "emitters": [
+    {
+      "file-system-emitter": {
+        "id": "output-emitter",
+        "basePath": "/data/output",
+        "fileExtension": "json",
+        "onExists": "SKIP",
+        "prettyPrint": false
+      }
+    }
+  ],
+  "parsers": [
+    {
+      "default-parser": {}
+    }
+  ]
+}

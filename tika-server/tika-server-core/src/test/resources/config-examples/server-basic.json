@@ -1,0 +1,13 @@
+{
+  "server": {
+    "port": 9998,
+    "host": "localhost",
+    "taskTimeoutMillis": 300000,
+    "enableUnsecureFeatures": false
+  },
+  "parsers": [
+    {
+      "default-parser": {}
+    }
+  ]
+}
