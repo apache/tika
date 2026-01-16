@@ -25,7 +25,7 @@ This page documents the configuration options for `TesseractOCRParser` in Tika 4
 ----
 include::{parser-examples}/tesseract-basic.json[]
 ----
-icon:github[] link:{github-parser-examples}/tesseract-basic.json[View source on GitHub]
+icon:github[] https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-package/src/test/resources/config-examples/tesseract-basic.json[View source on GitHub]
 
 == Full Configuration
 
@@ -36,7 +36,7 @@ Comments indicate the available options for enum fields.
 ----
 include::{parser-examples}/tesseract-full.json[]
 ----
-icon:github[] link:{github-parser-examples}/tesseract-full.json[View source on GitHub]
+icon:github[] https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-package/src/test/resources/config-examples/tesseract-full.json[View source on GitHub]
 
 == Changes from 3.x
 
