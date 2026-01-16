@@ -22,18 +22,18 @@ that best fits your use case.
 
 == Choose Your Integration Method
 
-link:java-api/index.html[Java API]::
+xref:java-api/index.adoc[Java API]::
 Use Tika directly in your Java application. Best for tight integration and full control
 over parsing behavior.
 
-link:cli/index.html[Command Line (tika-app)]::
+xref:cli/index.adoc[Command Line (tika-app)]::
 Run Tika from the command line. Best for quick extraction, scripting, and one-off tasks.
 
-link:server/index.html[Server (REST API)]::
+xref:server/index.adoc[Server (REST API)]::
 Run Tika as a standalone server with a REST API. Best for language-agnostic integration
 and microservice architectures.
 
-link:grpc/index.html[gRPC]::
+xref:grpc/index.adoc[gRPC]::
 Use Tika via gRPC protocol. Best for high-performance, cross-language communication.
 
 == Which Should I Use?
@@ -52,7 +52,7 @@ Use Tika via gRPC protocol. Best for high-performance, cross-language communicat
 |Server (REST) or gRPC
 
 |High-throughput processing pipeline
-|Server or gRPC with link:../pipes/index.html[Pipes]
+|Server or gRPC with xref:../pipes/index.adoc[Pipes]
 
 |Quick one-time extraction
 |Command Line
@@ -60,6 +60,6 @@ Use Tika via gRPC protocol. Best for high-performance, cross-language communicat
 
 == Scalable Processing
 
-For processing large volumes of documents, see link:../pipes/index.html[Tika Pipes],
+For processing large volumes of documents, see xref:../pipes/index.adoc[Tika Pipes],
 which provides fault-tolerant, scalable document processing and works with all of the
 above integration methods.

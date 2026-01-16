@@ -26,7 +26,7 @@ step-by-step guides for releasing the various Tika components.
 
 == Topics
 
-* link:tika.html[Releasing Apache Tika] - Main Tika project release process
-* link:docker.html[Releasing Tika Docker Images] - Docker image release process
-* link:helm.html[Releasing Tika Helm Charts] - Helm chart release process
-* link:grpc.html[Releasing Tika gRPC] - gRPC component release process
+* xref:tika.adoc[Releasing Apache Tika] - Main Tika project release process
+* xref:docker.adoc[Releasing Tika Docker Images] - Docker image release process
+* xref:helm.adoc[Releasing Tika Helm Charts] - Helm chart release process
+* xref:grpc.adoc[Releasing Tika gRPC] - gRPC component release process

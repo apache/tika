@@ -27,36 +27,36 @@ Apache Tika is a content detection and extraction framework written in Java.
 
 == Using Tika
 
-* link:using-tika/index.html[Getting Started] - Choose your integration method
-* link:pipes/index.html[Pipes] - Scalable, fault-tolerant document processing
+* xref:using-tika/index.adoc[Getting Started] - Choose your integration method
+* xref:pipes/index.adoc[Pipes] - Scalable, fault-tolerant document processing
 
 == Configuration
 
-* link:configuration/index.html[Configuration] - JSON and XML configuration options
+* xref:configuration/index.adoc[Configuration] - JSON and XML configuration options
 
 == Migration
 
-* link:migration-to-4x/index.html[Migrating to 4.x] - Guides and background for upgrading to Tika 4.x
+* xref:migration-to-4x/index.adoc[Migrating to 4.x] - Guides and background for upgrading to Tika 4.x
 
 == Advanced
 
-* link:advanced/index.html[Advanced Topics] - Custom parsers, performance tuning, internals
+* xref:advanced/index.adoc[Advanced Topics] - Custom parsers, performance tuning, internals
 
 == FAQ
 
-* link:faq.html[FAQ and Troubleshooting] - Common questions and issues
+* xref:faq.adoc[FAQ and Troubleshooting] - Common questions and issues
 
 == Security
 
-* link:security.html[Security] - Security considerations and reporting vulnerabilities
+* xref:security.adoc[Security] - Security considerations and reporting vulnerabilities
 
 == Roadmap
 
-* link:roadmap.html[Roadmap] - Planned features and improvements for upcoming releases
+* xref:roadmap.adoc[Roadmap] - Planned features and improvements for upcoming releases
 
 == For Maintainers
 
-* link:maintainers/index.html[Maintainer Documentation] - Release guides and project maintenance
+* xref:maintainers/index.adoc[Maintainer Documentation] - Release guides and project maintenance
 
 == Links
 

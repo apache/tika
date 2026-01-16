@@ -85,7 +85,7 @@ with traditional calendars.
 
 Tika 4.x implements namespaced metadata keys to prevent overwrites and improve namespace clarity.
 
-See link:migration/metadata-changes-4x.html[Metadata Changes in 4.x] for complete details and
+See xref:migration-to-4x/metadata-changes-4x.adoc[Metadata Changes in 4.x] for complete details and
 migration examples.
 
 == Long-term Goals

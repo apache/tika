@@ -27,8 +27,8 @@ client-server architecture would better suit your needs.
 For most use cases, we recommend running Tika as a separate service rather than
 embedding it directly:
 
-* **link:../server/index.html[tika-server]** - REST API, language-agnostic
-* **link:../grpc/index.html[tika-grpc]** - High-performance gRPC protocol
+* **xref:../server/index.adoc[tika-server]** - REST API, language-agnostic
+* **xref:../grpc/index.adoc[tika-grpc]** - High-performance gRPC protocol
 
 **Why?**
 
@@ -116,7 +116,7 @@ infinite loops, and crashes that will affect your entire application.
 
 Before proceeding without process isolation, read:
 
-* link:../../advanced/robustness.html[The Robustness of Apache Tika] - Understanding parser risks and mitigations
+* xref:../../advanced/robustness.adoc[The Robustness of Apache Tika] - Understanding parser risks and mitigations
 * https://tika.apache.org/security-model.html[Apache Tika Security Model] - Trust boundaries and assumptions
 
 If you still need to use parsers directly, your application is responsible for

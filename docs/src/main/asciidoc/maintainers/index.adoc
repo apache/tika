@@ -21,7 +21,7 @@ This section contains documentation for Apache Tika project maintainers and comm
 
 == Topics
 
-* link:release-guides/index.html[Release Guides] - How to release Apache Tika
+* xref:release-guides/index.adoc[Release Guides] - How to release Apache Tika
 
 // Add links to specific topics as they are created
 // * link:voting.html[Voting Procedures]

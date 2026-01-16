@@ -24,13 +24,13 @@ This section covers using Apache Tika programmatically in your Java applications
 Tika can be embedded directly into your Java applications as a library. This gives you
 full control over parsing, detection, and configuration.
 
-However, for most use cases we recommend using link:../server/index.html[tika-server]
-or link:../grpc/index.html[tika-grpc] instead. See
-link:getting-started.html[Getting Started] for guidance on choosing the right approach.
+However, for most use cases we recommend using xref:../server/index.adoc[tika-server]
+or xref:../grpc/index.adoc[tika-grpc] instead. See
+xref:getting-started.adoc[Getting Started] for guidance on choosing the right approach.
 
 == Topics
 
-* link:getting-started.html[Getting Started] - Recommendations and PipesForkParser usage
+* xref:getting-started.adoc[Getting Started] - Recommendations and PipesForkParser usage
 
 // Add links to specific topics as they are created
 // * link:parsing.html[Parsing Documents]

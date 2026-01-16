@@ -36,7 +36,7 @@ in separate processes, you protect your main application from:
 
 === Tika 4.x
 
-**In Tika 4.x, link:../pipes/index.html[Tika Pipes] is the recommended approach for
+**In Tika 4.x, xref:../pipes/index.adoc[Tika Pipes] is the recommended approach for
 robust document processing.** It provides:
 
 * Automatic process isolation
@@ -47,7 +47,7 @@ robust document processing.** It provides:
 Pipes can be used in multiple ways:
 
 * **Programmatically** - Via `PipesForkParser` in the `tika-pipes-fork-parser` module
-  (see link:../using-tika/java-api/getting-started.html[Java API Getting Started])
+  (see xref:../using-tika/java-api/getting-started.adoc[Java API Getting Started])
 * **Via tika-server** - REST endpoints for pipes-based processing
 * **Via tika-grpc** - gRPC interface with pipes backend
 
@@ -108,7 +108,7 @@ The Apache Tika team implements several measures to identify and prevent vulnera
 * **Fuzzing modules** for automated vulnerability discovery
 * **Collaboration** with security researchers
 * **Maintained forks** of parsers with critical fixes (released independently when needed)
-* **Public documentation** of vulnerabilities at link:../security.html[security page]
+* **Public documentation** of vulnerabilities at xref:../security.adoc[security page]
 
 == MockParser for Testing
 
@@ -133,5 +133,5 @@ This allows you to verify that your integration handles parser failures graceful
 
 == Further Reading
 
-* link:../pipes/index.html[Tika Pipes] - Recommended approach for robust processing
-* link:../security.html[Security] - Known vulnerabilities and security model
+* xref:../pipes/index.adoc[Tika Pipes] - Recommended approach for robust processing
+* xref:../security.adoc[Security] - Known vulnerabilities and security model

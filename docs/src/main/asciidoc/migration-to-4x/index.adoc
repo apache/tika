@@ -19,14 +19,14 @@
 
 This section provides guides and background documentation for migrating to Apache Tika 4.x.
 
-See the link:../roadmap.html[Roadmap] for version timelines and support schedules.
+See the xref:../roadmap.adoc[Roadmap] for version timelines and support schedules.
 
 == Migration Guides
 
-* link:migrating-to-4x.html[Migration Guide] - Step-by-step guide for upgrading from Tika 3.x to 4.x
-* link:metadata-changes-4x.html[Metadata Changes] - Detailed metadata key changes and migration examples
+* xref:migrating-to-4x.adoc[Migration Guide] - Step-by-step guide for upgrading from Tika 3.x to 4.x
+* xref:metadata-changes-4x.adoc[Metadata Changes] - Detailed metadata key changes and migration examples
 
 == Background Documentation
 
-* link:design-notes-4x.html[Design Notes] - Architectural decisions and design rationale
-* link:serialization-4x.html[Serialization] - JSON serialization design and implementation details
+* xref:design-notes-4x.adoc[Design Notes] - Architectural decisions and design rationale
+* xref:serialization-4x.adoc[Serialization] - JSON serialization design and implementation details
