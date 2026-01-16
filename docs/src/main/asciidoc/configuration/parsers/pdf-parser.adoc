@@ -19,8 +19,6 @@
 
 This page documents the configuration options for `PDFParser` in Tika 4.x.
 
-WARNING: This page is a stub and needs to be completed with accurate configuration options.
-
 == Basic Configuration
 
 [source,json]
@@ -30,46 +28,14 @@ include::{parser-examples}/pdf-parser-basic.json[]
 
 == Full Configuration
 
-The following example shows all available configuration options with their default values:
+The following example shows all available configuration options with their default values.
+Comments indicate the available options for enum fields.
 
 [source,json]
 ----
 include::{parser-examples}/pdf-parser-full.json[]
 ----
 
-== Configuration Options
-
-// TODO: Document all PDFParser configuration options
-// Reference: org.apache.tika.parser.pdf.PDFParser and PDFParserConfig
-
-[cols="2,1,1,4"]
-|===
-|Option |Type |Default |Description
-
-|`extractInlineImages`
-|boolean
-|false
-|Extract inline images from the PDF
-
-|`extractUniqueInlineImagesOnly`
-|boolean
-|true
-|Only extract unique inline images (avoids duplicates)
-
-|`sortByPosition`
-|boolean
-|false
-|Sort text by position on page rather than stream order
-
-|`maxMainMemoryBytes`
-|long
-|524288000
-|Maximum bytes to use for main memory before spooling to disk
-
-|===
-
 == Changes from 3.x
-
-// TODO: Document specific changes from 3.x configuration
 
 See xref:../../migration-to-4x/migrating-to-4x.adoc[Migrating to 4.x] for general migration guidance.

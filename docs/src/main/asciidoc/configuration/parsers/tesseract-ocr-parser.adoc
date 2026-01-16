@@ -19,8 +19,6 @@
 
 This page documents the configuration options for `TesseractOCRParser` in Tika 4.x.
 
-WARNING: This page is a stub and needs to be completed with accurate configuration options.
-
 == Basic Configuration
 
 [source,json]
@@ -30,43 +28,13 @@ include::{parser-examples}/tesseract-basic.json[]
 
 == Full Configuration
 
-The following example shows all available configuration options with their default values:
+The following example shows all available configuration options with their default values.
+Comments indicate the available options for enum fields.
 
 [source,json]
 ----
 include::{parser-examples}/tesseract-full.json[]
 ----
-
-== Configuration Options
-
-// TODO: Document all TesseractOCRParser configuration options
-// Reference: org.apache.tika.parser.ocr.TesseractOCRParser and TesseractOCRConfig
-
-[cols="2,1,1,4"]
-|===
-|Option |Type |Default |Description
-
-|`language`
-|string
-|eng
-|Tesseract language code(s). Use `+` for multiple languages (e.g., `eng+fra`)
-
-|`pageSegMode`
-|string
-|1
-|Tesseract page segmentation mode
-
-|`timeout`
-|int
-|120
-|Timeout in seconds for OCR processing
-
-|`otherTesseractConfig`
-|map
-|{}
-|Additional Tesseract configuration parameters as key-value pairs
-
-|===
 
 == Changes from 3.x
 
