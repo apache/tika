@@ -39,6 +39,16 @@ import org.apache.tika.parser.Parser;
  * <strong>Important:</strong> When modifying examples in the config-examples directory,
  * ensure the JSON remains valid and these tests pass. The documentation will automatically
  * reflect your changes.
+ * <p>
+ * TODO: Consider auto-generating the full config JSON files from the actual config classes
+ * (e.g., PDFParserConfig, TesseractOCRConfig) during the build process. This would:
+ * <ul>
+ *   <li>Guarantee JSON always matches actual defaults</li>
+ *   <li>Automatically catch when fields are added/removed</li>
+ *   <li>Use Jackson's ORDER_MAP_ENTRIES_BY_KEYS for consistent ordering</li>
+ * </ul>
+ * Challenge: Jackson doesn't write comments in JSON output, so enum options would need
+ * to be documented via annotations and a post-processor, or in the AsciiDoc directly.
  */
 public class ConfigExamplesTest {
 
@@ -76,8 +86,8 @@ public class ConfigExamplesTest {
     }
 
     @Test
-    public void testTesseractWithOtherConfig() throws Exception {
-        loadAndValidate("tesseract-other-config.json");
+    public void testTesseractFullConfig() throws Exception {
+        loadAndValidate("tesseract-full.json");
     }
 
     @Test

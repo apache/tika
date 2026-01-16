@@ -2,10 +2,51 @@
   "parsers": [
     {
       "pdf-parser": {
-        "extractInlineImages": true,
+        // Options: DONT_CHECK, ALLOW_EXTRACTION_FOR_ACCESSIBILITY, IGNORE_ACCESSIBILITY_ALLOWANCE
+        "accessCheckMode": "DONT_CHECK",
+        "averageCharTolerance": 0.3,
+        "catchIntermediateIOExceptions": true,
+        "detectAngles": false,
+        "dropThreshold": 2.5,
+        "enableAutoSpace": true,
+        "extractAcroFormContent": true,
+        "extractActions": false,
+        "extractAnnotationText": true,
+        "extractBookmarksText": true,
+        "extractFontNames": false,
+        "extractIncrementalUpdateInfo": true,
+        "extractInlineImageMetadataOnly": false,
+        "extractInlineImages": false,
+        "extractMarkedContent": false,
         "extractUniqueInlineImagesOnly": true,
-        "sortByPosition": true,
-        "maxMainMemoryBytes": 1000000000
+        "ifXFAExtractOnlyXFA": false,
+        "ignoreContentStreamSpaceGlyphs": false,
+        // Options: NONE, RAW_IMAGES, RENDER_PAGES_BEFORE_PARSE, RENDER_PAGES_AT_PAGE_END
+        "imageStrategy": "NONE",
+        "maxIncrementalUpdates": 10,
+        "maxMainMemoryBytes": 536870912,
+        "ocr": {
+          "dpi": 300,
+          // Options: PNG, TIFF, JPEG
+          "imageFormat": "PNG",
+          "imageQuality": 1.0,
+          // Options: RGB, GRAY
+          "imageType": "GRAY",
+          // Options: NO_TEXT, TEXT_ONLY, VECTOR_GRAPHICS_ONLY, ALL
+          "renderingStrategy": "ALL",
+          // Options: AUTO, NO_OCR, OCR_ONLY, OCR_AND_TEXT_EXTRACTION
+          "strategy": "AUTO",
+          "strategyAuto": {
+            "totalCharsPerPage": 10,
+            "unmappedUnicodeCharsPerPage": 10
+          }
+        },
+        "parseIncrementalUpdates": false,
+        "setKCMS": false,
+        "sortByPosition": false,
+        "spacingTolerance": 0.5,
+        "suppressDuplicateOverlappingText": false,
+        "throwOnEncryptedPayload": false
       }
     }
   ]

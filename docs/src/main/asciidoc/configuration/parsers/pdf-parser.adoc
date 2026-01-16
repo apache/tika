@@ -28,6 +28,15 @@ WARNING: This page is a stub and needs to be completed with accurate configurati
 include::{parser-examples}/pdf-parser-basic.json[]
 ----
 
+== Full Configuration
+
+The following example shows all available configuration options with their default values:
+
+[source,json]
+----
+include::{parser-examples}/pdf-parser-full.json[]
+----
+
 == Configuration Options
 
 // TODO: Document all PDFParser configuration options

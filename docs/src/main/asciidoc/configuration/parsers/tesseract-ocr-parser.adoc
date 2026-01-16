@@ -28,6 +28,15 @@ WARNING: This page is a stub and needs to be completed with accurate configurati
 include::{parser-examples}/tesseract-basic.json[]
 ----
 
+== Full Configuration
+
+The following example shows all available configuration options with their default values:
+
+[source,json]
+----
+include::{parser-examples}/tesseract-full.json[]
+----
+
 == Configuration Options
 
 // TODO: Document all TesseractOCRParser configuration options
@@ -58,15 +67,6 @@ include::{parser-examples}/tesseract-basic.json[]
 |Additional Tesseract configuration parameters as key-value pairs
 
 |===
-
-== Tesseract Configuration Map
-
-The `otherTesseractConfig` option allows passing arbitrary Tesseract configuration parameters:
-
-[source,json]
-----
-include::{parser-examples}/tesseract-other-config.json[]
-----
 
 == Changes from 3.x
 
