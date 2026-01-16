@@ -20,8 +20,12 @@ name: main jdk17 windows build (multi-locale)
 on:
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - 'docs/**'
   push:
     branches: [ main ]
+    paths-ignore:
+      - 'docs/**'
 
 jobs:
   build:
