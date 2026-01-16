@@ -1,0 +1,72 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Apache Tika Documentation
+
+WARNING: This reference guide was generated with the assistance of AI and requires
+human review before it can be fully trusted. This documentation serves as an example
+and a starting point, but more work remains. Contributions and corrections are welcome.
+
+== Overview
+
+Apache Tika is a content detection and extraction framework written in Java.
+
+== Using Tika
+
+* link:using-tika/index.html[Getting Started] - Choose your integration method
+* link:pipes/index.html[Pipes] - Scalable, fault-tolerant document processing
+
+== Configuration
+
+* link:configuration/index.html[Configuration] - JSON and XML configuration options
+
+== Migration
+
+* link:migration-to-4x/index.html[Migrating to 4.x] - Guides and background for upgrading to Tika 4.x
+
+== Advanced
+
+* link:advanced/index.html[Advanced Topics] - Custom parsers, performance tuning, internals
+
+== FAQ
+
+* link:faq.html[FAQ and Troubleshooting] - Common questions and issues
+
+== Security
+
+* link:security.html[Security] - Security considerations and reporting vulnerabilities
+
+== Roadmap
+
+* link:roadmap.html[Roadmap] - Planned features and improvements for upcoming releases
+
+== For Maintainers
+
+* link:maintainers/index.html[Maintainer Documentation] - Release guides and project maintenance
+
+== Links
+
+* https://tika.apache.org/[Apache Tika Website] - Official project website
+* https://tika.apache.org/{tika-stable-version}/formats.html[Supported Formats] - File formats Tika can parse
+* https://tika.apache.org/{tika-stable-version}/api/[API Documentation] - Javadoc
+* https://issues.apache.org/jira/projects/TIKA[JIRA] - Issue tracker
+* https://repository.apache.org/content/repositories/snapshots/org/apache/tika/[Maven Snapshots] - SNAPSHOT builds in Apache's Maven repository
+* https://ci-builds.apache.org/job/Tika/[CI Builds] - Continuous integration builds
+* https://cwiki.apache.org/confluence/display/TIKA/[Confluence Wiki] - Legacy wiki documentation
++
+NOTE: As of Tika 4.x, we are migrating content from Confluence to these AsciiDoc pages.
+The Confluence wiki will eventually be retired.

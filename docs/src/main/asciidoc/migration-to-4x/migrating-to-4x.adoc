@@ -1,0 +1,46 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Migrating to Tika 4.x
+
+This guide covers the changes required when upgrading from Apache Tika 3.x to 4.x.
+
+See the link:../roadmap.html[Roadmap] for version timelines and support schedules.
+
+== Requirements
+
+* Java 17 or later (upgraded from Java 11 in 3.x)
+
+== Metadata Key Changes
+
+Tika 4.x prefixes all "user generated" metadata keys to prevent overwrites and improve
+namespace clarity.
+
+See link:metadata-changes-4x.html[Metadata Changes in 4.x] for complete details, including
+a full table of changes and code migration examples.
+
+== API Changes
+
+// TODO: Document API changes
+
+== Configuration Changes
+
+// TODO: Document configuration changes
+
+== Deprecations and Removals
+
+// TODO: Document deprecated and removed features
