@@ -64,6 +64,25 @@ public class RecursiveMetadataResource {
             throws Exception {
 
         final ParseContext context = new ParseContext();
+
+        // Use pipes-based parsing if enabled
+        if (TikaResource.isPipesParsingEnabled()) {
+            fillMetadata(null, metadata, httpHeaders);
+            TikaResource.logRequest(LOG, "/rmeta", metadata);
+
+            // Set up handler factory in context
+            BasicContentHandlerFactory.HANDLER_TYPE type = handlerConfig.type();
+            ContentHandlerFactory factory = new BasicContentHandlerFactory(type, handlerConfig.writeLimit(),
+                    handlerConfig.throwOnWriteLimitReached(), context);
+            context.set(ContentHandlerFactory.class, factory);
+
+            List<Metadata> metadataList = TikaResource.parseWithPipes(tis, metadata, context, ParseMode.RMETA);
+            MetadataFilter metadataFilter = context.get(MetadataFilter.class, getTikaLoader().loadMetadataFilters());
+            metadataFilter.filter(metadataList);
+            return metadataList;
+        }
+
+        // Legacy in-process parsing
         Parser parser = TikaResource.createParser();
 
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
@@ -178,6 +197,24 @@ public class RecursiveMetadataResource {
 
     private MetadataList parseMetadataWithContext(TikaInputStream tis, Metadata metadata, MultivaluedMap<String, String> httpHeaders,
                                                   UriInfo info, ServerHandlerConfig handlerConfig, ParseContext context) throws Exception {
+        // Use pipes-based parsing if enabled
+        if (TikaResource.isPipesParsingEnabled()) {
+            // Set up handler factory in context if not already set
+            ContentHandlerFactory factory = context.get(ContentHandlerFactory.class);
+            if (factory == null) {
+                BasicContentHandlerFactory.HANDLER_TYPE type = handlerConfig.type();
+                factory = new BasicContentHandlerFactory(type, handlerConfig.writeLimit(),
+                        handlerConfig.throwOnWriteLimitReached(), context);
+                context.set(ContentHandlerFactory.class, factory);
+            }
+
+            List<Metadata> metadataList = TikaResource.parseWithPipes(tis, metadata, context, ParseMode.RMETA);
+            MetadataFilter metadataFilter = context.get(MetadataFilter.class, getTikaLoader().loadMetadataFilters());
+            metadataFilter.filter(metadataList);
+            return new MetadataList(metadataList);
+        }
+
+        // Legacy in-process parsing
         Parser parser = TikaResource.createParser();
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
 

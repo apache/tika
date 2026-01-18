@@ -74,6 +74,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
@@ -100,14 +101,48 @@ public class TikaResource {
     private static TikaServerConfig TIKA_SERVER_CONFIG;
     private static InputStreamFactory INPUTSTREAM_FACTORY = null;
     private static ServerStatus SERVER_STATUS = null;
+    private static PipesParsingHelper PIPES_PARSING_HELPER = null;
 
-
-    public static void init(TikaLoader tikaLoader, TikaServerConfig tikaServerConfg, InputStreamFactory inputStreamFactory,
+    /**
+     * Initialize TikaResource without pipes-based parsing (legacy mode).
+     */
+    public static void init(TikaLoader tikaLoader, TikaServerConfig tikaServerConfig, InputStreamFactory inputStreamFactory,
                             ServerStatus serverStatus) {
+        init(tikaLoader, tikaServerConfig, inputStreamFactory, serverStatus, null);
+    }
+
+    /**
+     * Initialize TikaResource with pipes-based parsing for process isolation.
+     *
+     * @param tikaLoader the Tika loader
+     * @param tikaServerConfig server configuration
+     * @param inputStreamFactory input stream factory
+     * @param serverStatus server status tracker
+     * @param pipesParsingHelper helper for pipes-based parsing (may be null for legacy mode)
+     */
+    public static void init(TikaLoader tikaLoader, TikaServerConfig tikaServerConfig, InputStreamFactory inputStreamFactory,
+                            ServerStatus serverStatus, PipesParsingHelper pipesParsingHelper) {
         TIKA_LOADER = tikaLoader;
-        TIKA_SERVER_CONFIG = tikaServerConfg;
+        TIKA_SERVER_CONFIG = tikaServerConfig;
         INPUTSTREAM_FACTORY = inputStreamFactory;
         SERVER_STATUS = serverStatus;
+        PIPES_PARSING_HELPER = pipesParsingHelper;
+    }
+
+    /**
+     * Returns true if pipes-based parsing is enabled.
+     */
+    public static boolean isPipesParsingEnabled() {
+        return PIPES_PARSING_HELPER != null;
+    }
+
+    /**
+     * Gets the PipesParsingHelper instance.
+     *
+     * @return the helper, or null if pipes-based parsing is not enabled
+     */
+    public static PipesParsingHelper getPipesParsingHelper() {
+        return PIPES_PARSING_HELPER;
     }
 
 
@@ -323,6 +358,34 @@ public class TikaResource {
         }
     }
 
+    /**
+     * Parses using pipes-based parsing with process isolation.
+     * This method writes the input to a temp file, invokes PipesParser,
+     * and returns the metadata list.
+     *
+     * @param inputStream the input stream to parse
+     * @param metadata metadata to pass to the parser
+     * @param parseContext parse context with handler configuration
+     * @param parseMode RMETA or CONCATENATE
+     * @return list of metadata objects from parsing
+     * @throws IOException if parsing fails
+     */
+    public static List<Metadata> parseWithPipes(InputStream inputStream, Metadata metadata,
+                                                 ParseContext parseContext, ParseMode parseMode)
+            throws IOException {
+        checkIsOperating();
+
+        if (PIPES_PARSING_HELPER == null) {
+            throw new IllegalStateException("Pipes-based parsing is not enabled");
+        }
+
+        String fileName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+        LOG.debug("Parsing with pipes: {}", fileName);
+
+        return PIPES_PARSING_HELPER.parse(inputStream, metadata, parseContext, parseMode,
+                TIKA_SERVER_CONFIG.isReturnStackTrace());
+    }
+
     public static void checkIsOperating() {
         //check that server is not in shutdown mode
         if (!SERVER_STATUS.isOperating()) {
@@ -500,9 +563,25 @@ public class TikaResource {
     public Metadata getJsonFromMultipart(Attachment att, @Context HttpHeaders httpHeaders, @Context final UriInfo info, @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
             throws IOException, TikaException {
         Metadata metadata = new Metadata();
-        parseToMetadata(getInputStream(att.getObject(InputStream.class), metadata, httpHeaders, info), metadata, preparePostHeaderMap(att, httpHeaders), info, handlerTypeName);
-        List<Metadata> metadataList = new ArrayList<>();
-        metadataList.add(metadata);
+        List<Metadata> metadataList;
+
+        if (isPipesParsingEnabled()) {
+            // Use pipes-based parsing
+            TikaInputStream tis = getInputStream(att.getObject(InputStream.class), metadata, httpHeaders, info);
+            MultivaluedMap<String, String> headers = preparePostHeaderMap(att, httpHeaders);
+            fillMetadata(null, metadata, headers);
+            logRequest(LOG, "/tika", metadata);
+
+            ParseContext context = new ParseContext();
+            setupHandlerFactory(context, handlerTypeName, headers);
+            metadataList = parseWithPipes(tis, metadata, context, ParseMode.CONCATENATE);
+        } else {
+            // Legacy in-process parsing
+            parseToMetadata(getInputStream(att.getObject(InputStream.class), metadata, httpHeaders, info), metadata, preparePostHeaderMap(att, httpHeaders), info, handlerTypeName);
+            metadataList = new ArrayList<>();
+            metadataList.add(metadata);
+        }
+
         TikaResource.getTikaLoader().loadMetadataFilters().filter(metadataList);
         if (metadataList.isEmpty()) {
             return new Metadata();
@@ -517,14 +596,45 @@ public class TikaResource {
     public Metadata getJson(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info, @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
             throws IOException, TikaException {
         Metadata metadata = new Metadata();
-        parseToMetadata(getInputStream(is, metadata, httpHeaders, info), metadata, httpHeaders.getRequestHeaders(), info, handlerTypeName);
-        List<Metadata> metadataList = new ArrayList<>();
-        metadataList.add(metadata);
+        List<Metadata> metadataList;
+
+        if (isPipesParsingEnabled()) {
+            // Use pipes-based parsing
+            TikaInputStream tis = getInputStream(is, metadata, httpHeaders, info);
+            MultivaluedMap<String, String> headers = httpHeaders.getRequestHeaders();
+            fillMetadata(null, metadata, headers);
+            logRequest(LOG, "/tika", metadata);
+
+            ParseContext context = new ParseContext();
+            setupHandlerFactory(context, handlerTypeName, headers);
+            metadataList = parseWithPipes(tis, metadata, context, ParseMode.CONCATENATE);
+        } else {
+            // Legacy in-process parsing
+            parseToMetadata(getInputStream(is, metadata, httpHeaders, info), metadata, httpHeaders.getRequestHeaders(), info, handlerTypeName);
+            metadataList = new ArrayList<>();
+            metadataList.add(metadata);
+        }
+
         TikaResource.getTikaLoader().loadMetadataFilters().filter(metadataList);
         if (metadataList.isEmpty()) {
             return new Metadata();
         }
         return metadataList.get(0);
+    }
+
+    /**
+     * Sets up the ContentHandlerFactory in the ParseContext based on handler type and HTTP headers.
+     */
+    private void setupHandlerFactory(ParseContext context, String handlerTypeName, MultivaluedMap<String, String> httpHeaders) {
+        int writeLimit = -1;
+        boolean throwOnWriteLimitReached = getThrowOnWriteLimitReached(httpHeaders);
+        if (httpHeaders.containsKey("writeLimit")) {
+            writeLimit = Integer.parseInt(httpHeaders.getFirst("writeLimit"));
+        }
+
+        BasicContentHandlerFactory.HANDLER_TYPE type = BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE);
+        ContentHandlerFactory factory = new BasicContentHandlerFactory(type, writeLimit, throwOnWriteLimitReached, context);
+        context.set(ContentHandlerFactory.class, factory);
     }
 
     private void parseToMetadata(TikaInputStream tis, Metadata metadata, MultivaluedMap<String, String> httpHeaders, UriInfo info, String handlerTypeName)

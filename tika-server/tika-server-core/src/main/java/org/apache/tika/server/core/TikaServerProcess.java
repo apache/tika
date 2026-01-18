@@ -58,6 +58,10 @@ import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.pipes.core.EmitStrategy;
+import org.apache.tika.pipes.core.EmitStrategyConfig;
+import org.apache.tika.pipes.core.PipesConfig;
+import org.apache.tika.pipes.core.PipesParser;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.plugins.TikaPluginManager;
@@ -65,6 +69,7 @@ import org.apache.tika.server.core.resource.AsyncResource;
 import org.apache.tika.server.core.resource.DetectorResource;
 import org.apache.tika.server.core.resource.LanguageResource;
 import org.apache.tika.server.core.resource.MetadataResource;
+import org.apache.tika.server.core.resource.PipesParsingHelper;
 import org.apache.tika.server.core.resource.PipesResource;
 import org.apache.tika.server.core.resource.RecursiveMetadataResource;
 import org.apache.tika.server.core.resource.TikaDetectors;
@@ -190,7 +195,14 @@ public class TikaServerProcess {
         ServerStatus serverStatus;
 
         serverStatus = new ServerStatus();
-        TikaResource.init(tikaLoader, tikaServerConfig, inputStreamFactory, serverStatus);
+
+        // Initialize pipes-based parsing for process isolation
+        PipesParsingHelper pipesParsingHelper = initPipesParsingHelper(tikaServerConfig);
+        if (pipesParsingHelper != null) {
+            LOG.info("Pipes-based parsing enabled for /tika and /rmeta endpoints");
+        }
+
+        TikaResource.init(tikaLoader, tikaServerConfig, inputStreamFactory, serverStatus, pipesParsingHelper);
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
 
         List<ResourceProvider> resourceProviders = new ArrayList<>();
@@ -458,6 +470,80 @@ public class TikaServerProcess {
 
     private static Collection<?> loadWriterServices() {
         return new ServiceLoader(TikaServerProcess.class.getClassLoader()).loadServiceProviders(org.apache.tika.server.core.writer.TikaServerWriter.class);
+    }
+
+    /**
+     * Initializes the PipesParsingHelper for pipes-based parsing with process isolation.
+     * <p>
+     * The PipesParser will be configured with PASSBACK_ALL emit strategy so that
+     * parsed content is returned directly instead of being emitted to an external emitter.
+     * <p>
+     * Required JSON configuration:
+     * <pre>
+     * {
+     *   "plugin-roots": "/path/to/plugins",
+     *   "fetchers": {
+     *     "file-system-fetcher": {
+     *       "file-system-fetcher": {
+     *         "allowAbsolutePaths": true
+     *       }
+     *     }
+     *   },
+     *   "pipes": {
+     *     "numClients": 4
+     *   }
+     * }
+     * </pre>
+     *
+     * @param tikaServerConfig the server configuration
+     * @return the PipesParsingHelper, or null if pipes config doesn't exist or initialization fails
+     */
+    private static PipesParsingHelper initPipesParsingHelper(TikaServerConfig tikaServerConfig) {
+        if (!tikaServerConfig.hasConfigFile()) {
+            LOG.debug("No config file - pipes-based parsing not enabled");
+            return null;
+        }
+
+        try {
+            TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaServerConfig.getConfigPath());
+
+            // Check if pipes config exists
+            PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+            if (pipesConfig.getNumClients() <= 0) {
+                LOG.debug("No pipes.numClients configured - pipes-based parsing not enabled");
+                return null;
+            }
+
+            // Force PASSBACK_ALL strategy so results are returned to us (not emitted)
+            pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.PASSBACK_ALL));
+
+            // Create PipesParser
+            PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig,
+                    tikaServerConfig.getConfigPath());
+
+            // Create and return the helper
+            PipesParsingHelper helper = new PipesParsingHelper(pipesParser, pipesConfig);
+
+            // Register shutdown hook to clean up PipesParser
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try {
+                    LOG.info("Shutting down PipesParser");
+                    pipesParser.close();
+                } catch (Exception e) {
+                    LOG.warn("Error closing PipesParser", e);
+                }
+            }));
+
+            return helper;
+        } catch (Exception e) {
+            LOG.warn("Failed to initialize pipes-based parsing, falling back to in-process parsing. " +
+                    "To enable pipes-based parsing, ensure your config includes: " +
+                    "1) 'plugin-roots' pointing to plugins directory, " +
+                    "2) 'fetchers.file-system-fetcher' with allowAbsolutePaths=true, " +
+                    "3) 'pipes.numClients' > 0. Error: {}", e.getMessage());
+            LOG.debug("Pipes initialization error details", e);
+            return null;
+        }
     }
 
     private static class ServerDetails {
