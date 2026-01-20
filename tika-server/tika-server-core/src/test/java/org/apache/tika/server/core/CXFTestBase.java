@@ -33,6 +33,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -56,7 +57,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.JsonConfigHelper;
+import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.pipes.core.EmitStrategy;
+import org.apache.tika.pipes.core.EmitStrategyConfig;
+import org.apache.tika.pipes.core.PipesConfig;
+import org.apache.tika.pipes.core.PipesParser;
+import org.apache.tika.server.core.resource.PipesParsingHelper;
 import org.apache.tika.server.core.resource.TikaResource;
 import org.apache.tika.server.core.resource.UnpackerResource;
 
@@ -91,6 +98,8 @@ public abstract class CXFTestBase {
     protected final static int DIGESTER_READ_LIMIT = 20 * 1024 * 1024;
     protected Server server;
     protected TikaLoader tika;
+    private PipesParser pipesParser;
+    private Path pipesConfigPath;
 
     public static void createPluginsConfig(Path configPath, Path inputDir, Path jsonOutputDir, Path bytesOutputDir, Long timeoutMillis) throws IOException {
 
@@ -172,15 +181,33 @@ public abstract class CXFTestBase {
     public void setUp() throws Exception {
         Path tmp = Files.createTempFile("tika-server-test-", ".json");
         try {
+            InputStream pipesConfigInputStream = getPipesConfigInputStream();
+            if (pipesConfigInputStream != null) {
+                this.pipesConfigPath = Files.createTempFile("tika-server-pipes-", ".json");
+                Files.copy(pipesConfigInputStream, this.pipesConfigPath, StandardCopyOption.REPLACE_EXISTING);
+            } else {
+                // Create a default pipes config for tests
+                this.pipesConfigPath = createDefaultTestConfig();
+            }
+
             Files.copy(getTikaConfigInputStream(), tmp, StandardCopyOption.REPLACE_EXISTING);
             this.tika = TikaLoader.load(tmp);
+
+            // Initialize PipesParsingHelper for pipes-based parsing
+            TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(this.pipesConfigPath);
+            PipesConfig pipesConfig = tikaJsonConfig.deserialize("pipes", PipesConfig.class);
+            if (pipesConfig == null) {
+                pipesConfig = new PipesConfig();
+            }
+            pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.PASSBACK_ALL));
+            this.pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, this.pipesConfigPath);
+            PipesParsingHelper pipesParsingHelper = new PipesParsingHelper(this.pipesParser, pipesConfig);
+
+            TikaResource.init(tika, new ServerStatus(), pipesParsingHelper);
         } finally {
-            Files.delete(tmp);
+            // Only delete tika config, keep pipes config for child processes
+            Files.deleteIfExists(tmp);
         }
-        TikaServerConfig tikaServerConfig = getTikaServerConfig();
-        TikaResource.init(tika, tikaServerConfig,
-                getInputStreamFactory(getPipesConfigInputStream()),
-                new ServerStatus());
         tika.loadAutoDetectParser();
         tika.loadMetadataFilters();
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
@@ -204,14 +231,32 @@ public abstract class CXFTestBase {
         server = sf.create();
     }
 
-    protected TikaServerConfig getTikaServerConfig() {
-        TikaServerConfig tikaServerConfig = new TikaServerConfig();
-        tikaServerConfig.setReturnStackTrace(true);
-        return tikaServerConfig;
-    }
+    /**
+     * Creates a default test config with pipes configuration.
+     */
+    private Path createDefaultTestConfig() throws IOException {
+        Path pluginsDir = Paths.get("target/plugins").toAbsolutePath();
 
-    protected InputStreamFactory getInputStreamFactory(InputStream tikaConfig) {
-        return new DefaultInputStreamFactory();
+        String configJson = String.format(Locale.ROOT, """
+            {
+              "fetchers": {
+                "file-system-fetcher": {
+                  "file-system-fetcher": {
+                    "allowAbsolutePaths": true
+                  }
+                }
+              },
+              "pipes": {
+                "numClients": 2,
+                "timeoutMillis": 60000
+              },
+              "plugin-roots": "%s"
+            }
+            """, pluginsDir.toString().replace("\\", "/"));
+
+        Path tempConfig = Files.createTempFile("tika-test-default-config-", ".json");
+        Files.writeString(tempConfig, configJson);
+        return tempConfig;
     }
 
     protected InputStream getTikaConfigInputStream() throws IOException {
@@ -262,6 +307,22 @@ public abstract class CXFTestBase {
     public void tearDown() throws Exception {
         server.stop();
         server.destroy();
+
+        // Close PipesParser and clean up config file
+        if (pipesParser != null) {
+            try {
+                pipesParser.close();
+            } catch (Exception e) {
+                LOG.warn("Error closing PipesParser", e);
+            }
+        }
+        if (pipesConfigPath != null) {
+            try {
+                Files.deleteIfExists(pipesConfigPath);
+            } catch (Exception e) {
+                LOG.warn("Error deleting config file", e);
+            }
+        }
     }
 
     protected Map<String, String> readZipArchive(InputStream inputStream) throws IOException {

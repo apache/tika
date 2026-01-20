@@ -124,11 +124,15 @@ public class TikaResourceTest extends CXFTestBase {
 
     @Test
     public void testJsonNPE() throws Exception {
+        // With pipes-based parsing, parse exceptions are always returned in metadata with HTTP 200
         Response response = WebClient
                 .create(endPoint + TIKA_PATH)
                 .accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_NULL_POINTER));
-        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(((InputStream) response.getEntity()), StandardCharsets.UTF_8));
+
+        assertEquals(200, response.getStatus());
+        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(
+                (InputStream) response.getEntity(), StandardCharsets.UTF_8));
 
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));

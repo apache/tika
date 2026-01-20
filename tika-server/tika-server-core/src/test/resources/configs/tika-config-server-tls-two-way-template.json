@@ -1,9 +1,13 @@
 {
+  "fetchers": {
+    "file-system-fetcher": {
+      "file-system-fetcher": {
+        "allowAbsolutePaths": true
+      }
+    }
+  },
   "server": {
     "port": 9999,
-    "taskTimeoutMillis": 1000000,
-    "minimumTimeoutMillis": 10000,
-    "taskPulseMillis": 100,
     "endpoints": [
       "rmeta"
     ],
@@ -18,5 +22,13 @@
       "clientAuthenticationWanted": true,
       "clientAuthenticationRequired": true
     }
-  }
+  },
+  "pipes": {
+    "numClients": 2,
+    "timeoutMillis": 120000,
+    "forkedJvmArgs": [
+      "-Xmx256m"
+    ]
+  },
+  "plugin-roots": "target/plugins"
 }

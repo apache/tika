@@ -19,22 +19,34 @@ package org.apache.tika.server.core;
 import java.time.Instant;
 import java.util.Optional;
 
+/**
+ * Represents the status of an active task for observability purposes.
+ */
 public class TaskStatus {
     final ServerStatus.TASK task;
     final Instant started;
     final Optional<String> fileName;
-    final long timeoutMillis;
 
-    TaskStatus(ServerStatus.TASK task, Instant started, String fileName, long timeoutMillis) {
+    TaskStatus(ServerStatus.TASK task, Instant started, String fileName) {
         this.task = task;
         this.started = started;
         this.fileName = Optional.ofNullable(fileName);
-        this.timeoutMillis = timeoutMillis;
     }
 
+    public ServerStatus.TASK getTask() {
+        return task;
+    }
+
+    public Instant getStarted() {
+        return started;
+    }
+
+    public Optional<String> getFileName() {
+        return fileName;
+    }
 
     @Override
     public String toString() {
-        return "TaskStatus{" + "task=" + task + ", started=" + started + ", fileName=" + fileName + ", timeoutMillis=" + timeoutMillis + '}';
+        return "TaskStatus{" + "task=" + task + ", started=" + started + ", fileName=" + fileName + '}';
     }
 }

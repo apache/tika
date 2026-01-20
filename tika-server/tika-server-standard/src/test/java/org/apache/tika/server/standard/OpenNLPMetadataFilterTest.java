@@ -69,6 +69,11 @@ public class OpenNLPMetadataFilterTest extends CXFTestBase {
         return getClass().getResourceAsStream("/configs/tika-config-langdetect-opennlp-filter.json");
     }
 
+    @Override
+    protected InputStream getPipesConfigInputStream() {
+        return getClass().getResourceAsStream("/configs/tika-config-langdetect-opennlp-filter.json");
+    }
+
     @Test
     public void testMeta() throws Exception {
         Response response = WebClient

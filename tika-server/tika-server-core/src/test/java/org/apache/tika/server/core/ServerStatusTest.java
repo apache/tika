@@ -86,14 +86,11 @@ public class ServerStatusTest {
             int processed = 0;
             for (int i = 0; i < filesToProcess; i++) {
                 sleepRandom(200);
-                long taskId = serverStatus.start(ServerStatus.TASK.PARSE, null, 60000);
+                long taskId = serverStatus.start(ServerStatus.TASK.PARSE, "test-file-" + i);
                 sleepRandom(100);
                 serverStatus.complete(taskId);
                 processed++;
-                serverStatus.getStatus();
                 sleepRandom(10);
-                serverStatus.setStatus(ServerStatus.STATUS.OPERATING);
-                sleepRandom(20);
                 Map<Long, TaskStatus> tasks = serverStatus.getTasks();
                 assertNotNull(tasks);
             }

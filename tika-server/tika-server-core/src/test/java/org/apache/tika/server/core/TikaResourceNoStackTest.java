@@ -50,13 +50,6 @@ public class TikaResourceNoStackTest extends CXFTestBase {
     private static final int UNPROCESSEABLE = 422;
 
     @Override
-    public TikaServerConfig getTikaServerConfig() {
-        TikaServerConfig tikaServerConfig = new TikaServerConfig();
-        tikaServerConfig.setReturnStackTrace(false);
-        return tikaServerConfig;
-    }
-
-    @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TikaResource.class);
         sf.setResourceProvider(TikaResource.class, new SingletonResourceProvider(new TikaResource()));
@@ -72,13 +65,18 @@ public class TikaResourceNoStackTest extends CXFTestBase {
 
     @Test
     public void testJsonNPE() throws Exception {
+        // With pipes-based parsing, parse exceptions are always returned in metadata with HTTP 200
         Response response = WebClient
                 .create(endPoint + TIKA_PATH)
                 .accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_NULL_POINTER));
-        assertEquals(UNPROCESSEABLE, response.getStatus());
-        String content = getStringFromInputStream((InputStream) response.getEntity());
-        assertEquals(0, content.length());
+        assertEquals(200, response.getStatus());
+        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(
+                (InputStream) response.getEntity(), StandardCharsets.UTF_8));
+        assertEquals("Nikolai Lobachevsky", metadata.get("author"));
+        assertEquals("application/mock+xml", metadata.get(org.apache.tika.metadata.Metadata.CONTENT_TYPE));
+        assertContains("some content", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("null pointer message", metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
     }
 
     @Test

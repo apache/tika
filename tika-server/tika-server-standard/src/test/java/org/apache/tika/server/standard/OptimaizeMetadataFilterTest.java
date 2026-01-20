@@ -70,6 +70,11 @@ public class OptimaizeMetadataFilterTest extends CXFTestBase {
         return getClass().getResourceAsStream("/configs/tika-config-langdetect-optimaize-filter.json");
     }
 
+    @Override
+    protected InputStream getPipesConfigInputStream() {
+        return getClass().getResourceAsStream("/configs/tika-config-langdetect-optimaize-filter.json");
+    }
+
     @Test
     public void testMeta() throws Exception {
         Response response = WebClient
