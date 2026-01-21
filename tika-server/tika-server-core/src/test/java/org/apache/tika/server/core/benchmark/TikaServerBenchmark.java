@@ -60,8 +60,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  *   --async              Async mode: all requests sent immediately (stress test)
  *
  *   Size mode options:
- *   --small-kb=N         Size of small files in KB (default: 1)
- *   --large-kb=N         Size of large files in KB (default: 100)
+ *   --small-times=N      Number of paragraph repetitions for small output (default: 10)
+ *   --large-times=N      Number of paragraph repetitions for large output (default: 1000)
  *
  *   Sleep mode options:
  *   --short-ms=N         Short sleep duration in ms (default: 10)
@@ -70,24 +70,33 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class TikaServerBenchmark {
 
-    private static final String MOCK_XML_SIZE_TEMPLATE = """
+    // Template with both sleep (parse time) and output size (times)
+    // Format args: sleepMs, times
+    // Padding added to avoid zip bomb detection (need >10KB input for 1MB output at 100:1 ratio)
+    private static final String MOCK_XML_TEMPLATE;
+
+    static {
+        StringBuilder sb = new StringBuilder();
+        sb.append("""
             <?xml version="1.0" encoding="UTF-8" ?>
             <mock>
                 <metadata action="add" name="author">Benchmark Test</metadata>
                 <metadata action="add" name="title">Performance Test Document</metadata>
-                <write element="p">%s</write>
-            </mock>
-            """;
-
-    private static final String MOCK_XML_SLEEP_TEMPLATE = """
-            <?xml version="1.0" encoding="UTF-8" ?>
-            <mock>
-                <metadata action="add" name="author">Benchmark Test</metadata>
-                <metadata action="add" name="title">Sleep Test Document</metadata>
                 <hang millis="%d" heavy="false" interruptible="false" />
-                <write element="p">Test content after sleep</write>
+                <write element="p" times="%d">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.</write>
+                <!-- Padding to increase input size and avoid zip bomb detection:
+            """);
+        // Add ~12KB of padding (120 lines of 100 chars each)
+        String paddingLine = "PADDING: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.\n";
+        for (int i = 0; i < 120; i++) {
+            sb.append(paddingLine);
+        }
+        sb.append("""
+                -->
             </mock>
-            """;
+            """);
+        MOCK_XML_TEMPLATE = sb.toString();
+    }
 
     private final String baseUrl;
     private final String endpoint;
@@ -95,14 +104,13 @@ public class TikaServerBenchmark {
     private final int count;
     private final int warmupCount;
     private final int repeats;
-    private final String mode;
     private final boolean syncMode;
 
-    // Size mode params
-    private final int smallSizeKb;
-    private final int largeSizeKb;
+    // Output size params (times = number of paragraph repetitions)
+    private final int smallTimes;
+    private final int largeTimes;
 
-    // Sleep mode params
+    // Parse time params
     private final int shortSleepMs;
     private final int longSleepMs;
 
@@ -110,22 +118,24 @@ public class TikaServerBenchmark {
     private final ExecutorService httpExecutor;
     private final ExecutorService taskExecutor;
 
-    private byte[] smallContent;
-    private byte[] largeContent;
+    // 2x2 matrix: [short/long sleep] x [small/large output]
+    private byte[] shortSmallContent;  // short parse, small output
+    private byte[] shortLargeContent;  // short parse, large output
+    private byte[] longSmallContent;   // long parse, small output
+    private byte[] longLargeContent;   // long parse, large output
 
     public TikaServerBenchmark(String baseUrl, String endpoint, int threads, int count,
-                               int warmupCount, int repeats, String mode, boolean syncMode,
-                               int smallSizeKb, int largeSizeKb, int shortSleepMs, int longSleepMs) {
+                               int warmupCount, int repeats, boolean syncMode,
+                               int smallTimes, int largeTimes, int shortSleepMs, int longSleepMs) {
         this.baseUrl = baseUrl;
         this.endpoint = endpoint;
         this.threads = threads;
         this.count = count;
         this.warmupCount = warmupCount;
         this.repeats = repeats;
-        this.mode = mode;
         this.syncMode = syncMode;
-        this.smallSizeKb = smallSizeKb;
-        this.largeSizeKb = largeSizeKb;
+        this.smallTimes = smallTimes;
+        this.largeTimes = largeTimes;
         this.shortSleepMs = shortSleepMs;
         this.longSleepMs = longSleepMs;
 
@@ -143,54 +153,33 @@ public class TikaServerBenchmark {
     }
 
     private void generateTestContent() {
-        if ("sleep".equals(mode)) {
-            smallContent = generateSleepMockXml(shortSleepMs);
-            largeContent = generateSleepMockXml(longSleepMs);
-        } else {
-            smallContent = generateSizeMockXml(smallSizeKb * 1024);
-            largeContent = generateSizeMockXml(largeSizeKb * 1024);
-        }
+        // 2x2 matrix of test content
+        shortSmallContent = generateMockXml(shortSleepMs, smallTimes);
+        shortLargeContent = generateMockXml(shortSleepMs, largeTimes);
+        longSmallContent = generateMockXml(longSleepMs, smallTimes);
+        longLargeContent = generateMockXml(longSleepMs, largeTimes);
     }
 
-    private byte[] generateSizeMockXml(int targetSizeBytes) {
-        StringBuilder content = new StringBuilder();
-        String baseText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. " +
-                "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. " +
-                "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris. ";
-
-        while (content.length() < targetSizeBytes) {
-            content.append(baseText);
-        }
-
-        String xml = String.format(Locale.ROOT, MOCK_XML_SIZE_TEMPLATE,
-                content.substring(0, Math.min(content.length(), targetSizeBytes)));
-        return xml.getBytes(StandardCharsets.UTF_8);
-    }
-
-    private byte[] generateSleepMockXml(int sleepMs) {
-        String xml = String.format(Locale.ROOT, MOCK_XML_SLEEP_TEMPLATE, sleepMs);
+    private byte[] generateMockXml(int sleepMs, int times) {
+        String xml = String.format(Locale.ROOT, MOCK_XML_TEMPLATE, sleepMs, times);
         return xml.getBytes(StandardCharsets.UTF_8);
     }
 
     public void run() throws Exception {
         System.out.println("=".repeat(70));
-        System.out.println("Tika Server Performance Benchmark");
+        System.out.println("Tika Server Performance Benchmark (2x2 Matrix)");
         System.out.println("=".repeat(70));
         System.out.println();
         System.out.printf(Locale.ROOT, "Target URL:    %s%s%n", baseUrl, endpoint);
         System.out.printf(Locale.ROOT, "Threads:       %d%n", threads);
         System.out.printf(Locale.ROOT, "Requests/test: %d%n", count);
         System.out.printf(Locale.ROOT, "Repeats:       %d%n", repeats);
-        System.out.printf(Locale.ROOT, "Mode:          %s%n", mode);
         System.out.printf(Locale.ROOT, "Request mode:  %s%n", syncMode ? "sync (realistic)" : "async (stress test)");
-
-        if ("sleep".equals(mode)) {
-            System.out.printf(Locale.ROOT, "Short sleep:   %d ms%n", shortSleepMs);
-            System.out.printf(Locale.ROOT, "Long sleep:    %d ms%n", longSleepMs);
-        } else {
-            System.out.printf(Locale.ROOT, "Small size:    %d KB%n", smallSizeKb);
-            System.out.printf(Locale.ROOT, "Large size:    %d KB%n", largeSizeKb);
-        }
+        System.out.println();
+        System.out.println("Test Matrix:");
+        System.out.printf(Locale.ROOT, "  Parse time:  short=%dms, long=%dms%n", shortSleepMs, longSleepMs);
+        System.out.printf(Locale.ROOT, "  Output size: small=%d times (~%dKB), large=%d times (~%dKB)%n",
+                smallTimes, smallTimes * 100 / 1024, largeTimes, largeTimes * 100 / 1024);
         System.out.println();
 
         // Check server is reachable
@@ -201,31 +190,34 @@ public class TikaServerBenchmark {
         }
         System.out.println("Server is reachable.");
 
-        // Verify MockParser is being used (only for sleep mode)
-        if ("sleep".equals(mode)) {
-            if (!verifyMockParserInUse()) {
-                System.err.println("ERROR: MockParser is NOT being used by the server!");
-                System.err.println("The tika-core test jar must be on the server's classpath.");
-                System.err.println("If using java -jar, the test jar must be in the manifest Class-Path.");
-                System.err.println("Try running with: java -cp 'tika-server.jar:lib/*' org.apache.tika.server.core.TikaServerCli");
-                System.exit(1);
-            }
-            System.out.println("MockParser verified - sleep mode will work correctly.");
+        // Verify MockParser is being used
+        if (!verifyMockParserInUse()) {
+            System.err.println("ERROR: MockParser is NOT being used by the server!");
+            System.err.println("The tika-core test jar must be on the server's classpath.");
+            System.err.println("If using java -jar, the test jar must be in the manifest Class-Path.");
+            System.err.println("Try running with: java -cp 'tika-server.jar:lib/*' org.apache.tika.server.core.TikaServerCli");
+            System.exit(1);
         }
+        System.out.println("MockParser verified.");
         System.out.println();
 
         // Warmup
         System.out.printf(Locale.ROOT, "Warming up with %d requests...%n", warmupCount);
-        runBenchmark(smallContent, warmupCount, "warmup", getSmallLabel());
+        runBenchmark(shortSmallContent, warmupCount, "warmup", "warmup");
         System.out.println("Warmup complete.");
         System.out.println();
 
-        String firstLabel = getSmallLabel();
-        String secondLabel = getLargeLabel();
+        // Labels for the 2x2 matrix
+        String shortSmallLabel = String.format(Locale.ROOT, "short-%dms/small-%d", shortSleepMs, smallTimes);
+        String shortLargeLabel = String.format(Locale.ROOT, "short-%dms/large-%d", shortSleepMs, largeTimes);
+        String longSmallLabel = String.format(Locale.ROOT, "long-%dms/small-%d", longSleepMs, smallTimes);
+        String longLargeLabel = String.format(Locale.ROOT, "long-%dms/large-%d", longSleepMs, largeTimes);
 
         // Collect results across all repeats
-        List<BenchmarkResult> firstResults = new ArrayList<>();
-        List<BenchmarkResult> secondResults = new ArrayList<>();
+        List<BenchmarkResult> shortSmallResults = new ArrayList<>();
+        List<BenchmarkResult> shortLargeResults = new ArrayList<>();
+        List<BenchmarkResult> longSmallResults = new ArrayList<>();
+        List<BenchmarkResult> longLargeResults = new ArrayList<>();
 
         // Per-benchmark warmup count (10 requests per thread)
         int perBenchmarkWarmup = threads * 10;
@@ -238,65 +230,72 @@ public class TikaServerBenchmark {
                 System.out.println("*".repeat(70));
             }
 
-            // First test (small/short)
-            System.out.println("-".repeat(70));
-            System.out.printf(Locale.ROOT, "Running %s benchmark (%d requests)%n", firstLabel.toUpperCase(Locale.ROOT), count);
-            System.out.println("-".repeat(70));
-            // Warmup for this benchmark (10 requests per thread, not counted)
-            System.out.printf(Locale.ROOT, "  Per-benchmark warmup (%d requests)...%n", perBenchmarkWarmup);
-            runBenchmark(smallContent, perBenchmarkWarmup, "warmup", firstLabel);
-            BenchmarkResult firstResult = runBenchmark(smallContent, count, "first", firstLabel);
-            firstResults.add(firstResult);
-            printResults(firstResult, firstLabel);
-            System.out.println();
+            // Test 1: short parse, small output
+            shortSmallResults.add(runSingleBenchmark(shortSmallContent, perBenchmarkWarmup, shortSmallLabel));
 
-            // Second test (large/long)
-            System.out.println("-".repeat(70));
-            System.out.printf(Locale.ROOT, "Running %s benchmark (%d requests)%n", secondLabel.toUpperCase(Locale.ROOT), count);
-            System.out.println("-".repeat(70));
-            // Warmup for this benchmark (10 requests per thread, not counted)
-            System.out.printf(Locale.ROOT, "  Per-benchmark warmup (%d requests)...%n", perBenchmarkWarmup);
-            runBenchmark(largeContent, perBenchmarkWarmup, "warmup", secondLabel);
-            BenchmarkResult secondResult = runBenchmark(largeContent, count, "second", secondLabel);
-            secondResults.add(secondResult);
-            printResults(secondResult, secondLabel);
+            // Test 2: short parse, large output
+            shortLargeResults.add(runSingleBenchmark(shortLargeContent, perBenchmarkWarmup, shortLargeLabel));
+
+            // Test 3: long parse, small output
+            longSmallResults.add(runSingleBenchmark(longSmallContent, perBenchmarkWarmup, longSmallLabel));
+
+            // Test 4: long parse, large output
+            longLargeResults.add(runSingleBenchmark(longLargeContent, perBenchmarkWarmup, longLargeLabel));
         }
 
         // Calculate aggregated results
-        BenchmarkResult firstAgg = aggregateResults(firstResults);
-        BenchmarkResult secondAgg = aggregateResults(secondResults);
+        BenchmarkResult shortSmallAgg = aggregateResults(shortSmallResults);
+        BenchmarkResult shortLargeAgg = aggregateResults(shortLargeResults);
+        BenchmarkResult longSmallAgg = aggregateResults(longSmallResults);
+        BenchmarkResult longLargeAgg = aggregateResults(longLargeResults);
 
-        // Summary
+        // Summary - 2x2 Matrix format
         System.out.println();
-        System.out.println("=".repeat(70));
+        System.out.println("=".repeat(90));
         if (repeats > 1) {
             System.out.printf(Locale.ROOT, "SUMMARY (averaged over %d repeats)%n", repeats);
         } else {
             System.out.println("SUMMARY");
         }
-        System.out.println("=".repeat(70));
-        System.out.printf(Locale.ROOT, "%-20s %18s %18s%n", "Metric", firstLabel, secondLabel);
-        System.out.println("-".repeat(70));
-        System.out.printf(Locale.ROOT, "%-20s %18.2f %18.2f%n", "Throughput (req/s)", firstAgg.throughput, secondAgg.throughput);
-        System.out.printf(Locale.ROOT, "%-20s %18.2f %18.2f%n", "Avg Latency (ms)", firstAgg.avgLatencyMs, secondAgg.avgLatencyMs);
-        System.out.printf(Locale.ROOT, "%-20s %18.2f %18.2f%n", "P50 Latency (ms)", firstAgg.p50LatencyMs, secondAgg.p50LatencyMs);
-        System.out.printf(Locale.ROOT, "%-20s %18.2f %18.2f%n", "P95 Latency (ms)", firstAgg.p95LatencyMs, secondAgg.p95LatencyMs);
-        System.out.printf(Locale.ROOT, "%-20s %18.2f %18.2f%n", "P99 Latency (ms)", firstAgg.p99LatencyMs, secondAgg.p99LatencyMs);
-        System.out.printf(Locale.ROOT, "%-20s %18d %18d%n", "Success Count", firstAgg.successCount, secondAgg.successCount);
-        System.out.printf(Locale.ROOT, "%-20s %18d %18d%n", "Error Count", firstAgg.errorCount, secondAgg.errorCount);
-        System.out.println("=".repeat(70));
+        System.out.println("=".repeat(90));
 
-        // Output CSV-friendly line for easy comparison
+        // Throughput matrix
         System.out.println();
-        System.out.println("CSV format (for comparison):");
-        System.out.printf(Locale.ROOT, "mode,threads,repeats,%s_throughput,%s_p50,%s_p95,%s_throughput,%s_p50,%s_p95%n",
-                firstLabel, firstLabel, firstLabel, secondLabel, secondLabel, secondLabel);
-        System.out.printf(Locale.ROOT, "%s,%d,%d,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f%n",
-                mode, threads, repeats,
-                firstAgg.throughput, firstAgg.p50LatencyMs, firstAgg.p95LatencyMs,
-                secondAgg.throughput, secondAgg.p50LatencyMs, secondAgg.p95LatencyMs);
+        System.out.println("THROUGHPUT (req/s):");
+        System.out.printf(Locale.ROOT, "%-20s %20s %20s%n", "", "small-" + smallTimes, "large-" + largeTimes);
+        System.out.printf(Locale.ROOT, "%-20s %20.2f %20.2f%n", "short-" + shortSleepMs + "ms", shortSmallAgg.throughput, shortLargeAgg.throughput);
+        System.out.printf(Locale.ROOT, "%-20s %20.2f %20.2f%n", "long-" + longSleepMs + "ms", longSmallAgg.throughput, longLargeAgg.throughput);
+
+        // Latency matrix
+        System.out.println();
+        System.out.println("AVG LATENCY (ms):");
+        System.out.printf(Locale.ROOT, "%-20s %20s %20s%n", "", "small-" + smallTimes, "large-" + largeTimes);
+        System.out.printf(Locale.ROOT, "%-20s %20.2f %20.2f%n", "short-" + shortSleepMs + "ms", shortSmallAgg.avgLatencyMs, shortLargeAgg.avgLatencyMs);
+        System.out.printf(Locale.ROOT, "%-20s %20.2f %20.2f%n", "long-" + longSleepMs + "ms", longSmallAgg.avgLatencyMs, longLargeAgg.avgLatencyMs);
+
+        // P95 Latency matrix
+        System.out.println();
+        System.out.println("P95 LATENCY (ms):");
+        System.out.printf(Locale.ROOT, "%-20s %20s %20s%n", "", "small-" + smallTimes, "large-" + largeTimes);
+        System.out.printf(Locale.ROOT, "%-20s %20.2f %20.2f%n", "short-" + shortSleepMs + "ms", shortSmallAgg.p95LatencyMs, shortLargeAgg.p95LatencyMs);
+        System.out.printf(Locale.ROOT, "%-20s %20.2f %20.2f%n", "long-" + longSleepMs + "ms", longSmallAgg.p95LatencyMs, longLargeAgg.p95LatencyMs);
+
+        System.out.println();
+        System.out.println("=".repeat(90));
 
         shutdown();
+    }
+
+    private BenchmarkResult runSingleBenchmark(byte[] content, int perBenchmarkWarmup, String label) throws Exception {
+        System.out.println("-".repeat(70));
+        System.out.printf(Locale.ROOT, "Running %s benchmark (%d requests)%n", label.toUpperCase(Locale.ROOT), count);
+        System.out.println("-".repeat(70));
+        System.out.printf(Locale.ROOT, "  Per-benchmark warmup (%d requests)...%n", perBenchmarkWarmup);
+        runBenchmark(content, perBenchmarkWarmup, "warmup", label);
+        BenchmarkResult result = runBenchmark(content, count, "test", label);
+        printResults(result, label);
+        System.out.println();
+        return result;
     }
 
     private BenchmarkResult aggregateResults(List<BenchmarkResult> results) {
@@ -312,14 +311,6 @@ public class TikaServerBenchmark {
         int totalSuccess = results.stream().mapToInt(r -> r.successCount).sum();
         int totalErrors = results.stream().mapToInt(r -> r.errorCount).sum();
         return new BenchmarkResult(avgThroughput, avgLatency, avgP50, avgP95, avgP99, avgMax, totalSuccess, totalErrors);
-    }
-
-    private String getSmallLabel() {
-        return "sleep".equals(mode) ? "short-sleep" : "small-files";
-    }
-
-    private String getLargeLabel() {
-        return "sleep".equals(mode) ? "long-sleep" : "large-files";
     }
 
     private boolean checkServerHealth() {
@@ -348,6 +339,7 @@ public class TikaServerBenchmark {
                     .uri(URI.create(baseUrl + "/rmeta"))
                     .header("Content-Type", "application/mock+xml")
                     .header("Accept", "application/json")
+                    .header("writeLimit", "-1")
                     .PUT(HttpRequest.BodyPublishers.ofString(testXml))
                     .timeout(Duration.ofSeconds(10))
                     .build();
@@ -391,8 +383,8 @@ public class TikaServerBenchmark {
         AtomicInteger errorCount = new AtomicInteger(0);
         AtomicInteger completedCount = new AtomicInteger(0);
 
-        // Calculate appropriate timeout based on content
-        int timeoutSeconds = "sleep".equals(mode) ? Math.max(60, longSleepMs / 1000 + 30) : 60;
+        // Calculate appropriate timeout based on longest possible sleep time
+        int timeoutSeconds = Math.max(60, longSleepMs / 1000 + 30);
 
         // Divide requests among threads
         int requestsPerThread = requestCount / threads;
@@ -451,8 +443,8 @@ public class TikaServerBenchmark {
         AtomicInteger errorCount = new AtomicInteger(0);
         AtomicInteger completedCount = new AtomicInteger(0);
 
-        // Calculate appropriate timeout based on content
-        int timeoutSeconds = "sleep".equals(mode) ? Math.max(60, longSleepMs / 1000 + 30) : 60;
+        // Calculate appropriate timeout based on longest possible sleep time
+        int timeoutSeconds = Math.max(60, longSleepMs / 1000 + 30);
 
         long startTime = System.nanoTime();
 
@@ -608,15 +600,14 @@ public class TikaServerBenchmark {
         String url = "http://localhost:9998";
         String endpoint = "/tika";
         int threads = 4;
-        int count = 1000;
+        int count = 100;
         int warmup = 100;
         int repeats = 1;
-        String mode = "size";
         boolean syncMode = true; // default to sync (realistic)
-        int smallKb = 1;
-        int largeKb = 100;
+        int smallTimes = 10;
+        int largeTimes = 10000;
         int shortMs = 10;
-        int longMs = 5000;
+        int longMs = 500;
 
         for (String arg : args) {
             if (arg.startsWith("--url=")) {
@@ -631,16 +622,14 @@ public class TikaServerBenchmark {
                 warmup = Integer.parseInt(arg.substring(9));
             } else if (arg.startsWith("--repeats=")) {
                 repeats = Integer.parseInt(arg.substring(10));
-            } else if (arg.startsWith("--mode=")) {
-                mode = arg.substring(7);
             } else if (arg.equals("--sync")) {
                 syncMode = true;
             } else if (arg.equals("--async")) {
                 syncMode = false;
-            } else if (arg.startsWith("--small-kb=")) {
-                smallKb = Integer.parseInt(arg.substring(11));
-            } else if (arg.startsWith("--large-kb=")) {
-                largeKb = Integer.parseInt(arg.substring(11));
+            } else if (arg.startsWith("--small-times=")) {
+                smallTimes = Integer.parseInt(arg.substring(14));
+            } else if (arg.startsWith("--large-times=")) {
+                largeTimes = Integer.parseInt(arg.substring(14));
             } else if (arg.startsWith("--short-ms=")) {
                 shortMs = Integer.parseInt(arg.substring(11));
             } else if (arg.startsWith("--long-ms=")) {
@@ -651,13 +640,8 @@ public class TikaServerBenchmark {
             }
         }
 
-        if (!mode.equals("size") && !mode.equals("sleep")) {
-            System.err.println("Invalid mode: " + mode + ". Must be 'size' or 'sleep'.");
-            System.exit(1);
-        }
-
         TikaServerBenchmark benchmark = new TikaServerBenchmark(
-                url, endpoint, threads, count, warmup, repeats, mode, syncMode, smallKb, largeKb, shortMs, longMs);
+                url, endpoint, threads, count, warmup, repeats, syncMode, smallTimes, largeTimes, shortMs, longMs);
 
         try {
             benchmark.run();
@@ -669,7 +653,9 @@ public class TikaServerBenchmark {
     }
 
     private static void printHelp() {
-        System.out.println("Tika Server Performance Benchmark");
+        System.out.println("Tika Server Performance Benchmark (2x2 Matrix)");
+        System.out.println();
+        System.out.println("Runs a 2x2 matrix of tests: [short/long parse time] x [small/large output]");
         System.out.println();
         System.out.println("Usage: java TikaServerBenchmark [options]");
         System.out.println();
@@ -677,30 +663,28 @@ public class TikaServerBenchmark {
         System.out.println("  --url=URL          Base URL of tika-server (default: http://localhost:9998)");
         System.out.println("  --endpoint=PATH    Endpoint to test: /tika or /rmeta (default: /tika)");
         System.out.println("  --threads=N        Number of client threads (default: 4)");
-        System.out.println("  --count=N          Number of requests per test (default: 1000)");
+        System.out.println("  --count=N          Number of requests per test (default: 100)");
         System.out.println("  --warmup=N         Number of initial warmup requests (default: 100)");
         System.out.println("  --repeats=N        Number of times to repeat the benchmark (default: 1)");
-        System.out.println("  --mode=MODE        Test mode: 'size' or 'sleep' (default: size)");
         System.out.println("  --sync             Synchronous: each thread waits for response before next request (default)");
         System.out.println("  --async            Asynchronous: all requests sent immediately (stress test)");
         System.out.println();
-        System.out.println("Size mode options (tests I/O throughput):");
-        System.out.println("  --small-kb=N       Size of small files in KB (default: 1)");
-        System.out.println("  --large-kb=N       Size of large files in KB (default: 100)");
+        System.out.println("Parse time options:");
+        System.out.println("  --short-ms=N       Short parse/sleep duration in ms (default: 10)");
+        System.out.println("  --long-ms=N        Long parse/sleep duration in ms (default: 500)");
         System.out.println();
-        System.out.println("Sleep mode options (tests process forking overhead):");
-        System.out.println("  --short-ms=N       Short sleep duration in ms (default: 10)");
-        System.out.println("  --long-ms=N        Long sleep duration in ms (default: 5000)");
+        System.out.println("Output size options:");
+        System.out.println("  --small-times=N    Paragraph repetitions for small output (default: 10, ~1KB)");
+        System.out.println("  --large-times=N    Paragraph repetitions for large output (default: 10000, ~1MB)");
         System.out.println();
-        System.out.println("Note: Each benchmark also runs a per-benchmark warmup of 10*threads requests");
-        System.out.println("      that is not counted towards the statistics.");
+        System.out.println("Note: Each of the 4 benchmarks runs a per-benchmark warmup of 10*threads requests.");
         System.out.println();
         System.out.println("Examples:");
-        System.out.println("  # Realistic test with 4 threads (default sync mode)");
-        System.out.println("  java TikaServerBenchmark --mode=sleep --threads=4 --short-ms=100 --long-ms=1000");
+        System.out.println("  # Default 2x2 matrix test");
+        System.out.println("  java TikaServerBenchmark --threads=4");
         System.out.println();
-        System.out.println("  # Stress test with async mode");
-        System.out.println("  java TikaServerBenchmark --mode=sleep --threads=4 --async --count=500");
+        System.out.println("  # Custom parse times and output sizes");
+        System.out.println("  java TikaServerBenchmark --short-ms=10 --long-ms=1000 --small-times=10 --large-times=5000");
         System.out.println();
         System.out.println("  # Test /rmeta endpoint with 3 repeats for more stable results");
         System.out.println("  java TikaServerBenchmark --endpoint=/rmeta --mode=size --repeats=3");

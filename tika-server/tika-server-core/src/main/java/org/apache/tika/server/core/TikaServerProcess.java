@@ -420,7 +420,7 @@ public class TikaServerProcess {
      * Initializes the PipesParsingHelper for pipes-based parsing with process isolation.
      * <p>
      * The PipesParser will be configured with PASSBACK_ALL emit strategy so that
-     * parsed content is returned directly instead of being emitted to an external emitter.
+     * parsed results are returned through the socket connection.
      * <p>
      * If no config file is provided, a minimal default configuration will be created.
      * The plugin-roots will default to a "plugins" directory at the same level as the server jar.
@@ -430,17 +430,15 @@ public class TikaServerProcess {
      * @throws Exception if pipes initialization fails
      */
     private static PipesParsingHelper initPipesParsingHelper(TikaServerConfig tikaServerConfig) throws Exception {
-        TikaJsonConfig tikaJsonConfig;
+        // Load or create config
         Path configPath;
-
         if (tikaServerConfig.hasConfigFile()) {
             configPath = tikaServerConfig.getConfigPath();
-            tikaJsonConfig = TikaJsonConfig.load(configPath);
         } else {
-            // Create minimal config - will use defaults
             configPath = createDefaultConfig();
-            tikaJsonConfig = TikaJsonConfig.load(configPath);
         }
+
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(configPath);
 
         // Load or create PipesConfig with defaults
         PipesConfig pipesConfig = tikaJsonConfig.deserialize("pipes", PipesConfig.class);
@@ -448,7 +446,7 @@ public class TikaServerProcess {
             pipesConfig = new PipesConfig();
         }
 
-        // Force PASSBACK_ALL strategy so results are returned to us (not emitted)
+        // Use PASSBACK_ALL strategy: results are returned through the socket
         pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.PASSBACK_ALL));
 
         // Create PipesParser

@@ -181,16 +181,18 @@ public abstract class CXFTestBase {
     public void setUp() throws Exception {
         Path tmp = Files.createTempFile("tika-server-test-", ".json");
         try {
+            // Copy tika config to temp file first
+            Files.copy(getTikaConfigInputStream(), tmp, StandardCopyOption.REPLACE_EXISTING);
+
             InputStream pipesConfigInputStream = getPipesConfigInputStream();
             if (pipesConfigInputStream != null) {
-                this.pipesConfigPath = Files.createTempFile("tika-server-pipes-", ".json");
-                Files.copy(pipesConfigInputStream, this.pipesConfigPath, StandardCopyOption.REPLACE_EXISTING);
+                // Test provided its own pipes config - merge in PASSBACK_ALL emit strategy
+                this.pipesConfigPath = mergePassbackAllStrategy(pipesConfigInputStream);
             } else {
-                // Create a default pipes config for tests
-                this.pipesConfigPath = createDefaultTestConfig();
+                // Create a default pipes config, merging metadata-filters from tika config
+                this.pipesConfigPath = createDefaultTestConfig(tmp);
             }
 
-            Files.copy(getTikaConfigInputStream(), tmp, StandardCopyOption.REPLACE_EXISTING);
             this.tika = TikaLoader.load(tmp);
 
             // Initialize PipesParsingHelper for pipes-based parsing
@@ -232,10 +234,51 @@ public abstract class CXFTestBase {
     }
 
     /**
-     * Creates a default test config with pipes configuration.
+     * Merges PASSBACK_ALL emit strategy into a pipes config.
+     * This ensures the child process uses PASSBACK_ALL regardless of what's in the config file.
      */
-    private Path createDefaultTestConfig() throws IOException {
+    private Path mergePassbackAllStrategy(InputStream pipesConfigInputStream) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        com.fasterxml.jackson.databind.node.ObjectNode root = (com.fasterxml.jackson.databind.node.ObjectNode) mapper.readTree(pipesConfigInputStream);
+
+        // Get or create pipes section
+        com.fasterxml.jackson.databind.node.ObjectNode pipes = (com.fasterxml.jackson.databind.node.ObjectNode) root.get("pipes");
+        if (pipes == null) {
+            pipes = mapper.createObjectNode();
+            root.set("pipes", pipes);
+        }
+
+        // Set emit strategy to PASSBACK_ALL
+        com.fasterxml.jackson.databind.node.ObjectNode emitStrategy = mapper.createObjectNode();
+        emitStrategy.put("type", "PASSBACK_ALL");
+        pipes.set("emitStrategy", emitStrategy);
+
+        Path tempConfig = Files.createTempFile("tika-server-pipes-", ".json");
+        mapper.writerWithDefaultPrettyPrinter().writeValue(tempConfig.toFile(), root);
+        return tempConfig;
+    }
+
+    /**
+     * Creates a default test config with pipes configuration.
+     * If the tika config contains metadata-filters, they are merged into the pipes config.
+     *
+     * @param tikaConfigPath path to the tika config (may contain metadata-filters)
+     */
+    private Path createDefaultTestConfig(Path tikaConfigPath) throws IOException {
         Path pluginsDir = Paths.get("target/plugins").toAbsolutePath();
+
+        // Read tika config to check for metadata-filters
+        String metadataFiltersJson = "";
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode tikaConfig = mapper.readTree(tikaConfigPath.toFile());
+            JsonNode metadataFilters = tikaConfig.get("metadata-filters");
+            if (metadataFilters != null && !metadataFilters.isEmpty()) {
+                metadataFiltersJson = ",\n              \"metadata-filters\": " + mapper.writeValueAsString(metadataFilters);
+            }
+        } catch (Exception e) {
+            LOG.debug("Could not read metadata-filters from tika config: {}", e.getMessage());
+        }
 
         String configJson = String.format(Locale.ROOT, """
             {
@@ -250,9 +293,9 @@ public abstract class CXFTestBase {
                 "numClients": 2,
                 "timeoutMillis": 60000
               },
-              "plugin-roots": "%s"
+              "plugin-roots": "%s"%s
             }
-            """, pluginsDir.toString().replace("\\", "/"));
+            """, pluginsDir.toString().replace("\\", "/"), metadataFiltersJson);
 
         Path tempConfig = Files.createTempFile("tika-test-default-config-", ".json");
         Files.writeString(tempConfig, configJson);

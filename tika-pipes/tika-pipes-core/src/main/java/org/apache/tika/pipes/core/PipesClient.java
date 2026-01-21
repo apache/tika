@@ -423,7 +423,9 @@ public class PipesClient implements Closeable {
         int len = serverTuple.input.readInt();
         byte[] bytes = new byte[len];
         serverTuple.input.readFully(bytes);
+
         writeAck();
+
         try (ObjectInputStream objectInputStream = new ObjectInputStream(UnsynchronizedByteArrayInputStream
                 .builder()
                 .setByteArray(bytes)
@@ -492,6 +494,7 @@ public class PipesClient implements Closeable {
             }
         }
         socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMs());
+        socket.setTcpNoDelay(true); // Disable Nagle's algorithm to avoid ~40ms delays on small writes
         serverTuple = new ServerTuple(process, serverSocket, socket, new DataInputStream(socket.getInputStream()),
                 new DataOutputStream(socket.getOutputStream()), tmpDir);
         waitForStartup();
