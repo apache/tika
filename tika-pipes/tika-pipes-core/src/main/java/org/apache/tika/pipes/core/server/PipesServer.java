@@ -259,16 +259,16 @@ public class PipesServer implements AutoCloseable {
 
 
     public static void main(String[] args) throws Exception {
+        String pipesClientId = System.getProperty("pipesClientId", "unknown");
+
         if (args.length < 3) {
-            System.err.println("Usage: PipesServer --port <port> <tikaConfigPath>");
-            System.err.println("   or: PipesServer --uds <socketPath> <tikaConfigPath>");
+            LOG.error("pipesClientId={}: Invalid arguments. Usage: PipesServer --port <port> <tikaConfigPath> or PipesServer --uds <socketPath> <tikaConfigPath>", pipesClientId);
             System.exit(1);
         }
 
         String mode = args[0];
         String connectionArg = args[1];
         Path tikaConfig = Paths.get(args[2]);
-        String pipesClientId = System.getProperty("pipesClientId", "unknown");
 
         PipesServer server;
         if ("--port".equals(mode)) {
@@ -280,11 +280,7 @@ public class PipesServer implements AutoCloseable {
             LOG.debug("pipesClientId={}: starting pipes server with UDS at {}", pipesClientId, udsPath);
             server = PipesServer.loadWithUds(udsPath, tikaConfig);
         } else {
-            System.err.println("Unknown mode: " + mode);
-            System.err.println("Usage: PipesServer --port <port> <tikaConfigPath>");
-            System.err.println("   or: PipesServer --uds <socketPath> <tikaConfigPath>");
-            System.exit(1);
-            return; // unreachable but makes compiler happy
+            throw new IllegalArgumentException("Unknown mode '" + mode + "'. Usage: PipesServer --port <port> <tikaConfigPath> or PipesServer --uds <socketPath> <tikaConfigPath>");
         }
 
         try (server) {
