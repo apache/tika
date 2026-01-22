@@ -67,8 +67,6 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.server.core.CXFTestBase;
-import org.apache.tika.server.core.FetcherStreamFactory;
-import org.apache.tika.server.core.InputStreamFactory;
 import org.apache.tika.server.core.TikaServerParseExceptionMapper;
 import org.apache.tika.server.core.resource.PipesResource;
 import org.apache.tika.server.core.writer.JSONObjWriter;
@@ -162,9 +160,8 @@ public class TikaPipesTest extends CXFTestBase {
     }
 
     @Override
-    protected InputStreamFactory getInputStreamFactory(InputStream is) {
-        //TODO: fix this to read from the is
-        return new FetcherStreamFactory(FETCHER_MANAGER);
+    protected InputStream getPipesConfigInputStream() throws IOException {
+        return new ByteArrayInputStream(Files.readAllBytes(TIKA_CONFIG_PATH));
     }
 
 

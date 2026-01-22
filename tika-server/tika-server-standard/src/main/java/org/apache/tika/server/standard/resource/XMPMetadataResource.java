@@ -33,7 +33,6 @@ import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.server.core.resource.MetadataResource;
-import org.apache.tika.server.core.resource.TikaResource;
 import org.apache.tika.server.core.resource.TikaServerResource;
 
 public class XMPMetadataResource extends MetadataResource implements TikaServerResource {
@@ -62,7 +61,7 @@ public class XMPMetadataResource extends MetadataResource implements TikaServerR
     @Produces({"application/rdf+xml"})
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
         Metadata metadata = new Metadata();
-        try (TikaInputStream tis = TikaResource.getInputStream(is, metadata, httpHeaders, info)) {
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
             return Response
                     .ok(parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(), info))
                     .build();

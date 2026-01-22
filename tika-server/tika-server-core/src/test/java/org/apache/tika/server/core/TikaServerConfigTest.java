@@ -43,7 +43,6 @@ public class TikaServerConfigTest extends TikaTest {
         CommandLine emptyCommandLine = parser.parse(new Options(), new String[]{});
         Path path = getConfigPath(getClass(), "tika-config-server.json");
         TikaServerConfig config = TikaServerConfig.load(path, emptyCommandLine, settings);
-        assertEquals(54321, config.getTaskTimeoutMillis());
         assertEquals(true, config.isEnableUnsecureFeatures());
     }
 
@@ -54,7 +53,6 @@ public class TikaServerConfigTest extends TikaTest {
         CommandLine emptyCommandLine = parser.parse(new Options(), new String[]{});
         Path path = getConfigPath(getClass(), "tika-config-server-fetchers-emitters.json");
         TikaServerConfig config = TikaServerConfig.load(path, emptyCommandLine, settings);
-        assertEquals(54321, config.getTaskTimeoutMillis());
         assertEquals(true, config.isEnableUnsecureFeatures());
     }
 

@@ -163,6 +163,7 @@ public class PipesServer implements AutoCloseable {
             LOG.debug("pipesClientId={}: connecting to client on port={}", pipesClientId, port);
             Socket socket = new Socket();
             socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), PipesClient.SOCKET_CONNECT_TIMEOUT_MS);
+            socket.setTcpNoDelay(true); // Disable Nagle's algorithm to avoid ~40ms delays on small writes
 
             DataInputStream dis = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
             DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));

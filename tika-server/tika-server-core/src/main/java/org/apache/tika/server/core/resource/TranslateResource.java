@@ -43,20 +43,18 @@ import org.apache.tika.server.core.ServerStatus;
 public class TranslateResource {
     private static final Logger LOG = LoggerFactory.getLogger(TranslateResource.class);
     private final ServerStatus serverStatus;
-    private final long timeoutMillis;
     private Translator defaultTranslator;
     private ServiceLoader loader;
 
-    public TranslateResource(ServerStatus serverStatus, long timeoutMillis) {
+    public TranslateResource(ServerStatus serverStatus) {
         this.loader = new ServiceLoader(ServiceLoader.class.getClassLoader());
         //TODO -- implement translators
         //this.defaultTranslator = TikaResource
           //      .getTikaLoader()
             //    .getTranslator();
         this.serverStatus = serverStatus;
-        this.timeoutMillis = timeoutMillis;
     }
-    
+
     // TIKA-4526: handle @PUT and @POST separately to avoid nondeterministic failures
     @POST
     @Path("/all/{translator}/{src}/{dest}")
@@ -99,18 +97,17 @@ public class TranslateResource {
             translate = this.defaultTranslator;
             LOG.info("Using default translator");
         }
-        TikaResource.checkIsOperating();
-        long taskId = serverStatus.start(ServerStatus.TASK.TRANSLATE, null, timeoutMillis);
+        long taskId = serverStatus.start(ServerStatus.TASK.TRANSLATE, null);
         try {
             return translate.translate(content, sLang, dLang);
         } catch (OutOfMemoryError e) {
-            serverStatus.setStatus(ServerStatus.STATUS.OOM);
+            LOG.error("OOM while translating");
             throw e;
         } finally {
             serverStatus.complete(taskId);
         }
     }
-    
+
     private String doAutoTranslate(String content, String translator, String dLang) throws TikaException, IOException {
         LanguageResult language = new OptimaizeLangDetector()
                 .loadModels()

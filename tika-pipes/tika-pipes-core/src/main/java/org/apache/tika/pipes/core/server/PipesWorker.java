@@ -18,8 +18,6 @@ package org.apache.tika.pipes.core.server;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -71,23 +69,15 @@ class PipesWorker implements Callable<PipesResult> {
 
     @Override
     public PipesResult call() throws Exception {
-        Instant start = Instant.now();
-
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("timer -- got fetcher: {}ms", Duration.between(start, Instant.now()).toMillis());
-        }
-        start = Instant.now();
         MetadataListAndEmbeddedBytes parseData = null;
         try {
             //this can be null if there is a fetch exception
             ParseDataOrPipesResult parseDataResult = parseFromTuple();
+
             if (parseDataResult.pipesResult != null) {
                 return parseDataResult.pipesResult;
             }
 
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("timer -- to parse: {} ms", Duration.between(start, Instant.now()).toMillis());
-            }
             parseData = parseDataResult.parseDataResult;
 
             if (parseData == null || metadataIsEmpty(parseData.getMetadataList())) {

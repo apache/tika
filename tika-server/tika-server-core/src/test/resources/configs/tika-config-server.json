@@ -1,15 +1,17 @@
 {
   "server": {
     "port": 9999,
-    "taskTimeoutMillis": 54321,
-    "taskPulseMillis": 100,
-    "minimumTimeoutMillis": 10,
     "enableUnsecureFeatures": true,
     "endpoints": [
       "rmeta"
     ]
   },
   "fetchers": {
+    "file-system-fetcher": {
+      "file-system-fetcher": {
+        "allowAbsolutePaths": true
+      }
+    },
     "fsf": {
       "file-system-fetcher": {
         "basePath": "BASE_PATH",
@@ -24,6 +26,13 @@
         "onExists": "EXCEPTION"
       }
     }
+  },
+  "pipes": {
+    "numClients": 2,
+    "timeoutMillis": 120000,
+    "forkedJvmArgs": [
+      "-Xmx256m"
+    ]
   },
   "plugin-roots": "target/plugins"
 }

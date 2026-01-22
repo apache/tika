@@ -97,7 +97,7 @@ public class UnpackerResource {
     @PUT
     @Produces({"application/zip", "application/x-tar"})
     public Map<String, byte[]> unpack(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-        try (TikaInputStream tis = TikaResource.getInputStream(is, new Metadata(), httpHeaders, info)) {
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
             return process(tis, httpHeaders, info, false);
         }
     }
@@ -106,7 +106,7 @@ public class UnpackerResource {
     @PUT
     @Produces({"application/zip", "application/x-tar"})
     public Map<String, byte[]> unpackAll(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-        try (TikaInputStream tis = TikaResource.getInputStream(is, new Metadata(), httpHeaders, info)) {
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
             return process(tis, httpHeaders, info, true);
         }
     }

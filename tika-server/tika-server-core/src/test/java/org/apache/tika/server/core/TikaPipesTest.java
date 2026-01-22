@@ -49,7 +49,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -58,9 +57,7 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
-import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
-import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.serialization.JsonMetadataList;
@@ -80,7 +77,6 @@ public class TikaPipesTest extends CXFTestBase {
     private static Path TIKA_PIPES_LOG4j2_PATH;
     private static Path TMP_NPE_OUTPUT_FILE;
     private static Path TIKA_CONFIG_PATH;
-    private static FetcherManager FETCHER_MANAGER;
     private static String HELLO_WORLD = "hello_world.xml";
     private static String HELLO_WORLD_JSON = "hello_world.xml.json";
     private static String NPE_JSON = "null_pointer.xml.json";
@@ -109,10 +105,6 @@ public class TikaPipesTest extends CXFTestBase {
         TIKA_CONFIG_PATH = Files.createTempFile(TMP_DIR, "tika-pipes-config-", ".json");
 
         CXFTestBase.createPluginsConfig(TIKA_CONFIG_PATH, inputDir, TMP_OUTPUT_DIR, null, 10000L);
-
-        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(TIKA_CONFIG_PATH);
-        TikaPluginManager pluginManager = TikaPluginManager.load(tikaJsonConfig);
-        FETCHER_MANAGER = FetcherManager.load(pluginManager, tikaJsonConfig);
     }
 
     @AfterAll
@@ -166,10 +158,6 @@ public class TikaPipesTest extends CXFTestBase {
         return new ByteArrayInputStream(Files.readAllBytes(TIKA_CONFIG_PATH));
     }
 
-    @Override
-    protected InputStreamFactory getInputStreamFactory(InputStream tikaConfigInputStream) {
-        return new FetcherStreamFactory(FETCHER_MANAGER);
-    }
 
 
     @Test

@@ -25,5 +25,17 @@
       }
     },
     "throwOnZeroBytes": false
-  }
+  },
+  "fetchers": {
+    "file-system-fetcher": {
+      "file-system-fetcher": {
+        "allowAbsolutePaths": true
+      }
+    }
+  },
+  "pipes": {
+    "numClients": 2,
+    "timeoutMillis": 30000
+  },
+  "plugin-roots": "target/plugins"
 }

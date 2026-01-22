@@ -37,7 +37,7 @@ import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.StreamEmitter;
 import org.apache.tika.pipes.core.EmitStrategy;
-import org.apache.tika.pipes.core.EmitStrategyOverride;
+import org.apache.tika.pipes.core.EmitStrategyConfig;
 import org.apache.tika.pipes.core.PassbackFilter;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
@@ -159,11 +159,11 @@ class EmitHandler {
         EmitStrategy strategy = emitStrategy;
         long thresholdBytes = directEmitThresholdBytes;
 
-        EmitStrategyOverride overrideConfig = parseContext.get(EmitStrategyOverride.class);
+        EmitStrategyConfig overrideConfig = parseContext.get(EmitStrategyConfig.class);
         if (overrideConfig != null) {
-            strategy = overrideConfig.getEmitStrategy();
-            if (overrideConfig.getDirectEmitThresholdBytes() != null) {
-                thresholdBytes = overrideConfig.getDirectEmitThresholdBytes();
+            strategy = overrideConfig.getType();
+            if (overrideConfig.getThresholdBytes() != null) {
+                thresholdBytes = overrideConfig.getThresholdBytes();
             }
         }
 

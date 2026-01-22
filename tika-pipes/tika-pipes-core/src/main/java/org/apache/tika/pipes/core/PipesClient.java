@@ -422,6 +422,7 @@ public class PipesClient implements Closeable {
         int len = serverTuple.input.readInt();
         byte[] bytes = new byte[len];
         serverTuple.input.readFully(bytes);
+
         writeAck();
         return JsonPipesIpc.fromBytes(bytes, clazz);
     }
