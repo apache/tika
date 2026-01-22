@@ -100,7 +100,14 @@ public class PipesConfig {
 
     private ArrayList<String> forkedJvmArgs = new ArrayList<>();
     private String javaPath = "java";
-    
+
+    /**
+     * Optional directory for temporary files during pipes-based parsing.
+     * If not set, the system default temp directory will be used.
+     * Consider using a RAM-backed filesystem (e.g., /dev/shm) for better performance.
+     */
+    private String tempDirectory = null;
+
     /**
      * Type of ConfigStore to use for distributed state management.
      * Options: "memory" (default), "ignite"
@@ -434,5 +441,25 @@ public class PipesConfig {
 
     public void setConfigStoreParams(String configStoreParams) {
         this.configStoreParams = configStoreParams;
+    }
+
+    /**
+     * Gets the directory for temporary files during pipes-based parsing.
+     *
+     * @return the temp directory path, or null to use system default
+     */
+    public String getTempDirectory() {
+        return tempDirectory;
+    }
+
+    /**
+     * Sets the directory for temporary files during pipes-based parsing.
+     * If not set, the system default temp directory will be used.
+     * Consider using a RAM-backed filesystem (e.g., /dev/shm or /tmpfs) for better performance.
+     *
+     * @param tempDirectory the temp directory path, or null to use system default
+     */
+    public void setTempDirectory(String tempDirectory) {
+        this.tempDirectory = tempDirectory;
     }
 }

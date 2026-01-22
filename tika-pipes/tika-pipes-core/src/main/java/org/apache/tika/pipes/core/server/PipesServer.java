@@ -165,6 +165,7 @@ public class PipesServer implements AutoCloseable {
             LOG.debug("pipesClientId={}: connecting to client on port={}", pipesClientId, port);
             Socket socket = new Socket();
             socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), PipesClient.SOCKET_CONNECT_TIMEOUT_MS);
+            socket.setTcpNoDelay(true); // Disable Nagle's algorithm to avoid ~40ms delays on small writes
 
             DataInputStream dis = new DataInputStream(socket.getInputStream());
             DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
@@ -443,6 +444,7 @@ public class PipesServer implements AutoCloseable {
             int length = input.readInt();
             byte[] bytes = new byte[length];
             input.readFully(bytes);
+
             try (ObjectInputStream objectInputStream = new ObjectInputStream(
                     UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
                 return (FetchEmitTuple) objectInputStream.readObject();

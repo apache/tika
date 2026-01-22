@@ -21,81 +21,66 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+/**
+ * Read-only server status for tracking active tasks and statistics.
+ * <p>
+ * This class provides observability into server activity. With pipes-based parsing,
+ * timeouts and process crashes are handled by the pipes infrastructure, so this
+ * class no longer triggers server shutdowns.
+ */
 public class ServerStatus {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ServerStatus.class);
+    private final AtomicLong counter = new AtomicLong(0);
+    private final Map<Long, TaskStatus> tasks = new HashMap<>();
+    private volatile long lastStarted = Instant.now().toEpochMilli();
 
-    private AtomicLong counter = new AtomicLong(0);
-    private Map<Long, TaskStatus> tasks = new HashMap<>();
-    private STATUS status = STATUS.OPERATING;
-    private volatile long lastStarted = Instant
-            .now()
-            .toEpochMilli();
-
-    public synchronized long start(TASK task, String fileName, long timeoutMillis) {
+    /**
+     * Records the start of a task and returns a task ID for tracking.
+     *
+     * @param task the type of task
+     * @param fileName the file being processed (for diagnostics)
+     * @return the task ID
+     */
+    public synchronized long start(TASK task, String fileName) {
         long taskId = counter.incrementAndGet();
         Instant now = Instant.now();
         lastStarted = now.toEpochMilli();
-        tasks.put(taskId, new TaskStatus(task, now, fileName, timeoutMillis));
+        tasks.put(taskId, new TaskStatus(task, now, fileName));
         return taskId;
     }
 
     /**
      * Removes the task from the collection of currently running tasks.
      *
-     * @param taskId
-     * @throws IllegalArgumentException if there is no task by that taskId in the collection
+     * @param taskId the task ID returned from start()
+     * @throws IllegalArgumentException if there is no task by that taskId
      */
     public synchronized void complete(long taskId) throws IllegalArgumentException {
         TaskStatus status = tasks.remove(taskId);
         if (status == null) {
-            throw new IllegalArgumentException("TaskId is not in map:" + taskId);
+            throw new IllegalArgumentException("TaskId is not in map: " + taskId);
         }
     }
 
-    public synchronized STATUS getStatus() {
-        return status;
-    }
-
-    public synchronized void setStatus(STATUS status) {
-        this.status = status;
-        if (status == STATUS.OOM) {
-            LOG.error("hit OOM. Shutting down");
-            ServerStatusWatcher.shutdown();
-        } else if (status == STATUS.CRASH) {
-            LOG.error("other crash");
-            ServerStatusWatcher.shutdown();
-        }
-    }
-
+    /**
+     * Returns a snapshot of currently running tasks.
+     */
     public synchronized Map<Long, TaskStatus> getTasks() {
         return new HashMap<>(tasks);
     }
 
-    public synchronized long getFilesProcessed() {
+    /**
+     * Returns the total number of tasks started since server startup.
+     */
+    public long getFilesProcessed() {
         return counter.get();
     }
 
-    public long getMillisSinceLastParseStarted() {
-        return Instant
-                .now()
-                .toEpochMilli() - lastStarted;
-    }
-
     /**
-     * @return true if this is legacy, otherwise whether or not status == OPERATING.
+     * Returns milliseconds since the last task was started.
      */
-    public synchronized boolean isOperating() {
-        return status == STATUS.OPERATING;
-    }
-
-    public enum STATUS {
-
-        INITIALIZING, OPERATING, TIMEOUT, OOM, CRASH, OFF;
-
+    public long getMillisSinceLastParseStarted() {
+        return Instant.now().toEpochMilli() - lastStarted;
     }
 
     public enum TASK {

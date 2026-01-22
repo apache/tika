@@ -1,0 +1,149 @@
+////
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+////
+= Migrating Tika Server to 4.x
+:toc:
+
+== Overview
+
+Tika Server 4.x introduces pipes-based parsing, which provides process isolation for all parsing operations. This improves stability and resource management but introduces some breaking changes.
+
+== New `/tika` Endpoint Structure
+
+The `/tika` endpoint has been simplified with path-based routing:
+
+[cols="1,2,1,3"]
+|===
+|Method |Path |Config? |Output
+
+|PUT |`/tika` |- |raw XHTML
+|PUT |`/tika/text` |- |raw text
+|PUT |`/tika/html` |- |raw HTML
+|PUT |`/tika/xml` |- |raw XML
+|PUT |`/tika/json` |- |JSON (text handler)
+|PUT |`/tika/json/{handler}` |- |JSON with specified handler (text, html, xml)
+|POST |`/tika` |YES |raw output (multipart with optional config)
+|POST |`/tika/json` |YES |JSON output (multipart with optional config)
+|===
+
+=== Using PUT endpoints (simple)
+
+[source,bash]
+----
+# Get plain text
+curl -T document.pdf http://localhost:9998/tika/text
+
+# Get JSON with metadata and text
+curl -T document.pdf http://localhost:9998/tika/json
+
+# Get JSON with HTML content
+curl -T document.pdf http://localhost:9998/tika/json/html
+----
+
+=== Using POST endpoints (with configuration)
+
+POST endpoints accept multipart requests with a `file` part and optional `config` part:
+
+[source,bash]
+----
+# Parse with custom PDF parser settings
+curl -X POST http://localhost:9998/tika/json \
+  -F "file=@document.pdf" \
+  -F "config={\"pdf-parser\":{\"ocrStrategy\":\"no_ocr\"}};type=application/json"
+----
+
+== Breaking Changes
+
+=== Removed Endpoints
+
+==== `/tika/main` and `/tika/form/main` (Boilerpipe)
+
+The Boilerpipe content extraction endpoints have been removed. These endpoints used `BoilerpipeContentHandler` which is not compatible with pipes-based parsing.
+
+**Migration:** Use `/tika/text` for plain text extraction.
+
+==== `/tika/form`, `/tika/form/*`
+
+All `/form` endpoints have been removed. Use the simplified endpoint structure above.
+
+**Migration:** Use PUT endpoints for simple requests, POST multipart for requests with configuration.
+
+==== `/tika/config`, `/tika/form/config`
+
+The separate `/config` endpoints have been removed. Configuration is now handled via the POST endpoints with multipart.
+
+**Migration:** Use `POST /tika` or `POST /tika/json` with a `config` part in your multipart request.
+
+=== Accept Header Routing Removed
+
+The `/tika` endpoint no longer routes based on `Accept` headers. Use explicit paths instead:
+
+* `Accept: text/plain` → use `/tika/text`
+* `Accept: text/html` → use `/tika/html`
+* `Accept: application/json` → use `/tika/json`
+
+=== Removed Configuration Options
+
+The following `TikaServerConfig` options have been removed:
+
+* `taskTimeoutMillis` - Now configured via `pipes.timeoutMillis`
+* `taskPulseMillis` - No longer needed
+* `minimumTimeoutMillis` - No longer needed
+
+=== Removed Features
+
+* **Fetcher-based streaming** - The `InputStreamFactory` pattern for fetching documents via HTTP headers (`fetcherName`, `fetchKey`) has been removed. All documents are now processed via temp files through the pipes infrastructure.
+
+== Configuration Changes
+
+=== Required: Pipes Configuration
+
+All tika-server configurations must now include a `pipes` section and a `file-system-fetcher`:
+
+[source,json]
+----
+{
+  "fetchers": {
+    "file-system-fetcher": {
+      "file-system-fetcher": {
+        "allowAbsolutePaths": true
+      }
+    }
+  },
+  "pipes": {
+    "numClients": 2,
+    "timeoutMillis": 30000
+  },
+  "plugin-roots": "path/to/plugins"
+}
+----
+
+== New Features
+
+=== Process Isolation
+
+All parsing now occurs in isolated child processes, providing:
+
+* Protection against parser crashes affecting the server
+* Memory isolation (OOM in parser doesn't crash server)
+* Configurable timeouts at the pipes level
+
+=== Performance Optimizations
+
+* TCP_NODELAY enabled for reduced latency on small requests
+* Configurable temp directory for RAM disk optimization (`pipes.tempDirectory`)
