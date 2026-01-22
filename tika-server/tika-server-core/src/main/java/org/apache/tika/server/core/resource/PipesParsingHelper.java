@@ -17,11 +17,9 @@
 package org.apache.tika.server.core.resource;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -31,6 +29,7 @@ import jakarta.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -95,8 +94,11 @@ public class PipesParsingHelper {
 
     /**
      * Parses content using pipes-based parsing with process isolation.
+     * <p>
+     * The TikaInputStream should already be spooled to a temp file via {@link TikaInputStream#getPath()}.
+     * The caller is responsible for closing the TikaInputStream, which will clean up any temp files.
      *
-     * @param inputStream the input stream containing the content to parse
+     * @param tis the TikaInputStream containing the content to parse
      * @param metadata metadata to pass to the parser (may include filename, content-type, etc.)
      * @param parseContext parse context with handler configuration
      * @param parseMode the parse mode (RMETA or CONCATENATE)
@@ -104,21 +106,20 @@ public class PipesParsingHelper {
      * @throws IOException if temp file operations fail
      * @throws TikaServerParseException if parsing fails
      */
-    public List<Metadata> parse(InputStream inputStream, Metadata metadata,
+    public List<Metadata> parse(TikaInputStream tis, Metadata metadata,
                                  ParseContext parseContext, ParseMode parseMode) throws IOException {
-        Path inputTempFile = null;
         String requestId = UUID.randomUUID().toString();
 
         try {
-            // Write input stream to temp file
-            inputTempFile = createInputTempFile();
-            Files.copy(inputStream, inputTempFile, StandardCopyOption.REPLACE_EXISTING);
+            // Get the backing file path from the spooled TikaInputStream
+            Path inputFile = tis.getPath();
+            LOG.debug("parse: using file {} ({} bytes)", inputFile, Files.size(inputFile));
 
             // Set parse mode in context
             parseContext.set(ParseMode.class, parseMode);
 
             // Create FetchEmitTuple - use NO_EMIT since we're using PASSBACK_ALL
-            FetchKey fetchKey = new FetchKey(DEFAULT_FETCHER_ID, inputTempFile.toAbsolutePath().toString());
+            FetchKey fetchKey = new FetchKey(DEFAULT_FETCHER_ID, inputFile.toAbsolutePath().toString());
 
             FetchEmitTuple tuple = new FetchEmitTuple(
                     requestId,
@@ -139,15 +140,6 @@ public class PipesParsingHelper {
             throw new TikaServerParseException("Parsing interrupted");
         } catch (PipesException e) {
             throw new TikaServerParseException(e);
-        } finally {
-            // Clean up input temp file
-            if (inputTempFile != null) {
-                try {
-                    Files.deleteIfExists(inputTempFile);
-                } catch (IOException e) {
-                    LOG.warn("Failed to delete input temp file: {}", inputTempFile, e);
-                }
-            }
         }
     }
 

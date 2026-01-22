@@ -109,8 +109,7 @@ public class OptimaizeMetadataFilterTest extends CXFTestBase {
     @Test
     public void testTika() throws Exception {
         Response response = WebClient
-                .create(endPoint + TIKA_PATH)
-                .accept("application/json")
+                .create(endPoint + TIKA_PATH + "/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
 
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);

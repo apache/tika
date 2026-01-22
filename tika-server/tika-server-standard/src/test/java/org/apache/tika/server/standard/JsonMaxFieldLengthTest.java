@@ -82,8 +82,7 @@ public class JsonMaxFieldLengthTest extends CXFTestBase {
                 .toString()
                 .getBytes(UTF_8));
         Response response = WebClient
-                .create(endPoint + TIKA_PATH + "/text")
-                .accept("application/json")
+                .create(endPoint + TIKA_PATH + "/json/text")
                 .put(Files.newInputStream(tmp));
         Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(((InputStream) response.getEntity()), StandardCharsets.UTF_8));
         String t = metadata.get(TikaCoreProperties.TIKA_CONTENT);

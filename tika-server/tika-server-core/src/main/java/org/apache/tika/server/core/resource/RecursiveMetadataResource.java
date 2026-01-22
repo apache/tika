@@ -114,6 +114,7 @@ public class RecursiveMetadataResource {
     @Path("form{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
     public Response getMetadataFromMultipart(Attachment att, @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName) throws Exception {
         try (TikaInputStream tis = TikaInputStream.get(att.getObject(InputStream.class))) {
+            tis.getPath(); // Spool to temp file for pipes-based parsing
             List<Metadata> metadataList = parseMetadata(tis, new Metadata(), att.getHeaders(),
                     buildHandlerConfig(att.getHeaders(), handlerTypeName, ParseMode.RMETA));
             return Response.ok(new MetadataList(metadataList)).build();
@@ -187,6 +188,7 @@ public class RecursiveMetadataResource {
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName) throws Exception {
         Metadata metadata = new Metadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
+            tis.getPath(); // Spool to temp file for pipes-based parsing
             List<Metadata> metadataList = parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(),
                     buildHandlerConfig(httpHeaders.getRequestHeaders(), handlerTypeName, ParseMode.RMETA));
             return Response.ok(new MetadataList(metadataList)).build();
