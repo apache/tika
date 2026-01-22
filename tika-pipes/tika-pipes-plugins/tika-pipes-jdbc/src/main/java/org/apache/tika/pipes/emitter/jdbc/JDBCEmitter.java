@@ -183,7 +183,11 @@ public class JDBCEmitter extends AbstractEmitter implements Closeable {
     @Override
     public void emit(List<? extends EmitData> emitData) throws IOException {
         for (EmitData d : emitData) {
-            emit(d.getEmitKey(), d.getMetadataList(), d.getParseContext());
+            ParseContext parseContext = d.getParseContext();
+            if (parseContext == null) {
+                parseContext = new ParseContext();
+            }
+            emit(d.getEmitKey(), d.getMetadataList(), parseContext);
         }
     }
 

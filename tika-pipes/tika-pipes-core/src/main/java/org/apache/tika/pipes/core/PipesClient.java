@@ -24,13 +24,14 @@ import static org.apache.tika.pipes.core.PipesClient.COMMANDS.ACK;
 import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.FINISHED;
 import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.READY;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -49,7 +50,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,6 +62,7 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
+import org.apache.tika.pipes.core.serialization.JsonPipesIpc;
 import org.apache.tika.pipes.core.server.IntermediateResult;
 import org.apache.tika.pipes.core.server.PipesServer;
 import org.apache.tika.utils.ExceptionUtils;
@@ -254,14 +255,7 @@ public class PipesClient implements Closeable {
 
     private void writeTask(FetchEmitTuple t) throws IOException {
         LOG.debug("pipesClientId={}: sending NEW_REQUEST for id={}", pipesClientId, t.getId());
-        UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream
-                .builder()
-                .get();
-        try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
-            objectOutputStream.writeObject(t);
-        }
-
-        byte[] bytes = bos.toByteArray();
+        byte[] bytes = JsonPipesIpc.toBytes(t);
         serverTuple.output.write(COMMANDS.NEW_REQUEST.getByte());
         serverTuple.output.writeInt(bytes.length);
         serverTuple.output.write(bytes);
@@ -312,7 +306,12 @@ public class PipesClient implements Closeable {
                         lastUpdate = Instant.now();
                         break;
                     case FINISHED:
-                        return readResult(PipesResult.class);
+                        PipesResult result = readResult(PipesResult.class);
+                        // Restore ParseContext from original FetchEmitTuple (not serialized back from server)
+                        if (result.emitData() instanceof EmitDataImpl emitDataImpl) {
+                            emitDataImpl.setParseContext(t.getParseContext());
+                        }
+                        return result;
                 }
             } catch (SocketTimeoutException e) {
                 LOG.warn("clientId={}: Socket timeout exception while waiting for server", pipesClientId, e);
@@ -419,19 +418,12 @@ public class PipesClient implements Closeable {
         return status;
     }
 
-    private <T> T readResult(Class<? extends T> clazz) throws IOException {
+    private <T> T readResult(Class<T> clazz) throws IOException {
         int len = serverTuple.input.readInt();
         byte[] bytes = new byte[len];
         serverTuple.input.readFully(bytes);
         writeAck();
-        try (ObjectInputStream objectInputStream = new ObjectInputStream(UnsynchronizedByteArrayInputStream
-                .builder()
-                .setByteArray(bytes)
-                .get())) {
-            return clazz.cast(objectInputStream.readObject());
-        } catch (ClassNotFoundException e) {
-            throw new IOException(e);
-        }
+        return JsonPipesIpc.fromBytes(bytes, clazz);
     }
 
     private void writeAck() throws IOException {
@@ -441,7 +433,9 @@ public class PipesClient implements Closeable {
 
 
     private void restart() throws InterruptedException, IOException, TimeoutException {
-        ServerSocket serverSocket = new ServerSocket(0, 50, InetAddress.getLoopbackAddress());
+        ServerSocket serverSocket = new ServerSocket();
+        serverSocket.setReuseAddress(true);
+        serverSocket.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 50);
         int port = serverSocket.getLocalPort();
         if (serverTuple != null && serverTuple.process != null) {
             int oldPort = serverTuple.serverSocket.getLocalPort();
@@ -492,8 +486,10 @@ public class PipesClient implements Closeable {
             }
         }
         socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMs());
-        serverTuple = new ServerTuple(process, serverSocket, socket, new DataInputStream(socket.getInputStream()),
-                new DataOutputStream(socket.getOutputStream()), tmpDir);
+        socket.setTcpNoDelay(true);
+        serverTuple = new ServerTuple(process, serverSocket, socket,
+                new DataInputStream(new BufferedInputStream(socket.getInputStream())),
+                new DataOutputStream(new BufferedOutputStream(socket.getOutputStream())), tmpDir);
         waitForStartup();
     }
 
