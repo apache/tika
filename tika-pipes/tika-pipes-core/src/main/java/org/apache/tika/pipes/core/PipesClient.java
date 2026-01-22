@@ -34,6 +34,10 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.net.StandardProtocolFamily;
+import java.net.UnixDomainSocketAddress;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -90,6 +94,10 @@ public class PipesClient implements Closeable {
     private static final long WAIT_ON_DESTROY_MS = 10000;
     public static final int SOCKET_CONNECT_TIMEOUT_MS = 60000;
     public static final int SOCKET_TIMEOUT_MS = 60000;
+    private static final String UDS_SOCKET_FILENAME = "tika-pipes.sock";
+
+    // Cached UDS support detection result (null = not yet tested)
+    private static volatile Boolean udsSupported = null;
 
 
     private final PipesConfig pipesConfig;
@@ -105,6 +113,68 @@ public class PipesClient implements Closeable {
         this.pipesClientId = CLIENT_COUNTER.getAndIncrement();
         this.shutdownHook = new Thread(this::cleanupOnShutdown, "PipesClient-shutdown-" + pipesClientId);
         Runtime.getRuntime().addShutdownHook(shutdownHook);
+    }
+
+    /**
+     * Tests if Unix Domain Sockets are supported on this system.
+     * Result is cached after first check.
+     *
+     * @return true if UDS is supported, false otherwise
+     */
+    public static boolean isUdsSupported() {
+        if (udsSupported != null) {
+            return udsSupported;
+        }
+        synchronized (PipesClient.class) {
+            if (udsSupported != null) {
+                return udsSupported;
+            }
+            udsSupported = testUdsSupport();
+            LOG.info("Unix Domain Socket support: {}", udsSupported);
+            return udsSupported;
+        }
+    }
+
+    private static boolean testUdsSupport() {
+        Path tmpDir = null;
+        Path testSocketPath = null;
+        try {
+            // Create a temporary socket file to test UDS support
+            tmpDir = Files.createTempDirectory("tika-uds-test-");
+            testSocketPath = tmpDir.resolve("test.sock");
+
+            // Try to create a Unix domain server socket
+            UnixDomainSocketAddress address = UnixDomainSocketAddress.of(testSocketPath);
+            try (ServerSocketChannel serverChannel = ServerSocketChannel.open(StandardProtocolFamily.UNIX)) {
+                serverChannel.bind(address);
+                // If we get here, UDS is supported
+                return true;
+            }
+        } catch (UnsupportedOperationException e) {
+            // UDS not supported on this platform
+            LOG.debug("UDS not supported: {}", e.getMessage());
+            return false;
+        } catch (Exception e) {
+            // Some other error - assume UDS not supported
+            LOG.debug("UDS test failed: {}", e.getMessage());
+            return false;
+        } finally {
+            // Clean up test socket and directory
+            if (testSocketPath != null) {
+                try {
+                    Files.deleteIfExists(testSocketPath);
+                } catch (IOException ignored) {
+                    // ignore cleanup errors
+                }
+            }
+            if (tmpDir != null) {
+                try {
+                    Files.deleteIfExists(tmpDir);
+                } catch (IOException ignored) {
+                    // ignore cleanup errors
+                }
+            }
+        }
     }
 
     private void cleanupOnShutdown() {
@@ -170,8 +240,19 @@ public class PipesClient implements Closeable {
         tryToClose(serverTuple.input, exceptions);
         tryToClose(serverTuple.output, exceptions);
         tryToClose(serverTuple.socket, exceptions);
+        tryToClose(serverTuple.socketChannel, exceptions);
         tryToClose(serverTuple.serverSocket, exceptions);
+        tryToClose(serverTuple.serverSocketChannel, exceptions);
         destroyForcibly();
+
+        // Clean up UDS socket file if present
+        if (serverTuple.udsPath != null) {
+            try {
+                Files.deleteIfExists(serverTuple.udsPath);
+            } catch (IOException e) {
+                LOG.warn("Failed to delete UDS socket file: {}", serverTuple.udsPath);
+            }
+        }
 
         deleteDir(serverTuple.tmpDir);
         serverTuple = null;
@@ -441,24 +522,38 @@ public class PipesClient implements Closeable {
 
 
     private void restart() throws InterruptedException, IOException, TimeoutException {
-        ServerSocket serverSocket = new ServerSocket(0, 50, InetAddress.getLoopbackAddress());
-        int port = serverSocket.getLocalPort();
         if (serverTuple != null && serverTuple.process != null) {
-            int oldPort = serverTuple.serverSocket.getLocalPort();
             shutItAllDown();
-            LOG.info("clientId={}: restarting process on port={} (old port was {})", pipesClientId, port, oldPort);
-        } else {
-            LOG.info("clientId={}: starting process on port={}", pipesClientId, port);
         }
+
         Path tmpDir = Files.createTempDirectory("pipes-server-" + pipesClientId + "-");
-        ProcessBuilder pb = new ProcessBuilder(getCommandline(port, tmpDir));
+
+        if (isUdsSupported()) {
+            restartWithUds(tmpDir);
+        } else {
+            restartWithTcp(tmpDir);
+        }
+        waitForStartup();
+    }
+
+    private void restartWithUds(Path tmpDir) throws IOException, InterruptedException {
+        Path udsPath = tmpDir.resolve(UDS_SOCKET_FILENAME);
+        UnixDomainSocketAddress address = UnixDomainSocketAddress.of(udsPath);
+        ServerSocketChannel serverSocketChannel = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
+        serverSocketChannel.bind(address);
+        serverSocketChannel.configureBlocking(false); // Non-blocking for polling
+
+        LOG.info("clientId={}: starting process with UDS at {}", pipesClientId, udsPath);
+
+        ProcessBuilder pb = new ProcessBuilder(getCommandlineUds(udsPath, tmpDir));
         pb.inheritIO();
-        Process process = null;
+        Process process;
         try {
             process = pb.start();
         } catch (Exception e) {
+            serverSocketChannel.close();
+            Files.deleteIfExists(udsPath);
             deleteDir(tmpDir);
-            //Do we ever want this to be not fatal?!
             LOG.error("clientId={}: failed to start server", pipesClientId, e);
             String msg = "Failed to start server process";
             if (e.getMessage() != null) {
@@ -466,6 +561,66 @@ public class PipesClient implements Closeable {
             }
             throw new ServerInitializationException(msg, e);
         }
+
+        // Poll for connection with periodic checks if process is still alive
+        SocketChannel socketChannel = null;
+        long startTime = System.currentTimeMillis();
+        while (socketChannel == null) {
+            socketChannel = serverSocketChannel.accept();
+            if (socketChannel == null) {
+                // Check if the process died before connecting
+                if (!process.isAlive()) {
+                    int exitValue = process.exitValue();
+                    LOG.error("clientId={}: Process exited with code {} before connecting to socket", pipesClientId, exitValue);
+                    serverSocketChannel.close();
+                    Files.deleteIfExists(udsPath);
+                    deleteDir(tmpDir);
+                    throw new ServerInitializationException("Process failed to start (exit code " + exitValue + "). Check JVM arguments and classpath.");
+                }
+                // Check if we've exceeded the overall timeout
+                long elapsed = System.currentTimeMillis() - startTime;
+                if (elapsed > SOCKET_CONNECT_TIMEOUT_MS) {
+                    LOG.error("clientId={}: Timed out waiting for server to connect after {}ms", pipesClientId, elapsed);
+                    serverSocketChannel.close();
+                    Files.deleteIfExists(udsPath);
+                    deleteDir(tmpDir);
+                    throw new ServerInitializationException("Server did not connect within " + SOCKET_CONNECT_TIMEOUT_MS + "ms");
+                }
+                // Sleep briefly before polling again
+                Thread.sleep(100);
+            }
+        }
+
+        socketChannel.configureBlocking(true);
+        Socket socket = socketChannel.socket();
+        socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMs());
+        serverTuple = new ServerTuple(process, null, serverSocketChannel, socket, socketChannel,
+                new DataInputStream(socket.getInputStream()),
+                new DataOutputStream(socket.getOutputStream()), tmpDir, udsPath);
+    }
+
+    private void restartWithTcp(Path tmpDir) throws IOException, InterruptedException {
+        ServerSocket serverSocket = new ServerSocket(0, 50, InetAddress.getLoopbackAddress());
+        int port = serverSocket.getLocalPort();
+
+        LOG.info("clientId={}: starting process on port={}", pipesClientId, port);
+
+        ProcessBuilder pb = new ProcessBuilder(getCommandlineTcp(port, tmpDir));
+        pb.inheritIO();
+        Process process;
+        try {
+            process = pb.start();
+        } catch (Exception e) {
+            serverSocket.close();
+            deleteDir(tmpDir);
+            LOG.error("clientId={}: failed to start server", pipesClientId, e);
+            String msg = "Failed to start server process";
+            if (e.getMessage() != null) {
+                msg += ": " + e.getMessage();
+            }
+            throw new ServerInitializationException(msg, e);
+        }
+
         // Poll for connection with periodic checks if process is still alive
         serverSocket.setSoTimeout(1000); // 1 second timeout for each poll
         Socket socket = null;
@@ -492,9 +647,9 @@ public class PipesClient implements Closeable {
             }
         }
         socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMs());
-        serverTuple = new ServerTuple(process, serverSocket, socket, new DataInputStream(socket.getInputStream()),
-                new DataOutputStream(socket.getOutputStream()), tmpDir);
-        waitForStartup();
+        serverTuple = new ServerTuple(process, serverSocket, null, socket, null,
+                new DataInputStream(socket.getInputStream()),
+                new DataOutputStream(socket.getOutputStream()), tmpDir, null);
     }
 
     private void waitForStartup() throws IOException {
@@ -536,7 +691,25 @@ public class PipesClient implements Closeable {
         }
     }
 
-    private String[] getCommandline(int port, Path tmpDir) {
+    private String[] getCommandlineTcp(int port, Path tmpDir) {
+        List<String> commandLine = buildBaseCommandLine(tmpDir);
+        commandLine.add("--port");
+        commandLine.add(Integer.toString(port));
+        commandLine.add(tikaConfigPath.toAbsolutePath().toString());
+        LOG.debug("pipesClientId={}: commandline: {}", pipesClientId, commandLine);
+        return commandLine.toArray(new String[0]);
+    }
+
+    private String[] getCommandlineUds(Path udsPath, Path tmpDir) {
+        List<String> commandLine = buildBaseCommandLine(tmpDir);
+        commandLine.add("--uds");
+        commandLine.add(udsPath.toAbsolutePath().toString());
+        commandLine.add(tikaConfigPath.toAbsolutePath().toString());
+        LOG.debug("pipesClientId={}: commandline: {}", pipesClientId, commandLine);
+        return commandLine.toArray(new String[0]);
+    }
+
+    private List<String> buildBaseCommandLine(Path tmpDir) {
         List<String> configArgs = pipesConfig.getForkedJvmArgs();
         boolean hasClassPath = false;
         boolean hasHeadless = false;
@@ -589,15 +762,13 @@ public class PipesClient implements Closeable {
         commandLine.addAll(configArgs);
         commandLine.add("-Djava.io.tmpdir=" + tmpDir.toAbsolutePath());
         commandLine.add("org.apache.tika.pipes.core.server.PipesServer");
-
-        commandLine.add(Integer.toString(port));
-        commandLine.add(tikaConfigPath.toAbsolutePath().toString());
-        LOG.debug("pipesClientId={}: commandline: {}", pipesClientId, commandLine);
-        return commandLine.toArray(new String[0]);
+        return commandLine;
     }
 
-    private record ServerTuple(Process process, ServerSocket serverSocket, Socket socket,
-                               DataInputStream input, DataOutputStream output, Path tmpDir) {
+    private record ServerTuple(Process process, ServerSocket serverSocket,
+                               ServerSocketChannel serverSocketChannel, Socket socket,
+                               SocketChannel socketChannel, DataInputStream input,
+                               DataOutputStream output, Path tmpDir, Path udsPath) {
 
     }
 

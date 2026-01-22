@@ -31,6 +31,9 @@ import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.StandardProtocolFamily;
+import java.net.UnixDomainSocketAddress;
+import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -160,14 +163,27 @@ public class PipesServer implements AutoCloseable {
     private final ExecutorCompletionService<PipesResult> executorCompletionService = new ExecutorCompletionService<>(executorService);
     private final EmitStrategy emitStrategy;
 
-    public static PipesServer load(int port, Path tikaConfigPath) throws Exception {
-            String pipesClientId = System.getProperty("pipesClientId", "unknown");
-            LOG.debug("pipesClientId={}: connecting to client on port={}", pipesClientId, port);
-            Socket socket = new Socket();
-            socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), PipesClient.SOCKET_CONNECT_TIMEOUT_MS);
+    public static PipesServer loadWithTcp(int port, Path tikaConfigPath) throws Exception {
+        String pipesClientId = System.getProperty("pipesClientId", "unknown");
+        LOG.debug("pipesClientId={}: connecting to client on port={}", pipesClientId, port);
+        Socket socket = new Socket();
+        socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), PipesClient.SOCKET_CONNECT_TIMEOUT_MS);
+        return loadWithSocket(socket, tikaConfigPath, pipesClientId);
+    }
 
-            DataInputStream dis = new DataInputStream(socket.getInputStream());
-            DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+    public static PipesServer loadWithUds(Path udsPath, Path tikaConfigPath) throws Exception {
+        String pipesClientId = System.getProperty("pipesClientId", "unknown");
+        LOG.debug("pipesClientId={}: connecting to client via UDS at {}", pipesClientId, udsPath);
+        UnixDomainSocketAddress address = UnixDomainSocketAddress.of(udsPath);
+        SocketChannel socketChannel = SocketChannel.open(StandardProtocolFamily.UNIX);
+        socketChannel.connect(address);
+        Socket socket = socketChannel.socket();
+        return loadWithSocket(socket, tikaConfigPath, pipesClientId);
+    }
+
+    private static PipesServer loadWithSocket(Socket socket, Path tikaConfigPath, String pipesClientId) throws Exception {
+        DataInputStream dis = new DataInputStream(socket.getInputStream());
+        DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
         try {
             TikaLoader tikaLoader = TikaLoader.load(tikaConfigPath);
             TikaJsonConfig tikaJsonConfig = tikaLoader.getConfig();
@@ -242,11 +258,35 @@ public class PipesServer implements AutoCloseable {
 
 
     public static void main(String[] args) throws Exception {
-        int port = Integer.parseInt(args[0]);
-        Path tikaConfig = Paths.get(args[1]);
+        if (args.length < 3) {
+            System.err.println("Usage: PipesServer --port <port> <tikaConfigPath>");
+            System.err.println("   or: PipesServer --uds <socketPath> <tikaConfigPath>");
+            System.exit(1);
+        }
+
+        String mode = args[0];
+        String connectionArg = args[1];
+        Path tikaConfig = Paths.get(args[2]);
         String pipesClientId = System.getProperty("pipesClientId", "unknown");
-        LOG.debug("pipesClientId={}: starting pipes server on port={}", pipesClientId, port);
-        try (PipesServer server = PipesServer.load(port, tikaConfig)) {
+
+        PipesServer server;
+        if ("--port".equals(mode)) {
+            int port = Integer.parseInt(connectionArg);
+            LOG.debug("pipesClientId={}: starting pipes server on port={}", pipesClientId, port);
+            server = PipesServer.loadWithTcp(port, tikaConfig);
+        } else if ("--uds".equals(mode)) {
+            Path udsPath = Paths.get(connectionArg);
+            LOG.debug("pipesClientId={}: starting pipes server with UDS at {}", pipesClientId, udsPath);
+            server = PipesServer.loadWithUds(udsPath, tikaConfig);
+        } else {
+            System.err.println("Unknown mode: " + mode);
+            System.err.println("Usage: PipesServer --port <port> <tikaConfigPath>");
+            System.err.println("   or: PipesServer --uds <socketPath> <tikaConfigPath>");
+            System.exit(1);
+            return; // unreachable but makes compiler happy
+        }
+
+        try (server) {
             server.mainLoop();
         } catch (Throwable t) {
             LOG.error("pipesClientId={}: crashed", pipesClientId, t);
