@@ -108,6 +108,11 @@
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
           <archive>
+            <manifest>
+              <mainClass>org.apache.tika.server.core.TikaServerCli</mainClass>
+              <addClasspath>true</addClasspath>
+              <classpathPrefix>lib/</classpathPrefix>
+            </manifest>
             <manifestEntries>
               <Automatic-Module-Name>org.apache.tika.server.standard</Automatic-Module-Name>
             </manifestEntries>
@@ -119,13 +124,13 @@
         <artifactId>maven-dependency-plugin</artifactId>
         <executions>
           <execution>
-            <id>copy-plugins</id>
+            <id>unpack-plugins</id>
             <phase>process-test-resources</phase>
             <goals>
-              <goal>copy</goal>
+              <goal>unpack</goal>
             </goals>
             <configuration>
-              <outputDirectory>${project.build.directory}/plugins</outputDirectory>
+              <outputDirectory>${project.build.directory}/plugins/tika-pipes-file-system</outputDirectory>
               <artifactItems>
                 <artifactItem>
                   <groupId>org.apache.tika</groupId>

@@ -98,7 +98,7 @@ public class MetadataResource {
     @Produces({"text/csv", "application/json"})
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
         Metadata metadata = new Metadata();
-        try (TikaInputStream tis = TikaResource.getInputStream(is, metadata, httpHeaders, info)) {
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
             return Response
                     .ok(parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(), info))
                     .build();
@@ -138,7 +138,7 @@ public class MetadataResource {
         Response.Status defaultErrorResponse = Response.Status.BAD_REQUEST;
         Metadata metadata = new Metadata();
         boolean success = false;
-        try (TikaInputStream tis = TikaResource.getInputStream(is, metadata, httpHeaders, info)) {
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
             parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(), info);
             // once we've parsed the document successfully, we should use NOT_FOUND
             // if we did not see the field

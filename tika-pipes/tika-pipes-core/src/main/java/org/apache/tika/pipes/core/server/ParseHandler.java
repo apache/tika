@@ -34,6 +34,7 @@ import org.apache.tika.digest.Digester;
 import org.apache.tika.digest.SkipContainerDocumentDigest;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.extractor.EmbeddedDocumentBytesHandler;
 import org.apache.tika.io.TikaInputStream;
@@ -221,11 +222,15 @@ class ParseHandler {
         //queue better be empty. we deserve an exception if not
         intermediateResult.add(metadata);
         countDownLatch.await();
+        boolean writeLimitReached = false;
         try {
             autoDetectParser.parse(stream, handler, metadata, parseContext);
         } catch (SAXException e) {
             containerException = ExceptionUtils.getStackTrace(e);
             LOG.warn("sax problem:" + fetchEmitTuple.getId(), e);
+            if (WriteLimitReachedException.isWriteLimitReached(e)) {
+                writeLimitReached = true;
+            }
         } catch (EncryptedDocumentException e) {
             containerException = ExceptionUtils.getStackTrace(e);
             LOG.warn("encrypted document:" + fetchEmitTuple.getId(), e);
@@ -239,6 +244,9 @@ class ParseHandler {
             metadata.add(TikaCoreProperties.TIKA_CONTENT, handler.toString());
             if (containerException != null) {
                 metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION, containerException);
+            }
+            if (writeLimitReached) {
+                metadata.set(TikaCoreProperties.WRITE_LIMIT_REACHED, true);
             }
             if (LOG.isTraceEnabled()) {
                 LOG.trace("timer -- parse only time: {} ms", System.currentTimeMillis() - start);

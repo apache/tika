@@ -33,7 +33,6 @@ public class TikaVersion {
     @GET
     @Produces("text/plain")
     public String getVersion() {
-        TikaResource.checkIsOperating();
         return tika.toString();
     }
 }

@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser;
 
+import java.io.Serializable;
+
 import org.apache.tika.metadata.Metadata;
 
 /**
@@ -31,7 +33,7 @@ import org.apache.tika.metadata.Metadata;
  *
  * @since Apache Tika 1.1
  */
-public interface PasswordProvider {
+public interface PasswordProvider extends Serializable {
     /**
      * Looks up the password for a document with the given metadata,
      * and returns it for the Parser. If no password is available

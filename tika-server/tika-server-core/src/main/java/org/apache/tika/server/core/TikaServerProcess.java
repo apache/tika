@@ -18,6 +18,8 @@ package org.apache.tika.server.core;
 
 import java.io.IOException;
 import java.net.BindException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +27,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import org.apache.commons.cli.CommandLine;
@@ -58,13 +61,15 @@ import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.pipes.core.emitter.EmitterManager;
-import org.apache.tika.pipes.core.fetcher.FetcherManager;
-import org.apache.tika.plugins.TikaPluginManager;
+import org.apache.tika.pipes.core.EmitStrategy;
+import org.apache.tika.pipes.core.EmitStrategyConfig;
+import org.apache.tika.pipes.core.PipesConfig;
+import org.apache.tika.pipes.core.PipesParser;
 import org.apache.tika.server.core.resource.AsyncResource;
 import org.apache.tika.server.core.resource.DetectorResource;
 import org.apache.tika.server.core.resource.LanguageResource;
 import org.apache.tika.server.core.resource.MetadataResource;
+import org.apache.tika.server.core.resource.PipesParsingHelper;
 import org.apache.tika.server.core.resource.PipesResource;
 import org.apache.tika.server.core.resource.RecursiveMetadataResource;
 import org.apache.tika.server.core.resource.TikaDetectors;
@@ -120,7 +125,7 @@ public class TikaServerProcess {
             LOG.debug("forked config: {}", tikaServerConfig);
 
             ServerDetails serverDetails = initServer(tikaServerConfig);
-            startServer(serverDetails, tikaServerConfig);
+            startServer(serverDetails);
 
         } catch (Exception e) {
             LOG.error("Can't start: ", e);
@@ -138,8 +143,7 @@ public class TikaServerProcess {
         return isBindException(e.getCause());
     }
 
-    private static void startServer(ServerDetails serverDetails, TikaServerConfig tikaServerConfig) throws Exception {
-
+    private static void startServer(ServerDetails serverDetails) {
         try {
             //start the server
             Server server = serverDetails.sf.create();
@@ -150,9 +154,6 @@ public class TikaServerProcess {
             }
             System.exit(DO_NOT_RESTART_EXIT_VALUE);
         }
-        Thread serverThread = new Thread(new ServerStatusWatcher(serverDetails.serverStatus, tikaServerConfig));
-        serverThread.setDaemon(true);
-        serverThread.start();
         LOG.info("Started Apache Tika server {} at {}", serverDetails.serverId, serverDetails.url);
     }
 
@@ -171,26 +172,16 @@ public class TikaServerProcess {
             tikaLoader = TikaLoader.loadDefault();
         }
 
-        //TODO -- clean this up -- only load as necessary
-        //REALLY NEED TODO THIS
-        FetcherManager fetcherManager = null;
-        InputStreamFactory inputStreamFactory = null;
-        if (tikaServerConfig.isEnableUnsecureFeatures()) {
-            TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaServerConfig.getConfigPath());
-            TikaPluginManager pluginManager = TikaPluginManager.load(tikaJsonConfig);
-            fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig);
-            inputStreamFactory = new FetcherStreamFactory(fetcherManager);
-        } else {
-            inputStreamFactory = new DefaultInputStreamFactory();
+        ServerStatus serverStatus = new ServerStatus();
+
+        // Initialize pipes-based parsing only if /tika or /rmeta endpoints are enabled
+        PipesParsingHelper pipesParsingHelper = null;
+        if (needsPipesParsingHelper(tikaServerConfig)) {
+            pipesParsingHelper = initPipesParsingHelper(tikaServerConfig);
+            LOG.info("Pipes-based parsing enabled for /tika and /rmeta endpoints");
         }
-        //TODO -- figure out how to turn this back on
-        //logFetchersAndEmitters(tikaServerConfig.isEnableUnsecureFeatures(), fetcherManager,
-        //      emitterManager);
 
-        ServerStatus serverStatus;
-
-        serverStatus = new ServerStatus();
-        TikaResource.init(tikaLoader, tikaServerConfig, inputStreamFactory, serverStatus);
+        TikaResource.init(tikaLoader, serverStatus, pipesParsingHelper);
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
 
         List<ResourceProvider> resourceProviders = new ArrayList<>();
@@ -318,7 +309,7 @@ public class TikaServerProcess {
             resourceProviders.add(new SingletonResourceProvider(new RecursiveMetadataResource()));
             resourceProviders.add(new SingletonResourceProvider(new DetectorResource(serverStatus)));
             resourceProviders.add(new SingletonResourceProvider(new LanguageResource()));
-            resourceProviders.add(new SingletonResourceProvider(new TranslateResource(serverStatus, tikaServerConfig.getTaskTimeoutMillis())));
+            resourceProviders.add(new SingletonResourceProvider(new TranslateResource(serverStatus)));
             resourceProviders.add(new SingletonResourceProvider(new TikaResource()));
             resourceProviders.add(new SingletonResourceProvider(new UnpackerResource()));
             resourceProviders.add(new SingletonResourceProvider(new TikaMimeTypes()));
@@ -341,7 +332,7 @@ public class TikaServerProcess {
                 } else if ("language".equals(endPoint)) {
                     resourceProviders.add(new SingletonResourceProvider(new LanguageResource()));
                 } else if ("translate".equals(endPoint)) {
-                    resourceProviders.add(new SingletonResourceProvider(new TranslateResource(serverStatus, tikaServerConfig.getTaskTimeoutMillis())));
+                    resourceProviders.add(new SingletonResourceProvider(new TranslateResource(serverStatus)));
                 } else if ("tika".equals(endPoint)) {
                     resourceProviders.add(new SingletonResourceProvider(new TikaResource()));
                 } else if ("unpack".equals(endPoint)) {
@@ -394,55 +385,6 @@ public class TikaServerProcess {
         return resourceProviders;
     }
 
-    private static void logFetchersAndEmitters(boolean enableUnsecureFeatures, FetcherManager fetcherManager, EmitterManager emitterManager) {
-        if (enableUnsecureFeatures) {
-            StringBuilder sb = new StringBuilder();
-            Set<String> supportedFetchers = fetcherManager.getSupported();
-            sb.append("enableSecureFeatures has been selected.\n");
-            if (supportedFetchers.size() == 0) {
-                sb.append("There are no fetchers specified in the TikaConfig");
-            } else {
-                sb.append("The following fetchers are available to whomever has " + "access to this server:\n");
-                for (String p : supportedFetchers) {
-                    sb
-                            .append(p)
-                            .append("\n");
-                }
-            }
-            Set<String> emitters = emitterManager.getSupported();
-            if (supportedFetchers.size() == 0) {
-                sb.append("There are no emitters specified in the TikaConfig");
-            } else {
-                sb.append("The following emitters are available to whomever has " + "access to this server:\n");
-                for (String e : emitters) {
-                    sb
-                            .append(e)
-                            .append("\n");
-                }
-            }
-            LOG.info(sb.toString());
-        } else {
-            if (emitterManager
-                    .getSupported()
-                    .size() > 0) {
-                String warn = "enableUnsecureFeatures has not been set to 'true' in the server " + "config file.\n" + "The " + emitterManager
-                        .getSupported()
-                        .size() + " emitter(s) that you've\n" + "specified in TikaConfig will not be available on the /emit " + "or /async endpoints.\n" +
-                        "To enable your emitters, start tika-server with " + "<enableUnsecureFeatures>true</enableUnsecureFeatures> " + "parameter in " + "the TikaConfig\n\n";
-                LOG.warn(warn);
-            }
-            if (emitterManager
-                    .getSupported()
-                    .size() > 0) {
-                String warn = "enableUnsecureFeatures has not been set to 'true' in the server " + "config file.\n" + "The " + emitterManager
-                        .getSupported()
-                        .size() + " fetcher(s) that you've\n" + "specified in TikaConfig will not be available on the /emit " + "or /async endpoints.\n" +
-                        "To enable your emitters, start tika-server with " + "<enableUnsecureFeatures>true</enableUnsecureFeatures> " + "parameter in " + "the TikaConfig\n\n";
-                LOG.warn(warn);
-            }
-        }
-    }
-
     private static Collection<? extends ResourceProvider> loadResourceServices(ServerStatus serverStatus) {
         List<TikaServerResource> resources = new ServiceLoader(TikaServerProcess.class.getClassLoader()).loadServiceProviders(TikaServerResource.class);
         List<ResourceProvider> providers = new ArrayList<>();
@@ -458,6 +400,109 @@ public class TikaServerProcess {
 
     private static Collection<?> loadWriterServices() {
         return new ServiceLoader(TikaServerProcess.class.getClassLoader()).loadServiceProviders(org.apache.tika.server.core.writer.TikaServerWriter.class);
+    }
+
+    /**
+     * Determines if PipesParsingHelper is needed based on configured endpoints.
+     * It's needed when /tika or /rmeta endpoints are enabled (either explicitly or by default).
+     */
+    private static boolean needsPipesParsingHelper(TikaServerConfig tikaServerConfig) {
+        List<String> endpoints = tikaServerConfig.getEndpoints();
+        // If no endpoints specified, all default endpoints are loaded (including tika and rmeta)
+        if (endpoints == null || endpoints.isEmpty()) {
+            return true;
+        }
+        // Check if tika or rmeta are in the configured endpoints
+        return endpoints.contains("tika") || endpoints.contains("rmeta");
+    }
+
+    /**
+     * Initializes the PipesParsingHelper for pipes-based parsing with process isolation.
+     * <p>
+     * The PipesParser will be configured with PASSBACK_ALL emit strategy so that
+     * parsed results are returned through the socket connection.
+     * <p>
+     * If no config file is provided, a minimal default configuration will be created.
+     * The plugin-roots will default to a "plugins" directory at the same level as the server jar.
+     *
+     * @param tikaServerConfig the server configuration
+     * @return the PipesParsingHelper
+     * @throws Exception if pipes initialization fails
+     */
+    private static PipesParsingHelper initPipesParsingHelper(TikaServerConfig tikaServerConfig) throws Exception {
+        // Load or create config
+        Path configPath;
+        if (tikaServerConfig.hasConfigFile()) {
+            configPath = tikaServerConfig.getConfigPath();
+        } else {
+            configPath = createDefaultConfig();
+        }
+
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(configPath);
+
+        // Load or create PipesConfig with defaults
+        PipesConfig pipesConfig = tikaJsonConfig.deserialize("pipes", PipesConfig.class);
+        if (pipesConfig == null) {
+            pipesConfig = new PipesConfig();
+        }
+
+        // Use PASSBACK_ALL strategy: results are returned through the socket
+        pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.PASSBACK_ALL));
+
+        // Create PipesParser
+        PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, configPath);
+
+        // Create and return the helper
+        PipesParsingHelper helper = new PipesParsingHelper(pipesParser, pipesConfig);
+
+        // Register shutdown hook to clean up PipesParser
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                LOG.info("Shutting down PipesParser");
+                pipesParser.close();
+            } catch (Exception e) {
+                LOG.warn("Error closing PipesParser", e);
+            }
+        }));
+
+        return helper;
+    }
+
+    /**
+     * Default plugins directory name, relative to current working directory.
+     */
+    private static final String DEFAULT_PLUGINS_DIR = "plugins";
+
+    /**
+     * Creates a default configuration file with plugin-roots set to the "plugins" directory
+     * relative to the current working directory.
+     */
+    private static Path createDefaultConfig() throws IOException {
+        Path pluginsDir = Path.of(DEFAULT_PLUGINS_DIR).toAbsolutePath();
+
+        String configJson = String.format(Locale.ROOT, """
+            {
+              "fetchers": {
+                "file-system-fetcher": {
+                  "file-system-fetcher": {
+                    "allowAbsolutePaths": true
+                  }
+                }
+              },
+              "pipes": {
+                "numClients": 4,
+                "timeoutMillis": 60000
+              },
+              "plugin-roots": "%s"
+            }
+            """, pluginsDir.toString().replace("\\", "/"));
+
+        Path tempConfig = Files.createTempFile("tika-server-default-config-", ".json");
+        Files.writeString(tempConfig, configJson);
+        tempConfig.toFile().deleteOnExit();
+
+        LOG.info("Created default config with plugin-roots: {}", pluginsDir);
+        return tempConfig;
     }
 
     private static class ServerDetails {

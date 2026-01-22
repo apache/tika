@@ -44,6 +44,10 @@
       <directory>${project.basedir}/bin</directory>
       <outputDirectory>bin</outputDirectory>
     </fileSet>
+    <fileSet>
+      <directory>${project.build.directory}/plugins</directory>
+      <outputDirectory>plugins</outputDirectory>
+    </fileSet>
   </fileSets>
   <files>
     <file>

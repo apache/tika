@@ -37,7 +37,8 @@ public class TikaServerStatus {
     @Produces("application/json")
     public Map<String, Object> getStatus() {
         Map<String, Object> map = new LinkedHashMap<>();
-        map.put("status", serverStatus.getStatus());
+        map.put("status", "OPERATING");
+        map.put("active_tasks", serverStatus.getTasks().size());
         map.put("millis_since_last_parse_started", serverStatus.getMillisSinceLastParseStarted());
         map.put("files_processed", serverStatus.getFilesProcessed());
         return map;

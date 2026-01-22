@@ -70,6 +70,11 @@ public class OptimaizeMetadataFilterTest extends CXFTestBase {
         return getClass().getResourceAsStream("/configs/tika-config-langdetect-optimaize-filter.json");
     }
 
+    @Override
+    protected InputStream getPipesConfigInputStream() {
+        return getClass().getResourceAsStream("/configs/tika-config-langdetect-optimaize-filter.json");
+    }
+
     @Test
     public void testMeta() throws Exception {
         Response response = WebClient
@@ -104,8 +109,7 @@ public class OptimaizeMetadataFilterTest extends CXFTestBase {
     @Test
     public void testTika() throws Exception {
         Response response = WebClient
-                .create(endPoint + TIKA_PATH)
-                .accept("application/json")
+                .create(endPoint + TIKA_PATH + "/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
 
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);

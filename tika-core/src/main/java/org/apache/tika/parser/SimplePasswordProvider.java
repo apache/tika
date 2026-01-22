@@ -37,6 +37,8 @@ import org.apache.tika.metadata.Metadata;
 @TikaComponent(contextKey = PasswordProvider.class)
 public class SimplePasswordProvider implements PasswordProvider {
 
+    private static final long serialVersionUID = 1L;
+
     private String password;
 
     public SimplePasswordProvider() {
