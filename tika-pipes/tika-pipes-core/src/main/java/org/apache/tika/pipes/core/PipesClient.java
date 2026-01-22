@@ -143,15 +143,24 @@ public class PipesClient implements Closeable {
             tmpDir = Files.createTempDirectory("tika-uds-test-");
             testSocketPath = tmpDir.resolve("test.sock");
 
-            // Try to create a Unix domain server socket
+            // Try to create a Unix domain server socket and verify full functionality
             UnixDomainSocketAddress address = UnixDomainSocketAddress.of(testSocketPath);
             try (ServerSocketChannel serverChannel = ServerSocketChannel.open(StandardProtocolFamily.UNIX)) {
                 serverChannel.bind(address);
-                // If we get here, UDS is supported
+                serverChannel.configureBlocking(false);
+
+                // Also test client-side connection and socket() call
+                // Some JDK implementations support UDS but don't support socketChannel.socket()
+                try (SocketChannel clientChannel = SocketChannel.open(StandardProtocolFamily.UNIX)) {
+                    clientChannel.connect(address);
+                    // This will throw UnsupportedOperationException on some JDKs
+                    clientChannel.socket();
+                }
+                // If we get here, UDS is fully supported
                 return true;
             }
         } catch (UnsupportedOperationException e) {
-            // UDS not supported on this platform
+            // UDS not supported on this platform (either channel creation or socket() call)
             LOG.debug("UDS not supported: {}", e.getMessage());
             return false;
         } catch (Exception e) {
