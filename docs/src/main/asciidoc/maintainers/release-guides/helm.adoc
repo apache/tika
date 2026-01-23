@@ -1,0 +1,138 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Releasing Tika Helm Charts
+
+This guide covers the process for releasing Apache Tika Helm charts.
+
+== Prerequisites
+
+=== Apache JFrog Artifactory Access
+
+You need permissions to release the Apache Tika Helm chart to the Apache Infra
+Artifactory instance. Access is controlled by ASF Infra and can be requested
+via a JIRA ticket with the "Artifactory" label.
+
+=== Repository Access
+
+Clone the tika-helm repository:
+
+[source,bash]
+----
+git clone https://github.com/apache/tika-helm
+cd tika-helm
+----
+
+Apache Tika committers should have existing access to this repository.
+
+=== Install Helm and Plugins
+
+Install Helm and the Artifactory plugin:
+
+[source,bash]
+----
+# Install Helm (macOS)
+brew install helm
+
+# Install the Artifactory push plugin
+helm plugin install https://github.com/belitre/helm-push-artifactory-plugin --version 1.0.2
+----
+
+== Docker Image Types
+
+The Helm chart deploys one of two upstream Docker image types:
+
+Minimal::
+Contains Apache Tika and base dependencies (Java only)
+
+Full::
+Includes Tika, dependencies, Tesseract OCR, GDAL, etc.
+
+The Helm Chart uses the *Full* image by default, though either can be specified
+during Kubernetes deployment.
+
+== Versioning
+
+tika-helm Charts follow the https://semver.org/spec/v2.0.0.html[Semantic Versioning 2.0.0]
+specification, regardless of upstream container image versioning.
+
+== Release Process
+
+=== Step 1: Update Chart Configuration
+
+For each new upstream tika-docker FULL release, update the following files:
+
+Chart.yaml::
+* Line 22: Update `version` (chart version)
+* Line 23: Update `appVersion` (must match upstream tika-docker FULL release tag)
+
+values.yaml::
+* Line 26: Update the default image tag
+
+=== Step 2: Commit and Tag
+
+Commit the changes and create a release tag:
+
+[source,bash]
+----
+export RELEASE_VERSION=v3.2.2
+
+git add -A
+git commit -m "Release tika-helm $RELEASE_VERSION"
+git push origin main
+
+git tag -a $RELEASE_VERSION -m "Release tika-helm $RELEASE_VERSION"
+git push --tags
+----
+
+=== Step 3: Create GitHub Release
+
+. Navigate to the pushed tag on GitHub
+. Click the three-dot menu
+. Select "Create release"
+. Add release notes and publish
+
+=== Step 4: Publish to Apache JFrog Artifactory
+
+Add the Tika Helm repository and push the chart:
+
+[source,bash]
+----
+# Add the Tika Helm repository
+helm repo add tika https://apache.jfrog.io/artifactory/tika
+
+# Set your credentials
+export HELM_REPO_USERNAME="your-apache-id"
+export HELM_REPO_PASSWORD="your-password"
+
+# Push the chart to Artifactory
+helm push-artifactory . https://apache.jfrog.io/artifactory/tika
+----
+
+== Post-Release
+
+After publishing the Helm chart:
+
+* Verify the chart is available at https://apache.jfrog.io/artifactory/tika
+* Test installing the chart in a Kubernetes cluster
+* Update any documentation referencing the chart version
+
+== Questions
+
+For questions about the Helm release process, contact:
+
+* dev@tika.apache.org mailing list

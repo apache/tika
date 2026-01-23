@@ -42,7 +42,16 @@ public enum ParseMode {
      * in tika-server. The result is a single metadata object with concatenated
      * content from all documents.
      */
-    CONCATENATE;
+    CONCATENATE,
+
+    /**
+     * Performs digest (if configured) and content type detection only.
+     * <p>
+     * No parsing occurs - embedded documents are not extracted and no content
+     * is returned. Use this mode when you only need file identification
+     * (mime type, hash) without text extraction.
+     */
+    NO_PARSE;
 
     /**
      * Parses a string to a ParseMode enum value.
@@ -61,7 +70,7 @@ public enum ParseMode {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(
                     "Invalid parse mode: '" + modeString + "'. " +
-                            "Must be one of: RMETA, CONCATENATE");
+                            "Must be one of: RMETA, CONCATENATE, NO_PARSE");
         }
     }
 }

@@ -196,6 +196,82 @@ public class PipesForkParserTest {
     }
 
     @Test
+    public void testNoParseMode() throws Exception {
+        // Create a simple test file
+        Path testFile = tempDir.resolve("test_no_parse.txt");
+        String content = "This content should NOT be extracted in NO_PARSE mode.";
+        Files.writeString(testFile, content);
+
+        PipesForkParserConfig config = new PipesForkParserConfig()
+                .setPluginsDir(PLUGINS_DIR)
+                .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
+                .setParseMode(ParseMode.NO_PARSE)
+                .setTimeoutMillis(60000);
+
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testFile)) {
+            PipesForkResult result = parser.parse(tis);
+
+            assertTrue(result.isSuccess(), "Parse should succeed. Status: " + result.getStatus()
+                    + ", message: " + result.getMessage());
+
+            // In NO_PARSE mode, there should be exactly one metadata object
+            List<Metadata> metadataList = result.getMetadataList();
+            assertEquals(1, metadataList.size(), "NO_PARSE mode should return single metadata");
+
+            // Content type should be detected
+            Metadata metadata = metadataList.get(0);
+            String contentType = metadata.get(Metadata.CONTENT_TYPE);
+            assertNotNull(contentType, "Content type should be detected");
+            assertTrue(contentType.contains("text/plain"),
+                    "Content type should be text/plain, got: " + contentType);
+
+            // No content should be extracted
+            String extractedContent = result.getContent();
+            assertTrue(extractedContent == null || extractedContent.isBlank(),
+                    "NO_PARSE mode should not extract content, got: " + extractedContent);
+        }
+    }
+
+    @Test
+    public void testNoParseModeWithZip() throws Exception {
+        // Test NO_PARSE mode with a zip file - should NOT extract embedded files
+        Path testZip = createZipWithEmbeddedFiles("test_no_parse.zip",
+                "embedded1.txt", "Content from first embedded file",
+                "embedded2.txt", "Content from second embedded file");
+
+        PipesForkParserConfig config = new PipesForkParserConfig()
+                .setPluginsDir(PLUGINS_DIR)
+                .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
+                .setParseMode(ParseMode.NO_PARSE)
+                .setTimeoutMillis(60000);
+
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testZip)) {
+            PipesForkResult result = parser.parse(tis);
+
+            assertTrue(result.isSuccess(), "Parse should succeed");
+
+            // Should have exactly one metadata object (no embedded file extraction)
+            List<Metadata> metadataList = result.getMetadataList();
+            assertEquals(1, metadataList.size(),
+                    "NO_PARSE mode should return only container metadata, not embedded files");
+
+            // Content type should be detected as zip
+            Metadata metadata = metadataList.get(0);
+            String contentType = metadata.get(Metadata.CONTENT_TYPE);
+            assertNotNull(contentType, "Content type should be detected");
+            assertTrue(contentType.contains("zip"),
+                    "Content type should be zip, got: " + contentType);
+
+            // No content should be extracted
+            String extractedContent = result.getContent();
+            assertTrue(extractedContent == null || extractedContent.isBlank(),
+                    "NO_PARSE mode should not extract content");
+        }
+    }
+
+    @Test
     public void testRmetaModeWithEmbedded() throws Exception {
         Path testZip = createZipWithEmbeddedFiles("test_rmeta_embedded.zip",
                 "file1.txt", "First file content",

@@ -1,0 +1,137 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= The Robustness of Apache Tika
+
+Running parsers on untrusted data carries inherent risks. In rare cases, Tika can
+encounter infinite loops or allocate unexpected amounts of memory (OutOfMemoryErrors).
+When processing documents at scale, you must implement protective measures.
+
+IMPORTANT: Avoid running Tika in the same process as critical infrastructure like
+indexers or search systems.
+
+== Process Isolation
+
+The primary defense against parser failures is process isolation. By running parsers
+in separate processes, you protect your main application from:
+
+* OutOfMemoryErrors
+* Infinite loops
+* Native code crashes
+* Resource exhaustion
+
+=== Tika 4.x
+
+**In Tika 4.x, xref:../pipes/index.adoc[Tika Pipes] is the recommended approach for
+robust document processing.** It provides:
+
+* Automatic process isolation
+* Fault tolerance and recovery
+* Scalable parallel processing
+* Unified architecture for all deployment scenarios
+
+Pipes can be used in multiple ways:
+
+* **Programmatically** - Via `PipesForkParser` in the `tika-pipes-fork-parser` module
+  (see xref:../using-tika/java-api/getting-started.adoc[Java API Getting Started])
+* **Via tika-server** - REST endpoints for pipes-based processing
+* **Via tika-grpc** - gRPC interface with pipes backend
+
+In Tika 4.x, the approach to robustness has been simplified. Previous versions offered
+four different forking mechanisms:
+
+[cols="1,2,1"]
+|===
+|Mechanism |Description |Status in 4.x
+
+|ForkParser
+|Spawned child processes for individual parse operations
+|Deprecated
+
+|tika-batch
+|Desktop/VM-scale batch processing
+|Deprecated
+
+|tika-server (forked mode)
+|REST server with forked parsing processes
+|Available, but Pipes recommended
+
+|tika-pipes
+|Scalable, fault-tolerant pipeline processing
+|*Recommended approach*
+|===
+
+=== Tika 3.x and Earlier
+
+If you are using Tika 3.x or earlier, you have several options for process isolation:
+
+ForkParser::
+Spawns child processes to protect against out-of-memory errors and infinite loops.
+Suitable for programmatic use in Java applications.
+
+tika-batch::
+For desktop/VM-scale processing (not cloud-scale):
++
+[source,bash]
+----
+java -jar tika-app.jar -i <input_dir> -o <output_dir>
+----
+
+tika-server::
+In version 2.x and later, parsing defaults to forked processes. Clients must handle
+tika-server restarts gracefully.
+
+tika-pipes::
+Available through programmatic use, tika-app `-a` option, or tika-server's `/async`
+and `/pipes` endpoints.
+
+== Security Testing and Prevention
+
+The Apache Tika team implements several measures to identify and prevent vulnerabilities:
+
+* **Regression testing** against ~2 million files from Common Crawl before releases
+* **Code reviews** of dependencies to identify vulnerability patterns
+* **Fuzzing modules** for automated vulnerability discovery
+* **Collaboration** with security researchers
+* **Maintained forks** of parsers with critical fixes (released independently when needed)
+* **Public documentation** of vulnerabilities at xref:../security.adoc[security page]
+
+== MockParser for Testing
+
+Tika provides a `MockParser` tool for testing your system's robustness. You can
+configure it to simulate various failure modes:
+
+* Infinite loops
+* OutOfMemoryErrors
+* Excessive runtime
+* Large output generation
+
+This allows you to verify that your integration handles parser failures gracefully.
+
+== Recommendations
+
+1. **Use Tika Pipes** (4.x) for production workloads with untrusted content
+2. **Isolate Tika** from critical systems - never run in the same JVM as your indexer
+3. **Set timeouts** for all parsing operations
+4. **Monitor memory usage** and set appropriate limits
+5. **Plan for failures** - your system should handle parser crashes gracefully
+6. **Stay updated** - apply security updates promptly
+
+== Further Reading
+
+* xref:../pipes/index.adoc[Tika Pipes] - Recommended approach for robust processing
+* xref:../security.adoc[Security] - Known vulnerabilities and security model

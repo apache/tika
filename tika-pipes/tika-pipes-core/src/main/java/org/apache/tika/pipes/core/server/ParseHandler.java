@@ -88,7 +88,9 @@ class ParseHandler {
         //this adds the EmbeddedDocumentByteStore to the parsecontext
         ParseMode parseMode = getParseMode(parseContext);
         ContentHandlerFactory contentHandlerFactory = getContentHandlerFactory(parseContext);
-        if (parseMode == ParseMode.RMETA) {
+        if (parseMode == ParseMode.NO_PARSE) {
+            metadataList = detectOnly(fetchEmitTuple, stream, metadata, parseContext);
+        } else if (parseMode == ParseMode.RMETA) {
             metadataList =
                     parseRecursive(fetchEmitTuple, contentHandlerFactory, stream, metadata, parseContext);
         } else {
@@ -156,6 +158,15 @@ class ParseHandler {
                           ParseContext parseContext) {
         _preParse(t, tis, metadata, parseContext);
         return metadata;
+    }
+
+    /**
+     * Performs digest (if configured) and content type detection only, without parsing.
+     */
+    private List<Metadata> detectOnly(FetchEmitTuple fetchEmitTuple, TikaInputStream stream,
+                                      Metadata metadata, ParseContext parseContext) {
+        _preParse(fetchEmitTuple, stream, metadata, parseContext);
+        return Collections.singletonList(metadata);
     }
 
     public List<Metadata> parseRecursive(FetchEmitTuple fetchEmitTuple,

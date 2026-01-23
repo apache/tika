@@ -1,0 +1,10 @@
+{
+  "parsers": [
+    {
+      "tesseract-ocr-parser": {
+        "language": "eng",
+        "timeoutSeconds": 120
+      }
+    }
+  ]
+}
