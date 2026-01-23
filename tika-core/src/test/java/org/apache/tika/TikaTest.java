@@ -496,8 +496,10 @@ public abstract class TikaTest {
 
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, FilenameUtils.getName(filePath));
         try (TikaInputStream tis = getResourceAsStream("/test-documents/" + filePath)) {
-            wrapper.parse(tis, handler, new Metadata(), context);
+            wrapper.parse(tis, handler, metadata, context);
         }
         return handler.getMetadataList();
     }
