@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -32,10 +31,8 @@ import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.filter.AttachmentCountingListFilter;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
-import org.apache.tika.metadata.filter.MockUpperCaseFilter;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
@@ -74,8 +71,11 @@ public class PipesClientTest {
     @Test
     public void testMetadataFilter(@TempDir Path tmp) throws Exception {
         ParseContext parseContext = new ParseContext();
-        MetadataFilter metadataFilter = new CompositeMetadataFilter(List.of(new MockUpperCaseFilter()));
-        parseContext.set(MetadataFilter.class, metadataFilter);
+        // Use JSON config approach for Jackson serialization compatibility
+        // Don't resolve here - let PipesServer resolve on its side
+        parseContext.setJsonConfig("metadata-filters", """
+            ["mock-upper-case-filter"]
+        """);
         PipesClient pipesClient = init(tmp, testDoc);
         PipesResult pipesResult = pipesClient.process(
                 new FetchEmitTuple(testDoc, new FetchKey(fetcherName, testDoc),
@@ -89,8 +89,11 @@ public class PipesClientTest {
     @Test
     public void testMetadataListFilter(@TempDir Path tmp) throws Exception {
         ParseContext parseContext = new ParseContext();
-        MetadataFilter metadataFilter = new CompositeMetadataFilter(List.of(new AttachmentCountingListFilter()));
-        parseContext.set(MetadataFilter.class, metadataFilter);
+        // Use JSON config approach for Jackson serialization compatibility
+        // Don't resolve here - let PipesServer resolve on its side
+        parseContext.setJsonConfig("metadata-filters", """
+            ["attachment-counting-list-filter"]
+        """);
 
         String testFile = "mock-embedded.xml";
 
@@ -175,8 +178,11 @@ public class PipesClientTest {
         //I did both manually during development, but unit tests are better. :D
         ParseContext parseContext = new ParseContext();
         parseContext.set(TikaTaskTimeout.class, new TikaTaskTimeout(1000));
-        MetadataFilter metadataFilter = new CompositeMetadataFilter(List.of(new AttachmentCountingListFilter()));
-        parseContext.set(MetadataFilter.class, metadataFilter);
+        // Use JSON config approach for Jackson serialization compatibility
+        // Don't resolve here - let PipesServer resolve on its side
+        parseContext.setJsonConfig("metadata-filters", """
+            ["attachment-counting-list-filter"]
+        """);
 
         String testFile = "mock-timeout-10s.xml";
         PipesClient pipesClient = init(tmp, testFile);

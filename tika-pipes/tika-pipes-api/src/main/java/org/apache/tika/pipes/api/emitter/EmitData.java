@@ -30,6 +30,10 @@ public interface EmitData {
 
     long getEstimatedSizeBytes();
 
+    /**
+     * Gets the ParseContext. This is not serialized over IPC - it's restored
+     * by PipesClient after deserialization from the original FetchEmitTuple.
+     * May return null if not set.
+     */
     ParseContext getParseContext();
-
 }

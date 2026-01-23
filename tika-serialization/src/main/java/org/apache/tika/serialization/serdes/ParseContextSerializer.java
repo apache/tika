@@ -91,7 +91,9 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
                 hasTypedObjects = true;
             }
             gen.writeFieldName(keyName);
-            gen.writeRawValue(PLAIN_MAPPER.writeValueAsString(value));
+            // Use writeTree instead of writeRawValue for binary format support (e.g., Smile)
+            // and stricter validation (fails early if value can't be serialized)
+            gen.writeTree(PLAIN_MAPPER.valueToTree(value));
         }
 
         if (hasTypedObjects) {
@@ -102,7 +104,8 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
         Map<String, JsonConfig> jsonConfigs = parseContext.getJsonConfigs();
         for (Map.Entry<String, JsonConfig> entry : jsonConfigs.entrySet()) {
             gen.writeFieldName(entry.getKey());
-            gen.writeRawValue(entry.getValue().json());
+            // Parse the JSON string into a tree for binary format support
+            gen.writeTree(PLAIN_MAPPER.readTree(entry.getValue().json()));
         }
 
         gen.writeEndObject();

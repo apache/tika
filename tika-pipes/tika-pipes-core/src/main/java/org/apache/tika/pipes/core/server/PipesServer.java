@@ -22,12 +22,11 @@ import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.IN
 import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.OOM;
 import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.TIMEOUT;
 
-import java.io.ByteArrayOutputStream;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -47,8 +46,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -74,6 +71,7 @@ import org.apache.tika.pipes.core.config.ConfigStore;
 import org.apache.tika.pipes.core.config.ConfigStoreFactory;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.apache.tika.pipes.core.serialization.JsonPipesIpc;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.sax.ContentHandlerFactory;
@@ -167,8 +165,8 @@ public class PipesServer implements AutoCloseable {
             socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), PipesClient.SOCKET_CONNECT_TIMEOUT_MS);
             socket.setTcpNoDelay(true); // Disable Nagle's algorithm to avoid ~40ms delays on small writes
 
-            DataInputStream dis = new DataInputStream(socket.getInputStream());
-            DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+            DataInputStream dis = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
+            DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
         try {
             TikaLoader tikaLoader = TikaLoader.load(tikaConfigPath);
             TikaJsonConfig tikaJsonConfig = tikaLoader.getConfig();
@@ -176,6 +174,7 @@ public class PipesServer implements AutoCloseable {
 
             // Set socket timeout from config after loading PipesConfig
             socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMs());
+            socket.setTcpNoDelay(true);
 
             MetadataFilter metadataFilter = tikaLoader.loadMetadataFilters();
             ContentHandlerFactory contentHandlerFactory = tikaLoader.loadContentHandlerFactory();
@@ -410,10 +409,9 @@ public class PipesServer implements AutoCloseable {
     private void handleCrash(PROCESSING_STATUS processingStatus, String id, Throwable t) {
         LOG.error("{}: {}", processingStatus, id, t);
         String msg = (t != null) ? ExceptionUtils.getStackTrace(t) : "";
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {
-            oos.writeObject(msg);
-            write(processingStatus, bos.toByteArray());
+        try {
+            byte[] bytes = JsonPipesIpc.toBytes(msg);
+            write(processingStatus, bytes);
             awaitAck();
         } catch (IOException e) {
             //swallow
@@ -444,19 +442,12 @@ public class PipesServer implements AutoCloseable {
             int length = input.readInt();
             byte[] bytes = new byte[length];
             input.readFully(bytes);
-
-            try (ObjectInputStream objectInputStream = new ObjectInputStream(
-                    UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
-                return (FetchEmitTuple) objectInputStream.readObject();
-            }
+            return JsonPipesIpc.fromBytes(bytes, FetchEmitTuple.class);
         } catch (IOException e) {
-            LOG.error("problem reading tuple", e);
-            exit(1);
-        } catch (ClassNotFoundException e) {
-            LOG.error("can't find class?!", e);
-            exit(1);
+            LOG.error("problem reading/deserializing FetchEmitTuple", e);
+            handleCrash(PROCESSING_STATUS.UNSPECIFIED_CRASH, "unknown", e);
         }
-        //unreachable, no?!
+        //unreachable - handleCrash calls exit
         return null;
     }
 
@@ -518,11 +509,8 @@ public class PipesServer implements AutoCloseable {
 
     private void write(PROCESSING_STATUS processingStatus, PipesResult pipesResult) {
         try {
-            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
-            try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
-                objectOutputStream.writeObject(pipesResult);
-            }
-            write(processingStatus, bos.toByteArray());
+            byte[] bytes = JsonPipesIpc.toBytes(pipesResult);
+            write(processingStatus, bytes);
         } catch (IOException e) {
             LOG.error("problem writing emit data (forking process shutdown?)", e);
             exit(1);
@@ -531,11 +519,8 @@ public class PipesServer implements AutoCloseable {
 
     private void writeIntermediate(Metadata metadata) {
         try {
-            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
-            try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
-                objectOutputStream.writeObject(metadata);
-            }
-            write(INTERMEDIATE_RESULT, bos.toByteArray());
+            byte[] bytes = JsonPipesIpc.toBytes(metadata);
+            write(INTERMEDIATE_RESULT, bytes);
         } catch (IOException e) {
             LOG.error("problem writing intermediate data (forking process shutdown?)", e);
             exit(1);
