@@ -58,6 +58,11 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
 
     private static final Logger LOG = LoggerFactory.getLogger(ParseContextDeserializer.class);
 
+    // Plain JSON mapper for converting JsonNodes to JSON strings.
+    // This is needed because the main mapper may use a binary format (e.g., Smile)
+    // which doesn't support writeValueAsString().
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+
     @Override
     public ParseContext deserialize(JsonParser jsonParser, DeserializationContext ctxt)
             throws IOException {
@@ -100,7 +105,8 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
                 deserializeTypedObjects(value, parseContext, mapper);
             } else {
                 // Store as JSON config for lazy resolution
-                String json = mapper.writeValueAsString(value);
+                // Use plain JSON mapper since the main mapper may be binary (Smile)
+                String json = JSON_MAPPER.writeValueAsString(value);
                 parseContext.setJsonConfig(name, json);
             }
         }
@@ -143,8 +149,8 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
                 } catch (ClassNotFoundException e) {
                     LOG.warn("Could not find class for typed component '{}', storing as JSON config",
                             componentName);
-                    // Fall back to storing as JSON config
-                    parseContext.setJsonConfig(componentName, mapper.writeValueAsString(configNode));
+                    // Fall back to storing as JSON config (use plain JSON mapper)
+                    parseContext.setJsonConfig(componentName, JSON_MAPPER.writeValueAsString(configNode));
                     continue;
                 }
             }
@@ -161,7 +167,8 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
             } catch (Exception e) {
                 LOG.warn("Failed to deserialize typed component '{}' as {}, storing as JSON config",
                         componentName, configClass.getName(), e);
-                parseContext.setJsonConfig(componentName, mapper.writeValueAsString(configNode));
+                // Use plain JSON mapper since main mapper may be binary (Smile)
+                parseContext.setJsonConfig(componentName, JSON_MAPPER.writeValueAsString(configNode));
             }
         }
     }

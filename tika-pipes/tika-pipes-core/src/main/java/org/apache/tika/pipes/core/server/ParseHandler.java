@@ -35,7 +35,6 @@ import org.apache.tika.digest.SkipContainerDocumentDigest;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.WriteLimitReachedException;
-import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.extractor.EmbeddedDocumentBytesHandler;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -43,10 +42,12 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.ParseRecord;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
@@ -203,18 +204,18 @@ class ParseHandler {
         if (contentHandlerFactory instanceof BasicContentHandlerFactory) {
             maxEmbedded = ((BasicContentHandlerFactory) contentHandlerFactory).getMaxEmbeddedResources();
         }
-        final int finalMaxEmbedded = maxEmbedded;
-        parseContext.set(DocumentSelector.class, new DocumentSelector() {
-            int embedded = 0;
 
-            @Override
-            public boolean select(Metadata metadata) {
-                if (finalMaxEmbedded < 0) {
-                    return true;
-                }
-                return embedded++ < finalMaxEmbedded;
-            }
-        });
+        // Configure ParseRecord for embedded document limits
+        // ParseRecord is created by CompositeParser if not present, but we configure it here
+        // to set the embedded count limit before parsing starts
+        ParseRecord parseRecord = parseContext.get(ParseRecord.class);
+        if (parseRecord == null) {
+            parseRecord = new ParseRecord();
+            parseContext.set(ParseRecord.class, parseRecord);
+        }
+        if (maxEmbedded >= 0) {
+            parseRecord.setMaxEmbeddedCount(maxEmbedded);
+        }
 
         String containerException = null;
         long start = System.currentTimeMillis();
@@ -247,6 +248,13 @@ class ParseHandler {
             }
             if (writeLimitReached) {
                 metadata.set(TikaCoreProperties.WRITE_LIMIT_REACHED, true);
+            }
+            // Set limit reached flags from ParseRecord
+            if (parseRecord.isEmbeddedCountLimitReached()) {
+                metadata.set(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_LIMIT_REACHED, true);
+            }
+            if (parseRecord.isEmbeddedDepthLimitReached()) {
+                metadata.set(AbstractRecursiveParserWrapperHandler.EMBEDDED_DEPTH_LIMIT_REACHED, true);
             }
             if (LOG.isTraceEnabled()) {
                 LOG.trace("timer -- parse only time: {} ms", System.currentTimeMillis() - start);
