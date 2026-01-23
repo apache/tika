@@ -1,0 +1,101 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Serialization in Tika 4.x
+
+This document describes the JSON serialization design and implementation details for Apache Tika 4.x.
+
+== High-Level Goals
+
+=== Jackson Framework Integration
+
+Use Jackson as much as possible with as few custom serializers and as few annotations as possible.
+Jackson dependencies are kept out of core modules to maintain flexibility.
+
+=== Friendly Naming Conventions
+
+Implementation uses friendly names like `pdf-parser` rather than full class names. These friendly
+names are applied to configured items rather than configuration class names.
+
+=== Custom Class Support
+
+The design permits users to add custom classes through Jackson's polymorphic handling:
+
+* `org.apache.tika` patterns are allowed by default
+* Users can define additional inclusion patterns for security
+
+=== Configuration Consistency
+
+The approach seeks to make initialization and runtime configuration look exactly the same and use
+the same underlying code where possible. However, security constraints may require differences in
+which fields are modifiable at runtime.
+
+=== Configuration Objects Over Annotations
+
+Preference for config objects rather than field annotations to support multithreading. Parsers
+retrieve settings from `ParseContext` at runtime.
+
+=== Cross-System Configuration Flow
+
+Configuration must pass seamlessly from:
+
+. User clients
+. Through tika-server REST APIs
+. Into tika-pipes infrastructure
+
+== Initialization Structure
+
+=== Tier 1 Objects
+
+ID Objects::
+Fetchers, emitters - components with unique identifiers
+
+Composite Objects::
+Parsers, detectors - components that aggregate other components
+
+Single Objects::
+Pipes, gRPC, server configurations
+
+=== Tier 2 Objects
+
+Components that can be read via friendly names using `@TikaComponent` annotations in an
+`other-config` section.
+
+== Runtime Patterns
+
+=== Backwards Compatibility
+
+The design maintains backwards compatibility by allowing `ParseContext` additions where the
+interface serves as the key.
+
+=== Partial Configuration Updates
+
+Users can specify only updates to the initialization configuration through partial JSON objects,
+rather than requiring complete configuration documents.
+
+=== Self-Configuring Components in Pipes
+
+In the pipes infrastructure, objects should configure themselves to avoid classloading
+dependencies on components like `PDFParser`.
+
+== Security Considerations
+
+* Configuration files at initialization are treated as trusted sources
+* Runtime serialization/deserialization uses an allowlist of permitted packages
+* Custom components can register patterns in `META-INF/tika-serialization-allowlist.txt`
+
+See link:design-notes-4x.html[Design Notes for 4.x] for additional architectural context.

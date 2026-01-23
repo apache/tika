@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika</artifactId>
+        <version>4.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>tika-docs</artifactId>
+    <packaging>pom</packaging>
+    <name>Apache Tika Documentation</name>
+
+    <properties>
+        <!-- Update this when a new stable version is released -->
+        <tika.stable.version>3.2.3</tika.stable.version>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.asciidoctor</groupId>
+                <artifactId>asciidoctor-maven-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <id>output-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <doctype>article</doctype>
+                            <attributes>
+                                <source-highlighter>coderay</source-highlighter>
+                                <toc />
+                                <linkcss>false</linkcss>
+                                <icons>font</icons>
+                                <tika-stable-version>${tika.stable.version}</tika-stable-version>
+                                <!-- Paths to config examples for include directives -->
+                                <parser-examples>${project.basedir}/../tika-parsers/tika-parsers-standard/tika-parsers-standard-package/src/test/resources/config-examples</parser-examples>
+                                <server-examples>${project.basedir}/../tika-server/tika-server-core/src/test/resources/config-examples</server-examples>
+                                <pipes-fs-examples>${project.basedir}/../tika-pipes/tika-pipes-plugins/tika-pipes-file-system/src/test/resources/config-examples</pipes-fs-examples>
+                            </attributes>
+                        </configuration>
+                    </execution>
+                </executions>
+                <configuration>
+                    <sourceDirectory>src/main/asciidoc</sourceDirectory>
+                    <preserveDirectories>true</preserveDirectories>
+                </configuration>
+            </plugin>
+
+            <!-- Maven Assembly plugin to create tar.gz -->
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>make-docs-archive</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/assembly/docs.xml</descriptor>
+                            </descriptors>
+                            <finalName>${project.artifactId}-${project.version}</finalName>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

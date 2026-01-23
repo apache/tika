@@ -62,6 +62,9 @@
   <profiles>
     <profile>
       <id>apache-release</id>
+      <modules>
+        <module>docs</module>
+      </modules>
       <properties>
         <username>${user.name}</username>
       </properties>
