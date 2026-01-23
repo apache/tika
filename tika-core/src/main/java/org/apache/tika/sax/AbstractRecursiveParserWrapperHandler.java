@@ -37,6 +37,8 @@ public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandl
 
     public final static Property EMBEDDED_RESOURCE_LIMIT_REACHED = Property.internalBoolean(
             TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_resource_limit_reached");
+    public final static Property EMBEDDED_DEPTH_LIMIT_REACHED = Property.internalBoolean(
+            TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_depth_limit_reached");
     private static final int MAX_DEPTH = 100;
     private final ContentHandlerFactory contentHandlerFactory;
     private final int maxEmbeddedResources;

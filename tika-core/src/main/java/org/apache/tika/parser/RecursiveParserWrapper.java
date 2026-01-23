@@ -229,6 +229,18 @@ public class RecursiveParserWrapper extends ParserDecorator {
             if (parserState.recursiveParserWrapperHandler.hasHitMaximumEmbeddedResources()) {
                 return;
             }
+
+            // Also check ParseRecord limits if available
+            ParseRecord parseRecord = context.get(ParseRecord.class);
+            if (parseRecord != null && !parseRecord.shouldParseEmbedded()) {
+                return;
+            }
+
+            // Increment embedded count in ParseRecord
+            if (parseRecord != null) {
+                parseRecord.incrementEmbeddedCount();
+            }
+
             // Work out what this thing is
             String objectName = getResourceName(metadata, parserState.unknownCount);
             String objectLocation = this.location + objectName;

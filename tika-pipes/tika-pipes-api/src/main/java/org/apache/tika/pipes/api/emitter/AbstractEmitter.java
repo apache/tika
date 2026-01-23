@@ -19,6 +19,7 @@ package org.apache.tika.pipes.api.emitter;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.plugins.AbstractTikaExtension;
 import org.apache.tika.plugins.ExtensionConfig;
 
@@ -31,7 +32,11 @@ public abstract class AbstractEmitter extends AbstractTikaExtension implements E
     @Override
     public void emit(List<? extends EmitData> emitData) throws IOException {
         for (EmitData item : emitData) {
-            emit(item.getEmitKey(), item.getMetadataList(), item.getParseContext());
+            ParseContext parseContext = item.getParseContext();
+            if (parseContext == null) {
+                parseContext = new ParseContext();
+            }
+            emit(item.getEmitKey(), item.getMetadataList(), parseContext);
         }
     }
 }

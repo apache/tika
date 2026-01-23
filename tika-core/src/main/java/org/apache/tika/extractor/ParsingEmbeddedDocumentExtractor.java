@@ -61,11 +61,19 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
 
     @Override
     public boolean shouldParseEmbedded(Metadata metadata) {
+        // Check ParseRecord for depth/count limits first
+        ParseRecord parseRecord = context.get(ParseRecord.class);
+        if (parseRecord != null && !parseRecord.shouldParseEmbedded()) {
+            return false;
+        }
+
+        // Then check DocumentSelector for content-based filtering
         DocumentSelector selector = context.get(DocumentSelector.class);
         if (selector != null) {
             return selector.select(metadata);
         }
 
+        // Then check FilenameFilter
         FilenameFilter filter = context.get(FilenameFilter.class);
         if (filter != null) {
             String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
@@ -81,6 +89,12 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
     public void parseEmbedded(
             TikaInputStream tis, ContentHandler handler, Metadata metadata, ParseContext parseContext, boolean outputHtml)
             throws SAXException, IOException {
+        // Increment embedded count for tracking
+        ParseRecord parseRecord = context.get(ParseRecord.class);
+        if (parseRecord != null) {
+            parseRecord.incrementEmbeddedCount();
+        }
+
         if (outputHtml) {
             AttributesImpl attributes = new AttributesImpl();
             attributes.addAttribute("", "class", "class", "CDATA", "package-entry");

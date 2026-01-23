@@ -1,0 +1,172 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Publishing the Documentation Site
+
+This guide covers how to build and publish the Apache Tika documentation site.
+
+== Overview
+
+The documentation is built using https://antora.org[Antora], a static site generator for AsciiDoc.
+The site supports multiple versions through Git branches and includes client-side search powered by Lunr.
+
+== Prerequisites
+
+* Maven 3.9+
+* Git
+
+== Building the Site Locally
+
+To build the documentation locally:
+
+[source,bash]
+----
+cd docs
+mvn antora:antora
+----
+
+The generated site will be at `docs/target/site/`.
+
+=== Previewing the Site
+
+**Option 1: Python HTTP server (recommended)**
+
+[source,bash]
+----
+cd docs/target/site
+python3 -m http.server 8000
+----
+
+Then open http://localhost:8000 in your browser.
+
+**Option 2: Node.js HTTP server**
+
+[source,bash]
+----
+npx http-server docs/target/site -p 8000
+----
+
+Then open http://localhost:8000 in your browser.
+
+**Option 3: Open static HTML directly**
+
+[source,bash]
+----
+# Linux
+xdg-open docs/target/site/index.html
+
+# macOS
+open docs/target/site/index.html
+
+# Windows
+start docs/target/site/index.html
+----
+
+NOTE: Opening static HTML directly may not fully test search and relative links.
+
+== Living Documentation
+
+The documentation includes examples that are symlinked to actual test configuration files in the codebase.
+This ensures examples are always valid and tested. The symlinks are in `docs/modules/ROOT/examples/` and
+point to files in `tika-parsers/.../config-examples/`.
+
+When you modify a config example in the codebase, the documentation automatically reflects the change
+on the next build.
+
+== Version Management
+
+Documentation versions are managed through Git branches with the `docs/` prefix.
+
+=== Branch Structure
+
+* `HEAD` (main branch) - Current development version (SNAPSHOT)
+* `docs/4.0.0` - Released 4.0.0 documentation
+* `docs/4.1.0` - Released 4.1.0 documentation
+
+The playbook (`antora-playbook.yml`) is configured to build all `docs/*` branches automatically.
+
+=== Publishing a New Release
+
+When releasing a new version (e.g., 4.0.0):
+
+[source,bash]
+----
+# 1. Tag the release as usual
+git tag v4.0.0
+
+# 2. Create docs branch from tag
+git checkout -b docs/4.0.0 v4.0.0
+
+# 3. Update version in antora.yml
+sed -i "s/4.0.0-SNAPSHOT/4.0.0/" docs/antora.yml
+git commit -am "Set docs version to 4.0.0"
+git push origin docs/4.0.0
+
+# 4. Build the site
+cd docs
+mvn antora:antora
+
+# 5. Publish to SVN
+cp -r target/site/* ~/tika-site/4.x/
+cd ~/tika-site
+svn add 4.x --force
+svn commit -m "Publish 4.0.0 docs"
+----
+
+=== Updating Released Documentation
+
+To fix or update documentation for a released version:
+
+[source,bash]
+----
+# 1. Checkout the docs branch
+git checkout docs/4.0.0
+
+# 2. Make changes (docs or config examples)
+# Edit files as needed...
+
+# 3. Commit and push
+git commit -am "Fix PDF parser example"
+git push origin docs/4.0.0
+
+# 4. Rebuild and republish
+cd docs
+mvn antora:antora
+cp -r target/site/* ~/tika-site/4.x/
+cd ~/tika-site
+svn commit -m "Update 4.0.0 docs"
+----
+
+== Site Structure
+
+The Antora configuration files:
+
+* `docs/antora.yml` - Component descriptor (name, version, navigation)
+* `docs/antora-playbook.yml` - Site-wide configuration (sources, UI, extensions)
+* `docs/modules/ROOT/nav.adoc` - Navigation sidebar structure
+* `docs/modules/ROOT/pages/` - Documentation pages
+* `docs/modules/ROOT/examples/` - Symlinks to config examples
+* `docs/supplemental-ui/` - Custom UI components (header, footer, search)
+
+== Search
+
+The site includes client-side search powered by the Lunr extension. The search index is generated
+at build time and requires no server-side infrastructure.
+
+== Logos
+
+Official Apache Tika logos are archived at `docs/assets/logos/asf-tika-logos.zip`.

@@ -16,7 +16,6 @@
  */
 package org.apache.tika.pipes.core.emitter;
 
-import java.io.Serializable;
 import java.util.List;
 
 import org.apache.tika.metadata.Metadata;
@@ -24,31 +23,23 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.emitter.EmitData;
 import org.apache.tika.utils.StringUtils;
 
-public class EmitDataImpl implements Serializable, EmitData {
-    /**
-     * Serial version UID
-     */
-    private static final long serialVersionUID = -3861669115439125268L;
+public class EmitDataImpl implements EmitData {
 
     private final String emitKey;
     private final List<Metadata> metadataList;
     private final String containerStackTrace;
-    private ParseContext parseContext = null;
+    // ParseContext is not serialized - it's set by PipesClient after deserialization
+    private ParseContext parseContext;
 
     public EmitDataImpl(String emitKey, List<Metadata> metadataList) {
         this(emitKey, metadataList, StringUtils.EMPTY);
     }
 
     public EmitDataImpl(String emitKey, List<Metadata> metadataList, String containerStackTrace) {
-        this(emitKey, metadataList, containerStackTrace, new ParseContext());
-    }
-
-    public EmitDataImpl(String emitKey, List<Metadata> metadataList, String containerStackTrace, ParseContext parseContext) {
         this.emitKey = emitKey;
         this.metadataList = metadataList;
         this.containerStackTrace = (containerStackTrace == null) ? StringUtils.EMPTY :
                 containerStackTrace;
-        this.parseContext = parseContext;
     }
 
     public String getEmitKey() {
@@ -67,12 +58,21 @@ public class EmitDataImpl implements Serializable, EmitData {
         return estimateSizeInBytes(getEmitKey(), getMetadataList(), containerStackTrace);
     }
 
-    public void setParseContext(ParseContext parseContext) {
-        this.parseContext = parseContext;
-    }
-
+    /**
+     * Gets the ParseContext. This is not serialized - it's set by PipesClient
+     * after deserialization from the original FetchEmitTuple.
+     */
+    @Override
     public ParseContext getParseContext() {
         return parseContext;
+    }
+
+    /**
+     * Sets the ParseContext. Called by PipesClient after deserialization
+     * to restore the ParseContext from the original FetchEmitTuple.
+     */
+    public void setParseContext(ParseContext parseContext) {
+        this.parseContext = parseContext;
     }
 
     private static long estimateSizeInBytes(String id, List<Metadata> metadataList,
