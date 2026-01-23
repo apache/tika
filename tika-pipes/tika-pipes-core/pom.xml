@@ -62,6 +62,10 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-smile</artifactId>
+    </dependency>
+    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-pipes-iterator-commons</artifactId>
       <version>${project.version}</version>

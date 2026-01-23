@@ -34,10 +34,22 @@ under the License.
     <properties>
         <!-- Update this when a new stable version is released -->
         <tika.stable.version>3.2.3</tika.stable.version>
+        <antora.version>1.0.0-alpha.5</antora.version>
     </properties>
 
     <build>
         <plugins>
+            <!-- Ensure mvn clean removes Antora output -->
+            <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>${project.basedir}/target</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.asciidoctor</groupId>
                 <artifactId>asciidoctor-maven-plugin</artifactId>
@@ -89,6 +101,24 @@ under the License.
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+
+            <!-- Antora plugin for building the documentation site -->
+            <plugin>
+                <groupId>org.antora</groupId>
+                <artifactId>antora-maven-plugin</artifactId>
+                <version>${antora.version}</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <playbook>antora-playbook.yml</playbook>
+                    <packages>
+                        <package>@antora/lunr-extension@1.0.0-alpha.8</package>
+                    </packages>
+                    <options>
+                        <!-- Use 'fatal' for development to ignore broken links, 'error' for CI -->
+                        <option>--log-failure-level=fatal</option>
+                    </options>
+                </configuration>
             </plugin>
         </plugins>
     </build>

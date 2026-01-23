@@ -185,6 +185,8 @@ public class RecursiveParserWrapper extends ParserDecorator {
         String objectName = "";
         if (metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY) != null) {
             objectName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+        } else if (metadata.get(TikaCoreProperties.INTERNAL_PATH) != null) {
+            objectName = FilenameUtils.getName(metadata.get(TikaCoreProperties.INTERNAL_PATH));
         } else if (metadata.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID) != null) {
             objectName = metadata.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID);
         } else if (metadata.get(TikaCoreProperties.VERSION_NUMBER) != null) {
@@ -227,6 +229,18 @@ public class RecursiveParserWrapper extends ParserDecorator {
             if (parserState.recursiveParserWrapperHandler.hasHitMaximumEmbeddedResources()) {
                 return;
             }
+
+            // Also check ParseRecord limits if available
+            ParseRecord parseRecord = context.get(ParseRecord.class);
+            if (parseRecord != null && !parseRecord.shouldParseEmbedded()) {
+                return;
+            }
+
+            // Increment embedded count in ParseRecord
+            if (parseRecord != null) {
+                parseRecord.incrementEmbeddedCount();
+            }
+
             // Work out what this thing is
             String objectName = getResourceName(metadata, parserState.unknownCount);
             String objectLocation = this.location + objectName;

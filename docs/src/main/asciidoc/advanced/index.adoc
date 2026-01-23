@@ -23,9 +23,4 @@ This section covers advanced usage and internals of Apache Tika.
 
 * xref:robustness.adoc[Robustness] - Process isolation and fault tolerance when parsing untrusted content
 * xref:spooling.adoc[TikaInputStream and Spooling] - Understanding how TikaInputStream handles buffering, caching, and spooling to disk
-
-// Add links to specific topics as they are created
-// * link:custom-parsers.html[Writing Custom Parsers]
-// * link:custom-detectors.html[Writing Custom Detectors]
-// * link:configuration.html[Advanced Configuration]
-// * link:performance.html[Performance Tuning]
+* xref:metadata/index.adoc[Metadata Reference] - Documentation for Tika's metadata fields

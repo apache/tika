@@ -176,7 +176,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
     public void testCharLimitNoThrowOnWriteLimit() throws Exception {
         ParseContext context = new ParseContext();
         Metadata metadata = new Metadata();
-        int writeLimit = 500;
+        int writeLimit = 510;
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT,

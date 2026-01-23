@@ -90,6 +90,11 @@ public class TikaModule extends SimpleModule {
 
     private static ObjectMapper sharedMapper;
 
+    // Plain JSON mapper for converting JsonNodes to JSON strings.
+    // This is needed because the main mapper may use a binary format (e.g., Smile)
+    // which doesn't support writeValueAsString().
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+
     /**
      * Interfaces that use compact format serialization.
      * Types implementing these interfaces will be serialized as:
@@ -324,7 +329,8 @@ public class TikaModule extends SimpleModule {
                     // Try JsonConfig constructor first (works for any component)
                     Constructor<?> jsonConfigCtor = findJsonConfigConstructor(clazz);
                     if (jsonConfigCtor != null) {
-                        String json = mapper.writeValueAsString(cleanedConfig);
+                        // Use plain JSON mapper since the main mapper may be binary (Smile)
+                        String json = JSON_MAPPER.writeValueAsString(cleanedConfig);
                         instance = jsonConfigCtor.newInstance((JsonConfig) () -> json);
                     } else {
                         // Fall back to no-arg constructor + Jackson bean deserialization

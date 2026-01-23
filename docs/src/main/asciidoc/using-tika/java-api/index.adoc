@@ -31,8 +31,5 @@ xref:getting-started.adoc[Getting Started] for guidance on choosing the right ap
 == Topics
 
 * xref:getting-started.adoc[Getting Started] - Recommendations and PipesForkParser usage
-
-// Add links to specific topics as they are created
-// * link:parsing.html[Parsing Documents]
-// * link:detection.html[Content Detection]
-// * link:configuration.html[Configuration]
+* xref:../../advanced/metadata/embedded-documents.adoc[Embedded Document Metadata] -
+  Understanding attachment and embedded resource tracking

@@ -199,6 +199,9 @@ least three +1 Tika PMC votes are cast.
             <inputExclude>tika-bundle/src/main/resources/META-INF/MANIFEST.MF</inputExclude>
             <inputExclude>.gitattributes</inputExclude>
 
+            <!-- Antora UI supplemental files -->
+            <inputExclude>docs/supplemental-ui/**</inputExclude>
+
             <!-- subprojects already checked, added for RAT 0.17, see also RAT-97 -->
             <inputExclude>tika-*/**</inputExclude>
           </inputExcludes>

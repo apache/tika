@@ -1,0 +1,29 @@
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="{{or siteRootPath (or site.url '/')}}">
+        <img src="{{{uiRootPath}}}/img/ASF_Tika-colour.svg" alt="Apache Tika" style="height: 2rem; margin-right: 0.5rem; background: white; padding: 2px 4px; border-radius: 3px;">
+        {{site.title}}
+      </a>
+      <button class="navbar-burger" aria-label="Toggle navigation" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <div class="navbar-item search">
+          <div class="field has-addons">
+            <p class="control">
+              <input id="search-input" class="input" type="text" placeholder="Search docs...">
+            </p>
+          </div>
+          <div id="search-results"></div>
+        </div>
+        <a class="navbar-item" href="https://tika.apache.org">Apache Tika</a>
+        <a class="navbar-item" href="https://github.com/apache/tika">GitHub</a>
+      </div>
+    </div>
+  </nav>
+</header>
