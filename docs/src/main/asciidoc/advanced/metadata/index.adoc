@@ -15,12 +15,11 @@
 // limitations under the License.
 //
 
-= Advanced Topics
+= Metadata Reference
 
-This section covers advanced usage and internals of Apache Tika.
+This section documents the metadata fields that Tika produces during parsing.
 
 == Topics
 
-* xref:robustness.adoc[Robustness] - Process isolation and fault tolerance when parsing untrusted content
-* xref:spooling.adoc[TikaInputStream and Spooling] - Understanding how TikaInputStream handles buffering, caching, and spooling to disk
-* xref:metadata/index.adoc[Metadata Reference] - Documentation for Tika's metadata fields
+* xref:embedded-documents.adoc[Embedded Document Metadata] - Understanding how Tika tracks
+  attachments and embedded resources within container files

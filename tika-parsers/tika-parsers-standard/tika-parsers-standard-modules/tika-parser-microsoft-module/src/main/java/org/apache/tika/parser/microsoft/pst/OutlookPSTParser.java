@@ -116,8 +116,11 @@ public class OutlookPSTParser implements Parser {
             while (pstMail != null) {
                 Metadata metadata = new Metadata();
                 metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
-                metadata.set(PST.PST_FOLDER_PATH, folderPath);
-                metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, pstMail.getSubject() + ".msg");
+                String resourceName = pstMail.getSubject() + ".msg";
+                String internalPath = folderPath.endsWith("/") ?
+                        folderPath + resourceName : folderPath + "/" + resourceName;
+                metadata.set(TikaCoreProperties.INTERNAL_PATH, internalPath);
+                metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, resourceName);
                 long length = estimateSize(pstMail);
                 try (TikaInputStream tis = TikaInputStream.getFromContainer(pstMail, length, metadata)) {
                     embeddedExtractor.parseEmbedded(tis, handler, metadata, new ParseContext(), true);

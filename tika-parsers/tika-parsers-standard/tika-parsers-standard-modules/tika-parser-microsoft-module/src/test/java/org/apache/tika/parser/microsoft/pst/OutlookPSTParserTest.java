@@ -29,7 +29,6 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.MAPI;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.PST;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.Parser;
@@ -77,7 +76,8 @@ public class OutlookPSTParserTest extends TikaTest {
         assertEquals("Jörn Kottmann", m1.get(MAPI.FROM_REPRESENTING_NAME));
         assertEquals("kottmann@gmail.com", m1.get(MAPI.FROM_REPRESENTING_EMAIL));
         assertEquals("NOTE", m1.get(MAPI.MESSAGE_CLASS));
-        assertEquals("/Début du fichier de données Outlook", m1.get(PST.PST_FOLDER_PATH));
+        assertEquals("/Début du fichier de données Outlook/Re: Feature Generators.msg",
+                m1.get(TikaCoreProperties.INTERNAL_PATH));
         //test that subject is making it into the xhtml
         assertContains("<meta name=\"dc:subject\" content=\"Re: Feature Generators\"", m1.get(TikaCoreProperties.TIKA_CONTENT));
 

@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -1704,6 +1705,9 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertEquals("audio/mpeg", metadataList.get(1).get(Metadata.CONTENT_TYPE));
         assertEquals("image/png", metadataList.get(2).get(Metadata.CONTENT_TYPE));
         assertEquals("image/jpeg", metadataList.get(3).get(Metadata.CONTENT_TYPE));
+        // Verify INTERNAL_PATH is set for embedded media
+        assertNotNull(metadataList.get(1).get(TikaCoreProperties.INTERNAL_PATH));
+        assertTrue(metadataList.get(1).get(TikaCoreProperties.INTERNAL_PATH).contains("/ppt/media/"));
     }
 
     @Test

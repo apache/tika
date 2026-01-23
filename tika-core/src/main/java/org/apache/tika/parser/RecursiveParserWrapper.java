@@ -185,6 +185,8 @@ public class RecursiveParserWrapper extends ParserDecorator {
         String objectName = "";
         if (metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY) != null) {
             objectName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+        } else if (metadata.get(TikaCoreProperties.INTERNAL_PATH) != null) {
+            objectName = FilenameUtils.getName(metadata.get(TikaCoreProperties.INTERNAL_PATH));
         } else if (metadata.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID) != null) {
             objectName = metadata.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID);
         } else if (metadata.get(TikaCoreProperties.VERSION_NUMBER) != null) {

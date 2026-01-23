@@ -29,7 +29,6 @@ import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.metadata.MAPI;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.PST;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.Parser;
 
@@ -61,9 +60,8 @@ public class TestLibPstParser extends TikaTest {
         for (int i = 1; i < metadataList.size(); i++) {
             String path = metadataList
                     .get(i)
-                    .get(PST.PST_FOLDER_PATH);
-            if (path != null) {
-                assertEquals("hong-thai.nguyen", path);
+                    .get(TikaCoreProperties.INTERNAL_PATH);
+            if (path != null && path.startsWith("hong-thai.nguyen/")) {
                 validPaths++;
             }
         }
@@ -100,9 +98,8 @@ public class TestLibPstParser extends TikaTest {
         for (int i = 1; i < metadataList.size(); i++) {
             String path = metadataList
                     .get(i)
-                    .get(PST.PST_FOLDER_PATH);
-            if (path != null) {
-                assertEquals("hong-thai.nguyen", path);
+                    .get(TikaCoreProperties.INTERNAL_PATH);
+            if (path != null && path.startsWith("hong-thai.nguyen/")) {
                 validPaths++;
             }
         }

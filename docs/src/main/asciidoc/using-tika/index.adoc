@@ -63,3 +63,9 @@ Use Tika via gRPC protocol. Best for high-performance, cross-language communicat
 For processing large volumes of documents, see xref:../pipes/index.adoc[Tika Pipes],
 which provides fault-tolerant, scalable document processing and works with all of the
 above integration methods.
+
+== Understanding the Output
+
+xref:../advanced/metadata/embedded-documents.adoc[Embedded Document Metadata]::
+Learn how Tika tracks and reports metadata for embedded documents (attachments, images,
+and other resources contained within files).

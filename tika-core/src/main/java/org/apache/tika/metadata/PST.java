@@ -19,7 +19,6 @@ package org.apache.tika.metadata;
 public interface PST {
 
     String PST_PREFIX = "pst:";
-    Property PST_FOLDER_PATH = Property.internalText(PST_PREFIX + "folderPath");
     Property DESCRIPTOR_NODE_ID = Property.internalText(PST_PREFIX + "discriptorNodeId");
     Property IS_VALID = Property.internalBoolean(PST_PREFIX + "isValid");
 }
