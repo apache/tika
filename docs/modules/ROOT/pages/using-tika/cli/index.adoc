@@ -1,0 +1,134 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Tika Command Line Interface
+
+WARNING: The tika-app command line interface is still in flux for 4.x. Options and
+behavior may change before the final release.
+
+This section covers using Apache Tika from the command line via `tika-app`.
+
+== Overview
+
+The Tika application (`tika-app.jar`) is a standalone command line utility for extracting
+text content and metadata from all sorts of files.
+
+== Basic Usage
+
+[source,bash]
+----
+java -jar tika-app.jar [option...] [file|port...]
+----
+
+== Command Line Options
+
+=== Help and Information
+
+[cols="1,3"]
+|===
+|Option |Description
+
+|`-?` or `--help`
+|Display usage instructions
+
+|`-v` or `--verbose`
+|Enable debug-level output
+
+|`-V` or `--version`
+|Show version details
+|===
+
+=== Operation Modes
+
+[cols="1,3"]
+|===
+|Option |Description
+
+|`-g` or `--gui`
+|Launch the graphical interface
+
+|`-s` or `--server`
+|Start the web server
+
+|`-f` or `--fork`
+|Enable fork mode for isolated extraction
+|===
+
+=== Output Formatting
+
+[cols="1,3"]
+|===
+|Option |Description
+
+|`-x` or `--xml`
+|Output XHTML (default)
+
+|`-h` or `--html`
+|Output HTML
+
+|`-t` or `--text`
+|Output plain text
+
+|`-m` or `--metadata`
+|Output metadata only
+
+|`-j` or `--json`
+|Output JSON metadata
+|===
+
+== Examples
+
+=== Extract text from a file
+
+[source,bash]
+----
+java -jar tika-app.jar --text document.pdf
+----
+
+=== Extract metadata as JSON
+
+[source,bash]
+----
+java -jar tika-app.jar --json document.docx
+----
+
+=== Pipeline processing
+
+Extract text from a remote document and search for keywords:
+
+[source,bash]
+----
+curl http://example.com/document.doc | java -jar tika-app.jar --text | grep -q keyword
+----
+
+=== Batch processing
+
+Process entire directories by specifying input and output paths:
+
+[source,bash]
+----
+java -jar tika-app.jar -i /path/to/input -o /path/to/output
+----
+
+=== Custom configuration
+
+Use a custom configuration file:
+
+[source,bash]
+----
+java -jar tika-app.jar --config=tika-config.json document.pdf
+----
