@@ -27,7 +27,7 @@ under the License.
     <includeBaseDirectory>false</includeBaseDirectory>
     <fileSets>
         <fileSet>
-            <directory>${project.build.directory}/generated-docs</directory>
+            <directory>${project.build.directory}/site</directory>
             <outputDirectory>/</outputDirectory>
             <includes>
                 <include>**/*</include>

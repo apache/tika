@@ -50,39 +50,6 @@ under the License.
                     </filesets>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.asciidoctor</groupId>
-                <artifactId>asciidoctor-maven-plugin</artifactId>
-                <version>3.2.0</version>
-                <executions>
-                    <execution>
-                        <id>output-html</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>process-asciidoc</goal>
-                        </goals>
-                        <configuration>
-                            <doctype>article</doctype>
-                            <attributes>
-                                <source-highlighter>coderay</source-highlighter>
-                                <toc />
-                                <linkcss>false</linkcss>
-                                <icons>font</icons>
-                                <tika-stable-version>${tika.stable.version}</tika-stable-version>
-                                <!-- Paths to config examples for include directives -->
-                                <parser-examples>${project.basedir}/../tika-parsers/tika-parsers-standard/tika-parsers-standard-package/src/test/resources/config-examples</parser-examples>
-                                <server-examples>${project.basedir}/../tika-server/tika-server-core/src/test/resources/config-examples</server-examples>
-                                <pipes-fs-examples>${project.basedir}/../tika-pipes/tika-pipes-plugins/tika-pipes-file-system/src/test/resources/config-examples</pipes-fs-examples>
-                            </attributes>
-                        </configuration>
-                    </execution>
-                </executions>
-                <configuration>
-                    <sourceDirectory>src/main/asciidoc</sourceDirectory>
-                    <preserveDirectories>true</preserveDirectories>
-                </configuration>
-            </plugin>
-
             <!-- Maven Assembly plugin to create tar.gz -->
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
