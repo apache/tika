@@ -1,0 +1,133 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Releasing Tika Docker Images
+
+This guide covers the process for releasing Apache Tika Docker images.
+
+== Prerequisites
+
+=== DockerHub Access
+
+You need permissions on the `apache/tika` repository on DockerHub. To obtain access,
+create an INFRA JIRA ticket with the "Docker" label.
+
+=== Repository Access
+
+Clone the tika-docker repository:
+
+[source,bash]
+----
+git clone https://github.com/apache/tika-docker
+cd tika-docker
+----
+
+== Image Types
+
+The tika-docker repository produces two types of images:
+
+Minimal::
+Apache Tika with base dependencies (Java only)
+
+Full::
+Apache Tika plus Tesseract OCR and GDAL
+
+== Helper Tools
+
+docker-tool.sh::
+Automates building, testing, and publishing Docker images
+
+republish-images.sh::
+Legacy script for batch republishing images
+
+NOTE: The repository also contains Docker Compose files for advanced scenarios
+(Vision, Grobid, OCR, NER), but these are not used for official releases.
+
+== Release Process
+
+=== Step 1: Update README
+
+Update the "Available Tags" section in `README.md` to include the new version.
+
+=== Step 2: Update Version
+
+Increment the TAG version in the `.env` file.
+
+=== Step 3: Update Changelog
+
+Update `CHANGES.md` with release information and date.
+
+=== Step 4: Test Locally
+
+Test the release locally before publishing:
+
+[source,bash]
+----
+./docker-tool.sh build <docker-version> <tika-version>
+./docker-tool.sh test <docker-version>
+----
+
+=== Step 5: Commit Changes
+
+Commit all changes:
+
+[source,bash]
+----
+git add README.md .env CHANGES.md
+git commit -m "Prepare for Docker release <docker-version>"
+git push
+----
+
+=== Step 6: Build and Publish
+
+Build and publish the images using the docker-tool script.
+
+Example for version 3.1.0.0 based on Tika 3.1.0:
+
+[source,bash]
+----
+# Build the images
+./docker-tool.sh build 3.1.0.0 3.1.0
+
+# Test the images
+./docker-tool.sh test 3.1.0.0
+
+# Publish to DockerHub
+./docker-tool.sh publish 3.1.0.0 3.1.0
+----
+
+NOTE: Multi-architecture building takes time. The publish step automatically
+updates the `-latest` tag on DockerHub.
+
+=== Step 7: Tag the Release
+
+Create and push a git tag for the release:
+
+[source,bash]
+----
+git tag -a 3.1.0.0 -m "New release for 3.1.0.0"
+git push --tags
+----
+
+== Post-Release
+
+After publishing the Docker images:
+
+* Verify the images are available on DockerHub at https://hub.docker.com/r/apache/tika
+* Test pulling and running the new images
+* Update the main Tika website if needed
+* Proceed to release the link:helm.html[Helm charts] if applicable

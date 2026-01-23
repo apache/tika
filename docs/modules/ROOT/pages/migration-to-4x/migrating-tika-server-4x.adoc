@@ -36,7 +36,7 @@ The `/tika` endpoint has been simplified with path-based routing:
 |PUT |`/tika/html` |- |raw HTML
 |PUT |`/tika/xml` |- |raw XML
 |PUT |`/tika/json` |- |JSON (text handler)
-|PUT |`/tika/json/{handler}` |- |JSON with specified handler (text, html, xml)
+|PUT |`/tika/json/\{handler\}` |- |JSON with specified handler (text, html, xml)
 |POST |`/tika` |YES |raw output (multipart with optional config)
 |POST |`/tika/json` |YES |JSON output (multipart with optional config)
 |===

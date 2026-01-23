@@ -1,0 +1,179 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Using Tika as a Library (Java API)
+
+This section covers using Apache Tika programmatically in your Java applications.
+
+== Overview
+
+Tika can be embedded directly into your Java applications as a library. This gives you
+full control over parsing, detection, and configuration.
+
+However, for most use cases we recommend using xref:using-tika/server/index.adoc[tika-server]
+or xref:using-tika/grpc/index.adoc[tika-grpc] instead. See
+xref:using-tika/java-api/getting-started.adoc[Getting Started] for guidance on choosing the right approach.
+
+== Parsers
+
+The `org.apache.tika.parser.Parser` interface is Tika's fundamental mechanism for document
+processing. It employs a single parsing method accepting an input stream, content handler,
+metadata object, and parse context.
+
+=== Design Principles
+
+Tika's parser architecture prioritizes:
+
+* **Streamed Processing** - When possible, documents aren't held entirely in memory, enabling efficient handling of large files
+* **Structured Output** - Preserves document hierarchy (headings, links, etc.) for relevance assessment
+* **Input Metadata** - Accepts file names and content types to guide parsing decisions
+* **Output Metadata** - Returns extracted metadata like author information alongside content
+* **Context Sensitivity** - Allows fine-grained control through parse context injection
+
+=== The Parse Method
+
+The parse method accepts four arguments:
+
+[source,java]
+----
+void parse(InputStream stream,
+           ContentHandler handler,
+           Metadata metadata,
+           ParseContext context) throws IOException, SAXException, TikaException;
+----
+
+* `InputStream` - the document content
+* `ContentHandler` - receives XHTML SAX events
+* `Metadata` - bidirectional metadata exchange
+* `ParseContext` - context-specific settings
+
+=== Output Format
+
+Parsers generate XHTML SAX events structured as:
+
+[source,xml]
+----
+<html>
+  <head>
+    <title>...</title>
+  </head>
+  <body>...</body>
+</html>
+----
+
+=== AutoDetectParser
+
+The `AutoDetectParser` class automatically determines document type and selects the
+appropriate parser, encapsulating all Tika functionality in a single parser:
+
+[source,java]
+----
+try (TikaInputStream stream = TikaInputStream.get(path)) {
+    AutoDetectParser parser = new AutoDetectParser();
+    BodyContentHandler handler = new BodyContentHandler();
+    Metadata metadata = new Metadata();
+    ParseContext context = new ParseContext();
+
+    parser.parse(stream, handler, metadata, context);
+
+    String content = handler.toString();
+    String title = metadata.get(TikaCoreProperties.TITLE);
+}
+----
+
+NOTE: Always use `TikaInputStream` and pass the original resource directly when possible.
+For example, use `TikaInputStream.get(path)` for a `Path`, or `TikaInputStream.get(bytes)`
+for a `byte[]`. This allows Tika to access the underlying resource efficiently and enables
+features like mark/reset support that many parsers and detectors require.
+
+=== Utility Classes
+
+**BodyContentHandler**:: Extracts and converts the body content to streams or strings.
+
+**ParsingReader**:: Uses background threading to return extracted text as character streams.
+
+=== Key Metadata Properties
+
+* `TikaCoreProperties.RESOURCE_NAME_KEY` - filename or resource identifier
+* `Metadata.CONTENT_TYPE` - declared document format
+* `TikaCoreProperties.TITLE` - document title
+* `TikaCoreProperties.CREATOR` - document creator
+
+== Detectors
+
+The `org.apache.tika.detect.Detector` interface is the foundation of Tika's detection system.
+All detection approaches implement a shared method:
+
+[source,java]
+----
+MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
+    throws IOException;
+----
+
+This method examines a `TikaInputStream`, metadata object, and parse context, returning a
+`MediaType` representing the detected file type.
+
+=== Detection Types
+
+**Magic Detection**:: Identifies files by analyzing special byte patterns near the file start
+using the Freedesktop MIME-info format. Works through `MimeTypes` and configuration files
+like `tika-mimetypes.xml`.
+
+**Name-Based Detection**:: Uses filename patterns to guess file types via `NameDetector`.
+Quick but potentially unreliable if files are renamed.
+
+**Known Content Type**:: Leverages pre-existing MIME type information (from web servers or
+repositories) to refine detection.
+
+**Container-Aware Detection**:: Handles formats stored within containers (OLE2 for .doc/.ppt,
+ZIP for iWork files). Requires `TikaInputStream` and the Tika Parsers jar to inspect
+container contents.
+
+=== DefaultDetector
+
+`DefaultDetector` uses service loaders to discover and try all available detectors automatically.
+With only Tika Core, it provides magic and name detection. With Tika Parsers included,
+container detection becomes available.
+
+=== Detection Example
+
+[source,java]
+----
+TikaConfig tika = new TikaConfig();
+ParseContext parseContext = new ParseContext();
+
+for (Path p : myListOfPaths) {
+    Metadata metadata = new Metadata();
+
+    try (TikaInputStream stream = TikaInputStream.get(p, metadata)) {
+        MediaType mimetype = tika.getDetector().detect(stream, metadata, parseContext);
+        System.out.println("File " + p + " is " + mimetype);
+    }
+}
+----
+
+NOTE: `TikaInputStream.get(path, metadata)` automatically sets the resource name in the
+metadata, so you don't need to set it manually.
+
+=== Language Detection
+
+Tika identifies text language through `LanguageDetector` extensions, useful for documents
+lacking language metadata.
+
+== Topics
+
+* xref:using-tika/java-api/getting-started.adoc[Getting Started] - Recommendations and PipesForkParser usage
