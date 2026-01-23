@@ -251,6 +251,7 @@ public class OpenDocumentParser implements Parser {
             if (embeddedName.contains("Thumbnails/") || embeddedName.contains("Pictures/")) {
 
                 Metadata embeddedMetadata = new Metadata();
+                embeddedMetadata.set(TikaCoreProperties.INTERNAL_PATH, embeddedName);
                 TikaInputStream stream = TikaInputStream.get(zip);
 
                 embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, entry.getName());
@@ -296,6 +297,7 @@ public class OpenDocumentParser implements Parser {
         Metadata embeddedMetadata = new Metadata();
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
+        embeddedMetadata.set(TikaCoreProperties.INTERNAL_PATH, embeddedName);
         handler = new OpenDocumentMacroHandler(handler, context);
         XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(is),
                 new EmbeddedContentHandler(handler), context);

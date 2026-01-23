@@ -221,13 +221,13 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         if (name != null && name.length() > 0) {
             name = name.replace("\\", "/");
             entrydata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
+            entrydata.set(TikaCoreProperties.INTERNAL_PATH, name);
+            entrydata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, name);
             AttributesImpl attributes = new AttributesImpl();
             attributes.addAttribute("", "class", "class", "CDATA", "embedded");
             attributes.addAttribute("", "id", "id", "CDATA", name);
             xhtml.startElement("div", attributes);
             xhtml.endElement("div");
-
-            entrydata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, name);
         }
         return entrydata;
     }

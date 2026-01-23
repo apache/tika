@@ -189,12 +189,19 @@ public interface TikaCoreProperties {
             Property.internalTextBag(TIKA_META_PREFIX + "origResourceName");
     /**
      * This should be used to store the path (relative or full)
-     * of the source file, including the file name,
+     * of the source/container file, including the file name,
      * e.g. doc/path/to/my_pdf.pdf
      * <p>
      * This can also be used for a primary key within a database.
      */
     Property SOURCE_PATH = Property.internalText(TIKA_META_PREFIX + "sourcePath");
+
+    /**
+     * This records the metadata as stored within a file for an embedded file's path
+     * including the file name. For example a zip file may include an msg with this path: /my-emails/important/this.msg
+     */
+    Property INTERNAL_PATH = Property.internalText(TIKA_META_PREFIX + "internalPath");
+
     /**
      * This is currently used to identify Content-Type that may be
      * included within a document, such as in html documents
