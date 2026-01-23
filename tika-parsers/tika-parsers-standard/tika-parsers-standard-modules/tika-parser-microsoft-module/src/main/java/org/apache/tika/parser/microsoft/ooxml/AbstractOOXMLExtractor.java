@@ -55,6 +55,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -183,7 +184,9 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 try (InputStream tStream = tPart.getInputStream()) {
                     Metadata thumbnailMetadata = new Metadata();
                     String thumbName = tPart.getPartName().getName();
-                    thumbnailMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, thumbName);
+                    thumbnailMetadata.set(TikaCoreProperties.INTERNAL_PATH, thumbName);
+                    thumbnailMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
+                            FilenameUtils.getName(thumbName));
 
                     AttributesImpl attributes = new AttributesImpl();
                     attributes.addAttribute(XHTML, "class", "class", "CDATA", "embedded");
@@ -348,6 +351,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name());
             metadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, rel);
+            metadata.set(TikaCoreProperties.INTERNAL_PATH, part.getPartName().getName());
 
             DirectoryNode root = fs.getRoot();
             POIFSDocumentType type = POIFSDocumentType.detectType(root);
@@ -454,6 +458,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         metadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, rel);
         metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 embeddedResourceType.name());
+        metadata.set(TikaCoreProperties.INTERNAL_PATH, part.getPartName().getName());
 
         // Get the name
         updateResourceName(part, embeddedPartMetadata, metadata);

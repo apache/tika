@@ -32,6 +32,7 @@
 * xref:advanced/index.adoc[Advanced]
 ** xref:advanced/robustness.adoc[Robustness]
 ** xref:advanced/spooling.adoc[Spooling]
+** xref:advanced/embedded-documents.adoc[Embedded Document Metadata]
 * xref:faq.adoc[FAQ]
 * xref:security.adoc[Security]
 * xref:roadmap.adoc[Roadmap]

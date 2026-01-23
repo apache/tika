@@ -368,7 +368,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals("91", metadatas.get(1).get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "height"));
         assertEquals("352", metadatas.get(1).get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "width"));
 
-        assertNull(metadatas.get(0).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("testPDF_JBIG2.pdf", metadatas.get(0).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("image0.jb2", metadatas.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals(MediaType.image("x-jbig2").toString(),
                 metadatas.get(1).get(Metadata.CONTENT_TYPE));

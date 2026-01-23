@@ -23,9 +23,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.ClosedInputStream;
@@ -127,11 +129,54 @@ public class RecursiveParserWrapperTest extends TikaTest {
         List<Metadata> list = handler.getMetadataList();
         assertEquals(12, list.size());
     }
+
+    @Test
+    public void testTarball() throws Exception {
+        List<Metadata> list = getRecursiveMetadata("test-documents.tgz");
+        List<String> actualInternalPaths =
+                list.stream()
+                        .map(m -> m.get(TikaCoreProperties.INTERNAL_PATH))
+                        .collect(Collectors.toList());
+
+        List<String> expectedInternalPaths = Arrays.asList(null,
+                "test-documents/testEXCEL.xls",
+                "test-documents/testHTML.html",
+                "Thumbnails/thumbnail.png",
+                "Thumbnails/thumbnail.pdf",
+                "test-documents/testOpenOffice2.odt",
+                "test-documents/testPDF.pdf",
+                "test-documents/testPPT.ppt",
+                "test-documents/testRTF.rtf",
+                "test-documents/testTXT.txt",
+                "test-documents/testWORD.doc",
+                "test-documents/testXML.xml",
+                "test-documents.tar");
+        assertEquals(expectedInternalPaths, actualInternalPaths);
+
+        List<String> actualEmbeddedPaths =
+                list.stream()
+                    .map(m -> m.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH))
+                    .collect(Collectors.toList());
+        assertEquals(Arrays.asList(null,
+                "/test-documents.tar/testEXCEL.xls",
+                "/test-documents.tar/testHTML.html",
+                "/test-documents.tar/testOpenOffice2.odt/thumbnail.png",
+                "/test-documents.tar/testOpenOffice2.odt/thumbnail.pdf",
+                "/test-documents.tar/testOpenOffice2.odt",
+                "/test-documents.tar/testPDF.pdf",
+                "/test-documents.tar/testPPT.ppt",
+                "/test-documents.tar/testRTF.rtf",
+                "/test-documents.tar/testTXT.txt",
+                "/test-documents.tar/testWORD.doc",
+                "/test-documents.tar/testXML.xml",
+                "/test-documents.tar"), actualEmbeddedPaths);
+    }
+
     @Test
     public void testCharLimitNoThrowOnWriteLimit() throws Exception {
         ParseContext context = new ParseContext();
         Metadata metadata = new Metadata();
-        int writeLimit = 500;
+        int writeLimit = 510;
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
