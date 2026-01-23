@@ -262,7 +262,7 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
         assertEquals("Microsoft_Office_Excel_Worksheet1.xlsx", handler.filenames.get(6));
         assertEquals("Microsoft_Office_Word_Document2.docx", handler.filenames.get(7));
         assertEquals("Microsoft_Office_Word_97_-_2003_Document1.doc", handler.filenames.get(8));
-        assertEquals("/docProps/thumbnail.jpeg", handler.filenames.get(9));
+        assertEquals("thumbnail.jpeg", handler.filenames.get(9));
 
         // But we do know their types
         assertEquals(TYPE_EMF, handler.mediaTypes.get(0));  // Icon of embedded office doc
