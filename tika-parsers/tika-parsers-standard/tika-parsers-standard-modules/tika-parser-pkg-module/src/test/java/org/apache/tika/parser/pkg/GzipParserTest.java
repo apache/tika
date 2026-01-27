@@ -50,7 +50,7 @@ public class GzipParserTest extends AbstractPkgTest {
         assertEquals(1, tracker.mediatypes.size());
         assertEquals(1, tracker.modifiedAts.size());
 
-        assertEquals(null, tracker.filenames.get(0));
+        assertEquals("test-documents.tar", tracker.filenames.get(0));
         assertEquals(null, tracker.mediatypes.get(0));
         assertEquals(null, tracker.modifiedAts.get(0));
 

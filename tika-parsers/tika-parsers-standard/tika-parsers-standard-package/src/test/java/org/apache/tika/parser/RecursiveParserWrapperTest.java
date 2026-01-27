@@ -175,6 +175,16 @@ public class RecursiveParserWrapperTest extends TikaTest {
     }
 
     @Test
+    public void testTarballWithoutGzipNameMetadata() throws Exception {
+        List<Metadata> list = getRecursiveMetadata("test-documents-no-name-metadata.tgz");
+        Metadata last = list.get(list.size() - 1);
+        String internalPath = last.get(TikaCoreProperties.INTERNAL_PATH);
+        String embeddedResourcePath = last.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
+        assertEquals("test-documents-no-name-metadata.tar", internalPath);
+        assertEquals("/test-documents-no-name-metadata.tar", embeddedResourcePath);
+    }
+
+    @Test
     public void testCharLimitNoThrowOnWriteLimit() throws Exception {
         ParseContext context = new ParseContext();
         Metadata metadata = new Metadata();
