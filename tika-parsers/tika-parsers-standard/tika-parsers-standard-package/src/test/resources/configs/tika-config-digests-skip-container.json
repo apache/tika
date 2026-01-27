@@ -1,15 +1,17 @@
 {
   "auto-detect-parser": {
     "outputThreshold": 1000000,
-    "skipContainerDocumentDigest": true,
-    "digesterFactory": {
+    "throwOnZeroBytes": false
+  },
+  "other-configs": {
+    "digester-factory": {
       "commons-digester-factory": {
         "digests": [
           { "algorithm": "SHA256", "encoding": "BASE32" },
           { "algorithm": "MD5" }
-        ]
+        ],
+        "skipContainerDocumentDigest": true
       }
-    },
-    "throwOnZeroBytes": false
+    }
   }
 }

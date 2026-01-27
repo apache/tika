@@ -1,15 +1,6 @@
 {
   "auto-detect-parser": {
     "outputThreshold": 1000000,
-    "skipContainerDocumentDigest": true,
-    "digesterFactory": {
-      "commons-digester-factory": {
-        "digests": [
-          { "algorithm": "SHA256", "encoding": "BASE32" },
-          { "algorithm": "MD5" }
-        ]
-      }
-    },
     "metadataWriteFilterFactory": {
       "standard-write-filter-factory": {
         "includeFields": [
@@ -19,6 +10,16 @@
       }
     },
     "throwOnZeroBytes": false
+  },
+  "other-configs": {
+    "digester-factory": {
+      "commons-digester-factory": {
+        "digests": [
+          { "algorithm": "SHA256", "encoding": "BASE32" },
+          { "algorithm": "MD5" }
+        ],
+        "skipContainerDocumentDigest": true
+      }
+    }
   }
 }
-

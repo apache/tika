@@ -79,14 +79,16 @@ public abstract class CXFTestBase {
             {
               "auto-detect-parser": {
                 "outputThreshold": 1000000,
-                "digesterFactory": {
+                "throwOnZeroBytes": false
+              },
+              "other-configs": {
+                "digester-factory": {
                   "commons-digester-factory": {
                     "digests": [
                       { "algorithm": "MD5" }
                     ]
                   }
-                },
-                "throwOnZeroBytes": false
+                }
               }
             }
             """;

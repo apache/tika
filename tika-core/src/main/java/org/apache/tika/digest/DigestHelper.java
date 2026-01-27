@@ -31,7 +31,19 @@ import org.apache.tika.parser.ParseContext;
 
 /**
  * Utility class for computing digests on streams.
- * This follows the same pattern as AutoDetectParser's maybeSpool() method.
+ * <p>
+ * The DigesterFactory is retrieved from ParseContext. Configure it via
+ * the "other-configs" section in tika-config.json:
+ * <pre>
+ * "other-configs": {
+ *   "digester-factory": {
+ *     "commons-digester-factory": {
+ *       "digests": [{ "algorithm": "SHA256" }],
+ *       "skipContainerDocumentDigest": true
+ *     }
+ *   }
+ * }
+ * </pre>
  */
 public class DigestHelper {
 
@@ -39,31 +51,36 @@ public class DigestHelper {
             new DefaultEmbeddedStreamTranslator();
 
     /**
-     * Computes digests on the stream if configured.
+     * Computes digests on the stream if a DigesterFactory is configured in ParseContext.
+     * <p>
      * This is called directly from AutoDetectParser.parse() before type detection.
      *
-     * @param tis                          the TikaInputStream to digest
-     * @param digester                     the digester to use (may be null)
-     * @param skipContainerDocumentDigest  if true, skip digesting for top-level documents (depth 0)
-     * @param metadata                     metadata to read embedded depth from and write digests to
-     * @param context                      parse context (may contain SkipContainerDocumentDigest marker)
+     * @param tis      the TikaInputStream to digest
+     * @param metadata metadata to read depth from and write digests to
+     * @param context  parse context (should contain DigesterFactory, may contain SkipContainerDocumentDigest marker)
      * @throws IOException if an I/O error occurs
      */
     public static void maybeDigest(TikaInputStream tis,
-                                   Digester digester,
-                                   boolean skipContainerDocumentDigest,
                                    Metadata metadata,
                                    ParseContext context) throws IOException {
-        if (digester == null) {
+        DigesterFactory digesterFactory = context.get(DigesterFactory.class);
+
+        if (digesterFactory == null) {
             return;
         }
-        // Check both the config setting and the ParseContext marker
-        if (skipContainerDocumentDigest || SkipContainerDocumentDigest.shouldSkip(context)) {
+
+        // Get skip setting from factory or ParseContext marker
+        boolean skipContainer = digesterFactory.isSkipContainerDocumentDigest()
+                || SkipContainerDocumentDigest.shouldSkip(context);
+
+        if (skipContainer) {
             Integer depth = metadata.getInt(TikaCoreProperties.EMBEDDED_DEPTH);
             if (depth == null || depth == 0) {
                 return;
             }
         }
+
+        Digester digester = digesterFactory.build();
 
         // Handle embedded stream translation if needed (e.g., for OLE2 objects in TikaInputStream's open container)
         if (EMBEDDED_STREAM_TRANSLATOR.shouldTranslate(tis, metadata)) {

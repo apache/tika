@@ -51,15 +51,18 @@ class PipesWorker implements Callable<PipesResult> {
     private static final Logger LOG = LoggerFactory.getLogger(PipesWorker.class);
 
     private final FetchEmitTuple fetchEmitTuple;
+    private final ParseContext parseContext;
     private final AutoDetectParser autoDetectParser;
     private final EmitterManager emitterManager;
     private final FetchHandler fetchHandler;
     private final ParseHandler parseHandler;
     private final EmitHandler emitHandler;
 
-    public PipesWorker(FetchEmitTuple fetchEmitTuple, AutoDetectParser autoDetectParser, EmitterManager emitterManager, FetchHandler fetchHandler, ParseHandler parseHandler,
+    public PipesWorker(FetchEmitTuple fetchEmitTuple, ParseContext parseContext, AutoDetectParser autoDetectParser,
+                       EmitterManager emitterManager, FetchHandler fetchHandler, ParseHandler parseHandler,
                        EmitHandler emitHandler) {
         this.fetchEmitTuple = fetchEmitTuple;
+        this.parseContext = parseContext;
         this.autoDetectParser = autoDetectParser;
         this.emitterManager = emitterManager;
         this.fetchHandler = fetchHandler;
@@ -83,7 +86,7 @@ class PipesWorker implements Callable<PipesResult> {
             if (parseData == null || metadataIsEmpty(parseData.getMetadataList())) {
                 return PipesResults.EMPTY_OUTPUT;
             }
-            return emitHandler.emitParseData(fetchEmitTuple, parseData);
+            return emitHandler.emitParseData(fetchEmitTuple, parseData, parseContext);
         } finally {
             if (parseData != null && parseData.hasEmbeddedDocumentByteStore() &&
                     parseData.getEmbeddedDocumentBytesHandler() instanceof Closeable) {
@@ -107,21 +110,21 @@ class PipesWorker implements Callable<PipesResult> {
         //we want to isolate and not touch the metadata sent into the fetchEmitTuple
         //so that we can inject it after the filter at the very end
         Metadata metadata = new Metadata();
-        FetchHandler.TisOrResult tisOrResult = fetchHandler.fetch(fetchEmitTuple, metadata);
+        FetchHandler.TisOrResult tisOrResult = fetchHandler.fetch(fetchEmitTuple, metadata, parseContext);
         if (tisOrResult.pipesResult() != null) {
             return new ParseDataOrPipesResult(null, tisOrResult.pipesResult());
         }
 
-        ParseContext parseContext = null;
+        ParseContext localContext = null;
         try {
-            parseContext = setupParseContext(fetchEmitTuple);
+            localContext = setupParseContext();
         } catch (IOException e) {
             LOG.warn("fetcher initialization exception id={}", fetchEmitTuple.getId(), e);
             return new ParseDataOrPipesResult(null,
                     new PipesResult(PipesResult.RESULT_STATUS.FETCHER_INITIALIZATION_EXCEPTION, ExceptionUtils.getStackTrace(e)));
         }
         try (TikaInputStream tis = tisOrResult.tis()) {
-            return parseHandler.parseWithStream(fetchEmitTuple, tis, metadata, parseContext);
+            return parseHandler.parseWithStream(fetchEmitTuple, tis, metadata, localContext);
         } catch (SecurityException e) {
             LOG.error("security exception id={}", fetchEmitTuple.getId(), e);
             throw e;
@@ -134,8 +137,7 @@ class PipesWorker implements Callable<PipesResult> {
 
 
 
-    private ParseContext setupParseContext(FetchEmitTuple fetchEmitTuple) throws TikaException, IOException {
-        ParseContext parseContext = fetchEmitTuple.getParseContext();
+    private ParseContext setupParseContext() throws TikaException, IOException {
         // ContentHandlerFactory and ParseMode are retrieved from ParseContext in ParseHandler.
         // They are set in ParseContext from PipesConfig loaded via TikaLoader at startup.
         EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);

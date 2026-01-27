@@ -31,6 +31,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.detect.Detector;
 import org.apache.tika.digest.Digester;
+import org.apache.tika.digest.DigesterFactory;
 import org.apache.tika.digest.SkipContainerDocumentDigest;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaConfigException;
@@ -58,7 +59,6 @@ class ParseHandler {
     private static final Logger LOG = LoggerFactory.getLogger(ParseHandler.class);
 
     private final Detector detector;
-    private final Digester digester;
     private final ArrayBlockingQueue<Metadata> intermediateResult;
     private final CountDownLatch countDownLatch;
     private final AutoDetectParser autoDetectParser;
@@ -67,12 +67,11 @@ class ParseHandler {
     private final ParseMode defaultParseMode;
 
 
-    ParseHandler(Detector detector, Digester digester, ArrayBlockingQueue<Metadata> intermediateResult,
+    ParseHandler(Detector detector, ArrayBlockingQueue<Metadata> intermediateResult,
                  CountDownLatch countDownLatch, AutoDetectParser autoDetectParser,
                  RecursiveParserWrapper recursiveParserWrapper, ContentHandlerFactory defaultContentHandlerFactory,
                  ParseMode defaultParseMode) {
         this.detector = detector;
-        this.digester = digester;
         this.intermediateResult = intermediateResult;
         this.countDownLatch = countDownLatch;
         this.autoDetectParser = autoDetectParser;
@@ -124,8 +123,11 @@ class ParseHandler {
 
     private void _preParse(FetchEmitTuple t, TikaInputStream tis, Metadata metadata,
                            ParseContext parseContext) {
-        if (digester != null) {
+        // Get DigesterFactory from ParseContext (configured via other-configs)
+        DigesterFactory digesterFactory = parseContext.get(DigesterFactory.class);
+        if (digesterFactory != null && !digesterFactory.isSkipContainerDocumentDigest()) {
             try {
+                Digester digester = digesterFactory.build();
                 digester.digest(tis, metadata, parseContext);
                 // Mark that we've already digested the container document so AutoDetectParser
                 // won't re-digest it during parsing

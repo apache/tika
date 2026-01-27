@@ -46,10 +46,6 @@
   },
   "auto-detect-parser": {
     "outputThreshold": 1000000,
-    "skipContainerDocumentDigest": false,
-    "digesterFactory": {
-      "mock-digester-factory": {}
-    },
     "embeddedDocumentExtractorFactory": {
       "runpack-extractor-factory": {
         "writeFileNameToContent": false,
@@ -57,6 +53,11 @@
       }
     },
     "throwOnZeroBytes": false
+  },
+  "other-configs": {
+    "digester-factory": {
+      "mock-digester-factory": {}
+    }
   },
   "plugin-roots": "PLUGINS_PATHS"
 }

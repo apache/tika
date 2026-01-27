@@ -152,10 +152,8 @@ public class AutoDetectParser extends CompositeParser {
         }
 
         // Compute digests before type detection if configured
-        DigestHelper.maybeDigest(tis,
-                autoDetectParserConfig.digester(),
-                autoDetectParserConfig.isSkipContainerDocumentDigest(),
-                metadata, context);
+        // DigesterFactory is retrieved from ParseContext (configured via other-configs)
+        DigestHelper.maybeDigest(tis, metadata, context);
 
         // Automatically detect the MIME type of the document
         MediaType type = detector.detect(tis, metadata, context);

@@ -567,14 +567,16 @@ public class AutoDetectParserTest extends TikaTest {
         //TIKA-4533 -- this tests both that a very large embedded OLE doc doesn't cause a zip bomb
         //exception AND that the sha for the embedded OLE doc is not the sha for a zero-byte file
         String expectedSha = "bbc2057a1ff8fe859a296d2fbb493fc0c3e5796749ba72507c0e13f7a3d81f78";
-        AutoDetectParser autoDetectParser = (AutoDetectParser) TikaLoaderHelper.getLoader("tika-4533.json").loadAutoDetectParser();
+        TikaLoader loader = TikaLoaderHelper.getLoader("tika-4533.json");
+        AutoDetectParser autoDetectParser = (AutoDetectParser) loader.loadAutoDetectParser();
+        ParseContext parseContext = loader.loadParseContext();
         //this models what happens in tika-pipes
         if (autoDetectParser.getAutoDetectParserConfig()
                     .getEmbeddedDocumentExtractorFactory() == null) {
             autoDetectParser.getAutoDetectParserConfig()
                                                      .setEmbeddedDocumentExtractorFactory(new RUnpackExtractorFactory());
         }
-        List<Metadata> metadataList = getRecursiveMetadata("testLargeOLEDoc.doc", autoDetectParser, new ParseContext());
+        List<Metadata> metadataList = getRecursiveMetadata("testLargeOLEDoc.doc", autoDetectParser, parseContext);
         assertEquals(expectedSha, metadataList.get(2).get("X-TIKA:digest:SHA256"));
         assertNull(metadataList.get(2).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
         assertEquals(2049290L, Long.parseLong(metadataList.get(2).get(Metadata.CONTENT_LENGTH)));

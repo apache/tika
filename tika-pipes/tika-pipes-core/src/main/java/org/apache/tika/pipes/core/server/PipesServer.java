@@ -53,13 +53,13 @@ import org.xml.sax.SAXException;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
-import org.apache.tika.digest.Digester;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.RUnpackExtractorFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
@@ -131,7 +131,6 @@ public class PipesServer implements AutoCloseable {
             return (byte) (ordinal() + 1);
         }
     }
-    private Digester digester;
 
     private Detector detector;
 
@@ -295,14 +294,16 @@ public class PipesServer implements AutoCloseable {
                     CountDownLatch countDownLatch = new CountDownLatch(1);
 
                     FetchEmitTuple fetchEmitTuple = readFetchEmitTuple();
+                    // Create merged ParseContext: defaults from tika-config + request overrides
+                    ParseContext mergedContext = createMergedParseContext(fetchEmitTuple.getParseContext());
                     // Resolve friendly-named configs in ParseContext to actual objects
-                    ParseContextUtils.resolveAll(fetchEmitTuple.getParseContext(), getClass().getClassLoader());
+                    ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
 
-                    PipesWorker pipesWorker = getPipesWorker(intermediateResult, fetchEmitTuple, countDownLatch);
+                    PipesWorker pipesWorker = getPipesWorker(intermediateResult, fetchEmitTuple, mergedContext, countDownLatch);
                     executorCompletionService.submit(pipesWorker);
                     //set progress counter
                     try {
-                        loopUntilDone(fetchEmitTuple, executorCompletionService, intermediateResult, countDownLatch);
+                        loopUntilDone(fetchEmitTuple, mergedContext, executorCompletionService, intermediateResult, countDownLatch);
                     } catch (Throwable t) {
                         LOG.error("Serious problem: {}", HexFormat.of().formatHex(new byte[]{(byte)request}), t);
                     }
@@ -334,21 +335,23 @@ public class PipesServer implements AutoCloseable {
         }
     }
 
-    private PipesWorker getPipesWorker(ArrayBlockingQueue<Metadata> intermediateResult, FetchEmitTuple fetchEmitTuple, CountDownLatch countDownLatch) {
+    private PipesWorker getPipesWorker(ArrayBlockingQueue<Metadata> intermediateResult, FetchEmitTuple fetchEmitTuple,
+                                        ParseContext mergedContext, CountDownLatch countDownLatch) {
         FetchHandler fetchHandler = new FetchHandler(fetcherManager);
-        ParseHandler parseHandler = new ParseHandler(detector, digester, intermediateResult, countDownLatch, autoDetectParser,
+        ParseHandler parseHandler = new ParseHandler(detector, intermediateResult, countDownLatch, autoDetectParser,
                 rMetaParser, defaultContentHandlerFactory, pipesConfig.getParseMode());
         Long thresholdBytes = pipesConfig.getEmitStrategy().getThresholdBytes();
         long threshold = (thresholdBytes != null) ? thresholdBytes : EmitStrategyConfig.DEFAULT_DIRECT_EMIT_THRESHOLD_BYTES;
         EmitHandler emitHandler = new EmitHandler(defaultMetadataFilter, emitStrategy, emitterManager, threshold);
-        PipesWorker pipesWorker = new PipesWorker(fetchEmitTuple, autoDetectParser, emitterManager, fetchHandler, parseHandler, emitHandler);
+        PipesWorker pipesWorker = new PipesWorker(fetchEmitTuple, mergedContext, autoDetectParser, emitterManager, fetchHandler, parseHandler, emitHandler);
         return pipesWorker;
     }
 
-    private void loopUntilDone(FetchEmitTuple fetchEmitTuple, ExecutorCompletionService<PipesResult> executorCompletionService,
+    private void loopUntilDone(FetchEmitTuple fetchEmitTuple, ParseContext mergedContext,
+                               ExecutorCompletionService<PipesResult> executorCompletionService,
                                ArrayBlockingQueue<Metadata> intermediateResult, CountDownLatch countDownLatch) throws InterruptedException, IOException {
         Instant start = Instant.now();
-        long timeoutMillis = PipesClient.getTimeoutMillis(pipesConfig, fetchEmitTuple.getParseContext());
+        long timeoutMillis = PipesClient.getTimeoutMillis(pipesConfig, mergedContext);
         long mockProgressCounter = 0;
         boolean wroteIntermediateResult = false;
 
@@ -463,21 +466,6 @@ public class PipesServer implements AutoCloseable {
         this.fetcherManager = FetcherManager.load(tikaPluginManager, tikaJsonConfig, true, configStore);
         this.emitterManager = EmitterManager.load(tikaPluginManager, tikaJsonConfig, true, configStore);
         this.autoDetectParser = (AutoDetectParser) tikaLoader.loadAutoDetectParser();
-        // Get the digester for pre-parse digesting of container documents.
-        // If user configured skipContainerDocumentDigest=false (the default), PipesServer
-        // digests the container document before parsing to ensure we have the digest even
-        // if parsing times out. The SkipContainerDocumentDigest marker is then added to
-        // ParseContext to prevent AutoDetectParser from re-digesting the container.
-        // If user configured skipContainerDocumentDigest=true, we don't digest containers at all.
-        boolean skipContainerDigest = autoDetectParser.getAutoDetectParserConfig()
-                .isSkipContainerDocumentDigest();
-        if (!skipContainerDigest) {
-            // User wants container documents digested - we'll do it in ParseHandler before parse
-            this.digester = autoDetectParser.getAutoDetectParserConfig().digester();
-        } else {
-            // User doesn't want container documents digested
-            this.digester = null;
-        }
 
         // If the user hasn't configured an embedded document extractor, set up the
         // RUnpackExtractorFactory
@@ -486,6 +474,23 @@ public class PipesServer implements AutoCloseable {
         }
         this.detector = this.autoDetectParser.getDetector();
         this.rMetaParser = new RecursiveParserWrapper(autoDetectParser);
+    }
+
+    /**
+     * Creates a merged ParseContext with defaults from tika-config overlaid with request values.
+     * Request values take precedence over defaults.
+     * <p>
+     * Creates a fresh context each time to avoid shared state between requests.
+     *
+     * @param requestContext the ParseContext from FetchEmitTuple
+     * @return a new ParseContext with defaults + request overrides
+     */
+    private ParseContext createMergedParseContext(ParseContext requestContext) throws TikaConfigException {
+        // Create fresh context with defaults from tika-config (e.g., DigesterFactory)
+        ParseContext mergedContext = tikaLoader.loadParseContext();
+        // Overlay request's values (request takes precedence)
+        mergedContext.copyFrom(requestContext);
+        return mergedContext;
     }
 
     private ConfigStore createConfigStore(PipesConfig pipesConfig, TikaPluginManager tikaPluginManager) throws TikaException {
