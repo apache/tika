@@ -212,10 +212,7 @@ public class CompressorParser implements Parser {
         xhtml.startDocument();
         try {
             Metadata entrydata = new Metadata();
-            if (cis instanceof GzipCompressorInputStream) {
-                extractGzipMetadata((GzipCompressorInputStream) cis, entrydata);
-            }
-            setName(metadata, entrydata);
+            setNameAndInternalPath(cis, metadata, entrydata);
 
             // Use the delegate parser to parse the compressed document
             EmbeddedDocumentExtractor extractor =
@@ -230,33 +227,44 @@ public class CompressorParser implements Parser {
         xhtml.endDocument();
     }
 
-    private void extractGzipMetadata(GzipCompressorInputStream gzcis, Metadata metadata) {
-        GzipParameters gzipParameters = gzcis.getMetaData();
-        if (gzipParameters == null) {
-            return;
+    private String getNameFromGzipMetadataIfPossible(CompressorInputStream cis) {
+        if (cis instanceof GzipCompressorInputStream) {
+            GzipCompressorInputStream gzcis = (GzipCompressorInputStream) cis;
+            GzipParameters gzipParameters = gzcis.getMetaData();
+            if (gzipParameters == null) {
+                return null;
+            }
+            String name = gzipParameters.getFileName();
+            if (!StringUtils.isBlank(name)) {
+                return name;
+            } else {
+                return null;
+            }
         }
-        String name = gzipParameters.getFileName();
-        if (!StringUtils.isBlank(name)) {
-            metadata.set(TikaCoreProperties.INTERNAL_PATH, name);
-        }
-        //TODO: modification, OS, comment
+        return null;
     }
 
-    private void setName(Metadata parentMetadata, Metadata metadata) {
-        String name = parentMetadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-        //if parent's name is blank stop now
-        if (StringUtils.isBlank(name)) {
-            return;
+    private void setNameAndInternalPath(CompressorInputStream cis, Metadata parentMetadata, Metadata metadata) {
+        String name = getNameFromGzipMetadataIfPossible(cis);
+
+        if (name == null) {
+            name = parentMetadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+            //if parent's name is blank stop now
+            if (StringUtils.isBlank(name)) {
+                return;
+            }
+            if (name.endsWith(".tgz") || name.endsWith(".tbz") || name.endsWith(".tbz2")) {
+                name = name.substring(0, name.lastIndexOf(".")) + ".tar";
+            } else if (name.endsWith(".bz") || name.endsWith("gz") || name.endsWith(".bz2") || name.endsWith(".xz") || name.endsWith(".zlib") || name.endsWith(".pack") ||
+                    name.endsWith(".br")) {
+                name = name.substring(0, name.lastIndexOf("."));
+            } else if (!name.isEmpty()) {
+                name = GzipUtils.getUncompressedFileName(name);
+            }
         }
-        if (name.endsWith(".tgz") || name.endsWith(".tbz") || name.endsWith(".tbz2")) {
-            name = name.substring(0, name.lastIndexOf(".")) + ".tar";
-        } else if (name.endsWith(".bz") || name.endsWith("gz") || name.endsWith(".bz2") || name.endsWith(".xz") || name.endsWith(".zlib") || name.endsWith(".pack") ||
-                name.endsWith(".br")) {
-            name = name.substring(0, name.lastIndexOf("."));
-        } else if (!name.isEmpty()) {
-            name = GzipUtils.getUncompressedFileName(name);
-        }
+
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
+        metadata.set(TikaCoreProperties.INTERNAL_PATH, name);
     }
 
     /**
