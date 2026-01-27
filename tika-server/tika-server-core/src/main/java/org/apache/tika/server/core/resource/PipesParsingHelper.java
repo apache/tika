@@ -182,7 +182,8 @@ public class PipesParsingHelper {
         LOG.debug("Parse returned empty result, status: {}", result.status());
         String message = result.message();
         if (message != null && !message.isEmpty()) {
-            Metadata errorMetadata = new Metadata();
+            ParseContext context = TikaResource.createParseContext();
+            Metadata errorMetadata = context.newMetadata();
             errorMetadata.add(TikaCoreProperties.CONTAINER_EXCEPTION, message);
             return Collections.singletonList(errorMetadata);
         }

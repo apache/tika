@@ -19,12 +19,10 @@ package org.apache.tika.metadata.writefilter;
 import java.io.Serializable;
 import java.util.Map;
 
-public interface MetadataWriteFilter extends Serializable {
-
-    void filterExisting(Map<String, String[]> data);
+public interface MetadataWriteLimiter extends Serializable {
 
     /**
-     * Based on the field and value, this filter modifies the field
+     * Based on the field and value, this limiter modifies the field
      * and/or the value to something that should be added to the Metadata object.
      *
      * If the value is <code>null</code>, no value is set or added.
@@ -32,21 +30,20 @@ public interface MetadataWriteFilter extends Serializable {
      * Status updates (e.g. write limit reached) can be added directly to the
      * underlying metadata.
      *
-     * @param field
-     * @param value
-     * @param data
-     * @return
+     * @param field the metadata field name
+     * @param value the value to add
+     * @param data the metadata map to modify
      */
     void add(String field, String value, Map<String, String[]> data);
 
     /**
-     * Based on the field and the value, this filter modifies
+     * Based on the field and the value, this limiter modifies
      * the field and/or the value to something that should be set in the
      * Metadata object.
      *
-     * @param field
-     * @param value
-     * @param data
+     * @param field the metadata field name
+     * @param value the value to set
+     * @param data the metadata map to modify
      */
     void set(String field, String value, Map<String, String[]> data);
 }

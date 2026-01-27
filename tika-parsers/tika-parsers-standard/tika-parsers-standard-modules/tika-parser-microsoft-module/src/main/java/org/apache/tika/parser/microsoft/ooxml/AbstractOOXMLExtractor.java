@@ -182,7 +182,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                     continue;
                 }
                 try (InputStream tStream = tPart.getInputStream()) {
-                    Metadata thumbnailMetadata = new Metadata();
+                    Metadata thumbnailMetadata = context.newMetadata();
                     String thumbName = tPart.getPartName().getName();
                     thumbnailMetadata.set(TikaCoreProperties.INTERNAL_PATH, thumbName);
                     thumbnailMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
@@ -347,7 +347,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         }
         TikaInputStream tis = null;
         try {
-            Metadata metadata = new Metadata();
+            Metadata metadata = context.newMetadata();
             metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name());
             metadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, rel);
@@ -454,7 +454,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                                       EmbeddedPartMetadata embeddedPartMetadata,
                                       TikaCoreProperties.EmbeddedResourceType embeddedResourceType)
             throws SAXException, IOException {
-        Metadata metadata = new Metadata();
+        Metadata metadata = context.newMetadata();
         metadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, rel);
         metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 embeddedResourceType.name());
@@ -520,7 +520,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             try (InputStream is = macroPart.getInputStream()) {
                 try (POIFSFileSystem poifs = new POIFSFileSystem(is)) {
                     //Macro reading exceptions are already swallowed here
-                    OfficeParser.extractMacros(poifs, handler, embeddedExtractor);
+                    OfficeParser.extractMacros(poifs, handler, embeddedExtractor, context);
                 }
             } catch (IOException e) {
                 throw new TikaException("Broken OOXML file", e);

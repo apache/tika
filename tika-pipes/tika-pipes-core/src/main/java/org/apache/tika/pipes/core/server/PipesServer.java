@@ -59,6 +59,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.RUnpackExtractorFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
+import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -149,6 +150,7 @@ public class PipesServer implements AutoCloseable {
     private final Socket socket;
     private final MetadataFilter defaultMetadataFilter;
     private final ContentHandlerFactory defaultContentHandlerFactory;
+    private final MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory;
     private AutoDetectParser autoDetectParser;
     private RecursiveParserWrapper rMetaParser;
     private FetcherManager fetcherManager;
@@ -178,7 +180,8 @@ public class PipesServer implements AutoCloseable {
 
             MetadataFilter metadataFilter = tikaLoader.loadMetadataFilters();
             ContentHandlerFactory contentHandlerFactory = tikaLoader.loadContentHandlerFactory();
-            PipesServer pipesServer = new PipesServer(pipesClientId, tikaLoader, pipesConfig, socket, dis, dos, metadataFilter, contentHandlerFactory);
+            MetadataWriteLimiterFactory metadataWriteLimiterFactory = tikaLoader.configs().load(MetadataWriteLimiterFactory.class);
+            PipesServer pipesServer = new PipesServer(pipesClientId, tikaLoader, pipesConfig, socket, dis, dos, metadataFilter, contentHandlerFactory, metadataWriteLimiterFactory);
             pipesServer.initializeResources();
             LOG.debug("pipesClientId={}: PipesServer loaded and ready", pipesClientId);
             return pipesServer;
@@ -211,7 +214,8 @@ public class PipesServer implements AutoCloseable {
     }
 
     public PipesServer(String pipesClientId, TikaLoader tikaLoader, PipesConfig pipesConfig, Socket socket, DataInputStream in,
-                       DataOutputStream out, MetadataFilter metadataFilter, ContentHandlerFactory contentHandlerFactory) throws TikaConfigException,
+                       DataOutputStream out, MetadataFilter metadataFilter, ContentHandlerFactory contentHandlerFactory,
+                       MetadataWriteLimiterFactory metadataWriteLimiterFactory) throws TikaConfigException,
             IOException {
 
         this.pipesClientId = pipesClientId;
@@ -220,6 +224,7 @@ public class PipesServer implements AutoCloseable {
         this.socket = socket;
         this.defaultMetadataFilter = metadataFilter;
         this.defaultContentHandlerFactory = contentHandlerFactory;
+        this.defaultMetadataWriteLimiterFactory = metadataWriteLimiterFactory;
         this.input = new DataInputStream(in);
         this.output = new DataOutputStream(out);
         this.heartbeatIntervalMs = pipesConfig.getHeartbeatIntervalMs();
@@ -341,7 +346,7 @@ public class PipesServer implements AutoCloseable {
         Long thresholdBytes = pipesConfig.getEmitStrategy().getThresholdBytes();
         long threshold = (thresholdBytes != null) ? thresholdBytes : EmitStrategyConfig.DEFAULT_DIRECT_EMIT_THRESHOLD_BYTES;
         EmitHandler emitHandler = new EmitHandler(defaultMetadataFilter, emitStrategy, emitterManager, threshold);
-        PipesWorker pipesWorker = new PipesWorker(fetchEmitTuple, autoDetectParser, emitterManager, fetchHandler, parseHandler, emitHandler);
+        PipesWorker pipesWorker = new PipesWorker(fetchEmitTuple, autoDetectParser, emitterManager, fetchHandler, parseHandler, emitHandler, defaultMetadataWriteLimiterFactory);
         return pipesWorker;
     }
 
@@ -486,6 +491,7 @@ public class PipesServer implements AutoCloseable {
         }
         this.detector = this.autoDetectParser.getDetector();
         this.rMetaParser = new RecursiveParserWrapper(autoDetectParser);
+
     }
 
     private ConfigStore createConfigStore(PipesConfig pipesConfig, TikaPluginManager tikaPluginManager) throws TikaException {

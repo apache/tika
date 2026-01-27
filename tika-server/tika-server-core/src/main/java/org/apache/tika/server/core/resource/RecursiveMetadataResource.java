@@ -62,7 +62,7 @@ public class RecursiveMetadataResource {
                                                ServerHandlerConfig handlerConfig)
             throws Exception {
 
-        final ParseContext context = new ParseContext();
+        final ParseContext context = TikaResource.createParseContext();
 
         fillMetadata(null, metadata, httpHeaders);
         TikaResource.logRequest(LOG, "/rmeta", metadata);
@@ -113,9 +113,10 @@ public class RecursiveMetadataResource {
     @Produces({"application/json"})
     @Path("form{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
     public Response getMetadataFromMultipart(Attachment att, @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName) throws Exception {
+        ParseContext context = TikaResource.createParseContext();
         try (TikaInputStream tis = TikaInputStream.get(att.getObject(InputStream.class))) {
             tis.getPath(); // Spool to temp file for pipes-based parsing
-            List<Metadata> metadataList = parseMetadata(tis, new Metadata(), att.getHeaders(),
+            List<Metadata> metadataList = parseMetadata(tis, context.newMetadata(), att.getHeaders(),
                     buildHandlerConfig(att.getHeaders(), handlerTypeName, ParseMode.RMETA));
             return Response.ok(new MetadataList(metadataList)).build();
         }
@@ -134,8 +135,8 @@ public class RecursiveMetadataResource {
             @Context HttpHeaders httpHeaders,
             @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName) throws Exception {
 
-        Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
+        ParseContext context = TikaResource.createParseContext();
+        Metadata metadata = context.newMetadata();
         try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
 
             TikaResource.logRequest(LOG, "/rmeta/config", metadata);
@@ -186,7 +187,8 @@ public class RecursiveMetadataResource {
     @Produces("application/json")
     @Path("{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName) throws Exception {
-        Metadata metadata = new Metadata();
+        ParseContext context = TikaResource.createParseContext();
+        Metadata metadata = context.newMetadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             tis.getPath(); // Spool to temp file for pipes-based parsing
             List<Metadata> metadataList = parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(),

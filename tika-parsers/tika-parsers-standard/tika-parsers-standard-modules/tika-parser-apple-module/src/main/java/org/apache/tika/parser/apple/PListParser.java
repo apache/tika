@@ -120,7 +120,7 @@ public class PListParser implements Parser {
             }
         }
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        State state = new State(xhtml, metadata, embeddedDocumentExtractor, df);
+        State state = new State(xhtml, metadata, embeddedDocumentExtractor, df, context);
         xhtml.startDocument();
         xhtml.startElement(PLIST);
         parseObject(rootObj, state);
@@ -191,7 +191,7 @@ public class PListParser implements Parser {
 
     private void handleData(NSData value, State state) throws IOException, SAXException {
         state.xhtml.characters(value.getBase64EncodedData());
-        Metadata embeddedMetadata = new Metadata();
+        Metadata embeddedMetadata = state.parseContext.newMetadata();
         if (!state.embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
             return;
         }
@@ -207,13 +207,16 @@ public class PListParser implements Parser {
         final Metadata metadata;
         final EmbeddedDocumentExtractor embeddedDocumentExtractor;
         final DateFormat dateFormat;
+        final ParseContext parseContext;
 
         public State(XHTMLContentHandler xhtml, Metadata metadata,
-                     EmbeddedDocumentExtractor embeddedDocumentExtractor, DateFormat df) {
+                     EmbeddedDocumentExtractor embeddedDocumentExtractor, DateFormat df,
+                     ParseContext parseContext) {
             this.xhtml = xhtml;
             this.metadata = metadata;
             this.embeddedDocumentExtractor = embeddedDocumentExtractor;
             this.dateFormat = df;
+            this.parseContext = parseContext;
         }
     }
 }

@@ -78,7 +78,7 @@ public class ActiveMimeParser implements Parser {
         EmbeddedDocumentExtractor ex = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         try (InputStream payload = new DeflateCompressorInputStream(tis)) {
             try (POIFSFileSystem poifs = new POIFSFileSystem(payload)) {
-                OfficeParser.extractMacros(poifs, xhtml, ex);
+                OfficeParser.extractMacros(poifs, xhtml, ex, context);
             }
         }
         xhtml.endDocument();

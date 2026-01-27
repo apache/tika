@@ -157,7 +157,7 @@ public class UniversalExecutableParser implements Parser {
             IOUtils.readFully(tis, perArchMachO);
             currentOffset += perArchMachO.length;
 
-            var perArchMetadata = new Metadata();
+            var perArchMetadata = context.newMetadata();
             var tikaInputStream = TikaInputStream.get(perArchMachO, perArchMetadata);
             if (extractor.shouldParseEmbedded(perArchMetadata)) {
                 extractor.parseEmbedded(tikaInputStream, xhtml, perArchMetadata, context, true);

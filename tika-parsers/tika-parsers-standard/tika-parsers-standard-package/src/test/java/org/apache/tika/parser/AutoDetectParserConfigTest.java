@@ -28,8 +28,10 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
 
 public class AutoDetectParserConfigTest extends TikaTest {
 
@@ -80,14 +82,19 @@ public class AutoDetectParserConfigTest extends TikaTest {
 
     @Test
     public void testWriteFilter() throws Exception {
-        //test to make sure that the decorator is only applied once for
-        //legacy (e.g. not RecursiveParserWrapperHandler) parsing
-        Parser p = TikaLoaderHelper.getLoader("tika-config-write-filter.json").loadAutoDetectParser();
-        List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", p);
-        for (Metadata metadata : metadataList) {
-            for (String k : metadata.names()) {
+        TikaLoader loader = TikaLoaderHelper.getLoader("tika-config-write-filter.json");
+        Parser p = loader.loadAutoDetectParser();
+        MetadataWriteLimiterFactory factory = loader.configs().load(MetadataWriteLimiterFactory.class);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(MetadataWriteLimiterFactory.class, factory);
+        Metadata metadata = parseContext.newMetadata();
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", p,
+                metadata, parseContext, true);
+        for (Metadata m : metadataList) {
+            for (String k : m.names()) {
                 assertTrue(k.startsWith("X-TIKA:") || k.startsWith("access_permission:")
-                        || k.equals("Content-Type") || k.equals("dc:creator"));
+                        || k.equals("Content-Type") || k.equals("dc:creator"),
+                        "unexpected key: " + k);
             }
         }
     }

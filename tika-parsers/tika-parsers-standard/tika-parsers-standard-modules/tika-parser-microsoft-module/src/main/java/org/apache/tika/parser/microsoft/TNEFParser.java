@@ -109,7 +109,7 @@ public class TNEFParser implements Parser {
                                 EmbeddedDocumentExtractor embeddedExtractor, ContentHandler handler,
                                 ParseContext context)
             throws IOException, SAXException, TikaException {
-        Metadata metadata = new Metadata();
+        Metadata metadata = context.newMetadata();
         if (name != null) {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
         }
