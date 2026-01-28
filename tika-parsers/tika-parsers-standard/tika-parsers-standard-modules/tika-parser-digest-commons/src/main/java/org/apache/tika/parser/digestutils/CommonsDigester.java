@@ -60,7 +60,7 @@ public class CommonsDigester extends CompositeDigester {
             Encoder encoder = getEncoder(def.getEncoding());
             digesters[i++] = new InputStreamDigester(
                     def.getAlgorithm().getJavaName(),
-                    def.getMetadataKey(),
+                    def.metadataKey(),
                     encoder);
         }
         return digesters;
@@ -75,7 +75,7 @@ public class CommonsDigester extends CompositeDigester {
             DigestDef def = new DigestDef(algorithm, DigestDef.Encoding.HEX);
             digesters[i++] = new InputStreamDigester(
                     algorithm.getJavaName(),
-                    def.getMetadataKey(),
+                    def.metadataKey(),
                     encoder);
         }
         return digesters;
