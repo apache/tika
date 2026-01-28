@@ -191,7 +191,7 @@ public class PListParser implements Parser {
 
     private void handleData(NSData value, State state) throws IOException, SAXException {
         state.xhtml.characters(value.getBase64EncodedData());
-        Metadata embeddedMetadata = state.parseContext.newMetadata();
+        Metadata embeddedMetadata = state.Metadata.newInstance(parseContext);
         if (!state.embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
             return;
         }

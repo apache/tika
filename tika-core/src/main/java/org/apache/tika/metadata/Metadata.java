@@ -36,6 +36,8 @@ import java.util.TimeZone;
 
 import org.apache.tika.metadata.Property.PropertyType;
 import org.apache.tika.metadata.writefilter.MetadataWriteLimiter;
+import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.DateUtils;
 
 /**
@@ -111,6 +113,28 @@ public class Metadata
     public Metadata(MetadataWriteLimiter writeLimiter) {
         metadata = new HashMap<>();
         this.writeLimiter = writeLimiter != null ? writeLimiter : ACCEPT_ALL;
+    }
+
+    /**
+     * Creates a new Metadata instance configured from the ParseContext.
+     * <p>
+     * If a {@link MetadataWriteLimiterFactory} is present in the context, the returned
+     * Metadata will have a write limiter that enforces those limits. Otherwise,
+     * returns a plain Metadata object with no limits.
+     * <p>
+     * Parsers should use this method instead of {@code new Metadata()} when creating
+     * metadata for embedded documents, to ensure limits are applied at creation time.
+     *
+     * @param context the ParseContext (may be null)
+     * @return a new Metadata instance configured from the context
+     * @since Apache Tika 4.0
+     */
+    public static Metadata newInstance(ParseContext context) {
+        if (context == null) {
+            return new Metadata();
+        }
+        MetadataWriteLimiterFactory factory = context.get(MetadataWriteLimiterFactory.class);
+        return factory != null ? new Metadata(factory.newInstance()) : new Metadata();
     }
 
     private static DateFormat createDateFormat(String format, TimeZone timezone) {

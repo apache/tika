@@ -59,7 +59,7 @@ public class MetadataResource {
         ParseContext context = TikaResource.createParseContext();
         try (TikaInputStream tis = TikaInputStream.get(att.getObject(InputStream.class))) {
             return Response
-                    .ok(parseMetadata(tis, context.newMetadata(), att.getHeaders(), info))
+                    .ok(parseMetadata(tis, Metadata.newInstance(context), att.getHeaders(), info))
                     .build();
         }
     }
@@ -78,7 +78,7 @@ public class MetadataResource {
             @Context UriInfo info) throws Exception {
 
         ParseContext context = TikaResource.createParseContext();
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
             // No need to parse embedded docs for metadata-only extraction
             context.set(DocumentSelector.class, metadata1 -> false);
@@ -99,7 +99,7 @@ public class MetadataResource {
     @Produces({"text/csv", "application/json"})
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
         ParseContext context = TikaResource.createParseContext();
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             return Response
                     .ok(parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(), info))
@@ -139,7 +139,7 @@ public class MetadataResource {
         // process the request
         Response.Status defaultErrorResponse = Response.Status.BAD_REQUEST;
         ParseContext context = TikaResource.createParseContext();
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         boolean success = false;
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(), info);

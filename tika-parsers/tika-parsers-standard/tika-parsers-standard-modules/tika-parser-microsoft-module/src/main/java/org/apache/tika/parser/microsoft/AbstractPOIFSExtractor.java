@@ -103,7 +103,7 @@ abstract class AbstractPOIFSExtractor {
                                           String mediaType, XHTMLContentHandler xhtml,
                                           boolean outputHtml)
             throws IOException, SAXException, TikaException {
-        handleEmbeddedResource(resource, context.newMetadata(), filename, relationshipID, storageClassID,
+        handleEmbeddedResource(resource, Metadata.newInstance(context), filename, relationshipID, storageClassID,
                 mediaType, xhtml, outputHtml);
     }
 
@@ -149,7 +149,7 @@ abstract class AbstractPOIFSExtractor {
     protected void handleEmbeddedOfficeDoc(DirectoryEntry dir, String resourceName,
                                            XHTMLContentHandler xhtml, boolean outputHtml)
             throws IOException, SAXException, TikaException {
-        handleEmbeddedOfficeDoc(dir, context.newMetadata(), resourceName, xhtml, outputHtml);
+        handleEmbeddedOfficeDoc(dir, Metadata.newInstance(context), resourceName, xhtml, outputHtml);
     }
     /**
      * Handle an office document that's embedded at the POIFS level

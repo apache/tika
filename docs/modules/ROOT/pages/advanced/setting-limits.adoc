@@ -31,7 +31,7 @@ exceed your configured limits.
 === How It Works
 
 When you configure a `MetadataWriteLimiterFactory` in the `ParseContext`, calling
-`parseContext.newMetadata()` creates a `Metadata` object with limits already applied.
+`Metadata.newInstance(parseContext)` creates a `Metadata` object with limits already applied.
 All subsequent writes to that metadata object are filtered through the limiter.
 
 [source,java]
@@ -47,7 +47,7 @@ ParseContext context = new ParseContext();
 context.set(MetadataWriteLimiterFactory.class, factory);
 
 // Create limited metadata - limits are enforced from the start
-Metadata metadata = context.newMetadata();
+Metadata metadata = Metadata.newInstance(context);
 ----
 
 === Configuration Options

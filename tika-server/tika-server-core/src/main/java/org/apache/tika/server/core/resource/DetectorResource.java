@@ -52,7 +52,7 @@ public class DetectorResource {
     @Produces("text/plain")
     public String detect(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
         ParseContext parseContext = TikaResource.createParseContext();
-        Metadata met = parseContext.newMetadata();
+        Metadata met = Metadata.newInstance(parseContext);
 
         String filename = TikaResource.detectFilename(httpHeaders.getRequestHeaders());
         LOG.info("Detecting media type for Filename: {}", filename);

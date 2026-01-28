@@ -23,12 +23,15 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
  * Server-internal configuration for request handlers.
  * This holds configuration parsed from HTTP headers for a single request
  * for the BasicContentHandlerFactory kinds of elements.
+ * <p>
+ * Note: Embedded resource limits are now configured via EmbeddedLimits in ParseContext,
+ * not through this config.
  */
 public record ServerHandlerConfig(
         BasicContentHandlerFactory.HANDLER_TYPE type,
         ParseMode parseMode,
         int writeLimit,
-        int maxEmbeddedResources,
+        int maxEmbeddedCount,
         boolean throwOnWriteLimitReached
 ) {
 }

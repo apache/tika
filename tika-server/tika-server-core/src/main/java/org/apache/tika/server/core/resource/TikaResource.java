@@ -504,7 +504,7 @@ public class TikaResource {
         TikaInputStream tis = TikaInputStream.get(is);
         tis.getPath(); // Spool to temp file for pipes-based parsing
         ParseContext context = createParseContext();
-        return produceRawOutput(tis, context.newMetadata(), httpHeaders.getRequestHeaders(), "xml");
+        return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "xml");
     }
 
     /**
@@ -519,7 +519,7 @@ public class TikaResource {
         TikaInputStream tis = TikaInputStream.get(is);
         tis.getPath(); // Spool to temp file for pipes-based parsing
         ParseContext context = createParseContext();
-        return produceRawOutput(tis, context.newMetadata(), httpHeaders.getRequestHeaders(), "text");
+        return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "text");
     }
 
     /**
@@ -534,7 +534,7 @@ public class TikaResource {
         TikaInputStream tis = TikaInputStream.get(is);
         tis.getPath(); // Spool to temp file for pipes-based parsing
         ParseContext context = createParseContext();
-        return produceRawOutput(tis, context.newMetadata(), httpHeaders.getRequestHeaders(), "html");
+        return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "html");
     }
 
     /**
@@ -549,7 +549,7 @@ public class TikaResource {
         TikaInputStream tis = TikaInputStream.get(is);
         tis.getPath(); // Spool to temp file for pipes-based parsing
         ParseContext context = createParseContext();
-        return produceRawOutput(tis, context.newMetadata(), httpHeaders.getRequestHeaders(), "xml");
+        return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "xml");
     }
 
     /**
@@ -564,7 +564,7 @@ public class TikaResource {
         TikaInputStream tis = TikaInputStream.get(is);
         tis.getPath(); // Spool to temp file for pipes-based parsing
         ParseContext context = createParseContext();
-        return produceJson(tis, context.newMetadata(), httpHeaders.getRequestHeaders(), "text");
+        return produceJson(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "text");
     }
 
     /**
@@ -582,7 +582,7 @@ public class TikaResource {
         TikaInputStream tis = TikaInputStream.get(is);
         tis.getPath(); // Spool to temp file for pipes-based parsing
         ParseContext context = createParseContext();
-        return produceJson(tis, context.newMetadata(), httpHeaders.getRequestHeaders(), handlerTypeName);
+        return produceJson(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), handlerTypeName);
     }
 
     // ==================== POST endpoints (multipart with optional config) ====================
@@ -602,7 +602,7 @@ public class TikaResource {
     public StreamingOutput postRaw(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException {
         ParseContext context = createParseContext();
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         TikaInputStream tis = setupMultipartConfig(attachments, metadata, context);
         // Default to xml (XHTML) if no handler specified in config
         return produceRawOutput(tis, metadata, context, "xml");
@@ -622,7 +622,7 @@ public class TikaResource {
     public StreamingOutput postText(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException {
         ParseContext context = createParseContext();
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         TikaInputStream tis = setupMultipartConfig(attachments, metadata, context);
         return produceRawOutput(tis, metadata, context, "text");
     }
@@ -641,7 +641,7 @@ public class TikaResource {
     public StreamingOutput postHtml(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException {
         ParseContext context = createParseContext();
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         TikaInputStream tis = setupMultipartConfig(attachments, metadata, context);
         return produceRawOutput(tis, metadata, context, "html");
     }
@@ -660,7 +660,7 @@ public class TikaResource {
     public StreamingOutput postXml(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException {
         ParseContext context = createParseContext();
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         TikaInputStream tis = setupMultipartConfig(attachments, metadata, context);
         return produceRawOutput(tis, metadata, context, "xml");
     }
@@ -681,7 +681,7 @@ public class TikaResource {
     public Metadata postJson(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException {
         ParseContext context = createParseContext();
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         TikaInputStream tis = setupMultipartConfig(attachments, metadata, context);
         return produceJson(tis, metadata, context, "text");
     }
@@ -803,7 +803,7 @@ public class TikaResource {
         }
 
         if (metadataList.isEmpty()) {
-            return context.newMetadata();
+            return Metadata.newInstance(context);
         }
         return metadataList.get(0);
     }

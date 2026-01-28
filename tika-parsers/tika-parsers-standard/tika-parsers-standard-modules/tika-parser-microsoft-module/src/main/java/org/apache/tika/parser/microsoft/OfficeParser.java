@@ -123,7 +123,7 @@ public class OfficeParser extends AbstractOfficeParser {
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
-            Metadata m = context.newMetadata();
+            Metadata m = Metadata.newInstance(context);
             m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
             m.set(Metadata.CONTENT_TYPE, "text/x-vbasic");
@@ -136,7 +136,7 @@ public class OfficeParser extends AbstractOfficeParser {
             return;
         }
         for (Map.Entry<String, String> e : macros.entrySet()) {
-            Metadata m = context.newMetadata();
+            Metadata m = Metadata.newInstance(context);
             m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
             m.set(Metadata.CONTENT_TYPE, "text/x-vbasic");

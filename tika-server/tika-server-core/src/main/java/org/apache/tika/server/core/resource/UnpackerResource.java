@@ -137,7 +137,7 @@ public class UnpackerResource {
 
     private Map<String, byte[]> processWithConfig(List<Attachment> attachments, HttpHeaders httpHeaders, UriInfo info, boolean saveAll) throws Exception {
         ParseContext pc = TikaResource.createParseContext();
-        Metadata metadata = pc.newMetadata();
+        Metadata metadata = Metadata.newInstance(pc);
         try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, pc)) {
             return processWithContext(tis, metadata, pc, info, saveAll);
         }
@@ -190,7 +190,7 @@ public class UnpackerResource {
 
     private Map<String, byte[]> process(TikaInputStream tis, @Context HttpHeaders httpHeaders, @Context UriInfo info, boolean saveAll) throws Exception {
         ParseContext pc = TikaResource.createParseContext();
-        Metadata metadata = pc.newMetadata();
+        Metadata metadata = Metadata.newInstance(pc);
         long unpackMaxBytes = DEFAULT_MAX_ATTACHMENT_BYTES;
         String unpackMaxBytesString = httpHeaders
                 .getRequestHeaders()

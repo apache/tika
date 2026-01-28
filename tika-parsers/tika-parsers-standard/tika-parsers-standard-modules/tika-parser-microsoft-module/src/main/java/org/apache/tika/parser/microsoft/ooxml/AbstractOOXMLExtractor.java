@@ -182,7 +182,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                     continue;
                 }
                 try (InputStream tStream = tPart.getInputStream()) {
-                    Metadata thumbnailMetadata = context.newMetadata();
+                    Metadata thumbnailMetadata = Metadata.newInstance(context);
                     String thumbName = tPart.getPartName().getName();
                     thumbnailMetadata.set(TikaCoreProperties.INTERNAL_PATH, thumbName);
                     thumbnailMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
@@ -347,7 +347,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         }
         TikaInputStream tis = null;
         try {
-            Metadata metadata = context.newMetadata();
+            Metadata metadata = Metadata.newInstance(context);
             metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name());
             metadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, rel);
@@ -454,7 +454,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                                       EmbeddedPartMetadata embeddedPartMetadata,
                                       TikaCoreProperties.EmbeddedResourceType embeddedResourceType)
             throws SAXException, IOException {
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         metadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, rel);
         metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 embeddedResourceType.name());

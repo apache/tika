@@ -490,7 +490,7 @@ public class TikaCLI {
 
             if (arg.equals("-")) {
                 try (TikaInputStream tis = TikaInputStream.get(CloseShieldInputStream.wrap(System.in))) {
-                    type.process(tis, System.out, context.newMetadata());
+                    type.process(tis, System.out, Metadata.newInstance(context));
                 }
             } else {
                 URL url;
@@ -505,7 +505,7 @@ public class TikaCLI {
                 if (recursiveJSON) {
                     handleRecursiveJson(url, System.out);
                 } else {
-                    Metadata metadata = context.newMetadata();
+                    Metadata metadata = Metadata.newInstance(context);
                     try (TikaInputStream tis = TikaInputStream.get(url, metadata)) {
                         type.process(tis, System.out, metadata);
                     } finally {
@@ -552,7 +552,7 @@ public class TikaCLI {
     }
 
     private void handleRecursiveJson(URL url, OutputStream output) throws IOException, SAXException, TikaException {
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(getContentHandlerFactory(type), -1);
         try (TikaInputStream tis = TikaInputStream.get(url, metadata)) {

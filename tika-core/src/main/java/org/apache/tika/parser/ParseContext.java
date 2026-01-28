@@ -237,17 +237,17 @@ public class ParseContext implements Serializable {
      * <p>
      * Example usage:
      * <pre>
-     * Metadata embeddedMetadata = context.newMetadata();
+     * Metadata embeddedMetadata = Metadata.newInstance(context);
      * embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
      * // limits are already applied, no data bypasses the limiter
      * </pre>
      *
      * @return a new Metadata object, with limits applied if configured
      * @since Apache Tika 4.0
+     * @see Metadata#newInstance(ParseContext)
      */
     public Metadata newMetadata() {
-        MetadataWriteLimiterFactory factory = get(MetadataWriteLimiterFactory.class);
-        return factory != null ? new Metadata(factory.newInstance()) : new Metadata();
+        return Metadata.newInstance(this);
     }
 
 

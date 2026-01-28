@@ -186,7 +186,7 @@ public class IWork13PackageParser implements Parser {
             extractDocumentIdentifier(tis, metadata);
         } else if ("preview.jpg".equals(streamName)) {
             //process thumbnail
-            Metadata embeddedMetadata = parseContext.newMetadata();
+            Metadata embeddedMetadata = Metadata.newInstance(parseContext);
             embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
             embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, streamName);
@@ -196,7 +196,7 @@ public class IWork13PackageParser implements Parser {
                 || streamName.endsWith(".iwa")) {
             //do nothing
         } else {
-            Metadata embeddedMetadata = parseContext.newMetadata();
+            Metadata embeddedMetadata = Metadata.newInstance(parseContext);
             embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, streamName);
             handleEmbedded(tis, embeddedMetadata, xhtml, embeddedDocumentExtractor);
         }

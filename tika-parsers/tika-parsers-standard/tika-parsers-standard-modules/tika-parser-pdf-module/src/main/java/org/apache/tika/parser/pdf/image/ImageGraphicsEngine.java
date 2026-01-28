@@ -385,7 +385,7 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
     protected void processImage(PDImage pdImage, int imageNumber)
             throws IOException, TikaException, SAXException {
         //this is the metadata for this particular image
-        Metadata metadata = parseContext.newMetadata();
+        Metadata metadata = Metadata.newInstance(parseContext);
         String suffix = getSuffix(pdImage, metadata);
         String fileName = "image" + imageNumber + "." + suffix;
 

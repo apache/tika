@@ -78,7 +78,7 @@ public class FictionBookParser extends XMLParser {
             binaryMode = ELEMENT_BINARY.equals(localName);
             if (binaryMode) {
                 binaryData.setLength(0);
-                metadata = context.newMetadata();
+                metadata = Metadata.newInstance(context);
 
                 metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
                         attributes.getValue(ATTRIBUTE_ID));

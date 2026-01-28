@@ -117,7 +117,7 @@ class PipesWorker implements Callable<PipesResult> {
             return new ParseDataOrPipesResult(null,
                     new PipesResult(PipesResult.RESULT_STATUS.FETCHER_INITIALIZATION_EXCEPTION, ExceptionUtils.getStackTrace(e)));
         }
-        Metadata metadata = parseContext.newMetadata();
+        Metadata metadata = Metadata.newInstance(parseContext);
         FetchHandler.TisOrResult tisOrResult = fetchHandler.fetch(fetchEmitTuple, metadata);
         if (tisOrResult.pipesResult() != null) {
             return new ParseDataOrPipesResult(null, tisOrResult.pipesResult());

@@ -284,7 +284,7 @@ public class CompositeParser implements Parser {
         Parser parser = getParser(metadata, context);
         ParseRecord parserRecord = context.get(ParseRecord.class);
         if (parserRecord == null) {
-            parserRecord = new ParseRecord();
+            parserRecord = ParseRecord.newInstance(context);
             context.set(ParseRecord.class, parserRecord);
         }
         try {

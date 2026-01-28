@@ -225,12 +225,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
         public void parse(TikaInputStream tis, ContentHandler ignore, Metadata metadata,
                           ParseContext context) throws IOException, SAXException, TikaException {
 
-            //Test to see if we should avoid parsing
-            if (parserState.recursiveParserWrapperHandler.hasHitMaximumEmbeddedResources()) {
-                return;
-            }
-
-            // Also check ParseRecord limits if available
+            // Check ParseRecord limits (configured from EmbeddedLimits)
             ParseRecord parseRecord = context.get(ParseRecord.class);
             if (parseRecord != null && !parseRecord.shouldParseEmbedded()) {
                 return;

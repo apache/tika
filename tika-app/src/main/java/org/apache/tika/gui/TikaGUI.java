@@ -304,7 +304,7 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
 
     public void openFile(File file) {
         try {
-            Metadata metadata = context.newMetadata();
+            Metadata metadata = Metadata.newInstance(context);
             try (TikaInputStream tis = TikaInputStream.get(file.toPath(), metadata)) {
                 handleStream(tis, metadata);
             }
@@ -315,7 +315,7 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
 
     public void openURL(URL url) {
         try {
-            Metadata metadata = context.newMetadata();
+            Metadata metadata = Metadata.newInstance(context);
             try (TikaInputStream tis = TikaInputStream.get(url, metadata)) {
                 handleStream(tis, metadata);
             }
@@ -383,7 +383,7 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
                     new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.BODY, -1), -1);
             RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
             ParseContext rpwContext = new ParseContext();
-            wrapper.parse(tis, recursiveParserWrapperHandler, rpwContext.newMetadata(), rpwContext);
+            wrapper.parse(tis, recursiveParserWrapperHandler, Metadata.newInstance(rpwContext), rpwContext);
             StringWriter jsonBuffer = new StringWriter();
             JsonMetadataList.setPrettyPrinting(true);
             List<Metadata> metadataList = recursiveParserWrapperHandler.getMetadataList();

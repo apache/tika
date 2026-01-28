@@ -173,7 +173,7 @@ public class AutoDetectParser extends CompositeParser {
         handler = decorateHandler(handler, metadata, context, autoDetectParserConfig);
         // TIKA-216: Zip bomb prevention
         SecureContentHandler sch = handler != null ?
-                createSecureContentHandler(handler, tis, autoDetectParserConfig) : null;
+                createSecureContentHandler(handler, tis, context) : null;
 
         initializeEmbeddedDocumentExtractor(metadata, context);
         try {
@@ -237,28 +237,9 @@ public class AutoDetectParser extends CompositeParser {
 
     private SecureContentHandler createSecureContentHandler(ContentHandler handler,
                                                             TikaInputStream tis,
-                                                            AutoDetectParserConfig config) {
-        SecureContentHandler sch = new SecureContentHandler(handler, tis);
-        if (config == null) {
-            return sch;
-        }
-
-        if (config.getOutputThreshold() != null) {
-            sch.setOutputThreshold(config.getOutputThreshold());
-        }
-
-        if (config.getMaximumCompressionRatio() != null) {
-            sch.setMaximumCompressionRatio(config.getMaximumCompressionRatio());
-        }
-
-        if (config.getMaximumDepth() != null) {
-            sch.setMaximumDepth(config.getMaximumDepth());
-        }
-
-        if (config.getMaximumPackageEntryDepth() != null) {
-            sch.setMaximumPackageEntryDepth(config.getMaximumPackageEntryDepth());
-        }
-        return sch;
+                                                            ParseContext context) {
+        // SecureContentHandler reads limits from OutputLimits in ParseContext
+        return SecureContentHandler.newInstance(handler, tis, context);
     }
 
 }

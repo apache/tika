@@ -216,7 +216,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
             String v = toString(obj, c.getType());
             if (isRichText(c)) {
                 BodyContentHandler h = new BodyContentHandler();
-                Metadata m = parseContext.newMetadata();
+                Metadata m = Metadata.newInstance(parseContext);
                 m.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
                 try (TikaInputStream tis = TikaInputStream.get(v.getBytes(UTF_8))) {
                     htmlParser.parse(tis, h, m, parseContext);
