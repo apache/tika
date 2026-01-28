@@ -1,14 +1,6 @@
 {
   "auto-detect-parser": {
     "outputThreshold": 1000000,
-    "metadataWriteFilterFactory": {
-      "standard-write-filter-factory": {
-        "includeFields": [
-         "X-TIKA-CONTENT",
-          "dc:creator"
-        ]
-      }
-    },
     "throwOnZeroBytes": false
   },
   "other-configs": {
@@ -19,6 +11,14 @@
           { "algorithm": "MD5" }
         ],
         "skipContainerDocumentDigest": true
+      }
+    },
+    "metadata-write-limiter-factory": {
+      "standard-metadata-limiter-factory": {
+        "includeFields": [
+          "X-TIKA:content",
+          "dc:creator"
+        ]
       }
     }
   }

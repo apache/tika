@@ -95,7 +95,7 @@ public class ChmParser implements Parser {
 
     private void parsePage(byte[] byteObject, Parser htmlParser, ContentHandler xhtml,
                            ParseContext context) throws TikaException, IOException, SAXException { // throws IOException
-        Metadata metadata = new Metadata();
+        Metadata metadata = context.newMetadata();
         ContentHandler handler = new EmbeddedContentHandler(new BodyContentHandler(xhtml));// -1
         try (TikaInputStream tis = TikaInputStream.get(byteObject)) {
             htmlParser.parse(tis, handler, metadata, context);

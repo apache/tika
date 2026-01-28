@@ -43,6 +43,7 @@ import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.filter.NoOpFilter;
+import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.AutoDetectParser;
@@ -384,6 +385,7 @@ public class TikaLoader {
      * This method loads components that should be passed via ParseContext, such as:
      * <ul>
      *   <li>DigesterFactory (from "digester-factory")</li>
+     *   <li>MetadataWriteLimiterFactory (from "metadata-write-limiter-factory")</li>
      * </ul>
      * <p>
      * Use this method when you need a pre-configured ParseContext for parsing operations.
@@ -406,6 +408,12 @@ public class TikaLoader {
         DigesterFactory digesterFactory = configs().load("digester-factory", DigesterFactory.class);
         if (digesterFactory != null) {
             context.set(DigesterFactory.class, digesterFactory);
+        }
+
+        // Load MetadataWriteLimiterFactory from other-configs if present
+        MetadataWriteLimiterFactory metadataWriteLimiterFactory = configs().load(MetadataWriteLimiterFactory.class);
+        if (metadataWriteLimiterFactory != null) {
+            context.set(MetadataWriteLimiterFactory.class, metadataWriteLimiterFactory);
         }
 
         return context;

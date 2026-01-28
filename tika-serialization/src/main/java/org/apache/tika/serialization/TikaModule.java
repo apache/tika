@@ -55,7 +55,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
-import org.apache.tika.metadata.writefilter.MetadataWriteFilterFactory;
+import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.DefaultParser;
@@ -113,7 +113,7 @@ public class TikaModule extends SimpleModule {
         COMPACT_FORMAT_INTERFACES.add(Renderer.class);
         COMPACT_FORMAT_INTERFACES.add(DigesterFactory.class);
         COMPACT_FORMAT_INTERFACES.add(EmbeddedDocumentExtractorFactory.class);
-        COMPACT_FORMAT_INTERFACES.add(MetadataWriteFilterFactory.class);
+        COMPACT_FORMAT_INTERFACES.add(MetadataWriteLimiterFactory.class);
         COMPACT_FORMAT_INTERFACES.add(ContentHandlerDecoratorFactory.class);
         COMPACT_FORMAT_INTERFACES.add(ContentHandlerFactory.class);
     }

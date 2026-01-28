@@ -101,7 +101,7 @@ public class TSDParser implements Parser {
         tis.enableRewind();
 
         //Try to parse TSD file
-        Metadata TSDAndEmbeddedMetadata = new Metadata();
+        Metadata TSDAndEmbeddedMetadata = context.newMetadata();
 
         List<TSDMetas> tsdMetasList = this.extractMetas(tis);
         this.buildMetas(tsdMetasList,

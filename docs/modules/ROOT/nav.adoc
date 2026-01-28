@@ -31,6 +31,7 @@
 ** xref:migration-to-4x/design-notes-4x.adoc[Design Notes]
 * xref:advanced/index.adoc[Advanced]
 ** xref:advanced/robustness.adoc[Robustness]
+** xref:advanced/setting-limits.adoc[Setting Limits]
 ** xref:advanced/spooling.adoc[Spooling]
 ** xref:advanced/embedded-documents.adoc[Embedded Document Metadata]
 * xref:faq.adoc[FAQ]

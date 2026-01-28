@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
 
 /**
  * Parse context. Used to pass context information to Tika parsers.
@@ -248,6 +250,31 @@ public class ParseContext implements Serializable {
         }
     }
 
+    /**
+     * Creates a new Metadata object with any configured limits applied.
+     * <p>
+     * If a {@link MetadataWriteLimiterFactory} is configured in this ParseContext, the returned
+     * Metadata will have a write limiter that enforces those limits. Otherwise,
+     * returns a plain Metadata object.
+     * <p>
+     * Parsers should use this method instead of {@code new Metadata()} when creating
+     * metadata for embedded documents, to ensure limits are applied at creation time
+     * rather than later during parsing.
+     * <p>
+     * Example usage:
+     * <pre>
+     * Metadata embeddedMetadata = context.newMetadata();
+     * embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
+     * // limits are already applied, no data bypasses the limiter
+     * </pre>
+     *
+     * @return a new Metadata object, with limits applied if configured
+     * @since Apache Tika 4.0
+     */
+    public Metadata newMetadata() {
+        MetadataWriteLimiterFactory factory = get(MetadataWriteLimiterFactory.class);
+        return factory != null ? new Metadata(factory.newInstance()) : new Metadata();
+    }
 
 
     /**

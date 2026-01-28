@@ -83,6 +83,7 @@ class OneNoteTreeWalker {
     }
 
     private final Metadata parentMetadata;
+    private final ParseContext parseContext;
     private final EmbeddedDocumentExtractor embeddedDocumentExtractor;
     private final Set<String> authors = new HashSet<>();
     private final Set<String> mostRecentAuthors = new HashSet<>();
@@ -125,6 +126,7 @@ class OneNoteTreeWalker {
         this.roleAndContext = roleAndContext;
         this.xhtml = xhtml;
         this.parentMetadata = parentMetadata;
+        this.parseContext = parseContext;
         this.embeddedDocumentExtractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
     }
@@ -351,8 +353,7 @@ class OneNoteTreeWalker {
             EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
             return;
         }
-        Metadata embeddedMetadata = new Metadata();
-        ParseContext parseContext = new ParseContext();
+        Metadata embeddedMetadata = this.parseContext.newMetadata();
         try {
             AttributesImpl attributes = new AttributesImpl();
             attributes.addAttribute("", "class", "class", "CDATA", "embedded");
@@ -360,7 +361,7 @@ class OneNoteTreeWalker {
             xhtml.endElement("div");
             tis = TikaInputStream.get(buf.array());
             embeddedDocumentExtractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),
-                    embeddedMetadata, parseContext, false);
+                    embeddedMetadata, this.parseContext, false);
         } finally {
             IOUtils.closeQuietly(tis);
         }

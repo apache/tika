@@ -23,7 +23,6 @@ import org.xml.sax.ContentHandler;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.writefilter.MetadataWriteFilterFactory;
 import org.apache.tika.sax.ContentHandlerDecoratorFactory;
 
 /**
@@ -69,8 +68,6 @@ public class AutoDetectParserConfig implements Serializable {
      * SecureContentHandler -- Desired maximum package entry nesting level.
      */
     private Integer maximumPackageEntryDepth = null;
-
-    private MetadataWriteFilterFactory metadataWriteFilterFactory = null;
 
     private EmbeddedDocumentExtractorFactory embeddedDocumentExtractorFactory = null;
 
@@ -132,15 +129,6 @@ public class AutoDetectParserConfig implements Serializable {
         this.maximumPackageEntryDepth = maximumPackageEntryDepth;
     }
 
-    public MetadataWriteFilterFactory getMetadataWriteFilterFactory() {
-        return this.metadataWriteFilterFactory;
-    }
-
-    public void setMetadataWriteFilterFactory(
-            MetadataWriteFilterFactory metadataWriteFilterFactory) {
-        this.metadataWriteFilterFactory = metadataWriteFilterFactory;
-    }
-
     public void setEmbeddedDocumentExtractorFactory(
             EmbeddedDocumentExtractorFactory embeddedDocumentExtractorFactory) {
         this.embeddedDocumentExtractorFactory = embeddedDocumentExtractorFactory;
@@ -172,8 +160,7 @@ public class AutoDetectParserConfig implements Serializable {
         return "AutoDetectParserConfig{" + "outputThreshold=" +
                 outputThreshold + ", maximumCompressionRatio=" + maximumCompressionRatio +
                 ", maximumDepth=" + maximumDepth + ", maximumPackageEntryDepth=" +
-                maximumPackageEntryDepth + ", metadataWriteFilterFactory=" +
-                metadataWriteFilterFactory + ", embeddedDocumentExtractorFactory=" +
+                maximumPackageEntryDepth + ", embeddedDocumentExtractorFactory=" +
                 embeddedDocumentExtractorFactory + ", contentHandlerDecoratorFactory=" +
                 contentHandlerDecoratorFactory +
                 ", throwOnZeroBytes=" + throwOnZeroBytes + '}';
