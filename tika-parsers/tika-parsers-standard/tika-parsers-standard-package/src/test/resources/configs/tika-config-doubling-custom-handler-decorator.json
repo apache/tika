@@ -1,6 +1,5 @@
 {
   "auto-detect-parser": {
-    "outputThreshold": 1000,
     "contentHandlerDecoratorFactory": "doubling-content-handler-decorator-factory"
   }
 }

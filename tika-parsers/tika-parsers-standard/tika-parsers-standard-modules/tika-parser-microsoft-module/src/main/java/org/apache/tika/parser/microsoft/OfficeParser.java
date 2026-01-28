@@ -113,7 +113,7 @@ public class OfficeParser extends AbstractOfficeParser {
     public static void extractMacros(POIFSFileSystem fs, ContentHandler xhtml,
                                      EmbeddedDocumentExtractor embeddedDocumentExtractor,
                                      ParseContext context)
-            throws IOException, SAXException {
+            throws IOException, SAXException, TikaException {
 
         VBAMacroReader reader = null;
         Map<String, String> macros = null;

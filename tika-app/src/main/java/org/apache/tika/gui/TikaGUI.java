@@ -380,7 +380,7 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
         }
         if (isReset) {
             RecursiveParserWrapperHandler recursiveParserWrapperHandler =
-                    new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.BODY, -1), -1);
+                    new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.BODY, -1));
             RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
             ParseContext rpwContext = new ParseContext();
             wrapper.parse(tis, recursiveParserWrapperHandler, Metadata.newInstance(rpwContext), rpwContext);

@@ -26,6 +26,15 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
 public interface EmbeddedDocumentExtractor {
+    /**
+     * Determines whether the given embedded document should be parsed.
+     * <p>
+     * Note: Implementations may throw {@link org.apache.tika.exception.EmbeddedLimitReachedException}
+     * (a RuntimeException) if a limit is exceeded and throwing is configured.
+     *
+     * @param metadata the metadata for the embedded document
+     * @return true if the embedded document should be parsed
+     */
     boolean shouldParseEmbedded(Metadata metadata);
 
     /**

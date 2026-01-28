@@ -335,6 +335,12 @@ public class CompositeParser implements Parser {
         if (record.isWriteLimitReached()) {
             metadata.set(TikaCoreProperties.WRITE_LIMIT_REACHED, true);
         }
+        if (record.isEmbeddedCountLimitReached()) {
+            metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_LIMIT_REACHED, true);
+        }
+        if (record.isEmbeddedDepthLimitReached()) {
+            metadata.set(TikaCoreProperties.EMBEDDED_DEPTH_LIMIT_REACHED, true);
+        }
 
         for (Metadata m : record.getMetadataList()) {
             for (String n : m.names()) {

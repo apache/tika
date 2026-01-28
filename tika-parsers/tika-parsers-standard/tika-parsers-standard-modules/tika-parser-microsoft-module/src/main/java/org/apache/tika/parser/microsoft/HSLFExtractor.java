@@ -406,7 +406,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                     try {
                         OfficeParser.extractMacros(poifsFileSystem, xhtml,
                                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context), context);
-                    } catch (IOException | SAXException inner) {
+                    } catch (IOException | SAXException | TikaException inner) {
                         EmbeddedDocumentUtil.recordException(inner, parentMetadata);
                     }
                 } catch (IOException e) {

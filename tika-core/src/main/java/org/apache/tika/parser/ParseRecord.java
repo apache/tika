@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.tika.config.EmbeddedLimits;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 
 /**
@@ -147,45 +146,39 @@ public class ParseRecord {
     }
 
     /**
-     * Checks whether an embedded document should be parsed based on configured limits.
-     * This should be called before parsing each embedded document.
-     * <p>
-     * If throwOnMaxDepth or throwOnMaxCount is true and the respective limit is hit,
-     * a TikaException is thrown. Otherwise, returns false and sets the appropriate
-     * limit flag.
-     * <p>
-     * Note: The count limit is a hard stop (once hit, no more embedded docs are parsed).
-     * The depth limit only affects documents at that depth - sibling documents at
-     * shallower depths will still be parsed.
+     * Returns whether throwing is configured when max depth is reached.
      *
-     * @return true if the embedded document should be parsed, false if limits are exceeded
-     * @throws TikaException if a limit is exceeded and throwing is configured
+     * @return true if an exception should be thrown on max depth
      */
-    public boolean shouldParseEmbedded() throws TikaException {
-        // Count limit is a hard stop - once we've hit max, no more embedded parsing
-        if (embeddedCountLimitReached) {
-            return false;
-        }
-        if (maxEmbeddedCount >= 0 && embeddedCount >= maxEmbeddedCount) {
-            embeddedCountLimitReached = true;
-            if (throwOnMaxCount) {
-                throw new TikaException("Max embedded count reached: " + maxEmbeddedCount);
-            }
-            return false;
-        }
+    public boolean isThrowOnMaxDepth() {
+        return throwOnMaxDepth;
+    }
 
-        // Depth limit only applies to current depth - siblings at shallower levels
-        // can still be parsed. The flag is set for reporting purposes.
-        // depth is 1-indexed (main doc is depth 1), so embedded depth limit of N
-        // means we allow parsing up to depth N+1
-        if (maxEmbeddedDepth >= 0 && depth > maxEmbeddedDepth) {
-            embeddedDepthLimitReached = true;
-            if (throwOnMaxDepth) {
-                throw new TikaException("Max embedded depth reached: " + maxEmbeddedDepth);
-            }
-            return false;
-        }
-        return true;
+    /**
+     * Returns whether throwing is configured when max count is reached.
+     *
+     * @return true if an exception should be thrown on max count
+     */
+    public boolean isThrowOnMaxCount() {
+        return throwOnMaxCount;
+    }
+
+    /**
+     * Sets the flag indicating the embedded depth limit was reached.
+     *
+     * @param embeddedDepthLimitReached true if depth limit was reached
+     */
+    public void setEmbeddedDepthLimitReached(boolean embeddedDepthLimitReached) {
+        this.embeddedDepthLimitReached = embeddedDepthLimitReached;
+    }
+
+    /**
+     * Sets the flag indicating the embedded count limit was reached.
+     *
+     * @param embeddedCountLimitReached true if count limit was reached
+     */
+    public void setEmbeddedCountLimitReached(boolean embeddedCountLimitReached) {
+        this.embeddedCountLimitReached = embeddedCountLimitReached;
     }
 
     /**

@@ -31,6 +31,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -449,7 +450,7 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
             inBinaryData = false;
             try {
                 processBinaryData();
-            } catch (IOException e) {
+            } catch (IOException | TikaException e) {
                 throw new SAXException(e);
             }
             return;
@@ -512,7 +513,7 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
         assert nodeDepth >= 0;
     }
 
-    private void processBinaryData() throws IOException, SAXException {
+    private void processBinaryData() throws IOException, SAXException, TikaException {
 
         //TODO: figure out whether we're in an inline image or a regular
         //attachment and add that info to the embedded metadata

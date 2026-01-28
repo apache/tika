@@ -356,7 +356,7 @@ public class EpubParser implements Parser {
                                 EmbeddedDocumentExtractor embeddedDocumentExtractor,
                                 XHTMLContentHandler xhtml, Metadata parentMetadata,
                                 ParseContext context)
-            throws IOException, SAXException {
+            throws IOException, SAXException, TikaException {
         if (hRefMediaPair.href == null) {
             return;
         }

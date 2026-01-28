@@ -49,7 +49,6 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
-import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.utils.ExceptionUtils;

@@ -353,7 +353,7 @@ class OneNoteTreeWalker {
             EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
             return;
         }
-        Metadata embeddedMetadata = this.Metadata.newInstance(parseContext);
+        Metadata embeddedMetadata = Metadata.newInstance(this.parseContext);
         try {
             AttributesImpl attributes = new AttributesImpl();
             attributes.addAttribute("", "class", "class", "CDATA", "embedded");

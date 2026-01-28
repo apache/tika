@@ -207,7 +207,7 @@ public class IWork13PackageParser implements Parser {
     private void handleEmbedded(TikaInputStream tis, Metadata embeddedMetadata,
                                 XHTMLContentHandler xhtml,
                                 EmbeddedDocumentExtractor embeddedDocumentExtractor)
-            throws IOException, SAXException {
+            throws IOException, SAXException, TikaException {
         if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
             embeddedDocumentExtractor.parseEmbedded(tis, xhtml, embeddedMetadata, new ParseContext(), true);
         }

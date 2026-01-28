@@ -120,8 +120,7 @@ public class MultiThreadedTikaTest extends TikaTest {
         //content's metadata and they'll differ by file.
         parseContext = new ParseContext();
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
-                -1);
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
         parser.parse(tis, handler, new Metadata(), parseContext);
         return handler.getMetadataList();
     }

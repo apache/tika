@@ -1,9 +1,5 @@
 {
   "auto-detect-parser": {
-    "outputThreshold": 1000,
-    "maximumCompressionRatio": 0.8,
-    "maximumDepth": 1000,
-    "maximumPackageEntryDepth": 1000,
     "embeddedDocumentExtractorFactory": {
       "runpack-extractor-factory": {
         "writeFileNameToContent": true,

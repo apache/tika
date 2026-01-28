@@ -225,17 +225,6 @@ public class RecursiveParserWrapper extends ParserDecorator {
         public void parse(TikaInputStream tis, ContentHandler ignore, Metadata metadata,
                           ParseContext context) throws IOException, SAXException, TikaException {
 
-            // Check ParseRecord limits (configured from EmbeddedLimits)
-            ParseRecord parseRecord = context.get(ParseRecord.class);
-            if (parseRecord != null && !parseRecord.shouldParseEmbedded()) {
-                return;
-            }
-
-            // Increment embedded count in ParseRecord
-            if (parseRecord != null) {
-                parseRecord.incrementEmbeddedCount();
-            }
-
             // Work out what this thing is
             String objectName = getResourceName(metadata, parserState.unknownCount);
             String objectLocation = this.location + objectName;

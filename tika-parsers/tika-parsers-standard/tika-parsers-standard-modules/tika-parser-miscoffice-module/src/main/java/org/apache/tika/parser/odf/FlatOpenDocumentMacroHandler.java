@@ -24,6 +24,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -77,7 +78,7 @@ class FlatOpenDocumentMacroHandler extends ContentHandlerDecorator {
         if (SOURCE_CODE.equals(localName)) {
             try {
                 handleMacro();
-            } catch (IOException e) {
+            } catch (IOException | TikaException e) {
                 throw new SAXException(e);
             } finally {
                 resetMacroState();
@@ -91,7 +92,7 @@ class FlatOpenDocumentMacroHandler extends ContentHandlerDecorator {
         inMacro = false;
     }
 
-    protected void handleMacro() throws IOException, SAXException {
+    protected void handleMacro() throws IOException, SAXException, TikaException {
 
         byte[] bytes = macroBuffer.toString().getBytes(StandardCharsets.UTF_8);
 

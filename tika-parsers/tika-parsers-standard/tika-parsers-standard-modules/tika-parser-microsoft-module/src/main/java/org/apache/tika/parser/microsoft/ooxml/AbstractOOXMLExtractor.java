@@ -330,7 +330,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     private void handleEmbeddedOLE(PackagePart part, XHTMLContentHandler xhtml, String rel,
                                    Metadata parentMetadata,
                                    EmbeddedPartMetadata embeddedPartMetadata) throws IOException,
-            SAXException {
+            SAXException, TikaException {
         // A POIFSFileSystem needs to be at least 3 blocks big to be valid
         if (part.getSize() >= 0 && part.getSize() < 512 * 3) {
             // Too small, skip
@@ -453,7 +453,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                                       String rel,
                                       EmbeddedPartMetadata embeddedPartMetadata,
                                       TikaCoreProperties.EmbeddedResourceType embeddedResourceType)
-            throws SAXException, IOException {
+            throws SAXException, IOException, TikaException {
         Metadata metadata = Metadata.newInstance(context);
         metadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, rel);
         metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
