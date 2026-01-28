@@ -46,7 +46,6 @@
   },
   "auto-detect-parser": {
     "outputThreshold": 1000000,
-    "skipContainerDocumentDigest": true,
     "throwOnZeroBytes": false
   },
   "other-configs": {

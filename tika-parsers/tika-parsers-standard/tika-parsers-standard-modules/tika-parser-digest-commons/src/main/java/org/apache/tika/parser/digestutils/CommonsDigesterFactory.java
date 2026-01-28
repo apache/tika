@@ -29,15 +29,18 @@ import org.apache.tika.digest.DigesterFactory;
  * <p>
  * Default: MD5 with HEX encoding.
  * <p>
- * Example JSON configuration:
+ * Example JSON configuration (in other-configs section):
  * <pre>
  * {
- *   "digesterFactory": {
- *     "commons-digester": {
- *       "digests": [
- *         { "algorithm": "MD5" },
- *         { "algorithm": "SHA256", "encoding": "BASE32" }
- *       ]
+ *   "other-configs": {
+ *     "digester-factory": {
+ *       "commons-digester-factory": {
+ *         "digests": [
+ *           { "algorithm": "MD5" },
+ *           { "algorithm": "SHA256", "encoding": "BASE32" }
+ *         ],
+ *         "skipContainerDocumentDigest": false
+ *       }
  *     }
  *   }
  * }
@@ -47,6 +50,7 @@ import org.apache.tika.digest.DigesterFactory;
 public class CommonsDigesterFactory implements DigesterFactory {
 
     private List<DigestDef> digests = new ArrayList<>();
+    private boolean skipContainerDocumentDigest = false;
 
     public CommonsDigesterFactory() {
         digests.add(new DigestDef(DigestDef.Algorithm.MD5));
@@ -55,6 +59,15 @@ public class CommonsDigesterFactory implements DigesterFactory {
     @Override
     public Digester build() {
         return new CommonsDigester(digests);
+    }
+
+    @Override
+    public boolean isSkipContainerDocumentDigest() {
+        return skipContainerDocumentDigest;
+    }
+
+    public void setSkipContainerDocumentDigest(boolean skipContainerDocumentDigest) {
+        this.skipContainerDocumentDigest = skipContainerDocumentDigest;
     }
 
     public List<DigestDef> getDigests() {

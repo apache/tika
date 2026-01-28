@@ -67,7 +67,7 @@ public class BouncyCastleDigester extends CompositeDigester {
             Encoder encoder = getEncoder(def.getEncoding());
             digesters[i++] = new BCInputStreamDigester(
                     def.getAlgorithm().getJavaName(),
-                    def.getMetadataKey(),
+                    def.metadataKey(),
                     encoder);
         }
         return digesters;
@@ -81,7 +81,7 @@ public class BouncyCastleDigester extends CompositeDigester {
             DigestDef def = new DigestDef(algorithm, DigestDef.Encoding.HEX);
             digesters[i++] = new BCInputStreamDigester(
                     algorithm.getJavaName(),
-                    def.getMetadataKey(),
+                    def.metadataKey(),
                     encoder);
         }
         return digesters;

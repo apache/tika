@@ -52,6 +52,7 @@ class PipesWorker implements Callable<PipesResult> {
     private static final Logger LOG = LoggerFactory.getLogger(PipesWorker.class);
 
     private final FetchEmitTuple fetchEmitTuple;
+    private final ParseContext parseContext;
     private final AutoDetectParser autoDetectParser;
     private final EmitterManager emitterManager;
     private final FetchHandler fetchHandler;
@@ -59,9 +60,11 @@ class PipesWorker implements Callable<PipesResult> {
     private final EmitHandler emitHandler;
     private final MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory;
 
-    public PipesWorker(FetchEmitTuple fetchEmitTuple, AutoDetectParser autoDetectParser, EmitterManager emitterManager, FetchHandler fetchHandler, ParseHandler parseHandler,
+    public PipesWorker(FetchEmitTuple fetchEmitTuple, ParseContext parseContext, AutoDetectParser autoDetectParser,
+                       EmitterManager emitterManager, FetchHandler fetchHandler, ParseHandler parseHandler,
                        EmitHandler emitHandler, MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory) {
         this.fetchEmitTuple = fetchEmitTuple;
+        this.parseContext = parseContext;
         this.autoDetectParser = autoDetectParser;
         this.emitterManager = emitterManager;
         this.fetchHandler = fetchHandler;
@@ -86,7 +89,7 @@ class PipesWorker implements Callable<PipesResult> {
             if (parseData == null || metadataIsEmpty(parseData.getMetadataList())) {
                 return PipesResults.EMPTY_OUTPUT;
             }
-            return emitHandler.emitParseData(fetchEmitTuple, parseData);
+            return emitHandler.emitParseData(fetchEmitTuple, parseData, parseContext);
         } finally {
             if (parseData != null && parseData.hasEmbeddedDocumentByteStore() &&
                     parseData.getEmbeddedDocumentBytesHandler() instanceof Closeable) {
@@ -109,22 +112,23 @@ class PipesWorker implements Callable<PipesResult> {
         //start a new metadata object to gather info from the fetch process
         //we want to isolate and not touch the metadata sent into the fetchEmitTuple
         //so that we can inject it after the filter at the very end
-        ParseContext parseContext = null;
+        ParseContext localContext = null;
         try {
-            parseContext = setupParseContext(fetchEmitTuple);
+            localContext = setupParseContext();
         } catch (IOException e) {
             LOG.warn("fetcher initialization exception id={}", fetchEmitTuple.getId(), e);
             return new ParseDataOrPipesResult(null,
                     new PipesResult(PipesResult.RESULT_STATUS.FETCHER_INITIALIZATION_EXCEPTION, ExceptionUtils.getStackTrace(e)));
         }
-        Metadata metadata = Metadata.newInstance(parseContext);
-        FetchHandler.TisOrResult tisOrResult = fetchHandler.fetch(fetchEmitTuple, metadata);
+        // Use newMetadata() to apply any configured write limits
+        Metadata metadata = localContext.newMetadata();
+        FetchHandler.TisOrResult tisOrResult = fetchHandler.fetch(fetchEmitTuple, metadata, localContext);
         if (tisOrResult.pipesResult() != null) {
             return new ParseDataOrPipesResult(null, tisOrResult.pipesResult());
         }
 
         try (TikaInputStream tis = tisOrResult.tis()) {
-            return parseHandler.parseWithStream(fetchEmitTuple, tis, metadata, parseContext);
+            return parseHandler.parseWithStream(fetchEmitTuple, tis, metadata, localContext);
         } catch (SecurityException e) {
             LOG.error("security exception id={}", fetchEmitTuple.getId(), e);
             throw e;
@@ -137,8 +141,7 @@ class PipesWorker implements Callable<PipesResult> {
 
 
 
-    private ParseContext setupParseContext(FetchEmitTuple fetchEmitTuple) throws TikaException, IOException {
-        ParseContext parseContext = fetchEmitTuple.getParseContext();
+    private ParseContext setupParseContext() throws TikaException, IOException {
         // ContentHandlerFactory and ParseMode are retrieved from ParseContext in ParseHandler.
         // They are set in ParseContext from PipesConfig loaded via TikaLoader at startup.
 

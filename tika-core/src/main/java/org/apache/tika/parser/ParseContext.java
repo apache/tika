@@ -225,6 +225,32 @@ public class ParseContext implements Serializable {
     }
 
     /**
+     * Copies all entries from the source ParseContext into this one.
+     * Existing entries in this context are overwritten by source entries.
+     * <p>
+     * This copies both typed objects (from context map) and JSON configs.
+     *
+     * @param source the ParseContext to copy from
+     * @since Apache Tika 4.0
+     */
+    public void copyFrom(ParseContext source) {
+        if (source == null) {
+            return;
+        }
+        // Copy typed objects
+        context.putAll(source.context);
+        // Copy JSON configs
+        jsonConfigs.putAll(source.jsonConfigs);
+        // Copy resolved configs (if any)
+        if (source.resolvedConfigs != null && !source.resolvedConfigs.isEmpty()) {
+            if (resolvedConfigs == null) {
+                resolvedConfigs = new HashMap<>();
+            }
+            resolvedConfigs.putAll(source.resolvedConfigs);
+        }
+    }
+
+    /**
      * Creates a new Metadata object with any configured limits applied.
      * <p>
      * If a {@link MetadataWriteLimiterFactory} is configured in this ParseContext, the returned

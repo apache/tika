@@ -77,6 +77,7 @@ public class MetadataResource {
             @Context HttpHeaders httpHeaders,
             @Context UriInfo info) throws Exception {
 
+        // Load default context from config, then overlay with request config
         ParseContext context = TikaResource.createParseContext();
         Metadata metadata = Metadata.newInstance(context);
         try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
@@ -171,6 +172,7 @@ public class MetadataResource {
 
     protected Metadata parseMetadata(TikaInputStream tis, Metadata metadata, MultivaluedMap<String, String> httpHeaders, UriInfo info)
             throws IOException, TikaConfigException {
+        // Load default context from config (includes DigesterFactory from other-configs)
         final ParseContext context = TikaResource.createParseContext();
         Parser parser = TikaResource.createParser();
         fillMetadata(parser, metadata, httpHeaders);

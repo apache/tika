@@ -115,18 +115,19 @@ public class TikaResource {
     }
 
     /**
-     * Creates a new ParseContext with the default MetadataWriteLimiterFactory set if configured.
-     * This should be used instead of {@code createParseContext()} to ensure metadata limits
-     * are applied when configured.
+     * Creates a new ParseContext with defaults loaded from tika-config.
+     * This loads components from "other-configs" such as DigesterFactory and MetadataWriteLimiterFactory.
      *
      * @return a new ParseContext with defaults applied
      */
     public static ParseContext createParseContext() {
-        ParseContext context = new ParseContext();
-        if (DEFAULT_METADATA_WRITE_LIMITER_FACTORY != null) {
-            context.set(MetadataWriteLimiterFactory.class, DEFAULT_METADATA_WRITE_LIMITER_FACTORY);
+        try {
+            return TIKA_LOADER.loadParseContext();
+        } catch (TikaConfigException e) {
+            // Fall back to empty context if loading fails
+            LOG.warn("Failed to load ParseContext from config, using empty context", e);
+            return new ParseContext();
         }
-        return context;
     }
 
 

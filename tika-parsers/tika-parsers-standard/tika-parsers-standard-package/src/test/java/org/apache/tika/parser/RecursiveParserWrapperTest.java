@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -437,13 +438,15 @@ public class RecursiveParserWrapperTest extends TikaTest {
                                        ContentHandlerFactory contentHandlerFactory,
                                        boolean catchEmbeddedExceptions,
                                        boolean digest) throws Exception {
-        ParseContext context = new ParseContext();
+        ParseContext context;
         Parser wrapped;
         if (digest) {
-            wrapped = TikaLoaderHelper.getLoader("tika-config-md5-digest.json")
-                    .loadAutoDetectParser();
+            TikaLoader loader = TikaLoaderHelper.getLoader("tika-config-md5-digest.json");
+            wrapped = loader.loadAutoDetectParser();
+            context = loader.loadParseContext();
         } else {
             wrapped = AUTO_DETECT_PARSER;
+            context = new ParseContext();
         }
         RecursiveParserWrapper wrapper =
                 new RecursiveParserWrapper(wrapped, catchEmbeddedExceptions);

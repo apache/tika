@@ -41,11 +41,12 @@
   },
   "auto-detect-parser": {
     "outputThreshold": 1000000,
-    "skipContainerDocumentDigest": false,
-    "digesterFactory": {
-      "mock-digester-factory": {}
-    },
     "throwOnZeroBytes": false
+  },
+  "other-configs": {
+    "digester-factory": {
+      "mock-digester-factory": {}
+    }
   },
   "plugin-roots": "PLUGINS_PATHS"
 }

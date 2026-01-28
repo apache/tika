@@ -40,6 +40,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -72,7 +73,7 @@ import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.digest.DigestDef;
-import org.apache.tika.digest.Digester;
+import org.apache.tika.digest.DigesterFactory;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.DefaultEmbeddedStreamTranslator;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -96,7 +97,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
-import org.apache.tika.parser.digestutils.CommonsDigester;
+import org.apache.tika.parser.digestutils.CommonsDigesterFactory;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
@@ -202,7 +203,7 @@ public class TikaCLI {
      * Password for opening encrypted documents, or <code>null</code>.
      */
     private String password = System.getenv("TIKA_PASSWORD");
-    private Digester digester = null;
+    private DigesterFactory digesterFactory = null;
     private boolean pipeMode = true;
     private boolean prettyPrint;
     private final OutputType XML = new OutputType() {
@@ -434,7 +435,9 @@ public class TikaCLI {
         } else if (arg.startsWith("--digest=")) {
             String algorithmName = arg.substring("--digest=".length()).toUpperCase(Locale.ROOT);
             DigestDef.Algorithm algorithm = DigestDef.Algorithm.valueOf(algorithmName);
-            digester = new CommonsDigester(algorithm);
+            CommonsDigesterFactory factory = new CommonsDigesterFactory();
+            factory.setDigests(Collections.singletonList(new DigestDef(algorithm)));
+            digesterFactory = factory;
         } else if (arg.startsWith("-e")) {
             encoding = arg.substring("-e".length());
         } else if (arg.startsWith("--encoding=")) {
@@ -731,9 +734,10 @@ public class TikaCLI {
             parser = new NetworkParser(networkURI);
         } else {
             parser = tikaLoader.loadAutoDetectParser();
-            if (digester != null && parser instanceof AutoDetectParser) {
-                ((AutoDetectParser) parser).getAutoDetectParserConfig().digester(digester);
-            }
+        }
+        // Set DigesterFactory in ParseContext if configured via --digest=
+        if (digesterFactory != null) {
+            context.set(DigesterFactory.class, digesterFactory);
         }
         detector = tikaLoader.loadDetectors();
         context.set(Parser.class, parser);
