@@ -103,7 +103,7 @@ public class MboxParser implements Parser {
             boolean inHeader = true;
             do {
                 if (curLine.startsWith(MBOX_RECORD_DIVIDER)) {
-                    Metadata mailMetadata = new Metadata();
+                    Metadata mailMetadata = context.newMetadata();
                     Queue<String> multiline = new LinkedList<>();
                     mailMetadata.add(EMAIL_FROMLINE_METADATA,
                             curLine.substring(MBOX_RECORD_DIVIDER.length()));

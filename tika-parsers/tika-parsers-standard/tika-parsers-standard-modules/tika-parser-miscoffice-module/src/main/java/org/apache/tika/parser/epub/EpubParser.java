@@ -366,7 +366,7 @@ public class EpubParser implements Parser {
         if (ze == null || !zipFile.canReadEntryData(ze)) {
             return;
         }
-        Metadata embeddedMetadata = new Metadata();
+        Metadata embeddedMetadata = context.newMetadata();
         if (!StringUtils.isBlank(hRefMediaPair.media)) {
             embeddedMetadata.set(Metadata.CONTENT_TYPE, hRefMediaPair.media);
         }

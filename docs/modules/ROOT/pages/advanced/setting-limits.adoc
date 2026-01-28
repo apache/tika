@@ -1,0 +1,229 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Setting Limits
+
+When processing untrusted documents, it's important to set limits on resource consumption
+to prevent denial-of-service attacks and protect against malicious or pathological files.
+Tika provides several mechanisms for limiting resource usage during parsing.
+
+== Limiting Metadata Writes
+
+Malicious or pathological documents can contain enormous amounts of metadata, potentially
+causing `OutOfMemoryError` or consuming excessive storage. The `MetadataWriteLimiter`
+system allows you to constrain metadata size at write time, ensuring parsers cannot
+exceed your configured limits.
+
+=== How It Works
+
+When you configure a `MetadataWriteLimiterFactory` in the `ParseContext`, calling
+`parseContext.newMetadata()` creates a `Metadata` object with limits already applied.
+All subsequent writes to that metadata object are filtered through the limiter.
+
+[source,java]
+----
+// Configure the factory
+StandardMetadataLimiterFactory factory = new StandardMetadataLimiterFactory();
+factory.setMaxTotalBytes(1024 * 1024);  // 1 MB total
+factory.setMaxFieldSize(100 * 1024);     // 100 KB per field
+factory.setMaxValuesPerField(100);       // Max 100 values per multi-valued field
+
+// Add to ParseContext
+ParseContext context = new ParseContext();
+context.set(MetadataWriteLimiterFactory.class, factory);
+
+// Create limited metadata - limits are enforced from the start
+Metadata metadata = context.newMetadata();
+----
+
+=== Configuration Options
+
+The `StandardMetadataLimiterFactory` provides the following settings:
+
+[cols="2,1,3"]
+|===
+|Setting |Default |Description
+
+|`maxTotalBytes`
+|10 MB
+|Maximum total estimated size of all metadata in UTF-16 bytes. When exceeded,
+additional metadata is silently dropped and `X-TIKA:WARN:truncated_metadata` is set.
+
+|`maxFieldSize`
+|100 KB
+|Maximum size of any single field's value(s) in UTF-16 bytes. Values exceeding
+this limit are truncated.
+
+|`maxKeySize`
+|1024
+|Maximum length of metadata key names in UTF-16 bytes. Keys exceeding this limit
+are truncated.
+
+|`maxValuesPerField`
+|10
+|Maximum number of values for multi-valued fields. Additional values are dropped.
+
+|`includeFields`
+|empty (all)
+|If non-empty, only these fields are stored (plus system fields like Content-Type).
+Use this to extract only the metadata you need.
+
+|`excludeFields`
+|empty (none)
+|These fields are never stored, regardless of other settings.
+
+|`includeEmpty`
+|false
+|Whether to store empty or null values.
+|===
+
+=== JSON Configuration
+
+You can configure the metadata limiter in a Tika JSON configuration file:
+
+[source,json]
+----
+{
+  "parsers": ["default-parser"],
+  "other-configs": {
+    "metadata-write-limiter-factory": {
+      "standard-metadata-limiter-factory": {
+        "maxTotalBytes": 1048576,
+        "maxFieldSize": 102400,
+        "maxKeySize": 1024,
+        "maxValuesPerField": 100,
+        "includeFields": ["dc:title", "dc:creator", "dc:subject"],
+        "excludeFields": ["pdf:unmappedUnicodeCharsPerPage"]
+      }
+    }
+  }
+}
+----
+
+=== Always-Included Fields
+
+Certain fields are critical for Tika's operation and are always allowed, regardless
+of `includeFields` or size limits:
+
+* `Content-Type` - Required for parser selection
+* `Content-Length`, `Content-Encoding`, `Content-Disposition`
+* `X-TIKA:content` - The extracted text content
+* `X-TIKA:Parsed-By` - Parser chain information
+* `X-TIKA:WARN:*` - Warning metadata
+* Access permission fields
+
+These fields still contribute to `maxTotalBytes` (except `X-TIKA:content`), but they
+are never filtered out by `includeFields` or `excludeFields`.
+
+=== Size Calculation
+
+All sizes are estimated in UTF-16 bytes (2 bytes per character). This provides a
+rough approximation of Java's in-memory String representation. The actual memory
+usage may vary depending on JVM version and string interning.
+
+=== Detecting Truncation
+
+When metadata is truncated due to limits, Tika sets the metadata field
+`X-TIKA:WARN:truncated_metadata` to `true`. You can check for this in your code:
+
+[source,java]
+----
+if ("true".equals(metadata.get(TikaCoreProperties.TRUNCATED_METADATA))) {
+    // Some metadata was dropped or truncated
+    log.warn("Metadata was truncated for: " + resourceName);
+}
+----
+
+=== Field Prioritization Strategy
+
+When working with limited budgets, consider using `includeFields` to prioritize
+the metadata you actually need:
+
+[source,java]
+----
+// Only capture essential fields
+factory.setIncludeFields(Set.of(
+    "dc:title",
+    "dc:creator",
+    "dc:subject",
+    "Content-Type",
+    "Last-Modified"
+));
+----
+
+This approach is more efficient than setting a low `maxTotalBytes`, because
+unwanted fields are filtered out immediately rather than consuming budget.
+
+=== Budget Considerations
+
+When setting `maxTotalBytes`, remember that system fields (Content-Type,
+X-TIKA:Parsed-By, etc.) consume approximately 200-300 bytes before any
+document-specific metadata is added. Set your budget accordingly:
+
+[source,java]
+----
+// Allow ~300 bytes for system fields + 10KB for document metadata
+factory.setMaxTotalBytes(300 + 10 * 1024);
+----
+
+== Other Limits
+
+=== Write Limits for Text Content
+
+To limit the amount of extracted text, use a `WriteLimit` with the content handler:
+
+[source,java]
+----
+ContentHandler handler = new BodyContentHandler(100000); // 100KB limit
+----
+
+Or configure via `BasicContentHandlerFactory`:
+
+[source,java]
+----
+BasicContentHandlerFactory factory = new BasicContentHandlerFactory(
+    BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+    100000  // max characters
+);
+----
+
+=== Parse Timeouts
+
+When using Tika Pipes, you can configure timeouts for parse operations:
+
+[source,json]
+----
+{
+  "pipes": {
+    "timeoutMillis": 60000
+  }
+}
+----
+
+== Recommendations
+
+1. **Always set limits** when processing untrusted content
+2. **Use `includeFields`** to capture only the metadata you need
+3. **Monitor for truncation** by checking `X-TIKA:WARN:truncated_metadata`
+4. **Combine with process isolation** - limits protect against memory issues,
+   but xref:advanced/robustness.adoc[process isolation] protects against crashes
+5. **Test with adversarial files** - use Tika's `MockParser` to simulate extreme cases
+
+== See Also
+
+* xref:advanced/robustness.adoc[Robustness] - Process isolation and fault tolerance
+* xref:configuration/index.adoc[Configuration] - General Tika configuration

@@ -111,7 +111,7 @@ class MailContentHandler implements ContentHandler {
         // in order to specify the mime type of the
         // sub part without damaging the main metadata
 
-        Metadata submd = new Metadata();
+        Metadata submd = parseContext.newMetadata();
         submd.set(Metadata.CONTENT_TYPE, body.getMimeType());
         submd.set(Metadata.CONTENT_ENCODING, body.getCharset());
 
@@ -540,7 +540,7 @@ class MailContentHandler implements ContentHandler {
 
             //parse inline
             try {
-                Metadata inlineMetadata = new Metadata();
+                Metadata inlineMetadata = parseContext.newMetadata();
                 if (inlineText) {
                     inlineMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
                             MediaType.TEXT_PLAIN.toString());

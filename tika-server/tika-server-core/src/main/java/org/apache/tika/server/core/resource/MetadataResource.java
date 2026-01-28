@@ -56,9 +56,10 @@ public class MetadataResource {
     @Produces({"text/csv", "application/json"})
     @Path("form")
     public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info) throws Exception {
+        ParseContext context = TikaResource.createParseContext();
         try (TikaInputStream tis = TikaInputStream.get(att.getObject(InputStream.class))) {
             return Response
-                    .ok(parseMetadata(tis, new Metadata(), att.getHeaders(), info))
+                    .ok(parseMetadata(tis, context.newMetadata(), att.getHeaders(), info))
                     .build();
         }
     }
@@ -76,8 +77,8 @@ public class MetadataResource {
             @Context HttpHeaders httpHeaders,
             @Context UriInfo info) throws Exception {
 
-        Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
+        ParseContext context = TikaResource.createParseContext();
+        Metadata metadata = context.newMetadata();
         try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
             // No need to parse embedded docs for metadata-only extraction
             context.set(DocumentSelector.class, metadata1 -> false);
@@ -97,7 +98,8 @@ public class MetadataResource {
     @PUT
     @Produces({"text/csv", "application/json"})
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-        Metadata metadata = new Metadata();
+        ParseContext context = TikaResource.createParseContext();
+        Metadata metadata = context.newMetadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             return Response
                     .ok(parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(), info))
@@ -136,7 +138,8 @@ public class MetadataResource {
         // use BAD request to indicate that we may not have had enough data to
         // process the request
         Response.Status defaultErrorResponse = Response.Status.BAD_REQUEST;
-        Metadata metadata = new Metadata();
+        ParseContext context = TikaResource.createParseContext();
+        Metadata metadata = context.newMetadata();
         boolean success = false;
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(), info);
@@ -168,7 +171,7 @@ public class MetadataResource {
 
     protected Metadata parseMetadata(TikaInputStream tis, Metadata metadata, MultivaluedMap<String, String> httpHeaders, UriInfo info)
             throws IOException, TikaConfigException {
-        final ParseContext context = new ParseContext();
+        final ParseContext context = TikaResource.createParseContext();
         Parser parser = TikaResource.createParser();
         fillMetadata(parser, metadata, httpHeaders);
         //no need to parse embedded docs

@@ -31,6 +31,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
 
@@ -127,10 +128,13 @@ class XPSPageContentHandler extends DefaultHandler {
     private Map<String, List<GlyphRun>> canvases = new LinkedHashMap<>();
     private Set<String> urls = new LinkedHashSet<String>();
     private Stack<String> canvasStack = new Stack<>();
+    private final ParseContext parseContext;
 
-    public XPSPageContentHandler(XHTMLContentHandler xhtml, Map<String, Metadata> embeddedInfos) {
+    public XPSPageContentHandler(XHTMLContentHandler xhtml, Map<String, Metadata> embeddedInfos,
+                                 ParseContext parseContext) {
         this.xhml = xhtml;
         this.embeddedInfos = embeddedInfos;
+        this.parseContext = parseContext;
     }
 
     private static String getVal(String localName, Attributes atts) {
@@ -274,7 +278,7 @@ class XPSPageContentHandler extends DefaultHandler {
             if (imageSourcePathInZip != null) {
                 Metadata m = embeddedInfos.get(imageSourcePathInZip);
                 if (m == null) {
-                    m = new Metadata();
+                    m = parseContext.newMetadata();
                 }
                 if (originalLocationOnDrive != null) {
                     String val = m.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME);

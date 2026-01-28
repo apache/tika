@@ -60,6 +60,7 @@ class RTFEmbObjHandler {
 
     private static final String EMPTY_STRING = "";
     private final ContentHandler handler;
+    private final ParseContext context;
     private final EmbeddedDocumentUtil embeddedDocumentUtil;
     private final UnsynchronizedByteArrayOutputStream os;
     private final int memoryLimitInKb;
@@ -80,6 +81,7 @@ class RTFEmbObjHandler {
     protected RTFEmbObjHandler(ContentHandler handler, Metadata metadata, ParseContext context,
                                int memoryLimitInKb) {
         this.handler = handler;
+        this.context = context;
         this.embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
         os = UnsynchronizedByteArrayOutputStream.builder().get();
         this.memoryLimitInKb = memoryLimitInKb;
@@ -87,12 +89,12 @@ class RTFEmbObjHandler {
 
     protected void startPict() {
         state = EMB_STATE.PICT;
-        metadata = new Metadata();
+        metadata = context.newMetadata();
     }
 
     protected void startObjData() {
         state = EMB_STATE.OBJDATA;
-        metadata = new Metadata();
+        metadata = context.newMetadata();
     }
 
     protected void startSN() {
@@ -247,7 +249,7 @@ class RTFEmbObjHandler {
     protected void reset() {
         state = EMB_STATE.NADA;
         os.reset();
-        metadata = new Metadata();
+        metadata = context.newMetadata();
         hi = -1;
         sv = EMPTY_STRING;
         sn = EMPTY_STRING;

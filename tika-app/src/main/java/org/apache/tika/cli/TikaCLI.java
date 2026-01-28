@@ -82,6 +82,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.language.detect.LanguageHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeType;
@@ -489,7 +490,7 @@ public class TikaCLI {
 
             if (arg.equals("-")) {
                 try (TikaInputStream tis = TikaInputStream.get(CloseShieldInputStream.wrap(System.in))) {
-                    type.process(tis, System.out, new Metadata());
+                    type.process(tis, System.out, context.newMetadata());
                 }
             } else {
                 URL url;
@@ -504,7 +505,7 @@ public class TikaCLI {
                 if (recursiveJSON) {
                     handleRecursiveJson(url, System.out);
                 } else {
-                    Metadata metadata = new Metadata();
+                    Metadata metadata = context.newMetadata();
                     try (TikaInputStream tis = TikaInputStream.get(url, metadata)) {
                         type.process(tis, System.out, metadata);
                     } finally {
@@ -551,7 +552,7 @@ public class TikaCLI {
     }
 
     private void handleRecursiveJson(URL url, OutputStream output) throws IOException, SAXException, TikaException {
-        Metadata metadata = new Metadata();
+        Metadata metadata = context.newMetadata();
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(getContentHandlerFactory(type), -1);
         try (TikaInputStream tis = TikaInputStream.get(url, metadata)) {
@@ -737,6 +738,16 @@ public class TikaCLI {
         detector = tikaLoader.loadDetectors();
         context.set(Parser.class, parser);
         context.set(PasswordProvider.class, new SimplePasswordProvider(password));
+
+        // Load default MetadataWriteLimiterFactory if configured
+        try {
+            MetadataWriteLimiterFactory factory = tikaLoader.configs().load(MetadataWriteLimiterFactory.class);
+            if (factory != null) {
+                context.set(MetadataWriteLimiterFactory.class, factory);
+            }
+        } catch (Exception e) {
+            LOG.warn("Failed to load MetadataWriteLimiterFactory", e);
+        }
     }
 
     private void displayMetModels() {

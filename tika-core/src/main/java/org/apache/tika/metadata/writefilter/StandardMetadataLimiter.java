@@ -33,42 +33,38 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
 
 /**
- * This is to be used to limit the amount of metadata that a
- * parser can add based on the {@link #maxTotalEstimatedSize},
- * {@link #maxFieldSize}, {@link #maxValuesPerField}, and
- * {@link #maxKeySize}.  This can also be used to limit which
- * fields are stored in the metadata object at write-time
- * with {@link #includeFields}.
+ * Standard implementation of {@link MetadataWriteLimiter} that limits the amount of metadata
+ * a parser can add based on {@link #maxTotalEstimatedSize}, {@link #maxFieldSize},
+ * {@link #maxValuesPerField}, and {@link #maxKeySize}. This can also be used to limit which
+ * fields are stored in the metadata object at write-time with {@link #includeFields}.
  *
- * All sizes are measured in UTF-16 bytes. The size is estimated
- * as a rough order of magnitude of what is
- * required to store the string in memory in Java.  We recognize
- * that Java uses more bytes to store length, offset etc. for strings. But
- * the extra overhead varies by Java version and implementation,
- * and we just need a basic estimate.  We also recognize actual
- * memory usage is affected by interning strings, etc.
- * Please forgive us ... or consider writing your own write filter. :)
+ * <p>All sizes are measured in UTF-16 bytes. The size is estimated as a rough order of magnitude
+ * of what is required to store the string in memory in Java. We recognize that Java uses more
+ * bytes to store length, offset etc. for strings, but the extra overhead varies by Java version
+ * and implementation, and we just need a basic estimate. We also recognize actual memory usage
+ * is affected by interning strings, etc.
+ * Please forgive us ... or consider writing your own limiter. :)
  *
+ * <p><b>NOTE:</b> Fields in {@link #ALWAYS_SET_FIELDS} are always set no matter the current
+ * state of {@link #maxTotalEstimatedSize}. Except for {@link TikaCoreProperties#TIKA_CONTENT},
+ * they are truncated at {@link #maxFieldSize}, and their sizes contribute to the
+ * {@link #maxTotalEstimatedSize}.
  *
- * <b>NOTE:</b> Fields in {@link #ALWAYS_SET_FIELDS} are
- * always set no matter the current state of {@link #maxTotalEstimatedSize}.
- * Except for {@link TikaCoreProperties#TIKA_CONTENT}, they are truncated at
- * {@link #maxFieldSize}, and their sizes contribute to the {@link #maxTotalEstimatedSize}.
+ * <p><b>NOTE:</b> Fields in {@link #ALWAYS_ADD_FIELDS} are always added no matter the current
+ * state of {@link #maxTotalEstimatedSize}. Except for {@link TikaCoreProperties#TIKA_CONTENT},
+ * each addition is truncated at {@link #maxFieldSize}, and their sizes contribute to the
+ * {@link #maxTotalEstimatedSize}.
  *
- * <b>NOTE:</b> Fields in {@link #ALWAYS_ADD_FIELDS} are
- * always added no matter the current state of {@link #maxTotalEstimatedSize}.
- * Except for {@link TikaCoreProperties#TIKA_CONTENT}, each addition is truncated at
- * {@link #maxFieldSize}, and their sizes contribute to the {@link #maxTotalEstimatedSize}.
+ * <p>This class uses {@link #minimumMaxFieldSizeInAlwaysFields} to protect the
+ * {@link #ALWAYS_ADD_FIELDS} and {@link #ALWAYS_SET_FIELDS}. If we didn't have this and a user
+ * sets the {@link #maxFieldSize} to, say, 10 bytes, the internal parser behavior would be broken
+ * because parsers rely on {@link Metadata#CONTENT_TYPE} to determine which parser to call.
  *
- * This class {@link #minimumMaxFieldSizeInAlwaysFields} to protect the
- * {@link #ALWAYS_ADD_FIELDS} and {@link #ALWAYS_SET_FIELDS}. If we didn't
- * have this and a user sets the {@link #maxFieldSize} to, say, 10 bytes,
- * the internal parser behavior would be broken because parsers rely on
- * {@link Metadata#CONTENT_TYPE} to determine which parser to call.
+ * <p><b>NOTE:</b> as with {@link Metadata}, this object is not thread safe.
  *
- * <b>NOTE:</b> as with {@link Metadata}, this object is not thread safe.
+ * @since Apache Tika 4.0 (renamed from StandardWriteFilter)
  */
-public class StandardWriteFilter implements MetadataWriteFilter, Serializable {
+public class StandardMetadataLimiter implements MetadataWriteLimiter, Serializable {
 
     public static final Set<String> ALWAYS_SET_FIELDS = new HashSet<>();
     public static final Set<String> ALWAYS_ADD_FIELDS = new HashSet<>();
@@ -123,14 +119,14 @@ public class StandardWriteFilter implements MetadataWriteFilter, Serializable {
     /**
      * @param maxKeySize maximum key size in UTF-16 bytes-- keys will be truncated to this
      *                   length; if less than 0, keys will not be truncated
-     * @param maxEstimatedSize
+     * @param maxEstimatedSize maximum total estimated size in UTF-16 bytes
      * @param includeFields if null or empty, all fields are included; otherwise, which fields
      *                      to add to the metadata object.
-     * @param excludeFields these fields will not be included (unless they're in {@link StandardWriteFilter#ALWAYS_SET_FIELDS})
+     * @param excludeFields these fields will not be included (unless they're in {@link StandardMetadataLimiter#ALWAYS_SET_FIELDS})
      * @param includeEmpty if <code>true</code>, this will set or add an empty value to the
      *                     metadata object.
      */
-    protected StandardWriteFilter(int maxKeySize, int maxFieldSize, int maxEstimatedSize,
+    protected StandardMetadataLimiter(int maxKeySize, int maxFieldSize, int maxEstimatedSize,
                                int maxValuesPerField,
                                Set<String> includeFields,
                                Set<String> excludeFields,
@@ -140,36 +136,11 @@ public class StandardWriteFilter implements MetadataWriteFilter, Serializable {
         this.maxFieldSize = maxFieldSize;
         this.maxTotalEstimatedSize = maxEstimatedSize;
         this.maxValuesPerField = maxValuesPerField;
-        this.includeFields = includeFields;
-        this.excludeFields = excludeFields;
+        // Defensive copies to prevent external modification
+        this.includeFields = includeFields != null ? new HashSet<>(includeFields) : new HashSet<>();
+        this.excludeFields = excludeFields != null ? new HashSet<>(excludeFields) : new HashSet<>();
         this.includeEmpty = includeEmpty;
     }
-
-    @Override
-    public void filterExisting(Map<String, String[]> data) {
-        //this is somewhat costly, but it ensures that
-        //metadata that was placed in the metadata object before this
-        //filter was applied is removed.
-        //It should only be called once, and probably not on that
-        //many fields.
-        Map<String, String[]> tmp = new HashMap<>();
-        for (Map.Entry<String, String[]> e : data.entrySet()) {
-            String name = e.getKey();
-            String[] vals = e.getValue();
-            if (! includeField(name)) {
-                continue;
-            }
-            for (int i = 0; i < vals.length; i++) {
-                String v = vals[i];
-                if (include(name, v)) {
-                    add(name, v, tmp);
-                }
-            }
-        }
-        data.clear();
-        data.putAll(tmp);
-    }
-
 
     @Override
     public void set(String field, String value, Map<String, String[]> data) {
@@ -444,7 +415,8 @@ public class StandardWriteFilter implements MetadataWriteFilter, Serializable {
         if (name == null) {
             throw new NullPointerException("property name must not be null");
         }
-        if (ALWAYS_SET_FIELDS.contains(name)) {
+        // Check both ALWAYS_SET_FIELDS and ALWAYS_ADD_FIELDS - these must always pass
+        if (ALWAYS_SET_FIELDS.contains(name) || ALWAYS_ADD_FIELDS.contains(name)) {
             return true;
         }
         if (excludeFields.contains(name)) {

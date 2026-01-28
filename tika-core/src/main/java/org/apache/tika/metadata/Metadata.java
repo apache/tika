@@ -35,7 +35,7 @@ import java.util.Properties;
 import java.util.TimeZone;
 
 import org.apache.tika.metadata.Property.PropertyType;
-import org.apache.tika.metadata.writefilter.MetadataWriteFilter;
+import org.apache.tika.metadata.writefilter.MetadataWriteLimiter;
 import org.apache.tika.utils.DateUtils;
 
 /**
@@ -46,12 +46,7 @@ public class Metadata
         TikaMimeKeys, Serializable {
 
 
-    private static final MetadataWriteFilter ACCEPT_ALL = new MetadataWriteFilter() {
-        @Override
-        public void filterExisting(Map<String, String[]> data) {
-            //no-op
-        }
-
+    private static final MetadataWriteLimiter ACCEPT_ALL = new MetadataWriteLimiter() {
         @Override
         public void add(String field, String value, Map<String, String[]> data) {
             String[] values = data.get(field);
@@ -98,12 +93,24 @@ public class Metadata
     private Map<String, String[]> metadata = null;
 
 
-    private MetadataWriteFilter writeFilter = ACCEPT_ALL;
+    private MetadataWriteLimiter writeLimiter = ACCEPT_ALL;
     /**
      * Constructs a new, empty metadata.
      */
     public Metadata() {
         metadata = new HashMap<>();
+    }
+
+    /**
+     * Constructs a new, empty metadata with the specified write limiter.
+     * The limiter will be applied to all subsequent writes.
+     *
+     * @param writeLimiter the limiter to apply to metadata writes, or null for no limits
+     * @since Apache Tika 4.0
+     */
+    public Metadata(MetadataWriteLimiter writeLimiter) {
+        metadata = new HashMap<>();
+        this.writeLimiter = writeLimiter != null ? writeLimiter : ACCEPT_ALL;
     }
 
     private static DateFormat createDateFormat(String format, TimeZone timezone) {
@@ -170,23 +177,6 @@ public class Metadata
         } else {
             return values[0];
         }
-    }
-
-    /**
-     * Sets the writeFilter that is called before {@link #set(String, String)}
-     * {@link #set(String, String[])}, {@link #add(String, String)},
-     * {@link #add(String, String[])}.  The default is {@link #ACCEPT_ALL}.
-     *
-     * This is intended for expert use only.  Some parsers rely on metadata
-     * during the parse, and if the metadata they need is excluded, they
-     * will not function properly.
-     *
-     * @param writeFilter
-     * @since 2.4.0
-     */
-    public void setMetadataWriteFilter(MetadataWriteFilter writeFilter) {
-        this.writeFilter = writeFilter;
-        this.writeFilter.filterExisting(metadata);
     }
 
     /**
@@ -290,7 +280,7 @@ public class Metadata
      * @param value the metadata value.
      */
     public void add(final String name, final String value) {
-        writeFilter.add(name, value, metadata);
+        writeLimiter.add(name, value, metadata);
     }
 
     /**
@@ -370,7 +360,7 @@ public class Metadata
      * @param value the metadata value, or <code>null</code>
      */
     public void set(String name, String value) {
-        writeFilter.set(name, value, metadata);
+        writeLimiter.set(name, value, metadata);
     }
 
     protected void set(String name, String[] values) {

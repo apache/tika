@@ -202,9 +202,10 @@ public class PackageParser extends AbstractEncodingDetectorParser {
     }
 
     protected static Metadata handleEntryMetadata(String name, Date createAt, Date modifiedAt,
-                                                  Long size, XHTMLContentHandler xhtml)
+                                                  Long size, XHTMLContentHandler xhtml,
+                                                  ParseContext context)
             throws SAXException, IOException, TikaException {
-        Metadata entrydata = new Metadata();
+        Metadata entrydata = context.newMetadata();
         if (createAt != null) {
             entrydata.set(TikaCoreProperties.CREATED, createAt);
         }
@@ -457,7 +458,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
             // Fetch the metadata on the entry contained in the archive
             Metadata entrydata =
                     handleEntryMetadata(name, null, entry.getLastModifiedDate(), entry.getSize(),
-                            xhtml);
+                            xhtml, context);
 
             // Recurse into the entry if desired
             if (extractor.shouldParseEmbedded(entrydata)) {

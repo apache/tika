@@ -115,6 +115,7 @@ public class TikaJsonConfig {
             "renderers",
             "translator",
             "auto-detect-parser",
+            "parse-context",
             "server",
 
             // Pipes/plugin keys

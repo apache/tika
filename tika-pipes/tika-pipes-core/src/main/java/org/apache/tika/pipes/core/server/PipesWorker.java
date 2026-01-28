@@ -34,6 +34,7 @@ import org.apache.tika.extractor.RUnpackExtractor;
 import org.apache.tika.extractor.RUnpackExtractorFactory;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -56,15 +57,17 @@ class PipesWorker implements Callable<PipesResult> {
     private final FetchHandler fetchHandler;
     private final ParseHandler parseHandler;
     private final EmitHandler emitHandler;
+    private final MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory;
 
     public PipesWorker(FetchEmitTuple fetchEmitTuple, AutoDetectParser autoDetectParser, EmitterManager emitterManager, FetchHandler fetchHandler, ParseHandler parseHandler,
-                       EmitHandler emitHandler) {
+                       EmitHandler emitHandler, MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory) {
         this.fetchEmitTuple = fetchEmitTuple;
         this.autoDetectParser = autoDetectParser;
         this.emitterManager = emitterManager;
         this.fetchHandler = fetchHandler;
         this.parseHandler = parseHandler;
         this.emitHandler = emitHandler;
+        this.defaultMetadataWriteLimiterFactory = defaultMetadataWriteLimiterFactory;
     }
 
     @Override
@@ -106,12 +109,6 @@ class PipesWorker implements Callable<PipesResult> {
         //start a new metadata object to gather info from the fetch process
         //we want to isolate and not touch the metadata sent into the fetchEmitTuple
         //so that we can inject it after the filter at the very end
-        Metadata metadata = new Metadata();
-        FetchHandler.TisOrResult tisOrResult = fetchHandler.fetch(fetchEmitTuple, metadata);
-        if (tisOrResult.pipesResult() != null) {
-            return new ParseDataOrPipesResult(null, tisOrResult.pipesResult());
-        }
-
         ParseContext parseContext = null;
         try {
             parseContext = setupParseContext(fetchEmitTuple);
@@ -120,6 +117,12 @@ class PipesWorker implements Callable<PipesResult> {
             return new ParseDataOrPipesResult(null,
                     new PipesResult(PipesResult.RESULT_STATUS.FETCHER_INITIALIZATION_EXCEPTION, ExceptionUtils.getStackTrace(e)));
         }
+        Metadata metadata = parseContext.newMetadata();
+        FetchHandler.TisOrResult tisOrResult = fetchHandler.fetch(fetchEmitTuple, metadata);
+        if (tisOrResult.pipesResult() != null) {
+            return new ParseDataOrPipesResult(null, tisOrResult.pipesResult());
+        }
+
         try (TikaInputStream tis = tisOrResult.tis()) {
             return parseHandler.parseWithStream(fetchEmitTuple, tis, metadata, parseContext);
         } catch (SecurityException e) {
@@ -138,6 +141,14 @@ class PipesWorker implements Callable<PipesResult> {
         ParseContext parseContext = fetchEmitTuple.getParseContext();
         // ContentHandlerFactory and ParseMode are retrieved from ParseContext in ParseHandler.
         // They are set in ParseContext from PipesConfig loaded via TikaLoader at startup.
+
+        // If the parseContext from the FetchEmitTuple doesn't have a MetadataWriteLimiterFactory,
+        // use the default one loaded from config in PipesServer
+        MetadataWriteLimiterFactory existingFactory = parseContext.get(MetadataWriteLimiterFactory.class);
+        if (existingFactory == null && defaultMetadataWriteLimiterFactory != null) {
+            parseContext.set(MetadataWriteLimiterFactory.class, defaultMetadataWriteLimiterFactory);
+        }
+
         EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);
         if (embeddedDocumentBytesConfig == null) {
             //make sure there's one here -- or do we make this default in fetchemit tuple?
@@ -166,6 +177,7 @@ class PipesWorker implements Callable<PipesResult> {
             parseContext.set(EmbeddedDocumentBytesHandler.class,
                     new BasicEmbeddedDocumentBytesHandler(embeddedDocumentBytesConfig));
         }
+
         return parseContext;
     }
 

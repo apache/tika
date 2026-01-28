@@ -3,10 +3,14 @@
     "default-parser"
   ],
   "auto-detect-parser": {
-    "outputThreshold": 6789,
-    "metadataWriteFilterFactory": {
-      "standard-write-filter-factory": {
-        "maxTotalEstimatedBytes": 150,
+    "outputThreshold": 6789
+  },
+  "other-configs": {
+    "metadata-write-limiter-factory": {
+      "standard-metadata-limiter-factory": {
+        // maxTotalBytes accounts for ~244 bytes of ALWAYS_SET_FIELDS overhead
+        // (Content-Type, X-TIKA:Parsed-By, etc.) plus room for 2 dc:creator values
+        "maxTotalBytes": 330,
         "includeFields": ["dc:creator"]
       }
     }

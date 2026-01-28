@@ -18,8 +18,10 @@ package org.apache.tika.metadata.writefilter;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -39,20 +41,24 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.AutoDetectParserConfig;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 
-public class StandardWriteFilterTest extends TikaTest {
+public class StandardMetadataLimiterTest extends TikaTest {
 
 
     @Test
     public void testMetadataFactoryConfig() throws Exception {
         TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "TIKA-3695.json"));
         AutoDetectParser parser = (AutoDetectParser) loader.loadAutoDetectParser();
-        AutoDetectParserConfig config = parser.getAutoDetectParserConfig();
-        MetadataWriteFilterFactory factory = config.getMetadataWriteFilterFactory();
-        assertEquals(150, ((StandardWriteFilterFactory) factory).getMaxTotalEstimatedBytes());
+        MetadataWriteLimiterFactory factory = loader.configs().load(MetadataWriteLimiterFactory.class);
+        assertEquals(330, ((StandardMetadataLimiterFactory) factory).getMaxTotalBytes());
+        assertFalse(((StandardMetadataLimiterFactory) factory).getIncludeFields().isEmpty(),
+                "includeFields should not be empty");
+        assertTrue(((StandardMetadataLimiterFactory) factory).getIncludeFields().contains("dc:creator"),
+                "includeFields should contain dc:creator");
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(MetadataWriteLimiterFactory.class, factory);
         String mock = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
                 "<mock>";
         for (int i = 0; i < 20; i++) {
@@ -60,10 +66,10 @@ public class StandardWriteFilterTest extends TikaTest {
         }
         mock += "<write element=\"p\" times=\"30\"> hello </write>\n";
         mock += "</mock>";
-        Metadata metadata = new Metadata();
+        Metadata metadata = parseContext.newMetadata();
         List<Metadata> metadataList =
                 getRecursiveMetadata(TikaInputStream.get(mock.getBytes(StandardCharsets.UTF_8)),
-                        parser, metadata, new ParseContext(), true);
+                        parser, metadata, parseContext, true);
         assertEquals(1, metadataList.size());
         metadata = metadataList.get(0);
 
@@ -78,11 +84,16 @@ public class StandardWriteFilterTest extends TikaTest {
     public void testMetadataFactoryFieldsConfig() throws Exception {
         TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "TIKA-3695-fields.json"));
         AutoDetectParser parser = (AutoDetectParser) loader.loadAutoDetectParser();
-        AutoDetectParserConfig config = parser.getAutoDetectParserConfig();
-        MetadataWriteFilterFactory factory = config.getMetadataWriteFilterFactory();
-        assertEquals(241, ((StandardWriteFilterFactory) factory).getMaxTotalEstimatedBytes());
-        assertEquals(999, ((StandardWriteFilterFactory) factory).getMaxKeySize());
-        assertEquals(10001, ((StandardWriteFilterFactory) factory).getMaxFieldSize());
+        MetadataWriteLimiterFactory factory = loader.configs().load(MetadataWriteLimiterFactory.class);
+        assertEquals(421, ((StandardMetadataLimiterFactory) factory).getMaxTotalBytes());
+        assertEquals(999, ((StandardMetadataLimiterFactory) factory).getMaxKeySize());
+        assertEquals(10001, ((StandardMetadataLimiterFactory) factory).getMaxFieldSize());
+        assertFalse(((StandardMetadataLimiterFactory) factory).getIncludeFields().isEmpty(),
+                "includeFields should not be empty");
+        assertTrue(((StandardMetadataLimiterFactory) factory).getIncludeFields().contains("dc:creator"),
+                "includeFields should contain dc:creator");
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(MetadataWriteLimiterFactory.class, factory);
         String mock = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
                 "<mock>";
         mock += "<metadata action=\"add\" name=\"dc:subject\">this is not a title</metadata>";
@@ -92,12 +103,12 @@ public class StandardWriteFilterTest extends TikaTest {
         }
         mock += "<write element=\"p\" times=\"30\"> hello </write>\n";
         mock += "</mock>";
-        Metadata metadata = new Metadata();
+        Metadata metadata = parseContext.newMetadata();
         metadata.add("dc:creator", "abcdefghijabcdefghij");
         metadata.add("not-allowed", "not-allowed");
         List<Metadata> metadataList =
                 getRecursiveMetadata(TikaInputStream.get(mock.getBytes(StandardCharsets.UTF_8)),
-                        parser, metadata, new ParseContext(), true);
+                        parser, metadata, parseContext, true);
         assertEquals(1, metadataList.size());
         metadata = metadataList.get(0);
         //test that this was removed during the filter existing stage
@@ -205,9 +216,8 @@ public class StandardWriteFilterTest extends TikaTest {
 
     @Test
     public void testAddOrder() throws Exception {
-        StandardWriteFilter standardWriteFilter = new StandardWriteFilter(100, 1000, 100000, 10, Set.of(), Set.of(), true);
-        Metadata m = new Metadata();
-        m.setMetadataWriteFilter(standardWriteFilter);
+        StandardMetadataLimiter standardWriteFilter = new StandardMetadataLimiter(100, 1000, 100000, 10, Set.of(), Set.of(), true);
+        Metadata m = new Metadata(standardWriteFilter);
         m.add("test", "foo");
         m.add("test", "bar");
         m.add("test", "baz");
@@ -217,27 +227,25 @@ public class StandardWriteFilterTest extends TikaTest {
 
     @Test
     public void testNullValues() throws Exception {
-        StandardWriteFilter standardWriteFilter = new StandardWriteFilter(100, 1000, 100000, 10, Set.of(), Set.of(), true);
-        Metadata m = new Metadata();
+        StandardMetadataLimiter standardWriteFilter = new StandardMetadataLimiter(100, 1000, 100000, 10, Set.of(), Set.of(), true);
+        Metadata m = new Metadata(standardWriteFilter);
         m.set("test", "foo");
-        m.setMetadataWriteFilter(standardWriteFilter);
         m.set("test", null);
 
         assertEquals(0, m.names().length);
         assertNull(m.get("test"));
 
         //now test adding
-        m = new Metadata();
+        m = new Metadata(standardWriteFilter);
         m.add("test", "foo");
         m.add("test", null);
         //Not sure this is the behavior we want, but it is what we're currently doing.
         assertArrayEquals(new String[]{"foo"}, m.getValues("test"));
 
         //now check when empty not allowed
-        standardWriteFilter = new StandardWriteFilter(100, 1000, 100000, 10, Set.of(), Set.of(), false);
-        m = new Metadata();
+        standardWriteFilter = new StandardMetadataLimiter(100, 1000, 100000, 10, Set.of(), Set.of(), false);
+        m = new Metadata(standardWriteFilter);
         m.set("test", "foo");
-        m.setMetadataWriteFilter(standardWriteFilter);
         assertEquals(1, m.names().length);
         assertEquals("foo", m.get("test"));
 
@@ -254,9 +262,8 @@ public class StandardWriteFilterTest extends TikaTest {
 
     @Test
     public void testNullKeys() {
-        StandardWriteFilter standardWriteFilter = new StandardWriteFilter(100, 1000, 100000, 10, Set.of(), Set.of(), true);
-        Metadata m = new Metadata();
-        m.setMetadataWriteFilter(standardWriteFilter);
+        StandardMetadataLimiter standardWriteFilter = new StandardMetadataLimiter(100, 1000, 100000, 10, Set.of(), Set.of(), true);
+        Metadata m = new Metadata(standardWriteFilter);
         Exception ex = assertThrows(NullPointerException.class, () -> {
             m.set((String) null, "foo");
         });
@@ -278,6 +285,9 @@ public class StandardWriteFilterTest extends TikaTest {
     public void testExclude() throws Exception {
         TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "TIKA-3695-exclude.json"));
         Parser parser = loader.loadAutoDetectParser();
+        MetadataWriteLimiterFactory factory = loader.configs().load(MetadataWriteLimiterFactory.class);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(MetadataWriteLimiterFactory.class, factory);
         String mock = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
                 "<mock>";
         mock += "<metadata action=\"add\" name=\"dc:creator\">01234567890123456789</metadata>";
@@ -285,10 +295,10 @@ public class StandardWriteFilterTest extends TikaTest {
         mock += "<metadata action=\"add\" name=\"subjectB\">01234567890123456789</metadata>";
         mock += "<write element=\"p\" times=\"1\"> hello </write>\n";
         mock += "</mock>";
-        Metadata metadata = new Metadata();
+        Metadata metadata = parseContext.newMetadata();
         List<Metadata> metadataList =
                 getRecursiveMetadata(TikaInputStream.get(mock.getBytes(StandardCharsets.UTF_8)),
-                        parser, metadata, new ParseContext(), true);
+                        parser, metadata, parseContext, true);
         assertEquals(1, metadataList.size());
         metadata = metadataList.get(0);
         // Verify the key fields - dc:creator and subjectB should be present, subject should be excluded
@@ -304,11 +314,9 @@ public class StandardWriteFilterTest extends TikaTest {
     private Metadata filter(int maxKeySize, int maxFieldSize, int maxTotalBytes,
                             int maxValuesPerField,
                             Set<String> includeFields, Set<String> excludeFields, boolean includeEmpty) {
-        MetadataWriteFilter filter = new StandardWriteFilter(maxKeySize, maxFieldSize,
+        MetadataWriteLimiter filter = new StandardMetadataLimiter(maxKeySize, maxFieldSize,
                 maxTotalBytes, maxValuesPerField, includeFields, excludeFields, includeEmpty);
-        Metadata metadata = new Metadata();
-        metadata.setMetadataWriteFilter(filter);
-        return metadata;
+        return new Metadata(filter);
     }
 
     public MediaType getLongestMime() throws Exception {

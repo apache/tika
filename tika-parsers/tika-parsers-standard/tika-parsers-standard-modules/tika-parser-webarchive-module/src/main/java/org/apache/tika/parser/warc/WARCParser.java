@@ -133,7 +133,7 @@ public class WARCParser implements Parser {
             //TODO handle missing payload?  Report or ignore?
             return;
         }
-        Metadata metadata = new Metadata();
+        Metadata metadata = context.newMetadata();
         setNotNull(WARC.WARC_RECORD_CONTENT_TYPE, warcResponse.contentType(), metadata);
         setNotNull(WARC.WARC_PAYLOAD_CONTENT_TYPE, warcResponse.payloadType(), metadata);
         processWarcMetadata(warcResponse, metadata);

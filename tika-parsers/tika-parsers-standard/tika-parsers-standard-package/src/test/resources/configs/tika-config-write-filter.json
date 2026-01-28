@@ -10,15 +10,17 @@
         ]
       }
     },
-    "metadataWriteFilterFactory": {
-      "standard-write-filter-factory": {
+    "throwOnZeroBytes": false
+  },
+  "other-configs": {
+    "metadata-write-limiter-factory": {
+      "standard-metadata-limiter-factory": {
         "includeFields": [
-         "X-TIKA-CONTENT",
+          "X-TIKA:content",
           "dc:creator"
         ]
       }
-    },
-    "throwOnZeroBytes": false
+    }
   }
 }
 

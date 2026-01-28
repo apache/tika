@@ -4,19 +4,6 @@
     "maximumCompressionRatio": 0.8,
     "maximumDepth": 1000,
     "maximumPackageEntryDepth": 1000,
-    "metadataWriteFilterFactory": {
-      "standard-write-filter-factory": {
-        "includeFields": [
-        ],
-        "excludeFields": [
-        ],
-        "maxKeySize": 1024,
-        "maxFieldSize": 102400,
-        "maxTotalEstimatedBytes": 10485760,
-        "maxValuesPerField": 10,
-        "includeEmpty": false
-      }
-    },
     "embeddedDocumentExtractorFactory": {
       "runpack-extractor-factory": {
         "writeFileNameToContent": true,
