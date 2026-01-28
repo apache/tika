@@ -348,8 +348,8 @@ public class PipesServer implements AutoCloseable {
         Long thresholdBytes = pipesConfig.getEmitStrategy().getThresholdBytes();
         long threshold = (thresholdBytes != null) ? thresholdBytes : EmitStrategyConfig.DEFAULT_DIRECT_EMIT_THRESHOLD_BYTES;
         EmitHandler emitHandler = new EmitHandler(defaultMetadataFilter, emitStrategy, emitterManager, threshold);
-        PipesWorker pipesWorker = new PipesWorker(fetchEmitTuple, mergedContext, autoDetectParser, emitterManager, fetchHandler, parseHandler, emitHandler, defaultMetadataWriteLimiterFactory);
-        return pipesWorker;
+        return new PipesWorker(fetchEmitTuple, mergedContext, autoDetectParser, emitterManager,
+                fetchHandler, parseHandler, emitHandler, defaultMetadataWriteLimiterFactory);
     }
 
     private void loopUntilDone(FetchEmitTuple fetchEmitTuple, ParseContext mergedContext,
