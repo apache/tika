@@ -77,7 +77,8 @@ public class MetadataResource {
             @Context UriInfo info) throws Exception {
 
         Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
+        // Load default context from config, then overlay with request config
+        ParseContext context = TikaResource.getTikaLoader().loadParseContext();
         try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
             // No need to parse embedded docs for metadata-only extraction
             context.set(DocumentSelector.class, metadata1 -> false);
@@ -168,7 +169,8 @@ public class MetadataResource {
 
     protected Metadata parseMetadata(TikaInputStream tis, Metadata metadata, MultivaluedMap<String, String> httpHeaders, UriInfo info)
             throws IOException, TikaConfigException {
-        final ParseContext context = new ParseContext();
+        // Load default context from config (includes DigesterFactory from other-configs)
+        final ParseContext context = TikaResource.getTikaLoader().loadParseContext();
         Parser parser = TikaResource.createParser();
         fillMetadata(parser, metadata, httpHeaders);
         //no need to parse embedded docs
