@@ -26,8 +26,10 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 
 /**
@@ -60,10 +62,11 @@ public class DigestConfigTest extends TikaTest {
 
     @Test
     public void testCommonsDigesterBasic() throws Exception {
-        Parser p = TikaLoaderHelper.getLoader("tika-config-commons-digests-basic.json")
-                .loadAutoDetectParser();
+        TikaLoader loader = TikaLoaderHelper.getLoader("tika-config-commons-digests-basic.json");
+        Parser p = loader.loadAutoDetectParser();
+        ParseContext context = loader.loadParseContext();
         Metadata m = new Metadata();
-        getXML("test_recursive_embedded.docx", p, m);
+        getXML("test_recursive_embedded.docx", p, m, context);
 
         assertEquals(EXPECTED_MD2, m.get(P + "MD2"), "MD2 digest should match");
         assertEquals(EXPECTED_MD5, m.get(P + "MD5"), "MD5 digest should match");
@@ -75,9 +78,11 @@ public class DigestConfigTest extends TikaTest {
 
     @Test
     public void testCommonsDigesterWithBase32() throws Exception {
-        Parser p = TikaLoaderHelper.getLoader("tika-config-digests.json").loadAutoDetectParser();
+        TikaLoader loader = TikaLoaderHelper.getLoader("tika-config-digests.json");
+        Parser p = loader.loadAutoDetectParser();
+        ParseContext context = loader.loadParseContext();
         Metadata m = new Metadata();
-        getXML("test_recursive_embedded.docx", p, m);
+        getXML("test_recursive_embedded.docx", p, m, context);
 
         // SHA256 with BASE32 encoding - just verify it exists with non-default key
         assertNotNull(m.get(P + "SHA256:BASE32"),
@@ -89,9 +94,10 @@ public class DigestConfigTest extends TikaTest {
     @Test
     public void testCommonsDigesterLengthsCalculated() throws Exception {
         // This tests that TIKA-4016 added lengths
-        Parser p = TikaLoaderHelper.getLoader("tika-config-commons-digests-basic.json")
-                .loadAutoDetectParser();
-        List<Metadata> metadataList = getRecursiveMetadata("test_recursive_embedded.docx", p);
+        TikaLoader loader = TikaLoaderHelper.getLoader("tika-config-commons-digests-basic.json");
+        Parser p = loader.loadAutoDetectParser();
+        ParseContext context = loader.loadParseContext();
+        List<Metadata> metadataList = getRecursiveMetadata("test_recursive_embedded.docx", p, context);
         for (Metadata m : metadataList) {
             assertNotNull(m.get(Metadata.CONTENT_LENGTH));
         }
@@ -99,9 +105,11 @@ public class DigestConfigTest extends TikaTest {
 
     @Test
     public void testCommonsDigesterSkipContainer() throws Exception {
-        Parser p = TikaLoaderHelper.getLoader("tika-config-digests-skip-container.json")
-                .loadAutoDetectParser();
-        List<Metadata> metadataList = getRecursiveMetadata("test_recursive_embedded.docx", p);
+        // Tests skipContainerDocumentDigest on the factory (configured in other-configs)
+        TikaLoader loader = TikaLoaderHelper.getLoader("tika-config-digests-skip-container.json");
+        Parser p = loader.loadAutoDetectParser();
+        ParseContext context = loader.loadParseContext();
+        List<Metadata> metadataList = getRecursiveMetadata("test_recursive_embedded.docx", p, context);
 
         // Container should NOT have digest
         assertNull(metadataList.get(0).get(P + "MD5"),
@@ -118,10 +126,11 @@ public class DigestConfigTest extends TikaTest {
 
     @Test
     public void testBouncyCastleDigesterBasic() throws Exception {
-        Parser p = TikaLoaderHelper.getLoader("tika-config-bc-digests-basic.json")
-                .loadAutoDetectParser();
+        TikaLoader loader = TikaLoaderHelper.getLoader("tika-config-bc-digests-basic.json");
+        Parser p = loader.loadAutoDetectParser();
+        ParseContext context = loader.loadParseContext();
         Metadata m = new Metadata();
-        getXML("test_recursive_embedded.docx", p, m);
+        getXML("test_recursive_embedded.docx", p, m, context);
 
         assertEquals(EXPECTED_MD2, m.get(P + "MD2"), "MD2 digest should match");
         assertEquals(EXPECTED_MD5, m.get(P + "MD5"), "MD5 digest should match");
@@ -133,10 +142,11 @@ public class DigestConfigTest extends TikaTest {
 
     @Test
     public void testBouncyCastleDigesterMultipleAlgorithms() throws Exception {
-        Parser p = TikaLoaderHelper.getLoader("tika-config-bc-digests-multiple.json")
-                .loadAutoDetectParser();
+        TikaLoader loader = TikaLoaderHelper.getLoader("tika-config-bc-digests-multiple.json");
+        Parser p = loader.loadAutoDetectParser();
+        ParseContext context = loader.loadParseContext();
         Metadata m = new Metadata();
-        getXML("test_recursive_embedded.docx", p, m);
+        getXML("test_recursive_embedded.docx", p, m, context);
 
         assertEquals(EXPECTED_MD5, m.get(P + "MD5"), "MD5 digest should match");
         assertEquals(EXPECTED_SHA256, m.get(P + "SHA256"), "SHA256 digest should match");
@@ -150,10 +160,11 @@ public class DigestConfigTest extends TikaTest {
 
     @Test
     public void testBouncyCastleDigesterBase32Encoding() throws Exception {
-        Parser p = TikaLoaderHelper.getLoader("tika-config-bc-digests-base32.json")
-                .loadAutoDetectParser();
+        TikaLoader loader = TikaLoaderHelper.getLoader("tika-config-bc-digests-base32.json");
+        Parser p = loader.loadAutoDetectParser();
+        ParseContext context = loader.loadParseContext();
         Metadata m = new Metadata();
-        getXML("test_recursive_embedded.docx", p, m);
+        getXML("test_recursive_embedded.docx", p, m, context);
 
         // Non-default encoding includes encoding in the key
         assertEquals(EXPECTED_SHA1_BASE32, m.get(P + "SHA1:BASE32"),
@@ -162,9 +173,10 @@ public class DigestConfigTest extends TikaTest {
 
     @Test
     public void testBouncyCastleDigesterLengthsCalculated() throws Exception {
-        Parser p = TikaLoaderHelper.getLoader("tika-config-bc-digests-basic.json")
-                .loadAutoDetectParser();
-        List<Metadata> metadataList = getRecursiveMetadata("test_recursive_embedded.docx", p);
+        TikaLoader loader = TikaLoaderHelper.getLoader("tika-config-bc-digests-basic.json");
+        Parser p = loader.loadAutoDetectParser();
+        ParseContext context = loader.loadParseContext();
+        List<Metadata> metadataList = getRecursiveMetadata("test_recursive_embedded.docx", p, context);
         for (Metadata m : metadataList) {
             assertNotNull(m.get(Metadata.CONTENT_LENGTH));
         }

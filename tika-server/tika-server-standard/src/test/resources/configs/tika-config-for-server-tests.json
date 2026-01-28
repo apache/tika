@@ -11,15 +11,17 @@
   ],
   "auto-detect-parser": {
     "outputThreshold": 1000000,
-    "digesterFactory": {
+    "throwOnZeroBytes": false
+  },
+  "other-configs": {
+    "digester-factory": {
       "commons-digester-factory": {
         "digests": [
           { "algorithm": "MD5" },
           { "algorithm": "SHA1", "encoding": "BASE32" }
         ]
       }
-    },
-    "throwOnZeroBytes": false
+    }
   },
   "fetchers": {
     "file-system-fetcher": {

@@ -3,8 +3,10 @@
     "maximumCompressionRatio": 100,
     "maximumDepth": 100,
     "maximumPackageEntryDepth": 100,
-    "throwOnZeroBytes": false,
-    "digesterFactory": {
+    "throwOnZeroBytes": false
+  },
+  "other-configs": {
+    "digester-factory": {
       "commons-digester-factory": {
         "digests": [
           { "algorithm": "SHA256" }

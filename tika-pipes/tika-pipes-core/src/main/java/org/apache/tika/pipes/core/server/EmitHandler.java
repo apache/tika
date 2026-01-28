@@ -62,12 +62,11 @@ class EmitHandler {
         this.directEmitThresholdBytes = directEmitThresholdBytes;
     }
 
-    public PipesResult emitParseData(FetchEmitTuple t, MetadataListAndEmbeddedBytes parseData) {
+    public PipesResult emitParseData(FetchEmitTuple t, MetadataListAndEmbeddedBytes parseData, ParseContext parseContext) {
         long start = System.currentTimeMillis();
         String stack = getContainerStacktrace(t, parseData.getMetadataList());
         //we need to apply the metadata filter after we pull out the stacktrace
-        filterMetadata(t, parseData);
-        ParseContext parseContext = t.getParseContext();
+        filterMetadata(parseData, parseContext);
         FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = t.getOnParseException();
         EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);
         if (StringUtils.isBlank(stack) ||
@@ -200,8 +199,8 @@ class EmitHandler {
         }
     }
 
-    private void filterMetadata(FetchEmitTuple t, MetadataListAndEmbeddedBytes parseData) {
-        MetadataFilter filter = t.getParseContext().get(MetadataFilter.class);
+    private void filterMetadata(MetadataListAndEmbeddedBytes parseData, ParseContext parseContext) {
+        MetadataFilter filter = parseContext.get(MetadataFilter.class);
         if (filter == null) {
             filter = defaultMetadataFilter;
         }

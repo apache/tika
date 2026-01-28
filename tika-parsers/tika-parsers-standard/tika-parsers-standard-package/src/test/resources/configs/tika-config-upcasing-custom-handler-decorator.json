@@ -22,10 +22,11 @@
       }
     },
     "contentHandlerDecoratorFactory": "upcasing-content-handler-decorator-factory",
-    "skipContainerDocumentDigest": false,
-    "digesterFactory": {
-      "commons-digester-factory": {}
-    },
     "throwOnZeroBytes": true
+  },
+  "other-configs": {
+    "digester-factory": {
+      "commons-digester-factory": {}
+    }
   }
 }

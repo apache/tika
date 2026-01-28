@@ -36,17 +36,20 @@ import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.CompositeEncodingDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.digest.DigesterFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.language.translate.DefaultTranslator;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.filter.NoOpFilter;
+import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.AutoDetectParserConfig;
 import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.renderer.CompositeRenderer;
 import org.apache.tika.renderer.Renderer;
@@ -374,6 +377,46 @@ public class TikaLoader {
             autoDetectParser = AutoDetectParser.build((CompositeParser)loadParsers(), loadDetectors(), adpConfig);
         }
         return autoDetectParser;
+    }
+
+    /**
+     * Loads and returns a ParseContext populated with components from the "other-configs" section.
+     * <p>
+     * This method loads components that should be passed via ParseContext, such as:
+     * <ul>
+     *   <li>DigesterFactory (from "digester-factory")</li>
+     *   <li>MetadataWriteLimiterFactory (from "metadata-write-limiter-factory")</li>
+     * </ul>
+     * <p>
+     * Use this method when you need a pre-configured ParseContext for parsing operations.
+     *
+     * <p>Example usage:
+     * <pre>
+     * TikaLoader loader = TikaLoader.load(configPath);
+     * Parser parser = loader.loadAutoDetectParser();
+     * ParseContext context = loader.loadParseContext();
+     * parser.parse(stream, handler, metadata, context);
+     * </pre>
+     *
+     * @return a ParseContext populated with configured components
+     * @throws TikaConfigException if loading fails
+     */
+    public ParseContext loadParseContext() throws TikaConfigException {
+        ParseContext context = new ParseContext();
+
+        // Load DigesterFactory from other-configs if present
+        DigesterFactory digesterFactory = configs().load("digester-factory", DigesterFactory.class);
+        if (digesterFactory != null) {
+            context.set(DigesterFactory.class, digesterFactory);
+        }
+
+        // Load MetadataWriteLimiterFactory from other-configs if present
+        MetadataWriteLimiterFactory metadataWriteLimiterFactory = configs().load(MetadataWriteLimiterFactory.class);
+        if (metadataWriteLimiterFactory != null) {
+            context.set(MetadataWriteLimiterFactory.class, metadataWriteLimiterFactory);
+        }
+
+        return context;
     }
 
     /**

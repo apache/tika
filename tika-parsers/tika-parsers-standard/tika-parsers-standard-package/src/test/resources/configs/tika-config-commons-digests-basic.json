@@ -1,7 +1,10 @@
 {
   "auto-detect-parser": {
     "outputThreshold": 1000000,
-    "digesterFactory": {
+    "throwOnZeroBytes": false
+  },
+  "other-configs": {
+    "digester-factory": {
       "commons-digester-factory": {
         "digests": [
           { "algorithm": "MD2" },
@@ -12,7 +15,6 @@
           { "algorithm": "SHA512" }
         ]
       }
-    },
-    "throwOnZeroBytes": false
+    }
   }
 }

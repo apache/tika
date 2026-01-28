@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
@@ -40,14 +41,14 @@ class FetchHandler {
         this.fetcherManager = fetcherManager;
     }
 
-    public TisOrResult fetch(FetchEmitTuple fetchEmitTuple, Metadata metadata) {
+    public TisOrResult fetch(FetchEmitTuple fetchEmitTuple, Metadata metadata, ParseContext parseContext) {
         FetcherOrResult fetcherResult = getFetcher(fetchEmitTuple);
         if (fetcherResult.pipesResult != null) {
             return new TisOrResult(null, fetcherResult.pipesResult);
         }
         try {
             TikaInputStream tis = fetcherResult.fetcher.fetch(
-                    fetchEmitTuple.getFetchKey().getFetchKey(), metadata, fetchEmitTuple.getParseContext());
+                    fetchEmitTuple.getFetchKey().getFetchKey(), metadata, parseContext);
             return new TisOrResult(tis, null);
         } catch (IOException | TikaException e) {
             return new TisOrResult(null, new PipesResult(PipesResult.RESULT_STATUS.FETCH_EXCEPTION, ExceptionUtils.getStackTrace(e)));

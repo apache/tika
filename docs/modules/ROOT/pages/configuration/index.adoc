@@ -34,6 +34,10 @@ xref:migration-to-4x/index.adoc[Migration Guide] for details on converting to JS
 * xref:configuration/parsers/pdf-parser.adoc[PDFParser] - PDF parsing options
 * xref:configuration/parsers/tesseract-ocr-parser.adoc[TesseractOCRParser] - OCR options for image-based text extraction
 
+=== Other Configuration
+
+* xref:configuration/digesters.adoc[Digesters] - Computing cryptographic hashes of documents
+
 // Add links to specific topics as they are created
 // * xref:json-config.adoc[JSON Configuration Reference]
 // * xref:detectors.adoc[Configuring Detectors]

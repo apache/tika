@@ -1,6 +1,6 @@
 {
-  "auto-detect-parser": {
-    "digesterFactory": {
+  "other-configs": {
+    "digester-factory": {
       "commons-digester-factory": {
         "digests": [
           { "algorithm": "MD5" }
