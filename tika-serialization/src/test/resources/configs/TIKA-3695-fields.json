@@ -2,9 +2,6 @@
   "parsers": [
     "default-parser"
   ],
-  "auto-detect-parser": {
-    "outputThreshold": 6789
-  },
   "other-configs": {
     "metadata-write-limiter-factory": {
       "standard-metadata-limiter-factory": {

@@ -135,7 +135,7 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
         }
         for (int i = start; i <= endInclusive; i++) {
             int id = tracker.getNextId();
-            Metadata m = parseContext.newMetadata();
+            Metadata m = Metadata.newInstance(parseContext);
             m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.RENDERING.name());
             try {

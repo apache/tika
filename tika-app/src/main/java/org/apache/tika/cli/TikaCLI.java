@@ -83,7 +83,6 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.language.detect.LanguageHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
-import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeType;
@@ -493,7 +492,7 @@ public class TikaCLI {
 
             if (arg.equals("-")) {
                 try (TikaInputStream tis = TikaInputStream.get(CloseShieldInputStream.wrap(System.in))) {
-                    type.process(tis, System.out, context.newMetadata());
+                    type.process(tis, System.out, Metadata.newInstance(context));
                 }
             } else {
                 URL url;
@@ -508,7 +507,7 @@ public class TikaCLI {
                 if (recursiveJSON) {
                     handleRecursiveJson(url, System.out);
                 } else {
-                    Metadata metadata = context.newMetadata();
+                    Metadata metadata = Metadata.newInstance(context);
                     try (TikaInputStream tis = TikaInputStream.get(url, metadata)) {
                         type.process(tis, System.out, metadata);
                     } finally {
@@ -555,9 +554,9 @@ public class TikaCLI {
     }
 
     private void handleRecursiveJson(URL url, OutputStream output) throws IOException, SAXException, TikaException {
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
-        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(getContentHandlerFactory(type), -1);
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(getContentHandlerFactory(type));
         try (TikaInputStream tis = TikaInputStream.get(url, metadata)) {
             wrapper.parse(tis, handler, metadata, context);
         }
@@ -735,23 +734,19 @@ public class TikaCLI {
         } else {
             parser = tikaLoader.loadAutoDetectParser();
         }
-        // Set DigesterFactory in ParseContext if configured via --digest=
+
+        // Load configs from tika-config.json and merge into existing context
+        // (preserves EmbeddedDocumentExtractor and other items set before configure())
+        ParseContext loadedContext = tikaLoader.loadParseContext();
+        context.copyFrom(loadedContext);
+
+        // Override DigesterFactory in ParseContext if configured via --digest= command line
         if (digesterFactory != null) {
             context.set(DigesterFactory.class, digesterFactory);
         }
         detector = tikaLoader.loadDetectors();
         context.set(Parser.class, parser);
         context.set(PasswordProvider.class, new SimplePasswordProvider(password));
-
-        // Load default MetadataWriteLimiterFactory if configured
-        try {
-            MetadataWriteLimiterFactory factory = tikaLoader.configs().load(MetadataWriteLimiterFactory.class);
-            if (factory != null) {
-                context.set(MetadataWriteLimiterFactory.class, factory);
-            }
-        } catch (Exception e) {
-            LOG.warn("Failed to load MetadataWriteLimiterFactory", e);
-        }
     }
 
     private void displayMetModels() {

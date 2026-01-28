@@ -26,6 +26,7 @@ import java.util.Locale;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.config.OutputLimits;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.parser.ParseContext;
 
@@ -41,7 +42,6 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
     private HANDLER_TYPE type = HANDLER_TYPE.TEXT;
     private int writeLimit = -1;
     private boolean throwOnWriteLimitReached = true;
-    private int maxEmbeddedResources = -1;
     private transient ParseContext parseContext;
 
     /**
@@ -84,26 +84,19 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
     }
 
     /**
-     * Full constructor with all parameters including maxEmbeddedResources.
+     * Creates a new BasicContentHandlerFactory configured from OutputLimits in the ParseContext.
+     * <p>
+     * If OutputLimits is present in the context, the factory will be configured with those
+     * limits (writeLimit, throwOnWriteLimit). Otherwise, default values are used.
      *
-     * @param type basic type of handler
-     * @param writeLimit maximum number of characters to store; -1 for unlimited
-     * @param throwOnWriteLimitReached whether to throw when write limit is reached
-     * @param maxEmbeddedResources maximum number of embedded resources to process; -1 for unlimited
-     * @param parseContext to store warnings if throwOnWriteLimitReached is false
+     * @param type the handler type
+     * @param context the ParseContext (required if throwOnWriteLimit is false)
+     * @return a configured BasicContentHandlerFactory
      */
-    public BasicContentHandlerFactory(HANDLER_TYPE type, int writeLimit,
-                                      boolean throwOnWriteLimitReached, int maxEmbeddedResources,
-                                      ParseContext parseContext) {
-        this.type = type;
-        this.writeLimit = writeLimit;
-        this.throwOnWriteLimitReached = throwOnWriteLimitReached;
-        this.maxEmbeddedResources = maxEmbeddedResources;
-        this.parseContext = parseContext;
-        if (throwOnWriteLimitReached == false && parseContext == null) {
-            throw new IllegalArgumentException("parse context must not be null if " +
-                    "throwOnWriteLimitReached is false");
-        }
+    public static BasicContentHandlerFactory newInstance(HANDLER_TYPE type, ParseContext context) {
+        OutputLimits limits = OutputLimits.get(context);
+        return new BasicContentHandlerFactory(type, limits.getWriteLimit(),
+                limits.isThrowOnWriteLimit(), context);
     }
 
     /**
@@ -266,22 +259,6 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
     }
 
     /**
-     * Gets the maximum number of embedded resources to process.
-     * @return max embedded resources; -1 for unlimited
-     */
-    public int getMaxEmbeddedResources() {
-        return maxEmbeddedResources;
-    }
-
-    /**
-     * Sets the maximum number of embedded resources to process.
-     * @param maxEmbeddedResources max embedded resources; -1 for unlimited
-     */
-    public void setMaxEmbeddedResources(int maxEmbeddedResources) {
-        this.maxEmbeddedResources = maxEmbeddedResources;
-    }
-
-    /**
      * Sets the parse context for storing warnings when throwOnWriteLimitReached is false.
      * @param parseContext the parse context
      */
@@ -300,7 +277,6 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
         BasicContentHandlerFactory that = (BasicContentHandlerFactory) o;
         return writeLimit == that.writeLimit &&
                 throwOnWriteLimitReached == that.throwOnWriteLimitReached &&
-                maxEmbeddedResources == that.maxEmbeddedResources &&
                 type == that.type;
     }
 
@@ -309,7 +285,6 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
         int result = type != null ? type.hashCode() : 0;
         result = 31 * result + writeLimit;
         result = 31 * result + (throwOnWriteLimitReached ? 1 : 0);
-        result = 31 * result + maxEmbeddedResources;
         return result;
     }
 }

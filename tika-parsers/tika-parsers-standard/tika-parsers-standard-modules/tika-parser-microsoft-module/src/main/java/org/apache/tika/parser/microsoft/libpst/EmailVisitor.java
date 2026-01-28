@@ -74,7 +74,7 @@ public class EmailVisitor implements FileVisitor<Path> {
     }
 
     private void process(Path file) throws IOException {
-        Metadata emailMetadata = parseContext.newMetadata();
+        Metadata emailMetadata = Metadata.newInstance(parseContext);
         String internalPath = root
                 .relativize(file)
                 .toString();

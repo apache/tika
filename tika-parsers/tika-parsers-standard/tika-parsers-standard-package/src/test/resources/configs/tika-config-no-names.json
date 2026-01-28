@@ -1,6 +1,5 @@
 {
   "auto-detect-parser": {
-    "outputThreshold": 678900,
     "embeddedDocumentExtractorFactory": {
       "runpack-extractor-factory": {
         "writeFileNameToContent": false

@@ -20,7 +20,7 @@ package org.apache.tika.metadata.writefilter;
  * Factory interface for creating {@link MetadataWriteLimiter} instances.
  * <p>
  * Implementations of this interface are placed in ParseContext and used
- * by {@code ParseContext.newMetadata()} to create Metadata objects with
+ * by {@code Metadata.newInstance(ParseContext)} to create Metadata objects with
  * limits applied at creation time.
  *
  * @since Apache Tika 4.0

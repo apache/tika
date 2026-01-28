@@ -109,7 +109,7 @@ public class ParsingReader extends Reader {
 
     private ParsingReader(Parser parser, InputStream stream, ParseContext context)
             throws IOException {
-        this(parser, stream, context.newMetadata(), context);
+        this(parser, stream, Metadata.newInstance(context), context);
         context.set(Parser.class, parser);
     }
 
@@ -222,7 +222,7 @@ public class ParsingReader extends Reader {
      * @return metadata instance
      */
     private static Metadata getMetadata(String name, ParseContext context) {
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         if (name != null && name.length() > 0) {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
         }

@@ -50,21 +50,15 @@ public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrappe
     protected final List<Metadata> metadataList = new LinkedList<>();
 
     /**
-     * Create a handler with no limit on the number of embedded resources
+     * Create a handler for recursive parsing.
+     * <p>
+     * Embedded resource limits are now configured via {@link org.apache.tika.config.EmbeddedLimits}
+     * in the ParseContext, not on the handler.
+     *
+     * @param contentHandlerFactory factory for creating content handlers
      */
     public RecursiveParserWrapperHandler(ContentHandlerFactory contentHandlerFactory) {
-        this(contentHandlerFactory, -1);
-    }
-
-    /**
-     * Create a handler that limits the number of embedded resources that will be
-     * parsed
-     *
-     * @param maxEmbeddedResources number of embedded resources that will be parsed
-     */
-    public RecursiveParserWrapperHandler(ContentHandlerFactory contentHandlerFactory,
-                                         int maxEmbeddedResources) {
-        super(contentHandlerFactory, maxEmbeddedResources);
+        super(contentHandlerFactory);
     }
 
     /**

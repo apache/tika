@@ -183,7 +183,7 @@ public class PipesParsingHelper {
         String message = result.message();
         if (message != null && !message.isEmpty()) {
             ParseContext context = TikaResource.createParseContext();
-            Metadata errorMetadata = context.newMetadata();
+            Metadata errorMetadata = Metadata.newInstance(context);
             errorMetadata.add(TikaCoreProperties.CONTAINER_EXCEPTION, message);
             return Collections.singletonList(errorMetadata);
         }

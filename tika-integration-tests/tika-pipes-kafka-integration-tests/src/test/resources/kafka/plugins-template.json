@@ -3,7 +3,6 @@
     "basic-content-handler-factory": {
       "type": "TEXT",
       "writeLimit": -1,
-      "maxEmbeddedResources": -1,
       "throwOnWriteLimitReached": true
     }
   },

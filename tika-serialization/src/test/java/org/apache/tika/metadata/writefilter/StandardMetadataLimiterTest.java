@@ -66,7 +66,7 @@ public class StandardMetadataLimiterTest extends TikaTest {
         }
         mock += "<write element=\"p\" times=\"30\"> hello </write>\n";
         mock += "</mock>";
-        Metadata metadata = parseContext.newMetadata();
+        Metadata metadata = Metadata.newInstance(parseContext);
         List<Metadata> metadataList =
                 getRecursiveMetadata(TikaInputStream.get(mock.getBytes(StandardCharsets.UTF_8)),
                         parser, metadata, parseContext, true);
@@ -103,7 +103,7 @@ public class StandardMetadataLimiterTest extends TikaTest {
         }
         mock += "<write element=\"p\" times=\"30\"> hello </write>\n";
         mock += "</mock>";
-        Metadata metadata = parseContext.newMetadata();
+        Metadata metadata = Metadata.newInstance(parseContext);
         metadata.add("dc:creator", "abcdefghijabcdefghij");
         metadata.add("not-allowed", "not-allowed");
         List<Metadata> metadataList =
@@ -295,7 +295,7 @@ public class StandardMetadataLimiterTest extends TikaTest {
         mock += "<metadata action=\"add\" name=\"subjectB\">01234567890123456789</metadata>";
         mock += "<write element=\"p\" times=\"1\"> hello </write>\n";
         mock += "</mock>";
-        Metadata metadata = parseContext.newMetadata();
+        Metadata metadata = Metadata.newInstance(parseContext);
         List<Metadata> metadataList =
                 getRecursiveMetadata(TikaInputStream.get(mock.getBytes(StandardCharsets.UTF_8)),
                         parser, metadata, parseContext, true);

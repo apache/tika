@@ -239,7 +239,7 @@ public class CompressorParser implements Parser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         try {
-            Metadata entrydata = context.newMetadata();
+            Metadata entrydata = Metadata.newInstance(context);
             if (cis instanceof GzipCompressorInputStream) {
                 extractGzipMetadata((GzipCompressorInputStream) cis, entrydata);
             }
