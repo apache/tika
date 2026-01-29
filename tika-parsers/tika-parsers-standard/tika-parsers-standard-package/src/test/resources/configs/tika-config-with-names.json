@@ -1,7 +1,8 @@
 {
-  "auto-detect-parser": {
-    "embeddedDocumentExtractorFactory": {
-      "runpack-extractor-factory": {
+  "other-configs": {
+    "embedded-document-extractor-factory": {
+      "standard-extractor-factory": {
+        "writeFileNameToContent": true
       }
     }
   }

@@ -349,7 +349,7 @@ public class FilenameUtils {
             String ext = MIME_TYPES
                     .forName(mime)
                     .getExtension();
-            if (ext == null) {
+            if (StringUtils.isBlank(ext)) {
                 return ".bin";
             } else {
                 return ext;

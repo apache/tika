@@ -48,7 +48,7 @@ import org.apache.tika.pipes.core.async.AsyncProcessor;
 import org.apache.tika.pipes.core.async.OfferLargerThanQueueSize;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
-import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
+import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTupleList;
 import org.apache.tika.plugins.TikaPluginManager;
 
@@ -113,10 +113,10 @@ public class AsyncResource {
                         .getEmitterId());
             }
             ParseContext parseContext = t.getParseContext();
-            EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);
-            if (embeddedDocumentBytesConfig != null && embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes() &&
-                    !StringUtils.isAllBlank(embeddedDocumentBytesConfig.getEmitter())) {
-                String bytesEmitter = embeddedDocumentBytesConfig.getEmitter();
+            UnpackConfig unpackConfig = parseContext.get(UnpackConfig.class);
+            if (unpackConfig != null && unpackConfig.isExtractEmbeddedDocumentBytes() &&
+                    !StringUtils.isAllBlank(unpackConfig.getEmitter())) {
+                String bytesEmitter = unpackConfig.getEmitter();
                 if (!emitterManager
                         .getSupported()
                         .contains(bytesEmitter)) {

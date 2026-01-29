@@ -14,18 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.extractor;
+package org.apache.tika.pipes.core.extractor;
 
 import org.apache.tika.config.TikaComponent;
+import org.apache.tika.extractor.EmbeddedDocumentByteStoreExtractorFactory;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
-@TikaComponent
-public class ParsingEmbeddedDocumentExtractorFactory
-        implements EmbeddedDocumentExtractorFactory {
+@TikaComponent(name = "runpack-extractor-factory")
+public class RUnpackExtractorFactory implements EmbeddedDocumentByteStoreExtractorFactory {
 
     @Override
     public EmbeddedDocumentExtractor newInstance(Metadata metadata, ParseContext parseContext) {
-        return new ParsingEmbeddedDocumentExtractor(parseContext);
+        UnpackConfig config = parseContext.get(UnpackConfig.class);
+        if (config == null) {
+            config = UnpackConfig.SKIP;
+        }
+        RUnpackExtractor ex = new RUnpackExtractor(parseContext, Long.MAX_VALUE);
+        ex.setEmbeddedBytesSelector(config.createEmbeddedBytesSelector());
+        return ex;
     }
 }

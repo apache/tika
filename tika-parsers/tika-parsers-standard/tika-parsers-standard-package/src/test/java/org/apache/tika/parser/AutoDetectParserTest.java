@@ -19,14 +19,12 @@ package org.apache.tika.parser;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -34,14 +32,12 @@ import java.util.zip.ZipOutputStream;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
-import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.exception.ZeroByteFileException;
-import org.apache.tika.extractor.RUnpackExtractorFactory;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -562,23 +558,4 @@ public class AutoDetectParserTest extends TikaTest {
         }
     }
 
-    @Test
-    public void testDigestingOpenContainers() throws Exception {
-        //TIKA-4533 -- this tests both that a very large embedded OLE doc doesn't cause a zip bomb
-        //exception AND that the sha for the embedded OLE doc is not the sha for a zero-byte file
-        String expectedSha = "bbc2057a1ff8fe859a296d2fbb493fc0c3e5796749ba72507c0e13f7a3d81f78";
-        TikaLoader loader = TikaLoaderHelper.getLoader("tika-4533.json");
-        AutoDetectParser autoDetectParser = (AutoDetectParser) loader.loadAutoDetectParser();
-        ParseContext parseContext = loader.loadParseContext();
-        //this models what happens in tika-pipes
-        if (autoDetectParser.getAutoDetectParserConfig()
-                    .getEmbeddedDocumentExtractorFactory() == null) {
-            autoDetectParser.getAutoDetectParserConfig()
-                                                     .setEmbeddedDocumentExtractorFactory(new RUnpackExtractorFactory());
-        }
-        List<Metadata> metadataList = getRecursiveMetadata("testLargeOLEDoc.doc", autoDetectParser, parseContext);
-        assertEquals(expectedSha, metadataList.get(2).get("X-TIKA:digest:SHA256"));
-        assertNull(metadataList.get(2).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
-        assertEquals(2049290L, Long.parseLong(metadataList.get(2).get(Metadata.CONTENT_LENGTH)));
-    }
 }

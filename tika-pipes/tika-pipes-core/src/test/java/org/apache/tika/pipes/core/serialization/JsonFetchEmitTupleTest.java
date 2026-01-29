@@ -86,7 +86,7 @@ public class JsonFetchEmitTupleTest {
     @Test
     public void testBytes() throws Exception {
         // TODO -- add these to the ParseContext:
-        // EmbeddedDocumentBytesConfig bytesConfig = new EmbeddedDocumentBytesConfig(true);
+        // UnpackConfig bytesConfig = new UnpackConfig(true);
         // bytesConfig.setEmitter("emitter");
         // parseContext.set(ContentHandlerFactory.class, new BasicContentHandlerFactory(
         //     BasicContentHandlerFactory.HANDLER_TYPE.XML, 10000));

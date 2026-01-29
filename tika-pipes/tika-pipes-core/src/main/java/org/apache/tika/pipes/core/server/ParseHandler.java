@@ -47,7 +47,7 @@ import org.apache.tika.parser.ParseRecord;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
-import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
+import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
@@ -143,9 +143,9 @@ class ParseHandler {
         } catch (IOException e) {
             LOG.warn("problem detecting: " + t.getId(), e);
         }
-        EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);
-        if (embeddedDocumentBytesConfig != null &&
-                embeddedDocumentBytesConfig.isIncludeOriginal()) {
+        UnpackConfig unpackConfig = parseContext.get(UnpackConfig.class);
+        if (unpackConfig != null &&
+                unpackConfig.isIncludeOriginal()) {
             EmbeddedDocumentBytesHandler embeddedDocumentByteStore = parseContext.get(EmbeddedDocumentBytesHandler.class);
             try (InputStream is = Files.newInputStream(tis.getPath())) {
                 embeddedDocumentByteStore.add(0, metadata, is);

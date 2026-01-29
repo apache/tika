@@ -44,16 +44,17 @@
     }
   },
   "auto-detect-parser": {
-    "embeddedDocumentExtractorFactory": {
-      "runpack-extractor-factory": {
-        "maxEmbeddedBytesForExtraction": 10
-      }
-    },
     "throwOnZeroBytes": false
   },
   "other-configs": {
     "digester-factory": {
       "mock-digester-factory": {}
+    },
+    "embedded-document-extractor-factory": {
+      "runpack-extractor-factory": {
+        "writeFileNameToContent": false,
+        "maxEmbeddedBytesForExtraction": 10
+      }
     }
   },
   "plugin-roots": "PLUGINS_PATHS"

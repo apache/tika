@@ -41,7 +41,7 @@ import org.apache.tika.pipes.core.EmitStrategyConfig;
 import org.apache.tika.pipes.core.PassbackFilter;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
-import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
+import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
 
@@ -68,7 +68,7 @@ class EmitHandler {
         //we need to apply the metadata filter after we pull out the stacktrace
         filterMetadata(parseData, parseContext);
         FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = t.getOnParseException();
-        EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);
+        UnpackConfig unpackConfig = parseContext.get(UnpackConfig.class);
         if (StringUtils.isBlank(stack) ||
                 onParseException == FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT) {
             injectUserMetadata(t.getMetadata(), parseData.getMetadataList());
@@ -78,8 +78,8 @@ class EmitHandler {
                 t.setEmitKey(emitKey);
             }
             EmitDataImpl emitDataTuple = new EmitDataImpl(t.getEmitKey().getEmitKey(), parseData.getMetadataList(), stack);
-            if (shouldEmit(embeddedDocumentBytesConfig, parseData, emitDataTuple, parseContext)) {
-                return emit(t.getId(), emitKey, embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes(),
+            if (shouldEmit(unpackConfig, parseData, emitDataTuple, parseContext)) {
+                return emit(t.getId(), emitKey, unpackConfig.isExtractEmbeddedDocumentBytes(),
                         parseData, stack, parseContext);
             } else {
                 if (StringUtils.isBlank(stack)) {
@@ -153,7 +153,7 @@ class EmitHandler {
     }
 
 
-    private boolean shouldEmit(EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig, MetadataListAndEmbeddedBytes parseData,
+    private boolean shouldEmit(UnpackConfig unpackConfig, MetadataListAndEmbeddedBytes parseData,
                                EmitDataImpl emitDataTuple, ParseContext parseContext) {
         EmitStrategy strategy = emitStrategy;
         long thresholdBytes = directEmitThresholdBytes;
@@ -168,7 +168,7 @@ class EmitHandler {
 
         if (strategy == EmitStrategy.EMIT_ALL) {
             return true;
-        } else if (embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes() &&
+        } else if (unpackConfig.isExtractEmbeddedDocumentBytes() &&
                 parseData.toBePackagedForStreamEmitter()) {
             return true;
         } else if (strategy == EmitStrategy.PASSBACK_ALL) {

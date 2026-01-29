@@ -55,7 +55,7 @@ import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.RUnpackExtractorFactory;
+import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
@@ -71,6 +71,7 @@ import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.config.ConfigStore;
 import org.apache.tika.pipes.core.config.ConfigStoreFactory;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
+import org.apache.tika.pipes.core.extractor.RUnpackExtractorFactory;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.pipes.core.serialization.JsonPipesIpc;
 import org.apache.tika.plugins.ExtensionConfig;
@@ -471,12 +472,6 @@ public class PipesServer implements AutoCloseable {
         this.fetcherManager = FetcherManager.load(tikaPluginManager, tikaJsonConfig, true, configStore);
         this.emitterManager = EmitterManager.load(tikaPluginManager, tikaJsonConfig, true, configStore);
         this.autoDetectParser = (AutoDetectParser) tikaLoader.loadAutoDetectParser();
-
-        // If the user hasn't configured an embedded document extractor, set up the
-        // RUnpackExtractorFactory
-        if (autoDetectParser.getAutoDetectParserConfig().getEmbeddedDocumentExtractorFactory() == null) {
-                autoDetectParser.getAutoDetectParserConfig().setEmbeddedDocumentExtractorFactory(new RUnpackExtractorFactory());
-        }
         this.detector = this.autoDetectParser.getDetector();
         this.rMetaParser = new RecursiveParserWrapper(autoDetectParser);
 
@@ -494,6 +489,11 @@ public class PipesServer implements AutoCloseable {
     private ParseContext createMergedParseContext(ParseContext requestContext) throws TikaConfigException {
         // Create fresh context with defaults from tika-config (e.g., DigesterFactory)
         ParseContext mergedContext = tikaLoader.loadParseContext();
+        // If no embedded document extractor factory is configured, use RUnpackExtractorFactory
+        // as the default for pipes scenarios (supports embedded byte extraction)
+        if (mergedContext.get(EmbeddedDocumentExtractorFactory.class) == null) {
+            mergedContext.set(EmbeddedDocumentExtractorFactory.class, new RUnpackExtractorFactory());
+        }
         // Overlay request's values (request takes precedence)
         mergedContext.copyFrom(requestContext);
         return mergedContext;
