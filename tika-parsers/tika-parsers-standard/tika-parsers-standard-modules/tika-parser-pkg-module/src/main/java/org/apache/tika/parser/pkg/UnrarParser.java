@@ -128,7 +128,7 @@ public class UnrarParser implements Parser {
                              XHTMLContentHandler xhtml, EmbeddedDocumentExtractor extractor, ParseContext context)
             throws IOException, SAXException {
         String relPath = base.relativize(embeddedFile).toString();
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         String fName = FilenameUtils.getName(relPath);
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fName);
         metadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, relPath);

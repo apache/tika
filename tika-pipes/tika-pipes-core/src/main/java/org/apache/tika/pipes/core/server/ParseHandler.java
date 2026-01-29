@@ -49,7 +49,6 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
-import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.utils.ExceptionUtils;
@@ -176,12 +175,9 @@ class ParseHandler {
                                               Metadata metadata, ParseContext parseContext) throws InterruptedException {
         //Intentionally do not add the metadata filter here!
         //We need to let stacktraces percolate
-        int maxEmbeddedResources = -1;
-        if (contentHandlerFactory instanceof BasicContentHandlerFactory) {
-            maxEmbeddedResources = ((BasicContentHandlerFactory) contentHandlerFactory).getMaxEmbeddedResources();
-        }
+        // Embedded limits are now configured via EmbeddedLimits in ParseContext
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                contentHandlerFactory, maxEmbeddedResources);
+                contentHandlerFactory);
 
         long start = System.currentTimeMillis();
 
@@ -213,21 +209,13 @@ class ParseHandler {
                                              Metadata metadata, ParseContext parseContext) throws InterruptedException {
 
         ContentHandler handler = contentHandlerFactory.createHandler();
-        int maxEmbedded = -1;
-        if (contentHandlerFactory instanceof BasicContentHandlerFactory) {
-            maxEmbedded = ((BasicContentHandlerFactory) contentHandlerFactory).getMaxEmbeddedResources();
-        }
 
         // Configure ParseRecord for embedded document limits
-        // ParseRecord is created by CompositeParser if not present, but we configure it here
-        // to set the embedded count limit before parsing starts
+        // ParseRecord.newInstance reads from EmbeddedLimits in ParseContext
         ParseRecord parseRecord = parseContext.get(ParseRecord.class);
         if (parseRecord == null) {
-            parseRecord = new ParseRecord();
+            parseRecord = ParseRecord.newInstance(parseContext);
             parseContext.set(ParseRecord.class, parseRecord);
-        }
-        if (maxEmbedded >= 0) {
-            parseRecord.setMaxEmbeddedCount(maxEmbedded);
         }
 
         String containerException = null;

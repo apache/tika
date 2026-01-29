@@ -1,0 +1,12 @@
+{
+  "other-configs": {
+    "output-limits": {
+      "writeLimit": 50000,
+      "throwOnWriteLimit": true,
+      "maxXmlDepth": 50,
+      "maxPackageEntryDepth": 5,
+      "zipBombThreshold": 500000,
+      "zipBombRatio": 50
+    }
+  }
+}

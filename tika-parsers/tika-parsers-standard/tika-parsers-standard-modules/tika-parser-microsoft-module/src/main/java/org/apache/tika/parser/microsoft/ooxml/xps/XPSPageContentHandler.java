@@ -278,7 +278,7 @@ class XPSPageContentHandler extends DefaultHandler {
             if (imageSourcePathInZip != null) {
                 Metadata m = embeddedInfos.get(imageSourcePathInZip);
                 if (m == null) {
-                    m = parseContext.newMetadata();
+                    m = Metadata.newInstance(parseContext);
                 }
                 if (originalLocationOnDrive != null) {
                     String val = m.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME);

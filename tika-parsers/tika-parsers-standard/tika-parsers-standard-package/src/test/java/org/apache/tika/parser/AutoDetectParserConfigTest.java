@@ -87,7 +87,7 @@ public class AutoDetectParserConfigTest extends TikaTest {
         MetadataWriteLimiterFactory factory = loader.configs().load(MetadataWriteLimiterFactory.class);
         ParseContext parseContext = new ParseContext();
         parseContext.set(MetadataWriteLimiterFactory.class, factory);
-        Metadata metadata = parseContext.newMetadata();
+        Metadata metadata = Metadata.newInstance(parseContext);
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", p,
                 metadata, parseContext, true);
         for (Metadata m : metadataList) {

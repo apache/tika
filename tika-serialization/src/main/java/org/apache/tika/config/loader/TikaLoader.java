@@ -31,7 +31,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.GlobalSettings;
+import org.apache.tika.config.OutputLimits;
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.CompositeEncodingDetector;
 import org.apache.tika.detect.Detector;
@@ -396,6 +399,7 @@ public class TikaLoader {
      * TikaLoader loader = TikaLoader.load(configPath);
      * Parser parser = loader.loadAutoDetectParser();
      * ParseContext context = loader.loadParseContext();
+     * Metadata metadata = Metadata.newInstance(context);
      * parser.parse(stream, handler, metadata, context);
      * </pre>
      *
@@ -404,27 +408,20 @@ public class TikaLoader {
      */
     public ParseContext loadParseContext() throws TikaConfigException {
         ParseContext context = new ParseContext();
-
-        // Load DigesterFactory from other-configs if present
-        DigesterFactory digesterFactory = configs().load("digester-factory", DigesterFactory.class);
-        if (digesterFactory != null) {
-            context.set(DigesterFactory.class, digesterFactory);
-        }
-
-        // Load MetadataWriteLimiterFactory from other-configs if present
-        MetadataWriteLimiterFactory metadataWriteLimiterFactory = configs().load(MetadataWriteLimiterFactory.class);
-        if (metadataWriteLimiterFactory != null) {
-            context.set(MetadataWriteLimiterFactory.class, metadataWriteLimiterFactory);
-        }
-
-        // Load EmbeddedDocumentExtractorFactory from other-configs if present
-        EmbeddedDocumentExtractorFactory extractorFactory =
-                configs().load(EmbeddedDocumentExtractorFactory.class);
-        if (extractorFactory != null) {
-            context.set(EmbeddedDocumentExtractorFactory.class, extractorFactory);
-        }
-
+        loadOne(DigesterFactory.class, context);
+        loadOne(MetadataWriteLimiterFactory.class, context);
+        loadOne(EmbeddedDocumentExtractorFactory.class, context);
+        loadOne(EmbeddedLimits.class, context);
+        loadOne(OutputLimits.class, context);
+        loadOne(TimeoutLimits.class, context);
         return context;
+    }
+
+    private <T> void loadOne(Class<T> clazz, ParseContext context) throws TikaConfigException {
+        T instnce = configs().load(clazz);
+        if (instnce != null) {
+            context.set(clazz, instnce);
+        }
     }
 
     /**

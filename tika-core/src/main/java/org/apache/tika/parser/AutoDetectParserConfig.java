@@ -25,10 +25,10 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.ContentHandlerDecoratorFactory;
 
 /**
- * This config object can be used to tune how conservative we want to be
- * when parsing data that is extremely compressible and resembles a ZIP
- * bomb. Null values will be ignored and will not affect the default values
- * in SecureContentHandler.
+ * Configuration for AutoDetectParser behavior.
+ * <p>
+ * Note: Security limits (zip bomb thresholds, XML depth, etc.) are now configured
+ * via {@link org.apache.tika.config.OutputLimits} in the ParseContext, not here.
  * <p>
  * This is a config POJO. It uses standard Jackson deserialization for its
  * primitive fields, but component fields (like contentHandlerDecoratorFactory)
@@ -48,82 +48,12 @@ public class AutoDetectParserConfig implements Serializable {
 
     public static AutoDetectParserConfig DEFAULT = new AutoDetectParserConfig();
 
-    /**
-     * SecureContentHandler -- Desired output threshold in characters.
-     */
-    private Long outputThreshold = null;
-
-    /**
-     * SecureContentHandler -- Desired maximum compression ratio.
-     */
-    private Long maximumCompressionRatio = null;
-
-    /**
-     * SecureContentHandler -- Desired maximum XML nesting level.
-     */
-    private Integer maximumDepth = null;
-
-    /**
-     * SecureContentHandler -- Desired maximum package entry nesting level.
-     */
-    private Integer maximumPackageEntryDepth = null;
-
     private ContentHandlerDecoratorFactory contentHandlerDecoratorFactory =
             NOOP_CONTENT_HANDLER_DECORATOR_FACTORY;
 
     private boolean throwOnZeroBytes = true;
 
-    /**
-     * Creates a SecureContentHandlerConfig using the passed in parameters.
-     *
-     * @param outputThreshold          SecureContentHandler - character output threshold.
-     * @param maximumCompressionRatio  SecureContentHandler - max compression ratio allowed.
-     * @param maximumDepth             SecureContentHandler - maximum XML element nesting level.
-     * @param maximumPackageEntryDepth SecureContentHandler - maximum package entry nesting level.
-     */
-    public AutoDetectParserConfig(Long outputThreshold,
-                                  Long maximumCompressionRatio, Integer maximumDepth,
-                                  Integer maximumPackageEntryDepth) {
-        this.outputThreshold = outputThreshold;
-        this.maximumCompressionRatio = maximumCompressionRatio;
-        this.maximumDepth = maximumDepth;
-        this.maximumPackageEntryDepth = maximumPackageEntryDepth;
-    }
-
     public AutoDetectParserConfig() {
-
-    }
-
-    public Long getOutputThreshold() {
-        return outputThreshold;
-    }
-
-    public void setOutputThreshold(Long outputThreshold) {
-        this.outputThreshold = outputThreshold;
-    }
-
-    public Long getMaximumCompressionRatio() {
-        return maximumCompressionRatio;
-    }
-
-    public void setMaximumCompressionRatio(Long maximumCompressionRatio) {
-        this.maximumCompressionRatio = maximumCompressionRatio;
-    }
-
-    public Integer getMaximumDepth() {
-        return maximumDepth;
-    }
-
-    public void setMaximumDepth(Integer maximumDepth) {
-        this.maximumDepth = maximumDepth;
-    }
-
-    public Integer getMaximumPackageEntryDepth() {
-        return maximumPackageEntryDepth;
-    }
-
-    public void setMaximumPackageEntryDepth(Integer maximumPackageEntryDepth) {
-        this.maximumPackageEntryDepth = maximumPackageEntryDepth;
     }
 
     public void setContentHandlerDecoratorFactory(
@@ -145,11 +75,8 @@ public class AutoDetectParserConfig implements Serializable {
 
     @Override
     public String toString() {
-        return "AutoDetectParserConfig{" + "outputThreshold=" +
-                outputThreshold + ", maximumCompressionRatio=" + maximumCompressionRatio +
-                ", maximumDepth=" + maximumDepth + ", maximumPackageEntryDepth=" +
-                maximumPackageEntryDepth + ", contentHandlerDecoratorFactory=" +
-                contentHandlerDecoratorFactory +
+        return "AutoDetectParserConfig{" +
+                "contentHandlerDecoratorFactory=" + contentHandlerDecoratorFactory +
                 ", throwOnZeroBytes=" + throwOnZeroBytes + '}';
     }
 }

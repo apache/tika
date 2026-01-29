@@ -39,6 +39,7 @@ import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -71,17 +72,27 @@ public class RecursiveMetadataResource {
         setupContentHandlerFactory(context, handlerConfig.type().toString(), handlerConfig.writeLimit(),
                 handlerConfig.throwOnWriteLimitReached());
 
+        // Set up embedded limits if specified
+        if (handlerConfig.maxEmbeddedCount() >= 0) {
+            EmbeddedLimits limits = new EmbeddedLimits();
+            limits.setMaxCount(handlerConfig.maxEmbeddedCount());
+            context.set(EmbeddedLimits.class, limits);
+        }
+
         // Filtering is done in child process, no need to filter again
         return TikaResource.parseWithPipes(tis, metadata, context, ParseMode.RMETA);
     }
 
     static ServerHandlerConfig buildHandlerConfig(MultivaluedMap<String, String> httpHeaders, String handlerTypeName, ParseMode parseMode) {
-        int maxEmbeddedResources = -1;
+        int maxEmbeddedCount = -1;
+        // Support both old header name and new for backwards compatibility
         if (httpHeaders.containsKey("maxEmbeddedResources")) {
-            maxEmbeddedResources = Integer.parseInt(httpHeaders.getFirst("maxEmbeddedResources"));
+            maxEmbeddedCount = Integer.parseInt(httpHeaders.getFirst("maxEmbeddedResources"));
+        } else if (httpHeaders.containsKey("maxEmbeddedCount")) {
+            maxEmbeddedCount = Integer.parseInt(httpHeaders.getFirst("maxEmbeddedCount"));
         }
         return new ServerHandlerConfig(BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE), parseMode,
-                getWriteLimit(httpHeaders), maxEmbeddedResources, TikaResource.getThrowOnWriteLimitReached(httpHeaders));
+                getWriteLimit(httpHeaders), maxEmbeddedCount, TikaResource.getThrowOnWriteLimitReached(httpHeaders));
     }
 
     /**
@@ -116,7 +127,7 @@ public class RecursiveMetadataResource {
         ParseContext context = TikaResource.createParseContext();
         try (TikaInputStream tis = TikaInputStream.get(att.getObject(InputStream.class))) {
             tis.getPath(); // Spool to temp file for pipes-based parsing
-            List<Metadata> metadataList = parseMetadata(tis, context.newMetadata(), att.getHeaders(),
+            List<Metadata> metadataList = parseMetadata(tis, Metadata.newInstance(context), att.getHeaders(),
                     buildHandlerConfig(att.getHeaders(), handlerTypeName, ParseMode.RMETA));
             return Response.ok(new MetadataList(metadataList)).build();
         }
@@ -136,7 +147,7 @@ public class RecursiveMetadataResource {
             @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName) throws Exception {
 
         ParseContext context = TikaResource.createParseContext();
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
 
             TikaResource.logRequest(LOG, "/rmeta/config", metadata);
@@ -188,7 +199,7 @@ public class RecursiveMetadataResource {
     @Path("{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName) throws Exception {
         ParseContext context = TikaResource.createParseContext();
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             tis.getPath(); // Spool to temp file for pipes-based parsing
             List<Metadata> metadataList = parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(),

@@ -109,8 +109,7 @@ public class RTFParserTest extends TikaTest {
         ParseContext ctx = new ParseContext();
         RecursiveParserWrapper parser = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1),
-                -1);
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1));
         Metadata rootMetadata = new Metadata();
         rootMetadata.add(TikaCoreProperties.RESOURCE_NAME_KEY, "testRTFRegularImages.rtf");
         try (TikaInputStream tis = TikaInputStream

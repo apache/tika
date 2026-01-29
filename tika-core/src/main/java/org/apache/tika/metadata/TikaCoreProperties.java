@@ -134,6 +134,13 @@ public interface TikaCoreProperties {
 
     Property WRITE_LIMIT_REACHED =
             Property.internalBoolean(TIKA_META_EXCEPTION_PREFIX + "write_limit_reached");
+
+    Property EMBEDDED_RESOURCE_LIMIT_REACHED =
+            Property.internalBoolean(TIKA_META_EXCEPTION_PREFIX + "embedded_resource_limit_reached");
+
+    Property EMBEDDED_DEPTH_LIMIT_REACHED =
+            Property.internalBoolean(TIKA_META_EXCEPTION_PREFIX + "embedded_depth_limit_reached");
+
     /**
      * Use this to store exceptions caught during a parse that are
      * non-fatal, e.g. if a parser is in lenient mode and more

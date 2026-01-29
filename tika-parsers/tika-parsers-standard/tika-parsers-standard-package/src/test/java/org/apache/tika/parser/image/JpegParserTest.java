@@ -45,7 +45,7 @@ public class JpegParserTest extends TikaTest {
 
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p);
         RecursiveParserWrapperHandler handler =
-                new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1), 1000);
+                new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
         try (InputStream is = getResourceAsStream("/test-documents/testJPEG_GEO_2.jpg")) {
             wrapper.parse(TikaInputStream.get(is), handler, new Metadata(), new ParseContext());
         }

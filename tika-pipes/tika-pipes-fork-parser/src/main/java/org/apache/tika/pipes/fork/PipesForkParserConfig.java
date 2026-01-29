@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -38,6 +39,7 @@ public class PipesForkParserConfig {
     private ParseMode parseMode = ParseMode.RMETA;
     private String fetcherName = PipesForkParser.DEFAULT_FETCHER_NAME;
     private Path pluginsDir;
+    private EmbeddedLimits embeddedLimits;
 
     public PipesForkParserConfig() {
         this.pipesConfig = new PipesConfig();
@@ -122,14 +124,36 @@ public class PipesForkParserConfig {
 
     /**
      * Set the maximum number of embedded resources to process.
+     * This sets the maxCount on EmbeddedLimits which will be applied to ParseContext.
      *
-     * @param maxEmbeddedResources the maximum embedded resources (-1 for unlimited)
+     * @param maxEmbeddedCount the maximum embedded count (-1 for unlimited)
      * @return this config for chaining
      */
-    public PipesForkParserConfig setMaxEmbeddedResources(int maxEmbeddedResources) {
-        if (contentHandlerFactory instanceof BasicContentHandlerFactory bcf) {
-            bcf.setMaxEmbeddedResources(maxEmbeddedResources);
+    public PipesForkParserConfig setMaxEmbeddedCount(int maxEmbeddedCount) {
+        if (embeddedLimits == null) {
+            embeddedLimits = new EmbeddedLimits();
         }
+        embeddedLimits.setMaxCount(maxEmbeddedCount);
+        return this;
+    }
+
+    /**
+     * Get the embedded limits configuration.
+     *
+     * @return the embedded limits, or null if not set
+     */
+    public EmbeddedLimits getEmbeddedLimits() {
+        return embeddedLimits;
+    }
+
+    /**
+     * Set the embedded limits configuration.
+     *
+     * @param embeddedLimits the embedded limits
+     * @return this config for chaining
+     */
+    public PipesForkParserConfig setEmbeddedLimits(EmbeddedLimits embeddedLimits) {
+        this.embeddedLimits = embeddedLimits;
         return this;
     }
 

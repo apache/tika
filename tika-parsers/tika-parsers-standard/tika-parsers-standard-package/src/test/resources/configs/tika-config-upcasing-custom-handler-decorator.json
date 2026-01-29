@@ -1,9 +1,5 @@
 {
   "auto-detect-parser": {
-    "outputThreshold": 1000,
-    "maximumCompressionRatio": 0.8,
-    "maximumDepth": 1000,
-    "maximumPackageEntryDepth": 1000,
     "contentHandlerDecoratorFactory": "upcasing-content-handler-decorator-factory",
     "throwOnZeroBytes": true
   },
@@ -12,7 +8,7 @@
       "commons-digester-factory": {}
     },
     "embedded-document-extractor-factory": {
-      "org.apache.tika.extractor.StandardExtractorFactory": {
+      "standard-extractor-factory": {
         "writeFileNameToContent": true
       }
     }

@@ -1,0 +1,7 @@
+{
+  "other-configs": {
+    "timeout-limits": {
+      "taskTimeoutMillis": 120000
+    }
+  }
+}

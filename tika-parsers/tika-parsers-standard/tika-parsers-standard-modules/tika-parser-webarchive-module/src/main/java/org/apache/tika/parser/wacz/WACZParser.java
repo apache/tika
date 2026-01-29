@@ -112,7 +112,7 @@ public class WACZParser implements Parser {
     private void processWARC(InputStream zais, ZipArchiveEntry zae,
                              String name, XHTMLContentHandler xhtml, Metadata parentMetadata,
                              EmbeddedDocumentExtractor ex, ParseContext context) throws IOException, SAXException {
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         metadata.set(TikaCoreProperties.INTERNAL_PATH, zae.getName());
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
         metadata.set(Metadata.CONTENT_LENGTH, Long.toString(zae.getSize()));

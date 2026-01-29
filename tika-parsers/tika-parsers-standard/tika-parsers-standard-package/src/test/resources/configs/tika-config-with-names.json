@@ -1,10 +1,7 @@
 {
-  "auto-detect-parser": {
-    "outputThreshold": 678900
-  },
   "other-configs": {
     "embedded-document-extractor-factory": {
-      "org.apache.tika.extractor.StandardExtractorFactory": {
+      "standard-extractor-factory": {
         "writeFileNameToContent": true
       }
     }

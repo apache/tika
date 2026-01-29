@@ -406,7 +406,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                     try {
                         OfficeParser.extractMacros(poifsFileSystem, xhtml,
                                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context), context);
-                    } catch (IOException | SAXException inner) {
+                    } catch (IOException | SAXException | TikaException inner) {
                         EmbeddedDocumentUtil.recordException(inner, parentMetadata);
                     }
                 } catch (IOException e) {
@@ -622,7 +622,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             if ("Excel.Chart.8".equals(progId)) {
                 mediaType = "application/vnd.ms-excel";
             } else {
-                MediaType mt = getDetector().detect(tis, context.newMetadata(), context);
+                MediaType mt = getDetector().detect(tis, Metadata.newInstance(context), context);
                 mediaType = mt.toString();
             }
             if (mediaType

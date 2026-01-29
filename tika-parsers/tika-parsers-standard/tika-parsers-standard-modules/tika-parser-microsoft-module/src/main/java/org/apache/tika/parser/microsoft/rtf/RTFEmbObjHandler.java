@@ -89,12 +89,12 @@ class RTFEmbObjHandler {
 
     protected void startPict() {
         state = EMB_STATE.PICT;
-        metadata = context.newMetadata();
+        metadata = Metadata.newInstance(context);
     }
 
     protected void startObjData() {
         state = EMB_STATE.OBJDATA;
-        metadata = context.newMetadata();
+        metadata = Metadata.newInstance(context);
     }
 
     protected void startSN() {
@@ -249,7 +249,7 @@ class RTFEmbObjHandler {
     protected void reset() {
         state = EMB_STATE.NADA;
         os.reset();
-        metadata = context.newMetadata();
+        metadata = Metadata.newInstance(context);
         hi = -1;
         sv = EMPTY_STRING;
         sn = EMPTY_STRING;

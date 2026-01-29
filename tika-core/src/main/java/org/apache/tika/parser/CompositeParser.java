@@ -284,7 +284,7 @@ public class CompositeParser implements Parser {
         Parser parser = getParser(metadata, context);
         ParseRecord parserRecord = context.get(ParseRecord.class);
         if (parserRecord == null) {
-            parserRecord = new ParseRecord();
+            parserRecord = ParseRecord.newInstance(context);
             context.set(ParseRecord.class, parserRecord);
         }
         try {
@@ -334,6 +334,12 @@ public class CompositeParser implements Parser {
         }
         if (record.isWriteLimitReached()) {
             metadata.set(TikaCoreProperties.WRITE_LIMIT_REACHED, true);
+        }
+        if (record.isEmbeddedCountLimitReached()) {
+            metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_LIMIT_REACHED, true);
+        }
+        if (record.isEmbeddedDepthLimitReached()) {
+            metadata.set(TikaCoreProperties.EMBEDDED_DEPTH_LIMIT_REACHED, true);
         }
 
         for (Metadata m : record.getMetadataList()) {
