@@ -6,7 +6,6 @@
     "outputThreshold": 678900,
     "embeddedDocumentExtractorFactory": {
       "runpack-extractor-factory": {
-        "writeFileNameToContent": false,
         "embeddedBytesIncludeMimeTypes": ["application/pdf", "application/rtf", "text/plain"],
         "embeddedBytesIncludeEmbeddedResourceTypes": ["ATTACHMENT", "INLINE"]
       }

@@ -139,7 +139,7 @@ public class ICNSParser implements Parser {
             iconmask_details = new StringBuilder(iconmask_details.substring(2));
             metadata.set("Masked icon details", iconmask_details.toString());
         }
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         xhtml.endDocument();
     }

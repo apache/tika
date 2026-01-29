@@ -29,16 +29,12 @@ public class RUnpackExtractorFactory implements EmbeddedDocumentByteStoreExtract
 
     public static long DEFAULT_MAX_EMBEDDED_BYTES_FOR_EXTRACTION = 10l * 1024l * 1024l * 1024l;
 
-    private boolean writeFileNameToContent = true;
     private Set<String> embeddedBytesIncludeMimeTypes = new HashSet<>();
     private Set<String> embeddedBytesExcludeMimeTypes = new HashSet<>();
     private Set<String> embeddedBytesIncludeEmbeddedResourceTypes = new HashSet<>();
     private Set<String> embeddedBytesExcludeEmbeddedResourceTypes = new HashSet<>();
 
     private long maxEmbeddedBytesForExtraction = DEFAULT_MAX_EMBEDDED_BYTES_FOR_EXTRACTION;
-    public void setWriteFileNameToContent(boolean writeFileNameToContent) {
-        this.writeFileNameToContent = writeFileNameToContent;
-    }
 
     public void setEmbeddedBytesIncludeMimeTypes(Set<String> includeMimeTypes) {
         embeddedBytesIncludeMimeTypes = new HashSet<>(includeMimeTypes);
@@ -72,10 +68,6 @@ public class RUnpackExtractorFactory implements EmbeddedDocumentByteStoreExtract
         this.maxEmbeddedBytesForExtraction = maxEmbeddedBytesForExtraction;
     }
 
-    public boolean isWriteFileNameToContent() {
-        return writeFileNameToContent;
-    }
-
     public Set<String> getEmbeddedBytesIncludeMimeTypes() {
         return embeddedBytesIncludeMimeTypes;
     }
@@ -101,7 +93,6 @@ public class RUnpackExtractorFactory implements EmbeddedDocumentByteStoreExtract
         RUnpackExtractor ex =
                 new RUnpackExtractor(parseContext,
                         maxEmbeddedBytesForExtraction);
-        ex.setWriteFileNameToContent(writeFileNameToContent);
         ex.setEmbeddedBytesSelector(createEmbeddedBytesSelector());
         return ex;
     }

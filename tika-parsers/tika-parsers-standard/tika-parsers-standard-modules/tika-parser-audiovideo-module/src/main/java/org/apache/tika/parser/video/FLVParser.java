@@ -198,7 +198,7 @@ public class FLVParser implements Parser {
         metadata.set("hasVideo", Boolean.toString((typeFlags & MASK_VIDEO) != 0));
         metadata.set("hasAudio", Boolean.toString((typeFlags & MASK_AUDIO) != 0));
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         // flv tag stream follows...

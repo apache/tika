@@ -3,7 +3,6 @@
     "outputThreshold": 678900,
     "embeddedDocumentExtractorFactory": {
       "runpack-extractor-factory": {
-        "writeFileNameToContent": true
       }
     }
   }

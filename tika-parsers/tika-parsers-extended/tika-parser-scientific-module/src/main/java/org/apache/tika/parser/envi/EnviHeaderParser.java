@@ -80,7 +80,7 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
             Charset charset = reader.getCharset();
             // deprecated, see TIKA-431
             metadata.set(Metadata.CONTENT_ENCODING, charset.name());
-            xhtml = new XHTMLContentHandler(handler, metadata);
+            xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
             readLines(reader, metadata);
             xhtml.endDocument();

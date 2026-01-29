@@ -83,7 +83,7 @@ public class GribParser implements Parser {
                     }
                 }
 
-                xhtml = new XHTMLContentHandler(handler, metadata);
+                xhtml = new XHTMLContentHandler(handler, metadata, context);
 
                 xhtml.startDocument();
 

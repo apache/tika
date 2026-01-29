@@ -76,7 +76,7 @@ public abstract class AbstractImageParser implements Parser {
         if (ocrMediaType == null ||
                 ocrParser == null || !ocrParser.getSupportedTypes(context).contains(ocrMediaType)) {
             extractMetadata(tis, handler, metadata, context);
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
             xhtml.endDocument();
             return;
@@ -85,7 +85,7 @@ public abstract class AbstractImageParser implements Parser {
         TemporaryResources tmpResources = new TemporaryResources();
         Exception metadataException = null;
         try {
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
             Path path = tis.getPath();
             try (InputStream pathStream = Files.newInputStream(path)) {

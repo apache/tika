@@ -202,7 +202,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     AbstractPDF2XHTML(PDDocument pdDocument, ContentHandler handler, ParseContext context,
                       Metadata metadata, PDFParserConfig config, Renderer renderer) throws IOException {
         this.pdDocument = pdDocument;
-        this.xhtml = new XHTMLContentHandler(handler, metadata);
+        this.xhtml = new XHTMLContentHandler(handler, metadata, context);
         this.context = context;
         this.metadata = metadata;
         this.config = config;

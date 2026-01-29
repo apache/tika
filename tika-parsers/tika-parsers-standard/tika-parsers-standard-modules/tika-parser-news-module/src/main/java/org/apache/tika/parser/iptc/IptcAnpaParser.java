@@ -104,7 +104,7 @@ public class IptcAnpaParser implements Parser {
         HashMap<String, String> properties = this.loadProperties(tis);
         this.setMetadata(metadata, properties);
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         // TODO: put body content here
         xhtml.startElement("p");

@@ -141,7 +141,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
      */
     public void getXHTML(ContentHandler handler, Metadata metadata, ParseContext context)
             throws SAXException, XmlException, IOException, TikaException {
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         buildXHTML(xhtml);

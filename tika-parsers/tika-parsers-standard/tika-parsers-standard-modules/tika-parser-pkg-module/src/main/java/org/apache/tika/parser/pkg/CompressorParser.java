@@ -236,7 +236,7 @@ public class CompressorParser implements Parser {
         }
 
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         try {
             Metadata entrydata = context.newMetadata();

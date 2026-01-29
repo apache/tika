@@ -107,7 +107,7 @@ public class TSDParser implements Parser {
         this.buildMetas(tsdMetasList,
                 metadata != null && metadata.size() > 0 ? TSDAndEmbeddedMetadata : metadata);
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         tis.rewind();
 

@@ -55,6 +55,7 @@ import org.apache.tika.renderer.CompositeRenderer;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
+import org.apache.tika.sax.SAXOutputConfig;
 import org.apache.tika.serialization.ComponentConfig;
 import org.apache.tika.serialization.ComponentNameResolver;
 import org.apache.tika.serialization.JsonMetadata;
@@ -414,6 +415,12 @@ public class TikaLoader {
         MetadataWriteLimiterFactory metadataWriteLimiterFactory = configs().load(MetadataWriteLimiterFactory.class);
         if (metadataWriteLimiterFactory != null) {
             context.set(MetadataWriteLimiterFactory.class, metadataWriteLimiterFactory);
+        }
+
+        // Load SAXOutputConfig from other-configs if present
+        SAXOutputConfig saxOutputConfig = configs().load(SAXOutputConfig.class);
+        if (saxOutputConfig != null) {
+            context.set(SAXOutputConfig.class, saxOutputConfig);
         }
 
         return context;

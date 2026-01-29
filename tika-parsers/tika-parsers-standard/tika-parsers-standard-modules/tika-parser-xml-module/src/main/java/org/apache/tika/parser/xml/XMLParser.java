@@ -63,7 +63,7 @@ public class XMLParser implements Parser {
             metadata.set(Metadata.CONTENT_TYPE, "application/xml");
         }
 
-        final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         xhtml.startElement("p");
 

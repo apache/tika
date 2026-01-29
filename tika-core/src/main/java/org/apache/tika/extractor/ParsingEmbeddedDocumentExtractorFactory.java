@@ -24,17 +24,8 @@ import org.apache.tika.parser.ParseContext;
 public class ParsingEmbeddedDocumentExtractorFactory
         implements EmbeddedDocumentExtractorFactory {
 
-    private boolean writeFileNameToContent = true;
-
-    public void setWriteFileNameToContent(boolean writeFileNameToContent) {
-        this.writeFileNameToContent = writeFileNameToContent;
-    }
-
     @Override
     public EmbeddedDocumentExtractor newInstance(Metadata metadata, ParseContext parseContext) {
-        ParsingEmbeddedDocumentExtractor ex =
-                new ParsingEmbeddedDocumentExtractor(parseContext);
-        ex.setWriteFileNameToContent(writeFileNameToContent);
-        return ex;
+        return new ParsingEmbeddedDocumentExtractor(parseContext);
     }
 }

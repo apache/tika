@@ -93,7 +93,7 @@ public class AppleSingleFileParser implements Parser {
         Metadata embeddedMetadata = context.newMetadata();
         bytesRead = processFieldEntries(tis, fieldInfoList, embeddedMetadata, bytesRead);
         FieldInfo contentFieldInfo = getContentFieldInfo(fieldInfoList);
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         if (contentFieldInfo != null) {
             long diff = contentFieldInfo.offset - bytesRead;

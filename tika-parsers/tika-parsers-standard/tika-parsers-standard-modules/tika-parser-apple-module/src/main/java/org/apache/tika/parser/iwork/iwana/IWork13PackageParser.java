@@ -94,7 +94,7 @@ public class IWork13PackageParser implements Parser {
         } else {
             zipStream = new ZipInputStream(tis);
         }
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         MediaType type = null;

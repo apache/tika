@@ -119,7 +119,7 @@ public class PListParser implements Parser {
                 metadata.set(Metadata.CONTENT_TYPE, subtype.toString());
             }
         }
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         State state = new State(xhtml, metadata, embeddedDocumentExtractor, df, context);
         xhtml.startDocument();
         xhtml.startElement(PLIST);

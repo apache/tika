@@ -6,7 +6,6 @@
     "maximumPackageEntryDepth": 1000,
     "embeddedDocumentExtractorFactory": {
       "runpack-extractor-factory": {
-        "writeFileNameToContent": true,
         "embeddedBytesIncludeMimeTypes": [
           "text/pdf"
         ],

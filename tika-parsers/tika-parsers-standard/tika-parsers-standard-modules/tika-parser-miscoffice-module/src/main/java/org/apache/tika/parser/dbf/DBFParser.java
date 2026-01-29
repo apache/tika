@@ -89,7 +89,7 @@ public class DBFParser implements Parser {
         Charset charset = getCharset(firstRows, header, context);
         metadata.set(Metadata.CONTENT_ENCODING, charset.toString());
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         xhtml.startElement("table");
         xhtml.startElement("thead");

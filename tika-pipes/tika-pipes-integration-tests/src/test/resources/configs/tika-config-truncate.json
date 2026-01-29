@@ -48,7 +48,6 @@
     "outputThreshold": 1000000,
     "embeddedDocumentExtractorFactory": {
       "runpack-extractor-factory": {
-        "writeFileNameToContent": false,
         "maxEmbeddedBytesForExtraction": 10
       }
     },

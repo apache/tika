@@ -64,7 +64,7 @@ public class ChmParser implements Parser {
         metadata.set(Metadata.CONTENT_TYPE, "application/vnd.ms-htmlhelp");
 
         // content
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         Parser htmlParser =

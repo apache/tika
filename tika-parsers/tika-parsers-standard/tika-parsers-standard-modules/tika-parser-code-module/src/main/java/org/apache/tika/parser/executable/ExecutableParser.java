@@ -85,7 +85,7 @@ public class ExecutableParser implements Parser, MachineMetadata {
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         // We only do metadata, for now
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         // What kind is it?
         byte[] first4 = new byte[4];

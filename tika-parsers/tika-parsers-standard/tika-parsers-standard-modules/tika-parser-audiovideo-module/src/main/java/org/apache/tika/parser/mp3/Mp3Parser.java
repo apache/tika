@@ -146,7 +146,7 @@ public class Mp3Parser implements Parser {
         metadata.set(Metadata.CONTENT_TYPE, "audio/mpeg");
         metadata.set(XMPDM.AUDIO_COMPRESSOR, "MP3");
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
 
         // Create handlers for the various kinds of ID3 tags
         ID3TagsAndAudio audioAndTags = getAllTagHandlers(tis, handler);

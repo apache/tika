@@ -80,7 +80,7 @@ public class OneNoteParser implements Parser {
 
         try (OneNoteDirectFileResource oneNoteDirectFileResource = new OneNoteDirectFileResource(
                         tis.getFile())) {
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
             OneNoteDocument oneNoteDocument =
                     createOneNoteDocumentFromDirectFileResource(oneNoteDirectFileResource);

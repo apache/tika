@@ -44,7 +44,7 @@ public class OpenDocumentContentParser implements Parser {
 
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        parseInternal(tis, new XHTMLContentHandler(handler, metadata), metadata, context);
+        parseInternal(tis, new XHTMLContentHandler(handler, metadata, context), metadata, context);
     }
 
     void parseInternal(TikaInputStream tis, final ContentHandler handler, Metadata metadata,
