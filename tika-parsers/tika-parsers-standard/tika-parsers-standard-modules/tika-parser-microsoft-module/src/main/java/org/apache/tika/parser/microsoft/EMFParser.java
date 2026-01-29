@@ -98,7 +98,7 @@ public class EMFParser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         EmbeddedDocumentExtractor embeddedDocumentExtractor = null;
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         try {
             HemfPicture ex = new HemfPicture(tis);

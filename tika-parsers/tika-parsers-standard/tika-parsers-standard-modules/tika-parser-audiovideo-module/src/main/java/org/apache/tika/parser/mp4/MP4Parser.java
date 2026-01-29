@@ -97,7 +97,7 @@ public class MP4Parser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         com.drew.metadata.Metadata mp4Metadata = new com.drew.metadata.Metadata();
         Mp4BoxHandler boxHandler = new TikaMp4BoxHandler(mp4Metadata, metadata, xhtml);

@@ -59,6 +59,7 @@ import org.apache.tika.renderer.CompositeRenderer;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
+import org.apache.tika.sax.SAXOutputConfig;
 import org.apache.tika.serialization.ComponentConfig;
 import org.apache.tika.serialization.ComponentNameResolver;
 import org.apache.tika.serialization.JsonMetadata;
@@ -414,6 +415,7 @@ public class TikaLoader {
         loadOne(EmbeddedLimits.class, context);
         loadOne(OutputLimits.class, context);
         loadOne(TimeoutLimits.class, context);
+        loadOne(SAXOutputConfig.class, context);
         return context;
     }
 

@@ -143,7 +143,7 @@ public class NamedEntityParser implements Parser {
                 }
             }
         }
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(contentHandler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(contentHandler, metadata, parseContext);
         extractOutput(text.trim(), xhtml);
     }
 

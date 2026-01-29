@@ -51,7 +51,7 @@ public class WebPParser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
         new ImageMetadataExtractor(metadata).parseWebP(tis.getFile());
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         xhtml.endDocument();
     }

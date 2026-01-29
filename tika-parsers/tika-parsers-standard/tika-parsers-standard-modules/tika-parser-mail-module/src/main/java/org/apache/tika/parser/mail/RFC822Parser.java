@@ -117,7 +117,7 @@ public class RFC822Parser implements Parser {
         }
         MimeStreamParser parser =
                 new MimeStreamParser(config, null, new DefaultBodyDescriptorBuilder());
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
 
         MailContentHandler mch = new MailContentHandler(xhtml, localDetector, metadata, context,
                 config.isStrictParsing(), extractAllAlternatives);

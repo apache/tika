@@ -91,7 +91,7 @@ public class ISArchiveParser implements Parser {
             File locationFile = new File(location);
             String[] investigationList = locationFile.list((dir, name) -> name.matches("i_.+\\.txt"));
 
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
 
             parseInvestigation(investigationList, xhtml, metadata, context);

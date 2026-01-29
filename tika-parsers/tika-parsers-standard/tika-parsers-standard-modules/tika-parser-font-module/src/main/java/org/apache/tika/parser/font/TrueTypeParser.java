@@ -116,7 +116,7 @@ public class TrueTypeParser implements Parser {
         }
 
         // For now, we only output metadata, no textual contents
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         xhtml.endDocument();
     }

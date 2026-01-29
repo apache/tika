@@ -106,7 +106,7 @@ public class OggParser extends AbstractParser {
         int totalStreams = 0;
 
         // Start
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         // Check the streams in turn

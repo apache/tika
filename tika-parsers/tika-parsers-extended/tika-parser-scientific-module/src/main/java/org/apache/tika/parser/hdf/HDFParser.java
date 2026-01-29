@@ -94,7 +94,7 @@ public class HDFParser implements Parser {
             throw new TikaException("HDF parse error", e);
         }
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         xhtml.endDocument();
     }

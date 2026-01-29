@@ -85,7 +85,7 @@ public abstract class AbstractXML2003Parser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
         setContentType(metadata);
 
-        final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         TaggedContentHandler tagged = new TaggedContentHandler(xhtml);

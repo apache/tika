@@ -39,6 +39,7 @@ import org.apache.tika.parser.ParseRecord;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
+import org.apache.tika.sax.SAXOutputConfig;
 
 /**
  * Helper class for parsers of package archives or other compound document
@@ -51,8 +52,6 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
     private static final File ABSTRACT_PATH = new File("");
 
     private static final Parser DELEGATING_PARSER = new DelegatingParser();
-
-    private boolean writeFileNameToContent = true;
 
     protected final ParseContext context;
 
@@ -149,7 +148,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         }
 
         String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-        if (writeFileNameToContent && name != null && name.length() > 0 && outputHtml) {
+        if (isWriteFileNameToContent() && name != null && name.length() > 0 && outputHtml) {
             handler.startElement(XHTML, "h1", "h1", new AttributesImpl());
             char[] chars = name.toCharArray();
             handler.characters(chars, 0, chars.length);
@@ -190,11 +189,14 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         return DELEGATING_PARSER;
     }
 
-    public void setWriteFileNameToContent(boolean writeFileNameToContent) {
-        this.writeFileNameToContent = writeFileNameToContent;
-    }
-
+    /**
+     * Returns whether to write file names to content based on {@link SAXOutputConfig}
+     * in the ParseContext. Defaults to {@code true} if no config is present.
+     *
+     * @return true if file names should be written to content
+     */
     public boolean isWriteFileNameToContent() {
-        return writeFileNameToContent;
+        SAXOutputConfig config = context.get(SAXOutputConfig.class);
+        return config == null || config.isWriteFileNameToContent();
     }
 }

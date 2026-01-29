@@ -225,7 +225,7 @@ public class GDALParser implements Parser {
 
         // make the content handler and provide output there
         // now that we have metadata
-        processOutput(handler, metadata, output);
+        processOutput(handler, metadata, output, context);
     }
 
     private Map<Pattern, String> getPatterns() {
@@ -313,9 +313,9 @@ public class GDALParser implements Parser {
         }
     }
 
-    private void processOutput(ContentHandler handler, Metadata metadata, String output)
-            throws SAXException, IOException {
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+    private void processOutput(ContentHandler handler, Metadata metadata, String output,
+                               ParseContext context) throws SAXException, IOException {
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         try (Reader reader = new StringReader(output)) {
             xhtml.startDocument();
             xhtml.startElement("p");

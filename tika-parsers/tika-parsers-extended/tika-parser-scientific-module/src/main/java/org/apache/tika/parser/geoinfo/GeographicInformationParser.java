@@ -88,7 +88,7 @@ public class GeographicInformationParser implements Parser {
     public void parse(TikaInputStream tis, ContentHandler contentHandler, Metadata metadata,
                       ParseContext parseContext) throws IOException, SAXException, TikaException {
         metadata.set(Metadata.CONTENT_TYPE, geoInfoType);
-        XHTMLContentHandler xhtmlContentHandler = new XHTMLContentHandler(contentHandler, metadata);
+        XHTMLContentHandler xhtmlContentHandler = new XHTMLContentHandler(contentHandler, metadata, parseContext);
 
         TemporaryResources tmp = null;
         try (tis) {

@@ -116,7 +116,7 @@ public class StringsParser implements Parser, Initializable {
             int totalBytes = 0;
 
             // Content
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
 
             xhtml.startDocument();
 

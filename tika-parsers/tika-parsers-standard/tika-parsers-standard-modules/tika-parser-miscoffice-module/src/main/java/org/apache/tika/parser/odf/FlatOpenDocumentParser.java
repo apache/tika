@@ -97,7 +97,7 @@ public class FlatOpenDocumentParser implements Parser {
     @Override
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
 
         xhtml.startDocument();
         tis.setCloseShield();

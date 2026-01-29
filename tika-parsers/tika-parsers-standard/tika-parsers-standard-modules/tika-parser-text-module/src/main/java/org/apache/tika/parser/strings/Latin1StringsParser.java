@@ -226,7 +226,7 @@ public class Latin1StringsParser implements Parser {
         tmpPos = 0;
         outPos = 0;
 
-        xhtml = new XHTMLContentHandler(handler, metadata);
+        xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         int i = 0;

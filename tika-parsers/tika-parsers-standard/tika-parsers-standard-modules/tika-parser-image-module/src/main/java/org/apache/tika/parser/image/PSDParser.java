@@ -169,7 +169,7 @@ public class PSDParser implements Parser {
         // We can't do anything with these parts
 
         // We don't have any helpful text, sorry...
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         xhtml.endDocument();
     }

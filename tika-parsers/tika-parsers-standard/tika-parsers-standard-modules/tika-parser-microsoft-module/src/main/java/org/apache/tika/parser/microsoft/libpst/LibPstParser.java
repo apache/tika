@@ -82,7 +82,7 @@ public class LibPstParser implements Parser, Initializable {
         Path debugFile = activeConfig.isDebug() ? Files.createTempFile("tika-libpst-debug", ".txt") : null;
         try {
             ProcessBuilder pb = getProcessBuilder(pst, activeConfig, outDir, debugFile);
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(contentHandler, metadata);
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(contentHandler, metadata, parseContext);
             FileProcessResult fileProcessResult = ProcessUtils.execute(pb, activeConfig.getTimeoutSeconds() * 1000l, MAX_STDOUT, MAX_STDERR);
             xhtml.startDocument();
             processContents(outDir, activeConfig, xhtml, metadata, parseContext);

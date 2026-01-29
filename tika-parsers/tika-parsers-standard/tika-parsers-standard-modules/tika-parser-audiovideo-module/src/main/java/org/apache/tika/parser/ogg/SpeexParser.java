@@ -69,7 +69,7 @@ public class SpeexParser extends OggAudioParser {
         SpeexFile speex = new SpeexFile(ogg);
 
         // Start
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         // Extract the common Speex info
