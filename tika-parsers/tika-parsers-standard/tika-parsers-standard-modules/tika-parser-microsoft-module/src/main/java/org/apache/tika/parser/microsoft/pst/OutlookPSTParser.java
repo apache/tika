@@ -115,6 +115,7 @@ public class OutlookPSTParser implements Parser {
             PSTMessage pstMail = (PSTMessage) pstFolder.getNextChild();
             while (pstMail != null) {
                 Metadata metadata = Metadata.newInstance(context);
+                metadata.set(Metadata.CONTENT_TYPE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
                 metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
                 String resourceName = pstMail.getSubject() + ".msg";
                 String internalPath = folderPath.endsWith("/") ?
