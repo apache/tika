@@ -265,7 +265,7 @@ public class OpenDocumentParser implements Parser {
             //scrape everything under Thumbnails/ and Pictures/
             if (embeddedName.contains("Thumbnails/") || embeddedName.contains("Pictures/")) {
 
-                Metadata embeddedMetadata = context.newMetadata();
+                Metadata embeddedMetadata = Metadata.newInstance(context);
                 embeddedMetadata.set(TikaCoreProperties.INTERNAL_PATH, embeddedName);
 
                     embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, entry.getName());
@@ -308,7 +308,7 @@ public class OpenDocumentParser implements Parser {
         if (ignoreScriptFile(embeddedName)) {
             return;
         }
-        Metadata embeddedMetadata = context.newMetadata();
+        Metadata embeddedMetadata = Metadata.newInstance(context);
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
         embeddedMetadata.set(TikaCoreProperties.INTERNAL_PATH, embeddedName);

@@ -27,6 +27,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -209,6 +210,11 @@ public class PipesForkParser implements Closeable {
         // Add content handler factory and parse mode to parse context
         parseContext.set(ContentHandlerFactory.class, config.getContentHandlerFactory());
         parseContext.set(ParseMode.class, config.getParseMode());
+
+        // Add embedded limits if configured
+        if (config.getEmbeddedLimits() != null) {
+            parseContext.set(EmbeddedLimits.class, config.getEmbeddedLimits());
+        }
 
         FetchEmitTuple tuple = new FetchEmitTuple(id, fetchKey, emitKey, metadata, parseContext);
 

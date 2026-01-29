@@ -54,7 +54,7 @@ public class XMPMetadataResource extends MetadataResource implements TikaServerR
         ParseContext context = new ParseContext();
         try (TikaInputStream tis = TikaInputStream.get(att.getObject(InputStream.class))) {
             return Response
-                    .ok(parseMetadata(tis, context.newMetadata(), att.getHeaders(), info))
+                    .ok(parseMetadata(tis, Metadata.newInstance(context), att.getHeaders(), info))
                     .build();
         }
     }
@@ -63,7 +63,7 @@ public class XMPMetadataResource extends MetadataResource implements TikaServerR
     @Produces({"application/rdf+xml"})
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
         ParseContext context = new ParseContext();
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             return Response
                     .ok(parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(), info))

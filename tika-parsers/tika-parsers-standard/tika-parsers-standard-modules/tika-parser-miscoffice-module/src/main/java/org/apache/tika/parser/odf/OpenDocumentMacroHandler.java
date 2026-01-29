@@ -22,6 +22,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -49,7 +50,7 @@ class OpenDocumentMacroHandler extends FlatOpenDocumentMacroHandler {
         if (MODULE.equals(localName)) {
             try {
                 handleMacro();
-            } catch (IOException e) {
+            } catch (IOException | TikaException e) {
                 throw new SAXException(e);
             } finally {
                 //this shouldn't be necessary in the compressed odf files

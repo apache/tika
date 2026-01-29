@@ -115,7 +115,7 @@ public class PSTMailItemParser implements Parser {
             } else {
                 byte[] data = htmlChunk.getBytes(StandardCharsets.UTF_8);
                 try (TikaInputStream tis = TikaInputStream.get(data)) {
-                    htmlParser.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(xhtml)), context.newMetadata(), context);
+                    htmlParser.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(xhtml)), Metadata.newInstance(context), context);
                 }
             }
             return;
@@ -226,7 +226,7 @@ public class PSTMailItemParser implements Parser {
         if (attachedEmail != null) {
             long sz = OutlookPSTParser.estimateSize(attachedEmail);
             try (TikaInputStream tis = TikaInputStream.getFromContainer(attachedEmail, sz, metadata)) {
-                Metadata attachMetadata = context.newMetadata();
+                Metadata attachMetadata = Metadata.newInstance(context);
                 attachMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
                 attachMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, attachedEmail.getSubject() + ".msg");
                 attachMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name());
@@ -243,7 +243,7 @@ public class PSTMailItemParser implements Parser {
 
         xhtml.element("p", filename);
 
-        Metadata attachMeta = context.newMetadata();
+        Metadata attachMeta = Metadata.newInstance(context);
         attachMeta.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
         attachMeta.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, filename);
         attachMeta.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());

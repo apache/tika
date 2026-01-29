@@ -167,7 +167,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         //TODO: figure out if we can send in the PDPage in the TikaInputStream
         TikaInputStream tis = state.getTikaInputStream();
         RenderRequest request = new PageRangeRequest(getCurrentPageNo(), getCurrentPageNo());
-        Metadata renderedMetadata = context.newMetadata();
+        Metadata renderedMetadata = Metadata.newInstance(context);
         renderedMetadata.set(TikaCoreProperties.TYPE, PDFParser.MEDIA_TYPE.toString());
         try (RenderResults results = renderer.render(tis, renderedMetadata, context, request)) {
             for (RenderResult result : results.getResults()) {

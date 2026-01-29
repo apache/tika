@@ -3,7 +3,6 @@
     "basic-content-handler-factory": {
       "type": "TEXT",
       "writeLimit": -1,
-      "maxEmbeddedResources": -1,
       "throwOnWriteLimitReached": true
     }
   },
@@ -44,7 +43,6 @@
     }
   },
   "auto-detect-parser": {
-    "outputThreshold": 1000000,
     "throwOnZeroBytes": false
   },
   "other-configs": {

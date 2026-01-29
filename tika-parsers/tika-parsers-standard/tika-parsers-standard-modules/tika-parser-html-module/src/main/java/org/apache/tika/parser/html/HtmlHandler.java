@@ -332,7 +332,7 @@ class HtmlHandler extends TextContentHandler {
         }
     }
     private void handleSrcDoc(String string) throws SAXException {
-        Metadata m = context.newMetadata();
+        Metadata m = Metadata.newInstance(context);
         m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
         m.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, "text/html");
@@ -358,7 +358,7 @@ class HtmlHandler extends TextContentHandler {
         }
 
         //do anything with attrs?
-        Metadata m = context.newMetadata();
+        Metadata m = Metadata.newInstance(context);
         m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
         if (dataURIScheme.getMediaType() != null) {
@@ -382,7 +382,7 @@ class HtmlHandler extends TextContentHandler {
             return;
         }
         //do anything with attrs?
-        Metadata m = context.newMetadata();
+        Metadata m = Metadata.newInstance(context);
         m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
         String src = scriptAtts.getValue("src");
@@ -395,7 +395,7 @@ class HtmlHandler extends TextContentHandler {
         //try to scrape dataURISchemes from javascript
         List<DataURIScheme> dataURISchemes = dataURISchemeUtil.extract(script.toString());
         for (DataURIScheme dataURIScheme : dataURISchemes) {
-            Metadata dataUriMetadata = context.newMetadata();
+            Metadata dataUriMetadata = Metadata.newInstance(context);
             dataUriMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
             dataUriMetadata.set(Metadata.CONTENT_TYPE, dataURIScheme.getMediaType().toString());

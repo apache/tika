@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -251,13 +252,16 @@ public class RecursiveParserWrapperTest extends TikaTest {
             assertNull(limitReached);
         }
 
-        //test setting value
+        //test setting value via EmbeddedLimits
         metadata = new Metadata();
+        ParseContext limitContext = new ParseContext();
+        EmbeddedLimits limits = new EmbeddedLimits();
+        limits.setMaxCount(maxEmbedded);
+        limitContext.set(EmbeddedLimits.class, limits);
         try (TikaInputStream tis = getResourceAsStream("/test-documents/test_recursive_embedded.docx")) {
             RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                    new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
-                    maxEmbedded);
-            wrapper.parse(tis, handler, metadata, context);
+                    new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
+            wrapper.parse(tis, handler, metadata, limitContext);
             List<Metadata> list = handler.getMetadataList();
             //add 1 for outer container file
             assertEquals(maxEmbedded + 1, list.size());
@@ -267,12 +271,11 @@ public class RecursiveParserWrapperTest extends TikaTest {
             assertEquals("true", limitReached);
         }
 
-        //test setting value < 0
+        //test setting value < 0 (unlimited)
         metadata = new Metadata();
         try (TikaInputStream tis = getResourceAsStream("/test-documents/test_recursive_embedded.docx")) {
             RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                    new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
-                    -2);
+                    new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
             wrapper.parse(tis, handler, metadata, context);
             List<Metadata> list = handler.getMetadataList();
             assertEquals(totalNoLimit, list.size());

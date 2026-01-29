@@ -478,7 +478,7 @@ public class PDFParser implements Parser, RenderingParser {
     private RenderResults renderPDF(TikaInputStream tstream,
                                     ParseContext parseContext, PDFParserConfig localConfig)
             throws IOException, TikaException {
-        Metadata metadata = parseContext.newMetadata();
+        Metadata metadata = Metadata.newInstance(parseContext);
         metadata.set(TikaCoreProperties.TYPE, MEDIA_TYPE.toString());
         return renderer.render(
                 tstream, metadata, parseContext, PageRangeRequest.RENDER_ALL);

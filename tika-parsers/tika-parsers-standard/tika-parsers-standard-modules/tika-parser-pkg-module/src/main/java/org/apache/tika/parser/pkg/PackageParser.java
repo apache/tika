@@ -205,7 +205,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                                                   Long size, XHTMLContentHandler xhtml,
                                                   ParseContext context)
             throws SAXException, IOException, TikaException {
-        Metadata entrydata = context.newMetadata();
+        Metadata entrydata = Metadata.newInstance(context);
         if (createAt != null) {
             entrydata.set(TikaCoreProperties.CREATED, createAt);
         }

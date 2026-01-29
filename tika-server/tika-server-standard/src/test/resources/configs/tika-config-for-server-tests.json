@@ -10,7 +10,6 @@
     }
   ],
   "auto-detect-parser": {
-    "outputThreshold": 1000000,
     "throwOnZeroBytes": false
   },
   "other-configs": {

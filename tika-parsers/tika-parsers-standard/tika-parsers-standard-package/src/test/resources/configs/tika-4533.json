@@ -1,8 +1,5 @@
 {
   "auto-detect-parser": {
-    "maximumCompressionRatio": 100,
-    "maximumDepth": 100,
-    "maximumPackageEntryDepth": 100,
     "throwOnZeroBytes": false
   },
   "other-configs": {

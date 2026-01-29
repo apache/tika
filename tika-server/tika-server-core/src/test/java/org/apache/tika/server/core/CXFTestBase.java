@@ -78,7 +78,6 @@ public abstract class CXFTestBase {
     public final static String BASIC_CONFIG = """
             {
               "auto-detect-parser": {
-                "outputThreshold": 1000000,
                 "throwOnZeroBytes": false
               },
               "other-configs": {

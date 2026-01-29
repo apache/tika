@@ -27,6 +27,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.exception.CorruptedFileException;
+import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -62,7 +63,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
     public boolean shouldParseEmbedded(Metadata metadata) {
         // Check ParseRecord for depth/count limits first
         ParseRecord parseRecord = context.get(ParseRecord.class);
-        if (parseRecord != null && !parseRecord.shouldParseEmbedded()) {
+        if (parseRecord != null && !checkEmbeddedLimits(parseRecord)) {
             return false;
         }
 
@@ -81,6 +82,52 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
             }
         }
 
+        return true;
+    }
+
+    /**
+     * Checks embedded document limits from ParseRecord.
+     * <p>
+     * If throwOnMaxDepth or throwOnMaxCount is configured and the respective limit is hit,
+     * an EmbeddedLimitReachedException is thrown. Otherwise, returns false and sets the
+     * appropriate limit flag on the ParseRecord.
+     * <p>
+     * Note: The count limit is a hard stop (once hit, no more embedded docs are parsed).
+     * The depth limit only affects documents at that depth - sibling documents at
+     * shallower depths will still be parsed.
+     *
+     * @param parseRecord the parse record to check
+     * @return true if the embedded document should be parsed, false if limits are exceeded
+     * @throws EmbeddedLimitReachedException if a limit is exceeded and throwing is configured
+     */
+    private boolean checkEmbeddedLimits(ParseRecord parseRecord) {
+        // Count limit is a hard stop - once we've hit max, no more embedded parsing
+        if (parseRecord.isEmbeddedCountLimitReached()) {
+            return false;
+        }
+        int maxCount = parseRecord.getMaxEmbeddedCount();
+        if (maxCount >= 0 && parseRecord.getEmbeddedCount() >= maxCount) {
+            parseRecord.setEmbeddedCountLimitReached(true);
+            if (parseRecord.isThrowOnMaxCount()) {
+                throw new EmbeddedLimitReachedException(
+                        EmbeddedLimitReachedException.LimitType.MAX_COUNT, maxCount);
+            }
+            return false;
+        }
+
+        // Depth limit only applies to current depth - siblings at shallower levels
+        // can still be parsed. The flag is set for reporting purposes.
+        // depth is 1-indexed (main doc is depth 1), so embedded depth limit of N
+        // means we allow parsing up to depth N+1
+        int maxDepth = parseRecord.getMaxEmbeddedDepth();
+        if (maxDepth >= 0 && parseRecord.getDepth() > maxDepth) {
+            parseRecord.setEmbeddedDepthLimitReached(true);
+            if (parseRecord.isThrowOnMaxDepth()) {
+                throw new EmbeddedLimitReachedException(
+                        EmbeddedLimitReachedException.LimitType.MAX_DEPTH, maxDepth);
+            }
+            return false;
+        }
         return true;
     }
 

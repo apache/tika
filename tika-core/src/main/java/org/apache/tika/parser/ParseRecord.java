@@ -21,6 +21,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.metadata.Metadata;
 
 /**
@@ -59,8 +60,29 @@ public class ParseRecord {
     private int embeddedCount = 0;
     private int maxEmbeddedDepth = -1;
     private int maxEmbeddedCount = -1;
+    private boolean throwOnMaxDepth = false;
+    private boolean throwOnMaxCount = false;
     private boolean embeddedDepthLimitReached = false;
     private boolean embeddedCountLimitReached = false;
+
+    /**
+     * Creates a new ParseRecord configured from EmbeddedLimits in the ParseContext.
+     * <p>
+     * If EmbeddedLimits is present in the context, the ParseRecord will be configured
+     * with those limits. Otherwise, default unlimited values are used.
+     *
+     * @param context the ParseContext (may be null)
+     * @return a new ParseRecord configured from the context
+     */
+    public static ParseRecord newInstance(ParseContext context) {
+        ParseRecord record = new ParseRecord();
+        EmbeddedLimits limits = EmbeddedLimits.get(context);
+        record.maxEmbeddedDepth = limits.getMaxDepth();
+        record.maxEmbeddedCount = limits.getMaxCount();
+        record.throwOnMaxDepth = limits.isThrowOnMaxDepth();
+        record.throwOnMaxCount = limits.isThrowOnMaxCount();
+        return record;
+    }
 
     void beforeParse() {
         depth++;
@@ -124,37 +146,39 @@ public class ParseRecord {
     }
 
     /**
-     * Checks whether an embedded document should be parsed based on configured limits.
-     * This should be called before parsing each embedded document.
-     * <p>
-     * If this returns false, the caller should skip parsing the embedded document
-     * and the appropriate limit flag will be set.
-     * <p>
-     * Note: The count limit is a hard stop (once hit, no more embedded docs are parsed).
-     * The depth limit only affects documents at that depth - sibling documents at
-     * shallower depths will still be parsed.
+     * Returns whether throwing is configured when max depth is reached.
      *
-     * @return true if the embedded document should be parsed, false if limits are exceeded
+     * @return true if an exception should be thrown on max depth
      */
-    public boolean shouldParseEmbedded() {
-        // Count limit is a hard stop - once we've hit max, no more embedded parsing
-        if (embeddedCountLimitReached) {
-            return false;
-        }
-        if (maxEmbeddedCount >= 0 && embeddedCount >= maxEmbeddedCount) {
-            embeddedCountLimitReached = true;
-            return false;
-        }
+    public boolean isThrowOnMaxDepth() {
+        return throwOnMaxDepth;
+    }
 
-        // Depth limit only applies to current depth - siblings at shallower levels
-        // can still be parsed. The flag is set for reporting purposes.
-        // depth is 1-indexed (main doc is depth 1), so embedded depth limit of N
-        // means we allow parsing up to depth N+1
-        if (maxEmbeddedDepth >= 0 && depth > maxEmbeddedDepth) {
-            embeddedDepthLimitReached = true;
-            return false;
-        }
-        return true;
+    /**
+     * Returns whether throwing is configured when max count is reached.
+     *
+     * @return true if an exception should be thrown on max count
+     */
+    public boolean isThrowOnMaxCount() {
+        return throwOnMaxCount;
+    }
+
+    /**
+     * Sets the flag indicating the embedded depth limit was reached.
+     *
+     * @param embeddedDepthLimitReached true if depth limit was reached
+     */
+    public void setEmbeddedDepthLimitReached(boolean embeddedDepthLimitReached) {
+        this.embeddedDepthLimitReached = embeddedDepthLimitReached;
+    }
+
+    /**
+     * Sets the flag indicating the embedded count limit was reached.
+     *
+     * @param embeddedCountLimitReached true if count limit was reached
+     */
+    public void setEmbeddedCountLimitReached(boolean embeddedCountLimitReached) {
+        this.embeddedCountLimitReached = embeddedCountLimitReached;
     }
 
     /**

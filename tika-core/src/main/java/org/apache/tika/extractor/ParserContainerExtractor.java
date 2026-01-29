@@ -63,7 +63,7 @@ public class ParserContainerExtractor implements ContainerExtractor {
 
     @Override
     public boolean isSupported(TikaInputStream input, ParseContext parseContext) throws IOException {
-        MediaType type = detector.detect(input, parseContext.newMetadata(), parseContext);
+        MediaType type = detector.detect(input, Metadata.newInstance(parseContext), parseContext);
         return parser.getSupportedTypes(parseContext).contains(type);
     }
 
@@ -74,7 +74,7 @@ public class ParserContainerExtractor implements ContainerExtractor {
             throws IOException, TikaException {
         parseContext.set(Parser.class, new RecursiveParser(parser, recurseExtractor, handler, parseContext));
         try {
-            parser.parse(stream, new DefaultHandler(), parseContext.newMetadata(), parseContext);
+            parser.parse(stream, new DefaultHandler(), Metadata.newInstance(parseContext), parseContext);
         } catch (SAXException e) {
             throw new TikaException("Unexpected SAX exception", e);
         }

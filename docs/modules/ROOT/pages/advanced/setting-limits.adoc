@@ -21,17 +21,280 @@ When processing untrusted documents, it's important to set limits on resource co
 to prevent denial-of-service attacks and protect against malicious or pathological files.
 Tika provides several mechanisms for limiting resource usage during parsing.
 
-== Limiting Metadata Writes
+== Overview
 
-Malicious or pathological documents can contain enormous amounts of metadata, potentially
-causing `OutOfMemoryError` or consuming excessive storage. The `MetadataWriteLimiter`
-system allows you to constrain metadata size at write time, ensuring parsers cannot
-exceed your configured limits.
+Tika 4.x provides a unified configuration system for all limits through the `other-configs`
+section of the JSON configuration file. All limits are loaded into the `ParseContext` and
+flow through the parsing pipeline.
+
+=== Complete Example
+
+Here's a comprehensive example showing all limit configurations together.
+This is the same configuration tested in `AllLimitsTest.java`:
+
+[source,json]
+----
+{
+  "parsers": ["default-parser"],
+  "other-configs": {
+    "embedded-limits": {
+      "maxDepth": 10,
+      "throwOnMaxDepth": false,
+      "maxCount": 1000,
+      "throwOnMaxCount": false
+    },
+    "output-limits": {
+      "writeLimit": 100000,
+      "throwOnWriteLimit": false,
+      "maxXmlDepth": 100,
+      "maxPackageEntryDepth": 10,
+      "zipBombThreshold": 1000000,
+      "zipBombRatio": 100
+    },
+    "timeout-limits": {
+      "taskTimeoutMillis": 60000
+    },
+    "metadata-write-limiter-factory": {
+      "standard-metadata-limiter-factory": {
+        "maxTotalBytes": 1048576,
+        "maxFieldSize": 102400,
+        "maxKeySize": 1024,
+        "maxValuesPerField": 100
+      }
+    }
+  }
+}
+----
+
+Configuration file: `tika-serialization/src/test/resources/configs/all-limits-test.json`
+
+=== Loading Limits
+
+Use `TikaLoader.loadParseContext()` to load all configured limits into a `ParseContext`:
+
+[source,java]
+----
+TikaLoader loader = TikaLoader.load(configPath);
+ParseContext context = loader.loadParseContext();
+
+// Limits are now available from the context
+EmbeddedLimits embeddedLimits = context.get(EmbeddedLimits.class);
+OutputLimits outputLimits = context.get(OutputLimits.class);
+TimeoutLimits timeoutLimits = context.get(TimeoutLimits.class);
+----
+
+See test: `tika-serialization/src/test/java/org/apache/tika/config/AllLimitsTest.java`
+
+== Embedded Document Limits
+
+The `EmbeddedLimits` class controls how deeply nested and how many embedded documents
+are processed. This is critical for protecting against "zip bomb" style attacks where
+documents contain deeply nested or numerous embedded files.
+
+=== Configuration Options
+
+[cols="2,1,3"]
+|===
+|Setting |Default |Description
+
+|`maxDepth`
+|-1 (unlimited)
+|Maximum nesting depth for embedded documents. When reached, recursion stops but
+siblings at the current level continue to be processed.
+
+|`throwOnMaxDepth`
+|false
+|Whether to throw an `EmbeddedLimitReachedException` when maxDepth is reached.
+If false, processing continues and `X-TIKA:maxDepthReached=true` is set in metadata.
+
+|`maxCount`
+|-1 (unlimited)
+|Maximum total number of embedded documents to process. When reached, processing
+stops immediately.
+
+|`throwOnMaxCount`
+|false
+|Whether to throw an `EmbeddedLimitReachedException` when maxCount is reached.
+If false, processing continues and `X-TIKA:maxEmbeddedCountReached=true` is set.
+|===
+
+=== maxDepth Behavior
+
+When the depth limit is reached, recursion stops but siblings at the current level
+continue to be processed. For example, with `maxDepth=1`:
+
+[source]
+----
+container.zip (depth 0)
+├── doc1.docx (depth 1) ✓ PARSED
+│   ├── image1.png (depth 2) ✗ NOT PARSED (exceeds maxDepth)
+│   └── embed.xlsx (depth 2) ✗ NOT PARSED (exceeds maxDepth)
+├── doc2.pdf (depth 1) ✓ PARSED (sibling at same level)
+└── doc3.txt (depth 1) ✓ PARSED (sibling at same level)
+----
+
+=== JSON Configuration
+
+[source,json]
+----
+{
+  "other-configs": {
+    "embedded-limits": {
+      "maxDepth": 5,
+      "throwOnMaxDepth": true,
+      "maxCount": 100,
+      "throwOnMaxCount": false
+    }
+  }
+}
+----
+
+Configuration file: `tika-serialization/src/test/resources/configs/embedded-limits-test.json`
+
+=== Java API
+
+[source,java]
+----
+// Create with constructor
+EmbeddedLimits limits = new EmbeddedLimits(10, true, 500, false);
+
+// Or use setters
+EmbeddedLimits limits = new EmbeddedLimits();
+limits.setMaxDepth(10);
+limits.setThrowOnMaxDepth(true);
+limits.setMaxCount(500);
+limits.setThrowOnMaxCount(false);
+
+// Add to ParseContext
+context.set(EmbeddedLimits.class, limits);
+
+// Helper method to get limits with defaults
+EmbeddedLimits limits = EmbeddedLimits.get(context); // Returns defaults if not set
+----
+
+See test: `tika-serialization/src/test/java/org/apache/tika/config/EmbeddedLimitsTest.java`
+
+== Output Limits
+
+The `OutputLimits` class controls limits on parsing output including text extraction
+and protection against zip bombs.
+
+=== Configuration Options
+
+[cols="2,1,3"]
+|===
+|Setting |Default |Description
+
+|`writeLimit`
+|-1 (unlimited)
+|Maximum characters of text to extract. When reached, extraction stops.
+
+|`throwOnWriteLimit`
+|false
+|Whether to throw a `WriteLimitReachedException` when writeLimit is reached.
+
+|`maxXmlDepth`
+|100
+|Maximum XML element nesting depth. Protects against XML bomb attacks.
+
+|`maxPackageEntryDepth`
+|10
+|Maximum depth of nested package entries (e.g., zip within zip).
+
+|`zipBombThreshold`
+|1,000,000
+|Minimum decompressed size (in bytes) before zip bomb detection activates.
+
+|`zipBombRatio`
+|100
+|Maximum ratio of decompressed to compressed size before flagging as zip bomb.
+|===
+
+=== JSON Configuration
+
+[source,json]
+----
+{
+  "other-configs": {
+    "output-limits": {
+      "writeLimit": 50000,
+      "throwOnWriteLimit": true,
+      "maxXmlDepth": 50,
+      "maxPackageEntryDepth": 5,
+      "zipBombThreshold": 500000,
+      "zipBombRatio": 50
+    }
+  }
+}
+----
+
+Configuration file: `tika-serialization/src/test/resources/configs/output-limits-test.json`
+
+=== Java API
+
+[source,java]
+----
+OutputLimits limits = new OutputLimits(50000, true, 50, 5, 500000, 50);
+context.set(OutputLimits.class, limits);
+
+// Helper method
+OutputLimits limits = OutputLimits.get(context);
+----
+
+See test: `tika-serialization/src/test/java/org/apache/tika/config/OutputLimitsTest.java`
+
+== Timeout Limits
+
+The `TimeoutLimits` class controls time-based limits for parsing operations.
+
+=== Configuration Options
+
+[cols="2,1,3"]
+|===
+|Setting |Default |Description
+
+|`taskTimeoutMillis`
+|60000 (1 minute)
+|Maximum time in milliseconds for a parse operation to complete.
+|===
+
+=== JSON Configuration
+
+[source,json]
+----
+{
+  "other-configs": {
+    "timeout-limits": {
+      "taskTimeoutMillis": 120000
+    }
+  }
+}
+----
+
+Configuration file: `tika-serialization/src/test/resources/configs/timeout-limits-test.json`
+
+=== Java API
+
+[source,java]
+----
+TimeoutLimits limits = new TimeoutLimits(120000);
+context.set(TimeoutLimits.class, limits);
+
+// Helper method
+TimeoutLimits limits = TimeoutLimits.get(context);
+----
+
+See test: `tika-serialization/src/test/java/org/apache/tika/config/TimeoutLimitsTest.java`
+
+== Metadata Limits
+
+The `MetadataWriteLimiter` system allows you to constrain metadata size at write time,
+ensuring parsers cannot exceed your configured limits.
 
 === How It Works
 
 When you configure a `MetadataWriteLimiterFactory` in the `ParseContext`, calling
-`parseContext.newMetadata()` creates a `Metadata` object with limits already applied.
+`Metadata.newInstance(parseContext)` creates a `Metadata` object with limits already applied.
 All subsequent writes to that metadata object are filtered through the limiter.
 
 [source,java]
@@ -47,12 +310,10 @@ ParseContext context = new ParseContext();
 context.set(MetadataWriteLimiterFactory.class, factory);
 
 // Create limited metadata - limits are enforced from the start
-Metadata metadata = context.newMetadata();
+Metadata metadata = Metadata.newInstance(context);
 ----
 
 === Configuration Options
-
-The `StandardMetadataLimiterFactory` provides the following settings:
 
 [cols="2,1,3"]
 |===
@@ -93,8 +354,6 @@ Use this to extract only the metadata you need.
 
 === JSON Configuration
 
-You can configure the metadata limiter in a Tika JSON configuration file:
-
 [source,json]
 ----
 {
@@ -126,15 +385,6 @@ of `includeFields` or size limits:
 * `X-TIKA:WARN:*` - Warning metadata
 * Access permission fields
 
-These fields still contribute to `maxTotalBytes` (except `X-TIKA:content`), but they
-are never filtered out by `includeFields` or `excludeFields`.
-
-=== Size Calculation
-
-All sizes are estimated in UTF-16 bytes (2 bytes per character). This provides a
-rough approximation of Java's in-memory String representation. The actual memory
-usage may vary depending on JVM version and string interning.
-
 === Detecting Truncation
 
 When metadata is truncated due to limits, Tika sets the metadata field
@@ -145,72 +395,6 @@ When metadata is truncated due to limits, Tika sets the metadata field
 if ("true".equals(metadata.get(TikaCoreProperties.TRUNCATED_METADATA))) {
     // Some metadata was dropped or truncated
     log.warn("Metadata was truncated for: " + resourceName);
-}
-----
-
-=== Field Prioritization Strategy
-
-When working with limited budgets, consider using `includeFields` to prioritize
-the metadata you actually need:
-
-[source,java]
-----
-// Only capture essential fields
-factory.setIncludeFields(Set.of(
-    "dc:title",
-    "dc:creator",
-    "dc:subject",
-    "Content-Type",
-    "Last-Modified"
-));
-----
-
-This approach is more efficient than setting a low `maxTotalBytes`, because
-unwanted fields are filtered out immediately rather than consuming budget.
-
-=== Budget Considerations
-
-When setting `maxTotalBytes`, remember that system fields (Content-Type,
-X-TIKA:Parsed-By, etc.) consume approximately 200-300 bytes before any
-document-specific metadata is added. Set your budget accordingly:
-
-[source,java]
-----
-// Allow ~300 bytes for system fields + 10KB for document metadata
-factory.setMaxTotalBytes(300 + 10 * 1024);
-----
-
-== Other Limits
-
-=== Write Limits for Text Content
-
-To limit the amount of extracted text, use a `WriteLimit` with the content handler:
-
-[source,java]
-----
-ContentHandler handler = new BodyContentHandler(100000); // 100KB limit
-----
-
-Or configure via `BasicContentHandlerFactory`:
-
-[source,java]
-----
-BasicContentHandlerFactory factory = new BasicContentHandlerFactory(
-    BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
-    100000  // max characters
-);
-----
-
-=== Parse Timeouts
-
-When using Tika Pipes, you can configure timeouts for parse operations:
-
-[source,json]
-----
-{
-  "pipes": {
-    "timeoutMillis": 60000
-  }
 }
 ----
 

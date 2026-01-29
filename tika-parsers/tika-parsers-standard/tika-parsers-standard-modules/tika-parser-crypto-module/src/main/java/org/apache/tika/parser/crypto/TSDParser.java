@@ -101,7 +101,7 @@ public class TSDParser implements Parser {
         tis.enableRewind();
 
         //Try to parse TSD file
-        Metadata TSDAndEmbeddedMetadata = context.newMetadata();
+        Metadata TSDAndEmbeddedMetadata = Metadata.newInstance(context);
 
         List<TSDMetas> tsdMetasList = this.extractMetas(tis);
         this.buildMetas(tsdMetasList,
@@ -168,7 +168,7 @@ public class TSDParser implements Parser {
     }
 
     private void parseTSDContent(InputStream stream, ContentHandler handler, Metadata metadata,
-                                 ParseContext context) throws SAXException {
+                                 ParseContext context) throws SAXException, TikaException {
 
         CMSTimeStampedDataParser cmsTimeStampedDataParser = null;
         EmbeddedDocumentExtractor edx = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);

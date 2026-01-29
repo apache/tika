@@ -409,7 +409,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         if ("image/x-emf".equals(packagePart.getContentType())) {
             try (TikaInputStream tis = TikaInputStream.get(packagePart.getInputStream())) {
                 EMFParser p = new EMFParser();
-                Metadata m = getParseContext().newMetadata();
+                Metadata m = Metadata.newInstance(getParseContext());
                 ToTextContentHandler toTextContentHandler = new ToTextContentHandler();
                 p.parse(tis, toTextContentHandler, m, getParseContext());
                 embeddedPartMetadata.setRenderedName(toTextContentHandler.toString().trim());

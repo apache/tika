@@ -128,7 +128,7 @@ public class PListParser implements Parser {
         xhtml.endDocument();
     }
 
-    private void parseObject(NSObject obj, State state) throws SAXException, IOException {
+    private void parseObject(NSObject obj, State state) throws SAXException, IOException, TikaException {
 
         if (obj instanceof NSDictionary) {
             parseDict((NSDictionary) obj, state);
@@ -170,7 +170,7 @@ public class PListParser implements Parser {
         }
     }
 
-    private void parseSet(NSSet obj, State state) throws SAXException, IOException {
+    private void parseSet(NSSet obj, State state) throws SAXException, IOException, TikaException {
         state.xhtml.startElement(SET);
         for (NSObject child : obj.allObjects()) {
             parseObject(child, state);
@@ -178,7 +178,7 @@ public class PListParser implements Parser {
         state.xhtml.endElement(SET);
     }
 
-    private void parseDict(NSDictionary obj, State state) throws SAXException, IOException {
+    private void parseDict(NSDictionary obj, State state) throws SAXException, IOException, TikaException {
         state.xhtml.startElement(DICT);
         for (Map.Entry<String, NSObject> mapEntry : obj.getHashMap().entrySet()) {
             String key = mapEntry.getKey();
@@ -189,9 +189,9 @@ public class PListParser implements Parser {
         state.xhtml.endElement(DICT);
     }
 
-    private void handleData(NSData value, State state) throws IOException, SAXException {
+    private void handleData(NSData value, State state) throws IOException, SAXException, TikaException {
         state.xhtml.characters(value.getBase64EncodedData());
-        Metadata embeddedMetadata = state.parseContext.newMetadata();
+        Metadata embeddedMetadata = Metadata.newInstance(state.parseContext);
         if (!state.embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
             return;
         }

@@ -173,7 +173,7 @@ public class Tika {
      */
     public String detect(InputStream stream, String name) throws IOException {
         ParseContext context = new ParseContext();
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
         return detect(stream, metadata);
     }
@@ -195,7 +195,7 @@ public class Tika {
      */
     public String detect(InputStream stream) throws IOException {
         ParseContext context = new ParseContext();
-        return detect(stream, context.newMetadata());
+        return detect(stream, Metadata.newInstance(context));
     }
 
     /**
@@ -259,7 +259,7 @@ public class Tika {
      */
     public String detect(Path path) throws IOException {
         ParseContext context = new ParseContext();
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         try (InputStream stream = TikaInputStream.get(path, metadata)) {
             return detect(stream, metadata);
         }
@@ -279,7 +279,7 @@ public class Tika {
      */
     public String detect(File file) throws IOException {
         ParseContext context = new ParseContext();
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         try (@SuppressWarnings("deprecation") InputStream stream = TikaInputStream
                 .get(file, metadata)) {
             return detect(stream, metadata);
@@ -300,7 +300,7 @@ public class Tika {
      */
     public String detect(URL url) throws IOException {
         ParseContext context = new ParseContext();
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         try (InputStream stream = TikaInputStream.get(url, metadata)) {
             return detect(stream, metadata);
         }
@@ -394,7 +394,7 @@ public class Tika {
      */
     public Reader parse(InputStream stream) throws IOException {
         ParseContext context = new ParseContext();
-        return parse(stream, context.newMetadata(), context);
+        return parse(stream, Metadata.newInstance(context), context);
     }
 
     private Reader parse(InputStream stream, Metadata metadata, ParseContext context)
@@ -428,7 +428,7 @@ public class Tika {
      */
     public Reader parse(Path path) throws IOException {
         ParseContext context = new ParseContext();
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         InputStream stream = TikaInputStream.get(path, metadata);
         return parse(stream, metadata, context);
     }
@@ -460,7 +460,7 @@ public class Tika {
      */
     public Reader parse(File file) throws IOException {
         ParseContext context = new ParseContext();
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         @SuppressWarnings("deprecation") InputStream stream = TikaInputStream.get(file, metadata);
         return parse(stream, metadata, context);
     }
@@ -475,7 +475,7 @@ public class Tika {
      */
     public Reader parse(URL url) throws IOException {
         ParseContext context = new ParseContext();
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         InputStream stream = TikaInputStream.get(url, metadata);
         return parse(stream, metadata, context);
     }
@@ -568,7 +568,7 @@ public class Tika {
      */
     public String parseToString(InputStream stream) throws IOException, TikaException {
         ParseContext context = new ParseContext();
-        return parseToString(stream, context.newMetadata(), maxStringLength, context);
+        return parseToString(stream, Metadata.newInstance(context), maxStringLength, context);
     }
 
     /**
@@ -586,7 +586,7 @@ public class Tika {
      */
     public String parseToString(Path path) throws IOException, TikaException {
         ParseContext context = new ParseContext();
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         InputStream stream = TikaInputStream.get(path, metadata);
         return parseToString(stream, metadata, maxStringLength, context);
     }
@@ -607,7 +607,7 @@ public class Tika {
      */
     public String parseToString(File file) throws IOException, TikaException {
         ParseContext context = new ParseContext();
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         @SuppressWarnings("deprecation") InputStream stream = TikaInputStream.get(file, metadata);
         return parseToString(stream, metadata, maxStringLength, context);
     }
@@ -628,7 +628,7 @@ public class Tika {
      */
     public String parseToString(URL url) throws IOException, TikaException {
         ParseContext context = new ParseContext();
-        Metadata metadata = context.newMetadata();
+        Metadata metadata = Metadata.newInstance(context);
         InputStream stream = TikaInputStream.get(url, metadata);
         return parseToString(stream, metadata, maxStringLength, context);
     }

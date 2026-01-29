@@ -167,17 +167,17 @@ public class IDMLParser implements Parser {
         } else if (entry.getName().equals("META-INF/metadata.xml")) {
             XMPMetadataExtractor.parse(zip, metadata);
         } else if (entry.getName().contains("MasterSpreads")) {
-            Metadata embeddedMeta = context.newMetadata();
+            Metadata embeddedMeta = Metadata.newInstance(context);
             ContentAndMetadataExtractor.extract(zip, handler, embeddedMeta, context);
             int spreadCount = Integer.parseInt(embeddedMeta.get("PageCount"));
             masterSpreadCount += spreadCount;
         } else if (entry.getName().contains("Spreads/Spread")) {
-            Metadata embeddedMeta = context.newMetadata();
+            Metadata embeddedMeta = Metadata.newInstance(context);
             ContentAndMetadataExtractor.extract(zip, handler, embeddedMeta, context);
             int spreadCount = Integer.parseInt(embeddedMeta.get("PageCount"));
             pageCount += spreadCount;
         }  else if (entry.getName().contains("Stories")) {
-            ContentAndMetadataExtractor.extract(zip, handler, context.newMetadata(), context);
+            ContentAndMetadataExtractor.extract(zip, handler, Metadata.newInstance(context), context);
         }
 
     }
