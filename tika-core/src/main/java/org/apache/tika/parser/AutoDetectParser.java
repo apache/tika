@@ -31,7 +31,6 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractorFactory;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.sax.SecureContentHandler;
@@ -152,12 +151,7 @@ public class AutoDetectParser extends CompositeParser {
 
         // Automatically detect the MIME type of the document
         MediaType type = detector.detect(tis, metadata, context);
-        //update CONTENT_TYPE as long as it wasn't set by parser override
-        if (metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE) == null ||
-                !metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE)
-                        .equals(type.toString())) {
-            metadata.set(Metadata.CONTENT_TYPE, type.toString());
-        }
+        metadata.set(Metadata.CONTENT_TYPE, type.toString());
         //check for zero-byte inputstream
         if (tis.getOpenContainer() == null) {
             if (autoDetectParserConfig.getThrowOnZeroBytes()) {
