@@ -41,6 +41,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.digest.DigesterFactory;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.language.translate.DefaultTranslator;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
@@ -58,6 +59,7 @@ import org.apache.tika.renderer.CompositeRenderer;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
+import org.apache.tika.sax.SAXOutputConfig;
 import org.apache.tika.serialization.ComponentConfig;
 import org.apache.tika.serialization.ComponentNameResolver;
 import org.apache.tika.serialization.JsonMetadata;
@@ -409,9 +411,11 @@ public class TikaLoader {
         ParseContext context = new ParseContext();
         loadOne(DigesterFactory.class, context);
         loadOne(MetadataWriteLimiterFactory.class, context);
+        loadOne(EmbeddedDocumentExtractorFactory.class, context);
         loadOne(EmbeddedLimits.class, context);
         loadOne(OutputLimits.class, context);
         loadOne(TimeoutLimits.class, context);
+        loadOne(SAXOutputConfig.class, context);
         return context;
     }
 

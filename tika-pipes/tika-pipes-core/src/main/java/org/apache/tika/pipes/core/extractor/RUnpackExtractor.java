@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.extractor;
+package org.apache.tika.pipes.core.extractor;
 
 import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 
@@ -34,6 +34,11 @@ import org.xml.sax.helpers.AttributesImpl;
 import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.DefaultEmbeddedStreamTranslator;
+import org.apache.tika.extractor.EmbeddedBytesSelector;
+import org.apache.tika.extractor.EmbeddedDocumentBytesHandler;
+import org.apache.tika.extractor.EmbeddedStreamTranslator;
+import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -182,12 +187,6 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
             }
         } catch (IOException e) {
             LOGGER.warn("problem writing out embedded bytes", e);
-            //info in metadata doesn't actually make it back to the metadata list
-            //because we're filtering and cloning the metadata at the end of the parse
-            //which happens before we try to copy out the files.
-            //TODO fix this
-            //metadata.set(TikaCoreProperties.EMBEDDED_BYTES_EXCEPTION,
-              //      ExceptionUtils.getStackTrace(e));
         }
     }
 

@@ -153,7 +153,7 @@ public class AmazonTranscribe implements Parser, Initializable {
             startTranscriptionJobRequest = startTranscriptionJobRequest.toBuilder().identifyLanguage(true).build();
         }
         amazonTranscribeAsync.startTranscriptionJob(startTranscriptionJobRequest);
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         String text = getTranscriptText(jobName);
         xhtml.startElement("p");

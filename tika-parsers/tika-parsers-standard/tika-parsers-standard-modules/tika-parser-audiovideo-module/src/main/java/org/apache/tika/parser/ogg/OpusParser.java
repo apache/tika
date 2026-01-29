@@ -69,7 +69,7 @@ public class OpusParser extends OggAudioParser {
         OpusFile opus = new OpusFile(ogg);
 
         // Start
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         // Extract the common Opus info

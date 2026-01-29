@@ -70,7 +70,7 @@ public class TheoraParser extends AbstractParser {
         TheoraFile theora = new TheoraFile(ogg);
 
         // Start
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         // Extract the common Theora info

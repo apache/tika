@@ -727,7 +727,7 @@ public class PDFParser implements Parser, RenderingParser {
                                ParseContext context)
             throws SAXException, IOException, TikaException {
         XFAExtractor ex = new XFAExtractor();
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         try (InputStream is = 
                 UnsynchronizedByteArrayInputStream.builder().setByteArray(pdDocument.getDocumentCatalog().getAcroForm(null).getXFA().getBytes()).get()) {

@@ -162,7 +162,7 @@ public class OfficeParser extends AbstractOfficeParser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         configure(context);
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         final DirectoryNode root;

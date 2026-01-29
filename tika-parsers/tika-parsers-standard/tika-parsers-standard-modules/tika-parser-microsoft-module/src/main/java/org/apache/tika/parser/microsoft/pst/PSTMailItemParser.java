@@ -77,7 +77,7 @@ public class PSTMailItemParser implements Parser {
         }
         PSTMessage pstMsg = (PSTMessage) openContainerObj;
         EmbeddedDocumentExtractor ex = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         parseMailAndAttachments(pstMsg, xhtml, metadata, context, ex);
         xhtml.endDocument();

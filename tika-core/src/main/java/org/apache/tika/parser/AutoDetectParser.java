@@ -28,7 +28,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractorFactory;
+import org.apache.tika.extractor.StandardExtractorFactory;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -211,10 +211,9 @@ public class AutoDetectParser extends CompositeParser {
         if (d == null) {
             context.set(Detector.class, getDetector());
         }
-        EmbeddedDocumentExtractorFactory edxf =
-                autoDetectParserConfig.getEmbeddedDocumentExtractorFactory();
+        EmbeddedDocumentExtractorFactory edxf = context.get(EmbeddedDocumentExtractorFactory.class);
         if (edxf == null) {
-            edxf = new ParsingEmbeddedDocumentExtractorFactory();
+            edxf = new StandardExtractorFactory();
         }
         EmbeddedDocumentExtractor edx = edxf.newInstance(metadata, context);
         context.set(EmbeddedDocumentExtractor.class, edx);

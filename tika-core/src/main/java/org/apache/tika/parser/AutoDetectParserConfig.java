@@ -21,7 +21,6 @@ import java.io.Serializable;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.config.TikaComponent;
-import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.ContentHandlerDecoratorFactory;
 
@@ -32,7 +31,7 @@ import org.apache.tika.sax.ContentHandlerDecoratorFactory;
  * via {@link org.apache.tika.config.OutputLimits} in the ParseContext, not here.
  * <p>
  * This is a config POJO. It uses standard Jackson deserialization for its
- * primitive fields, but component fields (like embeddedDocumentExtractorFactory)
+ * primitive fields, but component fields (like contentHandlerDecoratorFactory)
  * use compact format.
  */
 @TikaComponent(spi = false)
@@ -49,23 +48,12 @@ public class AutoDetectParserConfig implements Serializable {
 
     public static AutoDetectParserConfig DEFAULT = new AutoDetectParserConfig();
 
-    private EmbeddedDocumentExtractorFactory embeddedDocumentExtractorFactory = null;
-
     private ContentHandlerDecoratorFactory contentHandlerDecoratorFactory =
             NOOP_CONTENT_HANDLER_DECORATOR_FACTORY;
 
     private boolean throwOnZeroBytes = true;
 
     public AutoDetectParserConfig() {
-    }
-
-    public void setEmbeddedDocumentExtractorFactory(
-            EmbeddedDocumentExtractorFactory embeddedDocumentExtractorFactory) {
-        this.embeddedDocumentExtractorFactory = embeddedDocumentExtractorFactory;
-    }
-
-    public EmbeddedDocumentExtractorFactory getEmbeddedDocumentExtractorFactory() {
-        return embeddedDocumentExtractorFactory;
     }
 
     public void setContentHandlerDecoratorFactory(
@@ -88,8 +76,7 @@ public class AutoDetectParserConfig implements Serializable {
     @Override
     public String toString() {
         return "AutoDetectParserConfig{" +
-                "embeddedDocumentExtractorFactory=" + embeddedDocumentExtractorFactory +
-                ", contentHandlerDecoratorFactory=" + contentHandlerDecoratorFactory +
+                "contentHandlerDecoratorFactory=" + contentHandlerDecoratorFactory +
                 ", throwOnZeroBytes=" + throwOnZeroBytes + '}';
     }
 }

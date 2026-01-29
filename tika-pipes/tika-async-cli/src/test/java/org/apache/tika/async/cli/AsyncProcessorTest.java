@@ -48,7 +48,7 @@ import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.async.AsyncProcessor;
-import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
+import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.serialization.JsonMetadataList;
 
 /**
@@ -112,13 +112,13 @@ public class AsyncProcessorTest extends TikaTest {
     public void testRecursiveUnpacking() throws Exception {
         AsyncProcessor processor = AsyncProcessor.load(configDir.resolve("tika-config.json"));
 
-        EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = new EmbeddedDocumentBytesConfig(true);
+        UnpackConfig embeddedDocumentBytesConfig = new UnpackConfig(true);
         embeddedDocumentBytesConfig.setIncludeOriginal(true);
         embeddedDocumentBytesConfig.setEmitter("fse-bytes");
-        embeddedDocumentBytesConfig.setSuffixStrategy(EmbeddedDocumentBytesConfig.SUFFIX_STRATEGY.NONE);
+        embeddedDocumentBytesConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.NONE);
         embeddedDocumentBytesConfig.setEmbeddedIdPrefix("-");
         ParseContext parseContext = new ParseContext();
-        parseContext.set(EmbeddedDocumentBytesConfig.class, embeddedDocumentBytesConfig);
+        parseContext.set(UnpackConfig.class, embeddedDocumentBytesConfig);
         FetchEmitTuple t =
                 new FetchEmitTuple("myId-1", new FetchKey("fsf", "mock.xml"),
                         new EmitKey("fse-json", "emit-1"), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
@@ -133,10 +133,10 @@ public class AsyncProcessorTest extends TikaTest {
         }
         processor.close();
 
-        String container = Files.readString(bytesOutputDir.resolve("emit-1-embed/emit-1-0"));
+        String container = Files.readString(bytesOutputDir.resolve("emit-1-embed/0"));
         assertContains("\"dc:creator\">Nikolai Lobachevsky", container);
 
-        String xmlEmbedded = Files.readString(bytesOutputDir.resolve("emit-1-embed/emit-1-1"));
+        String xmlEmbedded = Files.readString(bytesOutputDir.resolve("emit-1-embed/1"));
         assertContains("name=\"dc:creator\"", xmlEmbedded);
         assertContains(">embeddedAuthor</metadata>", xmlEmbedded);
 

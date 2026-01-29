@@ -85,7 +85,7 @@ public class OldExcelParser implements Parser {
         // TODO Get the version and type, to set as the Content Type
 
         // Have the text extracted and given to our Content Handler
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         parse(extractor, xhtml);
         xhtml.endDocument();

@@ -100,7 +100,7 @@ public class MatParser implements Parser {
         metadata.set("endian", endianCode);
 
         //Text output
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         xhtml.newline();
         //Loop through each variable

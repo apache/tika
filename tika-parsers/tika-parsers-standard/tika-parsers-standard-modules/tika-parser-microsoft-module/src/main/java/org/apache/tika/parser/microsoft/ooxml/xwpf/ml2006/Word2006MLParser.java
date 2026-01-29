@@ -51,7 +51,7 @@ public class Word2006MLParser extends AbstractOfficeParser {
         //set OfficeParserConfig if the user hasn't specified one
         configure(context);
 
-        final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
 
         xhtml.startDocument();
         tis.setCloseShield();

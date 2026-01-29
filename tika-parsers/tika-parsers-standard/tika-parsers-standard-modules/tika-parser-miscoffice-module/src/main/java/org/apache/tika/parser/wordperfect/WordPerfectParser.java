@@ -73,7 +73,7 @@ public class WordPerfectParser implements Parser {
 
         applyMetadata(prefixArea, metadata);
 
-        extractDocumentArea(prefixArea, wpStream, new XHTMLContentHandler(handler, metadata));
+        extractDocumentArea(prefixArea, wpStream, new XHTMLContentHandler(handler, metadata, context));
     }
 
     private void extractDocumentArea(WPPrefixArea prefixArea, WPInputStream in,

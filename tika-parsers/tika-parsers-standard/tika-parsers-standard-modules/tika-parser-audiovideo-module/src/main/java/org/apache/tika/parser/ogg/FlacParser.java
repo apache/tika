@@ -68,7 +68,7 @@ public class FlacParser extends AbstractParser {
         FlacFile flac = FlacFile.open(tis);
 
         // Start
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         // Extract the common FLAC info

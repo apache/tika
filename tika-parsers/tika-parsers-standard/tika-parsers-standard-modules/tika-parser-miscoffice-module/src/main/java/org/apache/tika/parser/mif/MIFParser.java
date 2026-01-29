@@ -72,7 +72,7 @@ public class MIFParser extends AbstractEncodingDetectorParser {
             Optional<MediaType> firstElement = SUPPORTED_TYPES.stream().findFirst();
             metadata.set(Metadata.CONTENT_TYPE, firstElement.get().toString());
 
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
             EndDocumentShieldingContentHandler parseHandler =
                     new EndDocumentShieldingContentHandler(xhtml);

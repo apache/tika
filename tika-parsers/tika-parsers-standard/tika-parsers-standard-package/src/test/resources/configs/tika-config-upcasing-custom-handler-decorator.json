@@ -1,28 +1,16 @@
 {
   "auto-detect-parser": {
-    "embeddedDocumentExtractorFactory": {
-      "runpack-extractor-factory": {
-        "writeFileNameToContent": true,
-        "embeddedBytesIncludeMimeTypes": [
-          "text/pdf"
-        ],
-        "embeddedBytesExcludeMimeTypes": [
-          "rtf/application"
-        ],
-        "embeddedBytesIncludeEmbeddedResourceTypes": [
-          "appended"
-        ],
-        "embeddedBytesExcludeEmbeddedResourceTypes": [
-        ],
-        "maxEmbeddedBytesForExtraction": 10737418240
-      }
-    },
     "contentHandlerDecoratorFactory": "upcasing-content-handler-decorator-factory",
     "throwOnZeroBytes": true
   },
   "other-configs": {
     "digester-factory": {
       "commons-digester-factory": {}
+    },
+    "embedded-document-extractor-factory": {
+      "standard-extractor-factory": {
+        "writeFileNameToContent": true
+      }
     }
   }
 }

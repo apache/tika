@@ -58,7 +58,7 @@ public class HttpParser implements Parser {
         parser.lenientRequest();
         parser.lenientResponse();
         ByteBuffer buffer = ByteBuffer.allocate(1024);
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         tis.setCloseShield();

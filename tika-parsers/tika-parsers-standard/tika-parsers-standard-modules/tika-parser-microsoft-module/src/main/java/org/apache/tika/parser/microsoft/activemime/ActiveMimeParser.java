@@ -73,7 +73,7 @@ public class ActiveMimeParser implements Parser {
         IOUtils.skipFully(tis, 4);//don't know
 
         IOUtils.skipFully(tis, zlibOffset);
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         EmbeddedDocumentExtractor ex = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         try (InputStream payload = new DeflateCompressorInputStream(tis)) {

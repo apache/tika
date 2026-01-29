@@ -67,7 +67,7 @@ public class VorbisParser extends OggAudioParser {
         VorbisFile vorbis = new VorbisFile(ogg);
 
         // Start
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         // Extract the common Vorbis info
