@@ -56,9 +56,9 @@ public class ComponentRegistry {
 
     private static Map<String, String> createBuiltinAliases() {
         Map<String, String> aliases = new HashMap<>();
-        // EmbeddedDocumentBytesConfig is in tika-pipes-core which can't depend on tika-core for @TikaComponent
-        aliases.put("embedded-document-bytes-config",
-                "org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig");
+        // UnpackConfig is in tika-pipes-core which can't depend on tika-core for @TikaComponent
+        aliases.put("unpack-config",
+                "org.apache.tika.pipes.core.extractor.UnpackConfig");
         return Collections.unmodifiableMap(aliases);
     }
 

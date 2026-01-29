@@ -41,7 +41,7 @@ import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.core.async.AsyncProcessor;
-import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
+import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.pipes.core.pipesiterator.PipesIteratorManager;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.plugins.TikaPluginManager;
@@ -302,15 +302,15 @@ public class TikaAsyncCLI {
             return;
         }
         ParseContext parseContext = t.getParseContext();
-        EmbeddedDocumentBytesConfig config = new EmbeddedDocumentBytesConfig();
+        UnpackConfig config = new UnpackConfig();
         config.setExtractEmbeddedDocumentBytes(true);
         config.setEmitter(TikaConfigAsyncWriter.EMITTER_NAME);
         config.setIncludeOriginal(false);
-        config.setSuffixStrategy(EmbeddedDocumentBytesConfig.SUFFIX_STRATEGY.DETECTED);
+        config.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
         config.setEmbeddedIdPrefix("-");
         config.setZeroPadName(8);
-        config.setKeyBaseStrategy(EmbeddedDocumentBytesConfig.KEY_BASE_STRATEGY.CONTAINER_NAME_AS_IS);
-        parseContext.set(EmbeddedDocumentBytesConfig.class, config);
+        config.setKeyBaseStrategy(UnpackConfig.KEY_BASE_STRATEGY.DEFAULT);
+        parseContext.set(UnpackConfig.class, config);
     }
 
     private static void usage(Options options) throws IOException {

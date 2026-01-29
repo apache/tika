@@ -21,7 +21,6 @@ import java.io.Serializable;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.config.TikaComponent;
-import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.ContentHandlerDecoratorFactory;
 
@@ -32,7 +31,7 @@ import org.apache.tika.sax.ContentHandlerDecoratorFactory;
  * in SecureContentHandler.
  * <p>
  * This is a config POJO. It uses standard Jackson deserialization for its
- * primitive fields, but component fields (like embeddedDocumentExtractorFactory)
+ * primitive fields, but component fields (like contentHandlerDecoratorFactory)
  * use compact format.
  */
 @TikaComponent(spi = false)
@@ -68,8 +67,6 @@ public class AutoDetectParserConfig implements Serializable {
      * SecureContentHandler -- Desired maximum package entry nesting level.
      */
     private Integer maximumPackageEntryDepth = null;
-
-    private EmbeddedDocumentExtractorFactory embeddedDocumentExtractorFactory = null;
 
     private ContentHandlerDecoratorFactory contentHandlerDecoratorFactory =
             NOOP_CONTENT_HANDLER_DECORATOR_FACTORY;
@@ -129,15 +126,6 @@ public class AutoDetectParserConfig implements Serializable {
         this.maximumPackageEntryDepth = maximumPackageEntryDepth;
     }
 
-    public void setEmbeddedDocumentExtractorFactory(
-            EmbeddedDocumentExtractorFactory embeddedDocumentExtractorFactory) {
-        this.embeddedDocumentExtractorFactory = embeddedDocumentExtractorFactory;
-    }
-
-    public EmbeddedDocumentExtractorFactory getEmbeddedDocumentExtractorFactory() {
-        return embeddedDocumentExtractorFactory;
-    }
-
     public void setContentHandlerDecoratorFactory(
             ContentHandlerDecoratorFactory contentHandlerDecoratorFactory) {
         this.contentHandlerDecoratorFactory = contentHandlerDecoratorFactory;
@@ -160,8 +148,7 @@ public class AutoDetectParserConfig implements Serializable {
         return "AutoDetectParserConfig{" + "outputThreshold=" +
                 outputThreshold + ", maximumCompressionRatio=" + maximumCompressionRatio +
                 ", maximumDepth=" + maximumDepth + ", maximumPackageEntryDepth=" +
-                maximumPackageEntryDepth + ", embeddedDocumentExtractorFactory=" +
-                embeddedDocumentExtractorFactory + ", contentHandlerDecoratorFactory=" +
+                maximumPackageEntryDepth + ", contentHandlerDecoratorFactory=" +
                 contentHandlerDecoratorFactory +
                 ", throwOnZeroBytes=" + throwOnZeroBytes + '}';
     }

@@ -33,41 +33,26 @@ public abstract class AbstractEmbeddedDocumentBytesHandler implements EmbeddedDo
     List<Integer> ids = new ArrayList<>();
 
     public String getEmitKey(String containerEmitKey, int embeddedId,
-                             EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig,
+                             UnpackConfig unpackConfig,
                              Metadata metadata) {
-        String embeddedIdString = embeddedDocumentBytesConfig.getZeroPadName() > 0 ?
+        String embeddedIdString = unpackConfig.getZeroPadName() > 0 ?
                 StringUtils.leftPad(Integer.toString(embeddedId),
-                        embeddedDocumentBytesConfig.getZeroPadName(), "0") :
+                        unpackConfig.getZeroPadName(), "0") :
                 Integer.toString(embeddedId);
 
-
         StringBuilder emitKey = new StringBuilder();
-        if (embeddedDocumentBytesConfig.getKeyBaseStrategy() ==
-                EmbeddedDocumentBytesConfig.KEY_BASE_STRATEGY.CONTAINER_NAME_AS_IS) {
+        if (unpackConfig.getKeyBaseStrategy() == UnpackConfig.KEY_BASE_STRATEGY.DEFAULT) {
+            // Default pattern: {containerKey}-embed/{id}{suffix}
             emitKey.append(containerEmitKey);
-            emitKey.append("-embed");
-            emitKey.append("/");
-            emitKey.append(embeddedIdString).append(embeddedDocumentBytesConfig.getEmbeddedIdPrefix());
-            String fName = FilenameUtils.getSanitizedEmbeddedFileName(metadata, ".bin", 100);
-            if (! StringUtils.isBlank(fName)) {
-                emitKey.append(fName);
-            }
-            return emitKey.toString();
-        } else if (embeddedDocumentBytesConfig.getKeyBaseStrategy() ==
-                EmbeddedDocumentBytesConfig.KEY_BASE_STRATEGY.CONTAINER_NAME_NUMBERED) {
-            emitKey.append(containerEmitKey);
-            emitKey.append("-embed");
-            emitKey.append("/")
-                    .append(FilenameUtils.getName(containerEmitKey));
+            emitKey.append("-embed/");
+            emitKey.append(embeddedIdString);
         } else {
-            emitKey.append(embeddedDocumentBytesConfig.getEmitKeyBase());
+            // CUSTOM: use the configured emitKeyBase
+            emitKey.append(unpackConfig.getEmitKeyBase());
+            emitKey.append(unpackConfig.getEmbeddedIdPrefix());
+            emitKey.append(embeddedIdString);
         }
-        //at this point the emit key has the full "file" part, now we
-        //add the embedded id prefix, the embedded id string and then maybe
-        //the file extension
-        emitKey.append(embeddedDocumentBytesConfig.getEmbeddedIdPrefix())
-                    .append(embeddedIdString);
-        appendSuffix(emitKey, metadata, embeddedDocumentBytesConfig);
+        appendSuffix(emitKey, metadata, unpackConfig);
         return emitKey.toString();
     }
 
@@ -81,15 +66,15 @@ public abstract class AbstractEmbeddedDocumentBytesHandler implements EmbeddedDo
         return ids;
     }
 
-    private void appendSuffix(StringBuilder emitKey, Metadata metadata, EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig) {
-        if (embeddedDocumentBytesConfig.getSuffixStrategy().equals(
-                EmbeddedDocumentBytesConfig.SUFFIX_STRATEGY.EXISTING)) {
+    private void appendSuffix(StringBuilder emitKey, Metadata metadata, UnpackConfig unpackConfig) {
+        if (unpackConfig.getSuffixStrategy().equals(
+                UnpackConfig.SUFFIX_STRATEGY.EXISTING)) {
             String fName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
             String suffix = FilenameUtils.getSuffixFromPath(fName);
             suffix = suffix.toLowerCase(Locale.US);
             emitKey.append(suffix);
-        } else if (embeddedDocumentBytesConfig.getSuffixStrategy()
-                                              .equals(EmbeddedDocumentBytesConfig.SUFFIX_STRATEGY.DETECTED)) {
+        } else if (unpackConfig.getSuffixStrategy()
+                                              .equals(UnpackConfig.SUFFIX_STRATEGY.DETECTED)) {
             emitKey.append(FilenameUtils.calculateExtension(metadata, ".bin"));
         }
     }

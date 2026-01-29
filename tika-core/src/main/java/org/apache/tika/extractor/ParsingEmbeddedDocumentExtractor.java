@@ -131,7 +131,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         }
     }
 
-    void recordException(Exception e, ParseContext context) {
+    protected void recordException(Exception e, ParseContext context) {
         ParseRecord record = context.get(ParseRecord.class);
         if (record == null) {
             return;

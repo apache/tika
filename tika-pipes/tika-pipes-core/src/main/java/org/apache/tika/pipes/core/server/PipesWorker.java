@@ -30,8 +30,6 @@ import org.apache.tika.extractor.EmbeddedDocumentByteStoreExtractorFactory;
 import org.apache.tika.extractor.EmbeddedDocumentBytesHandler;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
-import org.apache.tika.extractor.RUnpackExtractor;
-import org.apache.tika.extractor.RUnpackExtractorFactory;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
@@ -41,9 +39,9 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.core.PipesResults;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
-import org.apache.tika.pipes.core.extractor.BasicEmbeddedDocumentBytesHandler;
-import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.pipes.core.extractor.EmittingEmbeddedDocumentBytesHandler;
+import org.apache.tika.pipes.core.extractor.RUnpackExtractor;
+import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
 
@@ -152,33 +150,29 @@ class PipesWorker implements Callable<PipesResult> {
             parseContext.set(MetadataWriteLimiterFactory.class, defaultMetadataWriteLimiterFactory);
         }
 
-        EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);
-        if (embeddedDocumentBytesConfig == null) {
+        UnpackConfig unpackConfig = parseContext.get(UnpackConfig.class);
+        if (unpackConfig == null) {
             //make sure there's one here -- or do we make this default in fetchemit tuple?
-            parseContext.set(EmbeddedDocumentBytesConfig.class, EmbeddedDocumentBytesConfig.SKIP);
+            parseContext.set(UnpackConfig.class, UnpackConfig.SKIP);
             return parseContext;
         }
-        EmbeddedDocumentExtractorFactory factory = autoDetectParser
-                .getAutoDetectParserConfig().getEmbeddedDocumentExtractorFactory();
+        EmbeddedDocumentExtractorFactory factory = parseContext.get(EmbeddedDocumentExtractorFactory.class);
         if (factory == null) {
-            parseContext.set(EmbeddedDocumentExtractor.class, new RUnpackExtractor(parseContext,
-                    RUnpackExtractorFactory.DEFAULT_MAX_EMBEDDED_BYTES_FOR_EXTRACTION));
+            parseContext.set(EmbeddedDocumentExtractor.class,
+                    new RUnpackExtractor(parseContext, Long.MAX_VALUE));
         } else {
-            if (! (factory instanceof EmbeddedDocumentByteStoreExtractorFactory)) {
+            if (!(factory instanceof EmbeddedDocumentByteStoreExtractorFactory)) {
                 throw new TikaConfigException("EmbeddedDocumentExtractorFactory must be an " +
-                        "instance of EmbeddedDocumentByteStoreExtractorFactory if you want" +
+                        "instance of EmbeddedDocumentByteStoreExtractorFactory if you want " +
                         "to extract embedded bytes! I see this embedded doc factory: " +
-                        factory.getClass() + "and a request: " +
-                        embeddedDocumentBytesConfig);
+                        factory.getClass() + " and a request: " +
+                        unpackConfig);
             }
         }
-        //TODO: especially clean this up.
-        if (!StringUtils.isBlank(embeddedDocumentBytesConfig.getEmitter())) {
+        // Only set up embedded document bytes handler if an emitter is configured
+        if (!StringUtils.isBlank(unpackConfig.getEmitter())) {
             parseContext.set(EmbeddedDocumentBytesHandler.class,
                     new EmittingEmbeddedDocumentBytesHandler(fetchEmitTuple, emitterManager));
-        } else {
-            parseContext.set(EmbeddedDocumentBytesHandler.class,
-                    new BasicEmbeddedDocumentBytesHandler(embeddedDocumentBytesConfig));
         }
 
         return parseContext;

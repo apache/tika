@@ -1,0 +1,19 @@
+{
+  "parsers": [
+    "default-parser"
+  ],
+  "auto-detect-parser": {
+    "outputThreshold": 678900
+  },
+  "other-configs": {
+    "embedded-document-extractor-factory": {
+      "runpack-extractor-factory": {
+      }
+    },
+    "unpack-config": {
+      "extractEmbeddedDocumentBytes": true,
+      "includeMimeTypes": ["application/pdf", "application/rtf", "text/plain"],
+      "includeEmbeddedResourceTypes": ["ATTACHMENT", "INLINE"]
+    }
+  }
+}

@@ -14,36 +14,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser;
+package org.apache.tika.pipes.core.extractor;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Set;
+
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.extractor.EmbeddedBytesSelector;
-import org.apache.tika.extractor.RUnpackExtractor;
-import org.apache.tika.extractor.RUnpackExtractorFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
 
-public class AutoDetectParserConfigTest extends TikaTest {
+public class UnpackConfigSelectorTest extends TikaTest {
 
     @Test
     public void testEmbeddedBytesSelector() throws Exception {
-        TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "TIKA-4207-embedded-bytes-config.json"));
-        AutoDetectParser parser = (AutoDetectParser) loader.loadAutoDetectParser();
-        AutoDetectParserConfig config = parser.getAutoDetectParserConfig();
-        RUnpackExtractorFactory f =
-                (RUnpackExtractorFactory) config.getEmbeddedDocumentExtractorFactory();
+        UnpackConfig config = new UnpackConfig();
+        config.setIncludeMimeTypes(Set.of("application/pdf", "application/rtf", "text/plain"));
+        config.setIncludeEmbeddedResourceTypes(Set.of("ATTACHMENT", "INLINE"));
 
-        Metadata metadata = new Metadata();
-        ParseContext parseContext = new ParseContext();
-        RUnpackExtractor ex = (RUnpackExtractor) f.newInstance(metadata, parseContext);
-        EmbeddedBytesSelector selector = ex.getEmbeddedBytesSelector();
+        EmbeddedBytesSelector selector = config.createEmbeddedBytesSelector();
+
         assertFalse(selector.select(getMetadata("", "")));
         assertTrue(selector.select(getMetadata("application/pdf", "")));
         assertTrue(selector.select(getMetadata("application/pdf", "ATTACHMENT")));
@@ -52,7 +47,17 @@ public class AutoDetectParserConfigTest extends TikaTest {
 
         assertFalse(selector.select(getMetadata("application/pdf", "MACRO")));
         assertFalse(selector.select(getMetadata("application/docx", "")));
+    }
 
+    @Test
+    public void testAcceptAllWhenNoFilters() {
+        UnpackConfig config = new UnpackConfig();
+        EmbeddedBytesSelector selector = config.createEmbeddedBytesSelector();
+
+        // With no filters, should accept all
+        assertTrue(selector.select(getMetadata("application/pdf", "")));
+        assertTrue(selector.select(getMetadata("application/docx", "MACRO")));
+        assertTrue(selector.select(getMetadata("", "")));
     }
 
     private Metadata getMetadata(String mime, String embeddedResourceType) {

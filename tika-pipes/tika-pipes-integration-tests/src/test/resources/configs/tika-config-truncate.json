@@ -46,17 +46,15 @@
   },
   "auto-detect-parser": {
     "outputThreshold": 1000000,
-    "embeddedDocumentExtractorFactory": {
-      "runpack-extractor-factory": {
-        "writeFileNameToContent": false,
-        "maxEmbeddedBytesForExtraction": 10
-      }
-    },
     "throwOnZeroBytes": false
   },
   "other-configs": {
     "digester-factory": {
       "mock-digester-factory": {}
+    },
+    "embedded-document-extractor-factory": {
+      "runpack-extractor-factory": {
+      }
     }
   },
   "plugin-roots": "PLUGINS_PATHS"

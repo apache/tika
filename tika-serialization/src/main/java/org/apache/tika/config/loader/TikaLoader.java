@@ -38,6 +38,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.digest.DigesterFactory;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.language.translate.DefaultTranslator;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
@@ -414,6 +415,13 @@ public class TikaLoader {
         MetadataWriteLimiterFactory metadataWriteLimiterFactory = configs().load(MetadataWriteLimiterFactory.class);
         if (metadataWriteLimiterFactory != null) {
             context.set(MetadataWriteLimiterFactory.class, metadataWriteLimiterFactory);
+        }
+
+        // Load EmbeddedDocumentExtractorFactory from other-configs if present
+        EmbeddedDocumentExtractorFactory extractorFactory =
+                configs().load(EmbeddedDocumentExtractorFactory.class);
+        if (extractorFactory != null) {
+            context.set(EmbeddedDocumentExtractorFactory.class, extractorFactory);
         }
 
         return context;

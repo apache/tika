@@ -59,7 +59,7 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
-import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
+import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
 import org.apache.tika.plugins.TikaPluginManager;
@@ -251,18 +251,20 @@ public class TikaPipesTest extends CXFTestBase {
 
     @Test
     public void testBytes() throws Exception {
-        EmbeddedDocumentBytesConfig config = new EmbeddedDocumentBytesConfig(true);
+        UnpackConfig config = new UnpackConfig(true);
         config.setEmitter(EMITTER_BYTES_ID);
         config.setIncludeOriginal(true);
+        config.setKeyBaseStrategy(UnpackConfig.KEY_BASE_STRATEGY.CUSTOM);
+        config.setEmitKeyBase("test_recursive_embedded.docx");
         config.setEmbeddedIdPrefix("-");
         config.setZeroPadName(10);
-        config.setSuffixStrategy(EmbeddedDocumentBytesConfig.SUFFIX_STRATEGY.EXISTING);
+        config.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.EXISTING);
         ParseContext parseContext = new ParseContext();
         // Set default content handler and parse mode
         parseContext.set(ContentHandlerFactory.class,
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
         parseContext.set(ParseMode.class, ParseMode.RMETA);
-        parseContext.set(EmbeddedDocumentBytesConfig.class, config);
+        parseContext.set(UnpackConfig.class, config);
         FetchEmitTuple t =
                 new FetchEmitTuple("myId", new FetchKey(FETCHER_ID, "test_recursive_embedded.docx"),
                         new EmitKey(EMITTER_JSON_ID, "test_recursive_embedded.docx"), new Metadata(), parseContext,

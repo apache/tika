@@ -17,12 +17,16 @@
 package org.apache.tika.pipes.core.extractor;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 import org.apache.tika.config.TikaComponent;
+import org.apache.tika.extractor.BasicEmbeddedBytesSelector;
+import org.apache.tika.extractor.EmbeddedBytesSelector;
 
-@TikaComponent(name = "embedded-document-bytes-config")
-public class EmbeddedDocumentBytesConfig implements Serializable {
+@TikaComponent(name = "unpack-config")
+public class UnpackConfig implements Serializable {
 
     /**
      * Serial version UID
@@ -30,7 +34,7 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
     private static final long serialVersionUID = -3861669115439125268L;
 
 
-    public static EmbeddedDocumentBytesConfig SKIP = new EmbeddedDocumentBytesConfig(false);
+    public static UnpackConfig SKIP = new UnpackConfig(false);
 
     public enum SUFFIX_STRATEGY {
             NONE, EXISTING, DETECTED;
@@ -48,17 +52,20 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
     }
 
     public enum KEY_BASE_STRATEGY {
-        CONTAINER_NAME_NUMBERED,
-        CONTAINER_NAME_AS_IS,
-        CUSTOM_BASE;
+        /**
+         * Default pattern: {containerKey}-embed/{id}{suffix}
+         */
+        DEFAULT,
+        /**
+         * Custom pattern using emitKeyBase
+         */
+        CUSTOM;
 
         public static KEY_BASE_STRATEGY parse(String s) {
-            if (s.equalsIgnoreCase(CONTAINER_NAME_NUMBERED.name())) {
-                return CONTAINER_NAME_NUMBERED;
-            } else if (s.equalsIgnoreCase(CONTAINER_NAME_AS_IS.name())) {
-                return CONTAINER_NAME_AS_IS;
-            } else if (s.equalsIgnoreCase(CUSTOM_BASE.name())) {
-                return CUSTOM_BASE;
+            if (s.equalsIgnoreCase(DEFAULT.name())) {
+                return DEFAULT;
+            } else if (s.equalsIgnoreCase(CUSTOM.name())) {
+                return CUSTOM;
             }
             throw new IllegalArgumentException("can't parse " + s);
         }
@@ -76,26 +83,32 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
 
     private boolean includeOriginal = false;
 
-    private KEY_BASE_STRATEGY keyBaseStrategy = KEY_BASE_STRATEGY.CONTAINER_NAME_NUMBERED;
+    private KEY_BASE_STRATEGY keyBaseStrategy = KEY_BASE_STRATEGY.DEFAULT;
     //This should be set per file. This allows a custom
     //emit key base that bypasses the algorithmic generation of the emitKey
-    //from the primary json emitKey when keyBase Strategy is CUSTOM_BASE
+    //from the primary json emitKey when keyBase Strategy is CUSTOM
     private String emitKeyBase = "";
 
+    // Filter parameters for embedded bytes selection
+    private Set<String> includeMimeTypes = new HashSet<>();
+    private Set<String> excludeMimeTypes = new HashSet<>();
+    private Set<String> includeEmbeddedResourceTypes = new HashSet<>();
+    private Set<String> excludeEmbeddedResourceTypes = new HashSet<>();
+
     /**
-     * Create an EmbeddedDocumentBytesConfig with
-     * {@link EmbeddedDocumentBytesConfig#extractEmbeddedDocumentBytes}
+     * Create an UnpackConfig with
+     * {@link UnpackConfig#extractEmbeddedDocumentBytes}
      * set to <code>true</code>
      */
-    public EmbeddedDocumentBytesConfig() {
+    public UnpackConfig() {
         this.extractEmbeddedDocumentBytes = true;
     }
 
-    public EmbeddedDocumentBytesConfig(boolean extractEmbeddedDocumentBytes) {
+    public UnpackConfig(boolean extractEmbeddedDocumentBytes) {
         this.extractEmbeddedDocumentBytes = extractEmbeddedDocumentBytes;
     }
 
-    public static EmbeddedDocumentBytesConfig getSKIP() {
+    public static UnpackConfig getSKIP() {
         return SKIP;
     }
 
@@ -171,22 +184,75 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
         return emitKeyBase;
     }
 
+    public Set<String> getIncludeMimeTypes() {
+        return includeMimeTypes;
+    }
+
+    public void setIncludeMimeTypes(Set<String> includeMimeTypes) {
+        this.includeMimeTypes = new HashSet<>(includeMimeTypes);
+    }
+
+    public Set<String> getExcludeMimeTypes() {
+        return excludeMimeTypes;
+    }
+
+    public void setExcludeMimeTypes(Set<String> excludeMimeTypes) {
+        this.excludeMimeTypes = new HashSet<>(excludeMimeTypes);
+    }
+
+    public Set<String> getIncludeEmbeddedResourceTypes() {
+        return includeEmbeddedResourceTypes;
+    }
+
+    public void setIncludeEmbeddedResourceTypes(Set<String> includeEmbeddedResourceTypes) {
+        this.includeEmbeddedResourceTypes = new HashSet<>(includeEmbeddedResourceTypes);
+    }
+
+    public Set<String> getExcludeEmbeddedResourceTypes() {
+        return excludeEmbeddedResourceTypes;
+    }
+
+    public void setExcludeEmbeddedResourceTypes(Set<String> excludeEmbeddedResourceTypes) {
+        this.excludeEmbeddedResourceTypes = new HashSet<>(excludeEmbeddedResourceTypes);
+    }
+
+    /**
+     * Creates an EmbeddedBytesSelector based on the configured filter parameters.
+     *
+     * @return an EmbeddedBytesSelector that will filter embedded documents based on
+     *         configured mime types and resource types
+     */
+    public EmbeddedBytesSelector createEmbeddedBytesSelector() {
+        if (includeMimeTypes.isEmpty() && excludeMimeTypes.isEmpty()
+                && includeEmbeddedResourceTypes.isEmpty() && excludeEmbeddedResourceTypes.isEmpty()) {
+            return EmbeddedBytesSelector.ACCEPT_ALL;
+        }
+        return new BasicEmbeddedBytesSelector(includeMimeTypes, excludeMimeTypes,
+                includeEmbeddedResourceTypes, excludeEmbeddedResourceTypes);
+    }
+
     @Override
     public String toString() {
-        return "EmbeddedDocumentBytesConfig{" + "extractEmbeddedDocumentBytes=" + extractEmbeddedDocumentBytes + ", zeroPadName=" + zeroPadName + ", suffixStrategy=" +
+        return "UnpackConfig{" + "extractEmbeddedDocumentBytes=" + extractEmbeddedDocumentBytes + ", zeroPadName=" + zeroPadName + ", suffixStrategy=" +
                 suffixStrategy + ", embeddedIdPrefix='" + embeddedIdPrefix + '\'' + ", emitter='" + emitter + '\'' + ", includeOriginal=" + includeOriginal + ", keyBaseStrategy=" +
-                keyBaseStrategy + ", emitKeyBase='" + emitKeyBase + '\'' + '}';
+                keyBaseStrategy + ", emitKeyBase='" + emitKeyBase + '\'' +
+                ", includeMimeTypes=" + includeMimeTypes + ", excludeMimeTypes=" + excludeMimeTypes +
+                ", includeEmbeddedResourceTypes=" + includeEmbeddedResourceTypes + ", excludeEmbeddedResourceTypes=" + excludeEmbeddedResourceTypes + '}';
     }
 
     @Override
     public final boolean equals(Object o) {
-        if (!(o instanceof EmbeddedDocumentBytesConfig config)) {
+        if (!(o instanceof UnpackConfig config)) {
             return false;
         }
 
         return extractEmbeddedDocumentBytes == config.extractEmbeddedDocumentBytes && zeroPadName == config.zeroPadName && includeOriginal == config.includeOriginal &&
                 suffixStrategy == config.suffixStrategy && Objects.equals(embeddedIdPrefix, config.embeddedIdPrefix) && Objects.equals(emitter, config.emitter) &&
-                keyBaseStrategy == config.keyBaseStrategy && Objects.equals(emitKeyBase, config.emitKeyBase);
+                keyBaseStrategy == config.keyBaseStrategy && Objects.equals(emitKeyBase, config.emitKeyBase) &&
+                Objects.equals(includeMimeTypes, config.includeMimeTypes) &&
+                Objects.equals(excludeMimeTypes, config.excludeMimeTypes) &&
+                Objects.equals(includeEmbeddedResourceTypes, config.includeEmbeddedResourceTypes) &&
+                Objects.equals(excludeEmbeddedResourceTypes, config.excludeEmbeddedResourceTypes);
     }
 
     @Override
@@ -199,6 +265,10 @@ public class EmbeddedDocumentBytesConfig implements Serializable {
         result = 31 * result + Boolean.hashCode(includeOriginal);
         result = 31 * result + Objects.hashCode(keyBaseStrategy);
         result = 31 * result + Objects.hashCode(emitKeyBase);
+        result = 31 * result + Objects.hashCode(includeMimeTypes);
+        result = 31 * result + Objects.hashCode(excludeMimeTypes);
+        result = 31 * result + Objects.hashCode(includeEmbeddedResourceTypes);
+        result = 31 * result + Objects.hashCode(excludeEmbeddedResourceTypes);
         return result;
     }
 }
