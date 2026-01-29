@@ -169,7 +169,7 @@ public class OpenDocumentParser implements Parser {
             tis.setOpenContainer(zipFile);
         }
         // Prepare to handle the content
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(baseHandler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(baseHandler, metadata, context);
         xhtml.startDocument();
         // As we don't know which of the metadata or the content
         //  we'll hit first, catch the endDocument call initially

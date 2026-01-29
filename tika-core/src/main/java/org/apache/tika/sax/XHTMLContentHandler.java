@@ -28,6 +28,7 @@ import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Content handler decorator that simplifies the task of producing XHTML
@@ -76,6 +77,14 @@ public class XHTMLContentHandler extends SafeContentHandler {
      */
     private final Metadata metadata;
     /**
+     * Whether to write metadata as meta elements in the head.
+     */
+    private final boolean writeMetadataToHead;
+    /**
+     * Whether to include the title element in the head.
+     */
+    private final boolean includeTitle;
+    /**
      * Flag to indicate whether the document has been started.
      */
     private boolean documentStarted = false;
@@ -85,9 +94,35 @@ public class XHTMLContentHandler extends SafeContentHandler {
     private boolean headStarted = false;
     private boolean headEnded = false;
     private boolean useFrameset = false;
+
     public XHTMLContentHandler(ContentHandler handler, Metadata metadata) {
+        this(handler, metadata, null);
+    }
+
+    /**
+     * Creates a new XHTMLContentHandler with configuration from ParseContext.
+     * <p>
+     * If a {@link SAXOutputConfig} is present in the ParseContext,
+     * its settings will be used to control output behavior.
+     *
+     * @param handler      the content handler to wrap
+     * @param metadata     metadata associated with the document
+     * @param parseContext parse context containing optional configuration
+     */
+    public XHTMLContentHandler(ContentHandler handler, Metadata metadata,
+                               ParseContext parseContext) {
         super(handler);
         this.metadata = metadata;
+        SAXOutputConfig config = parseContext != null
+                ? parseContext.get(SAXOutputConfig.class)
+                : null;
+        if (config != null) {
+            this.writeMetadataToHead = config.isWriteMetadataToHead();
+            this.includeTitle = config.isIncludeTitle();
+        } else {
+            this.writeMetadataToHead = true;
+            this.includeTitle = true;
+        }
     }
 
     private static Set<String> unmodifiableSet(String... elements) {
@@ -156,36 +191,40 @@ public class XHTMLContentHandler extends SafeContentHandler {
 
             // TIKA-478: Emit all metadata values (other than title). We have to call
             // startElement() and characters() directly to avoid recursive problems.
-            for (String name : metadata.names()) {
-                if (name.equals("title")) {
-                    continue;
-                }
+            if (writeMetadataToHead) {
+                for (String name : metadata.names()) {
+                    if (name.equals("title")) {
+                        continue;
+                    }
 
-                for (String value : metadata.getValues(name)) {
-                    // Putting null values into attributes causes problems, but is
-                    // allowed by Metadata, so guard against that.
-                    if (value != null) {
-                        AttributesImpl attributes = new AttributesImpl();
-                        attributes.addAttribute("", "name", "name", "CDATA", name);
-                        attributes.addAttribute("", "content", "content", "CDATA", value);
-                        super.startElement(XHTML, "meta", "meta", attributes);
-                        super.endElement(XHTML, "meta", "meta");
-                        newline();
+                    for (String value : metadata.getValues(name)) {
+                        // Putting null values into attributes causes problems, but is
+                        // allowed by Metadata, so guard against that.
+                        if (value != null) {
+                            AttributesImpl attributes = new AttributesImpl();
+                            attributes.addAttribute("", "name", "name", "CDATA", name);
+                            attributes.addAttribute("", "content", "content", "CDATA", value);
+                            super.startElement(XHTML, "meta", "meta", attributes);
+                            super.endElement(XHTML, "meta", "meta");
+                            newline();
+                        }
                     }
                 }
             }
 
-            super.startElement(XHTML, "title", "title", EMPTY_ATTRIBUTES);
-            String title = metadata.get(TikaCoreProperties.TITLE);
-            if (title != null && title.length() > 0) {
-                char[] titleChars = title.toCharArray();
-                super.characters(titleChars, 0, titleChars.length);
-            } else {
-                // TIKA-725: Prefer <title></title> over <title/>
-                super.characters(new char[0], 0, 0);
+            if (includeTitle) {
+                super.startElement(XHTML, "title", "title", EMPTY_ATTRIBUTES);
+                String title = metadata.get(TikaCoreProperties.TITLE);
+                if (title != null && title.length() > 0) {
+                    char[] titleChars = title.toCharArray();
+                    super.characters(titleChars, 0, titleChars.length);
+                } else {
+                    // TIKA-725: Prefer <title></title> over <title/>
+                    super.characters(new char[0], 0, 0);
+                }
+                super.endElement(XHTML, "title", "title");
+                newline();
             }
-            super.endElement(XHTML, "title", "title");
-            newline();
 
             super.endElement(XHTML, "head", "head");
             newline();

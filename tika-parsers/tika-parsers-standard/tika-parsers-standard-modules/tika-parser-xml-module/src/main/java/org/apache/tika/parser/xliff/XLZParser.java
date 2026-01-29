@@ -88,7 +88,7 @@ public class XLZParser implements Parser {
         }
 
         // Prepare to handle the content
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(baseHandler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(baseHandler, metadata, context);
         EndDocumentShieldingContentHandler handler = new EndDocumentShieldingContentHandler(xhtml);
         if (zipFile != null) {
             try {

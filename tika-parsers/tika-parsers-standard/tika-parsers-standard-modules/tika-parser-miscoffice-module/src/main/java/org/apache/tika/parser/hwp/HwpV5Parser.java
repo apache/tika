@@ -56,7 +56,7 @@ public class HwpV5Parser implements Parser {
 
         metadata.set(Metadata.CONTENT_TYPE, HWP_MIME_TYPE);
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         try {

@@ -78,7 +78,7 @@ public class TNEFParser implements Parser {
             metadata.set(TikaCoreProperties.TITLE, subject);
             metadata.set(TikaCoreProperties.SUBJECT, subject);
         }
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         // Recurse into the message body RTF
         MAPIAttribute attr = msg.getMessageMAPIAttribute(MAPIProperty.RTF_COMPRESSED);

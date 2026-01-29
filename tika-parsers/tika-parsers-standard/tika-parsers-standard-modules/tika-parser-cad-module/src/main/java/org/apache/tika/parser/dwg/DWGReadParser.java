@@ -101,7 +101,7 @@ public class DWGReadParser extends AbstractDWGParser {
 
         configure(context);
         DWGParserConfig dwgc = context.get(DWGParserConfig.class);
-        final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         // create unique files so we avoid overwriting out files if multithreaded
         UUID uuid = UUID.randomUUID();

@@ -70,7 +70,7 @@ public class AutoDetectReaderParserTest extends MultiThreadedTikaTest {
                 Charset charset = reader.getCharset();
                 MediaType type = new MediaType(MediaType.parse("text/plhtml"), charset);
                 metadata.set(Metadata.CONTENT_TYPE, type.toString());
-                XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+                XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
                 xhtml.startDocument();
 
                 xhtml.startElement("p");

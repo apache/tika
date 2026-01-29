@@ -65,7 +65,7 @@ public class QuattroProParser implements Parser {
             metadata.set(Metadata.CONTENT_TYPE, QP_9.toString());
         }
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         QPWTextExtractor extractor = new QPWTextExtractor();

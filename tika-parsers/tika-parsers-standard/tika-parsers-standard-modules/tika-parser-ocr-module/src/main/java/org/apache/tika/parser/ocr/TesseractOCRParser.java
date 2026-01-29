@@ -290,7 +290,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
             //commandline.  The actual output file name will have a suffix added.
             File tmpOCROutputFile = tmp.createTemporaryFile();
             ContentHandler baseHandler = getContentHandler(config.isInlineContent(), handler, metadata, parseContext);
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(baseHandler, metadata);
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(baseHandler, metadata, parseContext);
             xhtml.startDocument();
             parse(tikaStream, tmpOCROutputFile, xhtml, metadata, parseContext, config);
             xhtml.endDocument();

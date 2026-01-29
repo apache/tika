@@ -129,7 +129,7 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
             String codeAsHtml = renderer.highlight(name, out.toString(), charset.name(), false);
             Document document = Jsoup.parse(codeAsHtml);
             document.quirksMode(Document.QuirksMode.quirks);
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
             try {
                 NodeTraversor.filter(new TikaNodeFilter(xhtml), document);

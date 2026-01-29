@@ -93,7 +93,7 @@ public class MboxParser implements Parser {
         metadata.set(Metadata.CONTENT_TYPE, MBOX_MIME_TYPE);
         metadata.set(Metadata.CONTENT_ENCODING, charsetName);
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         InputStreamReader isr = new InputStreamReader(tis, charsetName);

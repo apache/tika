@@ -65,7 +65,7 @@ public class XLIFF12Parser implements Parser {
 
         metadata.set(Metadata.CONTENT_TYPE, XLF_CONTENT_TYPE.toString());
 
-        final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
 
         tis.setCloseShield();
         try {

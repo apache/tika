@@ -107,7 +107,7 @@ class HtmlHandler extends TextContentHandler {
 
     public HtmlHandler(HtmlMapper mapper, ContentHandler handler, Metadata metadata,
                        ParseContext context, boolean extractScripts) {
-        this(mapper, new XHTMLContentHandler(handler, metadata), metadata, context, extractScripts);
+        this(mapper, new XHTMLContentHandler(handler, metadata, context), metadata, context, extractScripts);
     }
 
     @Override

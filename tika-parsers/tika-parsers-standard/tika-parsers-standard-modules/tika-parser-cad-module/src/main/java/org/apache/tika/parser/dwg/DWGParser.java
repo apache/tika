@@ -105,7 +105,7 @@ public class DWGParser extends AbstractDWGParser {
             IOUtils.readFully(tis, header);
             String version = new String(header, 0, 6, "US-ASCII");
 
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
 
             switch (version) {

@@ -29,6 +29,8 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Unit tests for the {@link XHTMLContentHandler} class.
@@ -216,6 +218,127 @@ public class XHTMLContentHandlerTest {
         String[] words = getRealWords(output.toString());
         assertEquals(1, words.length);
         assertEquals("a\ufffdz", words[0]);
+    }
+
+    @Test
+    public void testDefaultConfigIncludesMetadataAndTitle() throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.TITLE, "Test Title");
+        metadata.set("author", "Test Author");
+
+        ToHTMLContentHandler toHTMLContentHandler = new ToHTMLContentHandler();
+        XHTMLContentHandler xhtmlHandler = new XHTMLContentHandler(toHTMLContentHandler, metadata);
+
+        xhtmlHandler.startDocument();
+        xhtmlHandler.element("p", "content");
+        xhtmlHandler.endDocument();
+
+        String result = toHTMLContentHandler.toString();
+        assertTrue(result.contains("<title>Test Title</title>"), "Should contain title");
+        assertTrue(result.contains("<meta name=\"author\" content=\"Test Author\""),
+                "Should contain metadata");
+    }
+
+    @Test
+    public void testConfigSkipMetadataInHead() throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.TITLE, "Test Title");
+        metadata.set("author", "Test Author");
+
+        SAXOutputConfig config = new SAXOutputConfig();
+        config.setWriteMetadataToHead(false);
+
+        ParseContext context = new ParseContext();
+        context.set(SAXOutputConfig.class, config);
+
+        ToHTMLContentHandler toHTMLContentHandler = new ToHTMLContentHandler();
+        XHTMLContentHandler xhtmlHandler =
+                new XHTMLContentHandler(toHTMLContentHandler, metadata, context);
+
+        xhtmlHandler.startDocument();
+        xhtmlHandler.element("p", "content");
+        xhtmlHandler.endDocument();
+
+        String result = toHTMLContentHandler.toString();
+        assertTrue(result.contains("<title>Test Title</title>"), "Should still contain title");
+        assertTrue(!result.contains("<meta name=\"author\""),
+                "Should NOT contain metadata");
+    }
+
+    @Test
+    public void testConfigSkipTitle() throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.TITLE, "Test Title");
+        metadata.set("author", "Test Author");
+
+        SAXOutputConfig config = new SAXOutputConfig();
+        config.setIncludeTitle(false);
+
+        ParseContext context = new ParseContext();
+        context.set(SAXOutputConfig.class, config);
+
+        ToHTMLContentHandler toHTMLContentHandler = new ToHTMLContentHandler();
+        XHTMLContentHandler xhtmlHandler =
+                new XHTMLContentHandler(toHTMLContentHandler, metadata, context);
+
+        xhtmlHandler.startDocument();
+        xhtmlHandler.element("p", "content");
+        xhtmlHandler.endDocument();
+
+        String result = toHTMLContentHandler.toString();
+        assertTrue(!result.contains("<title>"), "Should NOT contain title");
+        assertTrue(result.contains("<meta name=\"author\" content=\"Test Author\""),
+                "Should still contain metadata");
+    }
+
+    @Test
+    public void testConfigSkipBothMetadataAndTitle() throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.TITLE, "Test Title");
+        metadata.set("author", "Test Author");
+
+        SAXOutputConfig config = new SAXOutputConfig();
+        config.setWriteMetadataToHead(false);
+        config.setIncludeTitle(false);
+
+        ParseContext context = new ParseContext();
+        context.set(SAXOutputConfig.class, config);
+
+        ToHTMLContentHandler toHTMLContentHandler = new ToHTMLContentHandler();
+        XHTMLContentHandler xhtmlHandler =
+                new XHTMLContentHandler(toHTMLContentHandler, metadata, context);
+
+        xhtmlHandler.startDocument();
+        xhtmlHandler.element("p", "content");
+        xhtmlHandler.endDocument();
+
+        String result = toHTMLContentHandler.toString();
+        assertTrue(!result.contains("<title>"), "Should NOT contain title");
+        assertTrue(!result.contains("<meta name=\"author\""),
+                "Should NOT contain metadata");
+        assertTrue(result.contains("<head>") && result.contains("</head>"),
+                "Should still have head element");
+        assertTrue(result.contains("content"), "Should have body content");
+    }
+
+    @Test
+    public void testNullParseContextUsesDefaults() throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.TITLE, "Test Title");
+        metadata.set("author", "Test Author");
+
+        ToHTMLContentHandler toHTMLContentHandler = new ToHTMLContentHandler();
+        XHTMLContentHandler xhtmlHandler =
+                new XHTMLContentHandler(toHTMLContentHandler, metadata, null);
+
+        xhtmlHandler.startDocument();
+        xhtmlHandler.element("p", "content");
+        xhtmlHandler.endDocument();
+
+        String result = toHTMLContentHandler.toString();
+        assertTrue(result.contains("<title>Test Title</title>"), "Should contain title");
+        assertTrue(result.contains("<meta name=\"author\" content=\"Test Author\""),
+                "Should contain metadata");
     }
 
 }

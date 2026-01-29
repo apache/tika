@@ -98,7 +98,7 @@ public class AdobeFontMetricParser implements Parser {
                 Float.toString(fontMetrics.getUnderlineThickness()));
 
         // Output the remaining comments as text
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         // Display the comments

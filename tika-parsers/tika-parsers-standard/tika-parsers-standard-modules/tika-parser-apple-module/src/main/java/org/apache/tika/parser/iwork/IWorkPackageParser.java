@@ -103,7 +103,7 @@ public class IWorkPackageParser implements Parser {
             entryStream.reset(); // 4096 fails on github
 
             if (type != null) {
-                XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+                XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
                 ContentHandler contentHandler;
 
                 switch (type) {

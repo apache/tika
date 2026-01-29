@@ -114,7 +114,7 @@ public class EpubParser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
         // Because an EPub file is often made up of multiple XHTML files,
         //  we need explicit control over the start and end of the document
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         IOException caughtException = null;
         ContentHandler childHandler = new EmbeddedContentHandler(
