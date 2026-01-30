@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.core.StreamReadConstraints;
@@ -58,6 +57,8 @@ import org.apache.tika.serialization.ComponentConfig;
 import org.apache.tika.serialization.ComponentNameResolver;
 import org.apache.tika.serialization.JsonMetadata;
 import org.apache.tika.serialization.JsonMetadataList;
+import org.apache.tika.serialization.ParseContextUtils;
+import org.apache.tika.serialization.serdes.ParseContextDeserializer;
 
 /**
  * Main entry point for loading Tika components from JSON configuration.
@@ -381,8 +382,9 @@ public class TikaLoader {
     /**
      * Loads and returns a ParseContext populated with components from the "parse-context" section.
      * <p>
-     * This method only loads explicitly configured items from the JSON configuration.
-     * For loading with defaults for missing items, use {@link #loadParseContextWithDefaults()}.
+     * This method deserializes the parse-context JSON and resolves all component references
+     * using the component registry. Components are looked up by their friendly names
+     * (e.g., "embedded-limits", "pdf-parser-config") and deserialized to their appropriate types.
      * <p>
      * Use this method when you need a pre-configured ParseContext for parsing operations.
      *
@@ -399,106 +401,79 @@ public class TikaLoader {
      * @throws TikaConfigException if loading fails
      */
     public ParseContext loadParseContext() throws TikaConfigException {
-        return loadParseContextInternal(false);
-    }
-
-    /**
-     * Loads and returns a ParseContext populated with components from the "parse-context" section,
-     * plus default implementations for any missing items.
-     * <p>
-     * This method loads explicitly configured items from JSON, then instantiates
-     * default implementations (marked with {@code @TikaComponent(defaultFor=...)})
-     * for any interface that wasn't explicitly configured.
-     *
-     * @return a ParseContext populated with configured and default components
-     * @throws TikaConfigException if loading fails
-     */
-    public ParseContext loadParseContextWithDefaults() throws TikaConfigException {
-        return loadParseContextInternal(true);
-    }
-
-    /**
-     * Internal method to load ParseContext with optional defaults.
-     *
-     * @param includeDefaults whether to include default implementations for missing items
-     * @return a ParseContext populated with components
-     * @throws TikaConfigException if loading fails
-     */
-    private ParseContext loadParseContextInternal(boolean includeDefaults) throws TikaConfigException {
-        ParseContext context = new ParseContext();
-        Set<Class<?>> configuredKeys = new HashSet<>();
-
-        // Load the component registry for parse-context
-        ComponentRegistry registry;
-        try {
-            registry = new ComponentRegistry("parse-context", classLoader);
-        } catch (TikaConfigException e) {
-            // parse-context.idx might not exist yet (e.g., first build)
-            // In that case, just return an empty context
-            return context;
-        }
-
-        // Load explicitly configured items from JSON
         JsonNode parseContextNode = config.getRootNode().get("parse-context");
-        if (parseContextNode != null && parseContextNode.isObject()) {
-            java.util.Iterator<String> fieldNames = parseContextNode.fieldNames();
-            while (fieldNames.hasNext()) {
-                String key = fieldNames.next();
-                JsonNode valueNode = parseContextNode.get(key);
-
-                try {
-                    ComponentInfo info = registry.getComponentInfo(key);
-                    Class<?> targetClass = info.componentClass();
-                    Class<?> contextKey = info.contextKey() != null ? info.contextKey() : targetClass;
-
-                    Object instance = objectMapper.treeToValue(valueNode, targetClass);
-                    context.set((Class<Object>) contextKey, instance);
-                    configuredKeys.add(contextKey);
-                } catch (TikaConfigException e) {
-                    throw new TikaConfigException("Failed to load parse-context item: " + key, e);
-                } catch (Exception e) {
-                    throw new TikaConfigException("Failed to deserialize parse-context item: " + key, e);
-                }
-            }
+        if (parseContextNode == null) {
+            return new ParseContext();
         }
-
-        // Add defaults for missing items (if requested)
-        if (includeDefaults) {
-            for (Map.Entry<String, ComponentInfo> entry : registry.getDefaultComponents().entrySet()) {
-                ComponentInfo info = entry.getValue();
-                Class<?> contextKey = info.contextKey() != null ? info.contextKey() : info.componentClass();
-
-                if (!configuredKeys.contains(contextKey)) {
-                    try {
-                        Object instance = info.componentClass().getDeclaredConstructor().newInstance();
-                        context.set((Class<Object>) contextKey, instance);
-                    } catch (ReflectiveOperationException e) {
-                        throw new TikaConfigException(
-                                "Failed to instantiate default component: " + info.componentClass().getName(), e);
-                    }
-                }
-            }
+        try {
+            ParseContext context =
+                    ParseContextDeserializer.readParseContext(parseContextNode, objectMapper);
+            ParseContextUtils.resolveAll(context, classLoader);
+            return context;
+        } catch (IOException e) {
+            throw new TikaConfigException("Failed to load parse-context", e);
         }
+    }
 
-        return context;
+    /**
+     * Loads a configuration object from the "parse-context" section, merging with defaults.
+     * <p>
+     * This method is useful when you have a base configuration (e.g., from code defaults or
+     * a previous load) and want to overlay values from the JSON config. Properties not
+     * specified in the JSON retain their default values.
+     * <p>
+     * The original defaults object is NOT modified - a new instance is returned.
+     *
+     * <p>Example usage for PDFParserConfig:
+     * <pre>
+     * // Load base config from tika-config.json at init time
+     * TikaLoader loader = TikaLoader.load(configPath);
+     * PDFParserConfig baseConfig = loader.loadConfig(PDFParserConfig.class, new PDFParserConfig());
+     *
+     * // At runtime, create per-request overrides
+     * PDFParserConfig requestConfig = new PDFParserConfig();
+     * requestConfig.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.NO_OCR);
+     *
+     * // Merge: base config values + request overrides
+     * // (Note: for runtime merging, use JsonMergeUtils directly or loadConfig on a runtime loader)
+     * </pre>
+     *
+     * @param clazz the class to deserialize into
+     * @param defaults the default values to use for properties not in the JSON config
+     * @param <T> the configuration type
+     * @return a new instance with defaults merged with JSON config, or the original defaults if not configured
+     * @throws TikaConfigException if loading fails
+     */
+    public <T> T loadConfig(Class<T> clazz, T defaults) throws TikaConfigException {
+        return configs().loadWithDefaults(clazz, defaults);
+    }
+
+    /**
+     * Loads a configuration object from the "parse-context" section by explicit key, merging with defaults.
+     * <p>
+     * This method is useful when the JSON key doesn't match the class name's kebab-case conversion,
+     * or when you want to load from a specific key.
+     *
+     * @param key the JSON key in the "parse-context" section
+     * @param clazz the class to deserialize into
+     * @param defaults the default values to use for properties not in the JSON config
+     * @param <T> the configuration type
+     * @return a new instance with defaults merged with JSON config, or the original defaults if not configured
+     * @throws TikaConfigException if loading fails
+     */
+    public <T> T loadConfig(String key, Class<T> clazz, T defaults) throws TikaConfigException {
+        return configs().loadWithDefaults(key, clazz, defaults);
     }
 
     /**
      * Returns a ConfigLoader for loading simple configuration objects.
      * <p>
-     * Use this for POJOs and simple config classes. For complex components like
-     * Parsers, Detectors, etc., use the specific load methods on TikaLoader.
-     *
-     * <p>Usage:
-     * <pre>
-     * MyConfig config = loader.configs().load("my-config", MyConfig.class);
-     * // Or use kebab-case auto-conversion:
-     * MyConfig config = loader.configs().load(MyConfig.class);
-     * </pre>
+     * This is internal - external code should use {@link #loadParseContext()} or
+     * {@link #loadConfig(Class, Object)} instead.
      *
      * @return the ConfigLoader instance
      */
-    public synchronized ConfigLoader configs() {
+    private synchronized ConfigLoader configs() {
         if (configLoader == null) {
             configLoader = new ConfigLoader(config, objectMapper);
         }

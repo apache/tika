@@ -17,7 +17,9 @@
 package org.apache.tika.serialization.serdes;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -62,6 +64,10 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
                          SerializerProvider serializers) throws IOException {
         gen.writeStartObject();
 
+        // Track which friendly names have been serialized under "typed"
+        // so we can skip them when serializing jsonConfigs (avoid duplicates)
+        Set<String> serializedNames = new HashSet<>();
+
         // First, serialize typed objects from the context map under "typed" key
         Map<String, Object> contextMap = parseContext.getContextMap();
         boolean hasTypedObjects = false;
@@ -94,6 +100,9 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
             // Use writeTree instead of writeRawValue for binary format support (e.g., Smile)
             // and stricter validation (fails early if value can't be serialized)
             gen.writeTree(PLAIN_MAPPER.valueToTree(value));
+
+            // Track this name so we skip it in jsonConfigs
+            serializedNames.add(keyName);
         }
 
         if (hasTypedObjects) {
@@ -101,8 +110,13 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
         }
 
         // Then, serialize JSON configs at the top level
+        // Skip entries that were already serialized under "typed" (they've been resolved)
         Map<String, JsonConfig> jsonConfigs = parseContext.getJsonConfigs();
         for (Map.Entry<String, JsonConfig> entry : jsonConfigs.entrySet()) {
+            if (serializedNames.contains(entry.getKey())) {
+                // Already serialized under "typed", skip to avoid duplicate
+                continue;
+            }
             gen.writeFieldName(entry.getKey());
             // Parse the JSON string into a tree for binary format support
             gen.writeTree(PLAIN_MAPPER.readTree(entry.getValue().json()));

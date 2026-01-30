@@ -105,17 +105,18 @@ public class AllLimitsTest extends TikaTest {
     @Test
     public void testLoadIndividualLimits() throws Exception {
         TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "all-limits-test.json"));
+        ParseContext context = loader.loadParseContext();
 
-        // Load individual limit configs directly
-        EmbeddedLimits embeddedLimits = loader.configs().load(EmbeddedLimits.class);
+        // Load individual limit configs from ParseContext
+        EmbeddedLimits embeddedLimits = context.get(EmbeddedLimits.class);
         assertNotNull(embeddedLimits);
         assertEquals(10, embeddedLimits.getMaxDepth());
 
-        OutputLimits outputLimits = loader.configs().load(OutputLimits.class);
+        OutputLimits outputLimits = context.get(OutputLimits.class);
         assertNotNull(outputLimits);
         assertEquals(100000, outputLimits.getWriteLimit());
 
-        TimeoutLimits timeoutLimits = loader.configs().load(TimeoutLimits.class);
+        TimeoutLimits timeoutLimits = context.get(TimeoutLimits.class);
         assertNotNull(timeoutLimits);
         assertEquals(60000, timeoutLimits.getTaskTimeoutMillis());
     }
