@@ -32,7 +32,8 @@ public class EmbeddedLimitsTest extends TikaTest {
     @Test
     public void testLoadFromConfig() throws Exception {
         TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "embedded-limits-test.json"));
-        EmbeddedLimits limits = loader.configs().load(EmbeddedLimits.class);
+        ParseContext context = loader.loadParseContext();
+        EmbeddedLimits limits = context.get(EmbeddedLimits.class);
 
         assertNotNull(limits);
         assertEquals(5, limits.getMaxDepth());
