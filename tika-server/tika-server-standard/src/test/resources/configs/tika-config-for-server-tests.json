@@ -12,16 +12,14 @@
   "auto-detect-parser": {
     "throwOnZeroBytes": false
   },
-  "other-configs": {
-    "digester-factory": {
-      "commons-digester-factory": {
+  "parse-context": {
+    "commons-digester-factory": {
         "digests": [
           { "algorithm": "MD5" },
           { "algorithm": "SHA1", "encoding": "BASE32" }
         ]
       }
-    }
-  },
+    },
   "fetchers": {
     "file-system-fetcher": {
       "file-system-fetcher": {

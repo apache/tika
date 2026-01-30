@@ -2,11 +2,9 @@
   "parsers": [
     "default-parser"
   ],
-  "other-configs": {
-    "metadata-write-limiter-factory": {
-      "standard-metadata-limiter-factory": {
-        "excludeFields": ["subject"]
-      }
+  "parse-context": {
+    "standard-metadata-limiter-factory": {
+      "excludeFields": ["subject"]
     }
   }
 }

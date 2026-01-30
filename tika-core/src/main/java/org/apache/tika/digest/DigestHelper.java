@@ -33,14 +33,12 @@ import org.apache.tika.parser.ParseContext;
  * Utility class for computing digests on streams.
  * <p>
  * The DigesterFactory is retrieved from ParseContext. Configure it via
- * the "other-configs" section in tika-config.json:
+ * the "parse-context" section in tika-config.json:
  * <pre>
- * "other-configs": {
- *   "digester-factory": {
- *     "commons-digester-factory": {
- *       "digests": [{ "algorithm": "SHA256" }],
- *       "skipContainerDocumentDigest": true
- *     }
+ * "parse-context": {
+ *   "commons-digester-factory": {
+ *     "digests": [{ "algorithm": "SHA256" }],
+ *     "skipContainerDocumentDigest": true
  *   }
  * }
  * </pre>

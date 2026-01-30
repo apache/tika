@@ -1,5 +1,5 @@
 {
-  "other-configs": {
+  "parse-context": {
     "embedded-limits": {
       "maxDepth": 5,
       "throwOnMaxDepth": true,
