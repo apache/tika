@@ -64,6 +64,10 @@ public class TikaComponentProcessor extends AbstractProcessor {
     /**
      * Known Tika service interfaces for SPI generation.
      * Only classes implementing these interfaces will have SPI files generated.
+     * <p>
+     * Note: DigesterFactory and ContentHandlerFactory are NOT in this map because
+     * they are parse-context components, not top-level service interfaces.
+     * Their implementations go to parse-context.idx instead.
      */
     private static final Map<String, String> SERVICE_INTERFACES = new LinkedHashMap<>();
 
@@ -76,10 +80,18 @@ public class TikaComponentProcessor extends AbstractProcessor {
         SERVICE_INTERFACES.put("org.apache.tika.language.translate.Translator", "translators");
         SERVICE_INTERFACES.put("org.apache.tika.renderer.Renderer", "renderers");
         SERVICE_INTERFACES.put("org.apache.tika.metadata.filter.MetadataFilter", "metadata-filters");
-        SERVICE_INTERFACES.put("org.apache.tika.digest.DigesterFactory", "digester-factories");
-        SERVICE_INTERFACES.put("org.apache.tika.sax.ContentHandlerFactory",
-                "content-handler-factories");
     }
+
+    /**
+     * Interfaces whose implementations should go to parse-context.idx.
+     * These are factory interfaces used via ParseContext, not loaded via SPI.
+     */
+    private static final Set<String> PARSE_CONTEXT_INTERFACES = Set.of(
+            "org.apache.tika.digest.DigesterFactory",
+            "org.apache.tika.sax.ContentHandlerFactory",
+            "org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory",
+            "org.apache.tika.extractor.EmbeddedDocumentExtractorFactory"
+    );
 
     private Messager messager;
     private Filer filer;
@@ -134,45 +146,60 @@ public class TikaComponentProcessor extends AbstractProcessor {
         // Get contextKey if specified (need to use mirror API for Class types)
         String contextKey = getContextKeyFromAnnotation(element);
 
+        // Get defaultFor if specified (need to use mirror API for Class types)
+        String defaultFor = getDefaultForFromAnnotation(element);
+
         messager.printMessage(Diagnostic.Kind.NOTE,
                 "Processing @TikaComponent: " + className + " -> " + componentName +
-                " (SPI: " + includeSpi + ", contextKey: " + contextKey + ")");
+                " (SPI: " + includeSpi + ", contextKey: " + contextKey +
+                ", defaultFor: " + defaultFor + ")");
 
-        // Find all implemented service interfaces
+        // Find all implemented service interfaces (both SPI and parse-context)
         List<String> serviceInterfaces = findServiceInterfaces(element);
+        List<String> parseContextInterfaces = findParseContextInterfaces(element);
 
-        // Build the index entry value (className or className:key=X)
+        // Combine all interfaces for context key detection
+        List<String> allInterfaces = new ArrayList<>(serviceInterfaces);
+        allInterfaces.addAll(parseContextInterfaces);
+
+        // Build the index entry value (className or className:key=X[:default])
         // Auto-detect contextKey from service interface if not explicitly specified
         String indexValue = className;
         if (contextKey != null) {
             // Explicit contextKey specified
             indexValue = className + ":key=" + contextKey;
-        } else if (serviceInterfaces.size() == 1) {
-            // Auto-detect contextKey from single service interface
-            indexValue = className + ":key=" + serviceInterfaces.get(0);
+        } else if (allInterfaces.size() == 1) {
+            // Auto-detect contextKey from single interface
+            indexValue = className + ":key=" + allInterfaces.get(0);
             messager.printMessage(Diagnostic.Kind.NOTE,
-                    "Auto-detected contextKey=" + serviceInterfaces.get(0) + " for " + className);
-        } else if (serviceInterfaces.size() > 1) {
+                    "Auto-detected contextKey=" + allInterfaces.get(0) + " for " + className);
+        } else if (allInterfaces.size() > 1) {
             // Multiple interfaces - warn that contextKey should be specified
             messager.printMessage(Diagnostic.Kind.WARNING,
-                    "Class " + className + " implements multiple service interfaces: " +
-                    serviceInterfaces + ". Consider specifying @TikaComponent(contextKey=...) " +
+                    "Class " + className + " implements multiple interfaces: " +
+                    allInterfaces + ". Consider specifying @TikaComponent(contextKey=...) " +
                     "to select which one to use as ParseContext key.", element);
         }
 
-        if (serviceInterfaces.isEmpty()) {
-            // No known service interface - put in other-configs.idx
-            messager.printMessage(Diagnostic.Kind.NOTE,
-                    "Class " + className + " does not implement known service interface, " +
-                    "adding to other-configs.idx", element);
-
-            Map<String, String> index = indexFiles.computeIfAbsent("other-configs",
-                    k -> new LinkedHashMap<>());
-            addToIndex(index, componentName, indexValue, className, element);
-            return;
+        // Add :default marker if defaultFor is specified
+        if (defaultFor != null) {
+            indexValue = indexValue + ":default";
         }
 
-        // Process each service interface
+        // Check if this is a parse-context component (implements a parse-context interface
+        // or doesn't implement any known service interface)
+        if (!parseContextInterfaces.isEmpty() || serviceInterfaces.isEmpty()) {
+            // Put in parse-context.idx
+            messager.printMessage(Diagnostic.Kind.NOTE,
+                    "Class " + className + " is a parse-context component, " +
+                    "adding to parse-context.idx", element);
+
+            Map<String, String> index = indexFiles.computeIfAbsent("parse-context",
+                    k -> new LinkedHashMap<>());
+            addToIndex(index, componentName, indexValue, className, element);
+        }
+
+        // Process SPI service interfaces (these also get their own idx files)
         for (String serviceInterface : serviceInterfaces) {
             // Add to SPI services only if spi = true
             if (includeSpi) {
@@ -216,17 +243,33 @@ public class TikaComponentProcessor extends AbstractProcessor {
      * Returns null if contextKey is void.class (the default).
      */
     private String getContextKeyFromAnnotation(TypeElement element) {
+        return getClassAttributeFromAnnotation(element, "contextKey");
+    }
+
+    /**
+     * Gets the defaultFor value from the annotation using the mirror API.
+     * Returns null if defaultFor is void.class (the default).
+     */
+    private String getDefaultForFromAnnotation(TypeElement element) {
+        return getClassAttributeFromAnnotation(element, "defaultFor");
+    }
+
+    /**
+     * Gets a Class-typed attribute value from the annotation using the mirror API.
+     * Returns null if the attribute is void.class (the default).
+     */
+    private String getClassAttributeFromAnnotation(TypeElement element, String attributeName) {
         for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
             DeclaredType annotationType = mirror.getAnnotationType();
             if (annotationType.toString().equals(TikaComponent.class.getName())) {
                 for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry
                         : mirror.getElementValues().entrySet()) {
-                    if (entry.getKey().getSimpleName().toString().equals("contextKey")) {
+                    if (entry.getKey().getSimpleName().toString().equals(attributeName)) {
                         // The value is a TypeMirror for Class types
                         Object value = entry.getValue().getValue();
                         if (value instanceof TypeMirror) {
                             String typeName = value.toString();
-                            // void.class is the default, meaning "auto-detect"
+                            // void.class is the default, meaning "not specified"
                             if (!"void".equals(typeName) && !"java.lang.Void".equals(typeName)) {
                                 return typeName;
                             }
@@ -244,15 +287,30 @@ public class TikaComponentProcessor extends AbstractProcessor {
     private List<String> findServiceInterfaces(TypeElement element) {
         List<String> result = new ArrayList<>();
         Set<String> visited = new LinkedHashSet<>();
-        findServiceInterfacesRecursive(element.asType(), result, visited);
+        findInterfacesRecursive(element.asType(), result, visited, SERVICE_INTERFACES.keySet());
         return result;
     }
 
     /**
-     * Recursively searches for service interfaces in the type hierarchy.
+     * Finds all parse-context interfaces implemented by the given type element.
      */
-    private void findServiceInterfacesRecursive(TypeMirror type, List<String> result,
-                                                 Set<String> visited) {
+    private List<String> findParseContextInterfaces(TypeElement element) {
+        List<String> result = new ArrayList<>();
+        Set<String> visited = new LinkedHashSet<>();
+        findInterfacesRecursive(element.asType(), result, visited, PARSE_CONTEXT_INTERFACES);
+        return result;
+    }
+
+    /**
+     * Recursively searches for interfaces in the type hierarchy.
+     *
+     * @param type the type to search from
+     * @param result list to add found interfaces to
+     * @param visited set of already visited types (to avoid infinite loops)
+     * @param targetInterfaces the set of interface names to look for
+     */
+    private void findInterfacesRecursive(TypeMirror type, List<String> result,
+                                         Set<String> visited, Set<String> targetInterfaces) {
         if (type == null || !(type instanceof DeclaredType)) {
             return;
         }
@@ -266,8 +324,8 @@ public class TikaComponentProcessor extends AbstractProcessor {
             return;
         }
 
-        // Check if this is a service interface
-        if (SERVICE_INTERFACES.containsKey(typeName)) {
+        // Check if this is a target interface
+        if (targetInterfaces.contains(typeName)) {
             if (!result.contains(typeName)) {
                 result.add(typeName);
             }
@@ -275,11 +333,11 @@ public class TikaComponentProcessor extends AbstractProcessor {
 
         // Check superclass
         TypeMirror superclass = typeElement.getSuperclass();
-        findServiceInterfacesRecursive(superclass, result, visited);
+        findInterfacesRecursive(superclass, result, visited, targetInterfaces);
 
         // Check interfaces
         for (TypeMirror interfaceType : typeElement.getInterfaces()) {
-            findServiceInterfacesRecursive(interfaceType, result, visited);
+            findInterfacesRecursive(interfaceType, result, visited, targetInterfaces);
         }
     }
 

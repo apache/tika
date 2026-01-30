@@ -1,5 +1,5 @@
 {
-  "other-configs": {
+  "parse-context": {
     "retry-config": {
       "enabled": true
     },

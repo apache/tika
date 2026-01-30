@@ -172,7 +172,7 @@ public class MetadataResource {
 
     protected Metadata parseMetadata(TikaInputStream tis, Metadata metadata, MultivaluedMap<String, String> httpHeaders, UriInfo info)
             throws IOException, TikaConfigException {
-        // Load default context from config (includes DigesterFactory from other-configs)
+        // Load default context from config (includes DigesterFactory from parse-context)
         final ParseContext context = TikaResource.createParseContext();
         Parser parser = TikaResource.createParser();
         fillMetadata(parser, metadata, httpHeaders);

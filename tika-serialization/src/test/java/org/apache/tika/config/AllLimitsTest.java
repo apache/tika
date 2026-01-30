@@ -31,13 +31,13 @@ import org.apache.tika.parser.ParseContext;
  * Tests loading all limit configurations from a single tika-config.json file.
  * <p>
  * This test demonstrates how to configure all limits in one place using
- * the "other-configs" section of the JSON configuration.
+ * the "parse-context" section of the JSON configuration.
  * <p>
  * Configuration file: configs/all-limits-test.json
  * <pre>
  * {
  *   "parsers": ["default-parser"],
- *   "other-configs": {
+ *   "parse-context": {
  *     "embedded-limits": {
  *       "maxDepth": 10,
  *       "throwOnMaxDepth": false,
@@ -55,13 +55,11 @@ import org.apache.tika.parser.ParseContext;
  *     "timeout-limits": {
  *       "taskTimeoutMillis": 60000
  *     },
- *     "metadata-write-limiter-factory": {
- *       "standard-metadata-limiter-factory": {
- *         "maxTotalBytes": 1048576,
- *         "maxFieldSize": 102400,
- *         "maxKeySize": 1024,
- *         "maxValuesPerField": 100
- *       }
+ *     "standard-metadata-limiter-factory": {
+ *       "maxTotalBytes": 1048576,
+ *       "maxFieldSize": 102400,
+ *       "maxKeySize": 1024,
+ *       "maxValuesPerField": 100
  *     }
  *   }
  * }

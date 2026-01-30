@@ -2,7 +2,7 @@
   "parsers": [
     "default-parser"
   ],
-  "other-configs": {
+  "parse-context": {
     "embedded-limits": {
       "maxDepth": 10,
       "throwOnMaxDepth": false,
@@ -20,13 +20,11 @@
     "timeout-limits": {
       "taskTimeoutMillis": 60000
     },
-    "metadata-write-limiter-factory": {
-      "standard-metadata-limiter-factory": {
-        "maxTotalBytes": 1048576,
-        "maxFieldSize": 102400,
-        "maxKeySize": 1024,
-        "maxValuesPerField": 100
-      }
+    "standard-metadata-limiter-factory": {
+      "maxTotalBytes": 1048576,
+      "maxFieldSize": 102400,
+      "maxKeySize": 1024,
+      "maxValuesPerField": 100
     }
   }
 }

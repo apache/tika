@@ -1,11 +1,9 @@
 {
-  "other-configs": {
-    "digester-factory": {
-      "commons-digester-factory": {
+  "parse-context": {
+    "commons-digester-factory": {
         "digests": [
           { "algorithm": "MD5" }
         ]
       }
     }
-  }
 }

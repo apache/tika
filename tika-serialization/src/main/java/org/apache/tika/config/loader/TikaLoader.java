@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.core.StreamReadConstraints;
@@ -31,23 +32,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.GlobalSettings;
-import org.apache.tika.config.OutputLimits;
-import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.CompositeEncodingDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.EncodingDetector;
-import org.apache.tika.digest.DigesterFactory;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.language.translate.DefaultTranslator;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.filter.NoOpFilter;
-import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.AutoDetectParser;
@@ -59,7 +54,6 @@ import org.apache.tika.renderer.CompositeRenderer;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
-import org.apache.tika.sax.SAXOutputConfig;
 import org.apache.tika.serialization.ComponentConfig;
 import org.apache.tika.serialization.ComponentNameResolver;
 import org.apache.tika.serialization.JsonMetadata;
@@ -374,7 +368,7 @@ public class TikaLoader {
      */
     public synchronized Parser loadAutoDetectParser() throws TikaConfigException, IOException {
         if (autoDetectParser == null) {
-            // Load directly from root-level config (not via configs() which only looks in "other-configs")
+            // Load directly from root-level config (not via configs() which only looks in "parse-context")
             AutoDetectParserConfig adpConfig = loadAutoDetectParserConfig();
             if (adpConfig == null) {
                 adpConfig = new AutoDetectParserConfig();
@@ -385,13 +379,10 @@ public class TikaLoader {
     }
 
     /**
-     * Loads and returns a ParseContext populated with components from the "other-configs" section.
+     * Loads and returns a ParseContext populated with components from the "parse-context" section.
      * <p>
-     * This method loads components that should be passed via ParseContext, such as:
-     * <ul>
-     *   <li>DigesterFactory (from "digester-factory")</li>
-     *   <li>MetadataWriteLimiterFactory (from "metadata-write-limiter-factory")</li>
-     * </ul>
+     * This method only loads explicitly configured items from the JSON configuration.
+     * For loading with defaults for missing items, use {@link #loadParseContextWithDefaults()}.
      * <p>
      * Use this method when you need a pre-configured ParseContext for parsing operations.
      *
@@ -408,22 +399,88 @@ public class TikaLoader {
      * @throws TikaConfigException if loading fails
      */
     public ParseContext loadParseContext() throws TikaConfigException {
-        ParseContext context = new ParseContext();
-        loadOne(DigesterFactory.class, context);
-        loadOne(MetadataWriteLimiterFactory.class, context);
-        loadOne(EmbeddedDocumentExtractorFactory.class, context);
-        loadOne(EmbeddedLimits.class, context);
-        loadOne(OutputLimits.class, context);
-        loadOne(TimeoutLimits.class, context);
-        loadOne(SAXOutputConfig.class, context);
-        return context;
+        return loadParseContextInternal(false);
     }
 
-    private <T> void loadOne(Class<T> clazz, ParseContext context) throws TikaConfigException {
-        T instnce = configs().load(clazz);
-        if (instnce != null) {
-            context.set(clazz, instnce);
+    /**
+     * Loads and returns a ParseContext populated with components from the "parse-context" section,
+     * plus default implementations for any missing items.
+     * <p>
+     * This method loads explicitly configured items from JSON, then instantiates
+     * default implementations (marked with {@code @TikaComponent(defaultFor=...)})
+     * for any interface that wasn't explicitly configured.
+     *
+     * @return a ParseContext populated with configured and default components
+     * @throws TikaConfigException if loading fails
+     */
+    public ParseContext loadParseContextWithDefaults() throws TikaConfigException {
+        return loadParseContextInternal(true);
+    }
+
+    /**
+     * Internal method to load ParseContext with optional defaults.
+     *
+     * @param includeDefaults whether to include default implementations for missing items
+     * @return a ParseContext populated with components
+     * @throws TikaConfigException if loading fails
+     */
+    private ParseContext loadParseContextInternal(boolean includeDefaults) throws TikaConfigException {
+        ParseContext context = new ParseContext();
+        Set<Class<?>> configuredKeys = new HashSet<>();
+
+        // Load the component registry for parse-context
+        ComponentRegistry registry;
+        try {
+            registry = new ComponentRegistry("parse-context", classLoader);
+        } catch (TikaConfigException e) {
+            // parse-context.idx might not exist yet (e.g., first build)
+            // In that case, just return an empty context
+            return context;
         }
+
+        // Load explicitly configured items from JSON
+        JsonNode parseContextNode = config.getRootNode().get("parse-context");
+        if (parseContextNode != null && parseContextNode.isObject()) {
+            java.util.Iterator<String> fieldNames = parseContextNode.fieldNames();
+            while (fieldNames.hasNext()) {
+                String key = fieldNames.next();
+                JsonNode valueNode = parseContextNode.get(key);
+
+                try {
+                    ComponentInfo info = registry.getComponentInfo(key);
+                    Class<?> targetClass = info.componentClass();
+                    Class<?> contextKey = info.contextKey() != null ? info.contextKey() : targetClass;
+
+                    Object instance = objectMapper.treeToValue(valueNode, targetClass);
+                    context.set((Class<Object>) contextKey, instance);
+                    configuredKeys.add(contextKey);
+                } catch (TikaConfigException e) {
+                    throw new TikaConfigException("Failed to load parse-context item: " + key, e);
+                } catch (Exception e) {
+                    throw new TikaConfigException("Failed to deserialize parse-context item: " + key, e);
+                }
+            }
+        }
+
+        // Add defaults for missing items (if requested)
+        if (includeDefaults) {
+            for (Map.Entry<String, ComponentInfo> entry : registry.getDefaultComponents().entrySet()) {
+                ComponentInfo info = entry.getValue();
+                Class<?> contextKey = info.contextKey() != null ? info.contextKey() : info.componentClass();
+
+                if (!configuredKeys.contains(contextKey)) {
+                    try {
+                        Object instance = info.componentClass().getDeclaredConstructor().newInstance();
+                        context.set((Class<Object>) contextKey, instance);
+                    } catch (ReflectiveOperationException e) {
+                        throw new TikaConfigException(
+                                "Failed to instantiate default component: " + info.componentClass().getName(), e);
+                    }
+                }
+            }
+        }
+
+        return context;
     }
 
     /**

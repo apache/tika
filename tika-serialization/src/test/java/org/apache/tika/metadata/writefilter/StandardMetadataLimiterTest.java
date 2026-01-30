@@ -51,7 +51,8 @@ public class StandardMetadataLimiterTest extends TikaTest {
     public void testMetadataFactoryConfig() throws Exception {
         TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "TIKA-3695.json"));
         AutoDetectParser parser = (AutoDetectParser) loader.loadAutoDetectParser();
-        MetadataWriteLimiterFactory factory = loader.configs().load(MetadataWriteLimiterFactory.class);
+        ParseContext context = loader.loadParseContext();
+        MetadataWriteLimiterFactory factory = context.get(MetadataWriteLimiterFactory.class);
         assertEquals(330, ((StandardMetadataLimiterFactory) factory).getMaxTotalBytes());
         assertFalse(((StandardMetadataLimiterFactory) factory).getIncludeFields().isEmpty(),
                 "includeFields should not be empty");
@@ -84,7 +85,8 @@ public class StandardMetadataLimiterTest extends TikaTest {
     public void testMetadataFactoryFieldsConfig() throws Exception {
         TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "TIKA-3695-fields.json"));
         AutoDetectParser parser = (AutoDetectParser) loader.loadAutoDetectParser();
-        MetadataWriteLimiterFactory factory = loader.configs().load(MetadataWriteLimiterFactory.class);
+        ParseContext context = loader.loadParseContext();
+        MetadataWriteLimiterFactory factory = context.get(MetadataWriteLimiterFactory.class);
         assertEquals(421, ((StandardMetadataLimiterFactory) factory).getMaxTotalBytes());
         assertEquals(999, ((StandardMetadataLimiterFactory) factory).getMaxKeySize());
         assertEquals(10001, ((StandardMetadataLimiterFactory) factory).getMaxFieldSize());
@@ -285,9 +287,7 @@ public class StandardMetadataLimiterTest extends TikaTest {
     public void testExclude() throws Exception {
         TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "TIKA-3695-exclude.json"));
         Parser parser = loader.loadAutoDetectParser();
-        MetadataWriteLimiterFactory factory = loader.configs().load(MetadataWriteLimiterFactory.class);
-        ParseContext parseContext = new ParseContext();
-        parseContext.set(MetadataWriteLimiterFactory.class, factory);
+        ParseContext parseContext = loader.loadParseContext();
         String mock = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
                 "<mock>";
         mock += "<metadata action=\"add\" name=\"dc:creator\">01234567890123456789</metadata>";

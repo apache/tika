@@ -18,6 +18,8 @@ package org.apache.tika.sax;
 
 import java.io.Serializable;
 
+import org.apache.tika.config.TikaComponent;
+
 /**
  * Configuration for SAX output behavior.
  * <p>
@@ -25,6 +27,7 @@ import java.io.Serializable;
  * how content handlers and embedded document extractors generate output.
  * </p>
  */
+@TikaComponent(spi = false)
 public class SAXOutputConfig implements Serializable {
 
     private static final long serialVersionUID = 1L;
