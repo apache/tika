@@ -95,7 +95,8 @@ public abstract class CXFTestBase {
     private static final String TEMPLATE_RESOURCE = "/configs/cxf-test-base-template.json";
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    protected static final String endPoint = "http://localhost:" + TikaServerConfig.DEFAULT_PORT;
+    protected static final int testPort = TestPortAllocator.findFreePort();
+    protected static final String endPoint = "http://localhost:" + testPort;
     protected final static int DIGESTER_READ_LIMIT = 20 * 1024 * 1024;
     protected Server server;
     protected TikaLoader tika;
