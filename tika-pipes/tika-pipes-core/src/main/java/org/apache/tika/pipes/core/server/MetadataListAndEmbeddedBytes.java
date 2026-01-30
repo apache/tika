@@ -22,7 +22,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentBytesHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
-import org.apache.tika.pipes.core.extractor.EmittingEmbeddedDocumentBytesHandler;
+import org.apache.tika.pipes.core.extractor.EmittingUnpackHandler;
 
 class MetadataListAndEmbeddedBytes {
 
@@ -66,7 +66,7 @@ class MetadataListAndEmbeddedBytes {
          * @return
          */
         public boolean toBePackagedForStreamEmitter() {
-            return !(embeddedDocumentBytesHandler instanceof EmittingEmbeddedDocumentBytesHandler);
+            return !(embeddedDocumentBytesHandler instanceof EmittingUnpackHandler);
         }
 
     @Override

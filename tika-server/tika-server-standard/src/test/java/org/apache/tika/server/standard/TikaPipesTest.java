@@ -251,7 +251,7 @@ public class TikaPipesTest extends CXFTestBase {
 
     @Test
     public void testBytes() throws Exception {
-        UnpackConfig config = new UnpackConfig(true);
+        UnpackConfig config = new UnpackConfig();
         config.setEmitter(EMITTER_BYTES_ID);
         config.setIncludeOriginal(true);
         config.setKeyBaseStrategy(UnpackConfig.KEY_BASE_STRATEGY.CUSTOM);

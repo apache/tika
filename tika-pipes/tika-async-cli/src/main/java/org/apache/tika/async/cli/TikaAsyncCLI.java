@@ -33,10 +33,12 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
@@ -66,7 +68,8 @@ public class TikaAsyncCLI {
         options.addOption("p", "pluginsDir", true, "plugins directory");
         //options.addOption("l", "fileList", true, "file list");
         options.addOption("c", "config", true, "tikaConfig.json");
-        options.addOption("Z", "unzip", false, "extract raw bytes from attachments");
+        options.addOption("z", "unzipShallow", false, "extract raw bytes from direct attachments only (depth=1)");
+        options.addOption("Z", "unzipRecursive", false, "extract raw bytes from all attachments recursively");
 
         return options;
     }
@@ -146,7 +149,8 @@ public class TikaAsyncCLI {
         if (args.length == 2 && ! args[0].startsWith("-")) {
             return new SimpleAsyncConfig(args[0], args[1], 1,
                     30000L, "-Xmx1g", null, null,
-                    BasicContentHandlerFactory.HANDLER_TYPE.TEXT, false, null);
+                    BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                    SimpleAsyncConfig.ExtractBytesMode.NONE, null);
         }
 
         Options options = getOptions();
@@ -167,7 +171,7 @@ public class TikaAsyncCLI {
         String asyncConfig = null;
         String pluginsDir = null;
         BasicContentHandlerFactory.HANDLER_TYPE handlerType = BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
-        boolean extractBytes = false;
+        SimpleAsyncConfig.ExtractBytesMode extractBytesMode = SimpleAsyncConfig.ExtractBytesMode.NONE;
         if (line.hasOption("i")) {
             inputDir = line.getOptionValue("i");
         }
@@ -190,7 +194,9 @@ public class TikaAsyncCLI {
             tikaConfig = line.getOptionValue("c");
         }
         if (line.hasOption("Z")) {
-            extractBytes = true;
+            extractBytesMode = SimpleAsyncConfig.ExtractBytesMode.RECURSIVE;
+        } else if (line.hasOption("z")) {
+            extractBytesMode = SimpleAsyncConfig.ExtractBytesMode.SHALLOW;
         }
         if (line.hasOption('h')) {
             handlerType = getHandlerType(line.getOptionValue('h'));
@@ -242,7 +248,7 @@ public class TikaAsyncCLI {
 
         return new SimpleAsyncConfig(inputDir, outputDir,
                 numClients, timeoutMs, xmx, fileList, tikaConfig, handlerType,
-                extractBytes, pluginsDir);
+                extractBytesMode, pluginsDir);
     }
 
     private static BasicContentHandlerFactory.HANDLER_TYPE getHandlerType(String t) throws TikaConfigException {
@@ -298,12 +304,24 @@ public class TikaAsyncCLI {
         if (asyncConfig == null) {
             return;
         }
-        if (!asyncConfig.isExtractBytes()) {
+        SimpleAsyncConfig.ExtractBytesMode mode = asyncConfig.getExtractBytesMode();
+        if (mode == SimpleAsyncConfig.ExtractBytesMode.NONE) {
             return;
         }
         ParseContext parseContext = t.getParseContext();
+        // Use the new UNPACK ParseMode for embedded byte extraction
+        parseContext.set(ParseMode.class, ParseMode.UNPACK);
+
+        // For SHALLOW mode (-z), set depth limit to 1 (direct children only)
+        if (mode == SimpleAsyncConfig.ExtractBytesMode.SHALLOW) {
+            EmbeddedLimits limits = new EmbeddedLimits();
+            limits.setMaxDepth(1);
+            limits.setThrowOnMaxDepth(false);
+            parseContext.set(EmbeddedLimits.class, limits);
+        }
+        // For RECURSIVE mode (-Z), use default unlimited depth
+
         UnpackConfig config = new UnpackConfig();
-        config.setExtractEmbeddedDocumentBytes(true);
         config.setEmitter(TikaConfigAsyncWriter.EMITTER_NAME);
         config.setIncludeOriginal(false);
         config.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);

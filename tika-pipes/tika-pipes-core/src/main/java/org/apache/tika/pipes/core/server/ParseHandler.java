@@ -88,7 +88,9 @@ class ParseHandler {
         ContentHandlerFactory contentHandlerFactory = getContentHandlerFactory(parseContext);
         if (parseMode == ParseMode.NO_PARSE) {
             metadataList = detectOnly(fetchEmitTuple, stream, metadata, parseContext);
-        } else if (parseMode == ParseMode.RMETA) {
+        } else if (parseMode == ParseMode.RMETA || parseMode == ParseMode.UNPACK) {
+            // UNPACK uses the same recursive parsing as RMETA
+            // The difference is in setup (PipesWorker) - UNPACK has mandatory byte extraction
             metadataList =
                     parseRecursive(fetchEmitTuple, contentHandlerFactory, stream, metadata, parseContext);
         } else {

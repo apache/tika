@@ -35,7 +35,6 @@ import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.DefaultEmbeddedStreamTranslator;
-import org.apache.tika.extractor.EmbeddedBytesSelector;
 import org.apache.tika.extractor.EmbeddedDocumentBytesHandler;
 import org.apache.tika.extractor.EmbeddedStreamTranslator;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
@@ -48,24 +47,23 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 
 /**
- * Recursive Unpacker and text and metadata extractor.
+ * Embedded document extractor that parses and unpacks embedded documents,
+ * extracting both text/metadata and raw bytes.
  *
  * @since Apache Tika 3.0.0
  */
-public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
+public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
 
     private static final Logger LOGGER =
             LoggerFactory.getLogger(ParsingEmbeddedDocumentExtractor.class);
 
     private static final File ABSTRACT_PATH = new File("");
 
-    private EmbeddedBytesSelector embeddedBytesSelector = EmbeddedBytesSelector.ACCEPT_ALL;
-
     private final EmbeddedStreamTranslator embeddedStreamTranslator = new DefaultEmbeddedStreamTranslator();
     private long bytesExtracted = 0;
     private final long maxEmbeddedBytesForExtraction;
 
-    public RUnpackExtractor(ParseContext context, long maxEmbeddedBytesForExtraction) {
+    public UnpackExtractor(ParseContext context, long maxEmbeddedBytesForExtraction) {
         super(context);
         this.maxEmbeddedBytesForExtraction = maxEmbeddedBytesForExtraction;
     }
@@ -158,7 +156,10 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
             return;
         }
 
-        if (! embeddedBytesSelector.select(metadata)) {
+        // Get UnpackSelector from ParseContext - if configured, use it to filter
+        // If no selector configured, accept all embedded documents
+        UnpackSelector selector = context.get(UnpackSelector.class);
+        if (selector != null && !selector.select(metadata)) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("skipping embedded bytes {} <-> {}",
                         metadata.get(Metadata.CONTENT_TYPE),
@@ -188,13 +189,5 @@ public class RUnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         } catch (IOException e) {
             LOGGER.warn("problem writing out embedded bytes", e);
         }
-    }
-
-    public void setEmbeddedBytesSelector(EmbeddedBytesSelector embeddedBytesSelector) {
-        this.embeddedBytesSelector = embeddedBytesSelector;
-    }
-
-    public EmbeddedBytesSelector getEmbeddedBytesSelector() {
-        return embeddedBytesSelector;
     }
 }

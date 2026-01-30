@@ -28,7 +28,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
 
-public abstract class AbstractEmbeddedDocumentBytesHandler implements EmbeddedDocumentBytesHandler {
+public abstract class AbstractUnpackHandler implements EmbeddedDocumentBytesHandler {
 
     List<Integer> ids = new ArrayList<>();
 

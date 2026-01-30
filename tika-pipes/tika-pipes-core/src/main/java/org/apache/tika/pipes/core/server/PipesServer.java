@@ -63,6 +63,7 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.core.EmitStrategy;
 import org.apache.tika.pipes.core.EmitStrategyConfig;
@@ -71,7 +72,8 @@ import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.config.ConfigStore;
 import org.apache.tika.pipes.core.config.ConfigStoreFactory;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
-import org.apache.tika.pipes.core.extractor.RUnpackExtractorFactory;
+import org.apache.tika.pipes.core.extractor.UnpackConfig;
+import org.apache.tika.pipes.core.extractor.UnpackExtractorFactory;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.pipes.core.serialization.JsonPipesIpc;
 import org.apache.tika.plugins.ExtensionConfig;
@@ -79,6 +81,7 @@ import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.serialization.ParseContextUtils;
 import org.apache.tika.utils.ExceptionUtils;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * This server is forked from the PipesClient.  This class isolates
@@ -300,6 +303,8 @@ public class PipesServer implements AutoCloseable {
                     CountDownLatch countDownLatch = new CountDownLatch(1);
 
                     FetchEmitTuple fetchEmitTuple = readFetchEmitTuple();
+                    // Validate before merging with global config
+                    validateFetchEmitTuple(fetchEmitTuple);
                     // Create merged ParseContext: defaults from tika-config + request overrides
                     ParseContext mergedContext = createMergedParseContext(fetchEmitTuple.getParseContext());
                     // Resolve friendly-named configs in ParseContext to actual objects
@@ -460,6 +465,29 @@ public class PipesServer implements AutoCloseable {
         return null;
     }
 
+    /**
+     * Validates the FetchEmitTuple before merging with global config.
+     * If the tuple explicitly sets UnpackConfig with an emitter but ParseMode is not UNPACK,
+     * that's a configuration error.
+     */
+    private void validateFetchEmitTuple(FetchEmitTuple fetchEmitTuple) throws TikaConfigException {
+        ParseContext requestContext = fetchEmitTuple.getParseContext();
+        if (requestContext == null) {
+            return;
+        }
+        UnpackConfig unpackConfig = requestContext.get(UnpackConfig.class);
+        ParseMode parseMode = requestContext.get(ParseMode.class);
+
+        // If tuple explicitly has UnpackConfig with emitter but not UNPACK mode, that's an error
+        if (unpackConfig != null && !StringUtils.isBlank(unpackConfig.getEmitter())
+                && parseMode != ParseMode.UNPACK) {
+            throw new TikaConfigException(
+                    "FetchEmitTuple has UnpackConfig with emitter '" + unpackConfig.getEmitter() +
+                    "' but ParseMode is " + parseMode + ". " +
+                    "To extract embedded bytes, set ParseMode.UNPACK in the ParseContext.");
+        }
+    }
+
     protected void initializeResources() throws TikaException, IOException, SAXException {
 
         TikaJsonConfig tikaJsonConfig = tikaLoader.getConfig();
@@ -489,10 +517,10 @@ public class PipesServer implements AutoCloseable {
     private ParseContext createMergedParseContext(ParseContext requestContext) throws TikaConfigException {
         // Create fresh context with defaults from tika-config (e.g., DigesterFactory)
         ParseContext mergedContext = tikaLoader.loadParseContext();
-        // If no embedded document extractor factory is configured, use RUnpackExtractorFactory
+        // If no embedded document extractor factory is configured, use UnpackExtractorFactory
         // as the default for pipes scenarios (supports embedded byte extraction)
         if (mergedContext.get(EmbeddedDocumentExtractorFactory.class) == null) {
-            mergedContext.set(EmbeddedDocumentExtractorFactory.class, new RUnpackExtractorFactory());
+            mergedContext.set(EmbeddedDocumentExtractorFactory.class, new UnpackExtractorFactory());
         }
         // Overlay request's values (request takes precedence)
         mergedContext.copyFrom(requestContext);

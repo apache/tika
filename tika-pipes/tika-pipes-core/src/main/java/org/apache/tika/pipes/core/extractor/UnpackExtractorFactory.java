@@ -22,17 +22,11 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
-@TikaComponent(name = "runpack-extractor-factory")
-public class RUnpackExtractorFactory implements EmbeddedDocumentByteStoreExtractorFactory {
+@TikaComponent(name = "unpack-extractor-factory")
+public class UnpackExtractorFactory implements EmbeddedDocumentByteStoreExtractorFactory {
 
     @Override
     public EmbeddedDocumentExtractor newInstance(Metadata metadata, ParseContext parseContext) {
-        UnpackConfig config = parseContext.get(UnpackConfig.class);
-        if (config == null) {
-            config = UnpackConfig.SKIP;
-        }
-        RUnpackExtractor ex = new RUnpackExtractor(parseContext, Long.MAX_VALUE);
-        ex.setEmbeddedBytesSelector(config.createEmbeddedBytesSelector());
-        return ex;
+        return new UnpackExtractor(parseContext, Long.MAX_VALUE);
     }
 }

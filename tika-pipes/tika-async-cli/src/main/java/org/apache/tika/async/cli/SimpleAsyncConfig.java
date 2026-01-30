@@ -20,6 +20,12 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
 
 class SimpleAsyncConfig {
 
+    enum ExtractBytesMode {
+        NONE,       // no byte extraction
+        SHALLOW,    // -z: depth=1, no throw on max depth
+        RECURSIVE   // -Z: full recursion
+    }
+
     private String inputDir;
     private String outputDir;
     private Integer numClients;
@@ -27,13 +33,13 @@ class SimpleAsyncConfig {
     private String xmx;
     private String fileList;
     private String tikaConfig;//path to the tikaConfig file to be used in the forked process
-    private boolean extractBytes;
+    private ExtractBytesMode extractBytesMode;
     private final BasicContentHandlerFactory.HANDLER_TYPE handlerType;
     private final String pluginsDir;
     //TODO -- switch to a builder
     public SimpleAsyncConfig(String inputDir, String outputDir, Integer numClients, Long timeoutMs, String xmx, String fileList,
-                             String tikaConfig, BasicContentHandlerFactory.HANDLER_TYPE handlerType, boolean extractBytes,
-                             String pluginsDir) {
+                             String tikaConfig, BasicContentHandlerFactory.HANDLER_TYPE handlerType,
+                             ExtractBytesMode extractBytesMode, String pluginsDir) {
         this.inputDir = inputDir;
         this.outputDir = outputDir;
         this.numClients = numClients;
@@ -42,7 +48,7 @@ class SimpleAsyncConfig {
         this.fileList = fileList;
         this.tikaConfig = tikaConfig;
         this.handlerType = handlerType;
-        this.extractBytes = extractBytes;
+        this.extractBytesMode = extractBytesMode;
         this.pluginsDir = pluginsDir;
     }
 
@@ -74,8 +80,8 @@ class SimpleAsyncConfig {
         return tikaConfig;
     }
 
-    public boolean isExtractBytes() {
-        return extractBytes;
+    public ExtractBytesMode getExtractBytesMode() {
+        return extractBytesMode;
     }
 
     public BasicContentHandlerFactory.HANDLER_TYPE getHandlerType() {
@@ -96,7 +102,7 @@ class SimpleAsyncConfig {
                 ", xmx='" + xmx + '\'' +
                 ", fileList='" + fileList + '\'' +
                 ", tikaConfig='" + tikaConfig + '\'' +
-                ", extractBytes=" + extractBytes +
+                ", extractBytesMode=" + extractBytesMode +
                 ", handlerType=" + handlerType +
                 ", pluginsDir='" + pluginsDir + '\'' +
                 '}';

@@ -112,7 +112,7 @@ public class AsyncProcessorTest extends TikaTest {
     public void testRecursiveUnpacking() throws Exception {
         AsyncProcessor processor = AsyncProcessor.load(configDir.resolve("tika-config.json"));
 
-        UnpackConfig embeddedDocumentBytesConfig = new UnpackConfig(true);
+        UnpackConfig embeddedDocumentBytesConfig = new UnpackConfig();
         embeddedDocumentBytesConfig.setIncludeOriginal(true);
         embeddedDocumentBytesConfig.setEmitter("fse-bytes");
         embeddedDocumentBytesConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.NONE);
