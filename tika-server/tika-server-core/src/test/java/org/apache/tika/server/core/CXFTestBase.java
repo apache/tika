@@ -56,7 +56,8 @@ import org.apache.tika.server.core.resource.TikaResource;
 import org.apache.tika.server.core.resource.UnpackerResource;
 
 public abstract class CXFTestBase {
-    protected static final String endPoint = "http://localhost:" + TikaServerConfig.DEFAULT_PORT;
+    protected static final int testPort = TestPortAllocator.findFreePort();
+    protected static final String endPoint = "http://localhost:" + testPort;
     protected final static int DIGESTER_READ_LIMIT = 20 * 1024 * 1024;
     protected Server server;
     protected TikaConfig tika;
