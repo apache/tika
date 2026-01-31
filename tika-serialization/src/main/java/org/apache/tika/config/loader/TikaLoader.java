@@ -31,23 +31,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.GlobalSettings;
-import org.apache.tika.config.OutputLimits;
-import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.CompositeEncodingDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.EncodingDetector;
-import org.apache.tika.digest.DigesterFactory;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.language.translate.DefaultTranslator;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.filter.NoOpFilter;
-import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.AutoDetectParser;
@@ -59,11 +53,12 @@ import org.apache.tika.renderer.CompositeRenderer;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
-import org.apache.tika.sax.SAXOutputConfig;
 import org.apache.tika.serialization.ComponentConfig;
 import org.apache.tika.serialization.ComponentNameResolver;
 import org.apache.tika.serialization.JsonMetadata;
 import org.apache.tika.serialization.JsonMetadataList;
+import org.apache.tika.serialization.ParseContextUtils;
+import org.apache.tika.serialization.serdes.ParseContextDeserializer;
 
 /**
  * Main entry point for loading Tika components from JSON configuration.
@@ -374,7 +369,7 @@ public class TikaLoader {
      */
     public synchronized Parser loadAutoDetectParser() throws TikaConfigException, IOException {
         if (autoDetectParser == null) {
-            // Load directly from root-level config (not via configs() which only looks in "other-configs")
+            // Load directly from root-level config (not via configs() which only looks in "parse-context")
             AutoDetectParserConfig adpConfig = loadAutoDetectParserConfig();
             if (adpConfig == null) {
                 adpConfig = new AutoDetectParserConfig();
@@ -385,13 +380,11 @@ public class TikaLoader {
     }
 
     /**
-     * Loads and returns a ParseContext populated with components from the "other-configs" section.
+     * Loads and returns a ParseContext populated with components from the "parse-context" section.
      * <p>
-     * This method loads components that should be passed via ParseContext, such as:
-     * <ul>
-     *   <li>DigesterFactory (from "digester-factory")</li>
-     *   <li>MetadataWriteLimiterFactory (from "metadata-write-limiter-factory")</li>
-     * </ul>
+     * This method deserializes the parse-context JSON and resolves all component references
+     * using the component registry. Components are looked up by their friendly names
+     * (e.g., "embedded-limits", "pdf-parser-config") and deserialized to their appropriate types.
      * <p>
      * Use this method when you need a pre-configured ParseContext for parsing operations.
      *
@@ -408,40 +401,79 @@ public class TikaLoader {
      * @throws TikaConfigException if loading fails
      */
     public ParseContext loadParseContext() throws TikaConfigException {
-        ParseContext context = new ParseContext();
-        loadOne(DigesterFactory.class, context);
-        loadOne(MetadataWriteLimiterFactory.class, context);
-        loadOne(EmbeddedDocumentExtractorFactory.class, context);
-        loadOne(EmbeddedLimits.class, context);
-        loadOne(OutputLimits.class, context);
-        loadOne(TimeoutLimits.class, context);
-        loadOne(SAXOutputConfig.class, context);
-        return context;
+        JsonNode parseContextNode = config.getRootNode().get("parse-context");
+        if (parseContextNode == null) {
+            return new ParseContext();
+        }
+        try {
+            ParseContext context =
+                    ParseContextDeserializer.readParseContext(parseContextNode, objectMapper);
+            ParseContextUtils.resolveAll(context, classLoader);
+            return context;
+        } catch (IOException e) {
+            throw new TikaConfigException("Failed to load parse-context", e);
+        }
     }
 
-    private <T> void loadOne(Class<T> clazz, ParseContext context) throws TikaConfigException {
-        T instnce = configs().load(clazz);
-        if (instnce != null) {
-            context.set(clazz, instnce);
-        }
+    /**
+     * Loads a configuration object from the "parse-context" section, merging with defaults.
+     * <p>
+     * This method is useful when you have a base configuration (e.g., from code defaults or
+     * a previous load) and want to overlay values from the JSON config. Properties not
+     * specified in the JSON retain their default values.
+     * <p>
+     * The original defaults object is NOT modified - a new instance is returned.
+     *
+     * <p>Example usage for PDFParserConfig:
+     * <pre>
+     * // Load base config from tika-config.json at init time
+     * TikaLoader loader = TikaLoader.load(configPath);
+     * PDFParserConfig baseConfig = loader.loadConfig(PDFParserConfig.class, new PDFParserConfig());
+     *
+     * // At runtime, create per-request overrides
+     * PDFParserConfig requestConfig = new PDFParserConfig();
+     * requestConfig.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.NO_OCR);
+     *
+     * // Merge: base config values + request overrides
+     * // (Note: for runtime merging, use JsonMergeUtils directly or loadConfig on a runtime loader)
+     * </pre>
+     *
+     * @param clazz the class to deserialize into
+     * @param defaults the default values to use for properties not in the JSON config
+     * @param <T> the configuration type
+     * @return a new instance with defaults merged with JSON config, or the original defaults if not configured
+     * @throws TikaConfigException if loading fails
+     */
+    public <T> T loadConfig(Class<T> clazz, T defaults) throws TikaConfigException {
+        return configs().loadWithDefaults(clazz, defaults);
+    }
+
+    /**
+     * Loads a configuration object from the "parse-context" section by explicit key, merging with defaults.
+     * <p>
+     * This method is useful when the JSON key doesn't match the class name's kebab-case conversion,
+     * or when you want to load from a specific key.
+     *
+     * @param key the JSON key in the "parse-context" section
+     * @param clazz the class to deserialize into
+     * @param defaults the default values to use for properties not in the JSON config
+     * @param <T> the configuration type
+     * @return a new instance with defaults merged with JSON config, or the original defaults if not configured
+     * @throws TikaConfigException if loading fails
+     */
+    public <T> T loadConfig(String key, Class<T> clazz, T defaults) throws TikaConfigException {
+        return configs().loadWithDefaults(key, clazz, defaults);
     }
 
     /**
      * Returns a ConfigLoader for loading simple configuration objects.
      * <p>
-     * Use this for POJOs and simple config classes. For complex components like
-     * Parsers, Detectors, etc., use the specific load methods on TikaLoader.
-     *
-     * <p>Usage:
-     * <pre>
-     * MyConfig config = loader.configs().load("my-config", MyConfig.class);
-     * // Or use kebab-case auto-conversion:
-     * MyConfig config = loader.configs().load(MyConfig.class);
-     * </pre>
+     * This is internal - external code should use {@link #loadParseContext()} or
+     * {@link #loadConfig(Class, Object)} instead.
      *
      * @return the ConfigLoader instance
      */
-    public synchronized ConfigLoader configs() {
+    private synchronized ConfigLoader configs() {
         if (configLoader == null) {
             configLoader = new ConfigLoader(config, objectMapper);
         }

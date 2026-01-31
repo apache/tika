@@ -80,13 +80,11 @@ public abstract class CXFTestBase {
               "auto-detect-parser": {
                 "throwOnZeroBytes": false
               },
-              "other-configs": {
-                "digester-factory": {
-                  "commons-digester-factory": {
-                    "digests": [
-                      { "algorithm": "MD5" }
-                    ]
-                  }
+              "parse-context": {
+                "commons-digester-factory": {
+                  "digests": [
+                    { "algorithm": "MD5" }
+                  ]
                 }
               }
             }

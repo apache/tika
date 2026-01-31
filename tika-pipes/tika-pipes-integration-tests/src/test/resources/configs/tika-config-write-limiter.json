@@ -46,15 +46,13 @@
   "auto-detect-parser": {
     "throwOnZeroBytes": false
   },
-  "other-configs": {
-    "metadata-write-limiter-factory": {
-      "standard-metadata-limiter-factory": {
-        "includeFields": ["dc:creator", "Content-Type", "X-TIKA:content"],
-        "maxKeySize": 100,
-        "maxFieldSize": 1000,
-        "maxTotalBytes": 10000,
-        "maxValuesPerField": 5
-      }
+  "parse-context": {
+    "standard-metadata-limiter-factory": {
+      "includeFields": ["dc:creator", "Content-Type", "X-TIKA:content"],
+      "maxKeySize": 100,
+      "maxFieldSize": 1000,
+      "maxTotalBytes": 10000,
+      "maxValuesPerField": 5
     }
   },
   "plugin-roots": "PLUGINS_PATHS"

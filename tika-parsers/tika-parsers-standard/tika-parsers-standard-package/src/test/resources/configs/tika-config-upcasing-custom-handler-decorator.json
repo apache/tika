@@ -3,14 +3,10 @@
     "contentHandlerDecoratorFactory": "upcasing-content-handler-decorator-factory",
     "throwOnZeroBytes": true
   },
-  "other-configs": {
-    "digester-factory": {
-      "commons-digester-factory": {}
-    },
-    "embedded-document-extractor-factory": {
-      "standard-extractor-factory": {
-        "writeFileNameToContent": true
-      }
+  "parse-context": {
+    "commons-digester-factory": {},
+    "standard-extractor-factory": {
+      "writeFileNameToContent": true
     }
   }
 }

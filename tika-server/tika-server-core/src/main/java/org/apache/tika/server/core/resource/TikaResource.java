@@ -98,11 +98,7 @@ public class TikaResource {
         TIKA_LOADER = tikaLoader;
         SERVER_STATUS = serverStatus;
         PIPES_PARSING_HELPER = pipesParsingHelper;
-        try {
-            DEFAULT_METADATA_WRITE_LIMITER_FACTORY = tikaLoader.configs().load(MetadataWriteLimiterFactory.class);
-        } catch (TikaConfigException e) {
-            LOG.debug("No MetadataWriteLimiterFactory specified in the config", e);
-        }
+        // MetadataWriteLimiterFactory is now loaded dynamically via loadParseContext()
     }
 
     /**
@@ -116,7 +112,7 @@ public class TikaResource {
 
     /**
      * Creates a new ParseContext with defaults loaded from tika-config.
-     * This loads components from "other-configs" such as DigesterFactory and MetadataWriteLimiterFactory.
+     * This loads components from "parse-context" such as DigesterFactory and MetadataWriteLimiterFactory.
      *
      * @return a new ParseContext with defaults applied
      */

@@ -31,13 +31,13 @@ import org.apache.tika.parser.ParseContext;
  * Tests loading all limit configurations from a single tika-config.json file.
  * <p>
  * This test demonstrates how to configure all limits in one place using
- * the "other-configs" section of the JSON configuration.
+ * the "parse-context" section of the JSON configuration.
  * <p>
  * Configuration file: configs/all-limits-test.json
  * <pre>
  * {
  *   "parsers": ["default-parser"],
- *   "other-configs": {
+ *   "parse-context": {
  *     "embedded-limits": {
  *       "maxDepth": 10,
  *       "throwOnMaxDepth": false,
@@ -55,13 +55,11 @@ import org.apache.tika.parser.ParseContext;
  *     "timeout-limits": {
  *       "taskTimeoutMillis": 60000
  *     },
- *     "metadata-write-limiter-factory": {
- *       "standard-metadata-limiter-factory": {
- *         "maxTotalBytes": 1048576,
- *         "maxFieldSize": 102400,
- *         "maxKeySize": 1024,
- *         "maxValuesPerField": 100
- *       }
+ *     "standard-metadata-limiter-factory": {
+ *       "maxTotalBytes": 1048576,
+ *       "maxFieldSize": 102400,
+ *       "maxKeySize": 1024,
+ *       "maxValuesPerField": 100
  *     }
  *   }
  * }
@@ -107,17 +105,18 @@ public class AllLimitsTest extends TikaTest {
     @Test
     public void testLoadIndividualLimits() throws Exception {
         TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "all-limits-test.json"));
+        ParseContext context = loader.loadParseContext();
 
-        // Load individual limit configs directly
-        EmbeddedLimits embeddedLimits = loader.configs().load(EmbeddedLimits.class);
+        // Load individual limit configs from ParseContext
+        EmbeddedLimits embeddedLimits = context.get(EmbeddedLimits.class);
         assertNotNull(embeddedLimits);
         assertEquals(10, embeddedLimits.getMaxDepth());
 
-        OutputLimits outputLimits = loader.configs().load(OutputLimits.class);
+        OutputLimits outputLimits = context.get(OutputLimits.class);
         assertNotNull(outputLimits);
         assertEquals(100000, outputLimits.getWriteLimit());
 
-        TimeoutLimits timeoutLimits = loader.configs().load(TimeoutLimits.class);
+        TimeoutLimits timeoutLimits = context.get(TimeoutLimits.class);
         assertNotNull(timeoutLimits);
         assertEquals(60000, timeoutLimits.getTaskTimeoutMillis());
     }

@@ -159,12 +159,12 @@ The default spool types are:
 === JSON Configuration
 
 SpoolingStrategy can be configured via JSON in your `tika-config.json` file.
-Place the configuration in the `other-configs` section:
+Place the configuration in the `parse-context` section:
 
 [source,json]
 ----
 {
-  "other-configs": {
+  "parse-context": {
     "spooling-strategy": {
       "spoolTypes": [
         "application/zip",
@@ -181,11 +181,8 @@ Load the configuration using `TikaLoader`:
 [source,java]
 ----
 TikaLoader loader = TikaLoader.load(Path.of("tika-config.json"));
-SpoolingStrategy strategy = loader.configs().load(SpoolingStrategy.class);
-
-// Add to parse context
-ParseContext context = new ParseContext();
-context.set(SpoolingStrategy.class, strategy);
+ParseContext context = loader.loadParseContext();
+// SpoolingStrategy is automatically loaded into the ParseContext
 ----
 
 === Best Practices

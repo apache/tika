@@ -46,7 +46,7 @@ import org.apache.tika.parser.ParseContext;
  * Example configuration:
  * <pre>
  * {
- *   "other-configs": {
+ *   "parse-context": {
  *     "output-limits": {
  *       "writeLimit": 100000,
  *       "throwOnWriteLimit": false,
