@@ -67,7 +67,7 @@ import org.apache.tika.parser.ParseContext;
  *
  * @since Apache Tika 4.0
  */
-@TikaComponent(spi = false)
+@TikaComponent(name = "embedded-limits", spi = false)
 public class EmbeddedLimits implements Serializable {
 
     private static final long serialVersionUID = 1L;

@@ -312,10 +312,14 @@ public class TikaAsyncCLI {
         // Use the new UNPACK ParseMode for embedded byte extraction
         parseContext.set(ParseMode.class, ParseMode.UNPACK);
 
-        // For SHALLOW mode (-z), set depth limit to 1 (direct children only)
+        // For SHALLOW mode (-z), set depth limit to 2 (direct children only)
+        // The depth accounting in the parser chain adds extra levels:
+        // - Container document: depth 1 after beforeParse()
+        // - First-level embedded: depth 2-3 depending on parser wrapper chain
+        // Using maxDepth=2 allows first-level embedded while blocking recursive
         if (mode == SimpleAsyncConfig.ExtractBytesMode.SHALLOW) {
             EmbeddedLimits limits = new EmbeddedLimits();
-            limits.setMaxDepth(1);
+            limits.setMaxDepth(2);
             limits.setThrowOnMaxDepth(false);
             parseContext.set(EmbeddedLimits.class, limits);
         }

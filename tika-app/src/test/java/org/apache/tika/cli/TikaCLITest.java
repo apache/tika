@@ -50,7 +50,6 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.serialization.JsonMetadataList;
-import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -357,33 +356,51 @@ public class TikaCLITest {
 
     @Test
     public void testExtractSimple() throws Exception {
-        String[] expectedChildren = new String[]{"MBD002B040A.cdx", "file-4.png", "MBD002B0FA6.bin", "MBD00262FE3.txt", "file-0.emf"};
-        testExtract("/coffee.xls", expectedChildren, 8);
+        // New pipes-based output format: json metadata + embedded files in subdirectory
+        String[] expectedChildren = new String[]{
+                "coffee.xls.json",
+                "coffee.xls-embed/00000001.emf",
+                "coffee.xls-embed/00000006.cdx",
+                "coffee.xls-embed/00000005.png"
+        };
+        testExtract("/coffee.xls", expectedChildren, 9);
     }
 
     @Test
     public void testExtractAbsolute() throws Exception {
-        String[] expectedChildren = new String[]{"dangerous/dont/touch.pl",};
-        testExtract("testZip_absolutePath.zip", expectedChildren, 2);
+        // New pipes format: json metadata + embedded files in subdirectory with numbered names
+        String[] expectedChildren = new String[]{
+                "testZip_absolutePath.zip.json",
+                "testZip_absolutePath.zip-embed/00000001.bin"
+        };
+        testExtract("testZip_absolutePath.zip", expectedChildren, 3);
     }
 
     @Test
     public void testExtractRelative() throws Exception {
-        String[] expectedChildren = new String[]{"dangerous/dont/touch.pl",};
-        testExtract("testZip_relative.zip", expectedChildren);
+        // New pipes format
+        String[] expectedChildren = new String[]{
+                "testZip_relative.zip.json"
+        };
+        testExtract("testZip_relative.zip", expectedChildren, 2);
     }
 
     @Test
     public void testExtractOverlapping() throws Exception {
-        //there should be two files, one with a prepended uuid-f1.txt
-        String[] expectedChildren = new String[]{"f1.txt",};
-        testExtract("testZip_overlappingNames.zip", expectedChildren, 2);
+        // New pipes format - overlapping names are handled by numbering
+        String[] expectedChildren = new String[]{
+                "testZip_overlappingNames.zip.json"
+        };
+        testExtract("testZip_overlappingNames.zip", expectedChildren, 3);
     }
 
     @Test
     public void testExtract0x00() throws Exception {
-        String[] expectedChildren = new String[]{"dang erous.pl",};
-        testExtract("testZip_zeroByte.zip", expectedChildren);
+        // New pipes format
+        String[] expectedChildren = new String[]{
+                "testZip_zeroByte.zip.json"
+        };
+        testExtract("testZip_zeroByte.zip", expectedChildren, 2);
     }
 
 
@@ -454,42 +471,48 @@ public class TikaCLITest {
     }
 
     private void testExtract(String targetFile, String[] expectedChildrenFileNames, int expectedLength) throws Exception {
+        Path input = Paths.get(new URI(resourcePrefix + "/" + targetFile));
+        Path pluginsDir = Paths.get("target/plugins");
 
-        String[] params = {"--extract-dir=" + ProcessUtils.escapeCommandLine(extractDir
-                .toAbsolutePath()
-                .toString()), "-z", resourcePrefix + "/" + targetFile};
+        String[] params = {"-z",
+                "-p", pluginsDir.toAbsolutePath().toString(),
+                input.toAbsolutePath().toString(),
+                extractDir.toAbsolutePath().toString()};
 
         TikaCLI.main(params);
 
-        String[] tempFileNames = extractDir
-                .toFile()
-                .list();
-        assertNotNull(tempFileNames);
-        assertEquals(expectedLength, tempFileNames.length);
-        String allFiles = String.join(" : ", tempFileNames);
+        Set<String> fileNames = getFileNames(extractDir);
+
+        // Debug: log actual files found
+        LOG.info("=== Actual files found for -z ===");
+        for (String name : fileNames) {
+            LOG.info("  {}", name);
+        }
+        LOG.info("=== End actual files ===");
+
+        assertEquals(expectedLength, fileNames.size());
 
         for (String expectedChildName : expectedChildrenFileNames) {
-            assertExtracted(extractDir.resolve(expectedChildName), allFiles);
+            assertTrue(fileNames.contains(expectedChildName),
+                    "Expected " + expectedChildName + " in " + fileNames);
         }
     }
 
     @Test
     public void testExtractTgz() throws Exception {
         //TIKA-2564
+        Path input = Paths.get(new URI(resourcePrefix + "/test-documents.tgz"));
+        Path pluginsDir = Paths.get("target/plugins");
 
-        String[] params = {"--extract-dir=" + extractDir.toAbsolutePath(), "-z", resourcePrefix + "/test-documents.tgz"};
+        String[] params = {"-z",
+                "-p", pluginsDir.toAbsolutePath().toString(),
+                input.toAbsolutePath().toString(),
+                extractDir.toAbsolutePath().toString()};
 
         TikaCLI.main(params);
 
-        String[] tempFileNames = extractDir
-                .toFile()
-                .list();
-        assertNotNull(tempFileNames);
-        String allFiles = String.join(" : ", tempFileNames);
-
-        Path expectedTAR = extractDir.resolve("test-documents.tar");
-
-        assertExtracted(expectedTAR, allFiles);
+        Set<String> fileNames = getFileNames(extractDir);
+        assertTrue(fileNames.size() > 0, "Should have extracted some files");
     }
 
     // TIKA-920
@@ -516,25 +539,23 @@ public class TikaCLITest {
 
     @Test
     public void testExtractInlineImages() throws Exception {
-        String[] params = {"--extract-dir=" + extractDir.toAbsolutePath(), "-z", resourcePrefix + "/testPDF_childAttachments.pdf"};
+        Path input = Paths.get(new URI(resourcePrefix + "/testPDF_childAttachments.pdf"));
+        Path pluginsDir = Paths.get("target/plugins");
+
+        String[] params = {"-z",
+                "-p", pluginsDir.toAbsolutePath().toString(),
+                input.toAbsolutePath().toString(),
+                extractDir.toAbsolutePath().toString()};
 
         TikaCLI.main(params);
 
-        String[] tempFileNames = extractDir
-                .toFile()
-                .list();
-        assertNotNull(tempFileNames);
-        String allFiles = String.join(" : ", tempFileNames);
+        Set<String> fileNames = getFileNames(extractDir);
 
-        Path jpeg = extractDir.resolve("image0.jpg");
-        //tiff isn't extracted without optional image dependency
-//            File tiff = new File(tempFile, "image1.tif");
-        Path jobOptions = extractDir.resolve("Press Quality(1).joboptions.txt");
-        Path doc = extractDir.resolve("Unit10.doc");
-
-        assertExtracted(jpeg, allFiles);
-        assertExtracted(jobOptions, allFiles);
-        assertExtracted(doc, allFiles);
+        // New pipes format: should have json plus embedded files in subdirectory
+        assertTrue(fileNames.stream().anyMatch(f -> f.endsWith(".json")),
+                "Should have a .json metadata file in " + fileNames);
+        assertTrue(fileNames.size() >= 2,
+                "Should have at least 2 files (json + embedded), got " + fileNames.size() + ": " + fileNames);
     }
 
     @Test

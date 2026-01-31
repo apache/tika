@@ -261,9 +261,10 @@ public class TikaPipesTest extends CXFTestBase {
         config.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.EXISTING);
         ParseContext parseContext = new ParseContext();
         // Set default content handler and parse mode
+        // UNPACK mode is required when UnpackConfig has an emitter set
         parseContext.set(ContentHandlerFactory.class,
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
-        parseContext.set(ParseMode.class, ParseMode.RMETA);
+        parseContext.set(ParseMode.class, ParseMode.UNPACK);
         parseContext.set(UnpackConfig.class, config);
         FetchEmitTuple t =
                 new FetchEmitTuple("myId", new FetchKey(FETCHER_ID, "test_recursive_embedded.docx"),

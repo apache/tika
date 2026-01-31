@@ -27,6 +27,6 @@ public class UnpackExtractorFactory implements EmbeddedDocumentByteStoreExtracto
 
     @Override
     public EmbeddedDocumentExtractor newInstance(Metadata metadata, ParseContext parseContext) {
-        return new UnpackExtractor(parseContext, Long.MAX_VALUE);
+        return new UnpackExtractor(parseContext);
     }
 }

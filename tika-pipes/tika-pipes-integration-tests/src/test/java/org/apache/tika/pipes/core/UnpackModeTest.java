@@ -22,7 +22,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -323,5 +328,308 @@ public class UnpackModeTest {
         assertTrue(Files.exists(outputDir.resolve(testDocWithEmbedded + ".json")) ||
                         Files.list(outputDir).count() > 0,
                 "Output directory should contain emitted files");
+    }
+
+    @Test
+    public void testUnpackModeZipOutput(@TempDir Path tmp) throws Exception {
+        // Test that zipEmbeddedFiles=true creates a zip file containing embedded documents
+        Path outputDir = tmp.resolve("output");
+        Files.createDirectories(outputDir);
+
+        PipesClient pipesClient = init(tmp, testDocWithEmbedded);
+
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.UNPACK);
+
+        // Configure UnpackConfig for zip output
+        UnpackConfig unpackConfig = new UnpackConfig();
+        unpackConfig.setEmitter(emitterName);
+        unpackConfig.setZipEmbeddedFiles(true);
+        unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
+        parseContext.set(UnpackConfig.class, unpackConfig);
+
+        PipesResult pipesResult = pipesClient.process(
+                new FetchEmitTuple(testDocWithEmbedded, new FetchKey(fetcherName, testDocWithEmbedded),
+                        new EmitKey(emitterName, testDocWithEmbedded), new Metadata(), parseContext,
+                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
+
+        assertTrue(pipesResult.isSuccess(),
+                "UNPACK with zipEmbeddedFiles should succeed. Status: " + pipesResult.status() +
+                        ", Message: " + pipesResult.message());
+
+        // Find the zip file in output directory
+        List<Path> zipFiles = Files.list(outputDir)
+                .filter(p -> p.toString().endsWith("-embedded.zip"))
+                .toList();
+
+        assertEquals(1, zipFiles.size(), "Should create exactly one zip file. Found: " +
+                Files.list(outputDir).map(p -> p.getFileName().toString()).toList());
+
+        Path zipFile = zipFiles.get(0);
+        assertTrue(Files.size(zipFile) > 0, "Zip file should not be empty");
+
+        // Verify zip contents
+        Set<String> zipEntries = new HashSet<>();
+        try (ZipFile zip = new ZipFile(zipFile.toFile())) {
+            Enumeration<? extends ZipEntry> entries = zip.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                zipEntries.add(entry.getName());
+            }
+        }
+
+        // mock-embedded.xml has 4 embedded documents (test-embedded-1.txt through test-embedded-4.txt)
+        assertTrue(zipEntries.size() >= 4,
+                "Zip should contain at least 4 embedded files. Found: " + zipEntries);
+    }
+
+    @Test
+    public void testUnpackModeZipWithMetadata(@TempDir Path tmp) throws Exception {
+        // Test that includeMetadataInZip=true includes .metadata.json files in the zip
+        Path outputDir = tmp.resolve("output");
+        Files.createDirectories(outputDir);
+
+        PipesClient pipesClient = init(tmp, testDocWithEmbedded);
+
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.UNPACK);
+
+        // Configure UnpackConfig for zip output with metadata
+        UnpackConfig unpackConfig = new UnpackConfig();
+        unpackConfig.setEmitter(emitterName);
+        unpackConfig.setZipEmbeddedFiles(true);
+        unpackConfig.setIncludeMetadataInZip(true);
+        unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
+        parseContext.set(UnpackConfig.class, unpackConfig);
+
+        PipesResult pipesResult = pipesClient.process(
+                new FetchEmitTuple(testDocWithEmbedded, new FetchKey(fetcherName, testDocWithEmbedded),
+                        new EmitKey(emitterName, testDocWithEmbedded), new Metadata(), parseContext,
+                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
+
+        assertTrue(pipesResult.isSuccess(),
+                "UNPACK with zipEmbeddedFiles and metadata should succeed. Status: " + pipesResult.status() +
+                        ", Message: " + pipesResult.message());
+
+        // Find the zip file
+        List<Path> zipFiles = Files.list(outputDir)
+                .filter(p -> p.toString().endsWith("-embedded.zip"))
+                .toList();
+
+        assertEquals(1, zipFiles.size(), "Should create exactly one zip file");
+
+        Path zipFile = zipFiles.get(0);
+
+        // Verify zip contains metadata JSON files
+        Set<String> metadataFiles = new HashSet<>();
+        try (ZipFile zip = new ZipFile(zipFile.toFile())) {
+            Enumeration<? extends ZipEntry> entries = zip.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                if (entry.getName().endsWith(".metadata.json")) {
+                    metadataFiles.add(entry.getName());
+                }
+            }
+        }
+
+        // Each embedded document should have a corresponding .metadata.json file
+        assertTrue(metadataFiles.size() >= 4,
+                "Zip should contain metadata JSON files for embedded documents. Found: " + metadataFiles);
+    }
+
+    @Test
+    public void testUnpackModeZipWithIncludeOriginal(@TempDir Path tmp) throws Exception {
+        // Test that includeOriginal=true includes the container document in the zip
+        Path outputDir = tmp.resolve("output");
+        Files.createDirectories(outputDir);
+
+        PipesClient pipesClient = init(tmp, testDocWithEmbedded);
+
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.UNPACK);
+
+        // Configure UnpackConfig for zip output with original document
+        UnpackConfig unpackConfig = new UnpackConfig();
+        unpackConfig.setEmitter(emitterName);
+        unpackConfig.setZipEmbeddedFiles(true);
+        unpackConfig.setIncludeOriginal(true);
+        unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
+        parseContext.set(UnpackConfig.class, unpackConfig);
+
+        PipesResult pipesResult = pipesClient.process(
+                new FetchEmitTuple(testDocWithEmbedded, new FetchKey(fetcherName, testDocWithEmbedded),
+                        new EmitKey(emitterName, testDocWithEmbedded), new Metadata(), parseContext,
+                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
+
+        assertTrue(pipesResult.isSuccess(),
+                "UNPACK with includeOriginal should succeed. Status: " + pipesResult.status());
+
+        // Find the zip file
+        List<Path> zipFiles = Files.list(outputDir)
+                .filter(p -> p.toString().endsWith("-embedded.zip"))
+                .toList();
+
+        assertEquals(1, zipFiles.size(), "Should create exactly one zip file");
+
+        Path zipFile = zipFiles.get(0);
+
+        // Verify zip contents include the original document
+        Set<String> allEntries = new HashSet<>();
+        try (ZipFile zip = new ZipFile(zipFile.toFile())) {
+            Enumeration<? extends ZipEntry> entries = zip.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                allEntries.add(entry.getName());
+            }
+        }
+
+        // With includeOriginal=true, should have embedded files + original
+        // The original may have a name like the original file name
+        assertTrue(allEntries.size() >= 5,
+                "Zip should contain embedded files plus original. Found: " + allEntries);
+    }
+
+    @Test
+    public void testUnpackModeZipNoEmbedded(@TempDir Path tmp) throws Exception {
+        // Test that zipEmbeddedFiles=true with a document with no embedded files
+        // doesn't create a zip (or creates an empty one)
+        String simpleDoc = "mock_times.xml";
+        Path outputDir = tmp.resolve("output");
+        Files.createDirectories(outputDir);
+
+        PipesClient pipesClient = init(tmp, simpleDoc);
+
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.UNPACK);
+
+        UnpackConfig unpackConfig = new UnpackConfig();
+        unpackConfig.setEmitter(emitterName);
+        unpackConfig.setZipEmbeddedFiles(true);
+        parseContext.set(UnpackConfig.class, unpackConfig);
+
+        PipesResult pipesResult = pipesClient.process(
+                new FetchEmitTuple(simpleDoc, new FetchKey(fetcherName, simpleDoc),
+                        new EmitKey(emitterName, simpleDoc), new Metadata(), parseContext,
+                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
+
+        assertTrue(pipesResult.isSuccess(),
+                "UNPACK with zipEmbeddedFiles on simple doc should succeed. Status: " + pipesResult.status());
+
+        // Check for zip files - there may be none if no embedded docs
+        List<Path> zipFiles = Files.list(outputDir)
+                .filter(p -> p.toString().endsWith("-embedded.zip"))
+                .toList();
+
+        // Either no zip file is created, or it's empty (no entries except possibly the original)
+        if (!zipFiles.isEmpty()) {
+            try (ZipFile zip = new ZipFile(zipFiles.get(0).toFile())) {
+                // The zip might be empty or only contain the original document
+                // With a simple doc and no includeOriginal, it should be very small
+                assertTrue(zip.size() <= 1,
+                        "Zip for document without embedded files should be nearly empty");
+            }
+        }
+    }
+
+    @Test
+    public void testMaxUnpackBytesLimit(@TempDir Path tmp) throws Exception {
+        // Test that maxUnpackBytes limit is enforced during byte extraction
+        Path outputDir = tmp.resolve("output");
+        Files.createDirectories(outputDir);
+
+        PipesClient pipesClient = init(tmp, testDocWithEmbedded);
+
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.UNPACK);
+
+        // Set a very low maxUnpackBytes limit (10 bytes) - this should cause
+        // extraction to stop early after the first few bytes
+        UnpackConfig unpackConfig = new UnpackConfig();
+        unpackConfig.setEmitter(emitterName);
+        unpackConfig.setMaxUnpackBytes(10L);  // Only allow 10 bytes total
+        parseContext.set(UnpackConfig.class, unpackConfig);
+
+        PipesResult pipesResult = pipesClient.process(
+                new FetchEmitTuple(testDocWithEmbedded + "-limited", new FetchKey(fetcherName, testDocWithEmbedded),
+                        new EmitKey(emitterName, testDocWithEmbedded + "-limited"), new Metadata(), parseContext,
+                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
+
+        // The parse should succeed (limit exceeded just stops extraction, doesn't fail)
+        assertTrue(pipesResult.isSuccess(),
+                "UNPACK with maxUnpackBytes limit should succeed. Status: " + pipesResult.status());
+
+        // The output should be limited - total extracted bytes should be <= 10
+        // We can verify this by checking that not all embedded files were written
+        // or that they were truncated
+        long totalBytesWritten = Files.walk(outputDir)
+                .filter(Files::isRegularFile)
+                .filter(p -> !p.toString().endsWith(".json"))  // Exclude metadata JSON
+                .mapToLong(p -> {
+                    try {
+                        return Files.size(p);
+                    } catch (Exception e) {
+                        return 0;
+                    }
+                })
+                .sum();
+
+        // With a 10-byte limit, we should have extracted very little
+        // The first embedded file in mock-embedded.xml is larger than 10 bytes
+        assertTrue(totalBytesWritten <= 20,
+                "Total bytes written should be limited by maxUnpackBytes. Got: " + totalBytesWritten);
+    }
+
+    @Test
+    public void testMaxUnpackBytesDefault(@TempDir Path tmp) throws Exception {
+        // Test that the default maxUnpackBytes (10GB) allows normal extraction
+        Path outputDir = tmp.resolve("output");
+        Files.createDirectories(outputDir);
+
+        PipesClient pipesClient = init(tmp, testDocWithEmbedded);
+
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.UNPACK);
+
+        // Use UnpackConfig with default maxUnpackBytes (10GB)
+        UnpackConfig unpackConfig = new UnpackConfig();
+        unpackConfig.setEmitter(emitterName);
+        // Not setting maxUnpackBytes - should use default 10GB
+        assertEquals(UnpackConfig.DEFAULT_MAX_UNPACK_BYTES, unpackConfig.getMaxUnpackBytes(),
+                "Default maxUnpackBytes should be 10GB");
+        parseContext.set(UnpackConfig.class, unpackConfig);
+
+        PipesResult pipesResult = pipesClient.process(
+                new FetchEmitTuple(testDocWithEmbedded + "-default", new FetchKey(fetcherName, testDocWithEmbedded),
+                        new EmitKey(emitterName, testDocWithEmbedded + "-default"), new Metadata(), parseContext,
+                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
+
+        assertTrue(pipesResult.isSuccess(),
+                "UNPACK with default maxUnpackBytes should succeed. Status: " + pipesResult.status());
+    }
+
+    @Test
+    public void testMaxUnpackBytesUnlimited(@TempDir Path tmp) throws Exception {
+        // Test that maxUnpackBytes=-1 allows unlimited extraction
+        Path outputDir = tmp.resolve("output");
+        Files.createDirectories(outputDir);
+
+        PipesClient pipesClient = init(tmp, testDocWithEmbedded);
+
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.UNPACK);
+
+        // Set maxUnpackBytes to -1 (unlimited)
+        UnpackConfig unpackConfig = new UnpackConfig();
+        unpackConfig.setEmitter(emitterName);
+        unpackConfig.setMaxUnpackBytes(-1L);  // Unlimited
+        parseContext.set(UnpackConfig.class, unpackConfig);
+
+        PipesResult pipesResult = pipesClient.process(
+                new FetchEmitTuple(testDocWithEmbedded + "-unlimited", new FetchKey(fetcherName, testDocWithEmbedded),
+                        new EmitKey(emitterName, testDocWithEmbedded + "-unlimited"), new Metadata(), parseContext,
+                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
+
+        assertTrue(pipesResult.isSuccess(),
+                "UNPACK with unlimited maxUnpackBytes should succeed. Status: " + pipesResult.status());
     }
 }

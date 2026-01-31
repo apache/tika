@@ -23,6 +23,7 @@ import java.util.List;
 public class AsyncHelper {
 
     private static final String TIKA_CONFIG_KEY = "--config=";
+    private static final String EXTRACT_DIR_KEY = "--extract-dir=";
 
     public static String[] translateArgs(String[] args) {
         List<String> argList = new ArrayList<>();
@@ -32,6 +33,14 @@ public class AsyncHelper {
                 String c = arg.substring(TIKA_CONFIG_KEY.length());
                 argList.add("-c");
                 argList.add(c);
+            } else if (arg.startsWith(EXTRACT_DIR_KEY)) {
+                // Translate --extract-dir=<dir> to -o <dir> for TikaAsyncCLI
+                String dir = arg.substring(EXTRACT_DIR_KEY.length());
+                if (dir.isEmpty()) {
+                    dir = ".";
+                }
+                argList.add("-o");
+                argList.add(dir);
             } else if ("-a".equals(arg)) {
                 //do nothing
             } else {

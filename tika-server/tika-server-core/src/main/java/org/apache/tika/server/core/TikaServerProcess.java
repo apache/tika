@@ -452,8 +452,11 @@ public class TikaServerProcess {
         // Create PipesParser
         PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, configPath);
 
+        // Try to determine unpack emitter basePath from config
+        Path unpackEmitterBasePath = getUnpackEmitterBasePath(tikaJsonConfig);
+
         // Create and return the helper
-        PipesParsingHelper helper = new PipesParsingHelper(pipesParser, pipesConfig);
+        PipesParsingHelper helper = new PipesParsingHelper(pipesParser, pipesConfig, unpackEmitterBasePath);
 
         // Register shutdown hook to clean up PipesParser
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -466,6 +469,59 @@ public class TikaServerProcess {
         }));
 
         return helper;
+    }
+
+    /**
+     * Attempts to determine the basePath for the unpack-emitter from the config.
+     * Returns null if the emitter is not configured or basePath cannot be determined.
+     */
+    private static Path getUnpackEmitterBasePath(TikaJsonConfig tikaJsonConfig) {
+        try {
+            java.util.Map<String, com.fasterxml.jackson.databind.JsonNode> emitters =
+                    tikaJsonConfig.getComponents("emitters");
+            if (emitters == null || !emitters.containsKey(PipesParsingHelper.UNPACK_EMITTER_ID)) {
+                LOG.debug("No unpack-emitter configured, UNPACK mode will not be available");
+                return null;
+            }
+
+            com.fasterxml.jackson.databind.JsonNode emitterConfig =
+                    emitters.get(PipesParsingHelper.UNPACK_EMITTER_ID);
+            com.fasterxml.jackson.databind.JsonNode basePath = findBasePath(emitterConfig);
+            if (basePath != null && basePath.isTextual()) {
+                Path path = Path.of(basePath.asText());
+                if (Files.isDirectory(path)) {
+                    LOG.info("UNPACK mode enabled with basePath: {}", path);
+                    return path;
+                } else {
+                    LOG.warn("unpack-emitter basePath does not exist: {}", path);
+                }
+            }
+        } catch (Exception e) {
+            LOG.warn("Failed to determine unpack-emitter basePath", e);
+        }
+        return null;
+    }
+
+    /**
+     * Recursively searches for "basePath" in a JSON node.
+     */
+    private static com.fasterxml.jackson.databind.JsonNode findBasePath(
+            com.fasterxml.jackson.databind.JsonNode node) {
+        if (node == null) {
+            return null;
+        }
+        if (node.has("basePath")) {
+            return node.get("basePath");
+        }
+        for (com.fasterxml.jackson.databind.JsonNode child : node) {
+            if (child.isObject()) {
+                com.fasterxml.jackson.databind.JsonNode result = findBasePath(child);
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+        return null;
     }
 
     /**

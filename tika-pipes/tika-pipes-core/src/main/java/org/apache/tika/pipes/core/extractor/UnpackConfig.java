@@ -21,13 +21,19 @@ import java.util.Objects;
 
 import org.apache.tika.config.TikaComponent;
 
-@TikaComponent
+@TikaComponent(name = "unpack-config")
 public class UnpackConfig implements Serializable {
 
     /**
      * Serial version UID
      */
     private static final long serialVersionUID = -3861669115439125268L;
+
+    /**
+     * Default maximum bytes to unpack per file: 10 GB.
+     * Use -1 to disable the limit (not recommended).
+     */
+    public static final long DEFAULT_MAX_UNPACK_BYTES = 10L * 1024L * 1024L * 1024L;
 
     public enum SUFFIX_STRATEGY {
             NONE, EXISTING, DETECTED;
@@ -82,6 +88,9 @@ public class UnpackConfig implements Serializable {
     // Zipping options
     private boolean zipEmbeddedFiles = false;
     private boolean includeMetadataInZip = false;
+
+    // Maximum bytes to unpack per file (default 10GB, -1 to disable limit)
+    private long maxUnpackBytes = DEFAULT_MAX_UNPACK_BYTES;
 
     /**
      * Create an UnpackConfig with default settings.
@@ -178,13 +187,28 @@ public class UnpackConfig implements Serializable {
         this.includeMetadataInZip = includeMetadataInZip;
     }
 
+    /**
+     * Maximum total bytes to unpack per file. Default is 10GB.
+     * Set to -1 to disable the limit (not recommended).
+     *
+     * @return max bytes to unpack, or -1 if no limit
+     */
+    public long getMaxUnpackBytes() {
+        return maxUnpackBytes;
+    }
+
+    public void setMaxUnpackBytes(long maxUnpackBytes) {
+        this.maxUnpackBytes = maxUnpackBytes;
+    }
+
     @Override
     public String toString() {
         return "UnpackConfig{" + "zeroPadName=" + zeroPadName + ", suffixStrategy=" +
                 suffixStrategy + ", embeddedIdPrefix='" + embeddedIdPrefix + '\'' +
                 ", emitter='" + emitter + '\'' + ", includeOriginal=" + includeOriginal +
                 ", keyBaseStrategy=" + keyBaseStrategy + ", emitKeyBase='" + emitKeyBase + '\'' +
-                ", zipEmbeddedFiles=" + zipEmbeddedFiles + ", includeMetadataInZip=" + includeMetadataInZip + '}';
+                ", zipEmbeddedFiles=" + zipEmbeddedFiles + ", includeMetadataInZip=" + includeMetadataInZip +
+                ", maxUnpackBytes=" + maxUnpackBytes + '}';
     }
 
     @Override
@@ -200,7 +224,8 @@ public class UnpackConfig implements Serializable {
                 keyBaseStrategy == config.keyBaseStrategy &&
                 Objects.equals(emitKeyBase, config.emitKeyBase) &&
                 zipEmbeddedFiles == config.zipEmbeddedFiles &&
-                includeMetadataInZip == config.includeMetadataInZip;
+                includeMetadataInZip == config.includeMetadataInZip &&
+                maxUnpackBytes == config.maxUnpackBytes;
     }
 
     @Override
@@ -214,6 +239,7 @@ public class UnpackConfig implements Serializable {
         result = 31 * result + Objects.hashCode(emitKeyBase);
         result = 31 * result + Boolean.hashCode(zipEmbeddedFiles);
         result = 31 * result + Boolean.hashCode(includeMetadataInZip);
+        result = 31 * result + Long.hashCode(maxUnpackBytes);
         return result;
     }
 }

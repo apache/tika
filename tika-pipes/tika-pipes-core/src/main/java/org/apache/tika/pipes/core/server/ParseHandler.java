@@ -36,7 +36,7 @@ import org.apache.tika.digest.SkipContainerDocumentDigest;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.WriteLimitReachedException;
-import org.apache.tika.extractor.EmbeddedDocumentBytesHandler;
+import org.apache.tika.extractor.UnpackHandler;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -99,7 +99,7 @@ class ParseHandler {
         }
 
         return new PipesWorker.ParseDataOrPipesResult(new MetadataListAndEmbeddedBytes(metadataList,
-                parseContext.get(EmbeddedDocumentBytesHandler.class)), null);
+                parseContext.get(UnpackHandler.class)), null);
     }
 
     private ParseMode getParseMode(ParseContext parseContext) {
@@ -148,9 +148,9 @@ class ParseHandler {
         UnpackConfig unpackConfig = parseContext.get(UnpackConfig.class);
         if (unpackConfig != null &&
                 unpackConfig.isIncludeOriginal()) {
-            EmbeddedDocumentBytesHandler embeddedDocumentByteStore = parseContext.get(EmbeddedDocumentBytesHandler.class);
+            UnpackHandler unpackHandler = parseContext.get(UnpackHandler.class);
             try (InputStream is = Files.newInputStream(tis.getPath())) {
-                embeddedDocumentByteStore.add(0, metadata, is);
+                unpackHandler.add(0, metadata, is);
             } catch (IOException e) {
                 LOG.warn("problem reading source file into embedded document byte store", e);
             }

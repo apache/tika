@@ -95,12 +95,14 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
      * Note: The count limit is a hard stop (once hit, no more embedded docs are parsed).
      * The depth limit only affects documents at that depth - sibling documents at
      * shallower depths will still be parsed.
+     * <p>
+     * Subclasses that override parseEmbedded() should call this method to enforce limits.
      *
      * @param parseRecord the parse record to check
      * @return true if the embedded document should be parsed, false if limits are exceeded
      * @throws EmbeddedLimitReachedException if a limit is exceeded and throwing is configured
      */
-    private boolean checkEmbeddedLimits(ParseRecord parseRecord) {
+    protected boolean checkEmbeddedLimits(ParseRecord parseRecord) {
         // Count limit is a hard stop - once we've hit max, no more embedded parsing
         if (parseRecord.isEmbeddedCountLimitReached()) {
             return false;
@@ -120,7 +122,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         // depth is 1-indexed (main doc is depth 1), so embedded depth limit of N
         // means we allow parsing up to depth N+1
         int maxDepth = parseRecord.getMaxEmbeddedDepth();
-        if (maxDepth >= 0 && parseRecord.getDepth() > maxDepth) {
+        if (maxDepth >= 0 && parseRecord.getDepth() > maxDepth + 1) {
             parseRecord.setEmbeddedDepthLimitReached(true);
             if (parseRecord.isThrowOnMaxDepth()) {
                 throw new EmbeddedLimitReachedException(
@@ -135,8 +137,14 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
     public void parseEmbedded(
             TikaInputStream tis, ContentHandler handler, Metadata metadata, ParseContext parseContext, boolean outputHtml)
             throws SAXException, IOException {
-        // Increment embedded count for tracking
+        // Check and enforce embedded limits even if caller didn't call shouldParseEmbedded()
+        // This guarantees limits are enforced for all callers
         ParseRecord parseRecord = context.get(ParseRecord.class);
+        if (parseRecord != null && !checkEmbeddedLimits(parseRecord)) {
+            return;
+        }
+
+        // Increment embedded count for tracking
         if (parseRecord != null) {
             parseRecord.incrementEmbeddedCount();
         }

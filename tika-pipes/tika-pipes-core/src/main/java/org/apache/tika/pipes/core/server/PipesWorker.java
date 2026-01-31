@@ -33,8 +33,8 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentBytesHandler;
 import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
+import org.apache.tika.extractor.UnpackHandler;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
@@ -100,7 +100,7 @@ class PipesWorker implements Callable<PipesResult> {
             }
 
             // Check if we need to zip and emit embedded files
-            EmbeddedDocumentBytesHandler handler = parseContext.get(EmbeddedDocumentBytesHandler.class);
+            UnpackHandler handler = parseContext.get(UnpackHandler.class);
             if (handler instanceof TempFileUnpackHandler) {
                 tempHandler = (TempFileUnpackHandler) handler;
                 PipesResult zipResult = zipAndEmitEmbeddedFiles(tempHandler);
@@ -119,12 +119,12 @@ class PipesWorker implements Callable<PipesResult> {
                 } catch (IOException e) {
                     LOG.warn("problem closing temp file handler", e);
                 }
-            } else if (parseData != null && parseData.hasEmbeddedDocumentByteStore() &&
-                    parseData.getEmbeddedDocumentBytesHandler() instanceof Closeable) {
+            } else if (parseData != null && parseData.hasUnpackHandler() &&
+                    parseData.getUnpackHandler() instanceof Closeable) {
                 try {
-                    ((Closeable) parseData.getEmbeddedDocumentBytesHandler()).close();
+                    ((Closeable) parseData.getUnpackHandler()).close();
                 } catch (IOException e) {
-                    LOG.warn("problem closing embedded document byte store", e);
+                    LOG.warn("problem closing unpack handler", e);
                 }
             }
         }
@@ -229,9 +229,12 @@ class PipesWorker implements Callable<PipesResult> {
 
     /**
      * Writes metadata as JSON to the output stream.
+     * Note: Does not close the output stream.
      */
     private void writeMetadataAsJson(OutputStream os, Metadata metadata) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
+        // Disable auto-close so we don't close the zip output stream
+        mapper.configure(com.fasterxml.jackson.core.JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
         // Convert metadata to a map for JSON serialization
         java.util.Map<String, Object> metadataMap = new java.util.LinkedHashMap<>();
         for (String name : metadata.names()) {
@@ -298,7 +301,7 @@ class PipesWorker implements Callable<PipesResult> {
 
         try (TikaInputStream tis = tisOrResult.tis()) {
             // Store original document for zipping if requested
-            EmbeddedDocumentBytesHandler handler = localContext.get(EmbeddedDocumentBytesHandler.class);
+            UnpackHandler handler = localContext.get(UnpackHandler.class);
             if (handler instanceof TempFileUnpackHandler) {
                 TempFileUnpackHandler tempHandler = (TempFileUnpackHandler) handler;
                 UnpackConfig uc = localContext.get(UnpackConfig.class);
@@ -358,10 +361,10 @@ class PipesWorker implements Callable<PipesResult> {
 
             // Set up the bytes handler - use temp file handler if zipping requested
             if (unpackConfig.isZipEmbeddedFiles()) {
-                parseContext.set(EmbeddedDocumentBytesHandler.class,
+                parseContext.set(UnpackHandler.class,
                         new TempFileUnpackHandler(fetchEmitTuple.getEmitKey(), unpackConfig));
             } else {
-                parseContext.set(EmbeddedDocumentBytesHandler.class,
+                parseContext.set(UnpackHandler.class,
                         new EmittingUnpackHandler(fetchEmitTuple, emitterManager, parseContext));
             }
 

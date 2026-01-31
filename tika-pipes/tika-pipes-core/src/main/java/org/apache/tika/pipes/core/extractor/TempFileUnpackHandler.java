@@ -31,7 +31,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 
 /**
- * An EmbeddedDocumentBytesHandler that writes embedded bytes to a temporary directory
+ * An UnpackHandler that writes embedded bytes to a temporary directory
  * for later zipping. Files are stored with their emit key names (flattened, with path
  * separators replaced).
  */

@@ -19,7 +19,7 @@ package org.apache.tika.extractor;
 
 /**
  * This factory creates EmbeddedDocumentExtractors that require an
- * {@link EmbeddedDocumentBytesHandler} in the
+ * {@link UnpackHandler} in the
  * {@link org.apache.tika.parser.ParseContext} should extend this.
  *
  * This is a shim interface to signal to PipesServer to use UnpackExtractor

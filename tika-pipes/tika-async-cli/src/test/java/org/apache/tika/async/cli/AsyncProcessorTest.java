@@ -43,6 +43,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
@@ -118,6 +119,7 @@ public class AsyncProcessorTest extends TikaTest {
         embeddedDocumentBytesConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.NONE);
         embeddedDocumentBytesConfig.setEmbeddedIdPrefix("-");
         ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.UNPACK);
         parseContext.set(UnpackConfig.class, embeddedDocumentBytesConfig);
         FetchEmitTuple t =
                 new FetchEmitTuple("myId-1", new FetchKey("fsf", "mock.xml"),

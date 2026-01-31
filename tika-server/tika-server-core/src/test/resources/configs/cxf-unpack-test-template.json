@@ -1,0 +1,38 @@
+{
+  "fetchers": {
+    "file-system-fetcher": {
+      "file-system-fetcher": {
+        "allowAbsolutePaths": true
+      }
+    }
+  },
+  "emitters": {
+    "unpack-emitter": {
+      "file-system-emitter": {
+        "basePath": "UNPACK_EMITTER_BASE_PATH",
+        "onExists": "REPLACE"
+      }
+    }
+  },
+  "pipes": {
+    "numClients": 2,
+    "timeoutMillis": "TIMEOUT_MILLIS",
+    "emitIntermediateResults": false,
+    "forkedJvmArgs": [
+      "-Xmx512m"
+    ]
+  },
+  "auto-detect-parser": {
+    "throwOnZeroBytes": false
+  },
+  "other-configs": {
+    "digester-factory": {
+      "commons-digester-factory": {
+        "digests": [
+          { "algorithm": "MD5" }
+        ]
+      }
+    }
+  },
+  "plugin-roots": "PLUGINS_PATHS"
+}
