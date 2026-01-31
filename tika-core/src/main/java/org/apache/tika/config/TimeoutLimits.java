@@ -43,7 +43,7 @@ import org.apache.tika.parser.ParseContext;
  * Example configuration:
  * <pre>
  * {
- *   "other-configs": {
+ *   "parse-context": {
  *     "timeout-limits": {
  *       "taskTimeoutMillis": 120000
  *     }

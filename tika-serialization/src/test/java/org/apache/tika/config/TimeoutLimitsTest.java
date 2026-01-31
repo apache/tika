@@ -32,7 +32,8 @@ public class TimeoutLimitsTest extends TikaTest {
     @Test
     public void testLoadFromConfig() throws Exception {
         TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "timeout-limits-test.json"));
-        TimeoutLimits limits = loader.configs().load(TimeoutLimits.class);
+        ParseContext context = loader.loadParseContext();
+        TimeoutLimits limits = context.get(TimeoutLimits.class);
 
         assertNotNull(limits);
         assertEquals(120000, limits.getTaskTimeoutMillis());

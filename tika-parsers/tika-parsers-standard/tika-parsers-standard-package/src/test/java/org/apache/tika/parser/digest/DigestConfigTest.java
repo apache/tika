@@ -105,7 +105,7 @@ public class DigestConfigTest extends TikaTest {
 
     @Test
     public void testCommonsDigesterSkipContainer() throws Exception {
-        // Tests skipContainerDocumentDigest on the factory (configured in other-configs)
+        // Tests skipContainerDocumentDigest on the factory (configured in parse-context)
         TikaLoader loader = TikaLoaderHelper.getLoader("tika-config-digests-skip-container.json");
         Parser p = loader.loadAutoDetectParser();
         ParseContext context = loader.loadParseContext();

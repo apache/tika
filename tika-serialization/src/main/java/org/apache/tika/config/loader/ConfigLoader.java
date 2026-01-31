@@ -26,11 +26,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.tika.exception.TikaConfigException;
 
 /**
- * Loader for custom configuration objects from the "other-configs" section.
+ * Loader for configuration objects from the "parse-context" section.
  * <p>
- * This class handles custom POJOs and test configurations that are not part of
- * Tika's official configuration schema. All configurations loaded via ConfigLoader
- * must be placed under the "other-configs" top-level node in the JSON.
+ * This class handles ParseContext components and configuration POJOs that are loaded
+ * into a ParseContext for use during parsing. All configurations loaded via ConfigLoader
+ * must be placed under the "parse-context" top-level node in the JSON.
  * <p>
  * For official Tika components and configurations (parsers, detectors, async, server, etc.),
  * use the specific methods on {@link TikaLoader} or load directly from {@link TikaJsonConfig}.
@@ -55,14 +55,17 @@ import org.apache.tika.exception.TikaConfigException;
  *   "pipes": {...},
  *   "server": {...},
  *
- *   // Custom configs MUST be in "other-configs" (loaded via configs())
- *   "other-configs": {
- *     "my-config": {
- *       "timeout": 5000,
- *       "retries": 3
+ *   // ParseContext configs in "parse-context" (loaded via configs())
+ *   "parse-context": {
+ *     "embedded-limits": {
+ *       "maxDepth": 10,
+ *       "maxCount": 1000
  *     },
- *     "my-custom-config": {
- *       "enabled": true
+ *     "output-limits": {
+ *       "writeLimit": 100000
+ *     },
+ *     "commons-digester-factory": {
+ *       "algorithms": ["MD5", "SHA-256"]
  *     }
  *   }
  * }
@@ -277,16 +280,16 @@ public class ConfigLoader {
     }
 
     /**
-     * Gets a node by key from the "other-configs".
+     * Gets a node by key from the "parse-context" section.
      *
      * @param key The JSON key to look for
      * @return the node, or null if not found
      */
     private JsonNode getNode(String key) {
 
-        JsonNode otherConfigs = config.getRootNode().get("other-configs");
-        if (otherConfigs != null && otherConfigs.isObject()) {
-            return otherConfigs.get(key);
+        JsonNode parseContext = config.getRootNode().get("parse-context");
+        if (parseContext != null && parseContext.isObject()) {
+            return parseContext.get(key);
         }
 
         return null;

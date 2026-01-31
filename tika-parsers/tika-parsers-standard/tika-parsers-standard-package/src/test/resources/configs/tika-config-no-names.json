@@ -1,9 +1,7 @@
 {
-  "other-configs": {
-    "embedded-document-extractor-factory": {
-      "standard-extractor-factory": {
+  "parse-context": {
+    "standard-extractor-factory": {
         "writeFileNameToContent": false
       }
     }
-  }
 }

@@ -124,7 +124,7 @@ class ParseHandler {
 
     private void _preParse(FetchEmitTuple t, TikaInputStream tis, Metadata metadata,
                            ParseContext parseContext) {
-        // Get DigesterFactory from ParseContext (configured via other-configs)
+        // Get DigesterFactory from ParseContext (configured via parse-context)
         DigesterFactory digesterFactory = parseContext.get(DigesterFactory.class);
         if (digesterFactory != null && !digesterFactory.isSkipContainerDocumentDigest()) {
             try {

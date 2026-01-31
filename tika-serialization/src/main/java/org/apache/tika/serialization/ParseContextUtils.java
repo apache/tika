@@ -101,7 +101,7 @@ public class ParseContextUtils {
         }
 
         // First, process known array configs (e.g., "metadata-filters")
-        // These don't depend on the other-configs registry
+        // These don't depend on the parse-context registry
         for (String friendlyName : new ArrayList<>(jsonConfigs.keySet())) {
             if (ARRAY_CONFIGS.containsKey(friendlyName)) {
                 JsonConfig jsonConfig = jsonConfigs.get(friendlyName);
@@ -112,7 +112,7 @@ public class ParseContextUtils {
         }
 
         // Then, try to resolve single component configs using ComponentNameResolver
-        // This searches all registered component registries, not just "other-configs"
+        // This searches all registered component registries, not just "parse-context"
         for (Map.Entry<String, JsonConfig> entry : jsonConfigs.entrySet()) {
             String friendlyName = entry.getKey();
             JsonConfig jsonConfig = entry.getValue();

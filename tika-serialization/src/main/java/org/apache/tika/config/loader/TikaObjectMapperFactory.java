@@ -50,7 +50,7 @@ public class TikaObjectMapperFactory {
             "translators",
             "digester-factories",
             "content-handler-factories",
-            "other-configs"
+            "parse-context"
     };
 
     private static ObjectMapper MAPPER = null;

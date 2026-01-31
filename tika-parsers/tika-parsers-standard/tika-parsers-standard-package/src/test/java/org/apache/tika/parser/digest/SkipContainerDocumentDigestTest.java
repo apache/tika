@@ -35,7 +35,7 @@ import org.apache.tika.parser.digestutils.CommonsDigesterFactory;
 
 /**
  * Tests for SkipContainerDocumentDigest functionality with MockParser and embedded documents.
- * DigesterFactory is now configured via ParseContext (via other-configs in JSON).
+ * DigesterFactory is now configured via ParseContext (via parse-context in JSON).
  */
 public class SkipContainerDocumentDigestTest extends TikaTest {
 

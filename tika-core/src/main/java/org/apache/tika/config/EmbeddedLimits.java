@@ -54,7 +54,7 @@ import org.apache.tika.parser.ParseContext;
  * Example configuration:
  * <pre>
  * {
- *   "other-configs": {
+ *   "parse-context": {
  *     "embedded-limits": {
  *       "maxDepth": 10,
  *       "throwOnMaxDepth": false,

@@ -21,22 +21,20 @@ package org.apache.tika.digest;
  * Implementations should be annotated with {@code @TikaComponent} and
  * provide bean properties for configuration (e.g., digests).
  * <p>
- * Configure this factory in the "other-configs" section of tika-config.json.
+ * Configure this factory in the "parse-context" section of tika-config.json.
  * The factory is loaded into the ParseContext and used by AutoDetectParser
  * during parsing to compute digests.
  * <p>
  * Example JSON configuration:
  * <pre>
  * {
- *   "other-configs": {
- *     "digester-factory": {
- *       "commons-digester-factory": {
- *         "digests": [
- *           { "algorithm": "MD5" },
- *           { "algorithm": "SHA256", "encoding": "BASE32" }
- *         ],
- *         "skipContainerDocumentDigest": true
- *       }
+ *   "parse-context": {
+ *     "commons-digester-factory": {
+ *       "digests": [
+ *         { "algorithm": "MD5" },
+ *         { "algorithm": "SHA256", "encoding": "BASE32" }
+ *       ],
+ *       "skipContainerDocumentDigest": true
  *     }
  *   }
  * }

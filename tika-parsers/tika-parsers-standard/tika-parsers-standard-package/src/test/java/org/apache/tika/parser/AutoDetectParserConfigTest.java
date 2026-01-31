@@ -31,7 +31,6 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
 
 public class AutoDetectParserConfigTest extends TikaTest {
 
@@ -84,9 +83,7 @@ public class AutoDetectParserConfigTest extends TikaTest {
     public void testWriteFilter() throws Exception {
         TikaLoader loader = TikaLoaderHelper.getLoader("tika-config-write-filter.json");
         Parser p = loader.loadAutoDetectParser();
-        MetadataWriteLimiterFactory factory = loader.configs().load(MetadataWriteLimiterFactory.class);
-        ParseContext parseContext = new ParseContext();
-        parseContext.set(MetadataWriteLimiterFactory.class, factory);
+        ParseContext parseContext = loader.loadParseContext();
         Metadata metadata = Metadata.newInstance(parseContext);
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", p,
                 metadata, parseContext, true);

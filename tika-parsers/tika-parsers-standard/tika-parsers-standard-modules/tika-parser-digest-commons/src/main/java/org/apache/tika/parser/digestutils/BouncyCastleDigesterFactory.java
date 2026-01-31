@@ -32,10 +32,10 @@ import org.apache.tika.digest.DigesterFactory;
  * BouncyCastle supports additional algorithms beyond the standard Java ones,
  * such as SHA3-256, SHA3-384, SHA3-512.
  * <p>
- * Example JSON configuration (in other-configs section):
+ * Example JSON configuration (in parse-context section):
  * <pre>
  * {
- *   "other-configs": {
+ *   "parse-context": {
  *     "digester-factory": {
  *       "bouncy-castle-digester-factory": {
  *         "digests": [

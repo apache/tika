@@ -29,10 +29,10 @@ import org.apache.tika.digest.DigesterFactory;
  * <p>
  * Default: MD5 with HEX encoding.
  * <p>
- * Example JSON configuration (in other-configs section):
+ * Example JSON configuration (in parse-context section):
  * <pre>
  * {
- *   "other-configs": {
+ *   "parse-context": {
  *     "digester-factory": {
  *       "commons-digester-factory": {
  *         "digests": [
