@@ -38,6 +38,7 @@ import org.apache.cxf.binding.BindingFactoryManager;
 import org.apache.cxf.configuration.jsse.TLSParameterJaxBUtils;
 import org.apache.cxf.configuration.jsse.TLSServerParameters;
 import org.apache.cxf.configuration.security.ClientAuthentication;
+import org.apache.cxf.configuration.security.FiltersType;
 import org.apache.cxf.configuration.security.KeyManagersType;
 import org.apache.cxf.configuration.security.KeyStoreType;
 import org.apache.cxf.configuration.security.TrustManagersType;
@@ -209,6 +210,8 @@ public class TikaServerProcess {
                 .getTlsConfig()
                 .isActive()) {
             LOG.warn("The TLS configuration is in BETA and might change " + "dramatically in future releases.");
+            // Check for expiring certificates and log warnings
+            tikaServerConfig.getTlsConfig().checkCertificateExpiration();
             TLSServerParameters tlsParams = getTlsParams(tikaServerConfig.getTlsConfig());
             JettyHTTPServerEngineFactory factory = new JettyHTTPServerEngineFactory();
             factory.setBus(sf.getBus());
@@ -250,6 +253,28 @@ public class TikaServerProcess {
         clientAuthentication.setRequired(tlsConfig.isClientAuthenticationRequired());
         clientAuthentication.setWant(tlsConfig.isClientAuthenticationWanted());
         parameters.setClientAuthentication(clientAuthentication);
+
+        // Configure TLS protocols
+        if (tlsConfig.getIncludedProtocols() != null && !tlsConfig.getIncludedProtocols().isEmpty()) {
+            parameters.setIncludeProtocols(tlsConfig.getIncludedProtocols());
+        }
+        if (tlsConfig.getExcludedProtocols() != null && !tlsConfig.getExcludedProtocols().isEmpty()) {
+            parameters.setExcludeProtocols(tlsConfig.getExcludedProtocols());
+        }
+
+        // Configure cipher suites
+        if ((tlsConfig.getIncludedCipherSuites() != null && !tlsConfig.getIncludedCipherSuites().isEmpty()) ||
+                (tlsConfig.getExcludedCipherSuites() != null && !tlsConfig.getExcludedCipherSuites().isEmpty())) {
+            FiltersType cipherSuitesFilter = new FiltersType();
+            if (tlsConfig.getIncludedCipherSuites() != null) {
+                cipherSuitesFilter.getInclude().addAll(tlsConfig.getIncludedCipherSuites());
+            }
+            if (tlsConfig.getExcludedCipherSuites() != null) {
+                cipherSuitesFilter.getExclude().addAll(tlsConfig.getExcludedCipherSuites());
+            }
+            parameters.setCipherSuitesFilter(cipherSuitesFilter);
+        }
+
         return parameters;
     }
 
