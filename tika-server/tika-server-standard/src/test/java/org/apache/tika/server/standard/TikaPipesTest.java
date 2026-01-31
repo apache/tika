@@ -42,11 +42,11 @@ import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,6 +75,7 @@ import org.apache.tika.server.core.writer.JSONObjWriter;
  * This offers basic integration tests with fetchers and emitters.
  * We use file system fetchers and emitters.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TikaPipesTest extends CXFTestBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaPipesTest.class);
@@ -83,52 +84,56 @@ public class TikaPipesTest extends CXFTestBase {
     private static final String TEST_RECURSIVE_DOC = "test_recursive_embedded.docx";
     private static final String TEST_TWO_BOXES_PDF = "testPDFTwoTextBoxes.pdf";
 
-    @TempDir
-    private static Path TMP_WORKING_DIR;
-    private static Path OUTPUT_JSON_DIR;
-    private static Path OUTPUT_BYTES_DIR;
-    private static Path TIKA_PIPES_LOG4j2_PATH;
-    private static Path TIKA_CONFIG_PATH;
-    private static FetcherManager FETCHER_MANAGER;
+    private Path tmpWorkingDir;
+    private Path outputJsonDir;
+    private Path outputBytesDir;
+    private Path tikaPipesLog4j2Path;
+    private Path tikaConfigPath;
+    private FetcherManager fetcherManager;
 
     private PipesResource pipesResource;
 
+    @Override
     @BeforeAll
-    public static void setUpBeforeClass() throws Exception {
-        Path inputDir = TMP_WORKING_DIR.resolve("input");
-        OUTPUT_JSON_DIR = TMP_WORKING_DIR.resolve("output");
-        OUTPUT_BYTES_DIR = TMP_WORKING_DIR.resolve("bytes");
+    public void setUp() throws Exception {
+        // Initialize test directories and config before parent setup
+        tmpWorkingDir = Files.createTempDirectory("tika-pipes-test-");
+        Path inputDir = tmpWorkingDir.resolve("input");
+        outputJsonDir = tmpWorkingDir.resolve("output");
+        outputBytesDir = tmpWorkingDir.resolve("bytes");
 
         Files.createDirectories(inputDir);
-        Files.createDirectories(OUTPUT_JSON_DIR);
+        Files.createDirectories(outputJsonDir);
         Files.copy(TikaPipesTest.class.getResourceAsStream("/test-documents/" + TEST_RECURSIVE_DOC), inputDir.resolve("test_recursive_embedded.docx"),
                 StandardCopyOption.REPLACE_EXISTING);
         Files.copy(TikaPipesTest.class.getResourceAsStream("/test-documents/" + TEST_TWO_BOXES_PDF), inputDir.resolve(TEST_TWO_BOXES_PDF),
                 StandardCopyOption.REPLACE_EXISTING);
-        TIKA_PIPES_LOG4j2_PATH = Files.createTempFile(TMP_WORKING_DIR, "log4j2-", ".xml");
-        Files.copy(TikaPipesTest.class.getResourceAsStream("/log4j2.xml"), TIKA_PIPES_LOG4j2_PATH, StandardCopyOption.REPLACE_EXISTING);
+        tikaPipesLog4j2Path = Files.createTempFile(tmpWorkingDir, "log4j2-", ".xml");
+        Files.copy(TikaPipesTest.class.getResourceAsStream("/log4j2.xml"), tikaPipesLog4j2Path, StandardCopyOption.REPLACE_EXISTING);
 
-        TIKA_CONFIG_PATH = Files.createTempFile(TMP_WORKING_DIR, "tika-pipes-config-", ".json");
-        CXFTestBase.createPluginsConfig(TIKA_CONFIG_PATH, inputDir, OUTPUT_JSON_DIR, OUTPUT_BYTES_DIR, 10000L);
+        tikaConfigPath = Files.createTempFile(tmpWorkingDir, "tika-pipes-config-", ".json");
+        CXFTestBase.createPluginsConfig(tikaConfigPath, inputDir, outputJsonDir, outputBytesDir, 10000L);
 
-        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(TIKA_CONFIG_PATH);
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         TikaPluginManager pluginManager = TikaPluginManager.load(tikaJsonConfig);
-        FETCHER_MANAGER = FetcherManager.load(pluginManager, tikaJsonConfig);
+        fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig);
 
+        // Now call parent setup which will use our config
+        super.setUp();
     }
 
 
     @BeforeEach
     public void setUpEachTest() throws Exception {
-        FileUtils.deleteDirectory(OUTPUT_JSON_DIR.toFile());
-        assertFalse(Files.isDirectory(OUTPUT_JSON_DIR));
+        FileUtils.deleteDirectory(outputJsonDir.toFile());
+        assertFalse(Files.isDirectory(outputJsonDir));
     }
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         List<ResourceProvider> rCoreProviders = new ArrayList<>();
         try {
-            pipesResource = new PipesResource(TIKA_CONFIG_PATH);
+            pipesResource = new PipesResource(tikaConfigPath);
             rCoreProviders.add(new SingletonResourceProvider(pipesResource));
         } catch (IOException | TikaConfigException e) {
             throw new RuntimeException(e);
@@ -137,13 +142,16 @@ public class TikaPipesTest extends CXFTestBase {
     }
 
     @Override
-    @AfterEach
+    @AfterAll
     public void tearDown() throws Exception {
         if (pipesResource != null) {
             pipesResource.close();
             pipesResource = null;
         }
         super.tearDown();
+        if (tmpWorkingDir != null) {
+            FileUtils.deleteDirectory(tmpWorkingDir.toFile());
+        }
     }
 
     @Override
@@ -156,12 +164,12 @@ public class TikaPipesTest extends CXFTestBase {
 
     @Override
     protected InputStream getTikaConfigInputStream() throws IOException {
-        return new ByteArrayInputStream(Files.readAllBytes(TIKA_CONFIG_PATH));
+        return new ByteArrayInputStream(Files.readAllBytes(tikaConfigPath));
     }
 
     @Override
     protected InputStream getPipesConfigInputStream() throws IOException {
-        return new ByteArrayInputStream(Files.readAllBytes(TIKA_CONFIG_PATH));
+        return new ByteArrayInputStream(Files.readAllBytes(tikaConfigPath));
     }
 
 
@@ -181,7 +189,7 @@ public class TikaPipesTest extends CXFTestBase {
         assertEquals(200, response.getStatus());
 
         List<Metadata> metadataList = null;
-        try (Reader reader = Files.newBufferedReader(OUTPUT_JSON_DIR.resolve(TEST_RECURSIVE_DOC + ".json"))) {
+        try (Reader reader = Files.newBufferedReader(outputJsonDir.resolve(TEST_RECURSIVE_DOC + ".json"))) {
             metadataList = JsonMetadataList.fromJson(reader);
         }
         assertEquals(12, metadataList.size());
@@ -210,7 +218,7 @@ public class TikaPipesTest extends CXFTestBase {
         assertEquals(200, response.getStatus());
 
         List<Metadata> metadataList = null;
-        try (Reader reader = Files.newBufferedReader(OUTPUT_JSON_DIR.resolve(TEST_RECURSIVE_DOC + ".json"))) {
+        try (Reader reader = Files.newBufferedReader(outputJsonDir.resolve(TEST_RECURSIVE_DOC + ".json"))) {
             metadataList = JsonMetadataList.fromJson(reader);
         }
         assertEquals(1, metadataList.size());
@@ -237,7 +245,7 @@ public class TikaPipesTest extends CXFTestBase {
         assertEquals(200, response.getStatus());
 
         List<Metadata> metadataList = null;
-        Path outputFile = OUTPUT_JSON_DIR.resolve(TEST_TWO_BOXES_PDF + ".json");
+        Path outputFile = outputJsonDir.resolve(TEST_TWO_BOXES_PDF + ".json");
         try (Reader reader = Files.newBufferedReader(outputFile)) {
             metadataList = JsonMetadataList.fromJson(reader);
         }
@@ -282,7 +290,7 @@ public class TikaPipesTest extends CXFTestBase {
         assertEquals(200, response.getStatus());
 
         List<Metadata> metadataList = null;
-        try (Reader reader = Files.newBufferedReader(OUTPUT_JSON_DIR.resolve(TEST_RECURSIVE_DOC + ".json"))) {
+        try (Reader reader = Files.newBufferedReader(outputJsonDir.resolve(TEST_RECURSIVE_DOC + ".json"))) {
             metadataList = JsonMetadataList.fromJson(reader);
         }
         assertEquals(12, metadataList.size());
@@ -290,7 +298,7 @@ public class TikaPipesTest extends CXFTestBase {
                 .get(6)
                 .get(TikaCoreProperties.TIKA_CONTENT));
         Map<String, Long> expected = loadExpected();
-        Map<String, Long> byteFileNames = getFileNames(OUTPUT_BYTES_DIR);
+        Map<String, Long> byteFileNames = getFileNames(outputBytesDir);
         assertEquals(expected, byteFileNames);
     }
 
@@ -313,7 +321,7 @@ public class TikaPipesTest extends CXFTestBase {
 
     private Map<String, Long> getFileNames(Path p) throws Exception {
         final Map<String, Long> ret = new HashMap<>();
-        Files.walkFileTree(OUTPUT_BYTES_DIR, new FileVisitor<Path>() {
+        Files.walkFileTree(outputBytesDir, new FileVisitor<Path>() {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
                 return FileVisitResult.CONTINUE;
