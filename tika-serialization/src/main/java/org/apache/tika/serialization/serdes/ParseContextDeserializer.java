@@ -20,7 +20,9 @@ import static org.apache.tika.serialization.serdes.ParseContextSerializer.PARSE_
 import static org.apache.tika.serialization.serdes.ParseContextSerializer.TYPED;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -75,11 +77,15 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
      * <p>
      * The "typed" section is deserialized directly to typed objects in the context map.
      * All other fields are stored as JSON config strings for lazy resolution.
+     * <p>
+     * Duplicate detection is performed within a single document: if multiple entries
+     * resolve to the same context key (e.g., both "bouncy-castle-digester" and
+     * "commons-digester" resolve to DigesterFactory), an IOException is thrown.
      *
      * @param jsonNode the JSON node containing the ParseContext data
      * @param mapper   the ObjectMapper for deserializing typed objects
      * @return the deserialized ParseContext
-     * @throws IOException if deserialization fails
+     * @throws IOException if deserialization fails or duplicate context keys are detected
      */
     public static ParseContext readParseContext(JsonNode jsonNode, ObjectMapper mapper)
             throws IOException {
@@ -95,6 +101,10 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
             return parseContext;
         }
 
+        // Track context keys to detect duplicates within this document
+        // Maps contextKey -> friendlyName for error messages
+        Map<Class<?>, String> seenContextKeys = new HashMap<>();
+
         Iterator<String> fieldNames = contextNode.fieldNames();
         while (fieldNames.hasNext()) {
             String name = fieldNames.next();
@@ -102,8 +112,11 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
 
             if (TYPED.equals(name)) {
                 // Deserialize typed objects directly to context map
-                deserializeTypedObjects(value, parseContext, mapper);
+                deserializeTypedObjects(value, parseContext, mapper, seenContextKeys);
             } else {
+                // Check for duplicate context key before storing
+                checkForDuplicateContextKey(name, seenContextKeys);
+
                 // Store as JSON config for lazy resolution
                 // Use plain JSON mapper since the main mapper may be binary (Smile)
                 String json = JSON_MAPPER.writeValueAsString(value);
@@ -115,11 +128,48 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
     }
 
     /**
+     * Checks if a JSON config entry would create a duplicate context key.
+     * <p>
+     * Looks up the friendly name in the component registry to determine its context key,
+     * then checks if that key has already been seen in this document.
+     *
+     * @param friendlyName the friendly name of the config entry
+     * @param seenContextKeys map of already-seen context keys to their friendly names
+     * @throws IOException if a duplicate context key is detected
+     */
+    private static void checkForDuplicateContextKey(String friendlyName,
+                                                     Map<Class<?>, String> seenContextKeys)
+            throws IOException {
+        Optional<ComponentInfo> infoOpt = ComponentNameResolver.getComponentInfo(friendlyName);
+        if (infoOpt.isEmpty()) {
+            // Not a registered component - can't check for duplicates, that's okay
+            return;
+        }
+
+        ComponentInfo info = infoOpt.get();
+        Class<?> contextKey = info.contextKey() != null ? info.contextKey() : info.componentClass();
+
+        String existingName = seenContextKeys.get(contextKey);
+        if (existingName != null) {
+            throw new IOException("Duplicate parse-context entries resolve to the same key " +
+                    contextKey.getName() + ": '" + existingName + "' and '" + friendlyName + "'");
+        }
+        seenContextKeys.put(contextKey, friendlyName);
+    }
+
+    /**
      * Deserializes the "typed" section into typed objects in the context map.
+     *
+     * @param typedNode the JSON node containing typed objects
+     * @param parseContext the ParseContext to add objects to
+     * @param mapper the ObjectMapper for deserializing
+     * @param seenContextKeys map tracking context keys to their friendly names (for duplicate detection)
+     * @throws IOException if deserialization fails or duplicate context keys are detected
      */
     @SuppressWarnings("unchecked")
     private static void deserializeTypedObjects(JsonNode typedNode, ParseContext parseContext,
-                                                 ObjectMapper mapper) throws IOException {
+                                                 ObjectMapper mapper,
+                                                 Map<Class<?>, String> seenContextKeys) throws IOException {
         if (!typedNode.isObject()) {
             return;
         }
@@ -157,6 +207,14 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
 
             // Use contextKey if available, otherwise use the config class itself
             Class<?> parseContextKey = (contextKeyClass != null) ? contextKeyClass : configClass;
+
+            // Check for duplicate context key
+            String existingName = seenContextKeys.get(parseContextKey);
+            if (existingName != null) {
+                throw new IOException("Duplicate parse-context entries resolve to the same key " +
+                        parseContextKey.getName() + ": '" + existingName + "' and '" + componentName + "'");
+            }
+            seenContextKeys.put(parseContextKey, componentName);
 
             // Deserialize and add to context
             try {

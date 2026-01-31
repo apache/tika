@@ -19,6 +19,7 @@ package org.apache.tika.serialization;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.StringWriter;
@@ -349,7 +350,7 @@ public class TestParseContextSerialization {
      * Test that BasicContentHandlerFactory can be configured via JSON, serialized,
      * deserialized, and resolved via ParseContextUtils.resolveAll().
      * This verifies the fix for TIKA-4582 where ContentHandlerFactory was not being
-     * resolved because it wasn't in the "other-configs" registry.
+     * resolved because it wasn't in the "parse-context" registry.
      */
     @Test
     public void testContentHandlerFactoryRoundTrip() throws Exception {
@@ -428,5 +429,68 @@ public class TestParseContextSerialization {
         assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.HTML, basicFactory.getType());
         assertEquals(10000, basicFactory.getWriteLimit());
         assertFalse(basicFactory.isThrowOnWriteLimitReached());
+    }
+
+    /**
+     * Test that duplicate context keys within a single JSON document are detected and rejected.
+     * Both BasicContentHandlerFactory and UppercasingContentHandlerFactory resolve to
+     * ContentHandlerFactory.class as their context key, so configuring both should fail.
+     */
+    @Test
+    public void testDuplicateContextKeyDetection() throws Exception {
+        // Both of these resolve to ContentHandlerFactory.class as the context key
+        String json = """
+                {
+                  "basic-content-handler-factory": {
+                    "type": "XML",
+                    "writeLimit": 50000
+                  },
+                  "uppercasing-content-handler-factory": {}
+                }
+                """;
+
+        ObjectMapper mapper = createMapper();
+
+        // Should throw an exception due to duplicate context key
+        Exception ex = assertThrows(Exception.class, () ->
+                mapper.readValue(json, ParseContext.class));
+
+        // Verify the error message mentions the duplicate
+        assertTrue(ex.getMessage().contains("Duplicate") ||
+                        (ex.getCause() != null && ex.getCause().getMessage().contains("Duplicate")),
+                "Exception should mention duplicate context key: " + ex.getMessage());
+        assertTrue(ex.getMessage().contains("ContentHandlerFactory") ||
+                        (ex.getCause() != null && ex.getCause().getMessage().contains("ContentHandlerFactory")),
+                "Exception should mention the conflicting key: " + ex.getMessage());
+    }
+
+    /**
+     * Test that a single component per context key is allowed (no false positives).
+     */
+    @Test
+    public void testNoDuplicateWhenDifferentContextKeys() throws Exception {
+        // These have different context keys, so both should be allowed
+        String json = """
+                {
+                  "basic-content-handler-factory": {
+                    "type": "TEXT",
+                    "writeLimit": 10000
+                  },
+                  "skip-embedded-document-selector": {}
+                }
+                """;
+
+        ObjectMapper mapper = createMapper();
+        ParseContext deserialized = mapper.readValue(json, ParseContext.class);
+
+        // Both should be present as JSON configs
+        assertTrue(deserialized.hasJsonConfig("basic-content-handler-factory"));
+        assertTrue(deserialized.hasJsonConfig("skip-embedded-document-selector"));
+
+        // Resolve and verify both work
+        ParseContextUtils.resolveAll(deserialized, Thread.currentThread().getContextClassLoader());
+
+        assertNotNull(deserialized.get(ContentHandlerFactory.class));
+        assertNotNull(deserialized.get(DocumentSelector.class));
     }
 }

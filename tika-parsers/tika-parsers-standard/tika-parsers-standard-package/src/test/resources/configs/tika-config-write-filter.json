@@ -2,23 +2,19 @@
   "auto-detect-parser": {
     "throwOnZeroBytes": false
   },
-  "other-configs": {
-    "digester-factory": {
-      "commons-digester-factory": {
-        "digests": [
-          { "algorithm": "SHA256", "encoding": "BASE32" },
-          { "algorithm": "MD5" }
-        ],
-        "skipContainerDocumentDigest": true
-      }
+  "parse-context": {
+    "commons-digester-factory": {
+      "digests": [
+        { "algorithm": "SHA256", "encoding": "BASE32" },
+        { "algorithm": "MD5" }
+      ],
+      "skipContainerDocumentDigest": true
     },
-    "metadata-write-limiter-factory": {
-      "standard-metadata-limiter-factory": {
-        "includeFields": [
-          "X-TIKA:content",
-          "dc:creator"
-        ]
-      }
+    "standard-metadata-limiter-factory": {
+      "includeFields": [
+        "X-TIKA:content",
+        "dc:creator"
+      ]
     }
   }
 }

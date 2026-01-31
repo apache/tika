@@ -23,7 +23,7 @@ Tika provides several mechanisms for limiting resource usage during parsing.
 
 == Overview
 
-Tika 4.x provides a unified configuration system for all limits through the `other-configs`
+Tika 4.x provides a unified configuration system for all limits through the `parse-context`
 section of the JSON configuration file. All limits are loaded into the `ParseContext` and
 flow through the parsing pipeline.
 
@@ -36,7 +36,7 @@ This is the same configuration tested in `AllLimitsTest.java`:
 ----
 {
   "parsers": ["default-parser"],
-  "other-configs": {
+  "parse-context": {
     "embedded-limits": {
       "maxDepth": 10,
       "throwOnMaxDepth": false,
@@ -54,13 +54,11 @@ This is the same configuration tested in `AllLimitsTest.java`:
     "timeout-limits": {
       "taskTimeoutMillis": 60000
     },
-    "metadata-write-limiter-factory": {
-      "standard-metadata-limiter-factory": {
-        "maxTotalBytes": 1048576,
-        "maxFieldSize": 102400,
-        "maxKeySize": 1024,
-        "maxValuesPerField": 100
-      }
+    "standard-metadata-limiter-factory": {
+      "maxTotalBytes": 1048576,
+      "maxFieldSize": 102400,
+      "maxKeySize": 1024,
+      "maxValuesPerField": 100
     }
   }
 }
@@ -138,7 +136,7 @@ container.zip (depth 0)
 [source,json]
 ----
 {
-  "other-configs": {
+  "parse-context": {
     "embedded-limits": {
       "maxDepth": 5,
       "throwOnMaxDepth": true,
@@ -215,7 +213,7 @@ and protection against zip bombs.
 [source,json]
 ----
 {
-  "other-configs": {
+  "parse-context": {
     "output-limits": {
       "writeLimit": 50000,
       "throwOnWriteLimit": true,
@@ -263,7 +261,7 @@ The `TimeoutLimits` class controls time-based limits for parsing operations.
 [source,json]
 ----
 {
-  "other-configs": {
+  "parse-context": {
     "timeout-limits": {
       "taskTimeoutMillis": 120000
     }
@@ -358,16 +356,14 @@ Use this to extract only the metadata you need.
 ----
 {
   "parsers": ["default-parser"],
-  "other-configs": {
-    "metadata-write-limiter-factory": {
-      "standard-metadata-limiter-factory": {
-        "maxTotalBytes": 1048576,
-        "maxFieldSize": 102400,
-        "maxKeySize": 1024,
-        "maxValuesPerField": 100,
-        "includeFields": ["dc:title", "dc:creator", "dc:subject"],
-        "excludeFields": ["pdf:unmappedUnicodeCharsPerPage"]
-      }
+  "parse-context": {
+    "standard-metadata-limiter-factory": {
+      "maxTotalBytes": 1048576,
+      "maxFieldSize": 102400,
+      "maxKeySize": 1024,
+      "maxValuesPerField": 100,
+      "includeFields": ["dc:title", "dc:creator", "dc:subject"],
+      "excludeFields": ["pdf:unmappedUnicodeCharsPerPage"]
     }
   }
 }

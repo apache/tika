@@ -2,9 +2,8 @@
   "auto-detect-parser": {
     "throwOnZeroBytes": false
   },
-  "other-configs": {
-    "digester-factory": {
-      "commons-digester-factory": {
+  "parse-context": {
+    "commons-digester-factory": {
         "digests": [
           { "algorithm": "MD2" },
           { "algorithm": "MD5" },
@@ -15,5 +14,4 @@
         ]
       }
     }
-  }
 }

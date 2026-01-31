@@ -33,7 +33,7 @@ Tika provides two digester implementations:
 
 == JSON Configuration
 
-Configure digesters in the `other-configs.digester-factory` section of your tika-config.json.
+Configure digesters in the `parse-context` section of your tika-config.json.
 
 === Basic Example with CommonsDigester
 
@@ -43,15 +43,13 @@ This example configures multiple digest algorithms:
 [source,json]
 ----
 {
-  "other-configs": {
-    "digester-factory": {
-      "commons-digester-factory": {
-        "digests": [
-          { "algorithm": "MD5" },
-          { "algorithm": "SHA256" },
-          { "algorithm": "SHA512" }
-        ]
-      }
+  "parse-context": {
+    "commons-digester-factory": {
+      "digests": [
+        { "algorithm": "MD5" },
+        { "algorithm": "SHA256" },
+        { "algorithm": "SHA512" }
+      ]
     }
   }
 }
@@ -65,15 +63,13 @@ For SHA3 algorithms, use the BouncyCastle digester:
 [source,json]
 ----
 {
-  "other-configs": {
-    "digester-factory": {
-      "bouncy-castle-digester-factory": {
-        "digests": [
-          { "algorithm": "MD5" },
-          { "algorithm": "SHA256" },
-          { "algorithm": "SHA3_512" }
-        ]
-      }
+  "parse-context": {
+    "bouncy-castle-digester-factory": {
+      "digests": [
+        { "algorithm": "MD5" },
+        { "algorithm": "SHA256" },
+        { "algorithm": "SHA3_512" }
+      ]
     }
   }
 }
@@ -87,14 +83,12 @@ By default, digest values are encoded as lowercase hexadecimal. You can specify 
 [source,json]
 ----
 {
-  "other-configs": {
-    "digester-factory": {
-      "commons-digester-factory": {
-        "digests": [
-          { "algorithm": "SHA256", "encoding": "BASE32" },
-          { "algorithm": "MD5" }
-        ]
-      }
+  "parse-context": {
+    "commons-digester-factory": {
+      "digests": [
+        { "algorithm": "SHA256", "encoding": "BASE32" },
+        { "algorithm": "MD5" }
+      ]
     }
   }
 }
@@ -112,14 +106,12 @@ to `true`:
 [source,json]
 ----
 {
-  "other-configs": {
-    "digester-factory": {
-      "commons-digester-factory": {
-        "digests": [
-          { "algorithm": "MD5" }
-        ],
-        "skipContainerDocumentDigest": true
-      }
+  "parse-context": {
+    "commons-digester-factory": {
+      "digests": [
+        { "algorithm": "MD5" }
+      ],
+      "skipContainerDocumentDigest": true
     }
   }
 }

@@ -32,7 +32,8 @@ public class OutputLimitsTest extends TikaTest {
     @Test
     public void testLoadFromConfig() throws Exception {
         TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "output-limits-test.json"));
-        OutputLimits limits = loader.configs().load(OutputLimits.class);
+        ParseContext context = loader.loadParseContext();
+        OutputLimits limits = context.get(OutputLimits.class);
 
         assertNotNull(limits);
         assertEquals(50000, limits.getWriteLimit());

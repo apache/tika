@@ -105,7 +105,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(configPath);
 
-        // Load PipesConfig directly from root level (not from "other-configs")
+        // Load PipesConfig directly from root level (not from "parse-context")
         pipesConfig = tikaJsonConfig.deserialize("pipes", PipesConfig.class);
         if (pipesConfig == null) {
             pipesConfig = new PipesConfig();

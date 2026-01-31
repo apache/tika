@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -320,6 +321,52 @@ public class TikaLoaderTest {
         assertTrue(!compositeParser.getSupportedTypes(context)
                         .contains(MediaType.parse("application/test+optin")),
                 "Should NOT support application/test+optin (opt-in only, not in SPI)");
+    }
+
+    @Test
+    public void testLoadConfigWithDefaults() throws Exception {
+        // Test the loadConfig method that merges JSON config with defaults
+        URL configUrl = getClass().getResource("/configs/embedded-limits-test.json");
+        Path configPath = Path.of(configUrl.toURI());
+
+        TikaLoader loader = TikaLoader.load(configPath);
+
+        // Create defaults - some values will be overridden by JSON, others kept
+        EmbeddedLimits defaults = new EmbeddedLimits();
+        // Default values from EmbeddedLimits: maxDepth=UNLIMITED, maxCount=UNLIMITED, throwOnMax*=false
+
+        // Load with defaults - JSON has: maxDepth=5, throwOnMaxDepth=true, maxCount=100, throwOnMaxCount=false
+        EmbeddedLimits config = loader.loadConfig(EmbeddedLimits.class, defaults);
+
+        assertNotNull(config, "Config should not be null");
+        assertEquals(5, config.getMaxDepth(), "maxDepth should be from JSON");
+        assertTrue(config.isThrowOnMaxDepth(), "throwOnMaxDepth should be from JSON");
+        assertEquals(100, config.getMaxCount(), "maxCount should be from JSON");
+        assertFalse(config.isThrowOnMaxCount(), "throwOnMaxCount should be from JSON");
+
+        // Verify original defaults object was NOT modified
+        assertEquals(EmbeddedLimits.UNLIMITED, defaults.getMaxDepth(), "Original defaults should be unchanged");
+    }
+
+    @Test
+    public void testLoadConfigMissingKeyReturnsDefaults() throws Exception {
+        // Test that loadConfig returns defaults when key is not in config
+        URL configUrl = getClass().getResource("/configs/test-loader-config.json");
+        Path configPath = Path.of(configUrl.toURI());
+
+        TikaLoader loader = TikaLoader.load(configPath);
+
+        // Create defaults
+        EmbeddedLimits defaults = new EmbeddedLimits(10, true, 500, false);
+
+        // Load with defaults - this config doesn't have embedded-limits
+        EmbeddedLimits config = loader.loadConfig(EmbeddedLimits.class, defaults);
+
+        // Should return the defaults since key is missing
+        assertEquals(10, config.getMaxDepth(), "Should return defaults when key missing");
+        assertTrue(config.isThrowOnMaxDepth(), "Should return defaults when key missing");
+        assertEquals(500, config.getMaxCount(), "Should return defaults when key missing");
+        assertFalse(config.isThrowOnMaxCount(), "Should return defaults when key missing");
     }
 
     // TODO: TIKA-SERIALIZATION-FOLLOWUP - Jackson may need configuration to fail on unknown properties

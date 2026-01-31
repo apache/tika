@@ -180,7 +180,7 @@ public class PipesServer implements AutoCloseable {
 
             MetadataFilter metadataFilter = tikaLoader.loadMetadataFilters();
             ContentHandlerFactory contentHandlerFactory = tikaLoader.loadContentHandlerFactory();
-            MetadataWriteLimiterFactory metadataWriteLimiterFactory = tikaLoader.configs().load(MetadataWriteLimiterFactory.class);
+            MetadataWriteLimiterFactory metadataWriteLimiterFactory = tikaLoader.loadParseContext().get(MetadataWriteLimiterFactory.class);
             PipesServer pipesServer = new PipesServer(pipesClientId, tikaLoader, pipesConfig, socket, dis, dos, metadataFilter, contentHandlerFactory, metadataWriteLimiterFactory);
             pipesServer.initializeResources();
             LOG.debug("pipesClientId={}: PipesServer loaded and ready", pipesClientId);

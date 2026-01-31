@@ -42,10 +42,8 @@
   "auto-detect-parser": {
     "throwOnZeroBytes": false
   },
-  "other-configs": {
-    "digester-factory": {
-      "mock-digester-factory": {}
-    }
-  },
+  "parse-context": {
+    "mock-digester-factory": {}
+    },
   "plugin-roots": "PLUGINS_PATHS"
 }
