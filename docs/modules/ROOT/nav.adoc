@@ -20,6 +20,7 @@
 ** xref:using-tika/cli/index.adoc[Command Line]
 ** xref:using-tika/grpc/index.adoc[gRPC]
 * xref:pipes/index.adoc[Pipes]
+** xref:pipes/unpack-config.adoc[Extracting Embedded Bytes]
 * xref:configuration/index.adoc[Configuration]
 ** xref:configuration/parsers/pdf-parser.adoc[PDF Parser]
 ** xref:configuration/parsers/tesseract-ocr-parser.adoc[Tesseract OCR]
