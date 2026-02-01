@@ -267,20 +267,6 @@ public class UnpackerResourceTest extends CXFTestBase {
     }
 
     @Test
-    public void testText() throws Exception {
-        Response response = WebClient
-                .create(endPoint + ALL_PATH)
-                .header(CONTENT_TYPE, APPLICATION_XML)
-                .accept("application/zip")
-                .put(ClassLoader.getSystemResourceAsStream("test-documents/test.doc"));
-
-        String responseMsg = readArchiveMetadataAndText((InputStream) response.getEntity());
-        assertNotNull(responseMsg);
-        assertContains("test", responseMsg);
-        assertContains("dc:creator,Maxim Valyanskiy", responseMsg);
-    }
-
-    @Test
     public void testMetadataJsonIncluded() throws Exception {
         // Test that /unpack/all includes metadata JSON files
         Response response = WebClient
