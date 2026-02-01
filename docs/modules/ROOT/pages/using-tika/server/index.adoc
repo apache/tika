@@ -35,8 +35,4 @@ The server starts on port 9998 by default.
 
 == Topics
 
-// Add links to specific topics as they are created
-// * link:installation.html[Installation]
-// * link:endpoints.html[REST Endpoints]
-// * link:configuration.html[Configuration]
-// * link:docker.html[Docker Deployment]
+* xref:using-tika/server/tls.adoc[TLS/SSL Configuration] - Secure your server with TLS and mutual authentication

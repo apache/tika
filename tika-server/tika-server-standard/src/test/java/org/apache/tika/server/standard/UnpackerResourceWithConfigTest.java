@@ -138,7 +138,7 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
 
         // URL changed: POST to /unpack/all instead of /unpack/all/config
         Response response = WebClient
-                .create(CXFTestBase.endPoint + ALL_PATH)
+                .create(endPoint + ALL_PATH)
                 .type("multipart/form-data")
                 .accept("application/zip")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
@@ -209,7 +209,7 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
 
         // URL changed: POST to /unpack/all instead of /unpack/all/config
         Response response = WebClient
-                .create(CXFTestBase.endPoint + ALL_PATH)
+                .create(endPoint + ALL_PATH)
                 .type("multipart/form-data")
                 .accept("application/zip")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));

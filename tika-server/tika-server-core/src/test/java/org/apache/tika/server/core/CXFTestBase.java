@@ -51,8 +51,9 @@ import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.transport.common.gzip.GZIPInInterceptor;
 import org.apache.cxf.transport.common.gzip.GZIPOutInterceptor;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,6 +67,7 @@ import org.apache.tika.pipes.core.PipesParser;
 import org.apache.tika.server.core.resource.PipesParsingHelper;
 import org.apache.tika.server.core.resource.TikaResource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class CXFTestBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(CXFTestBase.class);
@@ -92,8 +94,8 @@ public abstract class CXFTestBase {
     private static final String TEMPLATE_RESOURCE = "/configs/cxf-test-base-template.json";
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    protected static final int testPort = TestPortAllocator.findFreePort();
-    protected static final String endPoint = "http://localhost:" + testPort;
+    protected final int testPort = TestPortAllocator.findFreePort();
+    protected final String endPoint = "http://localhost:" + testPort;
     protected final static int DIGESTER_READ_LIMIT = 20 * 1024 * 1024;
     protected Server server;
     protected TikaLoader tika;
@@ -176,7 +178,7 @@ public abstract class CXFTestBase {
         return new AverageColor((double) totalRed / (double) pixels, (double) totalGreen / (double) pixels, (double) totalBlue / (double) pixels);
     }
 
-    @BeforeEach
+    @BeforeAll
     public void setUp() throws Exception {
         Path tmp = Files.createTempFile("tika-server-test-", ".json");
         try {
@@ -354,7 +356,7 @@ public abstract class CXFTestBase {
      */
     protected abstract void setUpProviders(JAXRSServerFactoryBean sf);
 
-    @AfterEach
+    @AfterAll
     public void tearDown() throws Exception {
         server.stop();
         server.destroy();

@@ -134,7 +134,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     @Test
     public void testDocWAV() throws Exception {
         Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
+                .create(endPoint + UNPACKER_PATH)
                 .type(APPLICATION_MSWORD)
                 .accept("application/zip")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
@@ -156,7 +156,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     @Test
     public void testDocWAVText() throws Exception {
         Response response = WebClient
-                .create(CXFTestBase.endPoint + ALL_PATH)
+                .create(endPoint + ALL_PATH)
                 .type(APPLICATION_MSWORD)
                 .accept("application/zip")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
@@ -179,7 +179,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     @Test
     public void testDocPicture() throws Exception {
         Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
+                .create(endPoint + UNPACKER_PATH)
                 .type(APPLICATION_MSWORD)
                 .accept("application/zip")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
@@ -195,7 +195,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     @Test
     public void testDocPictureNoOle() throws Exception {
         Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
+                .create(endPoint + UNPACKER_PATH)
                 .type(APPLICATION_MSWORD)
                 .accept("application/zip")
                 .put(ClassLoader.getSystemResourceAsStream("test-documents/2pic.doc"));
@@ -210,7 +210,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     @Test
     public void testImageDOCX() throws Exception {
         Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
+                .create(endPoint + UNPACKER_PATH)
                 .accept("application/zip")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_DOCX_IMAGE));
 
@@ -231,7 +231,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     public void testExeDOCX() throws Exception {
         String TEST_DOCX_EXE = "test-documents/2exe.docx";
         Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
+                .create(endPoint + UNPACKER_PATH)
                 .accept("application/zip")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_DOCX_EXE));
 
@@ -244,7 +244,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     @Test
     public void testImageXSL() throws Exception {
         Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
+                .create(endPoint + UNPACKER_PATH)
                 .accept("application/zip")
                 .put(ClassLoader.getSystemResourceAsStream("test-documents/pic.xls"));
 
@@ -267,10 +267,24 @@ public class UnpackerResourceTest extends CXFTestBase {
     }
 
     @Test
+    public void testText() throws Exception {
+        Response response = WebClient
+                .create(endPoint + ALL_PATH)
+                .header(CONTENT_TYPE, APPLICATION_XML)
+                .accept("application/zip")
+                .put(ClassLoader.getSystemResourceAsStream("test-documents/test.doc"));
+
+        String responseMsg = readArchiveMetadataAndText((InputStream) response.getEntity());
+        assertNotNull(responseMsg);
+        assertContains("test", responseMsg);
+        assertContains("dc:creator,Maxim Valyanskiy", responseMsg);
+    }
+
+    @Test
     public void testMetadataJsonIncluded() throws Exception {
         // Test that /unpack/all includes metadata JSON files
         Response response = WebClient
-                .create(CXFTestBase.endPoint + ALL_PATH)
+                .create(endPoint + ALL_PATH)
                 .type(APPLICATION_MSWORD)
                 .accept("application/zip")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
@@ -290,7 +304,7 @@ public class UnpackerResourceTest extends CXFTestBase {
 
     @Test
     public void testPDFImages() throws Exception {
-        // POST with multipart config - URL is now just /unpack (not /unpack/config)
+        // POST with multipart config
         String configJson = """
                 {
                   "pdf-parser": {
@@ -305,7 +319,7 @@ public class UnpackerResourceTest extends CXFTestBase {
                 new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
+                .create(endPoint + UNPACKER_PATH)
                 .type("multipart/form-data")
                 .accept("application/zip")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
@@ -323,7 +337,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     public void testPDFRenderOCR() throws Exception {
         assumeTrue(new TesseractOCRParser().hasTesseract());
 
-        // POST with multipart config - URL is now /unpack/all (not /unpack/all/config)
+        // POST with multipart config
         String configJson = """
                 {
                   "pdf-parser": {
@@ -338,7 +352,7 @@ public class UnpackerResourceTest extends CXFTestBase {
                 new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         Response response = WebClient
-                .create(CXFTestBase.endPoint + ALL_PATH)
+                .create(endPoint + ALL_PATH)
                 .type("multipart/form-data")
                 .accept("application/zip")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
@@ -355,7 +369,7 @@ public class UnpackerResourceTest extends CXFTestBase {
 
     @Test
     public void testPDFPerPageRenderColor() throws Exception {
-        // POST with multipart config - URL is now /unpack/all (not /unpack/all/config)
+        // POST with multipart config
         String configJson = """
                 {
                   "pdf-parser": {
@@ -371,7 +385,7 @@ public class UnpackerResourceTest extends CXFTestBase {
                 new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         Response response = WebClient
-                .create(CXFTestBase.endPoint + ALL_PATH)
+                .create(endPoint + ALL_PATH)
                 .type("multipart/form-data")
                 .accept("application/zip")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
@@ -445,7 +459,7 @@ public class UnpackerResourceTest extends CXFTestBase {
                 new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
+                .create(endPoint + UNPACKER_PATH)
                 .type("multipart/form-data")
                 .accept("application/zip")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
@@ -478,7 +492,7 @@ public class UnpackerResourceTest extends CXFTestBase {
                 new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
+                .create(endPoint + UNPACKER_PATH)
                 .type("multipart/form-data")
                 .accept("application/zip")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
@@ -512,7 +526,7 @@ public class UnpackerResourceTest extends CXFTestBase {
                 new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
+                .create(endPoint + UNPACKER_PATH)
                 .type("multipart/form-data")
                 .accept("application/zip")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
@@ -549,7 +563,7 @@ public class UnpackerResourceTest extends CXFTestBase {
                 new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
+                .create(endPoint + UNPACKER_PATH)
                 .type("multipart/form-data")
                 .accept("application/zip")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
@@ -590,7 +604,7 @@ public class UnpackerResourceTest extends CXFTestBase {
                 new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
+                .create(endPoint + UNPACKER_PATH)
                 .type("multipart/form-data")
                 .accept("application/zip")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
