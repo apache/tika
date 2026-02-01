@@ -23,6 +23,7 @@ import org.apache.tika.extractor.UnpackHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.pipes.core.extractor.EmittingUnpackHandler;
+import org.apache.tika.pipes.core.extractor.FrictionlessUnpackHandler;
 import org.apache.tika.pipes.core.extractor.TempFileUnpackHandler;
 
 class MetadataListAndEmbeddedBytes {
@@ -65,16 +66,19 @@ class MetadataListAndEmbeddedBytes {
          * Returns false for:
          * - EmittingUnpackHandler: bytes are emitted individually during parsing
          * - TempFileUnpackHandler: bytes are zipped and emitted by PipesWorker.zipAndEmitEmbeddedFiles()
+         * - FrictionlessUnpackHandler: bytes are emitted by PipesWorker.emitFrictionlessOutput()
          *
          * @return true if bytes need to be packaged and emitted, false if already handled
          */
         public boolean toBePackagedForStreamEmitter() {
             // EmittingUnpackHandler emits bytes individually during parsing
             // TempFileUnpackHandler collects bytes for zipping by PipesWorker
-            // In both cases, the bytes are handled separately and don't need to be
+            // FrictionlessUnpackHandler collects bytes for Frictionless Data Package by PipesWorker
+            // In all cases, the bytes are handled separately and don't need to be
             // packaged here
             return !(unpackHandler instanceof EmittingUnpackHandler) &&
-                    !(unpackHandler instanceof TempFileUnpackHandler);
+                    !(unpackHandler instanceof TempFileUnpackHandler) &&
+                    !(unpackHandler instanceof FrictionlessUnpackHandler);
         }
 
     @Override

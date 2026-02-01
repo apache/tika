@@ -69,6 +69,53 @@ public class UnpackConfig implements Serializable {
             throw new IllegalArgumentException("can't parse " + s);
         }
     }
+
+    /**
+     * Output format for UNPACK mode.
+     */
+    public enum OUTPUT_FORMAT {
+        /**
+         * Regular output - embedded files emitted individually or as simple zip
+         */
+        REGULAR,
+        /**
+         * Frictionless Data Package format with datapackage.json manifest,
+         * SHA256 hashes, mimetypes, and files in unpacked/ subdirectory
+         */
+        FRICTIONLESS;
+
+        public static OUTPUT_FORMAT parse(String s) {
+            if (s.equalsIgnoreCase(REGULAR.name())) {
+                return REGULAR;
+            } else if (s.equalsIgnoreCase(FRICTIONLESS.name())) {
+                return FRICTIONLESS;
+            }
+            throw new IllegalArgumentException("can't parse OUTPUT_FORMAT: " + s);
+        }
+    }
+
+    /**
+     * Output mode for how embedded files are delivered.
+     */
+    public enum OUTPUT_MODE {
+        /**
+         * Package all files into a single zip archive
+         */
+        ZIPPED,
+        /**
+         * Emit files directly to the configured emitter as separate items
+         */
+        DIRECTORY;
+
+        public static OUTPUT_MODE parse(String s) {
+            if (s.equalsIgnoreCase(ZIPPED.name())) {
+                return ZIPPED;
+            } else if (s.equalsIgnoreCase(DIRECTORY.name())) {
+                return DIRECTORY;
+            }
+            throw new IllegalArgumentException("can't parse OUTPUT_MODE: " + s);
+        }
+    }
     private int zeroPadName = 0;
 
     private SUFFIX_STRATEGY suffixStrategy = SUFFIX_STRATEGY.NONE;
@@ -91,6 +138,11 @@ public class UnpackConfig implements Serializable {
 
     // Maximum bytes to unpack per file (default 10GB, -1 to disable limit)
     private long maxUnpackBytes = DEFAULT_MAX_UNPACK_BYTES;
+
+    // Frictionless Data Package options
+    private OUTPUT_FORMAT outputFormat = OUTPUT_FORMAT.REGULAR;
+    private OUTPUT_MODE outputMode = OUTPUT_MODE.ZIPPED;
+    private boolean includeFullMetadata = false;  // Include metadata.json in Frictionless output
 
     /**
      * Create an UnpackConfig with default settings.
@@ -201,6 +253,52 @@ public class UnpackConfig implements Serializable {
         this.maxUnpackBytes = maxUnpackBytes;
     }
 
+    /**
+     * Get the output format for UNPACK mode.
+     * REGULAR is the default (existing behavior).
+     * FRICTIONLESS creates a Frictionless Data Package with datapackage.json manifest.
+     */
+    public OUTPUT_FORMAT getOutputFormat() {
+        return outputFormat;
+    }
+
+    public void setOutputFormat(OUTPUT_FORMAT outputFormat) {
+        this.outputFormat = outputFormat;
+    }
+
+    public void setOutputFormat(String outputFormat) {
+        setOutputFormat(OUTPUT_FORMAT.valueOf(outputFormat));
+    }
+
+    /**
+     * Get the output mode for how embedded files are delivered.
+     * ZIPPED packages all files into a single zip archive.
+     * DIRECTORY emits files directly to the configured emitter.
+     */
+    public OUTPUT_MODE getOutputMode() {
+        return outputMode;
+    }
+
+    public void setOutputMode(OUTPUT_MODE outputMode) {
+        this.outputMode = outputMode;
+    }
+
+    public void setOutputMode(String outputMode) {
+        setOutputMode(OUTPUT_MODE.valueOf(outputMode));
+    }
+
+    /**
+     * Whether to include full RMETA-style metadata in metadata.json.
+     * Only applicable when outputFormat is FRICTIONLESS.
+     */
+    public boolean isIncludeFullMetadata() {
+        return includeFullMetadata;
+    }
+
+    public void setIncludeFullMetadata(boolean includeFullMetadata) {
+        this.includeFullMetadata = includeFullMetadata;
+    }
+
     @Override
     public String toString() {
         return "UnpackConfig{" + "zeroPadName=" + zeroPadName + ", suffixStrategy=" +
@@ -208,7 +306,8 @@ public class UnpackConfig implements Serializable {
                 ", emitter='" + emitter + '\'' + ", includeOriginal=" + includeOriginal +
                 ", keyBaseStrategy=" + keyBaseStrategy + ", emitKeyBase='" + emitKeyBase + '\'' +
                 ", zipEmbeddedFiles=" + zipEmbeddedFiles + ", includeMetadataInZip=" + includeMetadataInZip +
-                ", maxUnpackBytes=" + maxUnpackBytes + '}';
+                ", maxUnpackBytes=" + maxUnpackBytes + ", outputFormat=" + outputFormat +
+                ", outputMode=" + outputMode + ", includeFullMetadata=" + includeFullMetadata + '}';
     }
 
     @Override
@@ -225,7 +324,10 @@ public class UnpackConfig implements Serializable {
                 Objects.equals(emitKeyBase, config.emitKeyBase) &&
                 zipEmbeddedFiles == config.zipEmbeddedFiles &&
                 includeMetadataInZip == config.includeMetadataInZip &&
-                maxUnpackBytes == config.maxUnpackBytes;
+                maxUnpackBytes == config.maxUnpackBytes &&
+                outputFormat == config.outputFormat &&
+                outputMode == config.outputMode &&
+                includeFullMetadata == config.includeFullMetadata;
     }
 
     @Override
@@ -240,6 +342,9 @@ public class UnpackConfig implements Serializable {
         result = 31 * result + Boolean.hashCode(zipEmbeddedFiles);
         result = 31 * result + Boolean.hashCode(includeMetadataInZip);
         result = 31 * result + Long.hashCode(maxUnpackBytes);
+        result = 31 * result + Objects.hashCode(outputFormat);
+        result = 31 * result + Objects.hashCode(outputMode);
+        result = 31 * result + Boolean.hashCode(includeFullMetadata);
         return result;
     }
 }

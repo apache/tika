@@ -93,7 +93,7 @@ import org.apache.tika.parser.ParseContext;
  *       "suffixStrategy": "DETECTED",
  *       "includeOriginal": true
  *     },
- *     "unpack-selector": {
+ *     "standard-unpack-selector": {
  *       "includeMimeTypes": ["image/jpeg", "image/png"],
  *       "excludeMimeTypes": ["application/pdf"]
  *     },
@@ -103,6 +103,33 @@ import org.apache.tika.parser.ParseContext;
  *     }
  *   }
  * }
+ * </pre>
+ * <p>
+ * <b>Frictionless Data Package Format:</b>
+ * <p>
+ * To receive output in Frictionless Data Package format (with datapackage.json manifest,
+ * SHA256 hashes, and files in unpacked/ subdirectory), use:
+ * <pre>
+ * {
+ *   "parse-context": {
+ *     "unpack-config": {
+ *       "outputFormat": "FRICTIONLESS",
+ *       "outputMode": "ZIPPED",
+ *       "includeFullMetadata": true
+ *     }
+ *   }
+ * }
+ * </pre>
+ * <p>
+ * The Frictionless zip structure:
+ * <pre>
+ * output.zip
+ * ├── datapackage.json      # Manifest with file list, SHA256 hashes, mimetypes
+ * ├── metadata.json         # Full RMETA metadata (if includeFullMetadata=true)
+ * └── unpacked/
+ *     ├── 00000001.pdf
+ *     ├── 00000002.png
+ *     └── ...
  * </pre>
  * <p>
  * <b>Breaking Changes from Pre-4.0:</b>

@@ -49,9 +49,11 @@ import org.apache.tika.pipes.api.emitter.StreamEmitter;
 import org.apache.tika.pipes.core.PipesResults;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.extractor.EmittingUnpackHandler;
+import org.apache.tika.pipes.core.extractor.FrictionlessUnpackHandler;
 import org.apache.tika.pipes.core.extractor.TempFileUnpackHandler;
 import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.pipes.core.extractor.UnpackExtractorFactory;
+import org.apache.tika.pipes.core.extractor.frictionless.DataPackage;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
 
@@ -85,6 +87,7 @@ class PipesWorker implements Callable<PipesResult> {
     public PipesResult call() throws Exception {
         MetadataListAndEmbeddedBytes parseData = null;
         TempFileUnpackHandler tempHandler = null;
+        FrictionlessUnpackHandler frictionlessHandler = null;
         try {
             //this can be null if there is a fetch exception
             ParseDataOrPipesResult parseDataResult = parseFromTuple();
@@ -101,7 +104,14 @@ class PipesWorker implements Callable<PipesResult> {
 
             // Check if we need to zip and emit embedded files
             UnpackHandler handler = parseContext.get(UnpackHandler.class);
-            if (handler instanceof TempFileUnpackHandler) {
+            if (handler instanceof FrictionlessUnpackHandler) {
+                frictionlessHandler = (FrictionlessUnpackHandler) handler;
+                PipesResult frictionlessResult = emitFrictionlessOutput(frictionlessHandler, parseData);
+                if (frictionlessResult != null) {
+                    // Frictionless emit failed - return the error
+                    return frictionlessResult;
+                }
+            } else if (handler instanceof TempFileUnpackHandler) {
                 tempHandler = (TempFileUnpackHandler) handler;
                 PipesResult zipResult = zipAndEmitEmbeddedFiles(tempHandler);
                 if (zipResult != null) {
@@ -112,8 +122,14 @@ class PipesWorker implements Callable<PipesResult> {
 
             return emitHandler.emitParseData(fetchEmitTuple, parseData, parseContext);
         } finally {
-            // Clean up temp handler if used
-            if (tempHandler != null) {
+            // Clean up handlers if used
+            if (frictionlessHandler != null) {
+                try {
+                    frictionlessHandler.close();
+                } catch (IOException e) {
+                    LOG.warn("problem closing frictionless handler", e);
+                }
+            } else if (tempHandler != null) {
                 try {
                     tempHandler.close();
                 } catch (IOException e) {
@@ -195,6 +211,228 @@ class PipesWorker implements Callable<PipesResult> {
     }
 
     /**
+     * Emits Frictionless Data Package output (zipped or directory mode).
+     *
+     * @param frictionlessHandler the handler containing embedded files with SHA256 hashes
+     * @param parseData           the parsed metadata list for optional inclusion
+     * @return PipesResult if there was an error, null if successful
+     */
+    private PipesResult emitFrictionlessOutput(FrictionlessUnpackHandler frictionlessHandler,
+                                               MetadataListAndEmbeddedBytes parseData) {
+        UnpackConfig unpackConfig = frictionlessHandler.getUnpackConfig();
+
+        // Skip if no embedded files (unless includeOriginal is set)
+        if (!frictionlessHandler.hasEmbeddedFiles() && !unpackConfig.isIncludeOriginal()) {
+            LOG.debug("No embedded files for Frictionless output");
+            return null;
+        }
+
+        String emitterName = unpackConfig.getEmitter();
+        Emitter emitter;
+        try {
+            emitter = emitterManager.getEmitter(emitterName);
+        } catch (Exception e) {
+            LOG.warn("Failed to get emitter for Frictionless output: {}", emitterName, e);
+            return new PipesResult(PipesResult.RESULT_STATUS.EMITTER_NOT_FOUND,
+                    "Emitter not found for Frictionless output: " + emitterName);
+        }
+
+        if (!(emitter instanceof StreamEmitter)) {
+            LOG.warn("Emitter {} is not a StreamEmitter, cannot emit Frictionless output", emitterName);
+            return new PipesResult(PipesResult.RESULT_STATUS.EMIT_EXCEPTION,
+                    "Emitter must be a StreamEmitter for Frictionless output. Found: " +
+                            emitter.getClass().getName());
+        }
+
+        StreamEmitter streamEmitter = (StreamEmitter) emitter;
+        EmitKey containerEmitKey = fetchEmitTuple.getEmitKey();
+
+        // Get container name from fetch key
+        String fetchKey = fetchEmitTuple.getFetchKey().getFetchKey();
+        String containerName = fetchKey;
+        int lastSlash = Math.max(fetchKey.lastIndexOf('/'), fetchKey.lastIndexOf('\\'));
+        if (lastSlash >= 0 && lastSlash < fetchKey.length() - 1) {
+            containerName = fetchKey.substring(lastSlash + 1);
+        }
+
+        if (unpackConfig.getOutputMode() == UnpackConfig.OUTPUT_MODE.ZIPPED) {
+            return emitFrictionlessZipped(frictionlessHandler, streamEmitter, containerEmitKey,
+                    containerName, parseData, unpackConfig);
+        } else {
+            return emitFrictionlessDirectory(frictionlessHandler, streamEmitter, containerEmitKey,
+                    containerName, parseData, unpackConfig);
+        }
+    }
+
+    /**
+     * Emits Frictionless Data Package as a single zip file.
+     */
+    private PipesResult emitFrictionlessZipped(FrictionlessUnpackHandler frictionlessHandler,
+                                               StreamEmitter streamEmitter,
+                                               EmitKey containerEmitKey,
+                                               String containerName,
+                                               MetadataListAndEmbeddedBytes parseData,
+                                               UnpackConfig unpackConfig) {
+        // Build the data package manifest
+        DataPackage dataPackage = frictionlessHandler.buildDataPackage(containerName);
+
+        // Create zip file in temp directory
+        Path zipFile = frictionlessHandler.getTempDirectory().resolve("frictionless-package.zip");
+        try {
+            createFrictionlessZipFile(zipFile, frictionlessHandler, dataPackage, parseData, unpackConfig);
+        } catch (IOException e) {
+            LOG.warn("Failed to create Frictionless zip file", e);
+            return new PipesResult(PipesResult.RESULT_STATUS.EMIT_EXCEPTION,
+                    "Failed to create Frictionless zip file: " + ExceptionUtils.getStackTrace(e));
+        }
+
+        // Emit the zip file
+        String zipEmitKey = containerEmitKey.getEmitKey() + "-frictionless.zip";
+        try (InputStream zipStream = Files.newInputStream(zipFile)) {
+            streamEmitter.emit(zipEmitKey, zipStream, new Metadata(), parseContext);
+        } catch (IOException e) {
+            LOG.warn("Failed to emit Frictionless zip file", e);
+            return new PipesResult(PipesResult.RESULT_STATUS.EMIT_EXCEPTION,
+                    "Failed to emit Frictionless zip file: " + ExceptionUtils.getStackTrace(e));
+        }
+
+        LOG.debug("Successfully emitted Frictionless package with {} resources to {}",
+                dataPackage.resourceCount(), zipEmitKey);
+        return null;
+    }
+
+    /**
+     * Emits Frictionless Data Package files directly to the emitter (directory mode).
+     */
+    private PipesResult emitFrictionlessDirectory(FrictionlessUnpackHandler frictionlessHandler,
+                                                  StreamEmitter streamEmitter,
+                                                  EmitKey containerEmitKey,
+                                                  String containerName,
+                                                  MetadataListAndEmbeddedBytes parseData,
+                                                  UnpackConfig unpackConfig) {
+        String baseEmitKey = containerEmitKey.getEmitKey();
+
+        // Build the data package manifest
+        DataPackage dataPackage = frictionlessHandler.buildDataPackage(containerName);
+
+        try {
+            // Emit original document if included
+            if (unpackConfig.isIncludeOriginal() && frictionlessHandler.hasOriginalDocument()) {
+                String originalEmitKey = baseEmitKey + "/" + frictionlessHandler.getOriginalDocumentName();
+                try (InputStream is = Files.newInputStream(frictionlessHandler.getOriginalDocumentPath())) {
+                    streamEmitter.emit(originalEmitKey, is, new Metadata(), parseContext);
+                }
+            }
+
+            // Emit each embedded file under unpacked/
+            for (FrictionlessUnpackHandler.FrictionlessFileInfo fileInfo : frictionlessHandler.getEmbeddedFiles()) {
+                String fileEmitKey = baseEmitKey + "/unpacked/" + fileInfo.fileName();
+                try (InputStream is = Files.newInputStream(fileInfo.filePath())) {
+                    streamEmitter.emit(fileEmitKey, is, fileInfo.metadata(), parseContext);
+                }
+            }
+
+            // Emit datapackage.json
+            String dpEmitKey = baseEmitKey + "/datapackage.json";
+            byte[] dpBytes = dataPackage.toJson().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            try (InputStream dpStream = new java.io.ByteArrayInputStream(dpBytes)) {
+                streamEmitter.emit(dpEmitKey, dpStream, new Metadata(), parseContext);
+            }
+
+            // Emit metadata.json if requested
+            if (unpackConfig.isIncludeFullMetadata() && parseData != null &&
+                    parseData.getMetadataList() != null) {
+                String metadataEmitKey = baseEmitKey + "/metadata.json";
+                byte[] metadataBytes = writeMetadataListAsJson(parseData.getMetadataList());
+                try (InputStream metadataStream = new java.io.ByteArrayInputStream(metadataBytes)) {
+                    streamEmitter.emit(metadataEmitKey, metadataStream, new Metadata(), parseContext);
+                }
+            }
+        } catch (IOException e) {
+            LOG.warn("Failed to emit Frictionless directory output", e);
+            return new PipesResult(PipesResult.RESULT_STATUS.EMIT_EXCEPTION,
+                    "Failed to emit Frictionless directory output: " + ExceptionUtils.getStackTrace(e));
+        }
+
+        LOG.debug("Successfully emitted Frictionless package with {} resources (directory mode) to {}",
+                dataPackage.resourceCount(), baseEmitKey);
+        return null;
+    }
+
+    /**
+     * Creates a Frictionless Data Package zip file.
+     */
+    private void createFrictionlessZipFile(Path zipFile, FrictionlessUnpackHandler frictionlessHandler,
+                                           DataPackage dataPackage, MetadataListAndEmbeddedBytes parseData,
+                                           UnpackConfig unpackConfig) throws IOException {
+        try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zipFile))) {
+            // Add datapackage.json at root
+            ZipEntry dpEntry = new ZipEntry("datapackage.json");
+            zos.putNextEntry(dpEntry);
+            dataPackage.writeTo(zos);
+            zos.closeEntry();
+
+            // Add metadata.json if requested
+            if (unpackConfig.isIncludeFullMetadata() && parseData != null &&
+                    parseData.getMetadataList() != null) {
+                ZipEntry metadataEntry = new ZipEntry("metadata.json");
+                zos.putNextEntry(metadataEntry);
+                writeMetadataListAsJson(zos, parseData.getMetadataList());
+                zos.closeEntry();
+            }
+
+            // Add original document if included (at root level)
+            if (unpackConfig.isIncludeOriginal() && frictionlessHandler.hasOriginalDocument()) {
+                ZipEntry originalEntry = new ZipEntry(frictionlessHandler.getOriginalDocumentName());
+                zos.putNextEntry(originalEntry);
+                Files.copy(frictionlessHandler.getOriginalDocumentPath(), zos);
+                zos.closeEntry();
+            }
+
+            // Add all embedded files under unpacked/
+            for (FrictionlessUnpackHandler.FrictionlessFileInfo fileInfo : frictionlessHandler.getEmbeddedFiles()) {
+                ZipEntry fileEntry = new ZipEntry("unpacked/" + fileInfo.fileName());
+                zos.putNextEntry(fileEntry);
+                Files.copy(fileInfo.filePath(), zos);
+                zos.closeEntry();
+            }
+        }
+    }
+
+    /**
+     * Writes a list of metadata objects as JSON array to output stream.
+     */
+    private void writeMetadataListAsJson(OutputStream os, List<Metadata> metadataList) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(com.fasterxml.jackson.core.JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
+        mapper.enable(com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT);
+
+        List<java.util.Map<String, Object>> metadataMapList = new java.util.ArrayList<>();
+        for (Metadata metadata : metadataList) {
+            java.util.Map<String, Object> metadataMap = new java.util.LinkedHashMap<>();
+            for (String name : metadata.names()) {
+                String[] values = metadata.getValues(name);
+                if (values.length == 1) {
+                    metadataMap.put(name, values[0]);
+                } else {
+                    metadataMap.put(name, values);
+                }
+            }
+            metadataMapList.add(metadataMap);
+        }
+        mapper.writeValue(os, metadataMapList);
+    }
+
+    /**
+     * Writes a list of metadata objects as JSON array to byte array.
+     */
+    private byte[] writeMetadataListAsJson(List<Metadata> metadataList) throws IOException {
+        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+        writeMetadataListAsJson(baos, metadataList);
+        return baos.toByteArray();
+    }
+
+    /**
      * Creates a zip file containing all embedded files.
      */
     private void createZipFile(Path zipFile, TempFileUnpackHandler tempHandler,
@@ -254,13 +492,7 @@ class PipesWorker implements Callable<PipesResult> {
      */
     private void storeOriginalDocument(TikaInputStream tis, TempFileUnpackHandler tempHandler)
             throws IOException {
-        // Get the file name from fetch key
-        String fetchKey = fetchEmitTuple.getFetchKey().getFetchKey();
-        String fileName = fetchKey;
-        int lastSlash = Math.max(fetchKey.lastIndexOf('/'), fetchKey.lastIndexOf('\\'));
-        if (lastSlash >= 0 && lastSlash < fetchKey.length() - 1) {
-            fileName = fetchKey.substring(lastSlash + 1);
-        }
+        String fileName = getFileNameFromFetchKey();
 
         // TikaInputStream caches to a temp file internally - get that file
         Path originalPath = tis.getPath();
@@ -278,6 +510,46 @@ class PipesWorker implements Callable<PipesResult> {
                 tis.reset();
             }
         }
+    }
+
+    /**
+     * Stores the original document to the frictionless handler for inclusion in output.
+     * Uses TikaInputStream's internal file caching to avoid consuming the stream.
+     */
+    private void storeOriginalDocumentForFrictionless(TikaInputStream tis,
+                                                      FrictionlessUnpackHandler frictionlessHandler)
+            throws IOException {
+        String fileName = getFileNameFromFetchKey();
+
+        // TikaInputStream caches to a temp file internally - get that file
+        Path originalPath = tis.getPath();
+        if (originalPath != null && Files.exists(originalPath)) {
+            // Copy from the cached file
+            try (InputStream is = Files.newInputStream(originalPath)) {
+                frictionlessHandler.storeOriginalDocument(is, fileName);
+            }
+        } else {
+            // Stream hasn't been cached yet - we need to read and reset
+            tis.mark(Integer.MAX_VALUE);
+            try {
+                frictionlessHandler.storeOriginalDocument(tis, fileName);
+            } finally {
+                tis.reset();
+            }
+        }
+    }
+
+    /**
+     * Extracts the file name from the fetch key.
+     */
+    private String getFileNameFromFetchKey() {
+        String fetchKey = fetchEmitTuple.getFetchKey().getFetchKey();
+        String fileName = fetchKey;
+        int lastSlash = Math.max(fetchKey.lastIndexOf('/'), fetchKey.lastIndexOf('\\'));
+        if (lastSlash >= 0 && lastSlash < fetchKey.length() - 1) {
+            fileName = fetchKey.substring(lastSlash + 1);
+        }
+        return fileName;
     }
 
     protected ParseDataOrPipesResult parseFromTuple() throws TikaException, InterruptedException {
@@ -300,12 +572,13 @@ class PipesWorker implements Callable<PipesResult> {
         }
 
         try (TikaInputStream tis = tisOrResult.tis()) {
-            // Store original document for zipping if requested
+            // Store original document for zipping/frictionless if requested
             UnpackHandler handler = localContext.get(UnpackHandler.class);
-            if (handler instanceof TempFileUnpackHandler) {
-                TempFileUnpackHandler tempHandler = (TempFileUnpackHandler) handler;
-                UnpackConfig uc = localContext.get(UnpackConfig.class);
-                if (uc != null && uc.isIncludeOriginal()) {
+            UnpackConfig uc = localContext.get(UnpackConfig.class);
+            if (uc != null && uc.isIncludeOriginal()) {
+                if (handler instanceof FrictionlessUnpackHandler frictionlessHandler) {
+                    storeOriginalDocumentForFrictionless(tis, frictionlessHandler);
+                } else if (handler instanceof TempFileUnpackHandler tempHandler) {
                     storeOriginalDocument(tis, tempHandler);
                 }
             }
@@ -359,11 +632,18 @@ class PipesWorker implements Callable<PipesResult> {
             // with the correct context (after RecursiveParserWrapper sets up EmbeddedParserDecorator)
             parseContext.set(EmbeddedDocumentExtractorFactory.class, new UnpackExtractorFactory());
 
-            // Set up the bytes handler - use temp file handler if zipping requested
-            if (unpackConfig.isZipEmbeddedFiles()) {
+            // Set up the bytes handler based on output format and mode
+            if (unpackConfig.getOutputFormat() == UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS) {
+                // Frictionless Data Package format - always uses FrictionlessUnpackHandler
+                // which computes SHA256 hashes and stores files for datapackage.json generation
+                parseContext.set(UnpackHandler.class,
+                        new FrictionlessUnpackHandler(fetchEmitTuple.getEmitKey(), unpackConfig));
+            } else if (unpackConfig.isZipEmbeddedFiles()) {
+                // Regular format with zipping - use TempFileUnpackHandler
                 parseContext.set(UnpackHandler.class,
                         new TempFileUnpackHandler(fetchEmitTuple.getEmitKey(), unpackConfig));
             } else {
+                // Regular format, direct emission - use EmittingUnpackHandler
                 parseContext.set(UnpackHandler.class,
                         new EmittingUnpackHandler(fetchEmitTuple, emitterManager, parseContext));
             }

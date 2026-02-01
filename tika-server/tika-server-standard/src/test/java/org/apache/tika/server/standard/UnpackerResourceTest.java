@@ -500,8 +500,10 @@ public class UnpackerResourceTest extends CXFTestBase {
         // Only extract JPEG images, not other embedded content
         String configJson = """
                 {
-                  "unpack-selector": {
-                    "includeMimeTypes": ["image/jpeg"]
+                  "parse-context": {
+                    "standard-unpack-selector": {
+                      "includeMimeTypes": ["image/jpeg"]
+                    }
                   }
                 }
                 """;
@@ -537,8 +539,10 @@ public class UnpackerResourceTest extends CXFTestBase {
         // Exclude WAV files - note: must use canonical type "audio/vnd.wave", not alias "audio/x-wav"
         String configJson = """
                 {
-                  "unpack-selector": {
-                    "excludeMimeTypes": ["audio/vnd.wave"]
+                  "parse-context": {
+                    "standard-unpack-selector": {
+                      "excludeMimeTypes": ["audio/vnd.wave"]
+                    }
                   }
                 }
                 """;

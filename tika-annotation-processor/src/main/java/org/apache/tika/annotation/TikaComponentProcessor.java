@@ -90,7 +90,8 @@ public class TikaComponentProcessor extends AbstractProcessor {
             "org.apache.tika.digest.DigesterFactory",
             "org.apache.tika.sax.ContentHandlerFactory",
             "org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory",
-            "org.apache.tika.extractor.EmbeddedDocumentExtractorFactory"
+            "org.apache.tika.extractor.EmbeddedDocumentExtractorFactory",
+            "org.apache.tika.extractor.UnpackSelector"
     );
 
     private Messager messager;

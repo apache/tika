@@ -70,6 +70,12 @@ public class TikaAsyncCLI {
         options.addOption("c", "config", true, "tikaConfig.json");
         options.addOption("z", "unzipShallow", false, "extract raw bytes from direct attachments only (depth=1)");
         options.addOption("Z", "unzipRecursive", false, "extract raw bytes from all attachments recursively");
+        options.addOption(null, "unpack-format", true,
+                "output format for unpacking: REGULAR (default) or FRICTIONLESS");
+        options.addOption(null, "unpack-mode", true,
+                "output mode for unpacking: ZIPPED (default) or DIRECTORY");
+        options.addOption(null, "unpack-include-metadata", false,
+                "include metadata.json in Frictionless output");
 
         return options;
     }
@@ -207,6 +213,21 @@ public class TikaAsyncCLI {
         if (line.hasOption('p')) {
             pluginsDir = line.getOptionValue('p');
         }
+
+        // Frictionless Data Package options
+        String unpackFormat = null;
+        String unpackMode = null;
+        boolean unpackIncludeMetadata = false;
+        if (line.hasOption("unpack-format")) {
+            unpackFormat = line.getOptionValue("unpack-format").toUpperCase(java.util.Locale.ROOT);
+        }
+        if (line.hasOption("unpack-mode")) {
+            unpackMode = line.getOptionValue("unpack-mode").toUpperCase(java.util.Locale.ROOT);
+        }
+        if (line.hasOption("unpack-include-metadata")) {
+            unpackIncludeMetadata = true;
+        }
+
         if (line.getArgList().size() > 2) {
             throw new TikaConfigException("Can't have more than 2 unknown args: " + line.getArgList());
         }
@@ -248,7 +269,7 @@ public class TikaAsyncCLI {
 
         return new SimpleAsyncConfig(inputDir, outputDir,
                 numClients, timeoutMs, xmx, fileList, tikaConfig, handlerType,
-                extractBytesMode, pluginsDir);
+                extractBytesMode, pluginsDir, unpackFormat, unpackMode, unpackIncludeMetadata);
     }
 
     private static BasicContentHandlerFactory.HANDLER_TYPE getHandlerType(String t) throws TikaConfigException {
@@ -332,6 +353,18 @@ public class TikaAsyncCLI {
         config.setEmbeddedIdPrefix("-");
         config.setZeroPadName(8);
         config.setKeyBaseStrategy(UnpackConfig.KEY_BASE_STRATEGY.DEFAULT);
+
+        // Apply Frictionless Data Package options
+        if (asyncConfig.getUnpackFormat() != null) {
+            config.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.valueOf(asyncConfig.getUnpackFormat()));
+        }
+        if (asyncConfig.getUnpackMode() != null) {
+            config.setOutputMode(UnpackConfig.OUTPUT_MODE.valueOf(asyncConfig.getUnpackMode()));
+        }
+        if (asyncConfig.isUnpackIncludeMetadata()) {
+            config.setIncludeFullMetadata(true);
+        }
+
         parseContext.set(UnpackConfig.class, config);
     }
 

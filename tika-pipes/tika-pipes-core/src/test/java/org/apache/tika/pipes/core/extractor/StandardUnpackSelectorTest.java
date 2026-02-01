@@ -28,11 +28,11 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
 
-public class UnpackSelectorTest extends TikaTest {
+public class StandardUnpackSelectorTest extends TikaTest {
 
     @Test
-    public void testUnpackSelector() throws Exception {
-        UnpackSelector selector = new UnpackSelector();
+    public void testStandardUnpackSelector() throws Exception {
+        StandardUnpackSelector selector = new StandardUnpackSelector();
         selector.setIncludeMimeTypes(Set.of("application/pdf", "application/rtf", "text/plain"));
         selector.setIncludeEmbeddedResourceTypes(Set.of("ATTACHMENT", "INLINE"));
 
@@ -48,7 +48,7 @@ public class UnpackSelectorTest extends TikaTest {
 
     @Test
     public void testAcceptAllWhenNoFilters() {
-        UnpackSelector selector = new UnpackSelector();
+        StandardUnpackSelector selector = new StandardUnpackSelector();
 
         // With no filters, should accept all
         assertTrue(selector.select(getMetadata("application/pdf", "")));
@@ -58,7 +58,7 @@ public class UnpackSelectorTest extends TikaTest {
 
     @Test
     public void testExcludeMimeTypes() {
-        UnpackSelector selector = new UnpackSelector();
+        StandardUnpackSelector selector = new StandardUnpackSelector();
         selector.setExcludeMimeTypes(Set.of("application/pdf"));
 
         assertTrue(selector.select(getMetadata("application/docx", "")));
@@ -67,7 +67,7 @@ public class UnpackSelectorTest extends TikaTest {
 
     @Test
     public void testExcludeEmbeddedResourceTypes() {
-        UnpackSelector selector = new UnpackSelector();
+        StandardUnpackSelector selector = new StandardUnpackSelector();
         selector.setExcludeEmbeddedResourceTypes(Set.of("MACRO"));
 
         assertTrue(selector.select(getMetadata("application/pdf", "ATTACHMENT")));

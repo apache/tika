@@ -18,15 +18,15 @@ package org.apache.tika.extractor;
 
 import org.apache.tika.metadata.Metadata;
 
-public interface EmbeddedBytesSelector {
+public interface UnpackSelector {
 
-    class AcceptAll implements EmbeddedBytesSelector {
+    class AcceptAll implements UnpackSelector {
         @Override
         public boolean select(Metadata metadata) {
             return true;
         }
     }
-    EmbeddedBytesSelector ACCEPT_ALL = new AcceptAll();
+    UnpackSelector ACCEPT_ALL = new AcceptAll();
 
     boolean select(Metadata metadata);
 }

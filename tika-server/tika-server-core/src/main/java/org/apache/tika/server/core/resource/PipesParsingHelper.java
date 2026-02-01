@@ -380,23 +380,30 @@ public class PipesParsingHelper {
         }
 
         // Determine the zip file path
-        // The zip is emitted to: emitter.basePath + "/" + emitKey + "-embedded.zip"
-        Path zipFile = getEmittedZipPath(requestId);
+        // Regular format: emitter.basePath + "/" + emitKey + "-embedded.zip"
+        // Frictionless format: emitter.basePath + "/" + emitKey + "-frictionless.zip"
+        boolean isFrictionless = unpackConfig.getOutputFormat() == UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS;
+        Path zipFile = getEmittedZipPath(requestId, isFrictionless);
 
         return new UnpackResult(zipFile, metadataList);
     }
 
     /**
      * Gets the path where the zip file was emitted by the child process.
-     * The zip file is at: unpackEmitterBasePath + "/" + requestId + "-embedded.zip"
+     * Regular format: unpackEmitterBasePath + "/" + requestId + "-embedded.zip"
+     * Frictionless format: unpackEmitterBasePath + "/" + requestId + "-frictionless.zip"
+     *
+     * @param requestId the request ID used as emit key
+     * @param isFrictionless true if Frictionless Data Package format was requested
      */
-    private Path getEmittedZipPath(String requestId) throws IOException {
+    private Path getEmittedZipPath(String requestId, boolean isFrictionless) throws IOException {
         if (unpackEmitterBasePath == null) {
             throw new IOException("Unpack emitter basePath not configured. " +
                     "UNPACK mode requires unpackEmitterBasePath to be set.");
         }
 
-        Path zipPath = unpackEmitterBasePath.resolve(requestId + "-embedded.zip");
+        String suffix = isFrictionless ? "-frictionless.zip" : "-embedded.zip";
+        Path zipPath = unpackEmitterBasePath.resolve(requestId + suffix);
         if (!Files.exists(zipPath)) {
             // No embedded files were extracted - return null path
             LOG.debug("No zip file created (no embedded files): {}", zipPath);

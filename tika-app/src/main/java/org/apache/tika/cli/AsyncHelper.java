@@ -24,6 +24,9 @@ public class AsyncHelper {
 
     private static final String TIKA_CONFIG_KEY = "--config=";
     private static final String EXTRACT_DIR_KEY = "--extract-dir=";
+    private static final String UNPACK_FORMAT_KEY = "--unpack-format=";
+    private static final String UNPACK_MODE_KEY = "--unpack-mode=";
+    private static final String UNPACK_INCLUDE_METADATA = "--unpack-include-metadata";
 
     public static String[] translateArgs(String[] args) {
         List<String> argList = new ArrayList<>();
@@ -43,6 +46,18 @@ public class AsyncHelper {
                 argList.add(dir);
             } else if ("-a".equals(arg)) {
                 //do nothing
+            } else if (arg.startsWith(UNPACK_FORMAT_KEY)) {
+                // Translate --unpack-format=<format> to --unpack-format <format>
+                String format = arg.substring(UNPACK_FORMAT_KEY.length());
+                argList.add("--unpack-format");
+                argList.add(format);
+            } else if (arg.startsWith(UNPACK_MODE_KEY)) {
+                // Translate --unpack-mode=<mode> to --unpack-mode <mode>
+                String mode = arg.substring(UNPACK_MODE_KEY.length());
+                argList.add("--unpack-mode");
+                argList.add(mode);
+            } else if (arg.equals(UNPACK_INCLUDE_METADATA)) {
+                argList.add("--unpack-include-metadata");
             } else {
                 argList.add(args[i]);
             }

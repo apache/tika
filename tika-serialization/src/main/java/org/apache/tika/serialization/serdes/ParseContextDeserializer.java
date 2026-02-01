@@ -89,7 +89,7 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
      */
     public static ParseContext readParseContext(JsonNode jsonNode, ObjectMapper mapper)
             throws IOException {
-        // Handle optional wrapper: { "parseContext": {...} }
+        // Handle optional wrapper: { "parse-context": {...} }
         JsonNode contextNode = jsonNode.get(PARSE_CONTEXT);
         if (contextNode == null) {
             contextNode = jsonNode;

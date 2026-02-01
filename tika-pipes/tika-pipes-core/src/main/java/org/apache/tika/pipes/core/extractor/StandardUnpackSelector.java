@@ -20,7 +20,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.tika.config.TikaComponent;
-import org.apache.tika.extractor.EmbeddedBytesSelector;
+import org.apache.tika.extractor.UnpackSelector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -34,7 +34,7 @@ import org.apache.tika.utils.StringUtils;
  * <pre>
  * {
  *   "parse-context": {
- *     "unpack-selector": {
+ *     "standard-unpack-selector": {
  *       "includeMimeTypes": ["image/jpeg", "image/png"],
  *       "excludeMimeTypes": ["application/pdf"],
  *       "includeEmbeddedResourceTypes": ["ATTACHMENT"],
@@ -44,15 +44,15 @@ import org.apache.tika.utils.StringUtils;
  * }
  * </pre>
  */
-@TikaComponent(name = "unpack-selector")
-public class UnpackSelector implements EmbeddedBytesSelector {
+@TikaComponent
+public class StandardUnpackSelector implements UnpackSelector {
 
     private Set<String> includeMimeTypes = new HashSet<>();
     private Set<String> excludeMimeTypes = new HashSet<>();
     private Set<String> includeEmbeddedResourceTypes = new HashSet<>();
     private Set<String> excludeEmbeddedResourceTypes = new HashSet<>();
 
-    public UnpackSelector() {
+    public StandardUnpackSelector() {
     }
 
     @Override
@@ -133,7 +133,7 @@ public class UnpackSelector implements EmbeddedBytesSelector {
 
     @Override
     public String toString() {
-        return "UnpackSelector{" +
+        return "StandardUnpackSelector{" +
                 "includeMimeTypes=" + includeMimeTypes +
                 ", excludeMimeTypes=" + excludeMimeTypes +
                 ", includeEmbeddedResourceTypes=" + includeEmbeddedResourceTypes +

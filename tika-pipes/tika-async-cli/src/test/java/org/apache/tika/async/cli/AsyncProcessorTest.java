@@ -113,14 +113,14 @@ public class AsyncProcessorTest extends TikaTest {
     public void testRecursiveUnpacking() throws Exception {
         AsyncProcessor processor = AsyncProcessor.load(configDir.resolve("tika-config.json"));
 
-        UnpackConfig embeddedDocumentBytesConfig = new UnpackConfig();
-        embeddedDocumentBytesConfig.setIncludeOriginal(true);
-        embeddedDocumentBytesConfig.setEmitter("fse-bytes");
-        embeddedDocumentBytesConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.NONE);
-        embeddedDocumentBytesConfig.setEmbeddedIdPrefix("-");
+        UnpackConfig unpackConfig = new UnpackConfig();
+        unpackConfig.setIncludeOriginal(true);
+        unpackConfig.setEmitter("fse-bytes");
+        unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.NONE);
+        unpackConfig.setEmbeddedIdPrefix("-");
         ParseContext parseContext = new ParseContext();
         parseContext.set(ParseMode.class, ParseMode.UNPACK);
-        parseContext.set(UnpackConfig.class, embeddedDocumentBytesConfig);
+        parseContext.set(UnpackConfig.class, unpackConfig);
         FetchEmitTuple t =
                 new FetchEmitTuple("myId-1", new FetchKey("fsf", "mock.xml"),
                         new EmitKey("fse-json", "emit-1"), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);

@@ -48,7 +48,7 @@ import org.apache.tika.serialization.ComponentNameResolver;
  */
 public class ParseContextSerializer extends JsonSerializer<ParseContext> {
 
-    public static final String PARSE_CONTEXT = "parseContext";
+    public static final String PARSE_CONTEXT = "parse-context";
     public static final String TYPED = "typed";
 
     // Plain mapper for serializing values without TikaModule's component wrapping

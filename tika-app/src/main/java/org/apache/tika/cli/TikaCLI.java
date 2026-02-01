@@ -671,6 +671,9 @@ public class TikaCLI {
         out.println("    -X                         -Xmx in the forked processes");
         out.println("    -T                         Timeout in milliseconds");
         out.println("    -Z                         Recursively unpack all the attachments, too");
+        out.println("    --unpack-format=<format>   Output format: REGULAR (default) or FRICTIONLESS");
+        out.println("    --unpack-mode=<mode>       Output mode: ZIPPED (default) or DIRECTORY");
+        out.println("    --unpack-include-metadata  Include metadata.json in Frictionless output");
         out.println();
         out.println();
     }

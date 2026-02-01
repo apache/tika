@@ -6,7 +6,7 @@
   "emitKey": "0.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -21,7 +21,7 @@
   "emitKey": "1.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -36,7 +36,7 @@
   "emitKey": "2.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -51,7 +51,7 @@
   "emitKey": "3.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -66,7 +66,7 @@
   "emitKey": "4.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -81,7 +81,7 @@
   "emitKey": "5.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -96,7 +96,7 @@
   "emitKey": "6.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -111,7 +111,7 @@
   "emitKey": "7.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -126,7 +126,7 @@
   "emitKey": "8.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -141,7 +141,7 @@
   "emitKey": "9.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -156,7 +156,7 @@
   "emitKey": "10.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -171,7 +171,7 @@
   "emitKey": "11.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -186,7 +186,7 @@
   "emitKey": "12.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -201,7 +201,7 @@
   "emitKey": "13.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -216,7 +216,7 @@
   "emitKey": "14.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -231,7 +231,7 @@
   "emitKey": "15.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -246,7 +246,7 @@
   "emitKey": "16.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -261,7 +261,7 @@
   "emitKey": "17.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -276,7 +276,7 @@
   "emitKey": "18.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -291,7 +291,7 @@
   "emitKey": "19.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -306,7 +306,7 @@
   "emitKey": "20.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -321,7 +321,7 @@
   "emitKey": "21.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -336,7 +336,7 @@
   "emitKey": "22.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -351,7 +351,7 @@
   "emitKey": "23.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -366,7 +366,7 @@
   "emitKey": "24.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -381,7 +381,7 @@
   "emitKey": "25.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -396,7 +396,7 @@
   "emitKey": "26.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -411,7 +411,7 @@
   "emitKey": "27.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -426,7 +426,7 @@
   "emitKey": "28.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -441,7 +441,7 @@
   "emitKey": "29.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -456,7 +456,7 @@
   "emitKey": "30.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -471,7 +471,7 @@
   "emitKey": "31.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -486,7 +486,7 @@
   "emitKey": "32.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -501,7 +501,7 @@
   "emitKey": "33.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -516,7 +516,7 @@
   "emitKey": "34.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -531,7 +531,7 @@
   "emitKey": "35.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -546,7 +546,7 @@
   "emitKey": "36.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -561,7 +561,7 @@
   "emitKey": "37.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -576,7 +576,7 @@
   "emitKey": "38.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -591,7 +591,7 @@
   "emitKey": "39.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -606,7 +606,7 @@
   "emitKey": "40.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -621,7 +621,7 @@
   "emitKey": "41.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -636,7 +636,7 @@
   "emitKey": "42.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -651,7 +651,7 @@
   "emitKey": "43.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -666,7 +666,7 @@
   "emitKey": "44.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -681,7 +681,7 @@
   "emitKey": "45.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -696,7 +696,7 @@
   "emitKey": "46.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -711,7 +711,7 @@
   "emitKey": "47.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -726,7 +726,7 @@
   "emitKey": "48.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -741,7 +741,7 @@
   "emitKey": "49.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -756,7 +756,7 @@
   "emitKey": "50.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -771,7 +771,7 @@
   "emitKey": "51.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -786,7 +786,7 @@
   "emitKey": "52.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -801,7 +801,7 @@
   "emitKey": "53.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -816,7 +816,7 @@
   "emitKey": "54.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -831,7 +831,7 @@
   "emitKey": "55.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -846,7 +846,7 @@
   "emitKey": "56.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -861,7 +861,7 @@
   "emitKey": "57.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -876,7 +876,7 @@
   "emitKey": "58.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -891,7 +891,7 @@
   "emitKey": "59.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -906,7 +906,7 @@
   "emitKey": "60.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -921,7 +921,7 @@
   "emitKey": "61.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -936,7 +936,7 @@
   "emitKey": "62.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -951,7 +951,7 @@
   "emitKey": "63.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -966,7 +966,7 @@
   "emitKey": "64.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -981,7 +981,7 @@
   "emitKey": "65.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -996,7 +996,7 @@
   "emitKey": "66.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1011,7 +1011,7 @@
   "emitKey": "67.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1026,7 +1026,7 @@
   "emitKey": "68.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1041,7 +1041,7 @@
   "emitKey": "69.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1056,7 +1056,7 @@
   "emitKey": "70.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1071,7 +1071,7 @@
   "emitKey": "71.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1086,7 +1086,7 @@
   "emitKey": "72.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1101,7 +1101,7 @@
   "emitKey": "73.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1116,7 +1116,7 @@
   "emitKey": "74.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1131,7 +1131,7 @@
   "emitKey": "75.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1146,7 +1146,7 @@
   "emitKey": "76.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1161,7 +1161,7 @@
   "emitKey": "77.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1176,7 +1176,7 @@
   "emitKey": "78.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1191,7 +1191,7 @@
   "emitKey": "79.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1206,7 +1206,7 @@
   "emitKey": "80.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1221,7 +1221,7 @@
   "emitKey": "81.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1236,7 +1236,7 @@
   "emitKey": "82.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1251,7 +1251,7 @@
   "emitKey": "83.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1266,7 +1266,7 @@
   "emitKey": "84.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1281,7 +1281,7 @@
   "emitKey": "85.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1296,7 +1296,7 @@
   "emitKey": "86.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1311,7 +1311,7 @@
   "emitKey": "87.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1326,7 +1326,7 @@
   "emitKey": "88.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1341,7 +1341,7 @@
   "emitKey": "89.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1356,7 +1356,7 @@
   "emitKey": "90.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1371,7 +1371,7 @@
   "emitKey": "91.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1386,7 +1386,7 @@
   "emitKey": "92.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1401,7 +1401,7 @@
   "emitKey": "93.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1416,7 +1416,7 @@
   "emitKey": "94.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1431,7 +1431,7 @@
   "emitKey": "95.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1446,7 +1446,7 @@
   "emitKey": "96.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1461,7 +1461,7 @@
   "emitKey": "97.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1476,7 +1476,7 @@
   "emitKey": "98.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1491,7 +1491,7 @@
   "emitKey": "99.xml.json",
   "onParseException": "emit",
   "parseMode": "UNPACK",
-  "embeddedDocumentBytesConfig": {
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
