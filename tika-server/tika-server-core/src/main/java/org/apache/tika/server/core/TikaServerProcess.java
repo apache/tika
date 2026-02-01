@@ -297,6 +297,9 @@ public class TikaServerProcess {
         writers.add(new TikaServerParseExceptionMapper(tikaServerConfig.isReturnStackTrace()));
         writers.add(new JSONObjWriter());
 
+        // Add ConfigEndpointSecurityFilter to gate /config endpoints
+        writers.add(new ConfigEndpointSecurityFilter(tikaServerConfig.isEnableUnsecureFeatures()));
+
         TikaLoggingFilter logFilter = null;
         if (!StringUtils.isBlank(tikaServerConfig.getLogLevel())) {
             String logLevel = tikaServerConfig.getLogLevel();
