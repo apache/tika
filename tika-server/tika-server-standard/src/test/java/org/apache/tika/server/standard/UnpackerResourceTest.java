@@ -100,7 +100,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     @Test
     public void testDocWAV() throws Exception {
         Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
+                .create(endPoint + UNPACKER_PATH)
                 .type(APPLICATION_MSWORD)
                 .accept("application/zip")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
@@ -114,7 +114,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     @Test
     public void testDocWAVText() throws Exception {
         Response response = WebClient
-                .create(CXFTestBase.endPoint + ALL_PATH)
+                .create(endPoint + ALL_PATH)
                 .type(APPLICATION_MSWORD)
                 .accept("application/zip")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
@@ -128,7 +128,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     @Test
     public void testDocPicture() throws Exception {
         Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
+                .create(endPoint + UNPACKER_PATH)
                 .type(APPLICATION_MSWORD)
                 .accept("application/zip")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
@@ -141,7 +141,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     @Test
     public void testDocPictureNoOle() throws Exception {
         Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
+                .create(endPoint + UNPACKER_PATH)
                 .type(APPLICATION_MSWORD)
                 .accept("application/zip")
                 .put(ClassLoader.getSystemResourceAsStream("test-documents/2pic.doc"));
@@ -153,7 +153,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     @Test
     public void testImageDOCX() throws Exception {
         Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
+                .create(endPoint + UNPACKER_PATH)
                 .accept("application/zip")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_DOCX_IMAGE));
 
@@ -166,7 +166,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     public void test204() throws Exception {
         //this tests that the type overrides normal detection
         Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
+                .create(endPoint + UNPACKER_PATH)
                 .type("xxx/xxx")
                 .accept("*/*")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
@@ -178,7 +178,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     public void testExeDOCX() throws Exception {
         String TEST_DOCX_EXE = "test-documents/2exe.docx";
         Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
+                .create(endPoint + UNPACKER_PATH)
                 .accept("application/zip")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_DOCX_EXE));
 
@@ -191,7 +191,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     @Test
     public void testImageXSL() throws Exception {
         Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
+                .create(endPoint + UNPACKER_PATH)
                 .accept("application/zip")
                 .put(ClassLoader.getSystemResourceAsStream("test-documents/pic.xls"));
 
@@ -203,7 +203,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     @Test
     public void testTarDocPicture() throws Exception {
         Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH)
+                .create(endPoint + UNPACKER_PATH)
                 .type(APPLICATION_MSWORD)
                 .accept("application/x-tar")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
@@ -216,7 +216,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     @Test
     public void testText() throws Exception {
         Response response = WebClient
-                .create(CXFTestBase.endPoint + ALL_PATH)
+                .create(endPoint + ALL_PATH)
                 .header(CONTENT_TYPE, APPLICATION_XML)
                 .accept("application/zip")
                 .put(ClassLoader.getSystemResourceAsStream("test-documents/test.doc"));
@@ -230,7 +230,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     @Test
     public void testMaxBytes() throws Exception {
         Response response = WebClient
-                .create(CXFTestBase.endPoint + ALL_PATH)
+                .create(endPoint + ALL_PATH)
                 .header(CONTENT_TYPE, APPLICATION_XML)
                 .header(UnpackerResource.UNPACK_MAX_BYTES_KEY, 100)
                 .accept("application/zip")
@@ -254,7 +254,7 @@ public class UnpackerResourceTest extends CXFTestBase {
                 new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         Response response = WebClient
-                .create(CXFTestBase.endPoint + UNPACKER_PATH + "/config")
+                .create(endPoint + UNPACKER_PATH + "/config")
                 .type("multipart/form-data")
                 .accept("application/zip")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
@@ -286,7 +286,7 @@ public class UnpackerResourceTest extends CXFTestBase {
                 new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         Response response = WebClient
-                .create(CXFTestBase.endPoint + ALL_PATH + "/config")
+                .create(endPoint + ALL_PATH + "/config")
                 .type("multipart/form-data")
                 .accept("application/zip")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
@@ -311,7 +311,7 @@ public class UnpackerResourceTest extends CXFTestBase {
                 new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         Response response = WebClient
-                .create(CXFTestBase.endPoint + ALL_PATH + "/config")
+                .create(endPoint + ALL_PATH + "/config")
                 .type("multipart/form-data")
                 .accept("application/zip")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));

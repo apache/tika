@@ -96,7 +96,7 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
                 new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         Response response = WebClient
-                .create(CXFTestBase.endPoint + ALL_PATH + "/config")
+                .create(endPoint + ALL_PATH + "/config")
                 .type("multipart/form-data")
                 .accept("application/zip")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
@@ -161,7 +161,7 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
                 new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         Response response = WebClient
-                .create(CXFTestBase.endPoint + ALL_PATH + "/config")
+                .create(endPoint + ALL_PATH + "/config")
                 .type("multipart/form-data")
                 .accept("application/zip")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
