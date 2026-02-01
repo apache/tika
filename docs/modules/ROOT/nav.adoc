@@ -36,6 +36,8 @@
 ** xref:advanced/setting-limits.adoc[Setting Limits]
 ** xref:advanced/spooling.adoc[Spooling]
 ** xref:advanced/embedded-documents.adoc[Embedded Document Metadata]
+* xref:developers/index.adoc[Developers]
+** xref:developers/serialization.adoc[Serialization and Configuration]
 * xref:faq.adoc[FAQ]
 * xref:security.adoc[Security]
 * xref:roadmap.adoc[Roadmap]

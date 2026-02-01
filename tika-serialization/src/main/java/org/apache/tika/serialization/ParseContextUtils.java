@@ -159,17 +159,28 @@ public class ParseContextUtils {
     /**
      * Determines the ParseContext key for a component.
      * <p>
-     * The contextKey is auto-detected by the annotation processor from the service
-     * interface implemented by the component. If not detected (e.g., component implements
-     * multiple interfaces), falls back to the component class.
+     * Resolution order:
+     * <ol>
+     *   <li>Explicit contextKey from .idx file (via @TikaComponent annotation)</li>
+     *   <li>Auto-detect from implemented interfaces (using TikaModule.COMPACT_FORMAT_INTERFACES)</li>
+     *   <li>Fall back to the component class itself</li>
+     * </ol>
+     * <p>
+     * Security note: This only determines the context key - it does NOT affect which
+     * classes can be instantiated. Classes must still be registered via @TikaComponent.
      *
      * @param info the component info
      * @return the class to use as ParseContext key
      */
     private static Class<?> determineContextKey(ComponentInfo info) {
-        // Use contextKey from .idx file (auto-detected or explicit from @TikaComponent)
+        // Use explicit contextKey from .idx file if specified
         if (info.contextKey() != null) {
             return info.contextKey();
+        }
+        // Auto-detect from implemented interfaces at runtime
+        Class<?> contextKeyInterface = TikaModule.findContextKeyInterface(info.componentClass());
+        if (contextKeyInterface != null) {
+            return contextKeyInterface;
         }
         // Fall back to the component class itself
         return info.componentClass();
