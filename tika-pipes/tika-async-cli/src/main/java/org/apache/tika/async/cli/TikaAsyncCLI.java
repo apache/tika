@@ -260,10 +260,13 @@ public class TikaAsyncCLI {
                 throw new TikaConfigException("Input file/dir must exist: " + inputPath);
             }
             inputDir = inString;
-            if (Files.isRegularFile(inputPath)) {
-                outputDir = Paths.get(".").toAbsolutePath().toString();
-            } else {
-                outputDir = Paths.get("output").toAbsolutePath().toString();
+            // Only set default outputDir if not already specified via -o
+            if (outputDir == null) {
+                if (Files.isRegularFile(inputPath)) {
+                    outputDir = Paths.get(".").toAbsolutePath().toString();
+                } else {
+                    outputDir = Paths.get("output").toAbsolutePath().toString();
+                }
             }
         }
 

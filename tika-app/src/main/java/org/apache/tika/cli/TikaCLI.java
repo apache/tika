@@ -38,7 +38,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -276,25 +275,11 @@ public class TikaCLI {
         if (args.length == 1 &&  args[0].endsWith(".json")) {
             TikaAsyncCLI.main(args);
             return;
-        };
-        //TODO -- are there other shortcuts?
-        Path tmpConfig = null;
-        try {
-            tmpConfig = Files.createTempFile("tika-config-", ".json");
-            Files.copy(TikaCLI.class.getResourceAsStream("/tika-config-default-single-file.json"),
-                    tmpConfig, StandardCopyOption.REPLACE_EXISTING);
-            List<String> argList = new ArrayList<>();
-            argList.add("-c");
-            argList.add(tmpConfig.toAbsolutePath().toString());
-            for (String arg : args) {
-                argList.add(arg);
-            }
-            TikaAsyncCLI.main(argList.toArray(new String[0]));
-        } finally {
-            if (tmpConfig != null) {
-                Files.delete(tmpConfig);
-            }
         }
+        // For batch mode (two directories), pass directly to TikaAsyncCLI.
+        // It will create its own config with PluginsWriter that includes
+        // plugin-roots, fetcher, emitter, and pipes-iterator configuration.
+        TikaAsyncCLI.main(args);
     }
 
     /**
@@ -350,9 +335,31 @@ public class TikaCLI {
 
     private boolean testForAsync(String[] args) {
 
+        // Single .json file is a config file for async mode
+        if (args.length == 1 && args[0].endsWith(".json")) {
+            return true;
+        }
+
         if (args.length == 2) {
             if (Files.isDirectory(Paths.get(args[0]))) {
                 return true;
+            }
+        }
+
+        // Check if last two args are directories (batch mode with options)
+        if (args.length >= 2) {
+            String lastArg = args[args.length - 1];
+            String secondLastArg = args[args.length - 2];
+            // Make sure neither looks like an option value
+            if (!lastArg.startsWith("-") && !secondLastArg.startsWith("-")) {
+                try {
+                    if (Files.isDirectory(Paths.get(secondLastArg)) &&
+                        (Files.isDirectory(Paths.get(lastArg)) || !Files.exists(Paths.get(lastArg)))) {
+                        return true;
+                    }
+                } catch (Exception e) {
+                    // Invalid path, not batch mode
+                }
             }
         }
 
@@ -590,10 +597,12 @@ public class TikaCLI {
         out.println();
         out.println("    --config=<tika-config.xml>");
         out.println("        TikaConfig file. Must be specified before -g, -s, -f or the dump-x-config !");
-        out.println("    --dump-minimal-config  Print minimal TikaConfig");
-        out.println("    --dump-current-config  Print current TikaConfig");
-        out.println("    --dump-static-config   Print static config");
-        out.println("    --dump-static-full-config  Print static explicit config");
+        // TODO: TIKA-XXXX - Re-enable config dump options once JSON serialization is complete
+        // These options are not yet implemented in 4.x due to the migration from XML to JSON config
+        // out.println("    --dump-minimal-config  Print minimal TikaConfig");
+        // out.println("    --dump-current-config  Print current TikaConfig");
+        // out.println("    --dump-static-config   Print static config");
+        // out.println("    --dump-static-full-config  Print static explicit config");
         out.println("    --convert-config-xml-to-json=<input.xml>,<output.json>");
         out.println("        Convert legacy XML config to JSON format (parsers section only)");
         out.println("");
