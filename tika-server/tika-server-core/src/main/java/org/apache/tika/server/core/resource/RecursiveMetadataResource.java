@@ -136,15 +136,15 @@ public class RecursiveMetadataResource {
     /**
      * Multipart endpoint with per-request ParseContext configuration.
      * Accepts two parts: "file" (the document) and "config" (JSON configuration with parseContext).
+     * Uses the default handler type (XML).
      */
     @POST
     @Consumes("multipart/form-data")
     @Produces({"application/json"})
-    @Path("config{" + HANDLER_TYPE_PARAM + " : (/\\w+)?}")
+    @Path("config")
     public Response getMetadataWithConfig(
             List<Attachment> attachments,
-            @Context HttpHeaders httpHeaders,
-            @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName) throws Exception {
+            @Context HttpHeaders httpHeaders) throws Exception {
 
         ParseContext context = TikaResource.createParseContext();
         Metadata metadata = Metadata.newInstance(context);
@@ -154,7 +154,7 @@ public class RecursiveMetadataResource {
 
             return Response
                     .ok(parseMetadataWithContext(tis, metadata, httpHeaders.getRequestHeaders(),
-                            buildHandlerConfig(httpHeaders.getRequestHeaders(), handlerTypeName != null ? handlerTypeName.substring(1) : null, ParseMode.RMETA),
+                            buildHandlerConfig(httpHeaders.getRequestHeaders(), null, ParseMode.RMETA),
                             context))
                     .build();
         }
