@@ -25,7 +25,7 @@
   "auto-detect-parser": {
     "throwOnZeroBytes": false
   },
-  "other-configs": {
+  "parse-context": {
     "digester-factory": {
       "commons-digester-factory": {
         "digests": [
