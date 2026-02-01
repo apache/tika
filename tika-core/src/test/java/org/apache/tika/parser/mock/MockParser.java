@@ -266,6 +266,10 @@ public class MockParser implements Parser {
         if (!"".equals(contentType)) {
             m.set(Metadata.CONTENT_TYPE, contentType);
         }
+        // Check if we should parse this embedded document (respects EmbeddedLimits)
+        if (!extractor.shouldParseEmbedded(m)) {
+            return;
+        }
         try (TikaInputStream tis = TikaInputStream.get(embeddedText.getBytes(UTF_8))) {
             extractor.parseEmbedded(tis, new EmbeddedContentHandler(handler), m, context, true);
         }

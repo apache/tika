@@ -113,7 +113,6 @@ public class MetadataResourceTest extends CXFTestBase {
                 .accept("application/json")
                 .post(new MultipartBody(Arrays.asList(fileAtt)));
 
-        System.out.println(IOUtils.toString((InputStream) response.getEntity(), UTF_8.name()));
         // Won't work, no password given - EncryptedDocumentException returns 422
         assertEquals(500, response.getStatus());
 

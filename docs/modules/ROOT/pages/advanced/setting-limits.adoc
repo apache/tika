@@ -284,6 +284,64 @@ TimeoutLimits limits = TimeoutLimits.get(context);
 
 See test: `tika-serialization/src/test/java/org/apache/tika/config/TimeoutLimitsTest.java`
 
+== Embedded Byte Extraction Limits
+
+When extracting embedded document bytes using `ParseMode.UNPACK`, the `UnpackConfig` class
+provides safety limits on total bytes extracted. This protects against zip bombs and other
+malicious files that may expand to enormous sizes when unpacked.
+
+=== Configuration Options
+
+[cols="2,1,3"]
+|===
+|Setting |Default |Description
+
+|`maxUnpackBytes`
+|10 GB
+|Maximum total bytes to extract from all embedded documents per file. Set to -1 for
+unlimited (not recommended for untrusted input).
+|===
+
+=== Behavior
+
+When the byte limit is reached:
+
+* Extraction stops for remaining embedded documents
+* An exception is logged but processing continues
+* Already-extracted bytes are kept
+* The parse result status is `PARSE_SUCCESS_WITH_EXCEPTION`
+
+=== JSON Configuration
+
+[source,json]
+----
+{
+  "parseContext": {
+    "parseMode": "UNPACK",
+    "unpack-config": {
+      "maxUnpackBytes": 104857600
+    }
+  }
+}
+----
+
+This limits extraction to 100 MB total.
+
+=== Java API
+
+[source,java]
+----
+UnpackConfig config = new UnpackConfig();
+config.setMaxUnpackBytes(100 * 1024 * 1024); // 100 MB
+config.setEmitter("my-emitter");
+parseContext.set(UnpackConfig.class, config);
+parseContext.set(ParseMode.class, ParseMode.UNPACK);
+----
+
+For more details on embedded byte extraction configuration, see xref:pipes/unpack-config.adoc[Extracting Embedded Bytes].
+
+See tests: `tika-pipes/tika-pipes-integration-tests/src/test/java/org/apache/tika/pipes/core/UnpackModeTest.java`
+
 == Metadata Limits
 
 The `MetadataWriteLimiter` system allows you to constrain metadata size at write time,
@@ -407,3 +465,4 @@ if ("true".equals(metadata.get(TikaCoreProperties.TRUNCATED_METADATA))) {
 
 * xref:advanced/robustness.adoc[Robustness] - Process isolation and fault tolerance
 * xref:configuration/index.adoc[Configuration] - General Tika configuration
+* xref:pipes/unpack-config.adoc[Extracting Embedded Bytes] - UnpackConfig for byte extraction

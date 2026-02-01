@@ -38,7 +38,7 @@ public class TikaConfigAsyncWriterTest {
         SimpleAsyncConfig simpleAsyncConfig = new SimpleAsyncConfig("input", "output", 4,
                 10000L, "-Xmx1g", null,
                 p.toAbsolutePath().toString().replace("\\", "/"),
-                BasicContentHandlerFactory.HANDLER_TYPE.TEXT, false, null);
+                BasicContentHandlerFactory.HANDLER_TYPE.TEXT, SimpleAsyncConfig.ExtractBytesMode.NONE, null);
 
         PluginsWriter pluginsWriter = new PluginsWriter(simpleAsyncConfig, null);
 

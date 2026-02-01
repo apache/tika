@@ -50,9 +50,6 @@ public class TestBasic {
                 .toURI());
         assertTrue(Files.isRegularFile(p));
         String[] args = new String[]{p.toAbsolutePath().toString()};
-        long start = System.currentTimeMillis();
         TikaClientCLI.main(args);
-        long elapsed = System.currentTimeMillis() - start;
-        System.out.println("elapsed " + elapsed);
     }
 }

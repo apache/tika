@@ -23,7 +23,7 @@ import java.util.List;
 
 import org.apache.tika.metadata.Metadata;
 
-public interface EmbeddedDocumentBytesHandler extends Closeable {
+public interface UnpackHandler extends Closeable {
     //we need metadata for the emitter store...can we get away without it?
     void add(int id, Metadata metadata, InputStream inputStream) throws IOException;
 

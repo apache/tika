@@ -66,7 +66,6 @@ import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesParser;
 import org.apache.tika.server.core.resource.PipesParsingHelper;
 import org.apache.tika.server.core.resource.TikaResource;
-import org.apache.tika.server.core.resource.UnpackerResource;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class CXFTestBase {
@@ -205,7 +204,7 @@ public abstract class CXFTestBase {
             }
             pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.PASSBACK_ALL));
             this.pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, this.pipesConfigPath);
-            PipesParsingHelper pipesParsingHelper = new PipesParsingHelper(this.pipesParser, pipesConfig);
+            PipesParsingHelper pipesParsingHelper = new PipesParsingHelper(this.pipesParser, pipesConfig, getUnpackEmitterBasePath());
 
             TikaResource.init(tika, new ServerStatus(), pipesParsingHelper);
         } finally {
@@ -306,6 +305,15 @@ public abstract class CXFTestBase {
 
     protected InputStream getTikaConfigInputStream() throws IOException {
         return new ByteArrayInputStream(BASIC_CONFIG.getBytes(UTF_8));
+    }
+
+    /**
+     * Returns the basePath for the unpack-emitter, or null if UNPACK mode is not needed.
+     * Tests that use UNPACK mode should override this to return the temp directory
+     * where the emitter writes zip files.
+     */
+    protected Path getUnpackEmitterBasePath() throws IOException {
+        return null;
     }
 
     protected InputStream getPipesConfigInputStream() throws IOException {
@@ -414,38 +422,6 @@ public abstract class CXFTestBase {
             }
         }
         return data;
-    }
-
-    protected String readArchiveText(InputStream inputStream) throws IOException {
-        Path tempFile = writeTemporaryArchiveFile(inputStream, "zip");
-        ByteArrayOutputStream bos;
-        try (ZipFile zip = ZipFile.builder().setPath(tempFile).get())
-        {
-            zip.getEntry(UnpackerResource.TEXT_FILENAME);
-            bos = new ByteArrayOutputStream();
-            IOUtils.copy(zip.getInputStream(zip.getEntry(UnpackerResource.TEXT_FILENAME)), bos);
-        }
-        Files.delete(tempFile);
-        return bos.toString(UTF_8.name());
-    }
-
-    protected String readArchiveMetadataAndText(InputStream inputStream) throws IOException {
-        Path tempFile = writeTemporaryArchiveFile(inputStream, "zip");
-        String metadata;
-        String txt;
-        try (ZipFile zip = ZipFile.builder().setPath(tempFile).get())
-        {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            zip.getEntry(UnpackerResource.META_FILENAME);
-            IOUtils.copy(zip.getInputStream(zip.getEntry(UnpackerResource.META_FILENAME)), bos);
-            metadata = new String(bos.toByteArray(), UTF_8);
-            bos = new ByteArrayOutputStream();
-            zip.getEntry(UnpackerResource.TEXT_FILENAME);
-            IOUtils.copy(zip.getInputStream(zip.getEntry(UnpackerResource.TEXT_FILENAME)), bos);
-            txt = new String(bos.toByteArray(), UTF_8);
-        }
-        Files.delete(tempFile);
-        return metadata + "\n\n" + txt;
     }
 
     protected Map<String, String> readArchiveFromStream(ArchiveInputStream zip) throws IOException {

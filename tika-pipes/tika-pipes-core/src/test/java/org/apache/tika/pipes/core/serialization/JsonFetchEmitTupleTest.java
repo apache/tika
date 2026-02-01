@@ -30,6 +30,7 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 
@@ -99,5 +100,47 @@ public class JsonFetchEmitTupleTest {
         FetchEmitTuple deserialized = JsonFetchEmitTuple.fromJson(reader);
         assertEquals(t, deserialized);
 
+    }
+
+    @Test
+    public void testUnpackConfigSerialization() throws Exception {
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.UNPACK);
+
+        // Create UnpackConfig with specific settings
+        UnpackConfig unpackConfig = new UnpackConfig();
+        unpackConfig.setZipEmbeddedFiles(true);
+        unpackConfig.setIncludeMetadataInZip(true);
+        unpackConfig.setEmitter("test-emitter");
+        unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
+        parseContext.set(UnpackConfig.class, unpackConfig);
+
+        FetchEmitTuple t = new FetchEmitTuple("test-id",
+                new FetchKey("my_fetcher", "fetchKey1"),
+                new EmitKey("my_emitter", "emitKey1"),
+                new Metadata(), parseContext,
+                FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+
+        StringWriter writer = new StringWriter();
+        JsonFetchEmitTuple.toJson(t, writer);
+        String json = writer.toString();
+        System.out.println("Serialized JSON: " + json);
+
+        Reader reader = new StringReader(json);
+        FetchEmitTuple deserialized = JsonFetchEmitTuple.fromJson(reader);
+
+        // Verify ParseMode is preserved
+        assertEquals(ParseMode.UNPACK, deserialized.getParseContext().get(ParseMode.class));
+
+        // Verify UnpackConfig is preserved
+        UnpackConfig deserializedConfig = deserialized.getParseContext().get(UnpackConfig.class);
+        assertEquals(unpackConfig.isZipEmbeddedFiles(), deserializedConfig.isZipEmbeddedFiles(),
+                "zipEmbeddedFiles should be preserved");
+        assertEquals(unpackConfig.isIncludeMetadataInZip(), deserializedConfig.isIncludeMetadataInZip(),
+                "includeMetadataInZip should be preserved");
+        assertEquals(unpackConfig.getEmitter(), deserializedConfig.getEmitter(),
+                "emitter should be preserved");
+        assertEquals(unpackConfig.getSuffixStrategy(), deserializedConfig.getSuffixStrategy(),
+                "suffixStrategy should be preserved");
     }
 }

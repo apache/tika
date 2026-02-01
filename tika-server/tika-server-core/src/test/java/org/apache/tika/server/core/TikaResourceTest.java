@@ -165,7 +165,6 @@ public class TikaResourceTest extends CXFTestBase {
             if (f.isDirectory()) {
                 continue;
             }
-            System.out.println(f.getName());
             testWriteLimit(f);
         }
     }
@@ -199,7 +198,6 @@ public class TikaResourceTest extends CXFTestBase {
             if (totalLen > len) {
                 boolean wlr = "true".equals(writeLimitMetadata
                         .get(AbstractRecursiveParserWrapperHandler.WRITE_LIMIT_REACHED));
-                System.out.println(f.getName() + " " + len + " : " + writeLimit);
                 assertTrue(f.getName() + ": writelimit: " + writeLimit + " len: " + len,
                         len <= writeLimit);
                 assertEquals(

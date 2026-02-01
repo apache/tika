@@ -31,7 +31,7 @@ import org.apache.tika.pipes.api.emitter.StreamEmitter;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.emitter.TikaEmitterException;
 
-public class EmittingEmbeddedDocumentBytesHandler extends AbstractEmbeddedDocumentBytesHandler {
+public class EmittingUnpackHandler extends AbstractUnpackHandler {
     private final EmitKey containerEmitKey;
     private final UnpackConfig unpackConfig;
     private final StreamEmitter emitter;
@@ -39,11 +39,12 @@ public class EmittingEmbeddedDocumentBytesHandler extends AbstractEmbeddedDocume
     private static final Metadata METADATA = new Metadata();
     private static final ParseContext PARSE_CONTEXT = new ParseContext();
 
-    public EmittingEmbeddedDocumentBytesHandler(FetchEmitTuple fetchEmitTuple,
-                                                EmitterManager emitterManager) throws TikaException, IOException {
+    public EmittingUnpackHandler(FetchEmitTuple fetchEmitTuple,
+                                                EmitterManager emitterManager,
+                                                ParseContext parseContext) throws TikaException, IOException {
 
         this.containerEmitKey = fetchEmitTuple.getEmitKey();
-        this.unpackConfig = fetchEmitTuple.getParseContext().get(UnpackConfig.class);
+        this.unpackConfig = parseContext.get(UnpackConfig.class);
         if (this.unpackConfig == null) {
             throw new TikaConfigException("UnpackConfig must not be null!");
         }

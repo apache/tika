@@ -31,7 +31,6 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -84,7 +83,6 @@ public class OptimaizeMetadataFilterTest extends CXFTestBase {
 
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        TikaTest.debug(metadataList);
 
         assertEquals(12, metadataList.size());
         assertEquals("Microsoft Office Word", metadataList

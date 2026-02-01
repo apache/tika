@@ -17,13 +17,9 @@
 package org.apache.tika.pipes.core.extractor;
 
 import java.io.Serializable;
-import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 
 import org.apache.tika.config.TikaComponent;
-import org.apache.tika.extractor.BasicEmbeddedBytesSelector;
-import org.apache.tika.extractor.EmbeddedBytesSelector;
 
 @TikaComponent(name = "unpack-config")
 public class UnpackConfig implements Serializable {
@@ -33,8 +29,11 @@ public class UnpackConfig implements Serializable {
      */
     private static final long serialVersionUID = -3861669115439125268L;
 
-
-    public static UnpackConfig SKIP = new UnpackConfig(false);
+    /**
+     * Default maximum bytes to unpack per file: 10 GB.
+     * Use -1 to disable the limit (not recommended).
+     */
+    public static final long DEFAULT_MAX_UNPACK_BYTES = 10L * 1024L * 1024L * 1024L;
 
     public enum SUFFIX_STRATEGY {
             NONE, EXISTING, DETECTED;
@@ -70,9 +69,6 @@ public class UnpackConfig implements Serializable {
             throw new IllegalArgumentException("can't parse " + s);
         }
     }
-    //for our current custom serialization, this can't be final. :(
-    private boolean extractEmbeddedDocumentBytes;
-
     private int zeroPadName = 0;
 
     private SUFFIX_STRATEGY suffixStrategy = SUFFIX_STRATEGY.NONE;
@@ -89,35 +85,17 @@ public class UnpackConfig implements Serializable {
     //from the primary json emitKey when keyBase Strategy is CUSTOM
     private String emitKeyBase = "";
 
-    // Filter parameters for embedded bytes selection
-    private Set<String> includeMimeTypes = new HashSet<>();
-    private Set<String> excludeMimeTypes = new HashSet<>();
-    private Set<String> includeEmbeddedResourceTypes = new HashSet<>();
-    private Set<String> excludeEmbeddedResourceTypes = new HashSet<>();
+    // Zipping options
+    private boolean zipEmbeddedFiles = false;
+    private boolean includeMetadataInZip = false;
+
+    // Maximum bytes to unpack per file (default 10GB, -1 to disable limit)
+    private long maxUnpackBytes = DEFAULT_MAX_UNPACK_BYTES;
 
     /**
-     * Create an UnpackConfig with
-     * {@link UnpackConfig#extractEmbeddedDocumentBytes}
-     * set to <code>true</code>
+     * Create an UnpackConfig with default settings.
      */
     public UnpackConfig() {
-        this.extractEmbeddedDocumentBytes = true;
-    }
-
-    public UnpackConfig(boolean extractEmbeddedDocumentBytes) {
-        this.extractEmbeddedDocumentBytes = extractEmbeddedDocumentBytes;
-    }
-
-    public static UnpackConfig getSKIP() {
-        return SKIP;
-    }
-
-    public boolean isExtractEmbeddedDocumentBytes() {
-        return extractEmbeddedDocumentBytes;
-    }
-
-    public void setExtractEmbeddedDocumentBytes(boolean extractEmbeddedDocumentBytes) {
-        this.extractEmbeddedDocumentBytes = extractEmbeddedDocumentBytes;
     }
 
     public int getZeroPadName() {
@@ -184,60 +162,53 @@ public class UnpackConfig implements Serializable {
         return emitKeyBase;
     }
 
-    public Set<String> getIncludeMimeTypes() {
-        return includeMimeTypes;
+    /**
+     * Whether to zip all embedded files into a single archive before emitting.
+     * When true, embedded files are collected during parsing and then zipped
+     * and emitted as a single archive after parsing completes.
+     */
+    public boolean isZipEmbeddedFiles() {
+        return zipEmbeddedFiles;
     }
 
-    public void setIncludeMimeTypes(Set<String> includeMimeTypes) {
-        this.includeMimeTypes = new HashSet<>(includeMimeTypes);
-    }
-
-    public Set<String> getExcludeMimeTypes() {
-        return excludeMimeTypes;
-    }
-
-    public void setExcludeMimeTypes(Set<String> excludeMimeTypes) {
-        this.excludeMimeTypes = new HashSet<>(excludeMimeTypes);
-    }
-
-    public Set<String> getIncludeEmbeddedResourceTypes() {
-        return includeEmbeddedResourceTypes;
-    }
-
-    public void setIncludeEmbeddedResourceTypes(Set<String> includeEmbeddedResourceTypes) {
-        this.includeEmbeddedResourceTypes = new HashSet<>(includeEmbeddedResourceTypes);
-    }
-
-    public Set<String> getExcludeEmbeddedResourceTypes() {
-        return excludeEmbeddedResourceTypes;
-    }
-
-    public void setExcludeEmbeddedResourceTypes(Set<String> excludeEmbeddedResourceTypes) {
-        this.excludeEmbeddedResourceTypes = new HashSet<>(excludeEmbeddedResourceTypes);
+    public void setZipEmbeddedFiles(boolean zipEmbeddedFiles) {
+        this.zipEmbeddedFiles = zipEmbeddedFiles;
     }
 
     /**
-     * Creates an EmbeddedBytesSelector based on the configured filter parameters.
-     *
-     * @return an EmbeddedBytesSelector that will filter embedded documents based on
-     *         configured mime types and resource types
+     * Whether to include the metadata JSON for each embedded document in the zip file.
+     * Only applicable when {@link #isZipEmbeddedFiles()} is true.
      */
-    public EmbeddedBytesSelector createEmbeddedBytesSelector() {
-        if (includeMimeTypes.isEmpty() && excludeMimeTypes.isEmpty()
-                && includeEmbeddedResourceTypes.isEmpty() && excludeEmbeddedResourceTypes.isEmpty()) {
-            return EmbeddedBytesSelector.ACCEPT_ALL;
-        }
-        return new BasicEmbeddedBytesSelector(includeMimeTypes, excludeMimeTypes,
-                includeEmbeddedResourceTypes, excludeEmbeddedResourceTypes);
+    public boolean isIncludeMetadataInZip() {
+        return includeMetadataInZip;
+    }
+
+    public void setIncludeMetadataInZip(boolean includeMetadataInZip) {
+        this.includeMetadataInZip = includeMetadataInZip;
+    }
+
+    /**
+     * Maximum total bytes to unpack per file. Default is 10GB.
+     * Set to -1 to disable the limit (not recommended).
+     *
+     * @return max bytes to unpack, or -1 if no limit
+     */
+    public long getMaxUnpackBytes() {
+        return maxUnpackBytes;
+    }
+
+    public void setMaxUnpackBytes(long maxUnpackBytes) {
+        this.maxUnpackBytes = maxUnpackBytes;
     }
 
     @Override
     public String toString() {
-        return "UnpackConfig{" + "extractEmbeddedDocumentBytes=" + extractEmbeddedDocumentBytes + ", zeroPadName=" + zeroPadName + ", suffixStrategy=" +
-                suffixStrategy + ", embeddedIdPrefix='" + embeddedIdPrefix + '\'' + ", emitter='" + emitter + '\'' + ", includeOriginal=" + includeOriginal + ", keyBaseStrategy=" +
-                keyBaseStrategy + ", emitKeyBase='" + emitKeyBase + '\'' +
-                ", includeMimeTypes=" + includeMimeTypes + ", excludeMimeTypes=" + excludeMimeTypes +
-                ", includeEmbeddedResourceTypes=" + includeEmbeddedResourceTypes + ", excludeEmbeddedResourceTypes=" + excludeEmbeddedResourceTypes + '}';
+        return "UnpackConfig{" + "zeroPadName=" + zeroPadName + ", suffixStrategy=" +
+                suffixStrategy + ", embeddedIdPrefix='" + embeddedIdPrefix + '\'' +
+                ", emitter='" + emitter + '\'' + ", includeOriginal=" + includeOriginal +
+                ", keyBaseStrategy=" + keyBaseStrategy + ", emitKeyBase='" + emitKeyBase + '\'' +
+                ", zipEmbeddedFiles=" + zipEmbeddedFiles + ", includeMetadataInZip=" + includeMetadataInZip +
+                ", maxUnpackBytes=" + maxUnpackBytes + '}';
     }
 
     @Override
@@ -246,29 +217,29 @@ public class UnpackConfig implements Serializable {
             return false;
         }
 
-        return extractEmbeddedDocumentBytes == config.extractEmbeddedDocumentBytes && zeroPadName == config.zeroPadName && includeOriginal == config.includeOriginal &&
-                suffixStrategy == config.suffixStrategy && Objects.equals(embeddedIdPrefix, config.embeddedIdPrefix) && Objects.equals(emitter, config.emitter) &&
-                keyBaseStrategy == config.keyBaseStrategy && Objects.equals(emitKeyBase, config.emitKeyBase) &&
-                Objects.equals(includeMimeTypes, config.includeMimeTypes) &&
-                Objects.equals(excludeMimeTypes, config.excludeMimeTypes) &&
-                Objects.equals(includeEmbeddedResourceTypes, config.includeEmbeddedResourceTypes) &&
-                Objects.equals(excludeEmbeddedResourceTypes, config.excludeEmbeddedResourceTypes);
+        return zeroPadName == config.zeroPadName && includeOriginal == config.includeOriginal &&
+                suffixStrategy == config.suffixStrategy &&
+                Objects.equals(embeddedIdPrefix, config.embeddedIdPrefix) &&
+                Objects.equals(emitter, config.emitter) &&
+                keyBaseStrategy == config.keyBaseStrategy &&
+                Objects.equals(emitKeyBase, config.emitKeyBase) &&
+                zipEmbeddedFiles == config.zipEmbeddedFiles &&
+                includeMetadataInZip == config.includeMetadataInZip &&
+                maxUnpackBytes == config.maxUnpackBytes;
     }
 
     @Override
     public int hashCode() {
-        int result = Boolean.hashCode(extractEmbeddedDocumentBytes);
-        result = 31 * result + zeroPadName;
+        int result = zeroPadName;
         result = 31 * result + Objects.hashCode(suffixStrategy);
         result = 31 * result + Objects.hashCode(embeddedIdPrefix);
         result = 31 * result + Objects.hashCode(emitter);
         result = 31 * result + Boolean.hashCode(includeOriginal);
         result = 31 * result + Objects.hashCode(keyBaseStrategy);
         result = 31 * result + Objects.hashCode(emitKeyBase);
-        result = 31 * result + Objects.hashCode(includeMimeTypes);
-        result = 31 * result + Objects.hashCode(excludeMimeTypes);
-        result = 31 * result + Objects.hashCode(includeEmbeddedResourceTypes);
-        result = 31 * result + Objects.hashCode(excludeEmbeddedResourceTypes);
+        result = 31 * result + Boolean.hashCode(zipEmbeddedFiles);
+        result = 31 * result + Boolean.hashCode(includeMetadataInZip);
+        result = 31 * result + Long.hashCode(maxUnpackBytes);
         return result;
     }
 }

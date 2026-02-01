@@ -31,7 +31,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.extractor.RUnpackExtractorFactory;
+import org.apache.tika.pipes.core.extractor.UnpackExtractorFactory;
 
 public class DigestingOpenContainersTest extends TikaTest {
 
@@ -45,7 +45,7 @@ public class DigestingOpenContainersTest extends TikaTest {
         ParseContext parseContext = loader.loadParseContext();
         //this models what happens in tika-pipes
         if (parseContext.get(EmbeddedDocumentExtractorFactory.class) == null) {
-            parseContext.set(EmbeddedDocumentExtractorFactory.class, new RUnpackExtractorFactory());
+            parseContext.set(EmbeddedDocumentExtractorFactory.class, new UnpackExtractorFactory());
         }
         List<Metadata> metadataList = getRecursiveMetadata("testLargeOLEDoc.doc",
                 autoDetectParser, parseContext);
