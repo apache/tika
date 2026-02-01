@@ -591,11 +591,15 @@ public class TikaResource {
      * - "file" part (required): the document to parse
      * - "config" part (optional): JSON configuration for parser settings and handler type
      * <p>
-     * Returns XHTML by default. Use /tika/text, /tika/html, or /tika/xml for other formats.
+     * Returns XHTML by default. Use /tika/config/text, /tika/config/html, or /tika/config/xml for other formats.
+     * <p>
+     * This endpoint is gated behind enableUnsecureFeatures=true because per-request
+     * configuration could enable dangerous operations.
      */
     @POST
     @Consumes("multipart/form-data")
     @Produces("text/xml")
+    @Path("config")
     public StreamingOutput postRaw(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException {
         ParseContext context = createParseContext();
@@ -611,11 +615,14 @@ public class TikaResource {
      * Accepts multipart with:
      * - "file" part (required): the document to parse
      * - "config" part (optional): JSON configuration for parser settings
+     * <p>
+     * This endpoint is gated behind enableUnsecureFeatures=true because per-request
+     * configuration could enable dangerous operations.
      */
     @POST
     @Consumes("multipart/form-data")
     @Produces("text/plain")
-    @Path("text")
+    @Path("config/text")
     public StreamingOutput postText(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException {
         ParseContext context = createParseContext();
@@ -630,11 +637,14 @@ public class TikaResource {
      * Accepts multipart with:
      * - "file" part (required): the document to parse
      * - "config" part (optional): JSON configuration for parser settings
+     * <p>
+     * This endpoint is gated behind enableUnsecureFeatures=true because per-request
+     * configuration could enable dangerous operations.
      */
     @POST
     @Consumes("multipart/form-data")
     @Produces("text/html")
-    @Path("html")
+    @Path("config/html")
     public StreamingOutput postHtml(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException {
         ParseContext context = createParseContext();
@@ -649,11 +659,14 @@ public class TikaResource {
      * Accepts multipart with:
      * - "file" part (required): the document to parse
      * - "config" part (optional): JSON configuration for parser settings
+     * <p>
+     * This endpoint is gated behind enableUnsecureFeatures=true because per-request
+     * configuration could enable dangerous operations.
      */
     @POST
     @Consumes("multipart/form-data")
     @Produces("text/xml")
-    @Path("xml")
+    @Path("config/xml")
     public StreamingOutput postXml(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException {
         ParseContext context = createParseContext();
@@ -670,11 +683,14 @@ public class TikaResource {
      * - "config" part (optional): JSON configuration for parser settings and handler type
      * <p>
      * Default handler is text. Use config to specify different handler type.
+     * <p>
+     * This endpoint is gated behind enableUnsecureFeatures=true because per-request
+     * configuration could enable dangerous operations.
      */
     @POST
     @Consumes("multipart/form-data")
     @Produces("application/json")
-    @Path("json")
+    @Path("config/json")
     public Metadata postJson(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException {
         ParseContext context = createParseContext();

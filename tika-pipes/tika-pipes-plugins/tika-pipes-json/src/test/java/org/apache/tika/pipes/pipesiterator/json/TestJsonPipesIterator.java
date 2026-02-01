@@ -49,11 +49,11 @@ public class TestJsonPipesIterator {
     }
 
     @Test
-    public void testWithEmbDocBytes() throws Exception {
+    public void testWithUnpack() throws Exception {
         Path jsonPath = Paths
                 .get(this
                         .getClass()
-                        .getResource("/test-documents/test-with-embedded-bytes.json")
+                        .getResource("/test-documents/test-with-unpack.json")
                         .toURI())
                 .toAbsolutePath();
         JsonPipesIterator pipesIterator = createIterator(jsonPath);

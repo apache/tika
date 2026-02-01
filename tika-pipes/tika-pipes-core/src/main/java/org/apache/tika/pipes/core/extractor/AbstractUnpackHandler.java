@@ -22,13 +22,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.apache.tika.extractor.EmbeddedDocumentBytesHandler;
+import org.apache.tika.extractor.UnpackHandler;
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
 
-public abstract class AbstractEmbeddedDocumentBytesHandler implements EmbeddedDocumentBytesHandler {
+public abstract class AbstractUnpackHandler implements UnpackHandler {
 
     List<Integer> ids = new ArrayList<>();
 

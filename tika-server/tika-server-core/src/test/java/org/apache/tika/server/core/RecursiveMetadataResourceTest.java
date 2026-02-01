@@ -80,7 +80,6 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
             if (f.isDirectory()) {
                 continue;
             }
-            System.out.println(f.getName());
             testWriteLimit(f);
         }
     }
@@ -122,8 +121,6 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                         wlr = true;
                     }
                 }
-                System.out.println(f.getName() + " actualLen:" + len + " : writeLimit: "
-                        + writeLimit + " : totalLen: "+totalLen);
                 assertTrue(f.getName() + ": writelimit: " + writeLimit + " len: "+len,
                         len <= writeLimit);
                 assertEquals(f.getName() +" writeLimit: " + writeLimit +

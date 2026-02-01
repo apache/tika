@@ -49,9 +49,14 @@ public class TikaServerConfig {
     private static final long DEFAULT_MAX_FILES = 100000;
     private static final int DEFAULT_DIGEST_MARK_LIMIT = 20 * 1024 * 1024;
     private static final String UNSECURE_WARNING =
-            "WARNING: You have chosen to run tika-server with unsecure features enabled.\n" + "Whoever has access to your service now has the same read permissions\n" +
-                    "as you've given your fetchers and the same write permissions " + "as your emitters.\n" + "Users could request and receive a sensitive file from your\n" +
-                    "drive or a webpage from your intranet and/or send malicious content to\n" + " your emitter endpoints.  See CVE-2015-3271.\n" +
+            "WARNING: You have chosen to run tika-server with unsecure features enabled.\n" +
+                    "Whoever has access to your service now has the same read permissions\n" +
+                    "as you've given your fetchers and the same write permissions as your emitters.\n" +
+                    "Users could request and receive a sensitive file from your\n" +
+                    "drive or a webpage from your intranet and/or send malicious content to\n" +
+                    "your emitter endpoints. See CVE-2015-3271.\n" +
+                    "Additionally, /config endpoints allow per-request parser configuration\n" +
+                    "which could enable dangerous operations.\n" +
                     "Please make sure you know what you are doing.";
     private static final List<String> ONLY_IN_FORK_MODE = Arrays.asList(
             new String[]{"maxFiles", "javaPath", "maxRestarts", "numRestarts", "forkedStatusFile", "maxForkedStartupMillis",

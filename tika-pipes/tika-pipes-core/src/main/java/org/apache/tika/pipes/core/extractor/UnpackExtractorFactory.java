@@ -14,19 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.extractor;
+package org.apache.tika.pipes.core.extractor;
 
+import org.apache.tika.config.TikaComponent;
+import org.apache.tika.extractor.EmbeddedDocumentByteStoreExtractorFactory;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
-public interface EmbeddedBytesSelector {
+@TikaComponent(name = "unpack-extractor-factory")
+public class UnpackExtractorFactory implements EmbeddedDocumentByteStoreExtractorFactory {
 
-    class AcceptAll implements EmbeddedBytesSelector {
-        @Override
-        public boolean select(Metadata metadata) {
-            return true;
-        }
+    @Override
+    public EmbeddedDocumentExtractor newInstance(Metadata metadata, ParseContext parseContext) {
+        return new UnpackExtractor(parseContext);
     }
-    EmbeddedBytesSelector ACCEPT_ALL = new AcceptAll();
-
-    boolean select(Metadata metadata);
 }

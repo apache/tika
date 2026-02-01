@@ -32,6 +32,7 @@ import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.filter.NoOpFilter;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.emitter.Emitter;
@@ -41,7 +42,6 @@ import org.apache.tika.pipes.core.EmitStrategyConfig;
 import org.apache.tika.pipes.core.PassbackFilter;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
-import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
 
@@ -68,7 +68,6 @@ class EmitHandler {
         //we need to apply the metadata filter after we pull out the stacktrace
         filterMetadata(parseData, parseContext);
         FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = t.getOnParseException();
-        UnpackConfig unpackConfig = parseContext.get(UnpackConfig.class);
         if (StringUtils.isBlank(stack) ||
                 onParseException == FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT) {
             injectUserMetadata(t.getMetadata(), parseData.getMetadataList());
@@ -78,8 +77,9 @@ class EmitHandler {
                 t.setEmitKey(emitKey);
             }
             EmitDataImpl emitDataTuple = new EmitDataImpl(t.getEmitKey().getEmitKey(), parseData.getMetadataList(), stack);
-            if (shouldEmit(unpackConfig, parseData, emitDataTuple, parseContext)) {
-                return emit(t.getId(), emitKey, unpackConfig.isExtractEmbeddedDocumentBytes(),
+            ParseMode parseMode = parseContext.get(ParseMode.class);
+            if (shouldEmit(parseMode, parseData, emitDataTuple, parseContext)) {
+                return emit(t.getId(), emitKey, parseMode == ParseMode.UNPACK,
                         parseData, stack, parseContext);
             } else {
                 if (StringUtils.isBlank(stack)) {
@@ -153,7 +153,7 @@ class EmitHandler {
     }
 
 
-    private boolean shouldEmit(UnpackConfig unpackConfig, MetadataListAndEmbeddedBytes parseData,
+    private boolean shouldEmit(ParseMode parseMode, MetadataListAndEmbeddedBytes parseData,
                                EmitDataImpl emitDataTuple, ParseContext parseContext) {
         EmitStrategy strategy = emitStrategy;
         long thresholdBytes = directEmitThresholdBytes;
@@ -166,10 +166,18 @@ class EmitHandler {
             }
         }
 
-        if (strategy == EmitStrategy.EMIT_ALL) {
+        // UNPACK mode: bytes are already emitted during parsing
+        // For PASSBACK_ALL, don't emit metadata - pass it back to client instead
+        // For other strategies, also emit metadata
+        if (parseMode == ParseMode.UNPACK) {
+            if (strategy == EmitStrategy.PASSBACK_ALL) {
+                // Bytes were emitted during parsing, metadata will be passed back
+                return false;
+            }
             return true;
-        } else if (unpackConfig.isExtractEmbeddedDocumentBytes() &&
-                parseData.toBePackagedForStreamEmitter()) {
+        }
+
+        if (strategy == EmitStrategy.EMIT_ALL) {
             return true;
         } else if (strategy == EmitStrategy.PASSBACK_ALL) {
             return false;

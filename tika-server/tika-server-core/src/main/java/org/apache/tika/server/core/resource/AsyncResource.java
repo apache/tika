@@ -114,8 +114,7 @@ public class AsyncResource {
             }
             ParseContext parseContext = t.getParseContext();
             UnpackConfig unpackConfig = parseContext.get(UnpackConfig.class);
-            if (unpackConfig != null && unpackConfig.isExtractEmbeddedDocumentBytes() &&
-                    !StringUtils.isAllBlank(unpackConfig.getEmitter())) {
+            if (unpackConfig != null && !StringUtils.isAllBlank(unpackConfig.getEmitter())) {
                 String bytesEmitter = unpackConfig.getEmitter();
                 if (!emitterManager
                         .getSupported()

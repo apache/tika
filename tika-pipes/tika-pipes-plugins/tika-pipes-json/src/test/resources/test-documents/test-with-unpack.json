@@ -5,8 +5,8 @@
   "emitter": "fs",
   "emitKey": "0.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -20,8 +20,8 @@
   "emitter": "fs",
   "emitKey": "1.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -35,8 +35,8 @@
   "emitter": "fs",
   "emitKey": "2.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -50,8 +50,8 @@
   "emitter": "fs",
   "emitKey": "3.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -65,8 +65,8 @@
   "emitter": "fs",
   "emitKey": "4.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -80,8 +80,8 @@
   "emitter": "fs",
   "emitKey": "5.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -95,8 +95,8 @@
   "emitter": "fs",
   "emitKey": "6.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -110,8 +110,8 @@
   "emitter": "fs",
   "emitKey": "7.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -125,8 +125,8 @@
   "emitter": "fs",
   "emitKey": "8.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -140,8 +140,8 @@
   "emitter": "fs",
   "emitKey": "9.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -155,8 +155,8 @@
   "emitter": "fs",
   "emitKey": "10.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -170,8 +170,8 @@
   "emitter": "fs",
   "emitKey": "11.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -185,8 +185,8 @@
   "emitter": "fs",
   "emitKey": "12.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -200,8 +200,8 @@
   "emitter": "fs",
   "emitKey": "13.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -215,8 +215,8 @@
   "emitter": "fs",
   "emitKey": "14.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -230,8 +230,8 @@
   "emitter": "fs",
   "emitKey": "15.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -245,8 +245,8 @@
   "emitter": "fs",
   "emitKey": "16.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -260,8 +260,8 @@
   "emitter": "fs",
   "emitKey": "17.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -275,8 +275,8 @@
   "emitter": "fs",
   "emitKey": "18.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -290,8 +290,8 @@
   "emitter": "fs",
   "emitKey": "19.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -305,8 +305,8 @@
   "emitter": "fs",
   "emitKey": "20.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -320,8 +320,8 @@
   "emitter": "fs",
   "emitKey": "21.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -335,8 +335,8 @@
   "emitter": "fs",
   "emitKey": "22.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -350,8 +350,8 @@
   "emitter": "fs",
   "emitKey": "23.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -365,8 +365,8 @@
   "emitter": "fs",
   "emitKey": "24.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -380,8 +380,8 @@
   "emitter": "fs",
   "emitKey": "25.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -395,8 +395,8 @@
   "emitter": "fs",
   "emitKey": "26.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -410,8 +410,8 @@
   "emitter": "fs",
   "emitKey": "27.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -425,8 +425,8 @@
   "emitter": "fs",
   "emitKey": "28.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -440,8 +440,8 @@
   "emitter": "fs",
   "emitKey": "29.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -455,8 +455,8 @@
   "emitter": "fs",
   "emitKey": "30.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -470,8 +470,8 @@
   "emitter": "fs",
   "emitKey": "31.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -485,8 +485,8 @@
   "emitter": "fs",
   "emitKey": "32.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -500,8 +500,8 @@
   "emitter": "fs",
   "emitKey": "33.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -515,8 +515,8 @@
   "emitter": "fs",
   "emitKey": "34.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -530,8 +530,8 @@
   "emitter": "fs",
   "emitKey": "35.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -545,8 +545,8 @@
   "emitter": "fs",
   "emitKey": "36.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -560,8 +560,8 @@
   "emitter": "fs",
   "emitKey": "37.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -575,8 +575,8 @@
   "emitter": "fs",
   "emitKey": "38.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -590,8 +590,8 @@
   "emitter": "fs",
   "emitKey": "39.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -605,8 +605,8 @@
   "emitter": "fs",
   "emitKey": "40.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -620,8 +620,8 @@
   "emitter": "fs",
   "emitKey": "41.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -635,8 +635,8 @@
   "emitter": "fs",
   "emitKey": "42.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -650,8 +650,8 @@
   "emitter": "fs",
   "emitKey": "43.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -665,8 +665,8 @@
   "emitter": "fs",
   "emitKey": "44.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -680,8 +680,8 @@
   "emitter": "fs",
   "emitKey": "45.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -695,8 +695,8 @@
   "emitter": "fs",
   "emitKey": "46.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -710,8 +710,8 @@
   "emitter": "fs",
   "emitKey": "47.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -725,8 +725,8 @@
   "emitter": "fs",
   "emitKey": "48.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -740,8 +740,8 @@
   "emitter": "fs",
   "emitKey": "49.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -755,8 +755,8 @@
   "emitter": "fs",
   "emitKey": "50.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -770,8 +770,8 @@
   "emitter": "fs",
   "emitKey": "51.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -785,8 +785,8 @@
   "emitter": "fs",
   "emitKey": "52.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -800,8 +800,8 @@
   "emitter": "fs",
   "emitKey": "53.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -815,8 +815,8 @@
   "emitter": "fs",
   "emitKey": "54.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -830,8 +830,8 @@
   "emitter": "fs",
   "emitKey": "55.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -845,8 +845,8 @@
   "emitter": "fs",
   "emitKey": "56.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -860,8 +860,8 @@
   "emitter": "fs",
   "emitKey": "57.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -875,8 +875,8 @@
   "emitter": "fs",
   "emitKey": "58.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -890,8 +890,8 @@
   "emitter": "fs",
   "emitKey": "59.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -905,8 +905,8 @@
   "emitter": "fs",
   "emitKey": "60.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -920,8 +920,8 @@
   "emitter": "fs",
   "emitKey": "61.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -935,8 +935,8 @@
   "emitter": "fs",
   "emitKey": "62.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -950,8 +950,8 @@
   "emitter": "fs",
   "emitKey": "63.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -965,8 +965,8 @@
   "emitter": "fs",
   "emitKey": "64.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -980,8 +980,8 @@
   "emitter": "fs",
   "emitKey": "65.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -995,8 +995,8 @@
   "emitter": "fs",
   "emitKey": "66.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1010,8 +1010,8 @@
   "emitter": "fs",
   "emitKey": "67.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1025,8 +1025,8 @@
   "emitter": "fs",
   "emitKey": "68.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1040,8 +1040,8 @@
   "emitter": "fs",
   "emitKey": "69.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1055,8 +1055,8 @@
   "emitter": "fs",
   "emitKey": "70.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1070,8 +1070,8 @@
   "emitter": "fs",
   "emitKey": "71.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1085,8 +1085,8 @@
   "emitter": "fs",
   "emitKey": "72.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1100,8 +1100,8 @@
   "emitter": "fs",
   "emitKey": "73.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1115,8 +1115,8 @@
   "emitter": "fs",
   "emitKey": "74.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1130,8 +1130,8 @@
   "emitter": "fs",
   "emitKey": "75.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1145,8 +1145,8 @@
   "emitter": "fs",
   "emitKey": "76.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1160,8 +1160,8 @@
   "emitter": "fs",
   "emitKey": "77.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1175,8 +1175,8 @@
   "emitter": "fs",
   "emitKey": "78.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1190,8 +1190,8 @@
   "emitter": "fs",
   "emitKey": "79.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1205,8 +1205,8 @@
   "emitter": "fs",
   "emitKey": "80.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1220,8 +1220,8 @@
   "emitter": "fs",
   "emitKey": "81.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1235,8 +1235,8 @@
   "emitter": "fs",
   "emitKey": "82.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1250,8 +1250,8 @@
   "emitter": "fs",
   "emitKey": "83.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1265,8 +1265,8 @@
   "emitter": "fs",
   "emitKey": "84.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1280,8 +1280,8 @@
   "emitter": "fs",
   "emitKey": "85.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1295,8 +1295,8 @@
   "emitter": "fs",
   "emitKey": "86.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1310,8 +1310,8 @@
   "emitter": "fs",
   "emitKey": "87.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1325,8 +1325,8 @@
   "emitter": "fs",
   "emitKey": "88.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1340,8 +1340,8 @@
   "emitter": "fs",
   "emitKey": "89.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1355,8 +1355,8 @@
   "emitter": "fs",
   "emitKey": "90.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1370,8 +1370,8 @@
   "emitter": "fs",
   "emitKey": "91.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1385,8 +1385,8 @@
   "emitter": "fs",
   "emitKey": "92.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1400,8 +1400,8 @@
   "emitter": "fs",
   "emitKey": "93.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1415,8 +1415,8 @@
   "emitter": "fs",
   "emitKey": "94.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1430,8 +1430,8 @@
   "emitter": "fs",
   "emitKey": "95.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1445,8 +1445,8 @@
   "emitter": "fs",
   "emitKey": "96.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1460,8 +1460,8 @@
   "emitter": "fs",
   "emitKey": "97.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1475,8 +1475,8 @@
   "emitter": "fs",
   "emitKey": "98.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",
@@ -1490,8 +1490,8 @@
   "emitter": "fs",
   "emitKey": "99.xml.json",
   "onParseException": "emit",
-  "embeddedDocumentBytesConfig": {
-    "extractEmbeddedDocumentBytes": true,
+  "parseMode": "UNPACK",
+  "unpackConfig": {
     "zeroPadName": 0,
     "suffixStrategy": "NONE",
     "embeddedIdPrefix": "-",

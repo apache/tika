@@ -52,6 +52,7 @@ import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.digest.DigesterFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
+import org.apache.tika.extractor.UnpackSelector;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
@@ -116,6 +117,7 @@ public class TikaModule extends SimpleModule {
         COMPACT_FORMAT_INTERFACES.add(MetadataWriteLimiterFactory.class);
         COMPACT_FORMAT_INTERFACES.add(ContentHandlerDecoratorFactory.class);
         COMPACT_FORMAT_INTERFACES.add(ContentHandlerFactory.class);
+        COMPACT_FORMAT_INTERFACES.add(UnpackSelector.class);
     }
 
     /**

@@ -260,7 +260,7 @@ public class TikaResourceTest extends CXFTestBase {
                 new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         Response response = WebClient
-                .create(endPoint + TIKA_PATH)
+                .create(endPoint + TIKA_PATH + "/config")
                 .type("multipart/form-data")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
         String responseMsg = getStringFromInputStream((InputStream) response.getEntity());
@@ -289,7 +289,7 @@ public class TikaResourceTest extends CXFTestBase {
                 new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         Response response = WebClient
-                .create(endPoint + TIKA_PATH)
+                .create(endPoint + TIKA_PATH + "/config")
                 .type("multipart/form-data")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
         String responseMsg = getStringFromInputStream((InputStream) response.getEntity());
@@ -304,7 +304,7 @@ public class TikaResourceTest extends CXFTestBase {
                 new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         response = WebClient
-                .create(endPoint + TIKA_PATH)
+                .create(endPoint + TIKA_PATH + "/config")
                 .type("multipart/form-data")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
         responseMsg = getStringFromInputStream((InputStream) response.getEntity());
@@ -325,7 +325,7 @@ public class TikaResourceTest extends CXFTestBase {
                 new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         response = WebClient
-                .create(endPoint + TIKA_PATH)
+                .create(endPoint + TIKA_PATH + "/config")
                 .type("multipart/form-data")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
         responseMsg = getStringFromInputStream((InputStream) response.getEntity());
@@ -346,7 +346,7 @@ public class TikaResourceTest extends CXFTestBase {
                 new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         response = WebClient
-                .create(endPoint + TIKA_PATH)
+                .create(endPoint + TIKA_PATH + "/config")
                 .type("multipart/form-data")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
         assertEquals(422, response.getStatus());
@@ -382,7 +382,7 @@ public class TikaResourceTest extends CXFTestBase {
                 new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         response = WebClient
-                .create(endPoint + TIKA_PATH + "/text")
+                .create(endPoint + TIKA_PATH + "/config/text")
                 .type("multipart/form-data")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
         responseMsg = getStringFromInputStream((InputStream) response.getEntity());
@@ -425,7 +425,7 @@ public class TikaResourceTest extends CXFTestBase {
 
         try {
             Response response = WebClient
-                    .create(endPoint + TIKA_PATH)
+                    .create(endPoint + TIKA_PATH + "/config")
                     .type("multipart/form-data")
                     .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
             assertEquals(500, response.getStatus());
@@ -450,7 +450,7 @@ public class TikaResourceTest extends CXFTestBase {
 
         try {
             Response response = WebClient
-                    .create(endPoint + TIKA_PATH)
+                    .create(endPoint + TIKA_PATH + "/config")
                     .type("multipart/form-data")
                     .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
             assertEquals(422, response.getStatus());
@@ -480,7 +480,7 @@ public class TikaResourceTest extends CXFTestBase {
                 new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         Response response = WebClient
-                .create(endPoint + TIKA_PATH)
+                .create(endPoint + TIKA_PATH + "/config")
                 .type("multipart/form-data")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
         assertEquals(422, response.getStatus());
@@ -502,7 +502,7 @@ public class TikaResourceTest extends CXFTestBase {
                 new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         Response response = WebClient
-                .create(endPoint + TIKA_PATH)
+                .create(endPoint + TIKA_PATH + "/config")
                 .type("multipart/form-data")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
         assertEquals(200, response.getStatus());
@@ -527,7 +527,7 @@ public class TikaResourceTest extends CXFTestBase {
                 new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         Response response = WebClient
-                .create(endPoint + TIKA_PATH + "/text")
+                .create(endPoint + TIKA_PATH + "/config/text")
                 .type("multipart/form-data")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
         String responseMsg = getStringFromInputStream((InputStream) response.getEntity());
@@ -549,7 +549,7 @@ public class TikaResourceTest extends CXFTestBase {
                 new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         Response response = WebClient
-                .create(endPoint + TIKA_PATH + "/text")
+                .create(endPoint + TIKA_PATH + "/config/text")
                 .type("multipart/form-data")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
         String responseMsg = getStringFromInputStream((InputStream) response.getEntity());
@@ -580,7 +580,7 @@ public class TikaResourceTest extends CXFTestBase {
                 new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         response = WebClient
-                .create(endPoint + TIKA_PATH)
+                .create(endPoint + TIKA_PATH + "/config")
                 .type("multipart/form-data")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
         responseMsg = getStringFromInputStream((InputStream) response.getEntity());

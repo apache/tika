@@ -43,6 +43,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
@@ -112,13 +113,14 @@ public class AsyncProcessorTest extends TikaTest {
     public void testRecursiveUnpacking() throws Exception {
         AsyncProcessor processor = AsyncProcessor.load(configDir.resolve("tika-config.json"));
 
-        UnpackConfig embeddedDocumentBytesConfig = new UnpackConfig(true);
-        embeddedDocumentBytesConfig.setIncludeOriginal(true);
-        embeddedDocumentBytesConfig.setEmitter("fse-bytes");
-        embeddedDocumentBytesConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.NONE);
-        embeddedDocumentBytesConfig.setEmbeddedIdPrefix("-");
+        UnpackConfig unpackConfig = new UnpackConfig();
+        unpackConfig.setIncludeOriginal(true);
+        unpackConfig.setEmitter("fse-bytes");
+        unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.NONE);
+        unpackConfig.setEmbeddedIdPrefix("-");
         ParseContext parseContext = new ParseContext();
-        parseContext.set(UnpackConfig.class, embeddedDocumentBytesConfig);
+        parseContext.set(ParseMode.class, ParseMode.UNPACK);
+        parseContext.set(UnpackConfig.class, unpackConfig);
         FetchEmitTuple t =
                 new FetchEmitTuple("myId-1", new FetchKey("fsf", "mock.xml"),
                         new EmitKey("fse-json", "emit-1"), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);

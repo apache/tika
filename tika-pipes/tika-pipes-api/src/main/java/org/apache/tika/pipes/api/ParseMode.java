@@ -51,7 +51,25 @@ public enum ParseMode {
      * is returned. Use this mode when you only need file identification
      * (mime type, hash) without text extraction.
      */
-    NO_PARSE;
+    NO_PARSE,
+
+    /**
+     * Extracts embedded document bytes and emits them, with full RMETA metadata.
+     * <p>
+     * This mode parses like RMETA (returning a metadata object per document) AND
+     * automatically extracts and emits embedded document bytes. An emitter is
+     * required for the byte extraction.
+     * <p>
+     * With PASSBACK_ALL emit strategy, embedded bytes are still emitted during
+     * parsing, but metadata is passed back to the client instead of being emitted.
+     * This is useful when you want bytes written to storage but need metadata
+     * returned for further processing (e.g., indexing to a database).
+     * <p>
+     * This mode simplifies byte extraction by handling all the internal setup
+     * (UnpackExtractor, EmittingUnpackHandler) automatically.
+     * Users just need to specify the emitter in UnpackConfig or FetchEmitTuple.
+     */
+    UNPACK;
 
     /**
      * Parses a string to a ParseMode enum value.
@@ -70,7 +88,7 @@ public enum ParseMode {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(
                     "Invalid parse mode: '" + modeString + "'. " +
-                            "Must be one of: RMETA, CONCATENATE, NO_PARSE");
+                            "Must be one of: RMETA, CONCATENATE, NO_PARSE, UNPACK");
         }
     }
 }

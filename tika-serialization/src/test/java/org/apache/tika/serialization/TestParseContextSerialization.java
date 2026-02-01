@@ -204,10 +204,10 @@ public class TestParseContextSerialization {
 
     @Test
     public void testDeserializeWithParseContextWrapper() throws Exception {
-        // Test deserializing with optional "parseContext" wrapper
+        // Test deserializing with optional "parse-context" wrapper
         String json = """
                 {
-                  "parseContext": {
+                  "parse-context": {
                     "pdf-parser": {
                       "ocrStrategy": "NO_OCR"
                     }

@@ -50,15 +50,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.UUID;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.logging.log4j.Level;
 import org.slf4j.Logger;
@@ -69,20 +66,17 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.Tika;
 import org.apache.tika.async.cli.TikaAsyncCLI;
+import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.digest.DigestDef;
 import org.apache.tika.digest.DigesterFactory;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.DefaultEmbeddedStreamTranslator;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.EmbeddedStreamTranslator;
 import org.apache.tika.gui.TikaGUI;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.language.detect.LanguageHandler;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeType;
@@ -115,7 +109,6 @@ import org.apache.tika.xmp.XMPMetadata;
  */
 public class TikaCLI {
     private static final Logger LOG = LoggerFactory.getLogger(TikaCLI.class);
-    private static final Property NORMALIZED_EMBEDDED_NAME = Property.externalText("tk:normalized-embedded-name");
 
     private final int MAX_MARK = 20 * 1024 * 1024;//20MB
 
@@ -125,7 +118,6 @@ public class TikaCLI {
             return new DefaultHandler();
         }
     };
-    private Path extractDir = Paths.get(".");
     private ParseContext context;
     private Detector detector;
     private Parser parser;
@@ -203,6 +195,14 @@ public class TikaCLI {
      */
     private String password = System.getenv("TIKA_PASSWORD");
     private DigesterFactory digesterFactory = null;
+    /**
+     * Maximum depth for embedded document extraction, or -1 for unlimited.
+     */
+    private int maxEmbeddedDepth = EmbeddedLimits.UNLIMITED;
+    /**
+     * Maximum count of embedded documents to extract, or -1 for unlimited.
+     */
+    private int maxEmbeddedCount = EmbeddedLimits.UNLIMITED;
     private boolean pipeMode = true;
     private boolean prettyPrint;
     private final OutputType XML = new OutputType() {
@@ -264,7 +264,7 @@ public class TikaCLI {
         for (int i = 0; i < args.length - 1; i++) {
             if (args[i].equals("-c")) {
                 tikaConfigPath = args[i + 1];
-            } else if ("-Z".equals(args[i])) {
+            } else if ("-Z".equals(args[i]) || "-z".equals(args[i]) || "--extract".equals(args[i])) {
                 runpack = true;
             }
         }
@@ -366,7 +366,7 @@ public class TikaCLI {
             if (arg.equals("-o") || arg.startsWith("--output")) {
                 return true;
             }
-            if (arg.equals("-Z")) {
+            if (arg.equals("-Z") || arg.equals("-z") || arg.equals("--extract") || arg.startsWith("--extract-dir")) {
                 return true;
             }
 
@@ -467,17 +467,10 @@ public class TikaCLI {
             type = LANGUAGE;
         } else if (arg.equals("-d") || arg.equals("--detect")) {
             type = DETECT;
-        } else if (arg.startsWith("--extract-dir=")) {
-            String dirPath = arg.substring("--extract-dir=".length());
-            //if the user accidentally doesn't include
-            //a directory, set the directory to the cwd
-            if (dirPath.isEmpty()) {
-                dirPath = ".";
-            }
-            extractDir = Paths.get(dirPath);
-        } else if (arg.equals("-z") || arg.equals("--extract")) {
-            type = NO_OUTPUT;
-            context.set(EmbeddedDocumentExtractor.class, new FileEmbeddedDocumentExtractor());
+        } else if (arg.startsWith("--maxEmbeddedDepth=")) {
+            maxEmbeddedDepth = Integer.parseInt(arg.substring("--maxEmbeddedDepth=".length()));
+        } else if (arg.startsWith("--maxEmbeddedCount=")) {
+            maxEmbeddedCount = Integer.parseInt(arg.substring("--maxEmbeddedCount=".length()));
         } else if (arg.equals("-r") || arg.equals("--pretty-print")) {
             prettyPrint = true;
         } else if (arg.equals("-p") || arg.equals("--port") || arg.equals("-s") || arg.equals("--server")) {
@@ -624,6 +617,8 @@ public class TikaCLI {
         out.println("    -pX or --password=X    Use document password X");
         out.println("    -z  or --extract       Extract all attachements into current directory");
         out.println("    --extract-dir=<dir>    Specify target directory for -z");
+        out.println("    --maxEmbeddedDepth=X   Maximum depth for embedded document extraction");
+        out.println("    --maxEmbeddedCount=X   Maximum number of embedded documents to extract");
         out.println("    -r  or --pretty-print  For JSON, XML and XHTML outputs, adds newlines and");
         out.println("                           whitespace, for better readability");
         out.println();
@@ -676,6 +671,9 @@ public class TikaCLI {
         out.println("    -X                         -Xmx in the forked processes");
         out.println("    -T                         Timeout in milliseconds");
         out.println("    -Z                         Recursively unpack all the attachments, too");
+        out.println("    --unpack-format=<format>   Output format: REGULAR (default) or FRICTIONLESS");
+        out.println("    --unpack-mode=<mode>       Output mode: ZIPPED (default) or DIRECTORY");
+        out.println("    --unpack-include-metadata  Include metadata.json in Frictionless output");
         out.println();
         out.println();
     }
@@ -743,6 +741,17 @@ public class TikaCLI {
         // Override DigesterFactory in ParseContext if configured via --digest= command line
         if (digesterFactory != null) {
             context.set(DigesterFactory.class, digesterFactory);
+        }
+        // Set EmbeddedLimits if any limits were specified via command line
+        if (maxEmbeddedDepth != EmbeddedLimits.UNLIMITED || maxEmbeddedCount != EmbeddedLimits.UNLIMITED) {
+            EmbeddedLimits limits = new EmbeddedLimits();
+            if (maxEmbeddedDepth != EmbeddedLimits.UNLIMITED) {
+                limits.setMaxDepth(maxEmbeddedDepth);
+            }
+            if (maxEmbeddedCount != EmbeddedLimits.UNLIMITED) {
+                limits.setMaxCount(maxEmbeddedCount);
+            }
+            context.set(EmbeddedLimits.class, limits);
         }
         detector = tikaLoader.loadDetectors();
         context.set(Parser.class, parser);
@@ -1128,73 +1137,6 @@ public class TikaCLI {
 
     }
 
-    private class FileEmbeddedDocumentExtractor implements EmbeddedDocumentExtractor {
-
-        private final EmbeddedStreamTranslator embeddedStreamTranslator = new DefaultEmbeddedStreamTranslator();
-        private int count = 0;
-
-        public boolean shouldParseEmbedded(Metadata metadata) {
-            return true;
-        }
-
-        @Override
-        public void parseEmbedded(TikaInputStream tis, ContentHandler contentHandler, Metadata metadata,
-                                  ParseContext parseContext, boolean outputHtml) throws SAXException, IOException {
-            String contentType = metadata.get(Metadata.CONTENT_TYPE);
-            if (StringUtils.isBlank(contentType)) {
-                MediaType mediaType = detector.detect(tis, metadata, new ParseContext());
-                if (mediaType == null) {
-                    mediaType = MediaType.OCTET_STREAM;
-                }
-                contentType = mediaType.toString();
-                metadata.set(Metadata.CONTENT_TYPE, contentType);
-            }
-
-            Path outputFile = getOutputFile(metadata);
-            String name = metadata.get(NORMALIZED_EMBEDDED_NAME);
-
-            Path parent = outputFile.getParent();
-            if (parent != null && ! Files.isDirectory(parent)) {
-                Files.createDirectories(parent);
-            }
-            System.out.println("Extracting '" + name + "' (" + contentType + ") to " + outputFile);
-
-            try (OutputStream os = Files.newOutputStream(outputFile)) {
-                if (embeddedStreamTranslator.shouldTranslate(tis, metadata)) {
-                    embeddedStreamTranslator.translate(tis, metadata, os);
-                } else {
-                    IOUtils.copy(tis, os);
-                }
-            } catch (Exception e) {
-                //
-                // being a CLI program messages should go to the stderr too
-                //
-                String msg = String.format(Locale.ROOT, "Ignoring unexpected exception trying to save embedded file %s (%s)", name, e.getMessage());
-                LOG.warn(msg, e);
-            }
-        }
-
-        private Path getOutputFile(Metadata metadata) throws IOException {
-            String normalizedName = org.apache.tika.io.FilenameUtils.getSanitizedEmbeddedFilePath(metadata, ".bin", 50);
-            if (normalizedName == null) {
-                String ext = org.apache.tika.io.FilenameUtils.calculateExtension(metadata, ".bin");
-                normalizedName = "file-" + count++ + ext;
-            }
-            metadata.set(NORMALIZED_EMBEDDED_NAME, normalizedName);
-
-            Path outputFile = extractDir.resolve(normalizedName);
-            //if file already exists, prepend uuid
-            if (Files.exists(outputFile)) {
-                String fileName = FilenameUtils.getName(normalizedName);
-                outputFile = extractDir.resolve( UUID.randomUUID() + "-" + fileName);
-            }
-            if (! outputFile.toAbsolutePath().normalize().startsWith(extractDir.toAbsolutePath().normalize())) {
-                throw new IOException("Path traversal?!: " + outputFile.toAbsolutePath());
-            }
-            return outputFile;
-        }
-
-    }
 
     private class NoDocumentJSONMetHandler extends DefaultHandler {
 

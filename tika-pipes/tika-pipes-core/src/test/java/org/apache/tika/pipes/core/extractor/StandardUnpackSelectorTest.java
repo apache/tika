@@ -24,20 +24,17 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.extractor.EmbeddedBytesSelector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
 
-public class UnpackConfigSelectorTest extends TikaTest {
+public class StandardUnpackSelectorTest extends TikaTest {
 
     @Test
-    public void testEmbeddedBytesSelector() throws Exception {
-        UnpackConfig config = new UnpackConfig();
-        config.setIncludeMimeTypes(Set.of("application/pdf", "application/rtf", "text/plain"));
-        config.setIncludeEmbeddedResourceTypes(Set.of("ATTACHMENT", "INLINE"));
-
-        EmbeddedBytesSelector selector = config.createEmbeddedBytesSelector();
+    public void testStandardUnpackSelector() throws Exception {
+        StandardUnpackSelector selector = new StandardUnpackSelector();
+        selector.setIncludeMimeTypes(Set.of("application/pdf", "application/rtf", "text/plain"));
+        selector.setIncludeEmbeddedResourceTypes(Set.of("ATTACHMENT", "INLINE"));
 
         assertFalse(selector.select(getMetadata("", "")));
         assertTrue(selector.select(getMetadata("application/pdf", "")));
@@ -51,13 +48,30 @@ public class UnpackConfigSelectorTest extends TikaTest {
 
     @Test
     public void testAcceptAllWhenNoFilters() {
-        UnpackConfig config = new UnpackConfig();
-        EmbeddedBytesSelector selector = config.createEmbeddedBytesSelector();
+        StandardUnpackSelector selector = new StandardUnpackSelector();
 
         // With no filters, should accept all
         assertTrue(selector.select(getMetadata("application/pdf", "")));
         assertTrue(selector.select(getMetadata("application/docx", "MACRO")));
         assertTrue(selector.select(getMetadata("", "")));
+    }
+
+    @Test
+    public void testExcludeMimeTypes() {
+        StandardUnpackSelector selector = new StandardUnpackSelector();
+        selector.setExcludeMimeTypes(Set.of("application/pdf"));
+
+        assertTrue(selector.select(getMetadata("application/docx", "")));
+        assertFalse(selector.select(getMetadata("application/pdf", "")));
+    }
+
+    @Test
+    public void testExcludeEmbeddedResourceTypes() {
+        StandardUnpackSelector selector = new StandardUnpackSelector();
+        selector.setExcludeEmbeddedResourceTypes(Set.of("MACRO"));
+
+        assertTrue(selector.select(getMetadata("application/pdf", "ATTACHMENT")));
+        assertFalse(selector.select(getMetadata("application/pdf", "MACRO")));
     }
 
     private Metadata getMetadata(String mime, String embeddedResourceType) {

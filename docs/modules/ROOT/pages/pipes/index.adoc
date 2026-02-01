@@ -29,6 +29,8 @@ Tika Pipes provides a framework for processing large volumes of documents with:
 
 == Topics
 
+* xref:pipes/unpack-config.adoc[Extracting Embedded Bytes] - Extract raw bytes from embedded documents using `ParseMode.UNPACK`
+
 // Add links to specific topics as they are created
 // * link:getting-started.html[Getting Started]
 // * link:fetchers.html[Fetchers]

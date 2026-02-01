@@ -114,13 +114,6 @@ public class MetadataWriteLimiterTest {
 
         Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
 
-        // Debug: print all metadata keys to see what was included
-        System.out.println("=== Metadata keys from override test ===");
-        for (String name : metadata.names()) {
-            System.out.println("  " + name + " = " + metadata.get(name));
-        }
-        System.out.println("=========================================");
-
         // These fields should be present (in the override includeFields or ALWAYS_SET/ADD_FIELDS)
         assertNotNull(metadata.get("Content-Type"), "Content-Type should be present");
         assertNotNull(metadata.get("X-TIKA:parse_time_millis"), "X-TIKA:parse_time_millis should be present (allowed by override)");
