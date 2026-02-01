@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.config.loader.ComponentInfo;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.serialization.ComponentNameResolver;
+import org.apache.tika.serialization.TikaModule;
 
 /**
  * Deserializes ParseContext from JSON.
@@ -128,6 +129,21 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
     }
 
     /**
+     * Determines the context key for a component.
+     * Uses explicit contextKey if available, otherwise auto-detects from interfaces.
+     */
+    private static Class<?> determineContextKey(ComponentInfo info) {
+        if (info.contextKey() != null) {
+            return info.contextKey();
+        }
+        Class<?> interfaceKey = TikaModule.findContextKeyInterface(info.componentClass());
+        if (interfaceKey != null) {
+            return interfaceKey;
+        }
+        return info.componentClass();
+    }
+
+    /**
      * Checks if a JSON config entry would create a duplicate context key.
      * <p>
      * Looks up the friendly name in the component registry to determine its context key,
@@ -147,7 +163,7 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
         }
 
         ComponentInfo info = infoOpt.get();
-        Class<?> contextKey = info.contextKey() != null ? info.contextKey() : info.componentClass();
+        Class<?> contextKey = determineContextKey(info);
 
         String existingName = seenContextKeys.get(contextKey);
         if (existingName != null) {
@@ -205,8 +221,14 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
                 }
             }
 
-            // Use contextKey if available, otherwise use the config class itself
-            Class<?> parseContextKey = (contextKeyClass != null) ? contextKeyClass : configClass;
+            // Determine context key: explicit > interface detection > class itself
+            Class<?> parseContextKey = contextKeyClass;
+            if (parseContextKey == null) {
+                parseContextKey = TikaModule.findContextKeyInterface(configClass);
+            }
+            if (parseContextKey == null) {
+                parseContextKey = configClass;
+            }
 
             // Check for duplicate context key
             String existingName = seenContextKeys.get(parseContextKey);

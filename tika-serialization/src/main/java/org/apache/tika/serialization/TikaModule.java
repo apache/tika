@@ -123,12 +123,28 @@ public class TikaModule extends SimpleModule {
      * Returns true if the type implements any of the registered compact format interfaces.
      */
     private static boolean usesCompactFormat(Class<?> type) {
+        return findContextKeyInterface(type) != null;
+    }
+
+    /**
+     * Finds the appropriate context key interface for a given type.
+     * This is used to determine which interface should be used as the ParseContext key
+     * when storing instances of this type.
+     * <p>
+     * Security note: This method only helps determine the context key - it does NOT
+     * affect which classes can be instantiated. Classes must still be registered
+     * via @TikaComponent to be deserializable.
+     *
+     * @param type the type to find the context key for
+     * @return the interface to use as context key, or null if none found
+     */
+    public static Class<?> findContextKeyInterface(Class<?> type) {
         for (Class<?> iface : COMPACT_FORMAT_INTERFACES) {
             if (iface.isAssignableFrom(type)) {
-                return true;
+                return iface;
             }
         }
-        return false;
+        return null;
     }
 
     public TikaModule() {
