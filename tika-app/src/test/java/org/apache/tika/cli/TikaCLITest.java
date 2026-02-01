@@ -528,13 +528,23 @@ public class TikaCLITest {
     // TIKA-1031
     @Test
     public void testZipWithSubdirs() throws Exception {
-        new File("subdir/foo.txt").delete();
-        new File("subdir").delete();
-        String content = getParamOutContent("-z", "--extract-dir=target", resourcePrefix + "testWithSubdirs.zip");
-        //assertTrue(content.contains("Extracting 'subdir/foo.txt'"));
-        // clean up. TODO: These should be in target.
-        assertTrue(new File("target/subdir/foo.txt").delete());
-        assertTrue(new File("target/subdir").delete());
+        Path input = Paths.get(new URI(resourcePrefix + "/testWithSubdirs.zip"));
+        Path pluginsDir = Paths.get("target/plugins");
+
+        String[] params = {"-z",
+                "-p", pluginsDir.toAbsolutePath().toString(),
+                input.toAbsolutePath().toString(),
+                extractDir.toAbsolutePath().toString()};
+
+        TikaCLI.main(params);
+
+        Set<String> fileNames = getFileNames(extractDir);
+
+        // Async mode creates: .json metadata file + -embed/ directory with extracted bytes
+        assertTrue(fileNames.stream().anyMatch(f -> f.endsWith(".json")),
+                "Should have a .json metadata file, got: " + fileNames);
+        assertTrue(fileNames.stream().anyMatch(f -> f.contains("-embed/")),
+                "Should have extracted embedded files in -embed/ directory, got: " + fileNames);
     }
 
     @Test
