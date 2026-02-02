@@ -1814,4 +1814,17 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         String content = getText("testRecordSizeExceeded.xlsx");
         assertContains("Repetitive content pattern 3 for compression test row 1", content);
     }
+
+    /**
+     * Test extraction of field-based hyperlinks using instrText/fldChar.
+     * These are hyperlinks embedded as field codes rather than relationship-based hyperlinks.
+     * Uses the DOM-based XWPFWordExtractorDecorator.
+     */
+    @Test
+    public void testInstrTextHyperlink() throws Exception {
+        String xml = getXML("testInstrLink.docx").xml;
+        // The document contains a HYPERLINK field code in instrText
+        assertContains("<a href=\"https://exmaple.com/file\">", xml);
+        assertContains("Access Document(s)", xml);
+    }
 }

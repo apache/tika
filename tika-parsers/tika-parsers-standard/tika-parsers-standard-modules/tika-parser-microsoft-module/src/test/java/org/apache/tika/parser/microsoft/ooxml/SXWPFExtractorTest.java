@@ -848,4 +848,16 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContainsCount("inside-text", xml, 1);
     }
 
+    /**
+     * Test extraction of field-based hyperlinks using instrText/fldChar.
+     * These are hyperlinks embedded as field codes rather than relationship-based hyperlinks.
+     */
+    @Test
+    public void testInstrTextHyperlink() throws Exception {
+        String xml = getXML("testInstrLink.docx", parseContext).xml;
+        // The document contains a HYPERLINK field code in instrText
+        assertContains("<a href=\"https://exmaple.com/file\">", xml);
+        assertContains("Access Document(s)", xml);
+    }
+
 }

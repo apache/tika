@@ -19,6 +19,8 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
 import org.xml.sax.Attributes;
@@ -108,6 +110,11 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final static String MOVE_TO = "moveTo";
     private final static String ENDNOTE_REFERENCE = "endnoteReference";
     private static final String TEXTBOX = "textbox";
+    private final static String FLD_CHAR = "fldChar";
+    private final static String INSTR_TEXT = "instrText";
+    private final static String FLD_CHAR_TYPE = "fldCharType";
+    private static final Pattern HYPERLINK_PATTERN =
+            Pattern.compile("HYPERLINK\\s{1,100}\"([^\"]{1,10000})\"", Pattern.CASE_INSENSITIVE);
     private final XWPFBodyContentsHandler bodyContentsHandler;
     private final Map<String, String> linkedRelationships;
     private final RunProperties currRunProperties = new RunProperties();
@@ -145,6 +152,11 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private boolean inHlinkClick = false;
     private boolean inTextBox = false;
     private boolean inV = false; //in c:v in chart file
+    // Field code tracking for instrText-based hyperlinks
+    private boolean inField = false;
+    private boolean inInstrText = false;
+    private boolean inFieldHyperlink = false;
+    private final StringBuilder instrTextBuffer = new StringBuilder();
     private OOXMLWordAndPowerPointTextHandler.EditType editType =
             OOXMLWordAndPowerPointTextHandler.EditType.NONE;
     private DateUtils dateUtils = new DateUtils();
@@ -341,6 +353,28 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             if ("0".equals(val) || "false".equals(val)) {
                 hiddenSlide = true;
             }
+        } else if (FLD_CHAR.equals(localName)) {
+            String fldCharType = atts.getValue(W_NS, FLD_CHAR_TYPE);
+            if ("begin".equals(fldCharType)) {
+                inField = true;
+                instrTextBuffer.setLength(0);
+            } else if ("separate".equals(fldCharType)) {
+                // Parse instrText for HYPERLINK
+                String url = parseHyperlinkFromInstrText(instrTextBuffer.toString());
+                if (url != null) {
+                    bodyContentsHandler.hyperlinkStart(url);
+                    inFieldHyperlink = true;
+                }
+            } else if ("end".equals(fldCharType)) {
+                if (inFieldHyperlink) {
+                    bodyContentsHandler.hyperlinkEnd();
+                    inFieldHyperlink = false;
+                }
+                inField = false;
+                instrTextBuffer.setLength(0);
+            }
+        } else if (INSTR_TEXT.equals(localName)) {
+            inInstrText = true;
         }
 
     }
@@ -374,6 +408,24 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             }
         }
         return -1;
+    }
+
+    /**
+     * Parses a HYPERLINK URL from instrText field code content.
+     * Field codes like: HYPERLINK "https://example.com"
+     *
+     * @param instrText the accumulated instrText content
+     * @return the URL if found, or null
+     */
+    private String parseHyperlinkFromInstrText(String instrText) {
+        if (instrText == null || instrText.isEmpty()) {
+            return null;
+        }
+        Matcher m = HYPERLINK_PATTERN.matcher(instrText.trim());
+        if (m.find()) {
+            return m.group(1);
+        }
+        return null;
     }
 
     @Override
@@ -441,6 +493,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             inRt = false;
         } else if (RUBY.equals(localName)) {
             handleEndOfRuby();
+        } else if (INSTR_TEXT.equals(localName)) {
+            inInstrText = false;
         }
     }
 
@@ -498,6 +552,9 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (inV) {
             appendToBuffer(ch, start, length);
             appendToBuffer(TAB_CHAR, 0, 1);
+        } else if (inInstrText && inField) {
+            // Accumulate instrText content for field code parsing (e.g., HYPERLINK)
+            instrTextBuffer.append(ch, start, length);
         }
     }
 

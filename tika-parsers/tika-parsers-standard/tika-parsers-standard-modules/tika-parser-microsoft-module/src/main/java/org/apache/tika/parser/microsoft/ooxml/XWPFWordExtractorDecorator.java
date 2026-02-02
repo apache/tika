@@ -23,6 +23,8 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.xml.namespace.QName;
 
 import com.microsoft.schemas.vml.impl.CTShapeImpl;
@@ -60,9 +62,13 @@ import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTBookmark;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTFldChar;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTObject;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTP;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTR;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTSectPr;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTText;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.STFldCharType;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
@@ -84,6 +90,9 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     // Part 3, Step 3
     private static final String LIST_DELIMITER = " ";
 
+    // Pattern to extract HYPERLINK URL from instrText field codes
+    private static final Pattern HYPERLINK_PATTERN =
+            Pattern.compile("HYPERLINK\\s{1,100}\"([^\"]{1,10000})\"", Pattern.CASE_INSENSITIVE);
 
     //include all parts that might have embedded objects
     private final static String[] MAIN_PART_RELATIONS =
@@ -240,8 +249,40 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         //hyperlinks may or may not have hyperlink ids
         String lastHyperlinkId = null;
         boolean inHyperlink = false;
+        // Track field-based hyperlinks (using instrText/fldChar)
+        FieldHyperlinkTracker fieldTracker = new FieldHyperlinkTracker();
+        boolean inFieldHyperlink = false;
+
         // Do the iruns
         for (IRunElement run : paragraph.getIRuns()) {
+            // Check for field-based hyperlinks first (instrText HYPERLINK)
+            if (run instanceof XWPFRun) {
+                XWPFRun xwpfRun = (XWPFRun) run;
+                boolean wasInFieldHyperlink = fieldTracker.isInFieldHyperlink();
+                String fieldUrl = extractFieldLinks(xwpfRun, fieldTracker);
+
+                // If we just entered a field hyperlink, open the anchor tag
+                if (fieldUrl != null && !inFieldHyperlink) {
+                    // Close any existing relationship-based hyperlink first
+                    if (inHyperlink) {
+                        FormattingUtils.closeStyleTags(xhtml, formattingState);
+                        xhtml.endElement("a");
+                        inHyperlink = false;
+                        lastHyperlinkId = null;
+                    }
+                    FormattingUtils.closeStyleTags(xhtml, formattingState);
+                    xhtml.startElement("a", "href", fieldUrl);
+                    inFieldHyperlink = true;
+                }
+
+                // If we just exited a field hyperlink, close the anchor tag
+                if (wasInFieldHyperlink && !fieldTracker.isInFieldHyperlink() && inFieldHyperlink) {
+                    FormattingUtils.closeStyleTags(xhtml, formattingState);
+                    xhtml.endElement("a");
+                    inFieldHyperlink = false;
+                }
+            }
+
             if (run instanceof XWPFHyperlinkRun) {
                 XWPFHyperlinkRun hyperlinkRun = (XWPFHyperlinkRun) run;
                 if (hyperlinkRun.getHyperlinkId() == null ||
@@ -283,6 +324,9 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         }
         FormattingUtils.closeStyleTags(xhtml, formattingState);
         if (inHyperlink) {
+            xhtml.endElement("a");
+        }
+        if (inFieldHyperlink) {
             xhtml.endElement("a");
         }
 
@@ -467,6 +511,109 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     private void processSDTRun(XWPFSDT run, XHTMLContentHandler xhtml)
             throws SAXException, XmlException, IOException {
         xhtml.characters(run.getContent().getText());
+    }
+
+    /**
+     * Extracts field-based hyperlinks from a run by examining fldChar and instrText elements.
+     * This handles HYPERLINK field codes that are not relationship-based.
+     *
+     * @param run the run to examine
+     * @param tracker the field hyperlink tracker maintaining state across runs
+     * @return the hyperlink URL if this run starts a hyperlink, null otherwise
+     */
+    private String extractFieldLinks(XWPFRun run, FieldHyperlinkTracker tracker) {
+        CTR ctr = run.getCTR();
+        try (XmlCursor cursor = ctr.newCursor()) {
+            if (cursor.toFirstChild()) {
+                do {
+                    String localName = cursor.getName().getLocalPart();
+                    if ("fldChar".equals(localName)) {
+                        XmlObject obj = cursor.getObject();
+                        if (obj instanceof CTFldChar) {
+                            CTFldChar fldChar = (CTFldChar) obj;
+                            STFldCharType.Enum fldType = fldChar.getFldCharType();
+                            if (fldType == STFldCharType.BEGIN) {
+                                tracker.startField();
+                            } else if (fldType == STFldCharType.SEPARATE) {
+                                return tracker.separate();
+                            } else if (fldType == STFldCharType.END) {
+                                tracker.endField();
+                            }
+                        }
+                    } else if ("instrText".equals(localName)) {
+                        XmlObject obj = cursor.getObject();
+                        if (obj instanceof CTText) {
+                            CTText text = (CTText) obj;
+                            tracker.addInstrText(text.getStringValue());
+                        }
+                    }
+                } while (cursor.toNextSibling());
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Parses a HYPERLINK URL from instrText field code content.
+     *
+     * @param instrText the accumulated instrText content
+     * @return the URL if found, or null
+     */
+    private static String parseHyperlinkFromInstrText(String instrText) {
+        if (instrText == null || instrText.isEmpty()) {
+            return null;
+        }
+        Matcher m = HYPERLINK_PATTERN.matcher(instrText.trim());
+        if (m.find()) {
+            return m.group(1);
+        }
+        return null;
+    }
+
+    /**
+     * Tracks field hyperlink state across multiple runs within a paragraph.
+     * Field codes span multiple runs: begin -> instrText -> separate -> text runs -> end
+     */
+    private static class FieldHyperlinkTracker {
+        private boolean inField = false;
+        private boolean inFieldHyperlink = false;
+        private final StringBuilder instrTextBuffer = new StringBuilder();
+
+        void startField() {
+            inField = true;
+            instrTextBuffer.setLength(0);
+        }
+
+        void addInstrText(String text) {
+            if (inField && text != null) {
+                instrTextBuffer.append(text);
+            }
+        }
+
+        /**
+         * Called when fldChar separate is encountered.
+         * @return the hyperlink URL if this is a HYPERLINK field, null otherwise
+         */
+        String separate() {
+            if (inField) {
+                String url = parseHyperlinkFromInstrText(instrTextBuffer.toString());
+                if (url != null) {
+                    inFieldHyperlink = true;
+                    return url;
+                }
+            }
+            return null;
+        }
+
+        void endField() {
+            inField = false;
+            inFieldHyperlink = false;
+            instrTextBuffer.setLength(0);
+        }
+
+        boolean isInFieldHyperlink() {
+            return inFieldHyperlink;
+        }
     }
 
     private void extractTable(XWPFTable table, XWPFListManager listManager,
