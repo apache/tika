@@ -55,7 +55,11 @@ import org.apache.tika.sax.XHTMLContentHandler;
 /**
  * Parser that uses an external program (like catdoc or pdf2txt) to extract
  * text content and metadata from a given document.
+ *
+ * @deprecated Use {@link org.apache.tika.parser.external2.ExternalParser} instead.
+ *             This class will be removed in a future version of Tika.
  */
+@Deprecated
 public class ExternalParser implements Parser {
 
     private static final Logger LOG = LoggerFactory.getLogger(ExternalParser.class);

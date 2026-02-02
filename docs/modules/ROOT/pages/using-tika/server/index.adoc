@@ -36,3 +36,53 @@ The server starts on port 9998 by default.
 == Topics
 
 * xref:using-tika/server/tls.adoc[TLS/SSL Configuration] - Secure your server with TLS and mutual authentication
+
+== Security Configuration
+
+=== Config Endpoint Protection
+
+By default, the `/config` endpoints that expose server configuration are disabled for security
+reasons. These endpoints can reveal sensitive information about your server configuration,
+including parser settings and system properties (see https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-3271[CVE-2015-3271]).
+
+The protected endpoints include:
+
+* `/config` - Returns the server's full configuration
+* `/config/parsers` - Returns configured parsers
+* `/config/detectors` - Returns configured detectors
+* `/config/mimeTypes` - Returns MIME type mappings
+
+=== Enabling Config Endpoints
+
+To enable these endpoints:
+
+[source,json]
+----
+{
+  "server": {
+    "enableUnsecureFeatures": true
+  }
+}
+----
+
+WARNING: Only enable `enableUnsecureFeatures` if you have secured access to Tika Server through
+network controls (firewalls, private subnets), a reverse proxy (nginx, Apache httpd), or
+xref:using-tika/server/tls.adoc[2-way TLS authentication]. Exposing config endpoints to
+untrusted networks can help attackers identify vulnerabilities and craft targeted attacks.
+
+=== Command Line Usage
+
+You can also enable unsecure features via command line:
+
+[source,bash]
+----
+java -jar tika-server-standard.jar --enableUnsecureFeatures
+----
+
+=== Security Best Practices
+
+1. **Keep config endpoints disabled** in production (default behavior)
+2. **Use network controls** to restrict access to the Tika Server (firewall rules, private subnets)
+3. **Consider TLS** for encrypted communication - see xref:using-tika/server/tls.adoc[TLS Configuration]
+4. **Run with minimal privileges** - don't run Tika Server as root
+5. **Monitor logs** for unusual access patterns

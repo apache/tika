@@ -37,10 +37,10 @@ with traditional calendars.
 |April 2025
 |End support for 2.x (and Java 8)
 
-|January 2026
+|March 2026
 |Release 4.0.0
 
-|June 2026
+|March 2027
 |End support for 3.x (and Java 11)
 |===
 
@@ -65,7 +65,7 @@ with traditional calendars.
 |4.x
 |17
 |jakarta
-|January 2026
+|March 2026
 |TBD
 
 |5.x

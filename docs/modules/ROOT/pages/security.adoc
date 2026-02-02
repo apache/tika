@@ -32,3 +32,50 @@ For information about known security vulnerabilities (CVEs) in Apache Tika and t
 remediation, please see:
 
 * https://tika.apache.org/security.html[Apache Tika Security Vulnerabilities]
+
+== External Command Security
+
+Apache Tika can be configured to use external system commands for certain operations,
+such as the `FileCommandDetector` and `ExternalParser` components.
+
+CAUTION: External command configuration should only be performed by trusted administrators.
+Never allow untrusted users to configure command paths or arguments.
+
+=== Security Best Practices
+
+1. **Restrict configuration access**: Only allow administrators to modify Tika configuration
+   files that specify external commands.
+
+2. **Use absolute paths**: Always configure external commands with absolute paths to prevent
+   PATH manipulation attacks.
+
+3. **Sandbox execution**: Consider running Tika in a container or sandbox environment to
+   limit the impact of any command execution vulnerabilities.
+
+4. **Audit command configuration**: Regularly review configured external commands and
+   their arguments.
+
+=== Affected Components
+
+* `FileCommandDetector`: Uses the system `file` command for MIME type detection
+* `ExternalParser`: Executes arbitrary external programs to extract content
+* `ExternalEmbedder`: Uses external tools to embed content
+
+== Credential Handling
+
+=== Password Storage in Memory
+
+Tika stores some credentials as Java String objects, which remain in memory until
+garbage collected. For environments with strict security requirements:
+
+1. **Use environment variables**: Configure credentials via environment variables
+   rather than configuration files where possible.
+
+2. **Use secret managers**: Integrate with HashiCorp Vault, AWS Secrets Manager,
+   or similar services for production deployments.
+
+3. **Enable encryption**: Use the AES encryption option in `HttpClientFactory`
+   for stored passwords.
+
+4. **Minimize credential scope**: Use credentials with minimum necessary privileges
+   and rotate them regularly.
