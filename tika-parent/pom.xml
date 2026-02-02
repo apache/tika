@@ -320,7 +320,7 @@
         See TIKA-2992.
     -->
     <asm.version>9.9.1</asm.version>
-    <azure.version>1.3.3</azure.version>
+    <azure.version>1.3.4</azure.version>
     <biz.aqute.version>7.1.0</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!--  used by POI, PDFBox and Jackcess encrypt ...try to sync -->
