@@ -53,10 +53,7 @@
       "basePath": "FETCHER_BASE_PATH",
       "countTotal": true,
       "fetcherId": "fsf",
-      "emitterId": "fse",
-      "onParseException": "EMIT",
-      "maxWaitMs": 600000,
-      "queueSize": 10000
+      "emitterId": "fse"
     }
   },
   "pipes": {

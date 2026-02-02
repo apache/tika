@@ -27,7 +27,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 
 import org.apache.commons.cli.CommandLine;
@@ -445,6 +444,18 @@ public class TikaServerProcess {
     }
 
     /**
+     * Determines if the /unpack endpoint is enabled based on configured endpoints.
+     */
+    private static boolean isUnpackEndpointEnabled(TikaServerConfig tikaServerConfig) {
+        List<String> endpoints = tikaServerConfig.getEndpoints();
+        // If no endpoints specified, all default endpoints are loaded (including unpack)
+        if (endpoints == null || endpoints.isEmpty()) {
+            return true;
+        }
+        return endpoints.contains("unpack");
+    }
+
+    /**
      * Initializes the PipesParsingHelper for pipes-based parsing with process isolation.
      * <p>
      * The PipesParser will be configured with PASSBACK_ALL emit strategy so that
@@ -452,21 +463,41 @@ public class TikaServerProcess {
      * <p>
      * If no config file is provided, a minimal default configuration will be created.
      * The plugin-roots will default to a "plugins" directory at the same level as the server jar.
+     * <p>
+     * A dedicated temp directory is created for input files, and a file-system-fetcher
+     * is configured with basePath pointing to that directory. This ensures child processes
+     * can only access files in the designated temp directory (security boundary).
      *
      * @param tikaServerConfig the server configuration
      * @return the PipesParsingHelper
      * @throws Exception if pipes initialization fails
      */
     private static PipesParsingHelper initPipesParsingHelper(TikaServerConfig tikaServerConfig) throws Exception {
-        // Load or create config
+        // Create dedicated temp directory for input files
+        Path inputTempDirectory = Files.createTempDirectory("tika-server-input-");
+        LOG.info("Created input temp directory: {}", inputTempDirectory);
+
+        // Only create unpack temp directory if /unpack endpoint is enabled
+        Path unpackTempDirectory = null;
+        if (isUnpackEndpointEnabled(tikaServerConfig)) {
+            unpackTempDirectory = Files.createTempDirectory("tika-server-unpack-");
+            LOG.info("Created unpack temp directory: {}", unpackTempDirectory);
+        }
+
+        // Load or create config, adding the fetcher (and emitter if unpack is enabled)
         Path configPath;
         if (tikaServerConfig.hasConfigFile()) {
             configPath = tikaServerConfig.getConfigPath();
         } else {
-            configPath = createDefaultConfig();
+            configPath = createDefaultConfig(inputTempDirectory, unpackTempDirectory);
         }
 
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(configPath);
+
+        // Ensure fetcher (and emitter if unpack is enabled) are configured with correct basePaths
+        configPath = ensureServerComponents(configPath, tikaJsonConfig,
+                inputTempDirectory, unpackTempDirectory);
+        tikaJsonConfig = TikaJsonConfig.load(configPath);
 
         // Load or create PipesConfig with defaults
         PipesConfig pipesConfig = tikaJsonConfig.deserialize("pipes", PipesConfig.class);
@@ -480,13 +511,13 @@ public class TikaServerProcess {
         // Create PipesParser
         PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, configPath);
 
-        // Try to determine unpack emitter basePath from config
-        Path unpackEmitterBasePath = getUnpackEmitterBasePath(tikaJsonConfig);
-
         // Create and return the helper
-        PipesParsingHelper helper = new PipesParsingHelper(pipesParser, pipesConfig, unpackEmitterBasePath);
+        PipesParsingHelper helper = new PipesParsingHelper(pipesParser, pipesConfig,
+                inputTempDirectory, unpackTempDirectory);
 
-        // Register shutdown hook to clean up PipesParser
+        // Register shutdown hook to clean up PipesParser and temp directories
+        final Path inputDirToClean = inputTempDirectory;
+        final Path unpackDirToClean = unpackTempDirectory;
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
                 LOG.info("Shutting down PipesParser");
@@ -494,62 +525,32 @@ public class TikaServerProcess {
             } catch (Exception e) {
                 LOG.warn("Error closing PipesParser", e);
             }
+            // Clean up temp directories
+            cleanupTempDirectory(inputDirToClean);
+            if (unpackDirToClean != null) {
+                cleanupTempDirectory(unpackDirToClean);
+            }
         }));
 
         return helper;
     }
 
-    /**
-     * Attempts to determine the basePath for the unpack-emitter from the config.
-     * Returns null if the emitter is not configured or basePath cannot be determined.
-     */
-    private static Path getUnpackEmitterBasePath(TikaJsonConfig tikaJsonConfig) {
+    private static void cleanupTempDirectory(Path tempDir) {
         try {
-            java.util.Map<String, com.fasterxml.jackson.databind.JsonNode> emitters =
-                    tikaJsonConfig.getComponents("emitters");
-            if (emitters == null || !emitters.containsKey(PipesParsingHelper.UNPACK_EMITTER_ID)) {
-                LOG.debug("No unpack-emitter configured, UNPACK mode will not be available");
-                return null;
+            if (Files.exists(tempDir)) {
+                Files.walk(tempDir)
+                        .sorted((a, b) -> -a.compareTo(b)) // Delete files before directories
+                        .forEach(p -> {
+                            try {
+                                Files.deleteIfExists(p);
+                            } catch (IOException e) {
+                                LOG.warn("Failed to delete: {}", p);
+                            }
+                        });
             }
-
-            com.fasterxml.jackson.databind.JsonNode emitterConfig =
-                    emitters.get(PipesParsingHelper.UNPACK_EMITTER_ID);
-            com.fasterxml.jackson.databind.JsonNode basePath = findBasePath(emitterConfig);
-            if (basePath != null && basePath.isTextual()) {
-                Path path = Path.of(basePath.asText());
-                if (Files.isDirectory(path)) {
-                    LOG.info("UNPACK mode enabled with basePath: {}", path);
-                    return path;
-                } else {
-                    LOG.warn("unpack-emitter basePath does not exist: {}", path);
-                }
-            }
-        } catch (Exception e) {
-            LOG.warn("Failed to determine unpack-emitter basePath", e);
+        } catch (IOException e) {
+            LOG.warn("Error cleaning up temp directory: {}", tempDir, e);
         }
-        return null;
-    }
-
-    /**
-     * Recursively searches for "basePath" in a JSON node.
-     */
-    private static com.fasterxml.jackson.databind.JsonNode findBasePath(
-            com.fasterxml.jackson.databind.JsonNode node) {
-        if (node == null) {
-            return null;
-        }
-        if (node.has("basePath")) {
-            return node.get("basePath");
-        }
-        for (com.fasterxml.jackson.databind.JsonNode child : node) {
-            if (child.isObject()) {
-                com.fasterxml.jackson.databind.JsonNode result = findBasePath(child);
-                if (result != null) {
-                    return result;
-                }
-            }
-        }
-        return null;
     }
 
     /**
@@ -559,34 +560,148 @@ public class TikaServerProcess {
 
     /**
      * Creates a default configuration file with plugin-roots set to the "plugins" directory
-     * relative to the current working directory.
+     * relative to the current working directory, the tika-server-fetcher configured
+     * with basePath pointing to the input temp directory, and optionally the unpack-emitter
+     * configured with basePath pointing to the unpack temp directory.
+     *
+     * @param inputTempDirectory the temp directory for input files
+     * @param unpackTempDirectory the temp directory for unpack output files (may be null)
      */
-    private static Path createDefaultConfig() throws IOException {
+    private static Path createDefaultConfig(Path inputTempDirectory,
+                                            Path unpackTempDirectory) throws IOException {
         Path pluginsDir = Path.of(DEFAULT_PLUGINS_DIR).toAbsolutePath();
 
-        String configJson = String.format(Locale.ROOT, """
-            {
-              "fetchers": {
-                "file-system-fetcher": {
-                  "file-system-fetcher": {
-                    "allowAbsolutePaths": true
-                  }
-                }
-              },
-              "pipes": {
-                "numClients": 4,
-                "timeoutMillis": 60000
-              },
-              "plugin-roots": "%s"
-            }
-            """, pluginsDir.toString().replace("\\", "/"));
+        com.fasterxml.jackson.databind.ObjectMapper mapper =
+                new com.fasterxml.jackson.databind.ObjectMapper();
+        com.fasterxml.jackson.databind.node.ObjectNode rootNode = mapper.createObjectNode();
+
+        // Create fetchers section
+        com.fasterxml.jackson.databind.node.ObjectNode fetchersNode = mapper.createObjectNode();
+        com.fasterxml.jackson.databind.node.ObjectNode fetcherNode = mapper.createObjectNode();
+        com.fasterxml.jackson.databind.node.ObjectNode fetcherTypeConfig = mapper.createObjectNode();
+        fetcherTypeConfig.put("basePath", inputTempDirectory.toAbsolutePath().toString());
+        fetcherNode.set("file-system-fetcher", fetcherTypeConfig);
+        fetchersNode.set(PipesParsingHelper.DEFAULT_FETCHER_ID, fetcherNode);
+        rootNode.set("fetchers", fetchersNode);
+
+        // Create emitters section if unpack is enabled
+        if (unpackTempDirectory != null) {
+            com.fasterxml.jackson.databind.node.ObjectNode emittersNode = mapper.createObjectNode();
+            com.fasterxml.jackson.databind.node.ObjectNode emitterNode = mapper.createObjectNode();
+            com.fasterxml.jackson.databind.node.ObjectNode emitterTypeConfig = mapper.createObjectNode();
+            emitterTypeConfig.put("basePath", unpackTempDirectory.toAbsolutePath().toString());
+            emitterTypeConfig.put("onExists", "REPLACE");
+            emitterNode.set("file-system-emitter", emitterTypeConfig);
+            emittersNode.set(PipesParsingHelper.UNPACK_EMITTER_ID, emitterNode);
+            rootNode.set("emitters", emittersNode);
+        }
+
+        // Create pipes section
+        com.fasterxml.jackson.databind.node.ObjectNode pipesNode = mapper.createObjectNode();
+        pipesNode.put("numClients", 4);
+        pipesNode.put("timeoutMillis", 60000);
+        rootNode.set("pipes", pipesNode);
+
+        // Set plugin-roots
+        rootNode.put("plugin-roots", pluginsDir.toString());
 
         Path tempConfig = Files.createTempFile("tika-server-default-config-", ".json");
-        Files.writeString(tempConfig, configJson);
+        mapper.writerWithDefaultPrettyPrinter().writeValue(tempConfig.toFile(), rootNode);
         tempConfig.toFile().deleteOnExit();
 
         LOG.info("Created default config with plugin-roots: {}", pluginsDir);
         return tempConfig;
+    }
+
+    /**
+     * Ensures the tika-server-fetcher exists in the config with basePath pointing to
+     * the input temp directory. If unpackTempDirectory is provided, also ensures the
+     * unpack-emitter exists.
+     * <p>
+     * The fetcher is used by legacy endpoints (/tika, /rmeta, etc.) to read uploaded files
+     * that have been spooled to the input temp directory.
+     * <p>
+     * The emitter is used by /unpack endpoints to write unpacked files that are then
+     * streamed back to the client.
+     * <p>
+     * Both components are configured with basePath (not allowAbsolutePaths) so child processes
+     * can only access files within their designated temp directories (security boundary).
+     *
+     * @param originalConfigPath the original config file path
+     * @param tikaJsonConfig the parsed Tika JSON config
+     * @param inputTempDirectory the temp directory for input files
+     * @param unpackTempDirectory the temp directory for unpack output files (may be null)
+     * @return the config path to use (always a new merged config with fetcher and optionally emitter)
+     */
+    private static Path ensureServerComponents(Path originalConfigPath, TikaJsonConfig tikaJsonConfig,
+                                               Path inputTempDirectory,
+                                               Path unpackTempDirectory) throws IOException {
+        LOG.info("Configuring {} with basePath={}", PipesParsingHelper.DEFAULT_FETCHER_ID, inputTempDirectory);
+
+        // Read original config as a mutable tree
+        com.fasterxml.jackson.databind.ObjectMapper mapper =
+                new com.fasterxml.jackson.databind.ObjectMapper();
+        com.fasterxml.jackson.databind.node.ObjectNode rootNode =
+                (com.fasterxml.jackson.databind.node.ObjectNode) mapper.readTree(originalConfigPath.toFile());
+
+        // Get or create the fetchers section
+        com.fasterxml.jackson.databind.node.ObjectNode fetchersNode;
+        if (rootNode.has("fetchers") && rootNode.get("fetchers").isObject()) {
+            fetchersNode = (com.fasterxml.jackson.databind.node.ObjectNode) rootNode.get("fetchers");
+        } else {
+            fetchersNode = mapper.createObjectNode();
+            rootNode.set("fetchers", fetchersNode);
+        }
+
+        // Create the fetcher config with basePath
+        // Structure: "tika-server-fetcher": { "file-system-fetcher": { "basePath": "/tmp/..." } }
+        com.fasterxml.jackson.databind.node.ObjectNode fetcherTypeConfig = mapper.createObjectNode();
+        fetcherTypeConfig.put("basePath", inputTempDirectory.toAbsolutePath().toString());
+
+        com.fasterxml.jackson.databind.node.ObjectNode fetcherNode = mapper.createObjectNode();
+        fetcherNode.set("file-system-fetcher", fetcherTypeConfig);
+
+        fetchersNode.set(PipesParsingHelper.DEFAULT_FETCHER_ID, fetcherNode);
+
+        // Only add unpack-emitter if unpack endpoint is enabled
+        if (unpackTempDirectory != null) {
+            LOG.info("Configuring {} with basePath={}", PipesParsingHelper.UNPACK_EMITTER_ID, unpackTempDirectory);
+
+            // Get or create the emitters section
+            com.fasterxml.jackson.databind.node.ObjectNode emittersNode;
+            if (rootNode.has("emitters") && rootNode.get("emitters").isObject()) {
+                emittersNode = (com.fasterxml.jackson.databind.node.ObjectNode) rootNode.get("emitters");
+            } else {
+                emittersNode = mapper.createObjectNode();
+                rootNode.set("emitters", emittersNode);
+            }
+
+            // Create the emitter config with basePath
+            // Structure: "unpack-emitter": { "file-system-emitter": { "basePath": "/tmp/...", "onExists": "REPLACE" } }
+            com.fasterxml.jackson.databind.node.ObjectNode emitterTypeConfig = mapper.createObjectNode();
+            emitterTypeConfig.put("basePath", unpackTempDirectory.toAbsolutePath().toString());
+            emitterTypeConfig.put("onExists", "REPLACE");
+
+            com.fasterxml.jackson.databind.node.ObjectNode emitterNode = mapper.createObjectNode();
+            emitterNode.set("file-system-emitter", emitterTypeConfig);
+
+            emittersNode.set(PipesParsingHelper.UNPACK_EMITTER_ID, emitterNode);
+        }
+
+        // Ensure plugin-roots is set (required for child processes)
+        if (!rootNode.has("plugin-roots")) {
+            Path pluginsDir = Path.of(DEFAULT_PLUGINS_DIR).toAbsolutePath();
+            rootNode.put("plugin-roots", pluginsDir.toString());
+            LOG.info("Added default plugin-roots: {}", pluginsDir);
+        }
+
+        // Write merged config to temp file
+        Path mergedConfig = Files.createTempFile("tika-server-merged-config-", ".json");
+        mapper.writerWithDefaultPrettyPrinter().writeValue(mergedConfig.toFile(), rootNode);
+        mergedConfig.toFile().deleteOnExit();
+
+        LOG.debug("Created merged config: {}", mergedConfig);
+        return mergedConfig;
     }
 
     private static class ServerDetails {

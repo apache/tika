@@ -17,7 +17,6 @@
 package org.apache.tika.async.cli;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -52,30 +51,59 @@ public class PluginsWriter {
             }
         }
         try {
-            String jsonTemplate = new String(getClass().getResourceAsStream("/config-template.json").readAllBytes(), StandardCharsets.UTF_8);
-            String json = jsonTemplate.replace("FETCHER_BASE_PATH", baseInput.toAbsolutePath().toString());
-            json = json.replace("EMITTER_BASE_PATH", baseOutput.toAbsolutePath().toString());
-            String pluginString = StringUtils.isBlank(simpleAsyncConfig.getPluginsDir()) ? "plugins" : simpleAsyncConfig.getPluginsDir();
+            ObjectMapper objectMapper = TikaObjectMapperFactory.getMapper();
+            ObjectNode root = (ObjectNode) objectMapper.readTree(
+                    getClass().getResourceAsStream("/config-template.json"));
+
+            // Set fetcher basePath
+            ObjectNode fetchers = (ObjectNode) root.get("fetchers");
+            if (fetchers != null && fetchers.has("fsf")) {
+                ObjectNode fsf = (ObjectNode) fetchers.get("fsf");
+                if (fsf != null && fsf.has("file-system-fetcher")) {
+                    ObjectNode fsFetcher = (ObjectNode) fsf.get("file-system-fetcher");
+                    fsFetcher.put("basePath", baseInput.toAbsolutePath().toString());
+                }
+            }
+
+            // Set emitter basePath
+            ObjectNode emitters = (ObjectNode) root.get("emitters");
+            if (emitters != null && emitters.has("fse")) {
+                ObjectNode fse = (ObjectNode) emitters.get("fse");
+                if (fse != null && fse.has("file-system-emitter")) {
+                    ObjectNode fsEmitter = (ObjectNode) fse.get("file-system-emitter");
+                    fsEmitter.put("basePath", baseOutput.toAbsolutePath().toString());
+                }
+            }
+
+            // Set pipes-iterator basePath
+            ObjectNode pipesIterator = (ObjectNode) root.get("pipes-iterator");
+            if (pipesIterator != null && pipesIterator.has("file-system-pipes-iterator")) {
+                ObjectNode fsIterator = (ObjectNode) pipesIterator.get("file-system-pipes-iterator");
+                fsIterator.put("basePath", baseInput.toAbsolutePath().toString());
+            }
+
+            // Set plugin-roots
+            String pluginString = StringUtils.isBlank(simpleAsyncConfig.getPluginsDir()) ?
+                    "plugins" : simpleAsyncConfig.getPluginsDir();
             Path plugins = Paths.get(pluginString);
             if (Files.isDirectory(plugins)) {
                 pluginString = plugins.toAbsolutePath().toString();
             }
-            json = json.replace("PLUGIN_ROOTS", pluginString).replace("\\", "/");
+            root.put("plugin-roots", pluginString);
+
+            // Set pipes config
             PipesConfig pipesConfig = new PipesConfig();
-
-            pipesConfig.setNumClients(simpleAsyncConfig.getNumClients() == null ? 2 : simpleAsyncConfig.getNumClients());
-
+            pipesConfig.setNumClients(simpleAsyncConfig.getNumClients() == null ?
+                    2 : simpleAsyncConfig.getNumClients());
             if (simpleAsyncConfig.getXmx() != null) {
                 pipesConfig.setForkedJvmArgs(new ArrayList<>(List.of(simpleAsyncConfig.getXmx())));
             }
             if (simpleAsyncConfig.getTimeoutMs() != null) {
                 pipesConfig.setTimeoutMillis(simpleAsyncConfig.getTimeoutMs());
             }
-            ObjectMapper objectMapper = TikaObjectMapperFactory.getMapper();
-            ObjectNode root = (ObjectNode) objectMapper.readTree(json.getBytes(StandardCharsets.UTF_8));
             root.set("pipes", objectMapper.valueToTree(pipesConfig));
 
-            Files.writeString(output, root.toString());
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(output.toFile(), root);
         } catch (Exception e) {
             throw new IOException(e);
         }

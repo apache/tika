@@ -31,3 +31,20 @@ See the xref:roadmap.adoc[Roadmap] for version timelines and support schedules.
 
 * xref:migration-to-4x/design-notes-4x.adoc[Design Notes] - Architectural decisions and design rationale
 * xref:migration-to-4x/serialization-4x.adoc[Serialization] - JSON serialization design and implementation details
+
+== TODOs / Missing Features in 4.x
+
+The following features from 3.x are not yet implemented in 4.x:
+
+=== Config Serialization
+
+The following tika-app options for dumping configuration are not yet available:
+
+* `--dump-minimal-config` - Print minimal TikaConfig
+* `--dump-current-config` - Print current TikaConfig
+* `--dump-static-config` - Print static config
+* `--dump-static-full-config` - Print static explicit config
+
+These require completing the JSON serialization support for TikaConfig objects. The underlying serialization infrastructure exists (see xref:migration-to-4x/serialization-4x.adoc[Serialization]) but the CLI integration is pending.
+
+*Workaround:* Manually create JSON config files using the templates in `tika-pipes/tika-async-cli/src/main/resources/config-template.json` as a starting point.

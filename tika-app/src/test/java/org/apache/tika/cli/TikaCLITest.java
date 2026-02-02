@@ -568,6 +568,57 @@ public class TikaCLITest {
                 "Should have at least 2 files (json + embedded), got " + fileNames.size() + ": " + fileNames);
     }
 
+    /**
+     * Test that --extract-dir option correctly sets the output directory
+     * for both -z (shallow) and -Z (recursive) extraction modes.
+     */
+    @Test
+    public void testExtractDirOption() throws Exception {
+        Path input = Paths.get(new URI(resourcePrefix + "/test_recursive_embedded.docx"));
+        Path pluginsDir = Paths.get("target/plugins");
+
+        // Test with -z (shallow extraction)
+        String[] params = {"-z",
+                "--extract-dir=" + extractDir.toAbsolutePath(),
+                "-p", pluginsDir.toAbsolutePath().toString(),
+                input.toAbsolutePath().toString()};
+
+        TikaCLI.main(params);
+
+        Set<String> fileNames = getFileNames(extractDir);
+
+        // Should have extracted files in the specified directory, not current dir
+        assertTrue(fileNames.stream().anyMatch(f -> f.endsWith(".json")),
+                "Should have a .json metadata file in extractDir, got: " + fileNames);
+        assertTrue(fileNames.stream().anyMatch(f -> f.contains("-embed/")),
+                "Should have extracted embedded files in extractDir, got: " + fileNames);
+    }
+
+    /**
+     * Test that --extract-dir option works with -Z (recursive) extraction.
+     */
+    @Test
+    public void testExtractDirOptionRecursive() throws Exception {
+        Path input = Paths.get(new URI(resourcePrefix + "/test_recursive_embedded.docx"));
+        Path pluginsDir = Paths.get("target/plugins");
+
+        // Test with -Z (recursive extraction)
+        String[] params = {"-Z",
+                "--extract-dir=" + extractDir.toAbsolutePath(),
+                "-p", pluginsDir.toAbsolutePath().toString(),
+                input.toAbsolutePath().toString()};
+
+        TikaCLI.main(params);
+
+        Set<String> fileNames = getFileNames(extractDir);
+
+        // Should have extracted files in the specified directory
+        assertTrue(fileNames.stream().anyMatch(f -> f.endsWith(".json")),
+                "Should have a .json metadata file in extractDir, got: " + fileNames);
+        assertTrue(fileNames.stream().anyMatch(f -> f.contains("-embed/")),
+                "Should have extracted embedded files in extractDir, got: " + fileNames);
+    }
+
     @Test
     public void testDefaultConfigException() throws Exception {
         //default xml parser will throw TikaException
