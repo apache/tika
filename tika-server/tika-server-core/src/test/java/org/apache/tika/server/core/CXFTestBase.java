@@ -196,7 +196,12 @@ public abstract class CXFTestBase {
 
             this.tika = TikaLoader.load(tmp);
 
+            // Create input temp directory for pipes-based parsing
+            Path inputTempDirectory = Files.createTempDirectory("tika-server-test-input-");
+
             // Initialize PipesParsingHelper for pipes-based parsing
+            // Merge the fetcher config with basePath pointing to the temp directory
+            this.pipesConfigPath = mergeFetcherConfig(this.pipesConfigPath, inputTempDirectory);
             TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(this.pipesConfigPath);
             PipesConfig pipesConfig = tikaJsonConfig.deserialize("pipes", PipesConfig.class);
             if (pipesConfig == null) {
@@ -204,7 +209,8 @@ public abstract class CXFTestBase {
             }
             pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.PASSBACK_ALL));
             this.pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, this.pipesConfigPath);
-            PipesParsingHelper pipesParsingHelper = new PipesParsingHelper(this.pipesParser, pipesConfig, getUnpackEmitterBasePath());
+            PipesParsingHelper pipesParsingHelper = new PipesParsingHelper(this.pipesParser, pipesConfig,
+                    inputTempDirectory, getUnpackEmitterBasePath());
 
             TikaResource.init(tika, new ServerStatus(), pipesParsingHelper);
         } finally {
@@ -255,6 +261,37 @@ public abstract class CXFTestBase {
         pipes.set("emitStrategy", emitStrategy);
 
         Path tempConfig = Files.createTempFile("tika-server-pipes-", ".json");
+        mapper.writerWithDefaultPrettyPrinter().writeValue(tempConfig.toFile(), root);
+        return tempConfig;
+    }
+
+    /**
+     * Merges the tika-server-fetcher configuration into the pipes config.
+     * The fetcher is configured with basePath pointing to the input temp directory.
+     */
+    private Path mergeFetcherConfig(Path configPath, Path inputTempDirectory) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        com.fasterxml.jackson.databind.node.ObjectNode root =
+                (com.fasterxml.jackson.databind.node.ObjectNode) mapper.readTree(configPath.toFile());
+
+        // Get or create fetchers section
+        com.fasterxml.jackson.databind.node.ObjectNode fetchers =
+                (com.fasterxml.jackson.databind.node.ObjectNode) root.get("fetchers");
+        if (fetchers == null) {
+            fetchers = mapper.createObjectNode();
+            root.set("fetchers", fetchers);
+        }
+
+        // Create the tika-server-fetcher with basePath
+        com.fasterxml.jackson.databind.node.ObjectNode fetcherTypeConfig = mapper.createObjectNode();
+        fetcherTypeConfig.put("basePath", inputTempDirectory.toAbsolutePath().toString());
+
+        com.fasterxml.jackson.databind.node.ObjectNode fetcherNode = mapper.createObjectNode();
+        fetcherNode.set("file-system-fetcher", fetcherTypeConfig);
+
+        fetchers.set(PipesParsingHelper.DEFAULT_FETCHER_ID, fetcherNode);
+
+        Path tempConfig = Files.createTempFile("tika-server-pipes-fetcher-", ".json");
         mapper.writerWithDefaultPrettyPrinter().writeValue(tempConfig.toFile(), root);
         return tempConfig;
     }

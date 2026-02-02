@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -50,18 +49,9 @@ import org.apache.tika.server.core.TikaServerParseException;
  * Helper class for pipes-based parsing in tika-server endpoints.
  * Handles temp file management, FetchEmitTuple creation, and result processing.
  * <p>
- * To use pipes-based parsing, your tika-config.json must include a file-system fetcher
- * with allowAbsolutePaths enabled:
- * <pre>
- * {
- *   "fetchers": {
- *     "file-system-fetcher": {
- *       "class": "org.apache.tika.pipes.fetcher.fs.FileSystemFetcher",
- *       "allowAbsolutePaths": true
- *     }
- *   }
- * }
- * </pre>
+ * The helper manages a dedicated temp directory for input files. A file-system-fetcher
+ * is configured with basePath pointing to this directory, ensuring child processes
+ * can only access files within the designated temp directory (no absolute paths).
  */
 public class PipesParsingHelper {
 
@@ -69,9 +59,9 @@ public class PipesParsingHelper {
 
     /**
      * The fetcher ID used for reading temp files.
-     * This fetcher must be configured in the JSON config with allowAbsolutePaths=true.
+     * This fetcher is configured with basePath = inputTempDirectory.
      */
-    public static final String DEFAULT_FETCHER_ID = "file-system-fetcher";
+    public static final String DEFAULT_FETCHER_ID = "tika-server-fetcher";
 
     private final PipesParser pipesParser;
     private final PipesConfig pipesConfig;
@@ -83,33 +73,42 @@ public class PipesParsingHelper {
      *
      * @param pipesParser the PipesParser instance
      * @param pipesConfig the PipesConfig instance
+     * @param inputTempDirectory the temp directory for input files. The file-system-fetcher
+     *                           is configured with basePath = this directory.
      * @param unpackEmitterBasePath the basePath where the unpack-emitter writes files.
      *                              This is where the server will find the zip files created
      *                              by UNPACK mode. May be null if UNPACK mode won't be used.
      */
-    public PipesParsingHelper(PipesParser pipesParser, PipesConfig pipesConfig, Path unpackEmitterBasePath) {
+    public PipesParsingHelper(PipesParser pipesParser, PipesConfig pipesConfig,
+                              Path inputTempDirectory, Path unpackEmitterBasePath) {
         this.pipesParser = pipesParser;
         this.pipesConfig = pipesConfig;
+        this.inputTempDirectory = inputTempDirectory;
         this.unpackEmitterBasePath = unpackEmitterBasePath;
 
-        // Determine input temp directory
-        String configTempDir = pipesConfig.getTempDirectory();
-        if (configTempDir != null && !configTempDir.isBlank()) {
-            this.inputTempDirectory = Paths.get(configTempDir);
-            if (!Files.isDirectory(this.inputTempDirectory)) {
-                throw new IllegalArgumentException(
-                        "Configured tempDirectory does not exist or is not a directory: " + configTempDir);
-            }
-        } else {
-            this.inputTempDirectory = null; // Use system default
+        if (inputTempDirectory == null || !Files.isDirectory(inputTempDirectory)) {
+            throw new IllegalArgumentException(
+                    "inputTempDirectory must be a valid directory: " + inputTempDirectory);
         }
+        LOG.info("PipesParsingHelper initialized with inputTempDirectory: {}", inputTempDirectory);
+    }
+
+    /**
+     * Gets the input temp directory path.
+     * @return the input temp directory
+     */
+    public Path getInputTempDirectory() {
+        return inputTempDirectory;
     }
 
     /**
      * Parses content using pipes-based parsing with process isolation.
      * <p>
-     * The TikaInputStream should already be spooled to a temp file via {@link TikaInputStream#getPath()}.
-     * The caller is responsible for closing the TikaInputStream, which will clean up any temp files.
+     * This method spools the input to the dedicated temp directory and uses a relative
+     * filename in the FetchKey. The file-system-fetcher is configured with basePath
+     * pointing to this directory, so the child process can only access files there.
+     * <p>
+     * The caller is responsible for closing the TikaInputStream.
      *
      * @param tis the TikaInputStream containing the content to parse
      * @param metadata metadata to pass to the parser (may include filename, content-type, etc.)
@@ -122,17 +121,22 @@ public class PipesParsingHelper {
     public List<Metadata> parse(TikaInputStream tis, Metadata metadata,
                                  ParseContext parseContext, ParseMode parseMode) throws IOException {
         String requestId = UUID.randomUUID().toString();
+        Path tempFile = null;
 
         try {
-            // Get the backing file path from the spooled TikaInputStream
-            Path inputFile = tis.getPath();
-            LOG.debug("parse: using file {} ({} bytes)", inputFile, Files.size(inputFile));
+            // Spool input to our dedicated temp directory with proper suffix
+            String suffix = getSuffix(metadata);
+            tempFile = Files.createTempFile(inputTempDirectory, "tika-", suffix);
+            Files.copy(tis, tempFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+            String relativeName = tempFile.getFileName().toString();
+            LOG.debug("parse: spooled to {} ({} bytes)", relativeName, Files.size(tempFile));
 
             // Set parse mode in context
             parseContext.set(ParseMode.class, parseMode);
 
-            // Create FetchEmitTuple - use NO_EMIT since we're using PASSBACK_ALL
-            FetchKey fetchKey = new FetchKey(DEFAULT_FETCHER_ID, inputFile.toAbsolutePath().toString());
+            // Create FetchEmitTuple with relative filename (basePath is configured in fetcher)
+            FetchKey fetchKey = new FetchKey(DEFAULT_FETCHER_ID, relativeName);
 
             FetchEmitTuple tuple = new FetchEmitTuple(
                     requestId,
@@ -153,7 +157,31 @@ public class PipesParsingHelper {
             throw new TikaServerParseException("Parsing interrupted");
         } catch (PipesException e) {
             throw new TikaServerParseException(e);
+        } finally {
+            // Clean up temp file
+            if (tempFile != null) {
+                try {
+                    Files.deleteIfExists(tempFile);
+                } catch (IOException e) {
+                    LOG.warn("Failed to delete temp file: {}", tempFile, e);
+                }
+            }
         }
+    }
+
+    /**
+     * Extracts file suffix from metadata (resource name or content-type).
+     */
+    private String getSuffix(Metadata metadata) {
+        String resourceName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+        if (resourceName != null) {
+            int lastDot = resourceName.lastIndexOf('.');
+            if (lastDot > 0 && lastDot < resourceName.length() - 1) {
+                return resourceName.substring(lastDot);
+            }
+        }
+        // Default suffix
+        return ".tmp";
     }
 
     /**
@@ -260,10 +288,11 @@ public class PipesParsingHelper {
      * extracted embedded documents.
      * <p>
      * This method:
-     * 1. Configures UnpackConfig with zipEmbeddedFiles=true
-     * 2. The pipes child process extracts embedded files and creates a zip
-     * 3. The zip is emitted to the configured file-system emitter
-     * 4. Returns the path to the zip file for streaming
+     * 1. Spools input to the dedicated temp directory
+     * 2. Configures UnpackConfig with zipEmbeddedFiles=true
+     * 3. The pipes child process extracts embedded files and creates a zip
+     * 4. The zip is emitted to the configured file-system emitter
+     * 5. Returns the path to the zip file for streaming
      * <p>
      * The caller is responsible for deleting the zip file after streaming.
      *
@@ -277,42 +306,47 @@ public class PipesParsingHelper {
     public UnpackResult parseUnpack(TikaInputStream tis, Metadata metadata,
                                     ParseContext parseContext, boolean saveAll) throws IOException {
         String requestId = UUID.randomUUID().toString();
+        Path tempFile = null;
 
-        // Get the backing file path from the spooled TikaInputStream
-        Path inputFile = tis.getPath();
-        LOG.debug("parseUnpack: using file {} ({} bytes), requestId={}",
-                inputFile, Files.size(inputFile), requestId);
+        try {
+            // Spool input to our dedicated temp directory with proper suffix
+            String suffix = getSuffix(metadata);
+            tempFile = Files.createTempFile(inputTempDirectory, "tika-unpack-", suffix);
+            Files.copy(tis, tempFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 
-        // Set parse mode to UNPACK
-        parseContext.set(ParseMode.class, ParseMode.UNPACK);
+            String relativeName = tempFile.getFileName().toString();
+            LOG.debug("parseUnpack: spooled to {} ({} bytes), requestId={}",
+                    relativeName, Files.size(tempFile), requestId);
 
-        // Configure UnpackConfig - use existing or create new
-        UnpackConfig unpackConfig = parseContext.get(UnpackConfig.class);
-        if (unpackConfig == null) {
-            unpackConfig = new UnpackConfig();
-        }
+            // Set parse mode to UNPACK
+            parseContext.set(ParseMode.class, ParseMode.UNPACK);
 
-        // Enable zip creation in the child process
-        unpackConfig.setZipEmbeddedFiles(true);
+            // Configure UnpackConfig - use existing or create new
+            UnpackConfig unpackConfig = parseContext.get(UnpackConfig.class);
+            if (unpackConfig == null) {
+                unpackConfig = new UnpackConfig();
+            }
 
-        // Set suffix strategy to DETECTED so files get their proper extensions (e.g., .wav, .jpg)
-        unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
+            // Enable zip creation in the child process
+            unpackConfig.setZipEmbeddedFiles(true);
 
-        // Set emitter to our file-system emitter
-        unpackConfig.setEmitter(UNPACK_EMITTER_ID);
+            // Set suffix strategy to DETECTED so files get their proper extensions (e.g., .wav, .jpg)
+            unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
 
-        // Include original document if saveAll is requested
-        if (saveAll) {
-            unpackConfig.setIncludeOriginal(true);
-            unpackConfig.setIncludeMetadataInZip(true);
-        }
+            // Set emitter to our file-system emitter
+            unpackConfig.setEmitter(UNPACK_EMITTER_ID);
 
-        parseContext.set(UnpackConfig.class, unpackConfig);
+            // Include original document if saveAll is requested
+            if (saveAll) {
+                unpackConfig.setIncludeOriginal(true);
+                unpackConfig.setIncludeMetadataInZip(true);
+            }
 
-        // Create FetchEmitTuple - the emitKey will be used to determine the zip file location
-        // The zip file will be written to: emitter.basePath + "/" + emitKey + "-embedded.zip"
-        FetchKey fetchKey = new FetchKey(DEFAULT_FETCHER_ID, inputFile.toAbsolutePath().toString());
-        EmitKey emitKey = new EmitKey(UNPACK_EMITTER_ID, requestId);
+            parseContext.set(UnpackConfig.class, unpackConfig);
+
+            // Create FetchEmitTuple with relative filename (basePath is configured in fetcher)
+            FetchKey fetchKey = new FetchKey(DEFAULT_FETCHER_ID, relativeName);
+            EmitKey emitKey = new EmitKey(UNPACK_EMITTER_ID, requestId);
 
         FetchEmitTuple tuple = new FetchEmitTuple(
                 requestId,
@@ -322,70 +356,80 @@ public class PipesParsingHelper {
                 parseContext
         );
 
-        // Execute parse via pipes
-        PipesResult result;
-        try {
-            result = pipesParser.parse(tuple);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new TikaServerParseException("Parsing interrupted");
-        } catch (PipesException e) {
-            throw new TikaServerParseException(e);
-        }
+            // Execute parse via pipes
+            PipesResult result;
+            try {
+                result = pipesParser.parse(tuple);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new TikaServerParseException("Parsing interrupted");
+            } catch (PipesException e) {
+                throw new TikaServerParseException(e);
+            }
 
-        // Check for errors
-        if (result.isProcessCrash() || result.isFatal() || result.isInitializationFailure()) {
-            LOG.warn("UNPACK parse failed: {} - {}", result.status(), result.message());
-            throw new WebApplicationException(
-                    "Parse failed: " + result.status(),
-                    mapStatusToHttpResponse(result.status()));
-        }
+            // Check for errors
+            if (result.isProcessCrash() || result.isFatal() || result.isInitializationFailure()) {
+                LOG.warn("UNPACK parse failed: {} - {}", result.status(), result.message());
+                throw new WebApplicationException(
+                        "Parse failed: " + result.status(),
+                        mapStatusToHttpResponse(result.status()));
+            }
 
-        if (result.isTaskException()) {
-            LOG.warn("UNPACK task exception: {} - {}", result.status(), result.message());
-            throw new WebApplicationException(
-                    "Parse failed: " + result.message(),
-                    Response.Status.INTERNAL_SERVER_ERROR);
-        }
+            if (result.isTaskException()) {
+                LOG.warn("UNPACK task exception: {} - {}", result.status(), result.message());
+                throw new WebApplicationException(
+                        "Parse failed: " + result.message(),
+                        Response.Status.INTERNAL_SERVER_ERROR);
+            }
 
-        // Get metadata list from result
-        List<Metadata> metadataList = Collections.emptyList();
-        EmitData emitData = result.emitData();
-        if (emitData != null && emitData.getMetadataList() != null) {
-            metadataList = emitData.getMetadataList();
-        }
+            // Get metadata list from result
+            List<Metadata> metadataList = Collections.emptyList();
+            EmitData emitData = result.emitData();
+            if (emitData != null && emitData.getMetadataList() != null) {
+                metadataList = emitData.getMetadataList();
+            }
 
-        // Check for parse exceptions in the container document metadata
-        // These should return appropriate HTTP status codes
-        if (!metadataList.isEmpty()) {
-            Metadata containerMetadata = metadataList.get(0);
-            String containerException = containerMetadata.get(TikaCoreProperties.CONTAINER_EXCEPTION);
-            if (containerException != null) {
-                // Map exception type to HTTP status
-                // 422 (Unprocessable Entity) for parse-related exceptions
-                int status = 422; // Default for parse exceptions
-                if (containerException.contains("EncryptedDocumentException") ||
-                        containerException.contains("TikaException") ||
-                        containerException.contains("NullPointerException") ||
-                        containerException.contains("IllegalStateException")) {
-                    status = 422;
+            // Check for parse exceptions in the container document metadata
+            // These should return appropriate HTTP status codes
+            if (!metadataList.isEmpty()) {
+                Metadata containerMetadata = metadataList.get(0);
+                String containerException = containerMetadata.get(TikaCoreProperties.CONTAINER_EXCEPTION);
+                if (containerException != null) {
+                    // Map exception type to HTTP status
+                    // 422 (Unprocessable Entity) for parse-related exceptions
+                    int status = 422; // Default for parse exceptions
+                    if (containerException.contains("EncryptedDocumentException") ||
+                            containerException.contains("TikaException") ||
+                            containerException.contains("NullPointerException") ||
+                            containerException.contains("IllegalStateException")) {
+                        status = 422;
+                    }
+                    // Build response with exception string as body for stack trace support
+                    Response response = Response.status(status)
+                            .entity(containerException)
+                            .type("text/plain")
+                            .build();
+                    throw new WebApplicationException(response);
                 }
-                // Build response with exception string as body for stack trace support
-                Response response = Response.status(status)
-                        .entity(containerException)
-                        .type("text/plain")
-                        .build();
-                throw new WebApplicationException(response);
+            }
+
+            // Determine the zip file path
+            // Regular format: emitter.basePath + "/" + emitKey + "-embedded.zip"
+            // Frictionless format: emitter.basePath + "/" + emitKey + "-frictionless.zip"
+            boolean isFrictionless = unpackConfig.getOutputFormat() == UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS;
+            Path zipFile = getEmittedZipPath(requestId, isFrictionless);
+
+            return new UnpackResult(zipFile, metadataList);
+        } finally {
+            // Clean up temp file
+            if (tempFile != null) {
+                try {
+                    Files.deleteIfExists(tempFile);
+                } catch (IOException e) {
+                    LOG.warn("Failed to delete temp file: {}", tempFile, e);
+                }
             }
         }
-
-        // Determine the zip file path
-        // Regular format: emitter.basePath + "/" + emitKey + "-embedded.zip"
-        // Frictionless format: emitter.basePath + "/" + emitKey + "-frictionless.zip"
-        boolean isFrictionless = unpackConfig.getOutputFormat() == UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS;
-        Path zipFile = getEmittedZipPath(requestId, isFrictionless);
-
-        return new UnpackResult(zipFile, metadataList);
     }
 
     /**
