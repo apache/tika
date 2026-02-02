@@ -434,7 +434,7 @@
     <reactor.netty.version>1.3.2</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <slf4j.version>2.0.17</slf4j.version>
-    <sis.version>1.5</sis.version>
+    <sis.version>1.6</sis.version>
     <snappy.version>1.1.10.8</snappy.version>
     <solrj.version>9.10.0</solrj.version>
     <spring.version>7.0.3</spring.version>
