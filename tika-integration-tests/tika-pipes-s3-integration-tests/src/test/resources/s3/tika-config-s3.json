@@ -3,10 +3,7 @@
     {
       "default-parser": {
         "_exclude": [
-          "tesseract-ocr-parser",
-          "pdf-parser",
-          "ooxml-parser",
-          "office-parser"
+          "tesseract-ocr-parser"
         ]
       }
     },

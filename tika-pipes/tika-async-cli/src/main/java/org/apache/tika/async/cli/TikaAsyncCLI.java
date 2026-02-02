@@ -25,6 +25,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -115,6 +118,13 @@ public class TikaAsyncCLI {
                 tikaConfig = tmpTikaConfig;
                 PluginsWriter pluginsWriter = new PluginsWriter(simpleAsyncConfig, tikaConfig);
                 pluginsWriter.write(tikaConfig);
+            } else {
+                // User provided a config - ensure plugin-roots is set
+                tikaConfig = ensurePluginRoots(tikaConfig, simpleAsyncConfig.getPluginsDir());
+                if (!tikaConfig.equals(Paths.get(simpleAsyncConfig.getTikaConfig()))) {
+                    // A new merged config was created, mark for cleanup
+                    tmpTikaConfig = tikaConfig;
+                }
             }
 
             pipesIterator = buildPipesIterator(tikaConfig, simpleAsyncConfig);
@@ -369,6 +379,43 @@ public class TikaAsyncCLI {
         }
 
         parseContext.set(UnpackConfig.class, config);
+    }
+
+    private static final String DEFAULT_PLUGINS_DIR = "plugins";
+
+    /**
+     * Ensures plugin-roots is set in the config. If missing, creates a merged config
+     * with a default plugin-roots value.
+     *
+     * @param originalConfigPath the user's config file path
+     * @param pluginsDir optional plugins directory from command line (may be null)
+     * @return the config path to use (original if plugin-roots exists, or a new merged config)
+     */
+    static Path ensurePluginRoots(Path originalConfigPath, String pluginsDir) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode rootNode = mapper.readTree(originalConfigPath.toFile());
+
+        if (rootNode.has("plugin-roots")) {
+            // plugin-roots already set, use original config
+            return originalConfigPath;
+        }
+
+        // Need to add plugin-roots
+        ObjectNode mutableRoot = (ObjectNode) rootNode;
+        String pluginString = StringUtils.isBlank(pluginsDir) ? DEFAULT_PLUGINS_DIR : pluginsDir;
+        Path plugins = Paths.get(pluginString);
+        if (Files.isDirectory(plugins)) {
+            pluginString = plugins.toAbsolutePath().toString();
+        }
+        mutableRoot.put("plugin-roots", pluginString);
+
+        // Write merged config to temp file
+        Path mergedConfig = Files.createTempFile("tika-async-merged-config-", ".json");
+        mapper.writerWithDefaultPrettyPrinter().writeValue(mergedConfig.toFile(), mutableRoot);
+        mergedConfig.toFile().deleteOnExit();
+
+        LOG.info("Added default plugin-roots to config: {}", pluginString);
+        return mergedConfig;
     }
 
     private static void usage(Options options) throws IOException {

@@ -76,15 +76,16 @@ The converter currently supports:
         "sortByPosition": true,
         "maxMainMemoryBytes": 1000000
       }
-    },
-    {
-      "default-parser": {
-        "_exclude": ["pdf-parser"]
-      }
     }
   ]
 }
 ----
+
+NOTE: When you configure a parser with specific settings in JSON, the loader automatically
+excludes it from SPI loading. The parser (e.g., `pdf-parser`) is not even instantiated in
+`default-parser` if there's a definition for it in the tika-config.json. Explicit `_exclude`
+directives are only needed when you want to disable a parser entirely without providing
+custom configuration.
 
 === Key Differences
 
@@ -102,12 +103,8 @@ The converter currently supports:
 
 |Exclusions
 |`<parser-exclude class="..."/>`
-|`"_exclude": ["component-name"]`
+|`"_exclude": ["component-name"]` (only needed to disable a parser entirely)
 |===
-
-NOTE: When you configure a parser with specific settings in JSON, the loader automatically
-excludes it from SPI loading. Explicit exclusions are only needed when you want to disable
-a parser entirely without providing custom configuration.
 
 === Limitations
 
