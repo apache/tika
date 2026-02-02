@@ -364,6 +364,12 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             }
             if ("Embed".equals(type)) {
                 bodyContentsHandler.embeddedOLERef(refId);
+            } else if ("Link".equals(type)) {
+                // Linked OLE object - references external file
+                bodyContentsHandler.linkedOLERef(refId);
+                if (metadata != null) {
+                    metadata.set(Office.HAS_LINKED_OLE_OBJECTS, true);
+                }
             }
         } else if (CR.equals(localName)) {
             runBuffer.append(NEWLINE);
@@ -733,6 +739,12 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         boolean isIncludeMoveFromText() throws SAXException;
 
         void embeddedOLERef(String refId) throws SAXException;
+
+        /**
+         * Called when a linked (vs embedded) OLE object is found.
+         * These reference external files and are a security concern.
+         */
+        void linkedOLERef(String refId) throws SAXException;
 
         void embeddedPicRef(String picFileName, String picDescription) throws SAXException;
 

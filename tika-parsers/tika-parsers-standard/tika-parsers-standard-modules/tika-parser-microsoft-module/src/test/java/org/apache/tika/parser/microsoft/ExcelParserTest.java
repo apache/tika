@@ -612,4 +612,23 @@ public class ExcelParserTest extends TikaTest {
         assertContains("class=\"external-ref-textFileImport\"", xml);
         assertContains("http://example.net/data.csv", xml);
     }
+
+    /**
+     * Test detection of DDE links in Excel files.
+     * DDE (Dynamic Data Exchange) links are a security risk as they can execute commands.
+     */
+    @Test
+    public void testDdeLinks() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testDdeLink.xlsx");
+        Metadata m = metadataList.get(0);
+        // Check DDE link metadata flag is set
+        assertEquals("true", m.get(Office.HAS_DDE_LINKS));
+        // Also check external links flag since DDE is in externalLinks
+        assertEquals("true", m.get(Office.HAS_EXTERNAL_LINKS));
+
+        String xml = getXML("testDdeLink.xlsx").xml;
+        // Test DDE link extraction (service|topic format)
+        assertContains("class=\"external-ref-ddeLink\"", xml);
+        assertContains("cmd|", xml);
+    }
 }

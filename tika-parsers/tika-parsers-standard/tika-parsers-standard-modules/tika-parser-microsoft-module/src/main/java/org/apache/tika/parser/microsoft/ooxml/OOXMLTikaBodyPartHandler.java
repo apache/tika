@@ -322,6 +322,19 @@ public class OOXMLTikaBodyPartHandler
     }
 
     @Override
+    public void linkedOLERef(String relId) throws SAXException {
+        if (relId == null) {
+            return;
+        }
+        // Emit as an external reference anchor - linked OLE objects reference external files
+        AttributesImpl attributes = new AttributesImpl();
+        attributes.addAttribute("", "class", "class", "CDATA", "external-ref-linkedOle");
+        attributes.addAttribute("", "id", "id", "CDATA", relId);
+        xhtml.startElement("a", attributes);
+        xhtml.endElement("a");
+    }
+
+    @Override
     public void embeddedPicRef(String picFileName, String picDescription) throws SAXException {
 
         AttributesImpl attr = new AttributesImpl();

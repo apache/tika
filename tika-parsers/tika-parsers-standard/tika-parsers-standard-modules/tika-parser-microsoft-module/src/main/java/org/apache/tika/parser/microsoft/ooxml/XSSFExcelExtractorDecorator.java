@@ -87,6 +87,11 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/connections";
     private static final String QUERY_TABLE_RELATION =
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/queryTable";
+    private static final String PIVOT_CACHE_DEFINITION_RELATION =
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotCacheDefinition";
+    // Power Query stores data in customData parts
+    private static final String POWER_QUERY_CONTENT_TYPE =
+            "application/vnd.ms-excel.customDataProperties+xml";
 
     /**
      * Allows access to headers/footers from raw xml strings
@@ -269,6 +274,63 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         for (PackagePart sheetPart : sheetParts) {
             extractQueryTables(sheetPart, xhtml);
         }
+
+        // Detect pivot cache with external data sources
+        extractPivotCacheExternalData(workbookPart, xhtml);
+
+        // Detect Power Query / Data Mashup
+        detectPowerQuery(container);
+    }
+
+    /**
+     * Detects pivot cache definitions with external data sources (OLAP, databases).
+     */
+    private void extractPivotCacheExternalData(PackagePart workbookPart, XHTMLContentHandler xhtml)
+            throws InvalidFormatException {
+        PackageRelationshipCollection coll = workbookPart.getRelationshipsByType(PIVOT_CACHE_DEFINITION_RELATION);
+        if (coll == null || coll.isEmpty()) {
+            return;
+        }
+        for (PackageRelationship rel : coll) {
+            try {
+                PackagePart pivotCachePart = workbookPart.getRelatedPart(rel);
+                if (pivotCachePart != null) {
+                    PivotCacheHandler handler = new PivotCacheHandler(xhtml);
+                    try (InputStream is = pivotCachePart.getInputStream()) {
+                        XMLReaderUtils.parseSAX(is, handler, parseContext);
+                    }
+                    if (handler.hasExternalData()) {
+                        metadata.set(Office.HAS_EXTERNAL_PIVOT_DATA, true);
+                    }
+                }
+            } catch (IOException | TikaException | SAXException e) {
+                // swallow
+            }
+        }
+    }
+
+    /**
+     * Detects Power Query / Data Mashup presence.
+     */
+    private void detectPowerQuery(OPCPackage container) {
+        // Power Query data is stored in customData parts with specific content type
+        // or in xl/customData/ folder
+        try {
+            List<PackagePart> customDataParts = container.getPartsByContentType(POWER_QUERY_CONTENT_TYPE);
+            if (customDataParts != null && !customDataParts.isEmpty()) {
+                metadata.set(Office.HAS_POWER_QUERY, true);
+            }
+            // Also check for customData folder parts
+            for (PackagePart part : container.getParts()) {
+                String partName = part.getPartName().getName();
+                if (partName.contains("/customData/") || partName.contains("/dataMashup")) {
+                    metadata.set(Office.HAS_POWER_QUERY, true);
+                    break;
+                }
+            }
+        } catch (InvalidFormatException e) {
+            // swallow
+        }
     }
 
     /**
@@ -293,8 +355,12 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 try {
                     PackagePart externalLinkPart = workbookPart.getRelatedPart(rel);
                     if (externalLinkPart != null) {
+                        ExternalLinkHandler handler = new ExternalLinkHandler(xhtml);
                         try (InputStream is = externalLinkPart.getInputStream()) {
-                            XMLReaderUtils.parseSAX(is, new ExternalLinkHandler(xhtml), parseContext);
+                            XMLReaderUtils.parseSAX(is, handler, parseContext);
+                        }
+                        if (handler.hasDdeLink()) {
+                            metadata.set(Office.HAS_DDE_LINKS, true);
                         }
                     }
                 } catch (IOException | TikaException e) {
@@ -377,6 +443,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
      */
     private class ExternalLinkHandler extends DefaultHandler {
         private final XHTMLContentHandler xhtml;
+        private boolean foundDdeLink = false;
 
         ExternalLinkHandler(XHTMLContentHandler xhtml) {
             this.xhtml = xhtml;
@@ -405,6 +472,21 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                     emitExternalRef(xhtml, "oleLink", "relationship:" + rId);
                 }
             }
+            // DDE links - security risk: can execute commands
+            if ("ddeLink".equals(localName)) {
+                foundDdeLink = true;
+                String ddeService = atts.getValue("ddeService");
+                String ddeTopic = atts.getValue("ddeTopic");
+                if (ddeService != null || ddeTopic != null) {
+                    String ddeRef = (ddeService != null ? ddeService : "") + "|" +
+                            (ddeTopic != null ? ddeTopic : "");
+                    emitExternalRef(xhtml, "ddeLink", ddeRef);
+                }
+            }
+        }
+
+        boolean hasDdeLink() {
+            return foundDdeLink;
         }
     }
 
@@ -487,6 +569,48 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             if ("queryTableRefresh".equals(localName)) {
                 // Contains refresh settings
             }
+        }
+    }
+
+    /**
+     * Handler for parsing pivotCacheDefinition XML to detect external data sources.
+     */
+    private class PivotCacheHandler extends DefaultHandler {
+        private final XHTMLContentHandler xhtml;
+        private boolean hasExternalData = false;
+
+        PivotCacheHandler(XHTMLContentHandler xhtml) {
+            this.xhtml = xhtml;
+        }
+
+        @Override
+        public void startElement(String uri, String localName, String qName, Attributes atts)
+                throws SAXException {
+            // cacheSource with type="external" indicates external data
+            if ("cacheSource".equals(localName)) {
+                String type = atts.getValue("type");
+                if ("external".equals(type) || "consolidation".equals(type)) {
+                    hasExternalData = true;
+                }
+            }
+            // worksheetSource can have external references
+            if ("worksheetSource".equals(localName)) {
+                String ref = atts.getValue("ref");
+                String sheet = atts.getValue("sheet");
+                String rId = atts.getValue("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id");
+                // If there's a relationship ID, it likely points to external workbook
+                if (rId != null) {
+                    hasExternalData = true;
+                }
+            }
+            // consolidation source (multiple ranges, possibly external)
+            if ("consolidation".equals(localName) || "rangeSets".equals(localName)) {
+                hasExternalData = true;
+            }
+        }
+
+        boolean hasExternalData() {
+            return hasExternalData;
         }
     }
 

@@ -907,4 +907,54 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContains("http://vml.example.org/shape-link", xml);
     }
 
+    /**
+     * Test detection of mail merge in Word documents.
+     * Mail merge can reference external data sources.
+     */
+    @Test
+    public void testMailMerge() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testMailMerge.docx", parseContext);
+        Metadata m = metadataList.get(0);
+        assertEquals("true", m.get(Office.HAS_MAIL_MERGE));
+    }
+
+    /**
+     * Test detection of attached external template.
+     * Templates can be fetched from malicious URLs.
+     */
+    @Test
+    public void testAttachedTemplate() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testAttachedTemplate.docx", parseContext);
+        Metadata m = metadataList.get(0);
+        assertEquals("true", m.get(Office.HAS_ATTACHED_TEMPLATE));
+
+        String xml = getXML("testAttachedTemplate.docx", parseContext).xml;
+        assertContains("class=\"external-ref-attachedTemplate\"", xml);
+        assertContains("example.com/templates", xml);
+    }
+
+    /**
+     * Test detection of subdocuments (master document linking external docs).
+     */
+    @Test
+    public void testSubdocument() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testSubdocument.docx", parseContext);
+        Metadata m = metadataList.get(0);
+        assertEquals("true", m.get(Office.HAS_SUBDOCUMENTS));
+
+        String xml = getXML("testSubdocument.docx", parseContext).xml;
+        assertContains("class=\"external-ref-subDocument\"", xml);
+        assertContains("example.org/chapters", xml);
+    }
+
+    /**
+     * Test detection of framesets (HTML frames loading external URLs).
+     */
+    @Test
+    public void testFrameset() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testFrameset.docx", parseContext);
+        Metadata m = metadataList.get(0);
+        assertEquals("true", m.get(Office.HAS_FRAMESETS));
+    }
+
 }

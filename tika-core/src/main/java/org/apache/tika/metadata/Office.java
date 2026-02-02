@@ -199,4 +199,31 @@ public interface Office {
     Property HAS_HIDDEN_TEXT = Property.internalBoolean("msoffice:doc:has-hidden-text");
 
     Property HAS_TRACK_CHANGES = Property.internalBoolean("msoffice:has-track-changes");
+
+    // Security-relevant: DDE (Dynamic Data Exchange) links can execute commands
+    Property HAS_DDE_LINKS = Property.internalBoolean("msoffice:excel:has-dde-links");
+
+    // Security-relevant: Mail merge can reference external data sources
+    Property HAS_MAIL_MERGE = Property.internalBoolean("msoffice:doc:has-mail-merge");
+
+    // Security-relevant: Attached templates can be fetched from external URLs
+    Property HAS_ATTACHED_TEMPLATE = Property.internalBoolean("msoffice:doc:has-attached-template");
+
+    // Security-relevant: SubDocuments reference external documents in master docs
+    Property HAS_SUBDOCUMENTS = Property.internalBoolean("msoffice:doc:has-subdocuments");
+
+    // Security-relevant: Pivot tables can reference external OLAP/database sources
+    Property HAS_EXTERNAL_PIVOT_DATA = Property.internalBoolean("msoffice:excel:has-external-pivot-data");
+
+    // Security-relevant: Power Query can contain URLs and connection strings
+    Property HAS_POWER_QUERY = Property.internalBoolean("msoffice:excel:has-power-query");
+
+    // Security-relevant: OLE objects can link to external files (vs embedded)
+    Property HAS_LINKED_OLE_OBJECTS = Property.internalBoolean("msoffice:has-linked-ole-objects");
+
+    // Security-relevant: Charts can reference external workbook data
+    Property HAS_EXTERNAL_CHART_DATA = Property.internalBoolean("msoffice:has-external-chart-data");
+
+    // Security-relevant: Framesets can load external URLs
+    Property HAS_FRAMESETS = Property.internalBoolean("msoffice:doc:has-framesets");
 }
