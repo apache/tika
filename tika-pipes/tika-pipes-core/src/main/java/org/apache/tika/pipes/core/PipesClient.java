@@ -533,7 +533,7 @@ public class PipesClient implements Closeable {
         }
     }
 
-    private String[] getCommandline(int port, Path tmpDir) {
+    private String[] getCommandline(int port, Path tmpDir) throws IOException {
         List<String> configArgs = pipesConfig.getForkedJvmArgs();
         boolean hasClassPath = false;
         boolean hasHeadless = false;
@@ -568,10 +568,14 @@ public class PipesClient implements Closeable {
         List<String> commandLine = new ArrayList<>();
         String javaPath = pipesConfig.getJavaPath();
         commandLine.add(ProcessUtils.escapeCommandLine(javaPath));
+
+        // Use @argfile to avoid Windows command line length limits (~8191 chars)
+        // when the classpath is very long (e.g., with Ignite3 dependencies)
         if (!hasClassPath) {
-            commandLine.add("-cp");
-            commandLine.add(System.getProperty("java.class.path"));
+            Path argFile = writeArgFile(tmpDir);
+            commandLine.add("@" + argFile.toAbsolutePath());
         }
+
         if (!hasHeadless) {
             commandLine.add("-Djava.awt.headless=true");
         }
@@ -591,6 +595,30 @@ public class PipesClient implements Closeable {
         commandLine.add(tikaConfigPath.toAbsolutePath().toString());
         LOG.debug("pipesClientId={}: commandline: {}", pipesClientId, commandLine);
         return commandLine.toArray(new String[0]);
+    }
+
+    /**
+     * Writes an argfile containing the classpath for the forked JVM process.
+     * This avoids Windows command line length limits (~8191 chars) which can
+     * be exceeded when using dependencies with many transitive jars (e.g., Ignite3).
+     * <p>
+     * Security: The argfile is created in a temp directory with owner-only permissions (700).
+     * This is more secure than the alternative of passing the classpath on the command line,
+     * which would be visible to all users via 'ps' or /proc.
+     *
+     * @param tmpDir the temporary directory where the argfile will be created
+     * @return the path to the created argfile
+     * @throws IOException if the argfile cannot be written
+     */
+    private Path writeArgFile(Path tmpDir) throws IOException {
+        Path argFile = tmpDir.resolve("jvm-args.txt");
+        String classpath = System.getProperty("java.class.path");
+        // Argfile format: each argument on its own line, with proper quoting for paths with spaces
+        String content = "-cp\n\"" + classpath + "\"\n";
+        Files.writeString(argFile, content, StandardCharsets.UTF_8);
+        LOG.debug("pipesClientId={}: wrote argfile with classpath ({} chars) to {}",
+                pipesClientId, classpath.length(), argFile);
+        return argFile;
     }
 
     private record ServerTuple(Process process, ServerSocket serverSocket, Socket socket,
