@@ -27,6 +27,8 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.utils.DateUtils;
 
 /**
@@ -113,14 +115,31 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final static String FLD_CHAR = "fldChar";
     private final static String INSTR_TEXT = "instrText";
     private final static String FLD_CHAR_TYPE = "fldCharType";
+    // DrawingML hyperlinks on shapes/pictures
+    private final static String HLINK_HOVER = "hlinkHover";
+    private final static String C_NV_PR = "cNvPr";
+    // VML shape hyperlinks
+    private final static String SHAPE = "shape";
+    private final static String HREF = "href";
+
+    // Patterns for extracting URLs from field codes
     private static final Pattern HYPERLINK_PATTERN =
             Pattern.compile("HYPERLINK\\s{1,100}\"([^\"]{1,10000})\"", Pattern.CASE_INSENSITIVE);
+    private static final Pattern INCLUDEPICTURE_PATTERN =
+            Pattern.compile("INCLUDEPICTURE\\s{1,100}\"([^\"]{1,10000})\"", Pattern.CASE_INSENSITIVE);
+    private static final Pattern INCLUDETEXT_PATTERN =
+            Pattern.compile("INCLUDETEXT\\s{1,100}\"([^\"]{1,10000})\"", Pattern.CASE_INSENSITIVE);
+    private static final Pattern IMPORT_PATTERN =
+            Pattern.compile("IMPORT\\s{1,100}\"([^\"]{1,10000})\"", Pattern.CASE_INSENSITIVE);
+    private static final Pattern LINK_PATTERN =
+            Pattern.compile("LINK\\s{1,100}[\\w.]{1,50}\\s{1,100}\"([^\"]{1,10000})\"", Pattern.CASE_INSENSITIVE);
     private final XWPFBodyContentsHandler bodyContentsHandler;
     private final Map<String, String> linkedRelationships;
     private final RunProperties currRunProperties = new RunProperties();
     private final ParagraphProperties currPProperties = new ParagraphProperties();
     private final boolean includeTextBox;
     private final boolean concatenatePhoneticRuns;
+    private final Metadata metadata;
     private final StringBuilder runBuffer = new StringBuilder();
     private final StringBuilder rubyBuffer = new StringBuilder();
     private boolean inR = false;
@@ -165,16 +184,23 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
 
     public OOXMLWordAndPowerPointTextHandler(XWPFBodyContentsHandler bodyContentsHandler,
                                              Map<String, String> hyperlinks) {
-        this(bodyContentsHandler, hyperlinks, true, true);
+        this(bodyContentsHandler, hyperlinks, true, true, null);
     }
 
     public OOXMLWordAndPowerPointTextHandler(XWPFBodyContentsHandler bodyContentsHandler,
                                              Map<String, String> hyperlinks, boolean includeTextBox,
                                              boolean concatenatePhoneticRuns) {
+        this(bodyContentsHandler, hyperlinks, includeTextBox, concatenatePhoneticRuns, null);
+    }
+
+    public OOXMLWordAndPowerPointTextHandler(XWPFBodyContentsHandler bodyContentsHandler,
+                                             Map<String, String> hyperlinks, boolean includeTextBox,
+                                             boolean concatenatePhoneticRuns, Metadata metadata) {
         this.bodyContentsHandler = bodyContentsHandler;
         this.linkedRelationships = hyperlinks;
         this.includeTextBox = includeTextBox;
         this.concatenatePhoneticRuns = concatenatePhoneticRuns;
+        this.metadata = metadata;
     }
 
     @Override
@@ -364,6 +390,19 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
                 if (url != null) {
                     bodyContentsHandler.hyperlinkStart(url);
                     inFieldHyperlink = true;
+                    if (metadata != null) {
+                        metadata.set(Office.HAS_FIELD_HYPERLINKS, true);
+                    }
+                } else {
+                    // Check for external reference fields (INCLUDEPICTURE, INCLUDETEXT, etc.)
+                    StringBuilder fieldType = new StringBuilder();
+                    String extUrl = parseExternalRefFromInstrText(instrTextBuffer.toString(), fieldType);
+                    if (extUrl != null) {
+                        bodyContentsHandler.externalRef(fieldType.toString(), extUrl);
+                        if (metadata != null) {
+                            metadata.set(Office.HAS_FIELD_HYPERLINKS, true);
+                        }
+                    }
                 }
             } else if ("end".equals(fldCharType)) {
                 if (inFieldHyperlink) {
@@ -375,6 +414,30 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             }
         } else if (INSTR_TEXT.equals(localName)) {
             inInstrText = true;
+        } else if (HLINK_HOVER.equals(localName)) {
+            // DrawingML hover hyperlink on shapes/pictures
+            String hyperlinkId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "id");
+            if (hyperlinkId != null) {
+                String hyperlink = linkedRelationships.get(hyperlinkId);
+                if (hyperlink != null) {
+                    bodyContentsHandler.externalRef("hlinkHover", hyperlink);
+                    if (metadata != null) {
+                        metadata.set(Office.HAS_HOVER_HYPERLINKS, true);
+                    }
+                }
+            }
+        } else if (SHAPE.equals(localName) && V_NS.equals(uri)) {
+            // VML shape with href attribute
+            String href = atts.getValue(HREF);
+            if (href == null) {
+                href = atts.getValue(O_NS, HREF);
+            }
+            if (href != null && !href.isEmpty()) {
+                bodyContentsHandler.externalRef("vml-shape-href", href);
+                if (metadata != null) {
+                    metadata.set(Office.HAS_VML_HYPERLINKS, true);
+                }
+            }
         }
 
     }
@@ -425,6 +488,47 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         if (m.find()) {
             return m.group(1);
         }
+        return null;
+    }
+
+    /**
+     * Parses URLs from instrText field codes that reference external resources.
+     * This includes INCLUDEPICTURE, INCLUDETEXT, IMPORT, and LINK fields.
+     *
+     * @param instrText the accumulated instrText content
+     * @param fieldType output parameter - will contain the field type if found
+     * @return the URL if found, or null
+     */
+    private String parseExternalRefFromInstrText(String instrText, StringBuilder fieldType) {
+        if (instrText == null || instrText.isEmpty()) {
+            return null;
+        }
+        String trimmed = instrText.trim();
+
+        Matcher m = INCLUDEPICTURE_PATTERN.matcher(trimmed);
+        if (m.find()) {
+            fieldType.append("INCLUDEPICTURE");
+            return m.group(1);
+        }
+
+        m = INCLUDETEXT_PATTERN.matcher(trimmed);
+        if (m.find()) {
+            fieldType.append("INCLUDETEXT");
+            return m.group(1);
+        }
+
+        m = IMPORT_PATTERN.matcher(trimmed);
+        if (m.find()) {
+            fieldType.append("IMPORT");
+            return m.group(1);
+        }
+
+        m = LINK_PATTERN.matcher(trimmed);
+        if (m.find()) {
+            fieldType.append("LINK");
+            return m.group(1);
+        }
+
         return null;
     }
 
@@ -635,6 +739,18 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         void startBookmark(String id, String name) throws SAXException;
 
         void endBookmark(String id) throws SAXException;
+
+        /**
+         * Called when an external reference URL is found in a field code.
+         * This includes INCLUDEPICTURE, INCLUDETEXT, IMPORT, LINK fields,
+         * and DrawingML/VML hyperlinks on shapes.
+         *
+         * @param fieldType the type of field (e.g., "INCLUDEPICTURE", "hlinkHover", "vml-href")
+         * @param url the external URL
+         */
+        default void externalRef(String fieldType, String url) throws SAXException {
+            // Default no-op implementation for backward compatibility
+        }
     }
 
     public boolean isHiddenSlide() {

@@ -171,6 +171,20 @@ public interface Office {
 
     Property WORKBOOK_CODENAME = Property.internalText("msoffice:excel:workbook-codename");
 
+    Property HAS_DATA_CONNECTIONS = Property.internalBoolean("msoffice:excel:has-data-connections");
+
+    Property HAS_EXTERNAL_LINKS = Property.internalBoolean("msoffice:excel:has-external-links");
+
+    Property HAS_WEB_QUERIES = Property.internalBoolean("msoffice:excel:has-web-queries");
+
+    Property HAS_EXTERNAL_OLE_OBJECTS = Property.internalBoolean("msoffice:has-external-ole-objects");
+
+    Property HAS_FIELD_HYPERLINKS = Property.internalBoolean("msoffice:has-field-hyperlinks");
+
+    Property HAS_HOVER_HYPERLINKS = Property.internalBoolean("msoffice:has-hover-hyperlinks");
+
+    Property HAS_VML_HYPERLINKS = Property.internalBoolean("msoffice:has-vml-hyperlinks");
+
     Property HAS_COMMENTS = Property.internalBoolean("msoffice:has-comments");
 
     Property COMMENT_PERSONS = Property.internalTextBag("msoffice:comment-person-display-name");

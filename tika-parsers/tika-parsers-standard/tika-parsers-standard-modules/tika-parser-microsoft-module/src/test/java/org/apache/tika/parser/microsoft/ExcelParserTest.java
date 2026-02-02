@@ -588,4 +588,28 @@ public class ExcelParserTest extends TikaTest {
         assertEquals("true", m.get(Office.HAS_COMMENTS));
         assertEquals("true", m.get(Office.HAS_HIDDEN_COLUMNS));
     }
+
+    /**
+     * Test extraction of external data connections from XLSX files.
+     * These can be used to exfiltrate data or load malicious content.
+     */
+    @Test
+    public void testDataConnections() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testDataConnections.xlsx");
+        Metadata m = metadataList.get(0);
+        // Check metadata flags are set
+        assertEquals("true", m.get(Office.HAS_DATA_CONNECTIONS));
+        assertEquals("true", m.get(Office.HAS_WEB_QUERIES));
+
+        String xml = getXML("testDataConnections.xlsx").xml;
+        // Test web query extraction
+        assertContains("class=\"external-ref-webQuery\"", xml);
+        assertContains("http://example.com/data.html", xml);
+        // Test database connection extraction
+        assertContains("class=\"external-ref-dbConnection\"", xml);
+        assertContains("db.example.org", xml);
+        // Test text file import
+        assertContains("class=\"external-ref-textFileImport\"", xml);
+        assertContains("http://example.net/data.csv", xml);
+    }
 }

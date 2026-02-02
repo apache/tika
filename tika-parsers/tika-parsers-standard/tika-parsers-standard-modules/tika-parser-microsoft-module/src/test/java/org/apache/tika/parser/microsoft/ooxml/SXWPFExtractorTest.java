@@ -860,4 +860,51 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContains("Access Document(s)", xml);
     }
 
+    /**
+     * Test extraction of external reference field codes (INCLUDEPICTURE, INCLUDETEXT, IMPORT, LINK).
+     * These can be used to hide malicious URLs in documents.
+     */
+    @Test
+    public void testExternalRefFieldCodes() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testExternalRefs.docx", parseContext);
+        Metadata m = metadataList.get(0);
+        // Check metadata flag is set
+        assertEquals("true", m.get(Office.HAS_FIELD_HYPERLINKS));
+
+        String xml = getXML("testExternalRefs.docx", parseContext).xml;
+        // Test INCLUDEPICTURE field code
+        assertContains("class=\"external-ref-INCLUDEPICTURE\"", xml);
+        assertContains("http://example.com/tracking.png", xml);
+        // Test INCLUDETEXT field code
+        assertContains("class=\"external-ref-INCLUDETEXT\"", xml);
+        assertContains("http://example.org/payload.txt", xml);
+        // Test IMPORT field code
+        assertContains("class=\"external-ref-IMPORT\"", xml);
+        assertContains("http://example.net/exploit.wmf", xml);
+        // Test LINK field code
+        assertContains("class=\"external-ref-LINK\"", xml);
+        assertContains("http://test.invalid/cmd.docx", xml);
+    }
+
+    /**
+     * Test extraction of hlinkHover (hover hyperlinks) and VML shape hrefs.
+     * These are sneaky ways to hide malicious URLs.
+     */
+    @Test
+    public void testHoverAndVmlHyperlinks() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testHoverAndVml.docx", parseContext);
+        Metadata m = metadataList.get(0);
+        // Check metadata flags are set
+        assertEquals("true", m.get(Office.HAS_HOVER_HYPERLINKS));
+        assertEquals("true", m.get(Office.HAS_VML_HYPERLINKS));
+
+        String xml = getXML("testHoverAndVml.docx", parseContext).xml;
+        // Test hlinkHover (activates on mouse hover, not click)
+        assertContains("class=\"external-ref-hlinkHover\"", xml);
+        assertContains("http://hover.example.com/phishing", xml);
+        // Test VML shape href
+        assertContains("class=\"external-ref-vml-shape-href\"", xml);
+        assertContains("http://vml.example.org/shape-link", xml);
+    }
+
 }

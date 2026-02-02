@@ -23,8 +23,6 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javax.xml.namespace.QName;
 
 import com.microsoft.schemas.vml.impl.CTShapeImpl;
@@ -74,6 +72,7 @@ import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.EMFParser;
 import org.apache.tika.parser.microsoft.FormattingUtils;
@@ -89,10 +88,6 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     // could be improved by using the real delimiter in xchFollow [MS-DOC], v20140721, 2.4.6.3,
     // Part 3, Step 3
     private static final String LIST_DELIMITER = " ";
-
-    // Pattern to extract HYPERLINK URL from instrText field codes
-    private static final Pattern HYPERLINK_PATTERN =
-            Pattern.compile("HYPERLINK\\s{1,100}\"([^\"]{1,10000})\"", Pattern.CASE_INSENSITIVE);
 
     //include all parts that might have embedded objects
     private final static String[] MAIN_PART_RELATIONS =
@@ -273,6 +268,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     FormattingUtils.closeStyleTags(xhtml, formattingState);
                     xhtml.startElement("a", "href", fieldUrl);
                     inFieldHyperlink = true;
+                    metadata.set(Office.HAS_FIELD_HYPERLINKS, true);
                 }
 
                 // If we just exited a field hyperlink, close the anchor tag
@@ -280,6 +276,19 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     FormattingUtils.closeStyleTags(xhtml, formattingState);
                     xhtml.endElement("a");
                     inFieldHyperlink = false;
+                }
+
+                // Emit any external refs (INCLUDEPICTURE, INCLUDETEXT, IMPORT, LINK) as anchors
+                if (fieldTracker.getLastExternalRefUrl() != null) {
+                    AttributesImpl extRefAtts = new AttributesImpl();
+                    extRefAtts.addAttribute("", "class", "class", "CDATA",
+                            "external-ref-" + fieldTracker.getLastExternalRefType());
+                    extRefAtts.addAttribute("", "href", "href", "CDATA",
+                            fieldTracker.getLastExternalRefUrl());
+                    xhtml.startElement("a", extRefAtts);
+                    xhtml.endElement("a");
+                    metadata.set(Office.HAS_FIELD_HYPERLINKS, true);
+                    fieldTracker.clearExternalRef();
                 }
             }
 
@@ -551,69 +560,6 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             }
         }
         return null;
-    }
-
-    /**
-     * Parses a HYPERLINK URL from instrText field code content.
-     *
-     * @param instrText the accumulated instrText content
-     * @return the URL if found, or null
-     */
-    private static String parseHyperlinkFromInstrText(String instrText) {
-        if (instrText == null || instrText.isEmpty()) {
-            return null;
-        }
-        Matcher m = HYPERLINK_PATTERN.matcher(instrText.trim());
-        if (m.find()) {
-            return m.group(1);
-        }
-        return null;
-    }
-
-    /**
-     * Tracks field hyperlink state across multiple runs within a paragraph.
-     * Field codes span multiple runs: begin -> instrText -> separate -> text runs -> end
-     */
-    private static class FieldHyperlinkTracker {
-        private boolean inField = false;
-        private boolean inFieldHyperlink = false;
-        private final StringBuilder instrTextBuffer = new StringBuilder();
-
-        void startField() {
-            inField = true;
-            instrTextBuffer.setLength(0);
-        }
-
-        void addInstrText(String text) {
-            if (inField && text != null) {
-                instrTextBuffer.append(text);
-            }
-        }
-
-        /**
-         * Called when fldChar separate is encountered.
-         * @return the hyperlink URL if this is a HYPERLINK field, null otherwise
-         */
-        String separate() {
-            if (inField) {
-                String url = parseHyperlinkFromInstrText(instrTextBuffer.toString());
-                if (url != null) {
-                    inFieldHyperlink = true;
-                    return url;
-                }
-            }
-            return null;
-        }
-
-        void endField() {
-            inField = false;
-            inFieldHyperlink = false;
-            instrTextBuffer.setLength(0);
-        }
-
-        boolean isInFieldHyperlink() {
-            return inFieldHyperlink;
-        }
     }
 
     private void extractTable(XWPFTable table, XWPFListManager listManager,

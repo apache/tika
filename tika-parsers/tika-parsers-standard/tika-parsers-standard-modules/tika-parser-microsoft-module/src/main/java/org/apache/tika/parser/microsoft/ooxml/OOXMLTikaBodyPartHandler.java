@@ -339,6 +339,18 @@ public class OOXMLTikaBodyPartHandler
     }
 
     @Override
+    public void externalRef(String fieldType, String url) throws SAXException {
+        if (url == null || url.isEmpty()) {
+            return;
+        }
+        AttributesImpl attr = new AttributesImpl();
+        attr.addAttribute("", "class", "class", "CDATA", "external-ref-" + fieldType);
+        attr.addAttribute("", "href", "href", "CDATA", url);
+        xhtml.startElement("a", attr);
+        xhtml.endElement("a");
+    }
+
+    @Override
     public void startBookmark(String id, String name) throws SAXException {
         //skip bookmarks within hyperlinks
         if (name != null && !wroteHyperlinkStart) {
