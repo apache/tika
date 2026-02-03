@@ -22,7 +22,6 @@ import java.io.InputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
@@ -36,7 +35,6 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.extractor.EmbeddedStreamTranslator;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.microsoft.OfficeParser;
 
 public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
