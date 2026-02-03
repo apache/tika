@@ -21,7 +21,7 @@ This test module validates the functionality of Apache Tika gRPC Server by:
 ## Building
 
 ```bash
-mvn clean install
+./mvnw clean install
 ```
 
 ## Running Tests
@@ -29,14 +29,14 @@ mvn clean install
 ### Run all tests
 
 ```bash
-mvn test
+./mvnw test
 ```
 
 ### Run specific test
 
 ```bash
-mvn test -Dtest=FileSystemFetcherTest
-mvn test -Dtest=IgniteConfigStoreTest
+./mvnw test -Dtest=FileSystemFetcherTest
+./mvnw test -Dtest=IgniteConfigStoreTest
 ```
 
 ### Configure test document range
@@ -44,7 +44,7 @@ mvn test -Dtest=IgniteConfigStoreTest
 By default, only the first batch of GovDocs1 documents (001.zip) is downloaded. To test with more documents:
 
 ```bash
-mvn test -Dgovdocs1.fromIndex=1 -Dgovdocs1.toIndex=5
+./mvnw test -Dgovdocs1.fromIndex=1 -Dgovdocs1.toIndex=5
 ```
 
 This will download and test with batches 001.zip through 005.zip.
@@ -54,7 +54,7 @@ This will download and test with batches 001.zip through 005.zip.
 To limit the test to only process a specific number of documents (useful for quick testing):
 
 ```bash
-mvn test -Dcorpa.numdocs=10
+./mvnw test -Dcorpa.numdocs=10
 ```
 
 This will process only the first 10 documents instead of all documents in the corpus. Omit this parameter or set to -1 to process all documents.
@@ -63,13 +63,13 @@ This will process only the first 10 documents instead of all documents in the co
 
 ```bash
 # Test with just 5 documents
-mvn test -Dcorpa.numdocs=5
+./mvnw test -Dcorpa.numdocs=5
 
 # Test with 100 documents from multiple batches
-mvn test -Dgovdocs1.fromIndex=1 -Dgovdocs1.toIndex=2 -Dcorpa.numdocs=100
+./mvnw test -Dgovdocs1.fromIndex=1 -Dgovdocs1.toIndex=2 -Dcorpa.numdocs=100
 
 # Test all documents (default behavior)
-mvn test
+./mvnw test
 ```
 
 ## Test Structure
@@ -104,7 +104,7 @@ Or build from the main Tika repository and tag it:
 
 ```bash
 cd /path/to/tika
-mvn clean install -DskipTests
+./mvnw clean install -DskipTests
 cd tika-grpc
 # Follow tika-grpc Docker build instructions
 ```
