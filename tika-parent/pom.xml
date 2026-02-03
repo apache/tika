@@ -1615,6 +1615,7 @@
         <checkstyle.configLocation>${session.executionRootDirectory}/tika-parent/checkstyle.xml</checkstyle.configLocation>
       </properties>
     </profile>
+    <!-- Fast profile: ./mvnw install -Pfast -T1C -->
     <profile>
       <id>fast</id>
       <properties>

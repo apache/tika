@@ -12,6 +12,35 @@ Tika is a project of the [Apache Software Foundation](https://www.apache.org).
 
 Apache Tika, Tika, Apache, the Apache feather logo, and the Apache Tika project logo are trademarks of The Apache Software Foundation.
 
+Quick Start
+===========
+
+**Parse a file in Java:**
+
+```java
+import org.apache.tika.Tika;
+
+Tika tika = new Tika();
+String text = tika.parseToString(new File("document.pdf"));
+System.out.println(text);
+```
+
+**From the command line:**
+
+```bash
+java -jar tika-app-*.jar --text document.pdf
+```
+
+**Maven dependency:**
+
+```xml
+<dependency>
+    <groupId>org.apache.tika</groupId>
+    <artifactId>tika-parsers-standard-package</artifactId>
+    <version>4.x.y</version>
+</dependency>
+```
+
 Getting Started
 ===============
 Pre-built binaries of Apache Tika standalone applications are available
@@ -44,6 +73,33 @@ If the ossindex-maven-plugin is causing the build to fail because a dependency
 has now been discovered to have a vulnerability:
 
     ./mvnw clean install -Dossindex.skip
+
+
+Faster Builds
+=============
+
+**Fast profile** - Use `-Pfast` to skip tests, checkstyle, and spotless:
+
+    ./mvnw clean install -Pfast
+
+**Parallel builds** - Add `-T1C` to build with 1 thread per CPU core:
+
+    ./mvnw clean install -Pfast -T1C
+
+**Maven Daemon (mvnd)** - Keeps a warm JVM running for 2-3x faster rebuilds:
+
+```bash
+# Install: https://github.com/apache/maven-mvnd
+# macOS: brew install mvndaemon/tap/mvnd
+
+# Use exactly like mvn
+mvnd clean install -Pfast
+mvnd test -pl :tika-core
+```
+
+**Combine both** for maximum speed during development:
+
+    mvnd clean install -Pfast -T1C
 
 
 Reproducible Builds
