@@ -588,4 +588,47 @@ public class ExcelParserTest extends TikaTest {
         assertEquals("true", m.get(Office.HAS_COMMENTS));
         assertEquals("true", m.get(Office.HAS_HIDDEN_COLUMNS));
     }
+
+    /**
+     * Test extraction of external data connections from XLSX files.
+     * These can be used to exfiltrate data or load malicious content.
+     */
+    @Test
+    public void testDataConnections() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testDataConnections.xlsx");
+        Metadata m = metadataList.get(0);
+        // Check metadata flags are set
+        assertEquals("true", m.get(Office.HAS_DATA_CONNECTIONS));
+        assertEquals("true", m.get(Office.HAS_WEB_QUERIES));
+
+        String xml = getXML("testDataConnections.xlsx").xml;
+        // Test web query extraction
+        assertContains("class=\"external-ref-webQuery\"", xml);
+        assertContains("http://example.com/data.html", xml);
+        // Test database connection extraction
+        assertContains("class=\"external-ref-dbConnection\"", xml);
+        assertContains("db.example.org", xml);
+        // Test text file import
+        assertContains("class=\"external-ref-textFileImport\"", xml);
+        assertContains("http://example.net/data.csv", xml);
+    }
+
+    /**
+     * Test detection of DDE links in Excel files.
+     * DDE (Dynamic Data Exchange) links are a security risk as they can execute commands.
+     */
+    @Test
+    public void testDdeLinks() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testDdeLink.xlsx");
+        Metadata m = metadataList.get(0);
+        // Check DDE link metadata flag is set
+        assertEquals("true", m.get(Office.HAS_DDE_LINKS));
+        // Also check external links flag since DDE is in externalLinks
+        assertEquals("true", m.get(Office.HAS_EXTERNAL_LINKS));
+
+        String xml = getXML("testDdeLink.xlsx").xml;
+        // Test DDE link extraction (service|topic format)
+        assertContains("class=\"external-ref-ddeLink\"", xml);
+        assertContains("cmd|", xml);
+    }
 }

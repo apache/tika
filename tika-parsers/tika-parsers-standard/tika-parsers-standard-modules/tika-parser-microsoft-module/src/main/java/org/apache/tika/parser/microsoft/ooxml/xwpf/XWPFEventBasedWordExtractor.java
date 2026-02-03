@@ -363,6 +363,11 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
         }
 
         @Override
+        public void linkedOLERef(String refId) {
+            //no-op
+        }
+
+        @Override
         public void embeddedPicRef(String picFileName, String picDescription) {
             //no-op
         }
