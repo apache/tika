@@ -240,10 +240,13 @@ public class CompressorParser implements Parser {
         xhtml.startDocument();
         try {
             Metadata entrydata = Metadata.newInstance(context);
+            boolean foundName = false;
             if (cis instanceof GzipCompressorInputStream) {
-                extractGzipMetadata((GzipCompressorInputStream) cis, entrydata);
+                foundName = extractGzipMetadata((GzipCompressorInputStream) cis, entrydata);
             }
-            setName(metadata, entrydata);
+            if (! foundName) {
+                setName(metadata, entrydata);
+            }
 
             // Use the delegate parser to parse the compressed document
             EmbeddedDocumentExtractor extractor =
@@ -261,16 +264,19 @@ public class CompressorParser implements Parser {
         xhtml.endDocument();
     }
 
-    private void extractGzipMetadata(GzipCompressorInputStream gzcis, Metadata metadata) {
+    private boolean extractGzipMetadata(GzipCompressorInputStream gzcis, Metadata metadata) {
         GzipParameters gzipParameters = gzcis.getMetaData();
         if (gzipParameters == null) {
-            return;
+            return false;
         }
         String name = gzipParameters.getFileName();
         if (!StringUtils.isBlank(name)) {
             metadata.set(TikaCoreProperties.INTERNAL_PATH, name);
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
+            return true;
         }
         //TODO: modification, OS, comment
+        return false;
     }
 
     private void setName(Metadata parentMetadata, Metadata metadata) {
