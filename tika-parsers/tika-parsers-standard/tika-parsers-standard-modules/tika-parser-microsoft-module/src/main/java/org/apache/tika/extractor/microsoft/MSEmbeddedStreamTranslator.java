@@ -66,27 +66,18 @@ public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
             IOUtils.copy(inputStream, bos);
             POIFSFileSystem poifs = new POIFSFileSystem(bos.toInputStream());
             OfficeParser.POIFSDocumentType type = OfficeParser.POIFSDocumentType.detectType(poifs);
-            String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
 
             byte[] data = bos.toByteArray();
             if (type == OfficeParser.POIFSDocumentType.OLE10_NATIVE) {
                 try {
                     Ole10Native ole = Ole10Native.createFromEmbeddedOleObject(poifs);
                     if (ole.getDataSize() > 0) {
-                        if (StringUtils.isAllBlank(name)) {
-                            name = ole.getLabel();
-                        }
                         data = ole.getDataBuffer();
                     }
                 } catch (Ole10NativeException ex) {
                     LOG.warn("Skipping invalid part", ex);
                 }
-            } else {
-                if (! StringUtils.isAllBlank(type.getExtension()) && ! StringUtils.isAllBlank(name) && !name.contains(".")) {
-                    name += '.' + type.getExtension();
-                }
             }
-            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
             return UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get();
         } else if (inputStream instanceof TikaInputStream) {
             TikaInputStream tin = (TikaInputStream) inputStream;
