@@ -613,8 +613,10 @@ public class PipesClient implements Closeable {
     private Path writeArgFile(Path tmpDir) throws IOException {
         Path argFile = tmpDir.resolve("jvm-args.txt");
         String classpath = System.getProperty("java.class.path");
+        //convert to forward for Windows compatibility
+        String normalizedClasspath = classpath.replace("\\", "/");
         // Argfile format: each argument on its own line, with proper quoting for paths with spaces
-        String content = "-cp\n\"" + classpath + "\"\n";
+        String content = "-cp\n\"" + normalizedClasspath + "\"\n";
         Files.writeString(argFile, content, StandardCharsets.UTF_8);
         LOG.debug("pipesClientId={}: wrote argfile with classpath ({} chars) to {}",
                 pipesClientId, classpath.length(), argFile);
