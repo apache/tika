@@ -79,6 +79,20 @@ import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
 public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
+
+    // Relationship types for external data sources
+    private static final String EXTERNAL_LINK_RELATION =
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/externalLink";
+    private static final String CONNECTIONS_RELATION =
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/connections";
+    private static final String QUERY_TABLE_RELATION =
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/queryTable";
+    private static final String PIVOT_CACHE_DEFINITION_RELATION =
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotCacheDefinition";
+    // Power Query stores data in customData parts
+    private static final String POWER_QUERY_CONTENT_TYPE =
+            "application/vnd.ms-excel.customDataProperties+xml";
+
     /**
      * Allows access to headers/footers from raw xml strings
      */
@@ -223,6 +237,382 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             //swallow
         }
 
+        // Extract external data sources (HIGH security risk - can hide malicious URLs)
+        try {
+            extractExternalDataSources(container, xhtml);
+        } catch (InvalidFormatException | TikaException | IOException | SAXException e) {
+            //swallow
+        }
+
+    }
+
+    /**
+     * Extracts external data sources from the workbook including:
+     * - External workbook links
+     * - Data connections (database, web queries)
+     * - Query tables
+     */
+    private void extractExternalDataSources(OPCPackage container, XHTMLContentHandler xhtml)
+            throws InvalidFormatException, TikaException, IOException, SAXException {
+
+        PackageRelationship coreDocRelationship = container.getRelationshipsByType(
+                PackageRelationshipTypes.CORE_DOCUMENT).getRelationship(0);
+        if (coreDocRelationship == null) {
+            return;
+        }
+        PackagePart workbookPart = container.getPart(coreDocRelationship);
+        if (workbookPart == null) {
+            return;
+        }
+
+        // Extract external workbook links
+        extractExternalLinks(workbookPart, xhtml);
+
+        // Extract connections (database, ODBC, web queries)
+        extractConnections(workbookPart, xhtml);
+
+        // Extract query tables from each sheet
+        for (PackagePart sheetPart : sheetParts) {
+            extractQueryTables(sheetPart, xhtml);
+        }
+
+        // Detect pivot cache with external data sources
+        extractPivotCacheExternalData(workbookPart, xhtml);
+
+        // Detect Power Query / Data Mashup
+        detectPowerQuery(container);
+    }
+
+    /**
+     * Detects pivot cache definitions with external data sources (OLAP, databases).
+     */
+    private void extractPivotCacheExternalData(PackagePart workbookPart, XHTMLContentHandler xhtml)
+            throws InvalidFormatException {
+        PackageRelationshipCollection coll = workbookPart.getRelationshipsByType(PIVOT_CACHE_DEFINITION_RELATION);
+        if (coll == null || coll.isEmpty()) {
+            return;
+        }
+        for (PackageRelationship rel : coll) {
+            try {
+                PackagePart pivotCachePart = workbookPart.getRelatedPart(rel);
+                if (pivotCachePart != null) {
+                    PivotCacheHandler handler = new PivotCacheHandler(xhtml);
+                    try (InputStream is = pivotCachePart.getInputStream()) {
+                        XMLReaderUtils.parseSAX(is, handler, parseContext);
+                    }
+                    if (handler.hasExternalData()) {
+                        metadata.set(Office.HAS_EXTERNAL_PIVOT_DATA, true);
+                    }
+                }
+            } catch (IOException | TikaException | SAXException e) {
+                // swallow
+            }
+        }
+    }
+
+    /**
+     * Detects Power Query / Data Mashup presence.
+     */
+    private void detectPowerQuery(OPCPackage container) {
+        // Power Query data is stored in customData parts with specific content type
+        // or in xl/customData/ folder
+        try {
+            List<PackagePart> customDataParts = container.getPartsByContentType(POWER_QUERY_CONTENT_TYPE);
+            if (customDataParts != null && !customDataParts.isEmpty()) {
+                metadata.set(Office.HAS_POWER_QUERY, true);
+            }
+            // Also check for customData folder parts
+            for (PackagePart part : container.getParts()) {
+                String partName = part.getPartName().getName();
+                if (partName.contains("/customData/") || partName.contains("/dataMashup")) {
+                    metadata.set(Office.HAS_POWER_QUERY, true);
+                    break;
+                }
+            }
+        } catch (InvalidFormatException e) {
+            // swallow
+        }
+    }
+
+    /**
+     * Extracts external workbook links from externalLink parts.
+     */
+    private void extractExternalLinks(PackagePart workbookPart, XHTMLContentHandler xhtml)
+            throws InvalidFormatException, SAXException {
+        PackageRelationshipCollection coll = workbookPart.getRelationshipsByType(EXTERNAL_LINK_RELATION);
+        if (coll == null || coll.isEmpty()) {
+            return;
+        }
+        // If we have any external link relationships, set the metadata flag
+        if (coll.size() > 0) {
+            metadata.set(Office.HAS_EXTERNAL_LINKS, true);
+        }
+        for (PackageRelationship rel : coll) {
+            if (rel.getTargetMode() == TargetMode.EXTERNAL) {
+                // Direct external reference
+                emitExternalRef(xhtml, "externalLink", rel.getTargetURI().toString());
+            } else {
+                // Internal part that contains external reference - parse it
+                try {
+                    PackagePart externalLinkPart = workbookPart.getRelatedPart(rel);
+                    if (externalLinkPart != null) {
+                        ExternalLinkHandler handler = new ExternalLinkHandler(xhtml);
+                        try (InputStream is = externalLinkPart.getInputStream()) {
+                            XMLReaderUtils.parseSAX(is, handler, parseContext);
+                        }
+                        if (handler.hasDdeLink()) {
+                            metadata.set(Office.HAS_DDE_LINKS, true);
+                        }
+                    }
+                } catch (IOException | TikaException e) {
+                    // swallow
+                }
+            }
+        }
+    }
+
+    /**
+     * Extracts data connections from connections.xml.
+     */
+    private void extractConnections(PackagePart workbookPart, XHTMLContentHandler xhtml)
+            throws InvalidFormatException, SAXException {
+        PackageRelationshipCollection coll = workbookPart.getRelationshipsByType(CONNECTIONS_RELATION);
+        if (coll == null || coll.isEmpty()) {
+            return;
+        }
+        for (PackageRelationship rel : coll) {
+            try {
+                PackagePart connectionsPart = workbookPart.getRelatedPart(rel);
+                if (connectionsPart != null) {
+                    ConnectionsHandler handler = new ConnectionsHandler(xhtml);
+                    try (InputStream is = connectionsPart.getInputStream()) {
+                        XMLReaderUtils.parseSAX(is, handler, parseContext);
+                    }
+                    if (handler.hasConnections()) {
+                        metadata.set(Office.HAS_DATA_CONNECTIONS, true);
+                    }
+                    if (handler.hasWebQueries()) {
+                        metadata.set(Office.HAS_WEB_QUERIES, true);
+                    }
+                }
+            } catch (IOException | TikaException e) {
+                // swallow
+            }
+        }
+    }
+
+    /**
+     * Extracts query table external sources.
+     */
+    private void extractQueryTables(PackagePart sheetPart, XHTMLContentHandler xhtml)
+            throws InvalidFormatException, SAXException {
+        PackageRelationshipCollection coll = sheetPart.getRelationshipsByType(QUERY_TABLE_RELATION);
+        if (coll == null || coll.isEmpty()) {
+            return;
+        }
+        for (PackageRelationship rel : coll) {
+            try {
+                PackagePart queryTablePart = sheetPart.getRelatedPart(rel);
+                if (queryTablePart != null) {
+                    try (InputStream is = queryTablePart.getInputStream()) {
+                        XMLReaderUtils.parseSAX(is, new QueryTableHandler(xhtml), parseContext);
+                    }
+                }
+            } catch (IOException | TikaException e) {
+                // swallow
+            }
+        }
+    }
+
+    /**
+     * Emits an external reference as an anchor element with appropriate class.
+     */
+    private void emitExternalRef(XHTMLContentHandler xhtml, String refType, String url)
+            throws SAXException {
+        if (url == null || url.isEmpty()) {
+            return;
+        }
+        org.xml.sax.helpers.AttributesImpl attrs = new org.xml.sax.helpers.AttributesImpl();
+        attrs.addAttribute("", "class", "class", "CDATA", "external-ref-" + refType);
+        attrs.addAttribute("", "href", "href", "CDATA", url);
+        xhtml.startElement("a", attrs);
+        xhtml.endElement("a");
+    }
+
+    /**
+     * Handler for parsing externalLink XML to extract external workbook references.
+     */
+    private class ExternalLinkHandler extends DefaultHandler {
+        private final XHTMLContentHandler xhtml;
+        private boolean foundDdeLink = false;
+
+        ExternalLinkHandler(XHTMLContentHandler xhtml) {
+            this.xhtml = xhtml;
+        }
+
+        @Override
+        public void startElement(String uri, String localName, String qName, Attributes atts)
+                throws SAXException {
+            // Look for externalBook element with r:id attribute
+            if ("externalBook".equals(localName)) {
+                String rId = atts.getValue("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id");
+                // The actual URL is in the relationship, not directly in the XML
+                // For now, we note that there's an external book reference
+            }
+            // Look for file element with href attribute (older format)
+            if ("file".equals(localName)) {
+                String href = atts.getValue("href");
+                if (href != null && !href.isEmpty()) {
+                    emitExternalRef(xhtml, "externalWorkbook", href);
+                }
+            }
+            // Look for oleLink with r:id (OLE links to external files)
+            if ("oleLink".equals(localName)) {
+                String rId = atts.getValue("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id");
+                if (rId != null) {
+                    emitExternalRef(xhtml, "oleLink", "relationship:" + rId);
+                }
+            }
+            // DDE links - security risk: can execute commands
+            if ("ddeLink".equals(localName)) {
+                foundDdeLink = true;
+                String ddeService = atts.getValue("ddeService");
+                String ddeTopic = atts.getValue("ddeTopic");
+                if (ddeService != null || ddeTopic != null) {
+                    String ddeRef = (ddeService != null ? ddeService : "") + "|" +
+                            (ddeTopic != null ? ddeTopic : "");
+                    emitExternalRef(xhtml, "ddeLink", ddeRef);
+                }
+            }
+        }
+
+        boolean hasDdeLink() {
+            return foundDdeLink;
+        }
+    }
+
+    /**
+     * Handler for parsing connections.xml to extract external data connections.
+     */
+    private class ConnectionsHandler extends DefaultHandler {
+        private final XHTMLContentHandler xhtml;
+        private boolean foundConnection = false;
+        private boolean foundWebQuery = false;
+
+        ConnectionsHandler(XHTMLContentHandler xhtml) {
+            this.xhtml = xhtml;
+        }
+
+        @Override
+        public void startElement(String uri, String localName, String qName, Attributes atts)
+                throws SAXException {
+            if ("connection".equals(localName)) {
+                foundConnection = true;
+            }
+            // Database connection string
+            if ("dbPr".equals(localName)) {
+                String connection = atts.getValue("connection");
+                if (connection != null && !connection.isEmpty()) {
+                    emitExternalRef(xhtml, "dbConnection", connection);
+                }
+            }
+            // Web query
+            if ("webPr".equals(localName)) {
+                foundWebQuery = true;
+                String url = atts.getValue("url");
+                if (url != null && !url.isEmpty()) {
+                    emitExternalRef(xhtml, "webQuery", url);
+                }
+            }
+            // ODBC connection
+            if ("olapPr".equals(localName)) {
+                String connection = atts.getValue("connection");
+                if (connection != null && !connection.isEmpty()) {
+                    emitExternalRef(xhtml, "olapConnection", connection);
+                }
+            }
+            // Text file import
+            if ("textPr".equals(localName)) {
+                String sourceFile = atts.getValue("sourceFile");
+                if (sourceFile != null && !sourceFile.isEmpty()) {
+                    emitExternalRef(xhtml, "textFileImport", sourceFile);
+                }
+            }
+        }
+
+        boolean hasConnections() {
+            return foundConnection;
+        }
+
+        boolean hasWebQueries() {
+            return foundWebQuery;
+        }
+    }
+
+    /**
+     * Handler for parsing queryTable XML to extract web query sources.
+     */
+    private class QueryTableHandler extends DefaultHandler {
+        private final XHTMLContentHandler xhtml;
+
+        QueryTableHandler(XHTMLContentHandler xhtml) {
+            this.xhtml = xhtml;
+        }
+
+        @Override
+        public void startElement(String uri, String localName, String qName, Attributes atts)
+                throws SAXException {
+            if ("queryTable".equals(localName)) {
+                String connectionId = atts.getValue("connectionId");
+                // Connection details are in connections.xml
+            }
+            // Web query table refresh
+            if ("queryTableRefresh".equals(localName)) {
+                // Contains refresh settings
+            }
+        }
+    }
+
+    /**
+     * Handler for parsing pivotCacheDefinition XML to detect external data sources.
+     */
+    private class PivotCacheHandler extends DefaultHandler {
+        private final XHTMLContentHandler xhtml;
+        private boolean hasExternalData = false;
+
+        PivotCacheHandler(XHTMLContentHandler xhtml) {
+            this.xhtml = xhtml;
+        }
+
+        @Override
+        public void startElement(String uri, String localName, String qName, Attributes atts)
+                throws SAXException {
+            // cacheSource with type="external" indicates external data
+            if ("cacheSource".equals(localName)) {
+                String type = atts.getValue("type");
+                if ("external".equals(type) || "consolidation".equals(type)) {
+                    hasExternalData = true;
+                }
+            }
+            // worksheetSource can have external references
+            if ("worksheetSource".equals(localName)) {
+                String ref = atts.getValue("ref");
+                String sheet = atts.getValue("sheet");
+                String rId = atts.getValue("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id");
+                // If there's a relationship ID, it likely points to external workbook
+                if (rId != null) {
+                    hasExternalData = true;
+                }
+            }
+            // consolidation source (multiple ranges, possibly external)
+            if ("consolidation".equals(localName) || "rangeSets".equals(localName)) {
+                hasExternalData = true;
+            }
+        }
+
+        boolean hasExternalData() {
+            return hasExternalData;
+        }
     }
 
     private void getThreadedComments(OPCPackage container, PackagePart sheetPart, XHTMLContentHandler xhtml) throws TikaException,

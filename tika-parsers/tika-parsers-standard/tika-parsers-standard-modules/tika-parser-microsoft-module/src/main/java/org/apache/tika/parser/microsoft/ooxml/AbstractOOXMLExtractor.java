@@ -265,6 +265,16 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             sourceDesc = "";
         }
         if (rel.getTargetMode() != TargetMode.INTERNAL) {
+            // External target - emit as external reference for security analysis
+            String type = rel.getRelationshipType();
+            if (POIXMLDocument.OLE_OBJECT_REL_TYPE.equals(type)) {
+                emitExternalRef(xhtml, "externalOleObject", targetURI.toString());
+                parentMetadata.set(Office.HAS_EXTERNAL_OLE_OBJECTS, true);
+            } else if (PackageRelationshipTypes.IMAGE_PART.equals(type)) {
+                emitExternalRef(xhtml, "externalImage", targetURI.toString());
+            } else {
+                emitExternalRef(xhtml, "externalResource", targetURI.toString());
+            }
             return;
         }
         PackagePart target;
@@ -487,6 +497,22 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             name = name.substring(lastSlash + 1);
         }
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
+    }
+
+    /**
+     * Emits an external reference as an anchor element with appropriate class.
+     * Used for detecting external resources that could be security risks.
+     */
+    private void emitExternalRef(XHTMLContentHandler xhtml, String refType, String url)
+            throws SAXException {
+        if (url == null || url.isEmpty()) {
+            return;
+        }
+        AttributesImpl attrs = new AttributesImpl();
+        attrs.addAttribute("", "class", "class", "CDATA", "external-ref-" + refType);
+        attrs.addAttribute("", "href", "href", "CDATA", url);
+        xhtml.startElement("a", attrs);
+        xhtml.endElement("a");
     }
 
     /**

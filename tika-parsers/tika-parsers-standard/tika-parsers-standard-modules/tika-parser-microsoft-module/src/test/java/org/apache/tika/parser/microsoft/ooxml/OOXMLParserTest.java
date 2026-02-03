@@ -1812,4 +1812,43 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         String content = getText("testRecordSizeExceeded.xlsx");
         assertContains("Repetitive content pattern 3 for compression test row 1", content);
     }
+
+    /**
+     * Test extraction of field-based hyperlinks using instrText/fldChar.
+     * These are hyperlinks embedded as field codes rather than relationship-based hyperlinks.
+     * Uses the DOM-based XWPFWordExtractorDecorator.
+     */
+    @Test
+    public void testInstrTextHyperlink() throws Exception {
+        String xml = getXML("testInstrLink.docx").xml;
+        // The document contains a HYPERLINK field code in instrText
+        assertContains("<a href=\"https://exmaple.com/file\">", xml);
+        assertContains("Access Document(s)", xml);
+    }
+
+    /**
+     * Test extraction of external reference field codes (INCLUDEPICTURE, INCLUDETEXT, IMPORT, LINK).
+     * These can be used to hide malicious URLs in documents.
+     */
+    @Test
+    public void testExternalRefFieldCodes() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testExternalRefs.docx");
+        Metadata m = metadataList.get(0);
+        // Check metadata flag is set
+        assertEquals("true", m.get(Office.HAS_FIELD_HYPERLINKS));
+
+        String xml = getXML("testExternalRefs.docx").xml;
+        // Test INCLUDEPICTURE field code
+        assertContains("class=\"external-ref-INCLUDEPICTURE\"", xml);
+        assertContains("http://example.com/tracking.png", xml);
+        // Test INCLUDETEXT field code
+        assertContains("class=\"external-ref-INCLUDETEXT\"", xml);
+        assertContains("http://example.org/payload.txt", xml);
+        // Test IMPORT field code
+        assertContains("class=\"external-ref-IMPORT\"", xml);
+        assertContains("http://example.net/exploit.wmf", xml);
+        // Test LINK field code
+        assertContains("class=\"external-ref-LINK\"", xml);
+        assertContains("http://test.invalid/cmd.docx", xml);
+    }
 }
