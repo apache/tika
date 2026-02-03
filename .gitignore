@@ -1,7 +1,6 @@
 .svn
 target
 dependency-reduced-pom.xml
-.editorconfig
 .idea
 .classpath
 .project

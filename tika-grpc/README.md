@@ -17,7 +17,7 @@ The fastest way to run tika-grpc in development mode with plugin hot-reloading:
 
 ```bash
 # 1. Build Tika and all plugins (from tika project root)
-mvn clean install -DskipTests
+./mvnw clean install -DskipTests
 
 # 2. Run in development mode (from tika-grpc directory)
 cd tika-grpc
@@ -55,7 +55,7 @@ export TIKA_PLUGIN_DEV_MODE=true
 
 **Maven Dev Profile:** (Recommended)
 ```bash
-mvn exec:java -Pdev -Dconfig.file=dev-tika-config.json
+./mvnw exec:java -Pdev -Dconfig.file=dev-tika-config.json
 ```
 
 ### Configuration Example
@@ -97,7 +97,7 @@ The `dev-tika-config.json` file shows how to configure plugin-roots with relativ
 1. **Build the plugin modules** (only needed once or when dependencies change):
    ```bash
    cd tika-pipes/tika-pipes-plugins
-   mvn clean compile
+   ./mvnw clean compile
    ```
 
 2. **Run in development mode** using the convenience script:
@@ -110,8 +110,8 @@ The `dev-tika-config.json` file shows how to configure plugin-roots with relativ
 
 4. **Recompile just the changed plugin** (much faster than full rebuild):
    ```bash
-   cd tika-pipes/tika-pipes-plugins/tika-pipes-s3
-   mvn compile
+   # From the project root
+   ./mvnw compile -pl :tika-pipes-s3
    ```
 
 5. **Restart the server** - changes are immediately picked up
@@ -120,7 +120,7 @@ The `dev-tika-config.json` file shows how to configure plugin-roots with relativ
 
 - **ZIP extraction is skipped** - TikaPluginManager doesn't try to unzip plugins
 - **Plugins loaded from directories** - pf4j loads classes directly from `target/classes`
-- **Each plugin directory must contain** `plugin.properties` in the root (automatically present after `mvn compile`)
+- **Each plugin directory must contain** `plugin.properties` in the root (automatically present after `./mvnw compile`)
 - **Dependencies are available** - The dev profile includes all plugin modules as dependencies
 
 ### Expected Directory Structure
@@ -157,7 +157,7 @@ For IntelliJ IDEA development, here's a complete workflow for developing plugins
    - Or use terminal:
      ```bash
      cd tika-pipes/tika-pipes-plugins
-     mvn clean compile
+     ./mvnw clean compile
      ```
 
 3. **Create a Run Configuration** for tika-grpc:
@@ -200,8 +200,8 @@ For IntelliJ IDEA development, here's a complete workflow for developing plugins
    - Select **Build Module 'tika-pipes-s3.main'**
    - Or use terminal:
      ```bash
-     cd tika-pipes/tika-pipes-plugins/tika-pipes-s3
-     mvn compile
+     # From project root
+     ./mvnw compile -pl :tika-pipes-s3
      ```
    - Build time: ~5-10 seconds (much faster than full rebuild!)
 
@@ -229,7 +229,7 @@ For IntelliJ IDEA development, here's a complete workflow for developing plugins
 
 **Multiple terminal windows:**
 - Terminal 1: Run `./run-dev.sh` 
-- Terminal 2: Quick builds with `mvn compile` in plugin directory
+- Terminal 2: Quick builds with `./mvnw compile -pl :plugin-name` from project root
 - Restart server with Ctrl+C and up-arrow to re-run
 
 **Keyboard shortcut for restart:**
@@ -242,7 +242,7 @@ For IntelliJ IDEA development, here's a complete workflow for developing plugins
 **"ClassNotFoundException" after changes:**
 - Make sure you ran **Build Module** on the changed plugin
 - Check that `target/classes` was updated (look at file timestamps)
-- Do a clean compile: `mvn clean compile`
+- Do a clean compile: `./mvnw clean compile`
 
 **Changes not visible after restart:**
 - Verify you built the correct module (check module name in IntelliJ)
@@ -250,7 +250,7 @@ For IntelliJ IDEA development, here's a complete workflow for developing plugins
 - Check that development mode is enabled (look for "DEVELOPMENT mode" in logs)
 
 **Server won't start:**
-- Build ALL plugins first: `cd tika-pipes/tika-pipes-plugins && mvn compile`
+- Build ALL plugins first: `./mvnw compile -pl tika-pipes/tika-pipes-plugins`
 - Check that `dev-tika-config.json` exists in the working directory
 - Verify working directory is set to `$PROJECT_DIR$/tika-grpc`
 
@@ -306,8 +306,7 @@ For production deployments, use packaged ZIP files:
 
 2. **Build plugin ZIPs:**
    ```bash
-   cd tika-pipes/tika-pipes-plugins
-   mvn clean package
+   ./mvnw clean package -pl tika-pipes/tika-pipes-plugins
    ```
 
 3. **Update plugin-roots** to point to the directory containing ZIP files:
@@ -327,18 +326,18 @@ For production deployments, use packaged ZIP files:
 ### Troubleshooting
 
 **Plugin not loading?**
-- Ensure `mvn compile` was run on the plugin module
+- Ensure `./mvnw compile` was run on the plugin module
 - Check that `plugin.properties` exists in `target/classes/`
 - Verify development mode is enabled
 - Look for "DEVELOPMENT mode" in the logs on startup
 
 **Changes not picked up?**
-- Recompile the plugin module: `mvn compile`
+- Recompile the plugin module: `./mvnw compile -pl :plugin-name`
 - Restart the application
 - Check that you're editing the correct plugin module
 
 **ClassNotFoundException errors?**
-- Make sure you built all plugins first with `mvn clean install -DskipTests`
+- Make sure you built all plugins first with `./mvnw clean install -DskipTests`
 - The dev profile includes all plugin dependencies, but they must be compiled first
 
 ### References
