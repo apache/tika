@@ -16,21 +16,23 @@
  */
 package org.apache.tika.parser.pkg;
 
-import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
 
 import java.io.InputStream;
 
 import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 /**
  * Test case for parsing gzip files.
  */
-public class GzipParserTest extends AbstractPkgTest {
+public class GzipParserTest extends TikaTest {
 
     /**
      * Tests that the ParseContext parser is correctly
@@ -38,23 +40,23 @@ public class GzipParserTest extends AbstractPkgTest {
      */
     @Test
     public void testEmbedded() throws Exception {
-        ContentHandler handler = new BodyContentHandler();
-        Metadata metadata = new Metadata();
+        List<Metadata> metadataList = getRecursiveMetadata("test-documents.tgz");
 
-        try (InputStream stream = getResourceAsStream("/test-documents/test-documents.tgz")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
-        }
+        // Container plus embedded tar contents
+        assertTrue(metadataList.size() > 1);
 
-        // Should find a single entry, for the (compressed) tar file
-        assertEquals(1, tracker.filenames.size());
-        assertEquals(1, tracker.mediatypes.size());
-        assertEquals(1, tracker.modifiedAts.size());
+        // Embedded documents should have path through the tar file
+        String embeddedPath = metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
+        assertTrue(embeddedPath.contains("test-documents.tar"));
+    }
 
-        assertEquals(null, tracker.filenames.get(0));
-        assertEquals(null, tracker.mediatypes.get(0));
-        assertEquals(null, tracker.modifiedAts.get(0));
+    @Test
+    public void testGzipInternalFileName() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("bob.gz");
+        assertEquals(2, metadataList.size());
 
-        // Tar file starts with the directory name
-        assertEquals("test-documents/", new String(tracker.lastSeenStart, 0, 15, US_ASCII));
+        Metadata m1 = metadataList.get(1);
+        assertEquals("alice.txt", m1.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("alice.txt", m1.get(TikaCoreProperties.INTERNAL_PATH));
     }
 }
