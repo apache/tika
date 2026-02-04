@@ -21,6 +21,7 @@ import org.apache.tika.pipes.fetcher.config.AbstractConfig;
 public class FileSystemFetcherConfig extends AbstractConfig {
     private String basePath;
     private boolean extractFileSystemMetadata;
+    private boolean allowAbsolutePaths;
 
     public String getBasePath() {
         return basePath;
@@ -37,6 +38,20 @@ public class FileSystemFetcherConfig extends AbstractConfig {
 
     public FileSystemFetcherConfig setExtractFileSystemMetadata(boolean extractFileSystemMetadata) {
         this.extractFileSystemMetadata = extractFileSystemMetadata;
+        return this;
+    }
+
+    /**
+     * If true, allows fetchKey to be an absolute path when basePath is not set.
+     * This explicitly acknowledges the security risk of unrestricted file access.
+     * The default is <code>false</code>.
+     */
+    public boolean isAllowAbsolutePaths() {
+        return allowAbsolutePaths;
+    }
+
+    public FileSystemFetcherConfig setAllowAbsolutePaths(boolean allowAbsolutePaths) {
+        this.allowAbsolutePaths = allowAbsolutePaths;
         return this;
     }
 }

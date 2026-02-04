@@ -16,6 +16,7 @@
  */
 package org.apache.tika.pipes.fetcher.fs;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -27,6 +28,7 @@ import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.InitializableProblemHandler;
+import org.apache.tika.exception.TikaConfigException;
 
 
 public class FileSystemFetcherTest {
@@ -51,6 +53,38 @@ public class FileSystemFetcherTest {
         assertThrows(InvalidPathException.class, () -> {
             f.setBasePath("bad\u0000path");
             f.setName("fs");
+            f.checkInitialization(InitializableProblemHandler.IGNORE);
+        });
+    }
+
+    @Test
+    public void testNoBasePathWithoutAllowAbsolutePathsThrows() {
+        FileSystemFetcher f = new FileSystemFetcher();
+        f.setName("fs");
+        // No basePath set, allowAbsolutePaths defaults to false
+        assertThrows(TikaConfigException.class, () -> {
+            f.checkInitialization(InitializableProblemHandler.IGNORE);
+        });
+    }
+
+    @Test
+    public void testNoBasePathWithAllowAbsolutePathsSucceeds() {
+        FileSystemFetcher f = new FileSystemFetcher();
+        f.setName("fs");
+        f.setAllowAbsolutePaths(true);
+        // No basePath set, but allowAbsolutePaths is true
+        assertDoesNotThrow(() -> {
+            f.checkInitialization(InitializableProblemHandler.IGNORE);
+        });
+    }
+
+    @Test
+    public void testWithBasePathSucceeds() {
+        FileSystemFetcher f = new FileSystemFetcher();
+        f.setName("fs");
+        f.setBasePath("/some/path");
+        // basePath is set, so allowAbsolutePaths doesn't matter
+        assertDoesNotThrow(() -> {
             f.checkInitialization(InitializableProblemHandler.IGNORE);
         });
     }
