@@ -69,12 +69,20 @@ public class TikaPipesConfigTest extends AbstractTikaConfigTest {
     }
 
     @Test
-    public void testNoBasePathFetchers() throws Exception {
-        //no basepath is allowed as of > 2.3.0
-        //test that this does not throw an exception.
+    public void testNoBasePathFetchersRequiresAllowAbsolutePaths() throws Exception {
+        //no basepath requires allowAbsolutePaths=true as of 3.x
+        assertThrows(TikaConfigException.class, () -> {
+            FetcherManager.load(getConfigFilePath("fetchers-nobasepath-config.xml"));
+        });
+    }
 
+    @Test
+    public void testNoBasePathFetchersWithAllowAbsolutePaths() throws Exception {
+        //no basepath is allowed if allowAbsolutePaths=true
         FetcherManager fetcherManager = FetcherManager.load(
-                getConfigFilePath("fetchers-nobasepath-config.xml"));
+                getConfigFilePath("fetchers-nobasepath-allowabsolute-config.xml"));
+        Fetcher f = fetcherManager.getFetcher("fs2");
+        assertTrue(((FileSystemFetcher) f).isAllowAbsolutePaths());
     }
 
     @Test

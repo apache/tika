@@ -1,5 +1,8 @@
 Release 3.3.0 - ???
 
+  * Users need to add "allowAbsolutePaths=true" for the FileSystemFetcher to fetch
+    an absolute path (
+
   * Add detection of compressed bmp (TIKA-4511).
 
   * Allow per file timeouts in tika-pipes (TIKA-4497).

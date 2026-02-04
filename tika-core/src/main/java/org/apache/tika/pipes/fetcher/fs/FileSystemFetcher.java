@@ -52,6 +52,7 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
     public FileSystemFetcher(FileSystemFetcherConfig fileSystemFetcherConfig) {
         setBasePath(fileSystemFetcherConfig.getBasePath());
         setExtractFileSystemMetadata(fileSystemFetcherConfig.isExtractFileSystemMetadata());
+        setAllowAbsolutePaths(fileSystemFetcherConfig.isAllowAbsolutePaths());
     }
 
     private static final Logger LOG = LoggerFactory.getLogger(FileSystemFetcher.class);
@@ -60,6 +61,8 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
     private Path basePath = null;
 
     private boolean extractFileSystemMetadata = false;
+
+    private boolean allowAbsolutePaths = false;
 
     static boolean isDescendant(Path root, Path descendant) {
         return descendant.toAbsolutePath().normalize()
@@ -147,6 +150,22 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
         this.extractFileSystemMetadata = extractFileSystemMetadata;
     }
 
+    /**
+     * If true, allows fetchKey to be an absolute path when basePath is not set.
+     * This explicitly acknowledges the security risk of unrestricted file access.
+     * The default is <code>false</code>.
+     *
+     * @param allowAbsolutePaths
+     */
+    @Field
+    public void setAllowAbsolutePaths(boolean allowAbsolutePaths) {
+        this.allowAbsolutePaths = allowAbsolutePaths;
+    }
+
+    public boolean isAllowAbsolutePaths() {
+        return allowAbsolutePaths;
+    }
+
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         //no-op
@@ -156,11 +175,13 @@ public class FileSystemFetcher extends AbstractFetcher implements Initializable 
     public void checkInitialization(InitializableProblemHandler problemHandler)
             throws TikaConfigException {
         if (basePath == null || basePath.toString().isBlank()) {
-            LOG.warn("'basePath' has not been set. " +
-                    "This means that client code or clients can read from any file that this " +
-                    "process has permissions to read. If you are running tika-server, make " +
-                    "absolutely certain that you've locked down " +
-                    "access to tika-server and file-permissions for the tika-server process.");
+            if (!allowAbsolutePaths) {
+                throw new TikaConfigException(
+                        "'basePath' must be set, or 'allowAbsolutePaths' must be true. "
+                                + "Without basePath, clients can read any file this process "
+                                + "has access to. Set 'allowAbsolutePaths' to 'true' to explicitly "
+                                + "allow this behavior and accept the security risks.");
+            }
             return;
         }
         if (basePath.toString().startsWith("http://")) {
