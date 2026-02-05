@@ -43,11 +43,20 @@ public class PipesConfig {
 
     public static final long DEFAULT_HEARTBEAT_INTERVAL_MS = 1000;
 
+    public static final boolean DEFAULT_USE_SHARED_SERVER = false;
+
     /**
      * The emit strategy configuration determines how the forked PipesServer handles emitting data.
      * See {@link EmitStrategyConfig} for details.
      */
     private EmitStrategyConfig emitStrategy = new EmitStrategyConfig(EmitStrategyConfig.DEFAULT_EMIT_STRATEGY);
+
+    /**
+     * When true, multiple PipesClients connect to a single shared PipesServer process
+     * instead of each client spawning its own server. This reduces memory overhead
+     * and startup time at the cost of reduced isolation - one crash affects all in-flight requests.
+     */
+    private boolean useSharedServer = DEFAULT_USE_SHARED_SERVER;
 
     private long timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
     private long socketTimeoutMs = DEFAULT_SOCKET_TIMEOUT_MS;
@@ -461,5 +470,26 @@ public class PipesConfig {
      */
     public void setTempDirectory(String tempDirectory) {
         this.tempDirectory = tempDirectory;
+    }
+
+    /**
+     * Returns whether shared server mode is enabled.
+     * When true, multiple PipesClients connect to a single shared PipesServer process.
+     *
+     * @return true if shared server mode is enabled
+     */
+    public boolean isUseSharedServer() {
+        return useSharedServer;
+    }
+
+    /**
+     * Sets whether to use shared server mode.
+     * When true, multiple PipesClients connect to a single shared PipesServer process
+     * instead of each client spawning its own server.
+     *
+     * @param useSharedServer true to enable shared server mode
+     */
+    public void setUseSharedServer(boolean useSharedServer) {
+        this.useSharedServer = useSharedServer;
     }
 }

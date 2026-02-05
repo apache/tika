@@ -250,17 +250,75 @@ public class PipesServer implements AutoCloseable {
 
 
     public static void main(String[] args) throws Exception {
-        int port = Integer.parseInt(args[0]);
-        Path tikaConfig = Paths.get(args[1]);
-        String pipesClientId = System.getProperty("pipesClientId", "unknown");
-        LOG.debug("pipesClientId={}: starting pipes server on port={}", pipesClientId, port);
-        try (PipesServer server = PipesServer.load(port, tikaConfig)) {
-            server.mainLoop();
-        } catch (Throwable t) {
-            LOG.error("pipesClientId={}: crashed", pipesClientId, t);
-            throw t;
+        // Check for shared mode: --shared <port> <numConnections> <tikaConfigPath>
+        if (args.length > 0 && "--shared".equals(args[0])) {
+            int port = Integer.parseInt(args[1]);
+            int numConnections = Integer.parseInt(args[2]);
+            Path tikaConfig = Paths.get(args[3]);
+            LOG.info("Starting shared PipesServer on port={} with {} connections", port, numConnections);
+            runSharedMode(port, numConnections, tikaConfig);
+        } else {
+            // Per-client mode: <port> <tikaConfigPath>
+            int port = Integer.parseInt(args[0]);
+            Path tikaConfig = Paths.get(args[1]);
+            String pipesClientId = System.getProperty("pipesClientId", "unknown");
+            LOG.debug("pipesClientId={}: starting pipes server on port={}", pipesClientId, port);
+            try (PipesServer server = PipesServer.load(port, tikaConfig)) {
+                server.mainLoop();
+            } catch (Throwable t) {
+                LOG.error("pipesClientId={}: crashed", pipesClientId, t);
+                throw t;
+            } finally {
+                LOG.info("pipesClientId={}: server shutting down", pipesClientId);
+            }
+        }
+    }
+
+    /**
+     * Runs the server in shared mode, accepting multiple client connections.
+     */
+    private static void runSharedMode(int port, int numConnections, Path tikaConfigPath) throws Exception {
+        TikaLoader tikaLoader = TikaLoader.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaLoader.getConfig());
+
+        // Load shared resources
+        SharedServerResources resources = SharedServerResources.load(tikaLoader, pipesConfig);
+
+        // Create thread pool for connection handlers
+        ExecutorService connectionPool = Executors.newFixedThreadPool(numConnections);
+
+        // Create server socket and accept connections
+        try (java.net.ServerSocket serverSocket = new java.net.ServerSocket()) {
+            serverSocket.setReuseAddress(true);
+            serverSocket.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), numConnections);
+
+            // Signal readiness to the parent process via stdout
+            System.out.println("READY:" + port);
+            System.out.flush();
+
+            LOG.info("Shared server ready, accepting connections on port {}", port);
+
+            // Accept connections until shutdown
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    java.net.Socket clientSocket = serverSocket.accept();
+                    clientSocket.setSoTimeout((int) pipesConfig.getSocketTimeoutMs());
+                    clientSocket.setTcpNoDelay(true);
+
+                    LOG.debug("Accepted connection from client");
+
+                    ConnectionHandler handler = new ConnectionHandler(clientSocket, resources, pipesConfig);
+                    connectionPool.submit(handler);
+                } catch (java.net.SocketException e) {
+                    // Server socket closed, shutdown
+                    LOG.debug("Server socket closed, shutting down");
+                    break;
+                }
+            }
         } finally {
-            LOG.info("pipesClientId={}: server shutting down", pipesClientId);
+            connectionPool.shutdownNow();
+            connectionPool.awaitTermination(10, TimeUnit.SECONDS);
+            LOG.info("Shared server shutdown complete");
         }
     }
 
