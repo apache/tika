@@ -149,6 +149,10 @@ public class AutoDetectParser extends CompositeParser {
         // DigesterFactory is retrieved from ParseContext (configured via parse-context)
         DigestHelper.maybeDigest(tis, metadata, context);
 
+        // Signal to detectors that parsing will follow - allows them to prepare
+        // (e.g., salvage corrupted ZIP files for parser reuse)
+        context.set(ParsingIntent.class, ParsingIntent.WILL_PARSE);
+
         // Automatically detect the MIME type of the document
         MediaType type = detector.detect(tis, metadata, context);
         metadata.set(Metadata.CONTENT_TYPE, type.toString());
