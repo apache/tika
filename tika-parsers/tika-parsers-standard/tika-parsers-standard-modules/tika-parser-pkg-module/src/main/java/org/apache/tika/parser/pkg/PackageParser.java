@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -53,6 +54,7 @@ import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
 import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException.Feature;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.ContentHandler;
@@ -265,6 +267,18 @@ public class PackageParser extends AbstractEncodingDetectorParser {
     private void _parse(InputStream stream, ContentHandler handler, Metadata metadata,
                 ParseContext context, TemporaryResources tmp)
             throws TikaException, IOException, SAXException {
+        // Check if detector already opened a ZipFile and stored it in openContainer
+        if (stream instanceof TikaInputStream) {
+            TikaInputStream tis = (TikaInputStream) stream;
+            Object container = tis.getOpenContainer();
+            if (container instanceof ZipFile) {
+                // Ensure the ZipFile gets closed when tmp is closed
+                tmp.addResource((ZipFile) container);
+                parseZipFile((ZipFile) container, handler, metadata, context);
+                return;
+            }
+        }
+
         ArchiveInputStream ais = null;
         String encoding = null;
         try {
@@ -349,6 +363,75 @@ public class PackageParser extends AbstractEncodingDetectorParser {
             ais.close();
             tmp.close();
             xhtml.endDocument();
+        }
+    }
+
+    /**
+     * Parse a ZipFile that was already opened by the detector.
+     * This avoids the overhead of re-opening the file.
+     */
+    private void parseZipFile(ZipFile zipFile, ContentHandler handler, Metadata metadata,
+                              ParseContext context) throws IOException, SAXException, TikaException {
+        // Update media type if not already set to a specialization
+        String incomingContentTypeString = metadata.get(Metadata.CONTENT_TYPE);
+        if (incomingContentTypeString == null) {
+            metadata.set(Metadata.CONTENT_TYPE, ZIP.toString());
+        } else {
+            MediaType incomingMediaType = MediaType.parse(incomingContentTypeString);
+            if (incomingMediaType != null && !PACKAGE_SPECIALIZATIONS.contains(incomingMediaType)) {
+                metadata.set(Metadata.CONTENT_TYPE, ZIP.toString());
+            }
+        }
+
+        EmbeddedDocumentExtractor extractor =
+                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
+
+        try {
+            Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
+            while (entries.hasMoreElements()) {
+                ZipArchiveEntry entry = entries.nextElement();
+                if (!entry.isDirectory()) {
+                    parseZipEntry(zipFile, entry, extractor, metadata, xhtml);
+                }
+            }
+        } finally {
+            xhtml.endDocument();
+        }
+    }
+
+    /**
+     * Parse a single entry from a ZipFile.
+     */
+    private void parseZipEntry(ZipFile zipFile, ZipArchiveEntry entry,
+                               EmbeddedDocumentExtractor extractor, Metadata parentMetadata,
+                               XHTMLContentHandler xhtml)
+            throws SAXException, IOException, TikaException {
+        String name = entry.getName();
+
+        // Try to detect charset of archive entry in case of non-unicode filename is used
+        if (detectCharsetsInEntryNames) {
+            byte[] entryName = entry.getRawName();
+            if (entryName != null && entryName.length >= MIN_BYTES_FOR_DETECTING_CHARSET) {
+                Charset charset = getEncodingDetector().detect(
+                        new UnsynchronizedByteArrayInputStream(entryName), new Metadata());
+                if (charset != null) {
+                    name = new String(entryName, charset);
+                }
+            }
+        }
+
+        Metadata entryMetadata = handleEntryMetadata(name,
+                entry.getCreationTime() != null ? new Date(entry.getCreationTime().toMillis()) : null,
+                entry.getLastModifiedTime() != null ? new Date(entry.getLastModifiedTime().toMillis()) : null,
+                entry.getSize(), xhtml);
+
+        if (extractor.shouldParseEmbedded(entryMetadata)) {
+            try (InputStream entryStream = zipFile.getInputStream(entry)) {
+                extractor.parseEmbedded(entryStream, xhtml, entryMetadata, true);
+            }
         }
     }
 
