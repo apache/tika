@@ -13,7 +13,7 @@ application/fits	class org.apache.tika.parser.gdal.GDALParser
 application/gff	class org.apache.tika.parser.gdal.GDALParser
 application/grass-ascii-grid	class org.apache.tika.parser.gdal.GDALParser
 application/gzip	class org.apache.tika.parser.pkg.CompressorParser
-application/java-archive	class org.apache.tika.parser.pkg.PackageParser
+application/java-archive	class org.apache.tika.parser.pkg.ZipParser
 application/java-vm	class org.apache.tika.parser.asm.ClassParser
 application/jaxa-pal-sar	class org.apache.tika.parser.gdal.GDALParser
 application/jdem	class org.apache.tika.parser.gdal.GDALParser
@@ -117,7 +117,7 @@ application/vnd.wordperfect; version=5.1	class org.apache.tika.parser.wordperfec
 application/vnd.wordperfect; version=6.x	class org.apache.tika.parser.wordperfect.WordPerfectParser
 application/vrt	class org.apache.tika.parser.gdal.GDALParser
 application/warc	class org.apache.tika.parser.warc.WARCParser
-application/x-7z-compressed	class org.apache.tika.parser.pkg.PackageParser
+application/x-7z-compressed	class org.apache.tika.parser.pkg.SevenZParser
 application/x-ace2	class org.apache.tika.parser.gdal.GDALParser
 application/x-archive	class org.apache.tika.parser.pkg.PackageParser
 application/x-arj	class org.apache.tika.parser.pkg.PackageParser
@@ -251,7 +251,7 @@ application/x-zmap	class org.apache.tika.parser.gdal.GDALParser
 application/xhtml+xml	class org.apache.tika.parser.html.JSoupParser
 application/xml	class org.apache.tika.parser.xml.DcXMLParser
 application/xpm	class org.apache.tika.parser.gdal.GDALParser
-application/zip	class org.apache.tika.parser.pkg.PackageParser
+application/zip	class org.apache.tika.parser.pkg.ZipParser
 application/zlib	class org.apache.tika.parser.pkg.CompressorParser
 audio/basic	class org.apache.tika.parser.audio.AudioParser
 audio/midi	class org.apache.tika.parser.audio.MidiParser
