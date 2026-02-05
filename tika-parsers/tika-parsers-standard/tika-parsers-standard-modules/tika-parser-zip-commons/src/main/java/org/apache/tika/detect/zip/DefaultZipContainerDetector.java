@@ -42,8 +42,10 @@ import org.apache.tika.detect.DetectHelper;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Zip;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.zip.utils.ZipSalvager;
 
 /**
  * This class is designed to detect subtypes of zip-based file formats.
@@ -198,48 +200,52 @@ public class DefaultZipContainerDetector implements Detector {
      * This will call TikaInputStream's getFile(). If there are no exceptions,
      * it will place the ZipFile in TikaInputStream's openContainer and leave it
      * open.
+     * <p>
+     * Sets detector hints in metadata for the parser:
+     * <ul>
+     *   <li>{@link Zip#DETECTOR_ZIPFILE_OPENED} - true if ZipFile opened successfully</li>
+     *   <li>{@link Zip#DETECTOR_DATA_DESCRIPTOR_REQUIRED} - true if streaming needed data descriptor support</li>
+     * </ul>
      *
-     * @param tis
-     * @return
+     * @param tis the TikaInputStream
+     * @param metadata the metadata (will be updated with detector hints)
+     * @param parseContext the parse context
+     * @return the detected media type
      */
     private MediaType detectZipFormatOnFile(TikaInputStream tis, Metadata metadata, ParseContext parseContext) {
-        ZipFile zip = null;
-        try {
-            zip = ZipFile.builder().setFile(tis.getFile()).get();
+        // Try to open ZipFile (with salvaging fallback)
+        ZipFile zip = ZipSalvager.tryToOpenZipFile(tis, metadata);
 
-            for (ZipContainerDetector zipDetector : getDetectors()) {
-                MediaType type = zipDetector.detect(zip, tis);
-                if (type != null) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("{} detected {}", zipDetector.getClass(),
-                                type.toString());
-                    }
-                    //e.g. if OPCPackage has already been set
-                    //don't overwrite it with the zip
-                    if (tis.getOpenContainer() == null) {
-                        tis.setOpenContainer(zip);
+        if (zip != null) {
+            // ZipFile opened (directly or via salvaging) - run file-based detection
+            try {
+                for (ZipContainerDetector zipDetector : getDetectors()) {
+                    MediaType type = zipDetector.detect(zip, tis);
+                    if (type != null) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("{} detected {}", zipDetector.getClass(), type.toString());
+                        }
+                        return type;
                     } else {
-                        tis.addCloseableResource(zip);
-                    }
-                    return type;
-                } else {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("{} detected null", zipDetector.getClass());
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("{} detected null", zipDetector.getClass());
+                        }
                     }
                 }
+            } catch (IOException e) {
+                // Detection failed - fall through to return plain ZIP
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Detection failed on opened ZipFile", e);
+                }
             }
-        } catch (IOException e) {
-            //do nothing
-        }
-        // Fallback: it's still a zip file, we just don't know what kind of one
-        if (zip != null) {
-            IOUtils.closeQuietly(zip);
+            // No specific type detected - it's a plain ZIP
             return MediaType.APPLICATION_ZIP;
         }
+
+        // ZipFile failed to open even after salvaging - fall back to streaming detection
         if (LOG.isDebugEnabled()) {
-            LOG.debug("zip file failed to open; attempting streaming detect. Results may be imprecise");
+            LOG.debug("ZipFile and salvaging both failed; falling back to streaming detection");
         }
-        //problem opening zip file (truncated?)
         try {
             return detectStreamingFromPath(tis.getPath(), metadata, false);
         } catch (IOException e) {
@@ -265,6 +271,8 @@ public class DefaultZipContainerDetector implements Detector {
         } catch (UnsupportedZipFeatureException zfe) {
             if (allowStoredEntries == false &&
                     zfe.getFeature() == UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR) {
+                // Set hint for parser that DATA_DESCRIPTOR support is required
+                metadata.set(Zip.DETECTOR_DATA_DESCRIPTOR_REQUIRED, true);
                 input.reset();
                 return detectStreaming(input, metadata, true);
             }
@@ -295,6 +303,8 @@ public class DefaultZipContainerDetector implements Detector {
         } catch (UnsupportedZipFeatureException zfe) {
             if (allowStoredEntries == false &&
                     zfe.getFeature() == UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR) {
+                // Set hint for parser that DATA_DESCRIPTOR support is required
+                metadata.set(Zip.DETECTOR_DATA_DESCRIPTOR_REQUIRED, true);
                 return detectStreamingFromPath(p, metadata, true);
             }
         } catch (SecurityException e) {

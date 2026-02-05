@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Locale;
 
 import org.apache.poi.extractor.ExtractorFactory;
@@ -101,10 +102,13 @@ public class OOXMLExtractorFactory {
                 pkg = ((OPCPackageWrapper) tis.getOpenContainer()).getOPCPackage();
             } else {
                 try {
-                    pkg = OPCPackage.open(tis.getFile().getPath(), PackageAccess.READ);
+                    pkg = OPCPackage.open(tis.getPath().toString(), PackageAccess.READ);
                 } catch (InvalidOperationException e) {
-                    tmpRepairedCopy = Files.createTempFile("tika-ooxml-repair-", "").toFile();
-                    ZipSalvager.salvageCopy(tis.getFile(), tmpRepairedCopy);
+                    Path tmpRepairedPath = Files.createTempFile("tika-ooxml-repair-", "");
+                    tmpRepairedCopy = tmpRepairedPath.toFile();
+                    tis.enableRewind();
+                    ZipSalvager.salvageCopy(tis, tmpRepairedPath, false);
+                    tis.rewind();
                     pkg = OPCPackage.open(tmpRepairedCopy, PackageAccess.READ);
                 }
                 tis.setOpenContainer(new OPCPackageWrapper(pkg));

@@ -171,7 +171,7 @@ public class EpubParser implements Parser {
         try (TemporaryResources resources = new TemporaryResources()) {
             Path salvaged =
                     resources.createTempFile(FilenameUtils.getSuffixFromPath(brokenZip.getFileName().toString()));
-            ZipSalvager.salvageCopy(brokenZip.toFile(), salvaged.toFile());
+            ZipSalvager.salvageCopy(brokenZip, salvaged);
             try (ZipFile zipFile = ZipFile.builder().setFile(salvaged.toFile()).get()) {
                 return bufferedParseZipFile(zipFile, bodyHandler, xhtml, metadata, context, false);
             } catch (EpubZipException e) {
