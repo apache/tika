@@ -61,6 +61,12 @@
       <artifactId>tika-async-cli</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- for fork mode -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-pipes-fork-parser</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
     <!-- logging -->
     <dependency>

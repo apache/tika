@@ -40,6 +40,7 @@ public class PipesForkParserConfig {
     private String fetcherName = PipesForkParser.DEFAULT_FETCHER_NAME;
     private Path pluginsDir;
     private EmbeddedLimits embeddedLimits;
+    private Path userConfigPath;
 
     public PipesForkParserConfig() {
         this.pipesConfig = new PipesConfig();
@@ -298,6 +299,30 @@ public class PipesForkParserConfig {
      */
     public PipesForkParserConfig setPluginsDir(Path pluginsDir) {
         this.pluginsDir = pluginsDir;
+        return this;
+    }
+
+    /**
+     * Get the user-provided configuration file path.
+     * If set, this config will be merged with the generated configuration.
+     *
+     * @return the user config path, or null if not set
+     */
+    public Path getUserConfigPath() {
+        return userConfigPath;
+    }
+
+    /**
+     * Set a user-provided configuration file path.
+     * The user's configuration will be merged with the automatically generated
+     * configuration for PipesForkParser. User settings are preserved except
+     * for the internal fetcher which is always added.
+     *
+     * @param userConfigPath path to the user's configuration file
+     * @return this config for chaining
+     */
+    public PipesForkParserConfig setUserConfigPath(Path userConfigPath) {
+        this.userConfigPath = userConfigPath;
         return this;
     }
 }

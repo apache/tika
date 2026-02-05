@@ -76,6 +76,7 @@ import org.apache.tika.gui.TikaGUI;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.language.detect.LanguageHandler;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeType;
@@ -90,6 +91,10 @@ import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.digestutils.CommonsDigesterFactory;
+import org.apache.tika.pipes.api.ParseMode;
+import org.apache.tika.pipes.fork.PipesForkParser;
+import org.apache.tika.pipes.fork.PipesForkParserConfig;
+import org.apache.tika.pipes.fork.PipesForkResult;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
@@ -204,6 +209,22 @@ public class TikaCLI {
     private int maxEmbeddedCount = EmbeddedLimits.UNLIMITED;
     private boolean pipeMode = true;
     private boolean prettyPrint;
+    /**
+     * Fork mode: run parsing in a forked JVM process for isolation.
+     */
+    private boolean forkMode = false;
+    /**
+     * Fork mode timeout in milliseconds.
+     */
+    private long forkTimeout = 60000;
+    /**
+     * Fork mode JVM arguments.
+     */
+    private List<String> forkJvmArgs = null;
+    /**
+     * Fork mode plugins directory.
+     */
+    private String forkPluginsDir = null;
     private final OutputType XML = new OutputType() {
         @Override
         protected ContentHandler getContentHandler(OutputStream output, Metadata metadata) throws Exception {
@@ -474,6 +495,14 @@ public class TikaCLI {
             type = LANGUAGE;
         } else if (arg.equals("-d") || arg.equals("--detect")) {
             type = DETECT;
+        } else if (arg.equals("-f") || arg.equals("--fork")) {
+            forkMode = true;
+        } else if (arg.startsWith("--fork-timeout=")) {
+            forkTimeout = Long.parseLong(arg.substring("--fork-timeout=".length()));
+        } else if (arg.startsWith("--fork-jvm-args=")) {
+            forkJvmArgs = Arrays.asList(arg.substring("--fork-jvm-args=".length()).split(","));
+        } else if (arg.startsWith("--fork-plugins-dir=")) {
+            forkPluginsDir = arg.substring("--fork-plugins-dir=".length());
         } else if (arg.startsWith("--maxEmbeddedDepth=")) {
             maxEmbeddedDepth = Integer.parseInt(arg.substring("--maxEmbeddedDepth=".length()));
         } else if (arg.startsWith("--maxEmbeddedCount=")) {
@@ -492,7 +521,11 @@ public class TikaCLI {
 
             if (arg.equals("-")) {
                 try (TikaInputStream tis = TikaInputStream.get(CloseShieldInputStream.wrap(System.in))) {
-                    type.process(tis, System.out, Metadata.newInstance(context));
+                    if (forkMode) {
+                        processWithFork(tis, Metadata.newInstance(context), System.out);
+                    } else {
+                        type.process(tis, System.out, Metadata.newInstance(context));
+                    }
                 }
             } else {
                 URL url;
@@ -504,7 +537,12 @@ public class TikaCLI {
                 } else {
                     url = new URL(arg);
                 }
-                if (recursiveJSON) {
+                if (forkMode) {
+                    Metadata metadata = Metadata.newInstance(context);
+                    try (TikaInputStream tis = TikaInputStream.get(url, metadata)) {
+                        processWithFork(tis, metadata, System.out);
+                    }
+                } else if (recursiveJSON) {
                     handleRecursiveJson(url, System.out);
                 } else {
                     Metadata metadata = Metadata.newInstance(context);
@@ -565,6 +603,103 @@ public class TikaCLI {
             List<Metadata> metadataList = handler.getMetadataList();
             tikaLoader.loadMetadataFilters().filter(metadataList);
             JsonMetadataList.toJson(metadataList, writer);
+        }
+    }
+
+    /**
+     * Process a file using forked JVM process for isolation.
+     * This provides protection against parser crashes, OOM, and other issues.
+     */
+    private void processWithFork(TikaInputStream tis, Metadata metadata, OutputStream output) throws Exception {
+        PipesForkParserConfig config = new PipesForkParserConfig();
+
+        // Set handler type based on output type
+        config.setContentHandlerFactory(getContentHandlerFactory(type));
+
+        // Set parse mode based on recursiveJSON flag
+        if (recursiveJSON) {
+            config.setParseMode(ParseMode.RMETA);
+        } else {
+            config.setParseMode(ParseMode.CONCATENATE);
+        }
+
+        // Set timeout
+        config.setTimeoutMillis(forkTimeout);
+
+        // Set JVM args if provided
+        if (forkJvmArgs != null && !forkJvmArgs.isEmpty()) {
+            config.setJvmArgs(forkJvmArgs);
+        }
+
+        // Set plugins directory if provided
+        if (forkPluginsDir != null) {
+            config.setPluginsDir(Paths.get(forkPluginsDir));
+        }
+
+        // Set embedded limits if configured
+        if (maxEmbeddedDepth != EmbeddedLimits.UNLIMITED || maxEmbeddedCount != EmbeddedLimits.UNLIMITED) {
+            EmbeddedLimits limits = new EmbeddedLimits();
+            if (maxEmbeddedDepth != EmbeddedLimits.UNLIMITED) {
+                limits.setMaxDepth(maxEmbeddedDepth);
+            }
+            if (maxEmbeddedCount != EmbeddedLimits.UNLIMITED) {
+                limits.setMaxCount(maxEmbeddedCount);
+            }
+            config.setEmbeddedLimits(limits);
+        }
+
+        try (PipesForkParser parser = new PipesForkParser(config)) {
+            PipesForkResult result = parser.parse(tis, metadata);
+
+            if (result.isProcessCrash()) {
+                LOG.error("Fork process crashed: {}", result.getStatus());
+                System.err.println("Fork process crashed: " + result.getStatus());
+                return;
+            }
+
+            List<Metadata> metadataList = result.getMetadataList();
+
+            // Output based on type
+            if (recursiveJSON) {
+                // Output as JSON metadata list
+                JsonMetadataList.setPrettyPrinting(prettyPrint);
+                try (Writer writer = getOutputWriter(output, encoding)) {
+                    JsonMetadataList.toJson(metadataList, writer);
+                }
+            } else if (type == JSON || type == METADATA) {
+                // Output metadata (first item only for single-file mode)
+                if (!metadataList.isEmpty()) {
+                    Metadata m = metadataList.get(0);
+                    if (type == JSON) {
+                        JsonMetadata.setPrettyPrinting(prettyPrint);
+                        try (Writer writer = getOutputWriter(output, encoding)) {
+                            JsonMetadata.toJson(m, writer);
+                        }
+                    } else {
+                        try (PrintWriter writer = new PrintWriter(getOutputWriter(output, encoding))) {
+                            String[] names = m.names();
+                            Arrays.sort(names);
+                            for (String name : names) {
+                                for (String value : m.getValues(name)) {
+                                    writer.println(name + ": " + value);
+                                }
+                            }
+                            writer.flush();
+                        }
+                    }
+                }
+            } else {
+                // Output content (text, xml, html)
+                if (!metadataList.isEmpty()) {
+                    String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
+                    if (content != null) {
+                        try (Writer writer = getOutputWriter(output, encoding)) {
+                            writer.write(content);
+                            writer.flush();
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -630,6 +765,14 @@ public class TikaCLI {
         out.println("    --maxEmbeddedCount=X   Maximum number of embedded documents to extract");
         out.println("    -r  or --pretty-print  For JSON, XML and XHTML outputs, adds newlines and");
         out.println("                           whitespace, for better readability");
+        out.println();
+        out.println("Fork Mode (process isolation):");
+        out.println("    -f  or --fork          Run parsing in a forked JVM process for isolation");
+        out.println("                           Protects against parser crashes, OOM, and timeouts");
+        out.println("    --fork-timeout=<ms>    Parse timeout in milliseconds (default: 60000)");
+        out.println("    --fork-jvm-args=<args> JVM args for forked process (comma-separated)");
+        out.println("                           e.g., --fork-jvm-args=-Xmx512m,-Dsome.prop=value");
+        out.println("    --fork-plugins-dir=<dir> Directory containing plugin zips");
         out.println();
         out.println("    --list-parsers");
         out.println("         List the available document parsers");

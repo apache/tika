@@ -522,4 +522,121 @@ public class PipesForkParserTest {
             assertEquals(1, trueCount, "Exactly one category should be true");
         }
     }
+
+    @Test
+    public void testParseWithPath() throws Exception {
+        // Create a simple test file
+        Path testFile = tempDir.resolve("test_path.txt");
+        String content = "Hello from path-based parsing!";
+        Files.writeString(testFile, content);
+
+        PipesForkParserConfig config = new PipesForkParserConfig()
+                .setPluginsDir(PLUGINS_DIR)
+                .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
+                .setParseMode(ParseMode.RMETA)
+                .setTimeoutMillis(60000);
+
+        try (PipesForkParser parser = new PipesForkParser(config)) {
+            // Use parse(Path) directly without wrapping in TikaInputStream
+            PipesForkResult result = parser.parse(testFile);
+
+            assertTrue(result.isSuccess(), "Parse should succeed. Status: " + result.getStatus()
+                    + ", message: " + result.getMessage());
+            assertFalse(result.isProcessCrash(), "Should not be a process crash");
+
+            List<Metadata> metadataList = result.getMetadataList();
+            assertNotNull(metadataList, "Metadata list should not be null");
+            assertFalse(metadataList.isEmpty(), "Metadata list should not be empty");
+
+            String extractedContent = result.getContent();
+            assertNotNull(extractedContent, "Content should not be null");
+            assertTrue(extractedContent.contains("path-based parsing"),
+                    "Content should contain 'path-based parsing'");
+        }
+    }
+
+    @Test
+    public void testParseWithPathAndMetadata() throws Exception {
+        // Create a simple test file
+        Path testFile = tempDir.resolve("test_path_metadata.txt");
+        Files.writeString(testFile, "Content for metadata test");
+
+        PipesForkParserConfig config = new PipesForkParserConfig()
+                .setPluginsDir(PLUGINS_DIR)
+                .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
+                .setParseMode(ParseMode.RMETA)
+                .setTimeoutMillis(60000);
+
+        try (PipesForkParser parser = new PipesForkParser(config)) {
+            Metadata initialMetadata = new Metadata();
+            initialMetadata.set("custom-key", "custom-value");
+
+            // Use parse(Path, Metadata)
+            PipesForkResult result = parser.parse(testFile, initialMetadata);
+
+            assertTrue(result.isSuccess(), "Parse should succeed");
+            assertNotNull(result.getMetadata(), "Metadata should not be null");
+            assertTrue(result.getContent().contains("metadata test"));
+        }
+    }
+
+    @Test
+    public void testParseMultipleFilesWithPath() throws Exception {
+        // Create multiple test files
+        Path testFile1 = tempDir.resolve("path1.txt");
+        Path testFile2 = tempDir.resolve("path2.txt");
+        Files.writeString(testFile1, "Content of first path file");
+        Files.writeString(testFile2, "Content of second path file");
+
+        PipesForkParserConfig config = new PipesForkParserConfig()
+                .setPluginsDir(PLUGINS_DIR)
+                .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
+                .setParseMode(ParseMode.RMETA)
+                .setTimeoutMillis(60000);
+
+        try (PipesForkParser parser = new PipesForkParser(config)) {
+            // Parse both files using Path directly
+            PipesForkResult result1 = parser.parse(testFile1);
+            assertTrue(result1.isSuccess());
+            assertTrue(result1.getContent().contains("first path file"));
+
+            PipesForkResult result2 = parser.parse(testFile2);
+            assertTrue(result2.isSuccess());
+            assertTrue(result2.getContent().contains("second path file"));
+        }
+    }
+
+    @Test
+    public void testParsePathMatchesTikaInputStream() throws Exception {
+        // Verify that parse(Path) produces the same result as parse(TikaInputStream)
+        Path testFile = tempDir.resolve("compare.txt");
+        Files.writeString(testFile, "Content for comparison test");
+
+        PipesForkParserConfig config = new PipesForkParserConfig()
+                .setPluginsDir(PLUGINS_DIR)
+                .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
+                .setParseMode(ParseMode.RMETA)
+                .setTimeoutMillis(60000);
+
+        // Parse with Path
+        String pathContent;
+        try (PipesForkParser parser = new PipesForkParser(config)) {
+            PipesForkResult result = parser.parse(testFile);
+            assertTrue(result.isSuccess());
+            pathContent = result.getContent();
+        }
+
+        // Parse with TikaInputStream
+        String tisContent;
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testFile)) {
+            PipesForkResult result = parser.parse(tis);
+            assertTrue(result.isSuccess());
+            tisContent = result.getContent();
+        }
+
+        // Results should match
+        assertEquals(pathContent, tisContent,
+                "parse(Path) and parse(TikaInputStream) should produce same content");
+    }
 }
