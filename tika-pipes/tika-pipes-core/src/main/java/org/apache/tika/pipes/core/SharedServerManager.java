@@ -42,13 +42,15 @@ import org.apache.tika.utils.ProcessUtils;
  * Manages a single shared PipesServer process for multiple PipesClients.
  * <p>
  * This mode reduces memory overhead by running one JVM instead of N JVMs,
- * at the cost of reduced isolation - one crash affects all in-flight requests.
+ * at the cost of reduced isolation: one crash affects all in-flight requests.
  * <p>
- * Connection model: The shared server creates a ServerSocket and accepts
- * incoming connections from clients. Each client connects TO the server.
+ * <b>Not recommended for production use.</b> See Tika Pipes documentation for details.
  * <p>
- * Thread safety: {@link #ensureRunning()} is synchronized to prevent multiple
- * clients from attempting to restart the server simultaneously.
+ * The shared server creates a ServerSocket and accepts incoming connections from clients.
+ * {@link #ensureRunning()} is synchronized to prevent multiple clients from attempting
+ * to restart the server simultaneously.
+ *
+ * @see PipesConfig#setUseSharedServer(boolean)
  */
 public class SharedServerManager implements ServerManager {
 

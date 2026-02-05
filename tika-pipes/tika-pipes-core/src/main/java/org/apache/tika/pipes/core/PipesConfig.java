@@ -474,9 +474,9 @@ public class PipesConfig {
 
     /**
      * Returns whether shared server mode is enabled.
-     * When true, multiple PipesClients connect to a single shared PipesServer process.
      *
      * @return true if shared server mode is enabled
+     * @see #setUseSharedServer(boolean)
      */
     public boolean isUseSharedServer() {
         return useSharedServer;
@@ -484,10 +484,15 @@ public class PipesConfig {
 
     /**
      * Sets whether to use shared server mode.
-     * When true, multiple PipesClients connect to a single shared PipesServer process
-     * instead of each client spawning its own server.
+     * <p>
+     * When {@code true}, multiple PipesClients connect to a single shared PipesServer
+     * process instead of each client having its own dedicated server. This reduces
+     * memory overhead but sacrifices isolation: one crash affects all in-flight requests.
+     * <p>
+     * <b>Not recommended for production.</b> See the Tika Pipes documentation for
+     * limitations and guidance.
      *
-     * @param useSharedServer true to enable shared server mode
+     * @param useSharedServer true to enable shared server mode, false for per-client mode (default)
      */
     public void setUseSharedServer(boolean useSharedServer) {
         this.useSharedServer = useSharedServer;

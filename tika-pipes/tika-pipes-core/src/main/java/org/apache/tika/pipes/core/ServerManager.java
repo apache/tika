@@ -25,8 +25,11 @@ import java.util.concurrent.TimeoutException;
  * Manages the lifecycle of a PipesServer process and client connections.
  * <p>
  * Implementations handle starting, monitoring, and restarting the server process.
- * In per-client mode, each PipesClient has its own ServerManager.
+ * In per-client mode (default), each PipesClient has its own ServerManager.
  * In shared mode, multiple PipesClients share a single ServerManager.
+ *
+ * @see PerClientServerManager
+ * @see SharedServerManager
  */
 public interface ServerManager extends Closeable {
 
