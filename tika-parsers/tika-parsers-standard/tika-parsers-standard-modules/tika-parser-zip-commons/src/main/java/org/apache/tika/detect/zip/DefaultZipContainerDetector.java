@@ -45,6 +45,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Zip;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.ParsingIntent;
 import org.apache.tika.zip.utils.ZipSalvager;
 
 /**
@@ -63,6 +64,21 @@ import org.apache.tika.zip.utils.ZipSalvager;
  * <p>
  * For {@link TikaInputStream}, file-based detection is used (TikaInputStream
  * handles spilling to disk automatically if needed).
+ *
+ * <h2>ZIP Salvaging</h2>
+ * <p>
+ * When a ZIP file cannot be opened directly (truncated or corrupted), and
+ * {@link ParsingIntent#WILL_PARSE} is present in the {@link ParseContext},
+ * this detector will attempt to salvage the file using {@link ZipSalvager}.
+ * Salvaging reconstructs a valid ZIP structure from the local file headers.
+ * <p>
+ * When salvaging succeeds, {@link Zip#SALVAGED} is set to {@code true} in the
+ * metadata, and the salvaged {@link ZipFile} is stored in
+ * {@link TikaInputStream#getOpenContainer()} for reuse by parsers.
+ * <p>
+ * <b>Note:</b> If you use parsers directly without this detector (or without
+ * {@link org.apache.tika.parser.AutoDetectParser}), salvaging will not occur
+ * and truncated files may fail to parse.
  */
 @TikaComponent
 public class DefaultZipContainerDetector implements Detector {
@@ -213,11 +229,36 @@ public class DefaultZipContainerDetector implements Detector {
      * @return the detected media type
      */
     private MediaType detectZipFormatOnFile(TikaInputStream tis, Metadata metadata, ParseContext parseContext) {
-        // Try to open ZipFile (with salvaging fallback)
-        ZipFile zip = ZipSalvager.tryToOpenZipFile(tis, metadata);
+        // Try to open ZipFile directly
+        ZipFile zip = null;
+        try {
+            zip = ZipFile.builder().setFile(tis.getFile()).get();
+            metadata.set(Zip.DETECTOR_ZIPFILE_OPENED, true);
+        } catch (IOException e) {
+            // ZipFile failed to open (truncated/corrupt)
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("ZipFile failed to open directly", e);
+            }
+            metadata.set(Zip.DETECTOR_ZIPFILE_OPENED, false);
+
+            // If parsing will follow, try salvaging to prepare ZipFile for parser reuse
+            if (parseContext.get(ParsingIntent.class) != null) {
+                zip = ZipSalvager.tryToOpenZipFile(tis, metadata);
+                if (zip != null && LOG.isDebugEnabled()) {
+                    LOG.debug("Successfully salvaged ZIP for parsing");
+                }
+            }
+        }
 
         if (zip != null) {
-            // ZipFile opened (directly or via salvaging) - run file-based detection
+            // Store ZipFile in openContainer for parser reuse
+            if (tis.getOpenContainer() == null) {
+                tis.setOpenContainer(zip);
+            } else if (tis.getOpenContainer() != zip) {
+                tis.addCloseableResource(zip);
+            }
+
+            // ZipFile available (direct or salvaged) - run file-based detection
             try {
                 for (ZipContainerDetector zipDetector : getDetectors()) {
                     MediaType type = zipDetector.detect(zip, tis);
@@ -233,18 +274,18 @@ public class DefaultZipContainerDetector implements Detector {
                     }
                 }
             } catch (IOException e) {
-                // Detection failed - fall through to return plain ZIP
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Detection failed on opened ZipFile", e);
+                    LOG.debug("Detection failed on ZipFile", e);
                 }
             }
             // No specific type detected - it's a plain ZIP
             return MediaType.APPLICATION_ZIP;
         }
 
-        // ZipFile failed to open even after salvaging - fall back to streaming detection
+        // ZipFile not available - fall back to streaming detection
+        // Streaming can examine entries without needing the central directory
         if (LOG.isDebugEnabled()) {
-            LOG.debug("ZipFile and salvaging both failed; falling back to streaming detection");
+            LOG.debug("Falling back to streaming detection");
         }
         try {
             return detectStreamingFromPath(tis.getPath(), metadata, false);

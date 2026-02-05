@@ -58,7 +58,6 @@ import org.apache.tika.metadata.Zip;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.zip.utils.ZipSalvager;
 
 /**
  * Parser for ZIP and JAR archives using file-based access for complete metadata extraction.
@@ -77,6 +76,18 @@ import org.apache.tika.zip.utils.ZipSalvager;
  * but falls back to streaming (ZipArchiveInputStream) for edge-case ZIPs that
  * cannot be read as files (e.g., those with data descriptors that overlap the
  * central directory).
+ *
+ * <h2>Truncated and Corrupted Files</h2>
+ * <p>
+ * This parser does not perform ZIP salvaging directly. When used with
+ * {@link org.apache.tika.parser.AutoDetectParser}, the
+ * {@link org.apache.tika.detect.zip.DefaultZipContainerDetector} handles salvaging
+ * of truncated/corrupted files and provides the prepared {@link ZipFile} via
+ * {@link TikaInputStream#getOpenContainer()}.
+ * <p>
+ * <b>Note:</b> If you call this parser directly without going through the detector,
+ * truncated or corrupted ZIP files may fail to parse. For best results with
+ * untrusted content, use {@link org.apache.tika.parser.AutoDetectParser}.
  */
 @TikaComponent()
 public class ZipParser extends AbstractArchiveParser {
@@ -205,37 +216,34 @@ public class ZipParser extends AbstractArchiveParser {
 
         ZipParserConfig config = context.get(ZipParserConfig.class, defaultConfig);
 
+        // Check if detector already prepared a ZipFile (including salvaged)
         if (tis.getOpenContainer() instanceof ZipFile) {
-            // detectEntryName handles charset decoding from raw bytes, no need to reopen
             parseWithZipFile((ZipFile) tis.getOpenContainer(), tis, handler, metadata, context, config);
             return;
         }
 
-        // Check detector hints - if detector already tried ZipFile and failed, go straight to streaming
-        String detectorZipFileOpened = metadata.get(Zip.DETECTOR_ZIPFILE_OPENED);
-        if ("false".equals(detectorZipFileOpened)) {
-            // Detector already tried and failed - skip ZipFile, use streaming
-            // Enable rewind for DATA_DESCRIPTOR retry in parseWithStream
+        // No ZipFile from detector - try to open directly
+        // This handles cases where parser is called without detector
+        ZipFile zipFile = null;
+        try {
+            ZipFile.Builder builder = ZipFile.builder().setFile(tis.getFile());
+            if (config.getEntryEncoding() != null) {
+                builder.setCharset(config.getEntryEncoding());
+            }
+            zipFile = builder.get();
+            tis.setOpenContainer(zipFile);
+        } catch (IOException e) {
+            // ZipFile failed - fall back to streaming
+        }
+
+        if (zipFile != null) {
+            parseWithZipFile(zipFile, tis, handler, metadata, context, config);
+        } else {
+            // Use streaming - enable rewind for DATA_DESCRIPTOR retry
             tis.enableRewind();
             String dataDescriptorRequired = metadata.get(Zip.DETECTOR_DATA_DESCRIPTOR_REQUIRED);
             parseWithStream(tis, handler, metadata, context, config,
                     "true".equals(dataDescriptorRequired));
-            return;
-        }
-
-        // No detector hint - try to open ZipFile (with salvaging fallback)
-        // This likely means that the user didn't apply a detector first or the zip detector was not in the chain
-        ZipFile zipFile = ZipSalvager.tryToOpenZipFile(tis, metadata, config.getEntryEncoding());
-
-        if (zipFile != null) {
-            // ZipFile opened (directly or via salvaging) - use file-based parsing
-            parseWithZipFile(zipFile, tis, handler, metadata, context, config);
-        } else {
-            // ZipFile and salvaging both failed - use streaming
-            // Enable rewind for DATA_DESCRIPTOR retry in parseWithStream
-            // (may be redundant if tryToOpenZipFile already called it, but that's safe)
-            tis.enableRewind();
-            parseWithStream(tis, handler, metadata, context, config, false);
         }
     }
 

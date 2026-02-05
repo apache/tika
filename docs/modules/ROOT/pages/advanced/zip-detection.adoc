@@ -1,0 +1,102 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= ZIP Detection and Salvaging
+
+Apache Tika uses the `DefaultZipContainerDetector` to detect ZIP-based file formats including
+plain ZIP archives, OOXML documents (docx, xlsx, pptx), ODF documents (odt, ods, odp),
+EPUB, JAR files, and many others.
+
+== ZIP Salvaging
+
+When a ZIP file is truncated or corrupted in a way that prevents it from being opened
+normally, Tika can attempt to "salvage" the file by:
+
+1. Streaming through the local file headers (at the beginning of the ZIP)
+2. Reconstructing a valid ZIP structure with a proper central directory
+
+This allows Tika to extract content from partially downloaded files, truncated archives,
+or files with damaged central directories.
+
+=== When Salvaging Occurs
+
+Salvaging only happens when:
+
+1. The `DefaultZipContainerDetector` (or a detector that includes it) is used
+2. The detector is called with `ParsingIntent.WILL_PARSE` in the `ParseContext` (set automatically by `AutoDetectParser`)
+3. The ZIP file cannot be opened directly via `ZipFile`
+
+=== Detecting Salvaged Files
+
+When a file is salvaged, Tika sets the following metadata property:
+
+[source]
+----
+zip:salvaged = true
+----
+
+You can check for this in your code:
+
+[source,java]
+----
+import org.apache.tika.metadata.Zip;
+
+boolean wasSalvaged = metadata.getBoolean(Zip.SALVAGED);
+----
+
+=== Direct Parser Usage
+
+IMPORTANT: If you call parsers directly without going through `AutoDetectParser`, or if you
+use a custom detector that doesn't include `DefaultZipContainerDetector`, the salvaging
+behavior will not apply. In these cases:
+
+* Truncated or corrupted ZIP files may fail to parse
+* You may get different results compared to using `AutoDetectParser`
+* The parser will attempt to open the file directly, which may fail
+
+For consistent behavior with truncated files, use `AutoDetectParser`:
+
+[source,java]
+----
+// Recommended: Uses detection with salvaging
+AutoDetectParser parser = new AutoDetectParser();
+parser.parse(inputStream, handler, metadata, context);
+----
+
+Rather than calling parsers directly:
+
+[source,java]
+----
+// Direct parser: No salvaging support
+ZipParser parser = new ZipParser();
+parser.parse(inputStream, handler, metadata, context);  // May fail on truncated files
+----
+
+== Other Detection Hints
+
+The detector also sets additional metadata hints for parsers:
+
+`zip:detectorZipFileOpened`:: `true` if the detector successfully opened the ZIP as a `ZipFile`.
+The `ZipFile` object is available via `TikaInputStream.getOpenContainer()` for reuse by parsers.
+
+`zip:detectorDataDescriptorRequired`:: `true` if streaming detection required
+DATA_DESCRIPTOR support. This hint helps parsers choose the correct streaming mode.
+
+== Related Topics
+
+* xref:advanced/spooling.adoc[TikaInputStream and Spooling] - How Tika handles file access
+* xref:advanced/robustness.adoc[Robustness] - Handling failures when parsing untrusted content

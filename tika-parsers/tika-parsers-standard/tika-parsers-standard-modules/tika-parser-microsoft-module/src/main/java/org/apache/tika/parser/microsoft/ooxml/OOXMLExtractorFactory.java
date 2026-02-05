@@ -16,17 +16,13 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Locale;
 
 import org.apache.poi.extractor.ExtractorFactory;
 import org.apache.poi.ooxml.POIXMLDocument;
 import org.apache.poi.ooxml.extractor.POIXMLExtractorFactory;
 import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
-import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
@@ -61,7 +57,6 @@ import org.apache.tika.parser.microsoft.ooxml.xps.XPSExtractorDecorator;
 import org.apache.tika.parser.microsoft.ooxml.xps.XPSTextExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xslf.XSLFEventBasedPowerPointExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
-import org.apache.tika.zip.utils.ZipSalvager;
 
 /**
  * Figures out the correct {@link OOXMLExtractor} for the supplied document and
@@ -89,28 +84,16 @@ public class OOXMLExtractorFactory {
                              ParseContext context) throws IOException, SAXException, TikaException {
         Locale locale = context.get(Locale.class, LocaleUtil.getUserLocale());
 
-        //if there's a problem opening the zip file;
-        //create a tmp file, and copy what you can read of it.
-        File tmpRepairedCopy = null;
-
         OPCPackage pkg = null;
         try {
             OOXMLExtractor extractor = null;
 
             // Locate or Open the OPCPackage for the file
+            // Detector should have prepared OPCPackageWrapper if salvaging was needed
             if (tis.getOpenContainer() instanceof OPCPackageWrapper) {
                 pkg = ((OPCPackageWrapper) tis.getOpenContainer()).getOPCPackage();
             } else {
-                try {
-                    pkg = OPCPackage.open(tis.getPath().toString(), PackageAccess.READ);
-                } catch (InvalidOperationException e) {
-                    Path tmpRepairedPath = Files.createTempFile("tika-ooxml-repair-", "");
-                    tmpRepairedCopy = tmpRepairedPath.toFile();
-                    tis.enableRewind();
-                    ZipSalvager.salvageCopy(tis, tmpRepairedPath, false);
-                    tis.rewind();
-                    pkg = OPCPackage.open(tmpRepairedCopy, PackageAccess.READ);
-                }
+                pkg = OPCPackage.open(tis.getPath().toString(), PackageAccess.READ);
                 tis.setOpenContainer(new OPCPackageWrapper(pkg));
             }
 
@@ -214,14 +197,6 @@ public class OOXMLExtractorFactory {
             throw new TikaException("Error creating OOXML extractor", e);
         } catch (RuntimeSAXException e) {
             throw (SAXException) e.getCause();
-        } finally {
-            if (tmpRepairedCopy != null) {
-                boolean deleted = tmpRepairedCopy.delete();
-                if (!deleted) {
-                    LOG.warn("failed to delete tmp (repair) file: " +
-                            tmpRepairedCopy.getAbsolutePath());
-                }
-            }
         }
     }
 

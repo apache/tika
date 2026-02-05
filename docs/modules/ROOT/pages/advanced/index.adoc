@@ -25,6 +25,7 @@ This section covers advanced usage and internals of Apache Tika.
 * xref:advanced/setting-limits.adoc[Setting Limits] - Limiting metadata size and resource consumption when processing untrusted content
 * xref:advanced/spooling.adoc[TikaInputStream and Spooling] - Understanding how TikaInputStream handles buffering, caching, and spooling to disk
 * xref:advanced/embedded-documents.adoc[Embedded Document Metadata] - Understanding how Tika tracks embedded documents and their paths
+* xref:advanced/zip-detection.adoc[ZIP Detection and Salvaging] - How Tika detects and recovers truncated ZIP-based files
 
 // Add links to specific topics as they are created
 // * link:custom-parsers.html[Writing Custom Parsers]

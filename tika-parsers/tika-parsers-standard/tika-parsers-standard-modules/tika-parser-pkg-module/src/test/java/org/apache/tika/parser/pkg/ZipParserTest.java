@@ -28,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.commons.codec.binary.Base64;
 import org.junit.jupiter.api.Test;
@@ -483,9 +484,9 @@ public class ZipParserTest extends AbstractPkgTest {
         double overhead = avgWithCheck - avgWithoutCheck;
         double overheadPercent = (overhead / avgWithoutCheck) * 100;
 
-        System.out.printf("  Without integrity check: %.3f ms/parse%n", avgWithoutCheck);
-        System.out.printf("  With integrity check:    %.3f ms/parse%n", avgWithCheck);
-        System.out.printf("  Overhead:                %.3f ms (%.1f%%)%n", overhead, overheadPercent);
+        System.out.printf(Locale.ROOT, "  Without integrity check: %.3f ms/parse%n", avgWithoutCheck);
+        System.out.printf(Locale.ROOT, "  With integrity check:    %.3f ms/parse%n", avgWithCheck);
+        System.out.printf(Locale.ROOT, "  Overhead:                %.3f ms (%.1f%%)%n", overhead, overheadPercent);
     }
 
     private void parseZip(ZipParser parser, Path zipPath, ZipParserConfig config) throws Exception {

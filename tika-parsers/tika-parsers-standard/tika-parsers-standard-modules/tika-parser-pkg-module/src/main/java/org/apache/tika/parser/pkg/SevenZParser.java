@@ -104,6 +104,8 @@ public class SevenZParser extends AbstractArchiveParser {
                 }
                 entry = sevenZFile.getNextEntry();
             }
+        } catch (PasswordRequiredException e) {
+            throw new EncryptedDocumentException(e);
         } finally {
             sevenZFile.close();
             xhtml.endDocument();
