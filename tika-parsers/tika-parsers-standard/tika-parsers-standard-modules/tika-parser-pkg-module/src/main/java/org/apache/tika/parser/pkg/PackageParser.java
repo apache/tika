@@ -272,6 +272,8 @@ public class PackageParser extends AbstractEncodingDetectorParser {
             TikaInputStream tis = (TikaInputStream) stream;
             Object container = tis.getOpenContainer();
             if (container instanceof ZipFile) {
+                // Ensure the ZipFile gets closed when tmp is closed
+                tmp.addResource((ZipFile) container);
                 parseZipFile((ZipFile) container, handler, metadata, context);
                 return;
             }
