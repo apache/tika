@@ -282,7 +282,12 @@ public class DefaultZipContainerDetector implements Detector {
         }
         // Fallback: it's still a zip file, we just don't know what kind of one
         if (zip != null) {
-            IOUtils.closeQuietly(zip);
+            // Store ZipFile in openContainer so parser can reuse it
+            if (tis.getOpenContainer() == null) {
+                tis.setOpenContainer(zip);
+            } else {
+                tis.addCloseableResource(zip);
+            }
             return MediaType.APPLICATION_ZIP;
         }
         if (LOG.isDebugEnabled()) {
