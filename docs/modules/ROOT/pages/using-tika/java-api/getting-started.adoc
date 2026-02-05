@@ -68,14 +68,14 @@ application from parser crashes, memory leaks, and infinite loops.
 
 [source,java]
 ----
-import org.apache.tika.io.TikaInputStream;
+import java.nio.file.Path;
 import org.apache.tika.pipes.fork.PipesForkParser;
 import org.apache.tika.pipes.fork.PipesForkResult;
 
-try (PipesForkParser parser = new PipesForkParser();
-     TikaInputStream tis = TikaInputStream.get(filePath)) {
+Path file = Path.of("/path/to/document.pdf");
 
-    PipesForkResult result = parser.parse(tis);
+try (PipesForkParser parser = new PipesForkParser()) {
+    PipesForkResult result = parser.parse(file);
 
     if (result.isSuccess()) {
         String content = result.getContent();
