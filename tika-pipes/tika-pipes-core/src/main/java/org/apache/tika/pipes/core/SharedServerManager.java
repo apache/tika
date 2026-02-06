@@ -277,7 +277,7 @@ public class SharedServerManager implements ServerManager {
                 "\n" +
                 "  Shared server mode engaged! One JVM to parse them all,\n" +
                 "  one crash to bring them down, and in the darkness bind them.\n" +
-                "  You only live once -- so why not run without process isolation?\n\n" +
+                "  You only live once -- so why not run without per-parse process isolation?\n\n" +
                 "  But seriously, you're still protected. You just risk losing other\n" +
                 "  in-flight parses as collateral damage.\n");
         LOG.info("Starting shared server with {} connections", numConnections);
