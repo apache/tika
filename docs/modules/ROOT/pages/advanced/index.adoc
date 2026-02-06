@@ -27,8 +27,7 @@ This section covers advanced usage and internals of Apache Tika.
 * xref:advanced/embedded-documents.adoc[Embedded Document Metadata] - Understanding how Tika tracks embedded documents and their paths
 * xref:advanced/zip-detection.adoc[ZIP Detection and Salvaging] - How Tika detects and recovers truncated ZIP-based files
 
-// Add links to specific topics as they are created
-// * link:custom-parsers.html[Writing Custom Parsers]
-// * link:custom-detectors.html[Writing Custom Detectors]
-// * link:configuration.html[Advanced Configuration]
-// * link:performance.html[Performance Tuning]
+== Integration Testing
+
+* xref:advanced/integration-testing/tika-app.adoc[Testing with Tika App] - Integration testing strategies for Tika App
+* xref:advanced/integration-testing/tika-server.adoc[Testing with Tika Server] - Integration testing strategies for Tika Server

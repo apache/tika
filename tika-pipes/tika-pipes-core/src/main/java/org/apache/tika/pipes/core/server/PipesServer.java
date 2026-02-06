@@ -33,6 +33,7 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HexFormat;
@@ -94,6 +95,9 @@ import org.apache.tika.utils.StringUtils;
 public class PipesServer implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(PipesServer.class);
+
+    public static final int AUTH_TOKEN_LENGTH_BYTES = 32;
+    public static final int MAX_FETCH_EMIT_TUPLE_BYTES = 100 * 1024 * 1024; // 100MB
 
     private final long heartbeatIntervalMs;
     private final String pipesClientId;
@@ -250,17 +254,113 @@ public class PipesServer implements AutoCloseable {
 
 
     public static void main(String[] args) throws Exception {
-        int port = Integer.parseInt(args[0]);
-        Path tikaConfig = Paths.get(args[1]);
-        String pipesClientId = System.getProperty("pipesClientId", "unknown");
-        LOG.debug("pipesClientId={}: starting pipes server on port={}", pipesClientId, port);
-        try (PipesServer server = PipesServer.load(port, tikaConfig)) {
-            server.mainLoop();
-        } catch (Throwable t) {
-            LOG.error("pipesClientId={}: crashed", pipesClientId, t);
-            throw t;
+        // Check for shared mode: --shared <numConnections> <tikaConfigPath>
+        if (args.length > 0 && "--shared".equals(args[0])) {
+            String portEnv = System.getenv("TIKA_PIPES_PORT");
+            if (portEnv == null || portEnv.isEmpty()) {
+                throw new IllegalStateException("TIKA_PIPES_PORT environment variable is not set");
+            }
+            int port = Integer.parseInt(portEnv);
+            String tokenHex = System.getenv("TIKA_PIPES_AUTH_TOKEN");
+            if (tokenHex == null || tokenHex.isEmpty()) {
+                throw new IllegalStateException("TIKA_PIPES_AUTH_TOKEN environment variable is not set");
+            }
+            byte[] expectedToken = HexFormat.of().parseHex(tokenHex);
+            int numConnections = Integer.parseInt(args[1]);
+            Path tikaConfig = Paths.get(args[2]);
+            LOG.info("Starting shared PipesServer with {} connections", numConnections);
+            runSharedMode(port, numConnections, tikaConfig, expectedToken);
+        } else {
+            // Per-client mode: <port> <tikaConfigPath>
+            int port = Integer.parseInt(args[0]);
+            Path tikaConfig = Paths.get(args[1]);
+            String pipesClientId = System.getProperty("pipesClientId", "unknown");
+            LOG.debug("pipesClientId={}: starting pipes server on port={}", pipesClientId, port);
+            try (PipesServer server = PipesServer.load(port, tikaConfig)) {
+                server.mainLoop();
+            } catch (Throwable t) {
+                LOG.error("pipesClientId={}: crashed", pipesClientId, t);
+                throw t;
+            } finally {
+                LOG.debug("pipesClientId={}: server shutting down", pipesClientId);
+            }
+        }
+    }
+
+    /**
+     * Runs the server in shared mode, accepting multiple client connections.
+     * <p>
+     * Each incoming connection must present a valid auth token (32 bytes) before
+     * being accepted. This prevents unauthorized local processes from connecting.
+     * Note: if a malicious actor has access to your localhost and can read
+     * /proc/&lt;pid&gt;/environ, that is beyond Tika's security model. This auth
+     * token exists to prevent CVE-style abuse from untrusted local processes that
+     * cannot read the server process's environment.
+     */
+    private static void runSharedMode(int port, int numConnections, Path tikaConfigPath,
+                                      byte[] expectedToken) throws Exception {
+        TikaLoader tikaLoader = TikaLoader.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaLoader.getConfig());
+
+        // Load shared resources
+        SharedServerResources resources = SharedServerResources.load(tikaLoader, pipesConfig);
+
+        // Create thread pool for connection handlers
+        ExecutorService connectionPool = Executors.newFixedThreadPool(numConnections);
+
+        // Create server socket and accept connections
+        try (java.net.ServerSocket serverSocket = new java.net.ServerSocket()) {
+            serverSocket.setReuseAddress(true);
+            serverSocket.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), numConnections);
+
+            // Signal readiness to the parent process via stdout
+            System.out.println("READY:" + port);
+            System.out.flush();
+
+            LOG.info("Shared server ready, accepting connections");
+
+            // Accept connections until shutdown
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    java.net.Socket clientSocket = serverSocket.accept();
+                    clientSocket.setSoTimeout((int) pipesConfig.getSocketTimeoutMs());
+                    clientSocket.setTcpNoDelay(true);
+
+                    // Validate auth token before creating handler
+                    byte[] clientToken = new byte[AUTH_TOKEN_LENGTH_BYTES];
+                    int bytesRead = 0;
+                    while (bytesRead < AUTH_TOKEN_LENGTH_BYTES) {
+                        int r = clientSocket.getInputStream().read(
+                                clientToken, bytesRead, AUTH_TOKEN_LENGTH_BYTES - bytesRead);
+                        if (r == -1) {
+                            break;
+                        }
+                        bytesRead += r;
+                    }
+                    if (bytesRead < AUTH_TOKEN_LENGTH_BYTES ||
+                            !MessageDigest.isEqual(expectedToken, clientToken)) {
+                        LOG.warn("Rejected connection with invalid auth token");
+                        try {
+                            clientSocket.close();
+                        } catch (IOException ignored) {
+                        }
+                        continue;
+                    }
+
+                    LOG.debug("Accepted authenticated connection from client");
+
+                    ConnectionHandler handler = new ConnectionHandler(clientSocket, resources, pipesConfig);
+                    connectionPool.submit(handler);
+                } catch (java.net.SocketException e) {
+                    // Server socket closed, shutdown
+                    LOG.debug("Server socket closed, shutting down");
+                    break;
+                }
+            }
         } finally {
-            LOG.info("pipesClientId={}: server shutting down", pipesClientId);
+            connectionPool.shutdownNow();
+            connectionPool.awaitTermination(10, TimeUnit.SECONDS);
+            LOG.debug("Shared server shutdown complete");
         }
     }
 
@@ -276,7 +376,7 @@ public class PipesServer implements AutoCloseable {
                 int request = input.read();
                 LOG.trace("pipesClientId={}: received command byte={}", pipesClientId, HexFormat.of().formatHex(new byte[]{(byte)request}));
                 if (request == -1) {
-                    LOG.warn("received -1 from client; shutting down");
+                    LOG.debug("received -1 from client; shutting down");
                     exit(0);
                 }
 
@@ -319,7 +419,7 @@ public class PipesServer implements AutoCloseable {
                         LOG.error("Serious problem: {}", HexFormat.of().formatHex(new byte[]{(byte)request}), t);
                     }
                 } else if (request == PipesClient.COMMANDS.SHUT_DOWN.getByte()) {
-                    LOG.info("shutting down");
+                    LOG.debug("shutting down");
                     try {
                         close();
                     } catch (Exception e) {
@@ -445,7 +545,7 @@ public class PipesServer implements AutoCloseable {
         if (exitCode != 0) {
             LOG.error("exiting: {}", exitCode);
         } else {
-            LOG.info("exiting: {}", exitCode);
+            LOG.debug("exiting: {}", exitCode);
         }
         System.exit(exitCode);
     }
@@ -454,6 +554,10 @@ public class PipesServer implements AutoCloseable {
     private FetchEmitTuple readFetchEmitTuple() {
         try {
             int length = input.readInt();
+            if (length < 0 || length > MAX_FETCH_EMIT_TUPLE_BYTES) {
+                throw new IOException("FetchEmitTuple length " + length +
+                        " exceeds maximum allowed size of " + MAX_FETCH_EMIT_TUPLE_BYTES + " bytes");
+            }
             byte[] bytes = new byte[length];
             input.readFully(bytes);
             return JsonPipesIpc.fromBytes(bytes, FetchEmitTuple.class);

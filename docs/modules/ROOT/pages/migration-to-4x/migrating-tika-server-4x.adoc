@@ -147,3 +147,25 @@ All parsing now occurs in isolated child processes, providing:
 
 * TCP_NODELAY enabled for reduced latency on small requests
 * Configurable temp directory for RAM disk optimization (`pipes.tempDirectory`)
+
+== Advanced: Shared Server Mode
+
+For memory-constrained environments, an experimental shared server mode is available. Instead of running N separate server processes (one per client), all clients share a single server process.
+
+[WARNING]
+====
+This mode sacrifices reliability for reduced memory usage. One crash, OOM, or timeout affects all in-flight requests. Only use if you fully understand the tradeoffs.
+====
+
+[source,json]
+----
+{
+  "pipes": {
+    "numClients": 4,
+    "useSharedServer": true,
+    "forkedJvmArgs": ["-Xmx4g"]
+  }
+}
+----
+
+See xref:pipes/shared-server-mode.adoc[Shared Server Mode] for details.

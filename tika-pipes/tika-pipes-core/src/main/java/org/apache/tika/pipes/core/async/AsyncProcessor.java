@@ -19,6 +19,7 @@ package org.apache.tika.pipes.core.async;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
@@ -44,10 +45,13 @@ import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.api.pipesiterator.TotalCountResult;
 import org.apache.tika.pipes.api.pipesiterator.TotalCounter;
 import org.apache.tika.pipes.api.reporter.PipesReporter;
+import org.apache.tika.pipes.core.PerClientServerManager;
 import org.apache.tika.pipes.core.PipesClient;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesResults;
+import org.apache.tika.pipes.core.ServerManager;
+import org.apache.tika.pipes.core.SharedServerManager;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.reporter.ReporterManager;
 import org.apache.tika.plugins.TikaPluginManager;
@@ -71,6 +75,7 @@ public class AsyncProcessor implements Closeable {
     private final PipesConfig asyncConfig;
     private final Path tikaConfigPath;
     private final PipesReporter pipesReporter;
+    private final List<ServerManager> serverManagers = new ArrayList<>();
     private final AtomicLong totalProcessed = new AtomicLong(0);
     private final AtomicBoolean applicationErrorOccurred = new AtomicBoolean(false);
     private static long MAX_OFFER_WAIT_MS = 120000;
@@ -145,10 +150,30 @@ public class AsyncProcessor implements Closeable {
                 startCounter((TotalCounter) pipesIterator);
             }
 
-            for (int i = 0; i < asyncConfig.getNumClients(); i++) {
-                executorCompletionService.submit(
-                        new FetchEmitWorker(asyncConfig, tikaConfigPath, fetchEmitTuples,
-                                emitDatumTuples, applicationErrorOccurred));
+            // Create ServerManagers based on shared mode config
+            boolean isSharedMode = asyncConfig.isUseSharedServer();
+            if (isSharedMode) {
+                LOG.info("Using shared server mode with {} workers", asyncConfig.getNumClients());
+                SharedServerManager sharedManager = new SharedServerManager(
+                        asyncConfig, tikaConfigPath, asyncConfig.getNumClients());
+                serverManagers.add(sharedManager);
+
+                for (int i = 0; i < asyncConfig.getNumClients(); i++) {
+                    executorCompletionService.submit(
+                            new FetchEmitWorker(asyncConfig, sharedManager,
+                                    fetchEmitTuples, emitDatumTuples, applicationErrorOccurred));
+                }
+            } else {
+                LOG.info("Using per-client server mode with {} workers", asyncConfig.getNumClients());
+                for (int i = 0; i < asyncConfig.getNumClients(); i++) {
+                    PerClientServerManager serverManager = new PerClientServerManager(
+                            asyncConfig, tikaConfigPath, i);
+                    serverManagers.add(serverManager);
+
+                    executorCompletionService.submit(
+                            new FetchEmitWorker(asyncConfig, serverManager,
+                                    fetchEmitTuples, emitDatumTuples, applicationErrorOccurred));
+                }
             }
 
             EmitterManager emitterManager = EmitterManager.load(tikaPluginManager, tikaJsonConfig);
@@ -159,6 +184,7 @@ public class AsyncProcessor implements Closeable {
         } catch (Exception e) {
             LOG.error("problem initializing AsyncProcessor", e);
             executorService.shutdownNow();
+            closeServerManagers();
             this.pipesReporter.error(e);
             throw e;
         }
@@ -308,7 +334,18 @@ public class AsyncProcessor implements Closeable {
     @Override
     public void close() throws IOException {
         executorService.shutdownNow();
+        closeServerManagers();
         this.pipesReporter.close();
+    }
+
+    private void closeServerManagers() {
+        for (ServerManager manager : serverManagers) {
+            try {
+                manager.close();
+            } catch (IOException e) {
+                LOG.warn("Error closing server manager", e);
+            }
+        }
     }
 
     public long getTotalProcessed() {
@@ -318,18 +355,18 @@ public class AsyncProcessor implements Closeable {
     private class FetchEmitWorker implements Callable<Integer> {
 
         private final PipesConfig asyncConfig;
-        private final Path tikaConfigPath;
+        private final ServerManager serverManager;
         private final ArrayBlockingQueue<FetchEmitTuple> fetchEmitTuples;
         private final ArrayBlockingQueue<EmitDataPair> emitDataTupleQueue;
         private final AtomicBoolean applicationErrorOccurred;
 
         private FetchEmitWorker(PipesConfig asyncConfig,
-                                Path tikaConfigPath,
+                                ServerManager serverManager,
                                 ArrayBlockingQueue<FetchEmitTuple> fetchEmitTuples,
                                 ArrayBlockingQueue<EmitDataPair> emitDataTupleQueue,
                                 AtomicBoolean applicationErrorOccurred) {
             this.asyncConfig = asyncConfig;
-            this.tikaConfigPath = tikaConfigPath;
+            this.serverManager = serverManager;
             this.fetchEmitTuples = fetchEmitTuples;
             this.emitDataTupleQueue = emitDataTupleQueue;
             this.applicationErrorOccurred = applicationErrorOccurred;
@@ -338,7 +375,7 @@ public class AsyncProcessor implements Closeable {
         @Override
         public Integer call() throws Exception {
 
-            try (PipesClient pipesClient = new PipesClient(asyncConfig, tikaConfigPath)) {
+            try (PipesClient pipesClient = new PipesClient(asyncConfig, serverManager)) {
                 while (true) {
                     // Check if another worker encountered an application error
                     if (applicationErrorOccurred.get()) {

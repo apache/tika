@@ -37,3 +37,7 @@ Tika Pipes provides a framework for processing large volumes of documents with:
 // * link:emitters.html[Emitters]
 // * link:configuration.html[Configuration]
 // * link:async.html[Async Processing]
+
+== Advanced Topics
+
+* xref:pipes/shared-server-mode.adoc[Shared Server Mode] - Experimental mode for reduced memory usage
