@@ -353,7 +353,7 @@
     <geoapi.version>3.0.2</geoapi.version>
     <gson.version>2.13.2</gson.version>
     <guava.version>33.5.0-jre</guava.version>
-    <grpc.version>1.78.0</grpc.version>
+    <grpc.version>1.79.0</grpc.version>
     <h2.version>2.4.240</h2.version>
     <hdf5.version>1.14.3-1.5.10</hdf5.version>
     <httpcomponents.version>4.5.14</httpcomponents.version>
@@ -372,7 +372,7 @@
     <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
     <!-- can't update to 4.0.0, needs jdk17 -->
     <jakarta.ws.rs.version>3.1.0</jakarta.ws.rs.version>
-    <jakarta.xml.bind.version>4.0.4</jakarta.xml.bind.version>
+    <jakarta.xml.bind.version>4.0.5</jakarta.xml.bind.version>
     <jakarta.xml.soap.version>3.0.2</jakarta.xml.soap.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
     <javax.jcr.version>2.0</javax.jcr.version>
@@ -642,6 +642,13 @@
         <groupId>com.google.errorprone</groupId>
         <artifactId>error_prone_annotations</artifactId>
         <version>2.46.0</version>
+      </dependency>
+      <!-- avoid dependency convergence error in Google Cloud Storage fetcher
+           starting with grpc 1.79.0 with google cloud 2.62.1 -->
+      <dependency>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>animal-sniffer-annotations</artifactId>
+        <version>1.26</version>
       </dependency>
       <dependency>
         <groupId>com.googlecode.json-simple</groupId>
