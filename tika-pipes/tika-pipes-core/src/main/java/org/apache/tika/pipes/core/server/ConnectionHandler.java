@@ -298,6 +298,10 @@ public class ConnectionHandler implements Runnable, Closeable {
 
     private FetchEmitTuple readFetchEmitTuple() throws IOException {
         int length = input.readInt();
+        if (length < 0 || length > PipesServer.MAX_FETCH_EMIT_TUPLE_BYTES) {
+            throw new IOException("FetchEmitTuple length " + length +
+                    " exceeds maximum allowed size of " + PipesServer.MAX_FETCH_EMIT_TUPLE_BYTES + " bytes");
+        }
         byte[] bytes = new byte[length];
         input.readFully(bytes);
         return JsonPipesIpc.fromBytes(bytes, FetchEmitTuple.class);

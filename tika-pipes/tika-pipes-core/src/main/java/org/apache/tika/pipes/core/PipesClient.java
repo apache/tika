@@ -229,7 +229,7 @@ public class PipesClient implements Closeable {
 
         // Check if server needs restart (marked for restart after crash or reaching file limit)
         if (serverManager.needsRestart()) {
-            LOG.info("pipesClientId={}: server marked for restart - reconnecting", pipesClientId);
+            LOG.debug("pipesClientId={}: server marked for restart - reconnecting", pipesClientId);
             closeConnection();
             reconnect = true;
         }
@@ -292,7 +292,7 @@ public class PipesClient implements Closeable {
 
         // Get port after ensureRunning - this is the port we'll connect to
         int port = serverManager.getPort();
-        LOG.info("pipesClientId={}: connecting to server on port={}", pipesClientId, port);
+        LOG.debug("pipesClientId={}: connecting to server", pipesClientId);
 
         // Connect to server
         Socket socket = serverManager.connect((int) pipesConfig.getSocketTimeoutMs());
@@ -440,6 +440,10 @@ public class PipesClient implements Closeable {
 
     private <T> T readResult(Class<T> clazz) throws IOException {
         int len = connectionTuple.input.readInt();
+        if (len < 0 || len > PipesServer.MAX_FETCH_EMIT_TUPLE_BYTES) {
+            throw new IOException("Server response length " + len +
+                    " exceeds maximum allowed size of " + PipesServer.MAX_FETCH_EMIT_TUPLE_BYTES + " bytes");
+        }
         byte[] bytes = new byte[len];
         connectionTuple.input.readFully(bytes);
 
@@ -460,6 +464,10 @@ public class PipesClient implements Closeable {
             LOG.debug("clientId={}: server ready", pipesClientId);
         } else if (b == FINISHED.getByte()) {
             int len = connectionTuple.input.readInt();
+            if (len < 0 || len > PipesServer.MAX_FETCH_EMIT_TUPLE_BYTES) {
+                throw new IOException("Server startup error message length " + len +
+                        " exceeds maximum allowed size of " + PipesServer.MAX_FETCH_EMIT_TUPLE_BYTES + " bytes");
+            }
             byte[] bytes = new byte[len];
             connectionTuple.input.readFully(bytes);
             writeAck();

@@ -26,7 +26,9 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -36,6 +38,7 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.pipes.core.server.PipesServer;
 import org.apache.tika.utils.ProcessUtils;
 
 /**
@@ -49,6 +52,13 @@ import org.apache.tika.utils.ProcessUtils;
  * The shared server creates a ServerSocket and accepts incoming connections from clients.
  * {@link #ensureRunning()} is synchronized to prevent multiple clients from attempting
  * to restart the server simultaneously.
+ * <p>
+ * <b>Security:</b> The server port and a 32-byte auth token are passed to the child
+ * process via environment variables (not command-line args), so they are not visible
+ * in {@code /proc/<pid>/cmdline}. Each client connection must present the token before
+ * the server will accept it. This prevents CVE-style abuse from untrusted local
+ * processes. Note: if a malicious actor has same-uid access to your host and can read
+ * {@code /proc/<pid>/environ}, that is beyond Tika's security model.
  *
  * @see PipesConfig#setUseSharedServer(boolean)
  */
@@ -67,6 +77,7 @@ public class SharedServerManager implements ServerManager {
     private final AtomicLong filesProcessed = new AtomicLong(0);
     private volatile boolean restarting = false;
     private volatile boolean pendingRestart = false; // Set when a client reports fatal error or max files reached
+    private volatile byte[] currentToken;
     private Process process;
     private Path tmpDir;
     private int serverPort = -1;
@@ -155,7 +166,7 @@ public class SharedServerManager implements ServerManager {
     @Override
     public void markServerForRestart() {
         synchronized (lock) {
-            LOG.info("Server marked for restart - will restart on next ensureRunning()");
+            LOG.debug("Server marked for restart - will restart on next ensureRunning()");
             pendingRestart = true;
         }
     }
@@ -195,11 +206,13 @@ public class SharedServerManager implements ServerManager {
     @Override
     public Socket connect(int socketTimeoutMs) throws IOException, ServerInitializationException {
         int port;
+        byte[] token;
         synchronized (lock) {
             if (!isProcessAlive()) {
                 throw new ServerInitializationException("Shared server is not running. Call ensureRunning() first.");
             }
             port = serverPort;
+            token = currentToken;
         }
 
         // Connect to the shared server
@@ -208,7 +221,10 @@ public class SharedServerManager implements ServerManager {
             socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), SOCKET_CONNECT_TIMEOUT_MS);
             socket.setSoTimeout(socketTimeoutMs);
             socket.setTcpNoDelay(true);
-            LOG.debug("Connected to shared server on port {}", port);
+            // Send auth token before any protocol messages
+            socket.getOutputStream().write(token);
+            socket.getOutputStream().flush();
+            LOG.debug("Connected to shared server with auth token");
             return socket;
         } catch (IOException e) {
             try {
@@ -234,10 +250,45 @@ public class SharedServerManager implements ServerManager {
             port = tempSocket.getLocalPort();
         }
 
-        LOG.info("Starting shared server on port={} with {} connections", port, numConnections);
+        // Generate auth token for this server instance
+        byte[] token = new byte[PipesServer.AUTH_TOKEN_LENGTH_BYTES];
+        new SecureRandom().nextBytes(token);
+        currentToken = token;
+
+        LOG.warn("\n\n" +
+                "    __   __   ___    _        ___  \n" +
+                "    \\ \\ / /  / _ \\  | |      / _ \\ \n" +
+                "     \\ V /  | | | | | |     | | | |\n" +
+                "      | |   | | | | | |     | | | |\n" +
+                "      | |   | |_| | | |___  | |_| |\n" +
+                "      |_|    \\___/  |_____|  \\___/ \n" +
+                "\n" +
+                "                Yeehaw!\n" +
+                "              /\n" +
+                "            \\O/\n" +
+                "             |\n" +
+                "            / \\\n" +
+                "         \\------------\\\n" +
+                "          |            )\n" +
+                "         /------------/\n" +
+                "         \n" +
+                "\n" +
+                "        ~~ ~~ ~~ ~~\n" +
+                "\n" +
+                "  Shared server mode engaged! One JVM to parse them all,\n" +
+                "  one crash to bring them down, and in the darkness bind them.\n" +
+                "  You only live once -- so why not run without process isolation?\n\n" +
+                "  But seriously, you're still protected. You just risk losing other\n" +
+                "  in-flight parses as collateral damage.\n");
+        LOG.info("Starting shared server with {} connections", numConnections);
 
         tmpDir = Files.createTempDirectory("pipes-shared-server-");
-        ProcessBuilder pb = new ProcessBuilder(getCommandline(port));
+        ProcessBuilder pb = new ProcessBuilder(getCommandline());
+        // Pass port and auth token via environment variables so they are not
+        // visible in /proc/<pid>/cmdline. The token is only readable via
+        // /proc/<pid>/environ which requires same-uid access.
+        pb.environment().put("TIKA_PIPES_PORT", Integer.toString(port));
+        pb.environment().put("TIKA_PIPES_AUTH_TOKEN", HexFormat.of().formatHex(token));
         // Redirect stderr to inherit, capture stdout to read the READY signal
         pb.redirectErrorStream(false);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
@@ -258,7 +309,7 @@ public class SharedServerManager implements ServerManager {
         // Wait for the server to signal it's ready by printing the port
         waitForServerReady(port);
         serverPort = port;
-        LOG.info("Shared server started successfully on port {}", serverPort);
+        LOG.info("Shared server started successfully");
     }
 
     private void waitForServerReady(int expectedPort) throws IOException, ServerInitializationException {
@@ -360,7 +411,7 @@ public class SharedServerManager implements ServerManager {
         }
     }
 
-    private String[] getCommandline(int port) throws IOException {
+    private String[] getCommandline() throws IOException {
         List<String> configArgs = new ArrayList<>(pipesConfig.getForkedJvmArgs());
         boolean hasClassPath = false;
         boolean hasHeadless = false;
@@ -406,9 +457,8 @@ public class SharedServerManager implements ServerManager {
         commandLine.add("-Djava.io.tmpdir=" + tmpDir.toAbsolutePath());
         commandLine.add("org.apache.tika.pipes.core.server.PipesServer");
 
-        // Shared mode arguments
+        // Shared mode arguments: port and auth token are passed via env vars
         commandLine.add("--shared");
-        commandLine.add(Integer.toString(port));
         commandLine.add(Integer.toString(numConnections));
         commandLine.add(tikaConfigPath.toAbsolutePath().toString());
 
