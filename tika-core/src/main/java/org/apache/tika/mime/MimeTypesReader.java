@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -211,14 +210,8 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
     }
 
     private static SAXParser newSAXParser() throws TikaException {
-        SAXParserFactory factory = SAXParserFactory.newInstance();
+        SAXParserFactory factory = XMLReaderUtils.getSAXParserFactory();
         factory.setNamespaceAware(false);
-        try {
-            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        } catch (ParserConfigurationException | SAXException e) {
-            LOG.warn("can't set secure processing feature on: " + factory.getClass() +
-                    ". User assumes responsibility for consequences.");
-        }
         try {
             return factory.newSAXParser();
         } catch (ParserConfigurationException | SAXException e) {

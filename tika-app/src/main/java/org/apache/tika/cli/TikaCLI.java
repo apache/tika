@@ -32,7 +32,6 @@ import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.lang.reflect.Field;
-import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -84,7 +83,6 @@ import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
-import org.apache.tika.parser.NetworkParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
@@ -128,7 +126,6 @@ public class TikaCLI {
     private TikaLoader tikaLoader;
     private String configFilePath;
     private boolean recursiveJSON = false;
-    private URI networkURI = null;
     /**
      * Output character encoding, or <code>null</code> for platform default
      */
@@ -511,10 +508,6 @@ public class TikaCLI {
             prettyPrint = true;
         } else if (arg.equals("-p") || arg.equals("--port") || arg.equals("-s") || arg.equals("--server")) {
             throw new IllegalArgumentException("As of Tika 2.0, the server option is no longer supported in tika-app.\n" + "See https://wiki.apache.org/tika/TikaJAXRS for usage.");
-        } else if (arg.startsWith("-c")) {
-            networkURI = new URI(arg.substring("-c".length()));
-        } else if (arg.startsWith("--client=")) {
-            networkURI = new URI(arg.substring("--client=".length()));
         } else {
             pipeMode = false;
             configure();
@@ -879,11 +872,7 @@ public class TikaCLI {
                 Files.deleteIfExists(tempConfig);
             }
         }
-        if (networkURI != null) {
-            parser = new NetworkParser(networkURI);
-        } else {
-            parser = tikaLoader.loadAutoDetectParser();
-        }
+        parser = tikaLoader.loadAutoDetectParser();
 
         // Load configs from tika-config.json and merge into existing context
         // (preserves EmbeddedDocumentExtractor and other items set before configure())
