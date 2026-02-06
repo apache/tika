@@ -34,6 +34,7 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.pipes.core.server.PipesServer;
 import org.apache.tika.utils.ProcessUtils;
 
 /**
@@ -158,7 +159,17 @@ public class PerClientServerManager implements ServerManager {
                 // Check if the process died before connecting
                 if (!process.isAlive()) {
                     int exitValue = process.exitValue();
-                    LOG.error("clientId={}: Process exited with code {} before connecting to socket", clientId, exitValue);
+                    LOG.error("clientId={}: Process exited with code {} before connecting to socket",
+                            clientId, exitValue);
+                    // Don't treat known crash exit codes as initialization failures
+                    // These indicate the server started but crashed during processing
+                    if (exitValue == PipesServer.OOM_EXIT_CODE ||
+                            exitValue == PipesServer.TIMEOUT_EXIT_CODE ||
+                            exitValue == PipesServer.UNSPECIFIED_CRASH_EXIT_CODE) {
+                        // Mark for restart and throw IOException so caller can retry
+                        pendingRestart = true;
+                        throw new IOException("Server crashed (exit code " + exitValue + ") - will retry");
+                    }
                     throw new ServerInitializationException(
                             "Process failed to start (exit code " + exitValue + "). Check JVM arguments and classpath.");
                 }
@@ -348,7 +359,7 @@ public class PerClientServerManager implements ServerManager {
         commandLine.add(Integer.toString(port));
         commandLine.add(tikaConfigPath.toAbsolutePath().toString());
 
-        LOG.debug("clientId={}: commandline: {}", clientId, commandLine);
+        LOG.info("clientId={}: commandline: {}", clientId, commandLine);
         return commandLine.toArray(new String[0]);
     }
 
@@ -358,8 +369,8 @@ public class PerClientServerManager implements ServerManager {
         String normalizedClasspath = classpath.replace("\\", "/");
         String content = "-cp\n\"" + normalizedClasspath + "\"\n";
         Files.writeString(argFile, content, StandardCharsets.UTF_8);
-        LOG.debug("clientId={}: wrote argfile with classpath ({} chars) to {}",
-                clientId, classpath.length(), argFile);
+        LOG.info("clientId={}: wrote argfile with classpath ({} chars) to {}, content starts with: {}",
+                clientId, classpath.length(), argFile, content.substring(0, Math.min(100, content.length())));
         return argFile;
     }
 }
