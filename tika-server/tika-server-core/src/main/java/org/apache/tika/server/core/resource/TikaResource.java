@@ -78,6 +78,7 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
 import org.apache.tika.sax.RichTextContentHandler;
+import org.apache.tika.sax.ToMarkdownContentHandler;
 import org.apache.tika.sax.boilerpipe.BoilerpipeContentHandler;
 import org.apache.tika.server.core.CompositeParseContextConfig;
 import org.apache.tika.server.core.InputStreamFactory;
@@ -508,6 +509,48 @@ public class TikaResource {
             BodyContentHandler body = new BodyContentHandler(new RichTextContentHandler(writer));
 
             parse(parser, LOG, info.getPath(), is, body, metadata, context);
+        };
+    }
+
+    @PUT
+    @Consumes("*/*")
+    @Produces("text/plain")
+    @Path("md")
+    public StreamingOutput getMarkdown(final InputStream is, @Context HttpHeaders httpHeaders,
+                                       @Context final UriInfo info) {
+        final Metadata metadata = new Metadata();
+        return produceMarkdown(getInputStream(is, metadata, httpHeaders, info), metadata,
+                httpHeaders.getRequestHeaders(), info);
+    }
+
+    @POST
+    @Consumes("multipart/form-data")
+    @Produces("text/plain")
+    @Path("form/md")
+    public StreamingOutput getMarkdownFromMultipart(Attachment att,
+                                                    @Context HttpHeaders httpHeaders,
+                                                    @Context final UriInfo info) {
+        return produceMarkdown(att.getObject(InputStream.class), new Metadata(),
+                preparePostHeaderMap(att, httpHeaders), info);
+    }
+
+    public StreamingOutput produceMarkdown(final InputStream is, final Metadata metadata,
+                                           MultivaluedMap<String, String> httpHeaders,
+                                           final UriInfo info) {
+        final Parser parser = createParser();
+        final ParseContext context = new ParseContext();
+
+        fillMetadata(parser, metadata, httpHeaders);
+        fillParseContext(httpHeaders, metadata, context);
+
+        logRequest(LOG, "/tika", metadata);
+
+        return outputStream -> {
+            Writer writer = new OutputStreamWriter(outputStream, UTF_8);
+
+            ContentHandler handler = new ToMarkdownContentHandler(writer);
+
+            parse(parser, LOG, info.getPath(), is, handler, metadata, context);
         };
     }
 
