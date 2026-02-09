@@ -160,6 +160,20 @@ public class TikaResourceTest extends CXFTestBase {
     }
 
     @Test
+    public void testSimpleWordMarkdown() throws Exception {
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH + "/md")
+                .type("application/msword")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_DOC));
+        String responseMsg = getStringFromInputStream((InputStream) response.getEntity());
+        assertTrue(responseMsg.contains("test"));
+        // Should not contain HTML/XML tags
+        assertFalse(responseMsg.contains("<html"));
+        assertFalse(responseMsg.contains("<body"));
+        assertFalse(responseMsg.contains("<p>"));
+    }
+
+    @Test
     public void testSimpleWordHTML() throws Exception {
         Response response = WebClient
                 .create(endPoint + TIKA_PATH + "/html")

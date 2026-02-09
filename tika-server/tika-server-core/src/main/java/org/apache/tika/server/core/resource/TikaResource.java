@@ -76,7 +76,7 @@ public class TikaResource {
     public static final String GREETING = "This is Tika Server (" + Tika.getString() + "). Please PUT\n";
     /**
      * Header to specify the handler type for content extraction.
-     * Valid values: text, html, xml, ignore (default: text)
+     * Valid values: text, html, xml, markdown, ignore (default: text)
      */
     public static final String HANDLER_TYPE_HEADER = "X-Tika-Handler";
     private static final String META_PREFIX = "meta_";
@@ -550,6 +550,21 @@ public class TikaResource {
     }
 
     /**
+     * Parse document and return Markdown content.
+     */
+    @PUT
+    @Consumes("*/*")
+    @Produces("text/plain")
+    @Path("md")
+    public StreamingOutput getMarkdown(final InputStream is, @Context HttpHeaders httpHeaders)
+            throws IOException {
+        TikaInputStream tis = TikaInputStream.get(is);
+        tis.getPath(); // Spool to temp file for pipes-based parsing
+        ParseContext context = createParseContext();
+        return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "md");
+    }
+
+    /**
      * Parse document and return JSON with metadata and text content.
      */
     @PUT
@@ -676,6 +691,28 @@ public class TikaResource {
     }
 
     /**
+     * Parse multipart document with optional config, return Markdown.
+     * <p>
+     * Accepts multipart with:
+     * - "file" part (required): the document to parse
+     * - "config" part (optional): JSON configuration for parser settings
+     * <p>
+     * This endpoint is gated behind enableUnsecureFeatures=true because per-request
+     * configuration could enable dangerous operations.
+     */
+    @POST
+    @Consumes("multipart/form-data")
+    @Produces("text/plain")
+    @Path("config/md")
+    public StreamingOutput postMarkdown(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
+            throws IOException {
+        ParseContext context = createParseContext();
+        Metadata metadata = Metadata.newInstance(context);
+        TikaInputStream tis = setupMultipartConfig(attachments, metadata, context);
+        return produceRawOutput(tis, metadata, context, "md");
+    }
+
+    /**
      * Parse multipart document with optional config, return JSON.
      * <p>
      * Accepts multipart with:
@@ -702,7 +739,7 @@ public class TikaResource {
     // ==================== Internal methods ====================
 
     /**
-     * Produces raw streaming output (text, html, xml) using pipes-based parsing.
+     * Produces raw streaming output (text, html, xml, md) using pipes-based parsing.
      */
     private StreamingOutput produceRawOutput(TikaInputStream tis, Metadata metadata,
                                               MultivaluedMap<String, String> httpHeaders,
