@@ -18,6 +18,7 @@ package org.apache.tika.server.standard;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -56,6 +57,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
     private static final String TEXT_PATH = "/text";
     private static final String IGNORE_PATH = "/ignore";
     private static final String XML_PATH = "/xml";
+    private static final String MD_PATH = "/md";
     private static final String UNPARSEABLE_PATH = "/somethingOrOther";
     private static final String SLASH = "/";
 
@@ -293,6 +295,21 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                 .trim();
         assertTrue(content.startsWith("embed_3"));
 
+        //markdown
+        response = WebClient
+                .create(endPoint + META_PATH + MD_PATH)
+                .accept("application/json")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+        reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(12, metadataList.size());
+        content = metadataList
+                .get(6)
+                .get(TikaCoreProperties.TIKA_CONTENT)
+                .trim();
+        assertFalse(content.startsWith("<html"));
+        assertContains("plundered our seas", content);
+
         //ignore
         response = WebClient
                 .create(endPoint + META_PATH + IGNORE_PATH)
@@ -380,6 +397,25 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                 .get(TikaCoreProperties.TIKA_CONTENT)
                 .trim();
         assertTrue(content.startsWith("embed_3"));
+
+        //markdown
+        attachmentPart =
+                new Attachment("myworddocx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+        webClient = WebClient.create(endPoint + META_PATH + FORM_PATH + MD_PATH);
+
+        response = webClient
+                .type("multipart/form-data")
+                .accept("application/json")
+                .post(attachmentPart);
+        reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(12, metadataList.size());
+        content = metadataList
+                .get(6)
+                .get(TikaCoreProperties.TIKA_CONTENT)
+                .trim();
+        assertFalse(content.startsWith("<html"));
+        assertContains("plundered our seas", content);
 
         //ignore -- no content
         attachmentPart =

@@ -114,11 +114,12 @@ public class RecursiveMetadataResource {
      * The extracted text content is stored with the key
      * {@link org.apache.tika.metadata.TikaCoreProperties#TIKA_CONTENT}.
      * <p>
-     * Specify the handler for the content (xml, html, text, ignore)
+     * Specify the handler for the content (xml, html, text, markdown/md, ignore)
      * in the path:<br/>
      * /rmeta/form (default: xml)<br/>
      * /rmeta/form/xml    (store the content as xml)<br/>
      * /rmeta/form/text   (store the content as text)<br/>
+     * /rmeta/form/md     (store the content as markdown)<br/>
      * /rmeta/form/ignore (don't record any content)<br/>
      *
      * @param att             attachment
@@ -149,11 +150,12 @@ public class RecursiveMetadataResource {
      * The extracted text content is stored with the key
      * {@link org.apache.tika.metadata.TikaCoreProperties#TIKA_CONTENT}.
      * <p>
-     * Specify the handler for the content (xml, html, text, ignore)
+     * Specify the handler for the content (xml, html, text, markdown/md, ignore)
      * in the path:<br/>
      * /rmeta (default: xml)<br/>
      * /rmeta/xml    (store the content as xml)<br/>
      * /rmeta/text   (store the content as text)<br/>
+     * /rmeta/md     (store the content as markdown)<br/>
      * /rmeta/ignore (don't record any content)<br/>
      *
      * @param info            uri info
