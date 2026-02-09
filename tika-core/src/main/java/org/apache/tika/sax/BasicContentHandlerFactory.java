@@ -103,7 +103,7 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
      * Tries to parse string into handler type.  Returns default if string is null or
      * parse fails.
      * <p/>
-     * Options: xml, html, text, body, ignore (no content)
+     * Options: xml, html, text, body, ignore (no content), markdown/md
      *
      * @param handlerTypeName string to parse
      * @param defaultType     type to return if parse fails
@@ -128,6 +128,9 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
                 return HANDLER_TYPE.BODY;
             case "ignore":
                 return HANDLER_TYPE.IGNORE;
+            case "markdown":
+            case "md":
+                return HANDLER_TYPE.MARKDOWN;
             default:
                 return defaultType;
         }
@@ -159,6 +162,8 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
                 return new ToHTMLContentHandler();
             case XML:
                 return new ToXMLContentHandler();
+            case MARKDOWN:
+                return new ToMarkdownContentHandler();
             default:
                 return new ToTextContentHandler();
         }
@@ -186,6 +191,9 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
                     case XML:
                         return new WriteOutContentHandler(
                                 new ToXMLContentHandler(os, charset.name()), writeLimit);
+                    case MARKDOWN:
+                        return new WriteOutContentHandler(
+                                new ToMarkdownContentHandler(os, charset.name()), writeLimit);
                     default:
                         return new WriteOutContentHandler(
                                 new ToTextContentHandler(os, charset.name()), writeLimit);
@@ -200,6 +208,8 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
                         return new ToHTMLContentHandler(os, charset.name());
                     case XML:
                         return new ToXMLContentHandler(os, charset.name());
+                    case MARKDOWN:
+                        return new ToMarkdownContentHandler(os, charset.name());
                     default:
                         return new ToTextContentHandler(os, charset.name());
 
@@ -230,7 +240,7 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
      */
     public enum HANDLER_TYPE {
         BODY, IGNORE, //don't store content
-        TEXT, HTML, XML
+        TEXT, HTML, XML, MARKDOWN
     }
 
     public int getWriteLimit() {

@@ -106,12 +106,13 @@ public class RecursiveMetadataResource {
      * The extracted text content is stored with the key
      * {@link org.apache.tika.metadata.TikaCoreProperties#TIKA_CONTENT}.
      * <p>
-     * Specify the handler for the content (xml, html, text, ignore)
+     * Specify the handler for the content (xml, html, text, markdown, ignore)
      * in the path:<br/>
      * /rmeta/form (default: xml)<br/>
-     * /rmeta/form/xml    (store the content as xml)<br/>
-     * /rmeta/form/text   (store the content as text)<br/>
-     * /rmeta/form/ignore (don't record any content)<br/>
+     * /rmeta/form/xml      (store the content as xml)<br/>
+     * /rmeta/form/text     (store the content as text)<br/>
+     * /rmeta/form/markdown (store the content as markdown)<br/>
+     * /rmeta/form/ignore   (don't record any content)<br/>
      *
      * @param att             attachment
      * @param info            uri info
@@ -182,12 +183,13 @@ public class RecursiveMetadataResource {
      * The extracted text content is stored with the key
      * {@link org.apache.tika.metadata.TikaCoreProperties#TIKA_CONTENT}.
      * <p>
-     * Specify the handler for the content (xml, html, text, ignore)
+     * Specify the handler for the content (xml, html, text, markdown, ignore)
      * in the path:<br/>
      * /rmeta (default: xml)<br/>
-     * /rmeta/xml    (store the content as xml)<br/>
-     * /rmeta/text   (store the content as text)<br/>
-     * /rmeta/ignore (don't record any content)<br/>
+     * /rmeta/xml      (store the content as xml)<br/>
+     * /rmeta/text     (store the content as text)<br/>
+     * /rmeta/markdown (store the content as markdown)<br/>
+     * /rmeta/ignore   (don't record any content)<br/>
      *
      * @param handlerTypeName which type of handler to use
      * @return InputStream that can be deserialized as a list of {@link Metadata} objects
