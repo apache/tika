@@ -29,7 +29,7 @@
   <name>Apache Tika Pipes Microsoft Graph</name>
 
   <properties>
-    <microsoft-graph.version>6.60.0</microsoft-graph.version>
+    <microsoft-graph.version>6.61.0</microsoft-graph.version>
     <wiremock.version>3.3.1</wiremock.version>
     <msal4j.version>1.30.0-beta</msal4j.version>
     <kotlin-stdlib.version>2.3.0</kotlin-stdlib.version>
