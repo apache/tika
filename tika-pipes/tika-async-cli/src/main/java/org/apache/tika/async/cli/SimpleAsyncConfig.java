@@ -37,6 +37,10 @@ class SimpleAsyncConfig {
     private final BasicContentHandlerFactory.HANDLER_TYPE handlerType;
     private final String pluginsDir;
 
+    // Parse mode options
+    private final boolean concatenate;
+    private final boolean contentOnly;
+
     // Frictionless Data Package options
     private final String unpackFormat;  // "REGULAR" or "FRICTIONLESS"
     private final String unpackMode;    // "ZIPPED" or "DIRECTORY"
@@ -47,12 +51,13 @@ class SimpleAsyncConfig {
                              String tikaConfig, BasicContentHandlerFactory.HANDLER_TYPE handlerType,
                              ExtractBytesMode extractBytesMode, String pluginsDir) {
         this(inputDir, outputDir, numClients, timeoutMs, xmx, fileList, tikaConfig, handlerType,
-                extractBytesMode, pluginsDir, null, null, false);
+                extractBytesMode, pluginsDir, false, false, null, null, false);
     }
 
     public SimpleAsyncConfig(String inputDir, String outputDir, Integer numClients, Long timeoutMs, String xmx, String fileList,
                              String tikaConfig, BasicContentHandlerFactory.HANDLER_TYPE handlerType,
                              ExtractBytesMode extractBytesMode, String pluginsDir,
+                             boolean concatenate, boolean contentOnly,
                              String unpackFormat, String unpackMode, boolean unpackIncludeMetadata) {
         this.inputDir = inputDir;
         this.outputDir = outputDir;
@@ -64,6 +69,8 @@ class SimpleAsyncConfig {
         this.handlerType = handlerType;
         this.extractBytesMode = extractBytesMode;
         this.pluginsDir = pluginsDir;
+        this.concatenate = concatenate;
+        this.contentOnly = contentOnly;
         this.unpackFormat = unpackFormat;
         this.unpackMode = unpackMode;
         this.unpackIncludeMetadata = unpackIncludeMetadata;
@@ -109,6 +116,14 @@ class SimpleAsyncConfig {
         return pluginsDir;
     }
 
+    public boolean isConcatenate() {
+        return concatenate;
+    }
+
+    public boolean isContentOnly() {
+        return contentOnly;
+    }
+
     public String getUnpackFormat() {
         return unpackFormat;
     }
@@ -134,6 +149,8 @@ class SimpleAsyncConfig {
                 ", extractBytesMode=" + extractBytesMode +
                 ", handlerType=" + handlerType +
                 ", pluginsDir='" + pluginsDir + '\'' +
+                ", concatenate=" + concatenate +
+                ", contentOnly=" + contentOnly +
                 ", unpackFormat='" + unpackFormat + '\'' +
                 ", unpackMode='" + unpackMode + '\'' +
                 ", unpackIncludeMetadata=" + unpackIncludeMetadata +

@@ -29,6 +29,7 @@ Tika Pipes provides a framework for processing large volumes of documents with:
 
 == Topics
 
+* xref:pipes/parse-modes.adoc[Parse Modes] - Control how documents are parsed and emitted (`RMETA`, `CONCATENATE`, `CONTENT_ONLY`, `UNPACK`)
 * xref:pipes/unpack-config.adoc[Extracting Embedded Bytes] - Extract raw bytes from embedded documents using `ParseMode.UNPACK`
 
 // Add links to specific topics as they are created

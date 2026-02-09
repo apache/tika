@@ -83,6 +83,9 @@ java -jar tika-app.jar [option...] [file|port...]
 |`-t` or `--text`
 |Output plain text
 
+|`--md`
+|Output Markdown
+
 |`-m` or `--metadata`
 |Output metadata only
 
@@ -124,6 +127,13 @@ Process entire directories by specifying input and output paths:
 java -jar tika-app.jar -i /path/to/input -o /path/to/output
 ----
 
+=== Extract Markdown from a file
+
+[source,bash]
+----
+java -jar tika-app.jar --md document.docx
+----
+
 === Custom configuration
 
 Use a custom configuration file:
@@ -131,4 +141,69 @@ Use a custom configuration file:
 [source,bash]
 ----
 java -jar tika-app.jar --config=tika-config.json document.pdf
+----
+
+== Batch Processing (tika-async-cli)
+
+For processing large numbers of files, use `tika-async-cli`. It uses the Tika Pipes
+architecture with forked JVM processes for fault tolerance.
+
+=== Basic Batch Usage
+
+[source,bash]
+----
+java -jar tika-async-cli.jar -i /path/to/input -o /path/to/output
+----
+
+This processes all files in the input directory and writes JSON metadata (RMETA format)
+to the output directory.
+
+=== Batch Options
+
+[cols="1,3"]
+|===
+|Option |Description
+
+|`-i`
+|Input directory
+
+|`-o`
+|Output directory
+
+|`-h` or `--handlerType`
+|Content handler type: `t`=text, `h`=html, `x`=xml, `m`=markdown, `b`=body, `i`=ignore (default: `t`)
+
+|`--concatenate`
+|Concatenate content from all embedded documents into a single content field
+
+|`--content-only`
+|Output only extracted content (no metadata, no JSON wrapper); implies `--concatenate`
+
+|`-T` or `--timeoutMs`
+|Timeout for each parse in milliseconds
+
+|`-n` or `--numClients`
+|Number of parallel forked processes
+
+|`-p` or `--pluginsDir`
+|Plugins directory
+|===
+
+=== Batch Examples
+
+Extract markdown content only (no metadata) from all files:
+
+[source,bash]
+----
+java -jar tika-async-cli.jar -i /path/to/input -o /path/to/output -h m --content-only
+----
+
+This produces `.md` files in the output directory containing just the extracted markdown
+content — no JSON wrappers, no metadata fields.
+
+Extract text with all metadata in concatenated mode:
+
+[source,bash]
+----
+java -jar tika-async-cli.jar -i /path/to/input -o /path/to/output --concatenate
 ----
