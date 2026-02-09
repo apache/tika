@@ -38,7 +38,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.pipes.api.HandlerConfig;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 
@@ -80,7 +80,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(HandlerConfig.PARSE_MODE.RMETA)
+                .setParseMode(ParseMode.RMETA)
                 .setTimeoutMillis(60000)
                 .addJvmArg("-Xmx256m");
 
@@ -114,7 +114,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(HandlerConfig.PARSE_MODE.RMETA)
+                .setParseMode(ParseMode.RMETA)
                 .setTimeoutMillis(60000);
 
         try (PipesForkParser parser = new PipesForkParser(config);
@@ -144,7 +144,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(HandlerConfig.PARSE_MODE.RMETA)
+                .setParseMode(ParseMode.RMETA)
                 .setTimeoutMillis(60000);
 
         try (PipesForkParser parser = new PipesForkParser(config)) {
@@ -171,7 +171,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(HandlerConfig.PARSE_MODE.CONCATENATE)
+                .setParseMode(ParseMode.CONCATENATE)
                 .setTimeoutMillis(60000);
 
         try (PipesForkParser parser = new PipesForkParser(config);
@@ -196,6 +196,82 @@ public class PipesForkParserTest {
     }
 
     @Test
+    public void testNoParseMode() throws Exception {
+        // Create a simple test file
+        Path testFile = tempDir.resolve("test_no_parse.txt");
+        String content = "This content should NOT be extracted in NO_PARSE mode.";
+        Files.writeString(testFile, content);
+
+        PipesForkParserConfig config = new PipesForkParserConfig()
+                .setPluginsDir(PLUGINS_DIR)
+                .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
+                .setParseMode(ParseMode.NO_PARSE)
+                .setTimeoutMillis(60000);
+
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testFile)) {
+            PipesForkResult result = parser.parse(tis);
+
+            assertTrue(result.isSuccess(), "Parse should succeed. Status: " + result.getStatus()
+                    + ", message: " + result.getMessage());
+
+            // In NO_PARSE mode, there should be exactly one metadata object
+            List<Metadata> metadataList = result.getMetadataList();
+            assertEquals(1, metadataList.size(), "NO_PARSE mode should return single metadata");
+
+            // Content type should be detected
+            Metadata metadata = metadataList.get(0);
+            String contentType = metadata.get(Metadata.CONTENT_TYPE);
+            assertNotNull(contentType, "Content type should be detected");
+            assertTrue(contentType.contains("text/plain"),
+                    "Content type should be text/plain, got: " + contentType);
+
+            // No content should be extracted
+            String extractedContent = result.getContent();
+            assertTrue(extractedContent == null || extractedContent.isBlank(),
+                    "NO_PARSE mode should not extract content, got: " + extractedContent);
+        }
+    }
+
+    @Test
+    public void testNoParseModeWithZip() throws Exception {
+        // Test NO_PARSE mode with a zip file - should NOT extract embedded files
+        Path testZip = createZipWithEmbeddedFiles("test_no_parse.zip",
+                "embedded1.txt", "Content from first embedded file",
+                "embedded2.txt", "Content from second embedded file");
+
+        PipesForkParserConfig config = new PipesForkParserConfig()
+                .setPluginsDir(PLUGINS_DIR)
+                .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
+                .setParseMode(ParseMode.NO_PARSE)
+                .setTimeoutMillis(60000);
+
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testZip)) {
+            PipesForkResult result = parser.parse(tis);
+
+            assertTrue(result.isSuccess(), "Parse should succeed");
+
+            // Should have exactly one metadata object (no embedded file extraction)
+            List<Metadata> metadataList = result.getMetadataList();
+            assertEquals(1, metadataList.size(),
+                    "NO_PARSE mode should return only container metadata, not embedded files");
+
+            // Content type should be detected as zip
+            Metadata metadata = metadataList.get(0);
+            String contentType = metadata.get(Metadata.CONTENT_TYPE);
+            assertNotNull(contentType, "Content type should be detected");
+            assertTrue(contentType.contains("zip"),
+                    "Content type should be zip, got: " + contentType);
+
+            // No content should be extracted
+            String extractedContent = result.getContent();
+            assertTrue(extractedContent == null || extractedContent.isBlank(),
+                    "NO_PARSE mode should not extract content");
+        }
+    }
+
+    @Test
     public void testRmetaModeWithEmbedded() throws Exception {
         Path testZip = createZipWithEmbeddedFiles("test_rmeta_embedded.zip",
                 "file1.txt", "First file content",
@@ -204,7 +280,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(HandlerConfig.PARSE_MODE.RMETA)
+                .setParseMode(ParseMode.RMETA)
                 .setTimeoutMillis(60000);
 
         try (PipesForkParser parser = new PipesForkParser(config);
@@ -232,7 +308,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig explicitConfig = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(HandlerConfig.PARSE_MODE.RMETA)
+                .setParseMode(ParseMode.RMETA)
                 .setTimeoutMillis(60000);
 
         int explicitMetadataCount;
@@ -268,7 +344,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig textConfig = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(HandlerConfig.PARSE_MODE.RMETA)
+                .setParseMode(ParseMode.RMETA)
                 .setTimeoutMillis(60000);
 
         String textContent;
@@ -288,7 +364,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig xmlConfig = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.XML)
-                .setParseMode(HandlerConfig.PARSE_MODE.RMETA)
+                .setParseMode(ParseMode.RMETA)
                 .setTimeoutMillis(60000);
 
         String xmlContent;
@@ -322,7 +398,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(HandlerConfig.PARSE_MODE.RMETA)
+                .setParseMode(ParseMode.RMETA)
                 .setWriteLimit(100)  // Limit to 100 characters
                 .setTimeoutMillis(60000);
 
@@ -445,5 +521,122 @@ public class PipesForkParserTest {
             if (result.isTaskException()) trueCount++;
             assertEquals(1, trueCount, "Exactly one category should be true");
         }
+    }
+
+    @Test
+    public void testParseWithPath() throws Exception {
+        // Create a simple test file
+        Path testFile = tempDir.resolve("test_path.txt");
+        String content = "Hello from path-based parsing!";
+        Files.writeString(testFile, content);
+
+        PipesForkParserConfig config = new PipesForkParserConfig()
+                .setPluginsDir(PLUGINS_DIR)
+                .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
+                .setParseMode(ParseMode.RMETA)
+                .setTimeoutMillis(60000);
+
+        try (PipesForkParser parser = new PipesForkParser(config)) {
+            // Use parse(Path) directly without wrapping in TikaInputStream
+            PipesForkResult result = parser.parse(testFile);
+
+            assertTrue(result.isSuccess(), "Parse should succeed. Status: " + result.getStatus()
+                    + ", message: " + result.getMessage());
+            assertFalse(result.isProcessCrash(), "Should not be a process crash");
+
+            List<Metadata> metadataList = result.getMetadataList();
+            assertNotNull(metadataList, "Metadata list should not be null");
+            assertFalse(metadataList.isEmpty(), "Metadata list should not be empty");
+
+            String extractedContent = result.getContent();
+            assertNotNull(extractedContent, "Content should not be null");
+            assertTrue(extractedContent.contains("path-based parsing"),
+                    "Content should contain 'path-based parsing'");
+        }
+    }
+
+    @Test
+    public void testParseWithPathAndMetadata() throws Exception {
+        // Create a simple test file
+        Path testFile = tempDir.resolve("test_path_metadata.txt");
+        Files.writeString(testFile, "Content for metadata test");
+
+        PipesForkParserConfig config = new PipesForkParserConfig()
+                .setPluginsDir(PLUGINS_DIR)
+                .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
+                .setParseMode(ParseMode.RMETA)
+                .setTimeoutMillis(60000);
+
+        try (PipesForkParser parser = new PipesForkParser(config)) {
+            Metadata initialMetadata = new Metadata();
+            initialMetadata.set("custom-key", "custom-value");
+
+            // Use parse(Path, Metadata)
+            PipesForkResult result = parser.parse(testFile, initialMetadata);
+
+            assertTrue(result.isSuccess(), "Parse should succeed");
+            assertNotNull(result.getMetadata(), "Metadata should not be null");
+            assertTrue(result.getContent().contains("metadata test"));
+        }
+    }
+
+    @Test
+    public void testParseMultipleFilesWithPath() throws Exception {
+        // Create multiple test files
+        Path testFile1 = tempDir.resolve("path1.txt");
+        Path testFile2 = tempDir.resolve("path2.txt");
+        Files.writeString(testFile1, "Content of first path file");
+        Files.writeString(testFile2, "Content of second path file");
+
+        PipesForkParserConfig config = new PipesForkParserConfig()
+                .setPluginsDir(PLUGINS_DIR)
+                .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
+                .setParseMode(ParseMode.RMETA)
+                .setTimeoutMillis(60000);
+
+        try (PipesForkParser parser = new PipesForkParser(config)) {
+            // Parse both files using Path directly
+            PipesForkResult result1 = parser.parse(testFile1);
+            assertTrue(result1.isSuccess());
+            assertTrue(result1.getContent().contains("first path file"));
+
+            PipesForkResult result2 = parser.parse(testFile2);
+            assertTrue(result2.isSuccess());
+            assertTrue(result2.getContent().contains("second path file"));
+        }
+    }
+
+    @Test
+    public void testParsePathMatchesTikaInputStream() throws Exception {
+        // Verify that parse(Path) produces the same result as parse(TikaInputStream)
+        Path testFile = tempDir.resolve("compare.txt");
+        Files.writeString(testFile, "Content for comparison test");
+
+        PipesForkParserConfig config = new PipesForkParserConfig()
+                .setPluginsDir(PLUGINS_DIR)
+                .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
+                .setParseMode(ParseMode.RMETA)
+                .setTimeoutMillis(60000);
+
+        // Parse with Path
+        String pathContent;
+        try (PipesForkParser parser = new PipesForkParser(config)) {
+            PipesForkResult result = parser.parse(testFile);
+            assertTrue(result.isSuccess());
+            pathContent = result.getContent();
+        }
+
+        // Parse with TikaInputStream
+        String tisContent;
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testFile)) {
+            PipesForkResult result = parser.parse(tis);
+            assertTrue(result.isSuccess());
+            tisContent = result.getContent();
+        }
+
+        // Results should match
+        assertEquals(pathContent, tisContent,
+                "parse(Path) and parse(TikaInputStream) should produce same content");
     }
 }

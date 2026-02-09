@@ -23,14 +23,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Locale;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.config.loader.TikaJsonConfig;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -39,7 +37,6 @@ import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.serialization.JsonMetadataList;
-import org.apache.tika.utils.StringUtils;
 
 public class PassbackFilterTest {
 
@@ -63,7 +60,9 @@ public class PassbackFilterTest {
         init(tmpDir);
         String emitFileBase = "blah";
         ParseContext parseContext = new ParseContext();
-        parseContext.set(PassbackFilter.class, new MyPassbackFilter());
+        // Use JSON config approach for Jackson serialization compatibility
+        // Don't resolve here - let PipesServer resolve on its side
+        parseContext.setJsonConfig("mock-passback-filter", "{}");
         PipesResult pipesResult = pipesClient.process(
                 new FetchEmitTuple(testPdfFile, new FetchKey(fetcherId, testPdfFile),
                         new EmitKey(emitterId, emitFileBase), new Metadata(), parseContext,
@@ -96,21 +95,4 @@ public class PassbackFilterTest {
                 .get(0)
                 .get(Metadata.CONTENT_LENGTH));
     }
-
-    private static class MyPassbackFilter extends PassbackFilter {
-        @Override
-        public void filter(List<Metadata> metadataList) throws TikaException {
-            // Remove items without RESOURCE_NAME_KEY and transform remaining ones
-            metadataList.removeIf(m -> StringUtils.isBlank(m.get(TikaCoreProperties.RESOURCE_NAME_KEY)));
-            for (Metadata m : metadataList) {
-                String val = m.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-                // Clear all fields and only keep RESOURCE_NAME_KEY (uppercased)
-                for (String name : m.names()) {
-                    m.remove(name);
-                }
-                m.set(TikaCoreProperties.RESOURCE_NAME_KEY, val.toUpperCase(Locale.ROOT));
-            }
-        }
-    }
-
 }

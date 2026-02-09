@@ -80,7 +80,7 @@ public class WARCParser implements Parser {
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         EmbeddedDocumentExtractor embeddedDocumentExtractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
@@ -133,7 +133,7 @@ public class WARCParser implements Parser {
             //TODO handle missing payload?  Report or ignore?
             return;
         }
-        Metadata metadata = new Metadata();
+        Metadata metadata = Metadata.newInstance(context);
         setNotNull(WARC.WARC_RECORD_CONTENT_TYPE, warcResponse.contentType(), metadata);
         setNotNull(WARC.WARC_PAYLOAD_CONTENT_TYPE, warcResponse.payloadType(), metadata);
         processWarcMetadata(warcResponse, metadata);

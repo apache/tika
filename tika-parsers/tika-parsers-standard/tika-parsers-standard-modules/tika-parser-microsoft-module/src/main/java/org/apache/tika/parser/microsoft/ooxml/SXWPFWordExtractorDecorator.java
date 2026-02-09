@@ -29,14 +29,18 @@ import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
+import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.xssf.usermodel.XSSFRelation;
 import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
 import org.apache.xmlbeans.XmlException;
+import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
@@ -67,6 +71,16 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     XWPFRelation.FOOTNOTE.getRelation(),
                     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes",
                     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments"};
+
+    // Relationship types for Word settings
+    private static final String SETTINGS_RELATION =
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings";
+    private static final String WEB_SETTINGS_RELATION =
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/webSettings";
+    private static final String ATTACHED_TEMPLATE_RELATION =
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/attachedTemplate";
+    private static final String SUBDOCUMENT_RELATION =
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/subDocument";
 
     //a docx file should have one of these "main story" parts
     private final static String[] MAIN_STORY_PART_RELATIONS =
@@ -115,6 +129,106 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                 xhtml.endElement("div");
             }
         }
+
+        // Detect security-relevant features in main document
+        pps = getStoryDocumentParts();
+        if (pps != null && !pps.isEmpty()) {
+            PackagePart mainDoc = pps.get(0);
+            detectSecurityFeatures(mainDoc, xhtml);
+        }
+    }
+
+    /**
+     * Detects security-relevant features like mail merge, attached templates,
+     * subdocuments, and framesets.
+     */
+    private void detectSecurityFeatures(PackagePart documentPart, XHTMLContentHandler xhtml) {
+        // Check for attached template (external template reference)
+        try {
+            PackageRelationshipCollection templateRels =
+                    documentPart.getRelationshipsByType(ATTACHED_TEMPLATE_RELATION);
+            if (templateRels != null && templateRels.size() > 0) {
+                metadata.set(Office.HAS_ATTACHED_TEMPLATE, true);
+                for (PackageRelationship rel : templateRels) {
+                    if (rel.getTargetMode() == TargetMode.EXTERNAL) {
+                        emitExternalRef(xhtml, "attachedTemplate", rel.getTargetURI().toString());
+                    }
+                }
+            }
+        } catch (InvalidFormatException | SAXException e) {
+            // swallow
+        }
+
+        // Check for subdocuments (master document with external subdocs)
+        try {
+            PackageRelationshipCollection subDocRels =
+                    documentPart.getRelationshipsByType(SUBDOCUMENT_RELATION);
+            if (subDocRels != null && subDocRels.size() > 0) {
+                metadata.set(Office.HAS_SUBDOCUMENTS, true);
+                for (PackageRelationship rel : subDocRels) {
+                    if (rel.getTargetMode() == TargetMode.EXTERNAL) {
+                        emitExternalRef(xhtml, "subDocument", rel.getTargetURI().toString());
+                    }
+                }
+            }
+        } catch (InvalidFormatException | SAXException e) {
+            // swallow
+        }
+
+        // Check settings.xml for mail merge
+        try {
+            PackageRelationshipCollection settingsRels =
+                    documentPart.getRelationshipsByType(SETTINGS_RELATION);
+            if (settingsRels != null && settingsRels.size() > 0) {
+                PackagePart settingsPart = documentPart.getRelatedPart(settingsRels.getRelationship(0));
+                if (settingsPart != null) {
+                    try (InputStream is = settingsPart.getInputStream()) {
+                        WordSettingsHandler handler = new WordSettingsHandler(xhtml);
+                        XMLReaderUtils.parseSAX(is, handler, context);
+                        if (handler.hasMailMerge()) {
+                            metadata.set(Office.HAS_MAIL_MERGE, true);
+                        }
+                    }
+                }
+            }
+        } catch (InvalidFormatException | IOException | TikaException | SAXException e) {
+            // swallow
+        }
+
+        // Check webSettings.xml for framesets
+        try {
+            PackageRelationshipCollection webSettingsRels =
+                    documentPart.getRelationshipsByType(WEB_SETTINGS_RELATION);
+            if (webSettingsRels != null && webSettingsRels.size() > 0) {
+                PackagePart webSettingsPart = documentPart.getRelatedPart(webSettingsRels.getRelationship(0));
+                if (webSettingsPart != null) {
+                    try (InputStream is = webSettingsPart.getInputStream()) {
+                        WebSettingsHandler handler = new WebSettingsHandler(xhtml);
+                        XMLReaderUtils.parseSAX(is, handler, context);
+                        if (handler.hasFrameset()) {
+                            metadata.set(Office.HAS_FRAMESETS, true);
+                        }
+                    }
+                }
+            }
+        } catch (InvalidFormatException | IOException | TikaException | SAXException e) {
+            // swallow
+        }
+    }
+
+    /**
+     * Emits an external reference as an anchor element.
+     */
+    private void emitExternalRef(XHTMLContentHandler xhtml, String refType, String url)
+            throws SAXException {
+        if (url == null || url.isEmpty()) {
+            return;
+        }
+        org.xml.sax.helpers.AttributesImpl attrs = new org.xml.sax.helpers.AttributesImpl();
+        attrs.addAttribute("", "class", "class", "CDATA", "external-ref-" + refType);
+        attrs.addAttribute("", "href", "href", "CDATA", url);
+        xhtml.startElement("a", attrs);
+        xhtml.endElement("a");
     }
 
     private void handleDocumentPart(PackagePart documentPart, XHTMLContentHandler xhtml)
@@ -194,7 +308,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     new EmbeddedContentHandler(new OOXMLWordAndPowerPointTextHandler(
                             new OOXMLTikaBodyPartHandler(xhtml, styles, listManager, config),
                             linkedRelationships, config.isIncludeShapeBasedContent(),
-                            config.isConcatenatePhoneticRuns())), context);
+                            config.isConcatenatePhoneticRuns(), metadata)), context);
         } catch (TikaException | IOException e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));
@@ -297,5 +411,68 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             }
         }
         return new ArrayList<>();
+    }
+
+    /**
+     * Handler for parsing Word settings.xml to detect mail merge and other features.
+     */
+    private static class WordSettingsHandler extends DefaultHandler {
+        private final XHTMLContentHandler xhtml;
+        private boolean hasMailMerge = false;
+
+        WordSettingsHandler(XHTMLContentHandler xhtml) {
+            this.xhtml = xhtml;
+        }
+
+        @Override
+        public void startElement(String uri, String localName, String qName, Attributes atts)
+                throws SAXException {
+            // Mail merge element indicates document has mail merge data source
+            if ("mailMerge".equals(localName)) {
+                hasMailMerge = true;
+            }
+            // dataSource element contains the external data source reference
+            if ("dataSource".equals(localName) || "query".equals(localName)) {
+                String rId = atts.getValue("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id");
+                // The actual data source location is in the relationship
+            }
+        }
+
+        boolean hasMailMerge() {
+            return hasMailMerge;
+        }
+    }
+
+    /**
+     * Handler for parsing Word webSettings.xml to detect framesets.
+     */
+    private static class WebSettingsHandler extends DefaultHandler {
+        private final XHTMLContentHandler xhtml;
+        private boolean hasFrameset = false;
+
+        WebSettingsHandler(XHTMLContentHandler xhtml) {
+            this.xhtml = xhtml;
+        }
+
+        @Override
+        public void startElement(String uri, String localName, String qName, Attributes atts)
+                throws SAXException {
+            // Frameset element indicates document contains frames
+            if ("frameset".equals(localName)) {
+                hasFrameset = true;
+            }
+            // Frame with src attribute contains URL
+            if ("frame".equals(localName)) {
+                String src = atts.getValue("src");
+                if (src != null && !src.isEmpty()) {
+                    // Frame references an external URL
+                    hasFrameset = true;
+                }
+            }
+        }
+
+        boolean hasFrameset() {
+            return hasFrameset;
+        }
     }
 }

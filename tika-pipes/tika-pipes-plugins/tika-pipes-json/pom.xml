@@ -53,9 +53,9 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>src/test/resources/test-simple.csv</exclude>
-          </excludes>
+          <inputExcludes>
+            <inputExclude>src/test/resources/test-simple.csv</inputExclude>
+          </inputExcludes>
         </configuration>
       </plugin>
       <plugin>

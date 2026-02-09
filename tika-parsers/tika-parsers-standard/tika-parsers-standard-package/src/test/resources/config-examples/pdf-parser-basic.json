@@ -1,0 +1,10 @@
+{
+  "parsers": [
+    {
+      "pdf-parser": {
+        "extractInlineImages": true,
+        "sortByPosition": true
+      }
+    }
+  ]
+}

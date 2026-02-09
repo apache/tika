@@ -246,7 +246,7 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
                     }
                     try (InputStream stream = getZipStream(pagePath, pkg)) {
                         XMLReaderUtils.parseSAX(stream,
-                                        new XPSPageContentHandler(xhtml, embeddedImages), context);
+                                        new XPSPageContentHandler(xhtml, embeddedImages, context), context);
                     } catch (TikaException | IOException e) {
                         throw new SAXException(e);
                     }

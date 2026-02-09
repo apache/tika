@@ -27,10 +27,12 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.api.HandlerConfig;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.ContentHandlerFactory;
 
 public class JsonFetchEmitTupleTest {
 
@@ -45,8 +47,11 @@ public class JsonFetchEmitTupleTest {
 
         ParseContext parseContext = new ParseContext();
 
-        HandlerConfig h = new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML, HandlerConfig.PARSE_MODE.CONCATENATE, 10000, 10, true);
-        parseContext.set(HandlerConfig.class, h);
+        // Set ContentHandlerFactory and ParseMode in ParseContext
+        ContentHandlerFactory factory = new BasicContentHandlerFactory(
+                BasicContentHandlerFactory.HANDLER_TYPE.XML, 10000);
+        parseContext.set(ContentHandlerFactory.class, factory);
+        parseContext.set(ParseMode.class, ParseMode.CONCATENATE);
 
         FetchEmitTuple t = new FetchEmitTuple("my_id", new FetchKey("my_fetcher", "fetchKey1"), new EmitKey("my_emitter", "emitKey1"), m, parseContext,
                 FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
@@ -66,12 +71,10 @@ public class JsonFetchEmitTupleTest {
         m.add("m2", "v3");
         m.add("m3", "v4");
 
-        /**
-         *                TODO -- add this to the ParseContext
-         *                new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML,
-         *                         HandlerConfig.PARSE_MODE.CONCATENATE,
-         *                         10000,10, true),
-         */
+        // TODO -- add this to the ParseContext:
+        // parseContext.set(ContentHandlerFactory.class, new BasicContentHandlerFactory(
+        //     BasicContentHandlerFactory.HANDLER_TYPE.XML, 10000));
+        // parseContext.set(ParseMode.class, ParseMode.CONCATENATE);
         FetchEmitTuple t = new FetchEmitTuple("my_id", new FetchKey("my_fetcher", "fetchKey1", 10, 1000), new EmitKey("my_emitter", "emitKey1"), m, new ParseContext(),
                 FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
         StringWriter writer = new StringWriter();
@@ -83,14 +86,12 @@ public class JsonFetchEmitTupleTest {
 
     @Test
     public void testBytes() throws Exception {
-        /**
-         * TODO -- add these to the ParseContext
-         EmbeddedDocumentBytesConfig bytesConfig = new EmbeddedDocumentBytesConfig(true);
-         bytesConfig.setEmitter("emitter");
-         * new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.XML,
-         *                         HandlerConfig.PARSE_MODE.CONCATENATE,
-         *                         10000,10, true)
-         */
+        // TODO -- add these to the ParseContext:
+        // UnpackConfig bytesConfig = new UnpackConfig(true);
+        // bytesConfig.setEmitter("emitter");
+        // parseContext.set(ContentHandlerFactory.class, new BasicContentHandlerFactory(
+        //     BasicContentHandlerFactory.HANDLER_TYPE.XML, 10000));
+        // parseContext.set(ParseMode.class, ParseMode.CONCATENATE);
         FetchEmitTuple t = new FetchEmitTuple("my_id", new FetchKey("my_fetcher", "fetchKey1", 10, 1000), new EmitKey("my_emitter", "emitKey1"), new Metadata(), new ParseContext(),
                 FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
         StringWriter writer = new StringWriter();
@@ -99,5 +100,47 @@ public class JsonFetchEmitTupleTest {
         FetchEmitTuple deserialized = JsonFetchEmitTuple.fromJson(reader);
         assertEquals(t, deserialized);
 
+    }
+
+    @Test
+    public void testUnpackConfigSerialization() throws Exception {
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.UNPACK);
+
+        // Create UnpackConfig with specific settings
+        UnpackConfig unpackConfig = new UnpackConfig();
+        unpackConfig.setZipEmbeddedFiles(true);
+        unpackConfig.setIncludeMetadataInZip(true);
+        unpackConfig.setEmitter("test-emitter");
+        unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
+        parseContext.set(UnpackConfig.class, unpackConfig);
+
+        FetchEmitTuple t = new FetchEmitTuple("test-id",
+                new FetchKey("my_fetcher", "fetchKey1"),
+                new EmitKey("my_emitter", "emitKey1"),
+                new Metadata(), parseContext,
+                FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+
+        StringWriter writer = new StringWriter();
+        JsonFetchEmitTuple.toJson(t, writer);
+        String json = writer.toString();
+        System.out.println("Serialized JSON: " + json);
+
+        Reader reader = new StringReader(json);
+        FetchEmitTuple deserialized = JsonFetchEmitTuple.fromJson(reader);
+
+        // Verify ParseMode is preserved
+        assertEquals(ParseMode.UNPACK, deserialized.getParseContext().get(ParseMode.class));
+
+        // Verify UnpackConfig is preserved
+        UnpackConfig deserializedConfig = deserialized.getParseContext().get(UnpackConfig.class);
+        assertEquals(unpackConfig.isZipEmbeddedFiles(), deserializedConfig.isZipEmbeddedFiles(),
+                "zipEmbeddedFiles should be preserved");
+        assertEquals(unpackConfig.isIncludeMetadataInZip(), deserializedConfig.isIncludeMetadataInZip(),
+                "includeMetadataInZip should be preserved");
+        assertEquals(unpackConfig.getEmitter(), deserializedConfig.getEmitter(),
+                "emitter should be preserved");
+        assertEquals(unpackConfig.getSuffixStrategy(), deserializedConfig.getSuffixStrategy(),
+                "suffixStrategy should be preserved");
     }
 }

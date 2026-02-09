@@ -1,0 +1,17 @@
+{
+  "auto-detect-parser": {
+    "throwOnZeroBytes": false
+  },
+  "parse-context": {
+    "output-limits": {
+      "zipBombRatio": 100,
+      "maxXmlDepth": 100,
+      "maxPackageEntryDepth": 100
+    },
+    "commons-digester-factory": {
+        "digests": [
+          { "algorithm": "SHA256" }
+        ]
+      }
+    }
+}

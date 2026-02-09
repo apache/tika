@@ -52,9 +52,8 @@ public class IntegrationTestBase extends TikaTest {
     static final String STATUS_PATH = "/status";
 
     static final long MAX_WAIT_MS = 60000;
-    //running into conflicts on 9998 with the CXFTestBase tests
-    //TODO: figure out why?!
-    static final String INTEGRATION_TEST_PORT = "9999";
+    static final int integrationTestPort = TestPortAllocator.findFreePort();
+    static final String INTEGRATION_TEST_PORT = String.valueOf(integrationTestPort);
     protected static final String endPoint = "http://localhost:" + INTEGRATION_TEST_PORT;
     private static final Logger LOG = LoggerFactory.getLogger(IntegrationTestBase.class);
 
@@ -76,8 +75,14 @@ public class IntegrationTestBase extends TikaTest {
     @AfterEach
     public void tearDown() throws Exception {
         if (process != null) {
-            process.destroyForcibly();
-            process.waitFor(30, TimeUnit.SECONDS);
+            // Try graceful shutdown first (SIGTERM) to allow shutdown hooks to run
+            process.destroy();
+            boolean exited = process.waitFor(5, TimeUnit.SECONDS);
+            if (!exited) {
+                // Fall back to forceful shutdown (SIGKILL)
+                process.destroyForcibly();
+                process.waitFor(30, TimeUnit.SECONDS);
+            }
             if (process.isAlive()) {
                 throw new RuntimeException("process still alive!");
             }
@@ -85,7 +90,8 @@ public class IntegrationTestBase extends TikaTest {
     }
 
     public void startProcess(String[] extraArgs) throws IOException {
-        String[] base = new String[]{"java", "-cp", System.getProperty("java.class.path"), "org.apache.tika.server.core.TikaServerCli",};
+        String[] base = new String[]{"java", "-cp", System.getProperty("java.class.path"), "org.apache.tika.server.core.TikaServerCli",
+                "-p", INTEGRATION_TEST_PORT};
         List<String> args = new ArrayList<>(Arrays.asList(base));
         args.addAll(Arrays.asList(extraArgs));
         ProcessBuilder pb = new ProcessBuilder(args);

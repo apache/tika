@@ -186,14 +186,14 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
         //TODO -- if it was detected as a non-csv subtype of text
         if (!params.getMediaType().getBaseType().equals(CSV) &&
                 !params.getMediaType().getBaseType().equals(TSV)) {
-            handleText(reader, charset, handler, metadata);
+            handleText(reader, charset, handler, metadata, context);
             return;
         }
 
         CSVFormat csvFormat = CSVFormat.EXCEL.builder().setDelimiter(params.getDelimiter()).get();
         metadata.set(DELIMITER_PROPERTY, textAndCSVConfig.getDelimiterToNameMap().get(csvFormat.getDelimiterString().charAt(0)));
 
-        XHTMLContentHandler xhtmlContentHandler = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtmlContentHandler = new XHTMLContentHandler(handler, metadata, context);
         int totalRows = 0;
         try (CSVParser commonsParser = CSVParser.builder().setReader(reader).setFormat(csvFormat).get()) {
             xhtmlContentHandler.startDocument();
@@ -246,7 +246,7 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
     }
 
     private void handleText(Reader reader, Charset charset, ContentHandler handler,
-                            Metadata metadata) throws SAXException, IOException, TikaException {
+                            Metadata metadata, ParseContext context) throws SAXException, IOException, TikaException {
         // Automatically detect the character encoding
         //try to get detected content type; could be a subclass of text/plain
         //such as vcal, etc.
@@ -263,7 +263,7 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
         // deprecated, see TIKA-431
         metadata.set(Metadata.CONTENT_ENCODING, charset.name());
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         handleText(reader, xhtml);
         xhtml.endDocument();

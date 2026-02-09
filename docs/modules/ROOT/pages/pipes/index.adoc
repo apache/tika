@@ -1,0 +1,43 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Tika Pipes
+
+This section covers Tika Pipes for scalable, fault-tolerant document processing.
+
+== Overview
+
+Tika Pipes provides a framework for processing large volumes of documents with:
+
+* **Fetchers** - Retrieve documents from various sources (filesystem, S3, HTTP, etc.)
+* **Emitters** - Send parsed results to various destinations (filesystem, OpenSearch, Solr, etc.)
+* **Pipelines** - Configure processing workflows
+
+== Topics
+
+* xref:pipes/unpack-config.adoc[Extracting Embedded Bytes] - Extract raw bytes from embedded documents using `ParseMode.UNPACK`
+
+// Add links to specific topics as they are created
+// * link:getting-started.html[Getting Started]
+// * link:fetchers.html[Fetchers]
+// * link:emitters.html[Emitters]
+// * link:configuration.html[Configuration]
+// * link:async.html[Async Processing]
+
+== Advanced Topics
+
+* xref:pipes/shared-server-mode.adoc[Shared Server Mode] - Experimental mode for reduced memory usage

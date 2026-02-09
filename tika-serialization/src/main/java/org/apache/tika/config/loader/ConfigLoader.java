@@ -26,11 +26,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.tika.exception.TikaConfigException;
 
 /**
- * Loader for custom configuration objects from the "other-configs" section.
+ * Loader for configuration objects from the "parse-context" section.
  * <p>
- * This class handles custom POJOs and test configurations that are not part of
- * Tika's official configuration schema. All configurations loaded via ConfigLoader
- * must be placed under the "other-configs" top-level node in the JSON.
+ * This class handles ParseContext components and configuration POJOs that are loaded
+ * into a ParseContext for use during parsing. All configurations loaded via ConfigLoader
+ * must be placed under the "parse-context" top-level node in the JSON.
  * <p>
  * For official Tika components and configurations (parsers, detectors, async, server, etc.),
  * use the specific methods on {@link TikaLoader} or load directly from {@link TikaJsonConfig}.
@@ -40,10 +40,10 @@ import org.apache.tika.exception.TikaConfigException;
  * TikaLoader loader = TikaLoader.load(configPath);
  *
  * // Load by explicit key
- * HandlerConfig config = loader.configs().load("handler-config", HandlerConfig.class);
+ * MyConfig config = loader.configs().load("my-config", MyConfig.class);
  *
  * // Load by class name (auto-converts to kebab-case)
- * HandlerConfig config = loader.configs().load(HandlerConfig.class);
+ * MyConfig config = loader.configs().load(MyConfig.class);
  * </pre>
  *
  * <p>JSON configuration example:
@@ -55,14 +55,17 @@ import org.apache.tika.exception.TikaConfigException;
  *   "pipes": {...},
  *   "server": {...},
  *
- *   // Custom configs MUST be in "other-configs" (loaded via configs())
- *   "other-configs": {
- *     "handler-config": {
- *       "timeout": 5000,
- *       "retries": 3
+ *   // ParseContext configs in "parse-context" (loaded via configs())
+ *   "parse-context": {
+ *     "embedded-limits": {
+ *       "maxDepth": 10,
+ *       "maxCount": 1000
  *     },
- *     "my-custom-config": {
- *       "enabled": true
+ *     "output-limits": {
+ *       "writeLimit": 100000
+ *     },
+ *     "commons-digester-factory": {
+ *       "algorithms": ["MD5", "SHA-256"]
  *     }
  *   }
  * }
@@ -93,7 +96,7 @@ public class ConfigLoader {
     /**
      * Loads a configuration object using the class name converted to kebab-case.
      * <p>
-     * For example, {@code HandlerConfig.class} will look for key "handler-config".
+     * For example, {@code MyAppConfig.class} will look for key "my-app-config".
      * Class name suffixes like "Config", "Configuration", "Settings" are stripped first.
      * <p>
      * For interfaces, the JSON must specify the implementation (see {@link #load(String, Class)}).
@@ -213,7 +216,7 @@ public class ConfigLoader {
      *
      * <p>Example:
      * <pre>
-     * HandlerConfig defaults = new HandlerConfig();
+     * MyConfig defaults = new MyConfig();
      * defaults.setTimeout(30000);
      * defaults.setRetries(2);
      * defaults.setEnabled(false);
@@ -221,9 +224,9 @@ public class ConfigLoader {
      * // JSON: { "enabled": true }
      * // Result: timeout=30000, retries=2, enabled=true (merged!)
      * // Note: 'defaults' object remains unchanged
-     * HandlerConfig config = loader.configs().loadWithDefaults("handler-config",
-     *                                                           HandlerConfig.class,
-     *                                                           defaults);
+     * MyConfig config = loader.configs().loadWithDefaults("my-config",
+     *                                                      MyConfig.class,
+     *                                                      defaults);
      * </pre>
      *
      * @param key The JSON key to load from
@@ -277,16 +280,16 @@ public class ConfigLoader {
     }
 
     /**
-     * Gets a node by key from the "other-configs".
+     * Gets a node by key from the "parse-context" section.
      *
      * @param key The JSON key to look for
      * @return the node, or null if not found
      */
     private JsonNode getNode(String key) {
 
-        JsonNode otherConfigs = config.getRootNode().get("other-configs");
-        if (otherConfigs != null && otherConfigs.isObject()) {
-            return otherConfigs.get(key);
+        JsonNode parseContext = config.getRootNode().get("parse-context");
+        if (parseContext != null && parseContext.isObject()) {
+            return parseContext.get(key);
         }
 
         return null;

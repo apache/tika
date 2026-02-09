@@ -64,7 +64,7 @@
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
-      <artifactId>junit-jupiter</artifactId>
+      <artifactId>testcontainers-junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -75,9 +75,9 @@
       <groupId>org.apache.rat</groupId>
       <artifactId>apache-rat-plugin</artifactId>
       <configuration>
-        <excludes>
-          <exclude>src/test/resources/opensearch/*.json</exclude>
-        </excludes>
+        <inputExcludes>
+          <inputExclude>src/test/resources/opensearch/*.json</inputExclude>
+        </inputExcludes>
     </configuration>
   </plugin>
       <plugin>

@@ -22,10 +22,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig;
-import org.apache.tika.pipes.api.pipesiterator.PipesIteratorConfig;
+import org.apache.tika.pipes.pipesiterator.PipesIteratorConfig;
 
-public class JDBCPipesIteratorConfig implements PipesIteratorConfig {
+public class JDBCPipesIteratorConfig extends PipesIteratorConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -49,7 +48,6 @@ public class JDBCPipesIteratorConfig implements PipesIteratorConfig {
     private String select;
     private int fetchSize = -1;
     private int queryTimeoutSeconds = -1;
-    private PipesIteratorBaseConfig baseConfig = null;
 
     public String getIdColumn() {
         return idColumn;
@@ -88,16 +86,13 @@ public class JDBCPipesIteratorConfig implements PipesIteratorConfig {
     }
 
     @Override
-    public PipesIteratorBaseConfig getBaseConfig() {
-        return baseConfig;
-    }
-
-    @Override
-    public final boolean equals(Object o) {
+    public boolean equals(Object o) {
         if (!(o instanceof JDBCPipesIteratorConfig that)) {
             return false;
         }
-
+        if (!super.equals(o)) {
+            return false;
+        }
         return fetchSize == that.fetchSize &&
                 queryTimeoutSeconds == that.queryTimeoutSeconds &&
                 Objects.equals(idColumn, that.idColumn) &&
@@ -106,13 +101,13 @@ public class JDBCPipesIteratorConfig implements PipesIteratorConfig {
                 Objects.equals(fetchKeyRangeEndColumn, that.fetchKeyRangeEndColumn) &&
                 Objects.equals(emitKeyColumn, that.emitKeyColumn) &&
                 Objects.equals(connection, that.connection) &&
-                Objects.equals(select, that.select) &&
-                Objects.equals(baseConfig, that.baseConfig);
+                Objects.equals(select, that.select);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hashCode(idColumn);
+        int result = super.hashCode();
+        result = 31 * result + Objects.hashCode(idColumn);
         result = 31 * result + Objects.hashCode(fetchKeyColumn);
         result = 31 * result + Objects.hashCode(fetchKeyRangeStartColumn);
         result = 31 * result + Objects.hashCode(fetchKeyRangeEndColumn);
@@ -121,7 +116,6 @@ public class JDBCPipesIteratorConfig implements PipesIteratorConfig {
         result = 31 * result + Objects.hashCode(select);
         result = 31 * result + fetchSize;
         result = 31 * result + queryTimeoutSeconds;
-        result = 31 * result + Objects.hashCode(baseConfig);
         return result;
     }
 }

@@ -51,7 +51,7 @@ public class ClassParser implements Parser {
 
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        new XHTMLClassVisitor(handler, metadata).parse(tis);
+        new XHTMLClassVisitor(handler, metadata, context).parse(tis);
     }
 
 }

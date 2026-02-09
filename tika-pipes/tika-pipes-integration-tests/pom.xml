@@ -81,6 +81,18 @@
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-parser-digest-commons</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-parsers-standard-package</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -110,10 +122,10 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>src/test/resources/test-documents/file-list.txt</exclude>
-            <exclude>src/test/resources/test-documents/testOverlappingText.pdf</exclude>
-          </excludes>
+          <inputExcludes>
+            <inputExclude>src/test/resources/test-documents/file-list.txt</inputExclude>
+            <inputExclude>src/test/resources/test-documents/testOverlappingText.pdf</inputExclude>
+          </inputExcludes>
         </configuration>
       </plugin>
       <plugin>
@@ -140,6 +152,14 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <!-- Disable manifest-only jar so forked JVMs get the real classpath -->
+          <useManifestOnlyJar>false</useManifestOnlyJar>
+        </configuration>
       </plugin>
 
     </plugins>

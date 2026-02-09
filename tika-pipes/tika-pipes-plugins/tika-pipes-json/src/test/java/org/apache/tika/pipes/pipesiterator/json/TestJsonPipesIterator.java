@@ -49,11 +49,11 @@ public class TestJsonPipesIterator {
     }
 
     @Test
-    public void testWithEmbDocBytes() throws Exception {
+    public void testWithUnpack() throws Exception {
         Path jsonPath = Paths
                 .get(this
                         .getClass()
-                        .getResource("/test-documents/test-with-embedded-bytes.json")
+                        .getResource("/test-documents/test-with-unpack.json")
                         .toURI())
                 .toAbsolutePath();
         JsonPipesIterator pipesIterator = createIterator(jsonPath);
@@ -71,34 +71,4 @@ public class TestJsonPipesIterator {
                 OBJECT_MAPPER.writeValueAsString(jsonConfig));
         return JsonPipesIterator.build(extensionConfig);
     }
-
-
-    /*
-    //use this to generate test files
-    public static void main(String[] args) throws Exception {
-        Path p = Paths.get("/home/tallison/Intellij/tika-main/tika-pipes/tika-pipes-iterators" +
-                "/tika-pipes-iterator-json/src/test/resources/test-documents/test-with-embedded" +
-                "-bytes.json");
-        try (BufferedWriter writer = Files.newBufferedWriter(p, StandardCharsets.UTF_8)) {
-            HandlerConfig handlerConfig =
-                    new HandlerConfig(BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
-                            HandlerConfig.PARSE_MODE.RMETA, -1, -1,
-                            false);
-            EmbeddedDocumentBytesConfig config = new EmbeddedDocumentBytesConfig(true);
-            for (int i = 0; i < 100; i++) {
-                String id = "myid-"+i;
-                FetchEmitTuple t = new FetchEmitTuple(
-                        id,
-                        new FetchKey("fs", i + ".xml"),
-                        new EmitKey("fs", i + ".xml.json"),
-                        new Metadata(),
-                        handlerConfig,
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT,
-                        config);
-                String line = JsonFetchEmitTuple.toJson(t);
-                writer.write(line);
-                writer.newLine();
-            }
-        }
-    }*/
 }

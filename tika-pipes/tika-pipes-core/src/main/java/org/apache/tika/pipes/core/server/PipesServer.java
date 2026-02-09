@@ -22,23 +22,22 @@ import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.IN
 import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.OOM;
 import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.TIMEOUT;
 
-import java.io.ByteArrayOutputStream;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Locale;
-import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -48,8 +47,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -57,15 +54,17 @@ import org.xml.sax.SAXException;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
-import org.apache.tika.digest.Digester;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.RUnpackExtractorFactory;
+import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
+import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.core.EmitStrategy;
 import org.apache.tika.pipes.core.EmitStrategyConfig;
@@ -74,11 +73,16 @@ import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.config.ConfigStore;
 import org.apache.tika.pipes.core.config.ConfigStoreFactory;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
+import org.apache.tika.pipes.core.extractor.UnpackConfig;
+import org.apache.tika.pipes.core.extractor.UnpackExtractorFactory;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.apache.tika.pipes.core.serialization.JsonPipesIpc;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.plugins.TikaPluginManager;
+import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.serialization.ParseContextUtils;
 import org.apache.tika.utils.ExceptionUtils;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * This server is forked from the PipesClient.  This class isolates
@@ -91,6 +95,9 @@ import org.apache.tika.utils.ExceptionUtils;
 public class PipesServer implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(PipesServer.class);
+
+    public static final int AUTH_TOKEN_LENGTH_BYTES = 32;
+    public static final int MAX_FETCH_EMIT_TUPLE_BYTES = 100 * 1024 * 1024; // 100MB
 
     private final long heartbeatIntervalMs;
     private final String pipesClientId;
@@ -133,7 +140,6 @@ public class PipesServer implements AutoCloseable {
             return (byte) (ordinal() + 1);
         }
     }
-    private Digester digester;
 
     private Detector detector;
 
@@ -150,6 +156,8 @@ public class PipesServer implements AutoCloseable {
     private final PipesConfig pipesConfig;
     private final Socket socket;
     private final MetadataFilter defaultMetadataFilter;
+    private final ContentHandlerFactory defaultContentHandlerFactory;
+    private final MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory;
     private AutoDetectParser autoDetectParser;
     private RecursiveParserWrapper rMetaParser;
     private FetcherManager fetcherManager;
@@ -164,9 +172,10 @@ public class PipesServer implements AutoCloseable {
             LOG.debug("pipesClientId={}: connecting to client on port={}", pipesClientId, port);
             Socket socket = new Socket();
             socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), PipesClient.SOCKET_CONNECT_TIMEOUT_MS);
+            socket.setTcpNoDelay(true); // Disable Nagle's algorithm to avoid ~40ms delays on small writes
 
-            DataInputStream dis = new DataInputStream(socket.getInputStream());
-            DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+            DataInputStream dis = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
+            DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
         try {
             TikaLoader tikaLoader = TikaLoader.load(tikaConfigPath);
             TikaJsonConfig tikaJsonConfig = tikaLoader.getConfig();
@@ -174,9 +183,12 @@ public class PipesServer implements AutoCloseable {
 
             // Set socket timeout from config after loading PipesConfig
             socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMs());
+            socket.setTcpNoDelay(true);
 
             MetadataFilter metadataFilter = tikaLoader.loadMetadataFilters();
-            PipesServer pipesServer = new PipesServer(pipesClientId, tikaLoader, pipesConfig, socket, dis, dos, metadataFilter);
+            ContentHandlerFactory contentHandlerFactory = tikaLoader.loadContentHandlerFactory();
+            MetadataWriteLimiterFactory metadataWriteLimiterFactory = tikaLoader.loadParseContext().get(MetadataWriteLimiterFactory.class);
+            PipesServer pipesServer = new PipesServer(pipesClientId, tikaLoader, pipesConfig, socket, dis, dos, metadataFilter, contentHandlerFactory, metadataWriteLimiterFactory);
             pipesServer.initializeResources();
             LOG.debug("pipesClientId={}: PipesServer loaded and ready", pipesClientId);
             return pipesServer;
@@ -209,7 +221,8 @@ public class PipesServer implements AutoCloseable {
     }
 
     public PipesServer(String pipesClientId, TikaLoader tikaLoader, PipesConfig pipesConfig, Socket socket, DataInputStream in,
-                       DataOutputStream out, MetadataFilter metadataFilter) throws TikaConfigException,
+                       DataOutputStream out, MetadataFilter metadataFilter, ContentHandlerFactory contentHandlerFactory,
+                       MetadataWriteLimiterFactory metadataWriteLimiterFactory) throws TikaConfigException,
             IOException {
 
         this.pipesClientId = pipesClientId;
@@ -217,6 +230,8 @@ public class PipesServer implements AutoCloseable {
         this.pipesConfig = pipesConfig;
         this.socket = socket;
         this.defaultMetadataFilter = metadataFilter;
+        this.defaultContentHandlerFactory = contentHandlerFactory;
+        this.defaultMetadataWriteLimiterFactory = metadataWriteLimiterFactory;
         this.input = new DataInputStream(in);
         this.output = new DataOutputStream(out);
         this.heartbeatIntervalMs = pipesConfig.getHeartbeatIntervalMs();
@@ -239,17 +254,113 @@ public class PipesServer implements AutoCloseable {
 
 
     public static void main(String[] args) throws Exception {
-        int port = Integer.parseInt(args[0]);
-        Path tikaConfig = Paths.get(args[1]);
-        String pipesClientId = System.getProperty("pipesClientId", "unknown");
-        LOG.debug("pipesClientId={}: starting pipes server on port={}", pipesClientId, port);
-        try (PipesServer server = PipesServer.load(port, tikaConfig)) {
-            server.mainLoop();
-        } catch (Throwable t) {
-            LOG.error("pipesClientId={}: crashed", pipesClientId, t);
-            throw t;
+        // Check for shared mode: --shared <numConnections> <tikaConfigPath>
+        if (args.length > 0 && "--shared".equals(args[0])) {
+            String portEnv = System.getenv("TIKA_PIPES_PORT");
+            if (portEnv == null || portEnv.isEmpty()) {
+                throw new IllegalStateException("TIKA_PIPES_PORT environment variable is not set");
+            }
+            int port = Integer.parseInt(portEnv);
+            String tokenHex = System.getenv("TIKA_PIPES_AUTH_TOKEN");
+            if (tokenHex == null || tokenHex.isEmpty()) {
+                throw new IllegalStateException("TIKA_PIPES_AUTH_TOKEN environment variable is not set");
+            }
+            byte[] expectedToken = HexFormat.of().parseHex(tokenHex);
+            int numConnections = Integer.parseInt(args[1]);
+            Path tikaConfig = Paths.get(args[2]);
+            LOG.info("Starting shared PipesServer with {} connections", numConnections);
+            runSharedMode(port, numConnections, tikaConfig, expectedToken);
+        } else {
+            // Per-client mode: <port> <tikaConfigPath>
+            int port = Integer.parseInt(args[0]);
+            Path tikaConfig = Paths.get(args[1]);
+            String pipesClientId = System.getProperty("pipesClientId", "unknown");
+            LOG.debug("pipesClientId={}: starting pipes server on port={}", pipesClientId, port);
+            try (PipesServer server = PipesServer.load(port, tikaConfig)) {
+                server.mainLoop();
+            } catch (Throwable t) {
+                LOG.error("pipesClientId={}: crashed", pipesClientId, t);
+                throw t;
+            } finally {
+                LOG.debug("pipesClientId={}: server shutting down", pipesClientId);
+            }
+        }
+    }
+
+    /**
+     * Runs the server in shared mode, accepting multiple client connections.
+     * <p>
+     * Each incoming connection must present a valid auth token (32 bytes) before
+     * being accepted. This prevents unauthorized local processes from connecting.
+     * Note: if a malicious actor has access to your localhost and can read
+     * /proc/&lt;pid&gt;/environ, that is beyond Tika's security model. This auth
+     * token exists to prevent CVE-style abuse from untrusted local processes that
+     * cannot read the server process's environment.
+     */
+    private static void runSharedMode(int port, int numConnections, Path tikaConfigPath,
+                                      byte[] expectedToken) throws Exception {
+        TikaLoader tikaLoader = TikaLoader.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaLoader.getConfig());
+
+        // Load shared resources
+        SharedServerResources resources = SharedServerResources.load(tikaLoader, pipesConfig);
+
+        // Create thread pool for connection handlers
+        ExecutorService connectionPool = Executors.newFixedThreadPool(numConnections);
+
+        // Create server socket and accept connections
+        try (java.net.ServerSocket serverSocket = new java.net.ServerSocket()) {
+            serverSocket.setReuseAddress(true);
+            serverSocket.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), numConnections);
+
+            // Signal readiness to the parent process via stdout
+            System.out.println("READY:" + port);
+            System.out.flush();
+
+            LOG.info("Shared server ready, accepting connections");
+
+            // Accept connections until shutdown
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    java.net.Socket clientSocket = serverSocket.accept();
+                    clientSocket.setSoTimeout((int) pipesConfig.getSocketTimeoutMs());
+                    clientSocket.setTcpNoDelay(true);
+
+                    // Validate auth token before creating handler
+                    byte[] clientToken = new byte[AUTH_TOKEN_LENGTH_BYTES];
+                    int bytesRead = 0;
+                    while (bytesRead < AUTH_TOKEN_LENGTH_BYTES) {
+                        int r = clientSocket.getInputStream().read(
+                                clientToken, bytesRead, AUTH_TOKEN_LENGTH_BYTES - bytesRead);
+                        if (r == -1) {
+                            break;
+                        }
+                        bytesRead += r;
+                    }
+                    if (bytesRead < AUTH_TOKEN_LENGTH_BYTES ||
+                            !MessageDigest.isEqual(expectedToken, clientToken)) {
+                        LOG.warn("Rejected connection with invalid auth token");
+                        try {
+                            clientSocket.close();
+                        } catch (IOException ignored) {
+                        }
+                        continue;
+                    }
+
+                    LOG.debug("Accepted authenticated connection from client");
+
+                    ConnectionHandler handler = new ConnectionHandler(clientSocket, resources, pipesConfig);
+                    connectionPool.submit(handler);
+                } catch (java.net.SocketException e) {
+                    // Server socket closed, shutdown
+                    LOG.debug("Server socket closed, shutting down");
+                    break;
+                }
+            }
         } finally {
-            LOG.info("pipesClientId={}: server shutting down", pipesClientId);
+            connectionPool.shutdownNow();
+            connectionPool.awaitTermination(10, TimeUnit.SECONDS);
+            LOG.debug("Shared server shutdown complete");
         }
     }
 
@@ -265,7 +376,7 @@ public class PipesServer implements AutoCloseable {
                 int request = input.read();
                 LOG.trace("pipesClientId={}: received command byte={}", pipesClientId, HexFormat.of().formatHex(new byte[]{(byte)request}));
                 if (request == -1) {
-                    LOG.warn("received -1 from client; shutting down");
+                    LOG.debug("received -1 from client; shutting down");
                     exit(0);
                 }
 
@@ -292,49 +403,29 @@ public class PipesServer implements AutoCloseable {
                     CountDownLatch countDownLatch = new CountDownLatch(1);
 
                     FetchEmitTuple fetchEmitTuple = readFetchEmitTuple();
+                    // Validate before merging with global config
+                    validateFetchEmitTuple(fetchEmitTuple);
+                    // Create merged ParseContext: defaults from tika-config + request overrides
+                    ParseContext mergedContext = createMergedParseContext(fetchEmitTuple.getParseContext());
                     // Resolve friendly-named configs in ParseContext to actual objects
-                    ParseContextUtils.resolveAll(fetchEmitTuple.getParseContext(), getClass().getClassLoader());
+                    ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
 
-                    PipesWorker pipesWorker = getPipesWorker(intermediateResult, fetchEmitTuple, countDownLatch);
+                    PipesWorker pipesWorker = getPipesWorker(intermediateResult, fetchEmitTuple, mergedContext, countDownLatch);
                     executorCompletionService.submit(pipesWorker);
                     //set progress counter
                     try {
-                        loopUntilDone(fetchEmitTuple, executorCompletionService, intermediateResult, countDownLatch);
+                        loopUntilDone(fetchEmitTuple, mergedContext, executorCompletionService, intermediateResult, countDownLatch);
                     } catch (Throwable t) {
                         LOG.error("Serious problem: {}", HexFormat.of().formatHex(new byte[]{(byte)request}), t);
                     }
                 } else if (request == PipesClient.COMMANDS.SHUT_DOWN.getByte()) {
-                    LOG.info("shutting down");
+                    LOG.debug("shutting down");
                     try {
                         close();
                     } catch (Exception e) {
                         //swallow
                     }
                     System.exit(0);
-                } else if (request == PipesClient.COMMANDS.SAVE_FETCHER.getByte()) {
-                    handleSaveFetcher();
-                } else if (request == PipesClient.COMMANDS.DELETE_FETCHER.getByte()) {
-                    handleDeleteFetcher();
-                } else if (request == PipesClient.COMMANDS.LIST_FETCHERS.getByte()) {
-                    handleListFetchers();
-                } else if (request == PipesClient.COMMANDS.GET_FETCHER.getByte()) {
-                    handleGetFetcher();
-                } else if (request == PipesClient.COMMANDS.SAVE_EMITTER.getByte()) {
-                    handleSaveEmitter();
-                } else if (request == PipesClient.COMMANDS.DELETE_EMITTER.getByte()) {
-                    handleDeleteEmitter();
-                } else if (request == PipesClient.COMMANDS.LIST_EMITTERS.getByte()) {
-                    handleListEmitters();
-                } else if (request == PipesClient.COMMANDS.GET_EMITTER.getByte()) {
-                    handleGetEmitter();
-                } else if (request == PipesClient.COMMANDS.SAVE_PIPES_ITERATOR.getByte()) {
-                    handleSavePipesIterator();
-                } else if (request == PipesClient.COMMANDS.DELETE_PIPES_ITERATOR.getByte()) {
-                    handleDeletePipesIterator();
-                } else if (request == PipesClient.COMMANDS.LIST_PIPES_ITERATORS.getByte()) {
-                    handleListPipesIterators();
-                } else if (request == PipesClient.COMMANDS.GET_PIPES_ITERATOR.getByte()) {
-                    handleGetPipesIterator();
                 } else {
                     String msg = String.format(Locale.ROOT,
                             "pipesClientId=%s: Unexpected byte 0x%02x in command position. " +
@@ -355,20 +446,23 @@ public class PipesServer implements AutoCloseable {
         }
     }
 
-    private PipesWorker getPipesWorker(ArrayBlockingQueue<Metadata> intermediateResult, FetchEmitTuple fetchEmitTuple, CountDownLatch countDownLatch) {
+    private PipesWorker getPipesWorker(ArrayBlockingQueue<Metadata> intermediateResult, FetchEmitTuple fetchEmitTuple,
+                                        ParseContext mergedContext, CountDownLatch countDownLatch) {
         FetchHandler fetchHandler = new FetchHandler(fetcherManager);
-        ParseHandler parseHandler = new ParseHandler(detector, digester, intermediateResult, countDownLatch, autoDetectParser, rMetaParser);
+        ParseHandler parseHandler = new ParseHandler(detector, intermediateResult, countDownLatch, autoDetectParser,
+                rMetaParser, defaultContentHandlerFactory, pipesConfig.getParseMode());
         Long thresholdBytes = pipesConfig.getEmitStrategy().getThresholdBytes();
         long threshold = (thresholdBytes != null) ? thresholdBytes : EmitStrategyConfig.DEFAULT_DIRECT_EMIT_THRESHOLD_BYTES;
         EmitHandler emitHandler = new EmitHandler(defaultMetadataFilter, emitStrategy, emitterManager, threshold);
-        PipesWorker pipesWorker = new PipesWorker(fetchEmitTuple, autoDetectParser, emitterManager, fetchHandler, parseHandler, emitHandler);
-        return pipesWorker;
+        return new PipesWorker(fetchEmitTuple, mergedContext, autoDetectParser, emitterManager,
+                fetchHandler, parseHandler, emitHandler, defaultMetadataWriteLimiterFactory);
     }
 
-    private void loopUntilDone(FetchEmitTuple fetchEmitTuple, ExecutorCompletionService<PipesResult> executorCompletionService,
+    private void loopUntilDone(FetchEmitTuple fetchEmitTuple, ParseContext mergedContext,
+                               ExecutorCompletionService<PipesResult> executorCompletionService,
                                ArrayBlockingQueue<Metadata> intermediateResult, CountDownLatch countDownLatch) throws InterruptedException, IOException {
         Instant start = Instant.now();
-        long timeoutMillis = PipesClient.getTimeoutMillis(pipesConfig, fetchEmitTuple.getParseContext());
+        long timeoutMillis = PipesClient.getTimeoutMillis(pipesConfig, mergedContext);
         long mockProgressCounter = 0;
         boolean wroteIntermediateResult = false;
 
@@ -429,10 +523,9 @@ public class PipesServer implements AutoCloseable {
     private void handleCrash(PROCESSING_STATUS processingStatus, String id, Throwable t) {
         LOG.error("{}: {}", processingStatus, id, t);
         String msg = (t != null) ? ExceptionUtils.getStackTrace(t) : "";
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {
-            oos.writeObject(msg);
-            write(processingStatus, bos.toByteArray());
+        try {
+            byte[] bytes = JsonPipesIpc.toBytes(msg);
+            write(processingStatus, bytes);
             awaitAck();
         } catch (IOException e) {
             //swallow
@@ -452,7 +545,7 @@ public class PipesServer implements AutoCloseable {
         if (exitCode != 0) {
             LOG.error("exiting: {}", exitCode);
         } else {
-            LOG.info("exiting: {}", exitCode);
+            LOG.debug("exiting: {}", exitCode);
         }
         System.exit(exitCode);
     }
@@ -461,21 +554,42 @@ public class PipesServer implements AutoCloseable {
     private FetchEmitTuple readFetchEmitTuple() {
         try {
             int length = input.readInt();
+            if (length < 0 || length > MAX_FETCH_EMIT_TUPLE_BYTES) {
+                throw new IOException("FetchEmitTuple length " + length +
+                        " exceeds maximum allowed size of " + MAX_FETCH_EMIT_TUPLE_BYTES + " bytes");
+            }
             byte[] bytes = new byte[length];
             input.readFully(bytes);
-            try (ObjectInputStream objectInputStream = new ObjectInputStream(
-                    UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get())) {
-                return (FetchEmitTuple) objectInputStream.readObject();
-            }
+            return JsonPipesIpc.fromBytes(bytes, FetchEmitTuple.class);
         } catch (IOException e) {
-            LOG.error("problem reading tuple", e);
-            exit(1);
-        } catch (ClassNotFoundException e) {
-            LOG.error("can't find class?!", e);
-            exit(1);
+            LOG.error("problem reading/deserializing FetchEmitTuple", e);
+            handleCrash(PROCESSING_STATUS.UNSPECIFIED_CRASH, "unknown", e);
         }
-        //unreachable, no?!
+        //unreachable - handleCrash calls exit
         return null;
+    }
+
+    /**
+     * Validates the FetchEmitTuple before merging with global config.
+     * If the tuple explicitly sets UnpackConfig with an emitter but ParseMode is not UNPACK,
+     * that's a configuration error.
+     */
+    private void validateFetchEmitTuple(FetchEmitTuple fetchEmitTuple) throws TikaConfigException {
+        ParseContext requestContext = fetchEmitTuple.getParseContext();
+        if (requestContext == null) {
+            return;
+        }
+        UnpackConfig unpackConfig = requestContext.get(UnpackConfig.class);
+        ParseMode parseMode = requestContext.get(ParseMode.class);
+
+        // If tuple explicitly has UnpackConfig with emitter but not UNPACK mode, that's an error
+        if (unpackConfig != null && !StringUtils.isBlank(unpackConfig.getEmitter())
+                && parseMode != ParseMode.UNPACK) {
+            throw new TikaConfigException(
+                    "FetchEmitTuple has UnpackConfig with emitter '" + unpackConfig.getEmitter() +
+                    "' but ParseMode is " + parseMode + ". " +
+                    "To extract embedded bytes, set ParseMode.UNPACK in the ParseContext.");
+        }
     }
 
     protected void initializeResources() throws TikaException, IOException, SAXException {
@@ -490,29 +604,31 @@ public class PipesServer implements AutoCloseable {
         this.fetcherManager = FetcherManager.load(tikaPluginManager, tikaJsonConfig, true, configStore);
         this.emitterManager = EmitterManager.load(tikaPluginManager, tikaJsonConfig, true, configStore);
         this.autoDetectParser = (AutoDetectParser) tikaLoader.loadAutoDetectParser();
-        // Get the digester for pre-parse digesting of container documents.
-        // If user configured skipContainerDocumentDigest=false (the default), PipesServer
-        // digests the container document before parsing to ensure we have the digest even
-        // if parsing times out. The SkipContainerDocumentDigest marker is then added to
-        // ParseContext to prevent AutoDetectParser from re-digesting the container.
-        // If user configured skipContainerDocumentDigest=true, we don't digest containers at all.
-        boolean skipContainerDigest = autoDetectParser.getAutoDetectParserConfig()
-                .isSkipContainerDocumentDigest();
-        if (!skipContainerDigest) {
-            // User wants container documents digested - we'll do it in ParseHandler before parse
-            this.digester = autoDetectParser.getAutoDetectParserConfig().digester();
-        } else {
-            // User doesn't want container documents digested
-            this.digester = null;
-        }
-
-        // If the user hasn't configured an embedded document extractor, set up the
-        // RUnpackExtractorFactory
-        if (autoDetectParser.getAutoDetectParserConfig().getEmbeddedDocumentExtractorFactory() == null) {
-                autoDetectParser.getAutoDetectParserConfig().setEmbeddedDocumentExtractorFactory(new RUnpackExtractorFactory());
-        }
         this.detector = this.autoDetectParser.getDetector();
         this.rMetaParser = new RecursiveParserWrapper(autoDetectParser);
+
+    }
+
+    /**
+     * Creates a merged ParseContext with defaults from tika-config overlaid with request values.
+     * Request values take precedence over defaults.
+     * <p>
+     * Creates a fresh context each time to avoid shared state between requests.
+     *
+     * @param requestContext the ParseContext from FetchEmitTuple
+     * @return a new ParseContext with defaults + request overrides
+     */
+    private ParseContext createMergedParseContext(ParseContext requestContext) throws TikaConfigException {
+        // Create fresh context with defaults from tika-config (e.g., DigesterFactory)
+        ParseContext mergedContext = tikaLoader.loadParseContext();
+        // If no embedded document extractor factory is configured, use UnpackExtractorFactory
+        // as the default for pipes scenarios (supports embedded byte extraction)
+        if (mergedContext.get(EmbeddedDocumentExtractorFactory.class) == null) {
+            mergedContext.set(EmbeddedDocumentExtractorFactory.class, new UnpackExtractorFactory());
+        }
+        // Overlay request's values (request takes precedence)
+        mergedContext.copyFrom(requestContext);
+        return mergedContext;
     }
 
     private ConfigStore createConfigStore(PipesConfig pipesConfig, TikaPluginManager tikaPluginManager) throws TikaException {
@@ -536,11 +652,8 @@ public class PipesServer implements AutoCloseable {
 
     private void write(PROCESSING_STATUS processingStatus, PipesResult pipesResult) {
         try {
-            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
-            try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
-                objectOutputStream.writeObject(pipesResult);
-            }
-            write(processingStatus, bos.toByteArray());
+            byte[] bytes = JsonPipesIpc.toBytes(pipesResult);
+            write(processingStatus, bytes);
         } catch (IOException e) {
             LOG.error("problem writing emit data (forking process shutdown?)", e);
             exit(1);
@@ -549,11 +662,8 @@ public class PipesServer implements AutoCloseable {
 
     private void writeIntermediate(Metadata metadata) {
         try {
-            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
-            try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(bos)) {
-                objectOutputStream.writeObject(metadata);
-            }
-            write(INTERMEDIATE_RESULT, bos.toByteArray());
+            byte[] bytes = JsonPipesIpc.toBytes(metadata);
+            write(INTERMEDIATE_RESULT, bytes);
         } catch (IOException e) {
             LOG.error("problem writing intermediate data (forking process shutdown?)", e);
             exit(1);
@@ -604,405 +714,4 @@ public class PipesServer implements AutoCloseable {
             exit(1);
         }
     }
-
-    // ========== Fetcher Management Handlers ==========
-
-    private void handleSaveFetcher() {
-        try {
-            // Read ExtensionConfig
-            int len = input.readInt();
-            byte[] bytes = new byte[len];
-            input.readFully(bytes);
-            
-            ExtensionConfig config;
-            try (ObjectInputStream ois = new ObjectInputStream(new UnsynchronizedByteArrayInputStream(bytes))) {
-                config = (ExtensionConfig) ois.readObject();
-            }
-            
-            // Save the fetcher
-            fetcherManager.saveFetcher(config);
-            LOG.debug("pipesClientId={}: saved fetcher '{}'", pipesClientId, config.id());
-            
-            // Send success response
-            output.writeByte(0); // success
-            String msg = "Fetcher saved successfully";
-            byte[] msgBytes = msg.getBytes(StandardCharsets.UTF_8);
-            output.writeInt(msgBytes.length);
-            output.write(msgBytes);
-            output.flush();
-            
-        } catch (Exception e) {
-            LOG.error("pipesClientId={}: error saving fetcher", pipesClientId, e);
-            try {
-                output.writeByte(1); // error
-                String msg = ExceptionUtils.getStackTrace(e);
-                byte[] msgBytes = msg.getBytes(StandardCharsets.UTF_8);
-                output.writeInt(msgBytes.length);
-                output.write(msgBytes);
-                output.flush();
-            } catch (IOException ioe) {
-                LOG.error("pipesClientId={}: failed to send error response", pipesClientId, ioe);
-                exit(1);
-            }
-        }
-    }
-
-    private void handleDeleteFetcher() {
-        try {
-            // Read fetcher ID
-            int len = input.readInt();
-            byte[] bytes = new byte[len];
-            input.readFully(bytes);
-            String fetcherId = new String(bytes, StandardCharsets.UTF_8);
-            
-            // Delete the fetcher
-            fetcherManager.deleteFetcher(fetcherId);
-            LOG.debug("pipesClientId={}: deleted fetcher '{}'", pipesClientId, fetcherId);
-            
-            // Send success response
-            output.writeByte(0); // success
-            String msg = "Fetcher deleted successfully";
-            byte[] msgBytes = msg.getBytes(StandardCharsets.UTF_8);
-            output.writeInt(msgBytes.length);
-            output.write(msgBytes);
-            output.flush();
-            
-        } catch (Exception e) {
-            LOG.error("pipesClientId={}: error deleting fetcher", pipesClientId, e);
-            try {
-                output.writeByte(1); // error
-                String msg = ExceptionUtils.getStackTrace(e);
-                byte[] msgBytes = msg.getBytes(StandardCharsets.UTF_8);
-                output.writeInt(msgBytes.length);
-                output.write(msgBytes);
-                output.flush();
-            } catch (IOException ioe) {
-                LOG.error("pipesClientId={}: failed to send error response", pipesClientId, ioe);
-                exit(1);
-            }
-        }
-    }
-
-    private void handleListFetchers() {
-        try {
-            // Get list of fetcher IDs
-            Set<String> fetcherIds = fetcherManager.getSupported();
-            LOG.debug("pipesClientId={}: listing {} fetchers", pipesClientId, fetcherIds.size());
-            
-            // Send response
-            output.writeInt(fetcherIds.size());
-            for (String id : fetcherIds) {
-                byte[] idBytes = id.getBytes(StandardCharsets.UTF_8);
-                output.writeInt(idBytes.length);
-                output.write(idBytes);
-            }
-            output.flush();
-            
-        } catch (IOException e) {
-            LOG.error("pipesClientId={}: error listing fetchers", pipesClientId, e);
-            exit(1);
-        }
-    }
-
-    private void handleGetFetcher() {
-        try {
-            // Read fetcher ID
-            int len = input.readInt();
-            byte[] bytes = new byte[len];
-            input.readFully(bytes);
-            String fetcherId = new String(bytes, StandardCharsets.UTF_8);
-            
-            // Get fetcher config
-            ExtensionConfig config = fetcherManager.getConfig(fetcherId);
-            
-            if (config == null) {
-                output.writeByte(0); // not found
-                output.flush();
-            } else {
-                output.writeByte(1); // found
-                
-                // Serialize config
-                UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
-                try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {
-                    oos.writeObject(config);
-                }
-                byte[] configBytes = bos.toByteArray();
-                output.writeInt(configBytes.length);
-                output.write(configBytes);
-                output.flush();
-            }
-            LOG.debug("pipesClientId={}: get fetcher '{}' = {}", pipesClientId, fetcherId, (config != null ? "found" : "not found"));
-            
-        } catch (IOException e) {
-            LOG.error("pipesClientId={}: error getting fetcher", pipesClientId, e);
-            exit(1);
-        }
-    }
-
-    // ========== Emitter Management Handlers ==========
-
-    private void handleSaveEmitter() {
-        try {
-            // Read ExtensionConfig
-            int len = input.readInt();
-            byte[] bytes = new byte[len];
-            input.readFully(bytes);
-            
-            ExtensionConfig config;
-            try (ObjectInputStream ois = new ObjectInputStream(new UnsynchronizedByteArrayInputStream(bytes))) {
-                config = (ExtensionConfig) ois.readObject();
-            }
-            
-            // Save the emitter
-            emitterManager.saveEmitter(config);
-            LOG.debug("pipesClientId={}: saved emitter '{}'", pipesClientId, config.id());
-            
-            // Send success response
-            output.writeByte(0); // success
-            String msg = "Emitter saved successfully";
-            byte[] msgBytes = msg.getBytes(StandardCharsets.UTF_8);
-            output.writeInt(msgBytes.length);
-            output.write(msgBytes);
-            output.flush();
-            
-        } catch (Exception e) {
-            LOG.error("pipesClientId={}: error saving emitter", pipesClientId, e);
-            try {
-                output.writeByte(1); // error
-                String msg = ExceptionUtils.getStackTrace(e);
-                byte[] msgBytes = msg.getBytes(StandardCharsets.UTF_8);
-                output.writeInt(msgBytes.length);
-                output.write(msgBytes);
-                output.flush();
-            } catch (IOException ioe) {
-                LOG.error("pipesClientId={}: failed to send error response", pipesClientId, ioe);
-                exit(1);
-            }
-        }
-    }
-
-    private void handleDeleteEmitter() {
-        try {
-            // Read emitter ID
-            int len = input.readInt();
-            byte[] bytes = new byte[len];
-            input.readFully(bytes);
-            String emitterId = new String(bytes, StandardCharsets.UTF_8);
-            
-            // Delete the emitter
-            emitterManager.deleteEmitter(emitterId);
-            LOG.debug("pipesClientId={}: deleted emitter '{}'", pipesClientId, emitterId);
-            
-            // Send success response
-            output.writeByte(0); // success
-            String msg = "Emitter deleted successfully";
-            byte[] msgBytes = msg.getBytes(StandardCharsets.UTF_8);
-            output.writeInt(msgBytes.length);
-            output.write(msgBytes);
-            output.flush();
-            
-        } catch (Exception e) {
-            LOG.error("pipesClientId={}: error deleting emitter", pipesClientId, e);
-            try {
-                output.writeByte(1); // error
-                String msg = ExceptionUtils.getStackTrace(e);
-                byte[] msgBytes = msg.getBytes(StandardCharsets.UTF_8);
-                output.writeInt(msgBytes.length);
-                output.write(msgBytes);
-                output.flush();
-            } catch (IOException ioe) {
-                LOG.error("pipesClientId={}: failed to send error response", pipesClientId, ioe);
-                exit(1);
-            }
-        }
-    }
-
-    private void handleListEmitters() {
-        try {
-            // Get list of emitter IDs
-            Set<String> emitterIds = emitterManager.getSupported();
-            LOG.debug("pipesClientId={}: listing {} emitters", pipesClientId, emitterIds.size());
-            
-            // Send response
-            output.writeInt(emitterIds.size());
-            for (String id : emitterIds) {
-                byte[] idBytes = id.getBytes(StandardCharsets.UTF_8);
-                output.writeInt(idBytes.length);
-                output.write(idBytes);
-            }
-            output.flush();
-            
-        } catch (IOException e) {
-            LOG.error("pipesClientId={}: error listing emitters", pipesClientId, e);
-            exit(1);
-        }
-    }
-
-    private void handleGetEmitter() {
-        try {
-            // Read emitter ID
-            int len = input.readInt();
-            byte[] bytes = new byte[len];
-            input.readFully(bytes);
-            String emitterId = new String(bytes, StandardCharsets.UTF_8);
-            
-            // Get emitter config
-            ExtensionConfig config = emitterManager.getConfig(emitterId);
-            
-            if (config == null) {
-                output.writeByte(0); // not found
-                output.flush();
-            } else {
-                output.writeByte(1); // found
-                
-                // Serialize config
-                UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
-                try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {
-                    oos.writeObject(config);
-                }
-                byte[] configBytes = bos.toByteArray();
-                output.writeInt(configBytes.length);
-                output.write(configBytes);
-                output.flush();
-            }
-            LOG.debug("pipesClientId={}: get emitter '{}' = {}", pipesClientId, emitterId, (config != null ? "found" : "not found"));
-            
-        } catch (IOException e) {
-            LOG.error("pipesClientId={}: error getting emitter", pipesClientId, e);
-            exit(1);
-        }
-    }
-
-    // ========== PipesIterator Command Handlers ==========
-    // Note: PipesIterators are primarily used on the client side to generate FetchEmitTuples.
-    // Unlike Fetchers and Emitters, they are not component managers in PipesServer.
-    // These handlers provide basic ConfigStore operations for consistency.
-    
-    private void handleSavePipesIterator() {
-        try {
-            // Read ExtensionConfig
-            int len = input.readInt();
-            byte[] bytes = new byte[len];
-            input.readFully(bytes);
-            
-            ExtensionConfig config;
-            try (ObjectInputStream ois = new ObjectInputStream(new UnsynchronizedByteArrayInputStream(bytes))) {
-                config = (ExtensionConfig) ois.readObject();
-            } catch (ClassNotFoundException e) {
-                throw new IOException("Failed to deserialize ExtensionConfig", e);
-            }
-            
-            // Save to ConfigStore
-            configStore.put(PIPES_ITERATOR_PREFIX + config.id(), config);
-            
-            // Send success response
-            output.writeByte(0); // success
-            byte[] msgBytes = "OK".getBytes(StandardCharsets.UTF_8);
-            output.writeInt(msgBytes.length);
-            output.write(msgBytes);
-            output.flush();
-            
-            LOG.debug("pipesClientId={}: saved pipes iterator '{}'", pipesClientId, config.id());
-            
-        } catch (Exception e) {
-            LOG.error("pipesClientId={}: error saving pipes iterator", pipesClientId, e);
-            try {
-                output.writeByte(1); // error
-                byte[] msgBytes = e.getMessage().getBytes(StandardCharsets.UTF_8);
-                output.writeInt(msgBytes.length);
-                output.write(msgBytes);
-                output.flush();
-            } catch (IOException ioException) {
-                LOG.error("pipesClientId={}: error sending error response", pipesClientId, ioException);
-            }
-        }
-    }
-    
-    private void handleDeletePipesIterator() {
-        try {
-            // Read iterator ID
-            int len = input.readInt();
-            byte[] bytes = new byte[len];
-            input.readFully(bytes);
-            String iteratorId = new String(bytes, StandardCharsets.UTF_8);
-            
-            // Delete from ConfigStore
-            configStore.remove(PIPES_ITERATOR_PREFIX + iteratorId);
-            
-            // Send success response
-            output.writeByte(0); // success
-            byte[] msgBytes = "OK".getBytes(StandardCharsets.UTF_8);
-            output.writeInt(msgBytes.length);
-            output.write(msgBytes);
-            output.flush();
-            
-            LOG.debug("pipesClientId={}: deleted pipes iterator '{}'", pipesClientId, iteratorId);
-            
-        } catch (Exception e) {
-            LOG.error("pipesClientId={}: error deleting pipes iterator", pipesClientId, e);
-            try {
-                output.writeByte(1); // error
-                byte[] msgBytes = e.getMessage().getBytes(StandardCharsets.UTF_8);
-                output.writeInt(msgBytes.length);
-                output.write(msgBytes);
-                output.flush();
-            } catch (IOException ioException) {
-                LOG.error("pipesClientId={}: error sending error response", pipesClientId, ioException);
-            }
-        }
-    }
-    
-    private void handleListPipesIterators() {
-        try {
-            // This is a placeholder - list operation not fully implemented
-            // Would need to iterate ConfigStore keys with PIPES_ITERATOR_PREFIX
-            output.writeByte(0); // success
-            byte[] msgBytes = "[]".getBytes(StandardCharsets.UTF_8);
-            output.writeInt(msgBytes.length);
-            output.write(msgBytes);
-            output.flush();
-            LOG.debug("pipesClientId={}: list pipes iterators (placeholder)", pipesClientId);
-        } catch (IOException e) {
-            LOG.error("pipesClientId={}: error listing pipes iterators", pipesClientId, e);
-            exit(1);
-        }
-    }
-    
-    private void handleGetPipesIterator() {
-        try {
-            // Read iterator ID
-            int len = input.readInt();
-            byte[] bytes = new byte[len];
-            input.readFully(bytes);
-            String iteratorId = new String(bytes, StandardCharsets.UTF_8);
-            
-            // Get from ConfigStore
-            ExtensionConfig config = configStore.get(PIPES_ITERATOR_PREFIX + iteratorId);
-            
-            if (config == null) {
-                output.writeByte(0); // not found
-                output.flush();
-            } else {
-                output.writeByte(1); // found
-                
-                // Serialize config
-                UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
-                try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {
-                    oos.writeObject(config);
-                }
-                byte[] configBytes = bos.toByteArray();
-                output.writeInt(configBytes.length);
-                output.write(configBytes);
-                output.flush();
-            }
-            LOG.debug("pipesClientId={}: get pipes iterator '{}' = {}", pipesClientId, iteratorId, (config != null ? "found" : "not found"));
-            
-        } catch (IOException e) {
-            LOG.error("pipesClientId={}: error getting pipes iterator", pipesClientId, e);
-            exit(1);
-        }
-    }
-    
-    private static final String PIPES_ITERATOR_PREFIX = "pipesIterator:";
-
 }

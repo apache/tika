@@ -134,6 +134,13 @@ public interface TikaCoreProperties {
 
     Property WRITE_LIMIT_REACHED =
             Property.internalBoolean(TIKA_META_EXCEPTION_PREFIX + "write_limit_reached");
+
+    Property EMBEDDED_RESOURCE_LIMIT_REACHED =
+            Property.internalBoolean(TIKA_META_EXCEPTION_PREFIX + "embedded_resource_limit_reached");
+
+    Property EMBEDDED_DEPTH_LIMIT_REACHED =
+            Property.internalBoolean(TIKA_META_EXCEPTION_PREFIX + "embedded_depth_limit_reached");
+
     /**
      * Use this to store exceptions caught during a parse that are
      * non-fatal, e.g. if a parser is in lenient mode and more
@@ -150,6 +157,22 @@ public interface TikaCoreProperties {
      */
     Property TRUNCATED_METADATA =
             Property.internalBoolean(TIKA_META_WARN_PREFIX + "truncated_metadata");
+
+    /**
+     * This indicates that only a portion of the file content was provided for detection.
+     * Detectors should check this flag and may adjust their behavior accordingly
+     * (e.g., not returning a detection result that requires reading to end of file).
+     */
+    Property TRUNCATED_CONTENT_FOR_DETECTION =
+            Property.internalBoolean(TIKA_META_PREFIX + "truncated_content_for_detection");
+
+    /**
+     * When content is truncated for detection, this stores the number of bytes
+     * that were actually buffered for detection. This can be used by detectors
+     * to set appropriate mark limits.
+     */
+    Property DETECTION_CONTENT_LENGTH =
+            Property.internalInteger(TIKA_META_PREFIX + "detection_content_length");
 
     /**
      * Use this to store exceptions caught while trying to read the
@@ -188,12 +211,19 @@ public interface TikaCoreProperties {
             Property.internalTextBag(TIKA_META_PREFIX + "origResourceName");
     /**
      * This should be used to store the path (relative or full)
-     * of the source file, including the file name,
+     * of the source/container file, including the file name,
      * e.g. doc/path/to/my_pdf.pdf
      * <p>
      * This can also be used for a primary key within a database.
      */
     Property SOURCE_PATH = Property.internalText(TIKA_META_PREFIX + "sourcePath");
+
+    /**
+     * This records the metadata as stored within a file for an embedded file's path
+     * including the file name. For example a zip file may include an msg with this path: /my-emails/important/this.msg
+     */
+    Property INTERNAL_PATH = Property.internalText(TIKA_META_PREFIX + "internalPath");
+
     /**
      * This is currently used to identify Content-Type that may be
      * included within a document, such as in html documents
@@ -213,6 +243,13 @@ public interface TikaCoreProperties {
      */
     Property CONTENT_TYPE_PARSER_OVERRIDE =
             Property.internalText(HttpHeaders.CONTENT_TYPE + "-Parser-Override");
+    /**
+     * This is set by DefaultDetector to store the result of MimeTypes (magic byte)
+     * detection. This allows downstream detectors to use it as a hint without
+     * re-running magic detection.
+     */
+    Property CONTENT_TYPE_MAGIC_DETECTED =
+            Property.internalText(HttpHeaders.CONTENT_TYPE + "-Magic-Detected");
     /**
      * @see DublinCore#FORMAT
      */

@@ -1,0 +1,88 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Tika Server
+
+This section covers running Apache Tika as a REST server via `tika-server`.
+
+== Overview
+
+Tika Server provides a RESTful HTTP interface for parsing documents and extracting
+content. It can be deployed as a standalone service or in a containerized environment.
+
+== Basic Usage
+
+[source,bash]
+----
+java -jar tika-server-standard.jar
+----
+
+The server starts on port 9998 by default.
+
+== Topics
+
+* xref:using-tika/server/tls.adoc[TLS/SSL Configuration] - Secure your server with TLS and mutual authentication
+
+== Security Configuration
+
+=== Config Endpoint Protection
+
+By default, the `/config` endpoints that expose server configuration are disabled for security
+reasons. These endpoints can reveal sensitive information about your server configuration,
+including parser settings and system properties (see https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-3271[CVE-2015-3271]).
+
+The protected endpoints include:
+
+* `/config` - Returns the server's full configuration
+* `/config/parsers` - Returns configured parsers
+* `/config/detectors` - Returns configured detectors
+* `/config/mimeTypes` - Returns MIME type mappings
+
+=== Enabling Config Endpoints
+
+To enable these endpoints:
+
+[source,json]
+----
+{
+  "server": {
+    "enableUnsecureFeatures": true
+  }
+}
+----
+
+WARNING: Only enable `enableUnsecureFeatures` if you have secured access to Tika Server through
+network controls (firewalls, private subnets), a reverse proxy (nginx, Apache httpd), or
+xref:using-tika/server/tls.adoc[2-way TLS authentication]. Exposing config endpoints to
+untrusted networks can help attackers identify vulnerabilities and craft targeted attacks.
+
+=== Command Line Usage
+
+You can also enable unsecure features via command line:
+
+[source,bash]
+----
+java -jar tika-server-standard.jar --enableUnsecureFeatures
+----
+
+=== Security Best Practices
+
+1. **Keep config endpoints disabled** in production (default behavior)
+2. **Use network controls** to restrict access to the Tika Server (firewall rules, private subnets)
+3. **Consider TLS** for encrypted communication - see xref:using-tika/server/tls.adoc[TLS Configuration]
+4. **Run with minimal privileges** - don't run Tika Server as root
+5. **Monitor logs** for unusual access patterns

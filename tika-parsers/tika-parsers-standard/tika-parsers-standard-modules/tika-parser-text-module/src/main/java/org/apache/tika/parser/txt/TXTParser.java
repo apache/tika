@@ -95,7 +95,7 @@ public class TXTParser extends AbstractEncodingDetectorParser {
             // deprecated, see TIKA-431
             metadata.set(Metadata.CONTENT_ENCODING, charset.name());
 
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
 
             xhtml.startElement("p");

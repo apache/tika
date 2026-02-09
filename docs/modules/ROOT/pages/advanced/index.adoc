@@ -1,0 +1,33 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Advanced Topics
+
+This section covers advanced usage and internals of Apache Tika.
+
+== Topics
+
+* xref:advanced/robustness.adoc[Robustness] - Process isolation and fault tolerance when parsing untrusted content
+* xref:advanced/setting-limits.adoc[Setting Limits] - Limiting metadata size and resource consumption when processing untrusted content
+* xref:advanced/spooling.adoc[TikaInputStream and Spooling] - Understanding how TikaInputStream handles buffering, caching, and spooling to disk
+* xref:advanced/embedded-documents.adoc[Embedded Document Metadata] - Understanding how Tika tracks embedded documents and their paths
+* xref:advanced/zip-detection.adoc[ZIP Detection and Salvaging] - How Tika detects and recovers truncated ZIP-based files
+
+== Integration Testing
+
+* xref:advanced/integration-testing/tika-app.adoc[Testing with Tika App] - Integration testing strategies for Tika App
+* xref:advanced/integration-testing/tika-server.adoc[Testing with Tika Server] - Integration testing strategies for Tika Server

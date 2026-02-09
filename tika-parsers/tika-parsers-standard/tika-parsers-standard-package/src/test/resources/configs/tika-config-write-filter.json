@@ -1,26 +1,20 @@
 {
   "auto-detect-parser": {
-    "spoolToDisk": 1000000,
-    "outputThreshold": 1000000,
-    "skipContainerDocumentDigest": true,
-    "digesterFactory": {
-      "commons-digester-factory": {
-        "markLimit": 100000,
-        "digests": [
-          { "algorithm": "SHA256", "encoding": "BASE32" },
-          { "algorithm": "MD5" }
-        ]
-      }
-    },
-    "metadataWriteFilterFactory": {
-      "standard-write-filter-factory": {
-        "includeFields": [
-         "X-TIKA-CONTENT",
-          "dc:creator"
-        ]
-      }
-    },
     "throwOnZeroBytes": false
+  },
+  "parse-context": {
+    "commons-digester-factory": {
+      "digests": [
+        { "algorithm": "SHA256", "encoding": "BASE32" },
+        { "algorithm": "MD5" }
+      ],
+      "skipContainerDocumentDigest": true
+    },
+    "standard-metadata-limiter-factory": {
+      "includeFields": [
+        "X-TIKA:content",
+        "dc:creator"
+      ]
+    }
   }
 }
-

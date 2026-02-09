@@ -97,7 +97,7 @@ public class RTFParserTest extends TikaTest {
         assertContains("org.apache.tika.parser.microsoft.WMFParser", parsedByFullSet);
         assertContains("org.apache.tika.parser.csv.TextAndCSVParser", parsedByFullSet);
         assertContains("org.apache.tika.parser.microsoft.ooxml.OOXMLParser", parsedByFullSet);
-        assertContains("org.apache.tika.parser.pkg.PackageParser", parsedByFullSet);
+        assertContains("org.apache.tika.parser.pkg.ZipParser", parsedByFullSet);
         assertContains("org.apache.tika.parser.html.JSoupParser", parsedByFullSet);
         assertContains("org.apache.tika.parser.image.JpegParser", parsedByFullSet);
         assertContains("org.apache.tika.parser.pdf.PDFParser", parsedByFullSet);
@@ -109,8 +109,7 @@ public class RTFParserTest extends TikaTest {
         ParseContext ctx = new ParseContext();
         RecursiveParserWrapper parser = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1),
-                -1);
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1));
         Metadata rootMetadata = new Metadata();
         rootMetadata.add(TikaCoreProperties.RESOURCE_NAME_KEY, "testRTFRegularImages.rtf");
         try (TikaInputStream tis = TikaInputStream

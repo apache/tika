@@ -55,6 +55,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import org.apache.tika.cli.TikaCLI;
 import org.apache.tika.config.JsonConfigHelper;
+import org.apache.tika.pipes.api.ParseMode;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Testcontainers(disabledWithoutDocker = true)
@@ -140,7 +141,7 @@ class S3PipeIntegrationTest {
         // Create plugins config JSON
         Map<String, Object> replacements = new HashMap<>();
         replacements.put("LOG4J_JVM_ARG", "-Dlog4j.configurationFile=" + log4jPropFile.toAbsolutePath());
-        replacements.put("PARSE_MODE", org.apache.tika.pipes.api.HandlerConfig.PARSE_MODE.RMETA.name());
+        replacements.put("PARSE_MODE", ParseMode.RMETA.name());
         replacements.put("PIPE_ITERATOR_BUCKET", FETCH_BUCKET);
         replacements.put("EMIT_BUCKET", EMIT_BUCKET);
         replacements.put("FETCH_BUCKET", FETCH_BUCKET);

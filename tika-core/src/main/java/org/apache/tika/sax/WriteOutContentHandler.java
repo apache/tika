@@ -22,6 +22,7 @@ import java.io.Writer;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.OutputLimits;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.ParseRecord;
@@ -131,6 +132,23 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
         this.writeLimit = writeLimit;
         this.throwOnWriteLimitReached = throwOnWriteLimitReached;
         this.parseContext = parseContext;
+    }
+
+    /**
+     * Creates a new WriteOutContentHandler configured from OutputLimits in the ParseContext.
+     * <p>
+     * If OutputLimits is present in the context, the handler will be configured with those
+     * limits (writeLimit, throwOnWriteLimit). Otherwise, default values are used (-1 for
+     * unlimited, true for throwOnWriteLimitReached).
+     *
+     * @param handler the content handler to decorate
+     * @param context the ParseContext (may be null)
+     * @return a configured WriteOutContentHandler
+     */
+    public static WriteOutContentHandler newInstance(ContentHandler handler, ParseContext context) {
+        OutputLimits limits = OutputLimits.get(context);
+        return new WriteOutContentHandler(handler, limits.getWriteLimit(),
+                limits.isThrowOnWriteLimit(), context);
     }
 
     /**

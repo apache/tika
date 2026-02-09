@@ -1,0 +1,273 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= UnpackConfig: Extracting Embedded Document Bytes
+
+When processing container files (ZIP, DOCX, PDF with attachments, etc.), you may want to
+extract the raw bytes of embedded documents in addition to parsing them. `UnpackConfig`
+controls how embedded bytes are extracted and emitted.
+
+== Quick Start
+
+Use `ParseMode.UNPACK` to automatically extract embedded document bytes:
+
+[source,json]
+----
+{
+  "id": "doc1",
+  "fetchKey": {"fetcherId": "fsf", "fetchKey": "container.docx"},
+  "emitKey": {"emitterId": "fse", "emitKey": "container.docx"},
+  "parseContext": {
+    "parseMode": "UNPACK"
+  }
+}
+----
+
+This extracts both metadata (like `RMETA` mode) and embedded document bytes.
+
+== Configuration Options
+
+[cols="2,1,2,3"]
+|===
+|Property |Type |Default |Description
+
+|`emitter`
+|String
+|_(from FetchEmitTuple)_
+|Emitter name for embedded bytes. Falls back to the FetchEmitTuple's emitterId.
+
+|`maxUnpackBytes`
+|long
+|10GB
+|Maximum total bytes to extract per file. Set to `-1` for unlimited (not recommended).
+
+|`includeOriginal`
+|boolean
+|`false`
+|Include the container document itself in the output.
+
+|`zipEmbeddedFiles`
+|boolean
+|`false`
+|Collect all embedded files into a single ZIP archive.
+
+|`includeMetadataInZip`
+|boolean
+|`false`
+|Include `.metadata.json` files for each embedded document in the ZIP.
+
+|`zeroPadName`
+|int
+|`0`
+|Zero-pad embedded IDs in output names (e.g., `8` produces `00000001`).
+
+|`suffixStrategy`
+|NONE, EXISTING, DETECTED
+|`NONE`
+|How to determine file extensions for extracted files.
+
+|`embeddedIdPrefix`
+|String
+|`"-"`
+|Prefix between base name and embedded ID (e.g., `doc-1.txt`).
+
+|`keyBaseStrategy`
+|DEFAULT, CUSTOM
+|`DEFAULT`
+|Strategy for generating emit keys.
+
+|`emitKeyBase`
+|String
+|`""`
+|Custom base path when `keyBaseStrategy=CUSTOM`.
+|===
+
+== Examples
+
+=== Basic Byte Extraction
+
+Extract embedded bytes with default naming:
+
+[source,json]
+----
+{
+  "parseContext": {
+    "parseMode": "UNPACK"
+  }
+}
+----
+
+=== ZIP Output with Metadata
+
+Collect all embedded files into a ZIP with metadata:
+
+[source,json]
+----
+{
+  "parseContext": {
+    "parseMode": "UNPACK",
+    "unpack-config": {
+      "zipEmbeddedFiles": true,
+      "includeMetadataInZip": true,
+      "includeOriginal": true
+    }
+  }
+}
+----
+
+=== Custom Naming
+
+Control output file naming:
+
+[source,json]
+----
+{
+  "parseContext": {
+    "parseMode": "UNPACK",
+    "unpack-config": {
+      "zeroPadName": 8,
+      "suffixStrategy": "DETECTED",
+      "embeddedIdPrefix": "-embed-"
+    }
+  }
+}
+----
+
+Produces names like: `document-embed-00000001.pdf`
+
+=== Limit Extraction Size
+
+Prevent unbounded extraction from malicious files:
+
+[source,json]
+----
+{
+  "parseContext": {
+    "parseMode": "UNPACK",
+    "unpack-config": {
+      "maxUnpackBytes": 104857600
+    }
+  }
+}
+----
+
+This limits extraction to 100MB total.
+
+== Suffix Strategies
+
+`NONE`:: No file extension added to extracted files.
+`EXISTING`:: Use the file extension from the embedded document's resource name.
+`DETECTED`:: Use the file extension based on the detected MIME type.
+
+== Key Base Strategies
+
+`DEFAULT`:: Output key is `{containerKey}-{embeddedIdPrefix}{id}{suffix}`
+`CUSTOM`:: Output key uses `emitKeyBase` as the prefix.
+
+== Safety Limits
+
+The `maxUnpackBytes` setting protects against zip bombs and other malicious files that
+expand to enormous sizes. The default 10GB limit should be appropriate for most use cases.
+
+When the limit is reached:
+
+* Extraction stops for the current file
+* An exception is logged
+* Parsing continues (already-extracted bytes are kept)
+* The parse result status is `PARSE_SUCCESS_WITH_EXCEPTION`
+
+Set `maxUnpackBytes=-1` to disable the limit. This is not recommended for untrusted input.
+
+== Frictionless Data Package Output
+
+The UNPACK mode can output files in https://frictionlessdata.io/[Frictionless Data Package] format,
+a standard for packaging data files with their metadata. This format includes a `datapackage.json`
+manifest with file checksums and MIME types, making it easy to verify and process extracted files.
+
+=== Enabling Frictionless Output
+
+Set `outputFormat` to `FRICTIONLESS` in your UnpackConfig:
+
+[source,json]
+----
+{
+  "parseContext": {
+    "parseMode": "UNPACK",
+    "unpack-config": {
+      "outputFormat": "FRICTIONLESS",
+      "includeFullMetadata": true
+    }
+  }
+}
+----
+
+=== Output Structure
+
+When using Frictionless output format, the ZIP archive contains:
+
+[source]
+----
+output.zip
+├── datapackage.json      # Manifest with file list, SHA256 hashes, mimetypes
+├── metadata.json         # Full RMETA metadata (if includeFullMetadata=true)
+└── unpacked/
+    ├── 00000001.pdf
+    ├── 00000002.png
+    └── ...
+----
+
+The `datapackage.json` file contains:
+
+* List of all extracted files as "resources"
+* SHA256 hash for each file
+* MIME type for each file
+* File size in bytes
+
+=== Frictionless Configuration Options
+
+[cols="2,1,2,3"]
+|===
+|Property |Type |Default |Description
+
+|`outputFormat`
+|STANDARD, FRICTIONLESS
+|`STANDARD`
+|Output format for the ZIP archive. Use `FRICTIONLESS` for Data Package format.
+
+|`includeFullMetadata`
+|boolean
+|`false`
+|Include a `metadata.json` file with full RMETA-style metadata for all extracted files.
+|===
+
+=== CLI Usage
+
+Extract files in Frictionless format using the CLI:
+
+[source,bash]
+----
+java -jar tika-app.jar --unpack --unpack-format=FRICTIONLESS -i input.docx -o output/
+----
+
+== Code Examples
+
+For working code examples, see:
+
+* `tika-pipes/tika-pipes-integration-tests/src/test/java/org/apache/tika/pipes/core/UnpackModeTest.java`
+* `tika-server/tika-server-standard/src/test/java/org/apache/tika/server/standard/TikaPipesTest.java`
+
+These test files demonstrate all configuration options with assertions.

@@ -1,4 +1,11 @@
 {
+  "content-handler-factory": {
+    "basic-content-handler-factory": {
+      "type": "TEXT",
+      "writeLimit": -1,
+      "throwOnWriteLimitReached": true
+    }
+  },
   "parsers": [
     {
       "default-parser": {}
@@ -74,23 +81,13 @@
       "rows": 100,
       "connectionTimeout": 10000,
       "socketTimeout": 60000,
-      "baseConfig": {
-        "fetcherId": "fsf",
-        "emitterId": "se",
-        "handlerConfig": {
-          "type": "TEXT",
-          "parseMode": "PARSE_MODE",
-          "writeLimit": -1,
-          "maxEmbeddedResources": -1,
-          "throwOnWriteLimitReached": true
-        },
-        "onParseException": "EMIT",
-        "maxWaitMs": 600000,
-        "queueSize": 10000
-      }
+      "fetcherId": "fsf",
+      "emitterId": "se"
     }
   },
   "pipes": {
+    "parseMode": "PARSE_MODE",
+    "onParseException": "EMIT",
     "emitStrategy": {
       "type": "DYNAMIC",
       "thresholdBytes": 10000

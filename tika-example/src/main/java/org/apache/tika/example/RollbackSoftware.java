@@ -114,7 +114,7 @@ public class RollbackSoftware {
                     .getName()
                     .startsWith("current"));
 
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
             for (File v : versions) {
                 if (isSymlink(v)) {

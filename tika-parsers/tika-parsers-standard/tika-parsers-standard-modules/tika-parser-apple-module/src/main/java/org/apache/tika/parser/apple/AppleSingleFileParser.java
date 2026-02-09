@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.BoundedInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -89,19 +90,26 @@ public class AppleSingleFileParser implements Parser {
         long bytesRead = 26;
         List<FieldInfo> fieldInfoList = getSortedFieldInfoList(tis, numEntries);
         bytesRead += 12 * numEntries;
-        Metadata embeddedMetadata = new Metadata();
+        Metadata embeddedMetadata = Metadata.newInstance(context);
         bytesRead = processFieldEntries(tis, fieldInfoList, embeddedMetadata, bytesRead);
         FieldInfo contentFieldInfo = getContentFieldInfo(fieldInfoList);
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         if (contentFieldInfo != null) {
             long diff = contentFieldInfo.offset - bytesRead;
             IOUtils.skipFully(tis, diff);
             if (ex.shouldParseEmbedded(embeddedMetadata)) {
-                // TODO: we should probably add a readlimiting wrapper around this
-                // stream to ensure that not more than contentFieldInfo.length bytes
-                // are read
-                ex.parseEmbedded(tis, xhtml, embeddedMetadata, context, true);
+                // Use BoundedInputStream to limit bytes read, then spool to temp file
+                // for complete isolation from parent stream (reset() goes to embedded start)
+                BoundedInputStream bounded =
+                        BoundedInputStream.builder()
+                                .setInputStream(tis)
+                                .setMaxCount(contentFieldInfo.length)
+                                .get();
+                try (TikaInputStream inner = TikaInputStream.get(bounded)) {
+                    inner.getPath();
+                    ex.parseEmbedded(inner, xhtml, embeddedMetadata, context, true);
+                }
             }
         }
         xhtml.endDocument();

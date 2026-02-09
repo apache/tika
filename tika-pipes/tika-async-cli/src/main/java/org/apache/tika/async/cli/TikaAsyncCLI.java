@@ -25,6 +25,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -33,20 +36,22 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.api.HandlerConfig;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.core.async.AsyncProcessor;
-import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
+import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.pipes.core.pipesiterator.PipesIteratorManager;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.utils.StringUtils;
 
 public class TikaAsyncCLI {
@@ -66,7 +71,14 @@ public class TikaAsyncCLI {
         options.addOption("p", "pluginsDir", true, "plugins directory");
         //options.addOption("l", "fileList", true, "file list");
         options.addOption("c", "config", true, "tikaConfig.json");
-        options.addOption("Z", "unzip", false, "extract raw bytes from attachments");
+        options.addOption("z", "unzipShallow", false, "extract raw bytes from direct attachments only (depth=1)");
+        options.addOption("Z", "unzipRecursive", false, "extract raw bytes from all attachments recursively");
+        options.addOption(null, "unpack-format", true,
+                "output format for unpacking: REGULAR (default) or FRICTIONLESS");
+        options.addOption(null, "unpack-mode", true,
+                "output mode for unpacking: ZIPPED (default) or DIRECTORY");
+        options.addOption(null, "unpack-include-metadata", false,
+                "include metadata.json in Frictionless output");
 
         return options;
     }
@@ -106,6 +118,13 @@ public class TikaAsyncCLI {
                 tikaConfig = tmpTikaConfig;
                 PluginsWriter pluginsWriter = new PluginsWriter(simpleAsyncConfig, tikaConfig);
                 pluginsWriter.write(tikaConfig);
+            } else {
+                // User provided a config - ensure plugin-roots is set
+                tikaConfig = ensurePluginRoots(tikaConfig, simpleAsyncConfig.getPluginsDir());
+                if (!tikaConfig.equals(Paths.get(simpleAsyncConfig.getTikaConfig()))) {
+                    // A new merged config was created, mark for cleanup
+                    tmpTikaConfig = tikaConfig;
+                }
             }
 
             pipesIterator = buildPipesIterator(tikaConfig, simpleAsyncConfig);
@@ -146,7 +165,8 @@ public class TikaAsyncCLI {
         if (args.length == 2 && ! args[0].startsWith("-")) {
             return new SimpleAsyncConfig(args[0], args[1], 1,
                     30000L, "-Xmx1g", null, null,
-                    BasicContentHandlerFactory.HANDLER_TYPE.TEXT, false, null);
+                    BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                    SimpleAsyncConfig.ExtractBytesMode.NONE, null);
         }
 
         Options options = getOptions();
@@ -167,7 +187,7 @@ public class TikaAsyncCLI {
         String asyncConfig = null;
         String pluginsDir = null;
         BasicContentHandlerFactory.HANDLER_TYPE handlerType = BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
-        boolean extractBytes = false;
+        SimpleAsyncConfig.ExtractBytesMode extractBytesMode = SimpleAsyncConfig.ExtractBytesMode.NONE;
         if (line.hasOption("i")) {
             inputDir = line.getOptionValue("i");
         }
@@ -190,7 +210,9 @@ public class TikaAsyncCLI {
             tikaConfig = line.getOptionValue("c");
         }
         if (line.hasOption("Z")) {
-            extractBytes = true;
+            extractBytesMode = SimpleAsyncConfig.ExtractBytesMode.RECURSIVE;
+        } else if (line.hasOption("z")) {
+            extractBytesMode = SimpleAsyncConfig.ExtractBytesMode.SHALLOW;
         }
         if (line.hasOption('h')) {
             handlerType = getHandlerType(line.getOptionValue('h'));
@@ -201,6 +223,21 @@ public class TikaAsyncCLI {
         if (line.hasOption('p')) {
             pluginsDir = line.getOptionValue('p');
         }
+
+        // Frictionless Data Package options
+        String unpackFormat = null;
+        String unpackMode = null;
+        boolean unpackIncludeMetadata = false;
+        if (line.hasOption("unpack-format")) {
+            unpackFormat = line.getOptionValue("unpack-format").toUpperCase(java.util.Locale.ROOT);
+        }
+        if (line.hasOption("unpack-mode")) {
+            unpackMode = line.getOptionValue("unpack-mode").toUpperCase(java.util.Locale.ROOT);
+        }
+        if (line.hasOption("unpack-include-metadata")) {
+            unpackIncludeMetadata = true;
+        }
+
         if (line.getArgList().size() > 2) {
             throw new TikaConfigException("Can't have more than 2 unknown args: " + line.getArgList());
         }
@@ -233,16 +270,19 @@ public class TikaAsyncCLI {
                 throw new TikaConfigException("Input file/dir must exist: " + inputPath);
             }
             inputDir = inString;
-            if (Files.isRegularFile(inputPath)) {
-                outputDir = Paths.get(".").toAbsolutePath().toString();
-            } else {
-                outputDir = Paths.get("output").toAbsolutePath().toString();
+            // Only set default outputDir if not already specified via -o
+            if (outputDir == null) {
+                if (Files.isRegularFile(inputPath)) {
+                    outputDir = Paths.get(".").toAbsolutePath().toString();
+                } else {
+                    outputDir = Paths.get("output").toAbsolutePath().toString();
+                }
             }
         }
 
         return new SimpleAsyncConfig(inputDir, outputDir,
                 numClients, timeoutMs, xmx, fileList, tikaConfig, handlerType,
-                extractBytes, pluginsDir);
+                extractBytesMode, pluginsDir, unpackFormat, unpackMode, unpackIncludeMetadata);
     }
 
     private static BasicContentHandlerFactory.HANDLER_TYPE getHandlerType(String t) throws TikaConfigException {
@@ -290,28 +330,92 @@ public class TikaAsyncCLI {
         if (asyncConfig.getHandlerType() == BasicContentHandlerFactory.HANDLER_TYPE.TEXT) {
             return;
         }
-        HandlerConfig handlerConfig = new HandlerConfig(asyncConfig.getHandlerType(), HandlerConfig.PARSE_MODE.RMETA,
-                -1, -1, false);
-        t.getParseContext().set(HandlerConfig.class, handlerConfig);
+        ContentHandlerFactory factory = new BasicContentHandlerFactory(asyncConfig.getHandlerType(), -1);
+        t.getParseContext().set(ContentHandlerFactory.class, factory);
     }
 
     private static void configureExtractBytes(FetchEmitTuple t, SimpleAsyncConfig asyncConfig) {
         if (asyncConfig == null) {
             return;
         }
-        if (!asyncConfig.isExtractBytes()) {
+        SimpleAsyncConfig.ExtractBytesMode mode = asyncConfig.getExtractBytesMode();
+        if (mode == SimpleAsyncConfig.ExtractBytesMode.NONE) {
             return;
         }
         ParseContext parseContext = t.getParseContext();
-        EmbeddedDocumentBytesConfig config = new EmbeddedDocumentBytesConfig();
-        config.setExtractEmbeddedDocumentBytes(true);
+        // Use the new UNPACK ParseMode for embedded byte extraction
+        parseContext.set(ParseMode.class, ParseMode.UNPACK);
+
+        // For SHALLOW mode (-z), set depth limit to 2 (direct children only)
+        // The depth accounting in the parser chain adds extra levels:
+        // - Container document: depth 1 after beforeParse()
+        // - First-level embedded: depth 2-3 depending on parser wrapper chain
+        // Using maxDepth=2 allows first-level embedded while blocking recursive
+        if (mode == SimpleAsyncConfig.ExtractBytesMode.SHALLOW) {
+            EmbeddedLimits limits = new EmbeddedLimits();
+            limits.setMaxDepth(2);
+            limits.setThrowOnMaxDepth(false);
+            parseContext.set(EmbeddedLimits.class, limits);
+        }
+        // For RECURSIVE mode (-Z), use default unlimited depth
+
+        UnpackConfig config = new UnpackConfig();
         config.setEmitter(TikaConfigAsyncWriter.EMITTER_NAME);
         config.setIncludeOriginal(false);
-        config.setSuffixStrategy(EmbeddedDocumentBytesConfig.SUFFIX_STRATEGY.DETECTED);
+        config.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
         config.setEmbeddedIdPrefix("-");
         config.setZeroPadName(8);
-        config.setKeyBaseStrategy(EmbeddedDocumentBytesConfig.KEY_BASE_STRATEGY.CONTAINER_NAME_AS_IS);
-        parseContext.set(EmbeddedDocumentBytesConfig.class, config);
+        config.setKeyBaseStrategy(UnpackConfig.KEY_BASE_STRATEGY.DEFAULT);
+
+        // Apply Frictionless Data Package options
+        if (asyncConfig.getUnpackFormat() != null) {
+            config.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.valueOf(asyncConfig.getUnpackFormat()));
+        }
+        if (asyncConfig.getUnpackMode() != null) {
+            config.setOutputMode(UnpackConfig.OUTPUT_MODE.valueOf(asyncConfig.getUnpackMode()));
+        }
+        if (asyncConfig.isUnpackIncludeMetadata()) {
+            config.setIncludeFullMetadata(true);
+        }
+
+        parseContext.set(UnpackConfig.class, config);
+    }
+
+    private static final String DEFAULT_PLUGINS_DIR = "plugins";
+
+    /**
+     * Ensures plugin-roots is set in the config. If missing, creates a merged config
+     * with a default plugin-roots value.
+     *
+     * @param originalConfigPath the user's config file path
+     * @param pluginsDir optional plugins directory from command line (may be null)
+     * @return the config path to use (original if plugin-roots exists, or a new merged config)
+     */
+    static Path ensurePluginRoots(Path originalConfigPath, String pluginsDir) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode rootNode = mapper.readTree(originalConfigPath.toFile());
+
+        if (rootNode.has("plugin-roots")) {
+            // plugin-roots already set, use original config
+            return originalConfigPath;
+        }
+
+        // Need to add plugin-roots
+        ObjectNode mutableRoot = (ObjectNode) rootNode;
+        String pluginString = StringUtils.isBlank(pluginsDir) ? DEFAULT_PLUGINS_DIR : pluginsDir;
+        Path plugins = Paths.get(pluginString);
+        if (Files.isDirectory(plugins)) {
+            pluginString = plugins.toAbsolutePath().toString();
+        }
+        mutableRoot.put("plugin-roots", pluginString);
+
+        // Write merged config to temp file
+        Path mergedConfig = Files.createTempFile("tika-async-merged-config-", ".json");
+        mapper.writerWithDefaultPrettyPrinter().writeValue(mergedConfig.toFile(), mutableRoot);
+        mergedConfig.toFile().deleteOnExit();
+
+        LOG.info("Added default plugin-roots to config: {}", pluginString);
+        return mergedConfig;
     }
 
     private static void usage(Options options) throws IOException {

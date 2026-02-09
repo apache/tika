@@ -18,28 +18,28 @@ package org.apache.tika.pipes.fork;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.Map;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-
+import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.api.HandlerConfig;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.core.EmitStrategy;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesParser;
+import org.apache.tika.pipes.core.config.ConfigMerger;
+import org.apache.tika.pipes.core.config.ConfigOverrides;
+import org.apache.tika.sax.ContentHandlerFactory;
 
 /**
  * A ForkParser implementation backed by {@link PipesParser}.
@@ -86,21 +86,21 @@ import org.apache.tika.pipes.core.PipesParser;
  * Example usage:
  * <pre>
  * PipesForkParserConfig config = new PipesForkParserConfig();
- * config.setHandlerConfig(new HandlerConfig(HANDLER_TYPE.TEXT, PARSE_MODE.RMETA, -1, -1, true));
+ * config.setHandlerType(HANDLER_TYPE.TEXT);
+ * config.setParseMode(ParseMode.RMETA);
  *
  * try (PipesForkParser parser = new PipesForkParser(config)) {
- *     // Parse from a file
- *     try (TikaInputStream tis = TikaInputStream.get(Paths.get("/path/to/file.pdf"))) {
- *         PipesForkResult result = parser.parse(tis);
- *         for (Metadata m : result.getMetadataList()) {
- *             String content = m.get(TikaCoreProperties.TIKA_CONTENT);
- *             // process content and metadata
- *         }
+ *     // Parse a file by Path
+ *     Path file = Paths.get("/path/to/file.pdf");
+ *     PipesForkResult result = parser.parse(file);
+ *     for (Metadata m : result.getMetadataList()) {
+ *         String content = m.get(TikaCoreProperties.TIKA_CONTENT);
+ *         // process content and metadata
  *     }
  *
  *     // Or parse from an InputStream (will be spooled to temp file)
  *     try (TikaInputStream tis = TikaInputStream.get(inputStream)) {
- *         PipesForkResult result = parser.parse(tis);
+ *         result = parser.parse(tis);
  *         // ...
  *     }
  * }
@@ -115,6 +115,7 @@ public class PipesForkParser implements Closeable {
     private final PipesForkParserConfig config;
     private final PipesParser pipesParser;
     private final Path tikaConfigPath;
+    private final String internalFetcherId;
 
     /**
      * Creates a new PipesForkParser with default configuration.
@@ -135,8 +136,61 @@ public class PipesForkParser implements Closeable {
      */
     public PipesForkParser(PipesForkParserConfig config) throws IOException, TikaConfigException {
         this.config = config;
-        this.tikaConfigPath = createTikaConfigFile();
+        ConfigMerger.MergeResult mergeResult = createTikaConfigFile();
+        this.tikaConfigPath = mergeResult.configPath();
+        this.internalFetcherId = mergeResult.fetcherId();
         this.pipesParser = PipesParser.load(tikaConfigPath);
+    }
+
+    /**
+     * Parse a file in a forked JVM process.
+     *
+     * @param path the path to the file to parse
+     * @return the parse result containing metadata and content
+     * @throws IOException if an I/O error occurs
+     * @throws InterruptedException if the parsing is interrupted
+     * @throws PipesException if a pipes infrastructure error occurs
+     * @throws PipesForkParserException if an application error occurs (initialization
+     *         failure or configuration error)
+     */
+    public PipesForkResult parse(Path path)
+            throws IOException, InterruptedException, PipesException, TikaException {
+        return parse(path, new Metadata(), new ParseContext());
+    }
+
+    /**
+     * Parse a file in a forked JVM process with the specified metadata.
+     *
+     * @param path the path to the file to parse
+     * @param metadata initial metadata (e.g., content type hint)
+     * @return the parse result containing metadata and content
+     * @throws IOException if an I/O error occurs
+     * @throws InterruptedException if the parsing is interrupted
+     * @throws PipesException if a pipes infrastructure error occurs
+     * @throws PipesForkParserException if an application error occurs (initialization
+     *         failure or configuration error)
+     */
+    public PipesForkResult parse(Path path, Metadata metadata)
+            throws IOException, InterruptedException, PipesException, TikaException {
+        return parse(path, metadata, new ParseContext());
+    }
+
+    /**
+     * Parse a file in a forked JVM process with the specified metadata and parse context.
+     *
+     * @param path the path to the file to parse
+     * @param metadata initial metadata (e.g., content type hint)
+     * @param parseContext the parse context
+     * @return the parse result containing metadata and content
+     * @throws IOException if an I/O error occurs
+     * @throws InterruptedException if the parsing is interrupted
+     * @throws PipesException if a pipes infrastructure error occurs
+     * @throws PipesForkParserException if an application error occurs (initialization
+     *         failure or configuration error)
+     */
+    public PipesForkResult parse(Path path, Metadata metadata, ParseContext parseContext)
+            throws IOException, InterruptedException, PipesException, TikaException {
+        return parseInternal(path, metadata, parseContext);
     }
 
     /**
@@ -193,19 +247,32 @@ public class PipesForkParser implements Closeable {
      */
     public PipesForkResult parse(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
             throws IOException, InterruptedException, PipesException, TikaException {
-
         // Get the path - this will spool to a temp file if the stream doesn't have
         // an underlying file. The temp file is managed by TikaInputStream and will
         // be cleaned up when the TikaInputStream is closed.
-        Path path = tis.getPath();
+        return parseInternal(tis.getPath(), metadata, parseContext);
+    }
+
+    /**
+     * Internal parse implementation that takes a Path directly.
+     */
+    private PipesForkResult parseInternal(Path path, Metadata metadata, ParseContext parseContext)
+            throws IOException, InterruptedException, PipesException, TikaException {
         String absolutePath = path.toAbsolutePath().toString();
         String id = absolutePath;
 
-        FetchKey fetchKey = new FetchKey(config.getFetcherName(), absolutePath);
+        // Use the internal fetcher ID generated by ConfigMerger (UUID-based)
+        FetchKey fetchKey = new FetchKey(internalFetcherId, absolutePath);
         EmitKey emitKey = new EmitKey("", id); // Empty emitter name since we're using PASSBACK_ALL
 
-        // Add handler config to parse context so server knows how to handle content
-        parseContext.set(HandlerConfig.class, config.getHandlerConfig());
+        // Add content handler factory and parse mode to parse context
+        parseContext.set(ContentHandlerFactory.class, config.getContentHandlerFactory());
+        parseContext.set(ParseMode.class, config.getParseMode());
+
+        // Add embedded limits if configured
+        if (config.getEmbeddedLimits() != null) {
+            parseContext.set(EmbeddedLimits.class, config.getEmbeddedLimits());
+        }
 
         FetchEmitTuple tuple = new FetchEmitTuple(id, fetchKey, emitKey, metadata, parseContext);
 
@@ -298,72 +365,41 @@ public class PipesForkParser implements Closeable {
 
     /**
      * Creates a temporary tika-config.json file for the forked process.
-     * This configures:
-     * - FileSystemFetcher as the fetcher
-     * - PASSBACK_ALL emit strategy (no emitter, return results to client)
+     * <p>
+     * Uses ConfigMerger to:
+     * - Add a FileSystemFetcher with UUID-based name for absolute path access
+     * - Set PASSBACK_ALL emit strategy (no emitter, return results to client)
+     * - Merge with user config if provided
+     *
+     * @return MergeResult containing the config path and generated fetcher ID
      */
-    private Path createTikaConfigFile() throws IOException {
-        Path configFile = Files.createTempFile("tika-fork-config-", ".json");
-
-        String jsonConfig = generateJsonConfig();
-        Files.writeString(configFile, jsonConfig);
-
-        return configFile;
-    }
-
-    private String generateJsonConfig() throws IOException {
+    private ConfigMerger.MergeResult createTikaConfigFile() throws IOException {
         PipesConfig pc = config.getPipesConfig();
 
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.enable(SerializationFeature.INDENT_OUTPUT);
+        // Build configuration overrides
+        ConfigOverrides.Builder builder = ConfigOverrides.builder()
+                // Add internal fetcher with UUID-based name to avoid conflicts
+                // Use null ID to trigger UUID generation
+                .addFetcher(null, "file-system-fetcher",
+                        Map.of("allowAbsolutePaths", true))
+                // Set pipes configuration
+                .setPipesConfig(
+                        pc.getNumClients(),
+                        pc.getTimeoutMillis(),
+                        pc.getStartupTimeoutMillis(),
+                        pc.getMaxFilesProcessedPerProcess(),
+                        pc.getForkedJvmArgs())
+                // Use PASSBACK_ALL strategy - results returned through socket
+                .setEmitStrategy(EmitStrategy.PASSBACK_ALL);
 
-        StringWriter writer = new StringWriter();
-        try (JsonGenerator gen = mapper.getFactory().createGenerator(writer)) {
-            gen.writeStartObject();
-
-            // Fetchers section
-            gen.writeObjectFieldStart("fetchers");
-            gen.writeObjectFieldStart(config.getFetcherName());
-            gen.writeObjectFieldStart("file-system-fetcher");
-            // No basePath - fetchKey will be treated as absolute path
-            // Set allowAbsolutePaths to suppress the security warning since this is intentional
-            gen.writeBooleanField("allowAbsolutePaths", true);
-            gen.writeEndObject(); // file-system-fetcher
-            gen.writeEndObject(); // fetcher name
-            gen.writeEndObject(); // fetchers
-
-            // Pipes configuration section
-            gen.writeObjectFieldStart("pipes");
-            gen.writeNumberField("numClients", pc.getNumClients());
-            gen.writeNumberField("timeoutMillis", pc.getTimeoutMillis());
-            gen.writeNumberField("startupTimeoutMillis", pc.getStartupTimeoutMillis());
-            gen.writeNumberField("maxFilesProcessedPerProcess", pc.getMaxFilesProcessedPerProcess());
-
-            // Emit strategy - PASSBACK_ALL means no emitter, return results to client
-            gen.writeObjectFieldStart("emitStrategy");
-            gen.writeStringField("type", "PASSBACK_ALL");
-            gen.writeEndObject(); // emitStrategy
-
-            // JVM args if specified
-            ArrayList<String> jvmArgs = pc.getForkedJvmArgs();
-            if (jvmArgs != null && !jvmArgs.isEmpty()) {
-                gen.writeArrayFieldStart("forkedJvmArgs");
-                for (String arg : jvmArgs) {
-                    gen.writeString(arg);
-                }
-                gen.writeEndArray();
-            }
-
-            gen.writeEndObject(); // pipes
-
-            // Plugin roots if specified
-            if (config.getPluginsDir() != null) {
-                gen.writeStringField("plugin-roots", config.getPluginsDir().toAbsolutePath().toString());
-            }
-
-            gen.writeEndObject(); // root
+        // Set plugin roots if specified
+        if (config.getPluginsDir() != null) {
+            builder.setPluginRoots(config.getPluginsDir().toAbsolutePath().toString());
         }
 
-        return writer.toString();
+        ConfigOverrides overrides = builder.build();
+
+        // Merge with user config if provided, otherwise create new
+        return ConfigMerger.mergeOrCreate(config.getUserConfigPath(), overrides);
     }
 }

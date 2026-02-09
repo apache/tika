@@ -1,11 +1,6 @@
 {
   "parsers": [
     {
-      "default-parser": {
-        "_exclude": ["tesseract-ocr-parser"]
-      }
-    },
-    {
       "tesseract-ocr-parser": {
         "tesseractPath": "C:\\Program Files\\Tesseract OCR",
         "tessdataPath": "C:\\Program Files\\Tesseract OCR\\tessdata"

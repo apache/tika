@@ -25,9 +25,9 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.io.IOUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -165,11 +165,11 @@ public class OpenDocumentParser implements Parser {
         if (container instanceof ZipFile) {
             zipFile = (ZipFile) container;
         } else {
-            zipFile = new ZipFile(tis.getFile());
+            zipFile = ZipFile.builder().setFile(tis.getFile()).get();
             tis.setOpenContainer(zipFile);
         }
         // Prepare to handle the content
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(baseHandler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(baseHandler, metadata, context);
         xhtml.startDocument();
         // As we don't know which of the metadata or the content
         //  we'll hit first, catch the endDocument call initially
@@ -206,32 +206,32 @@ public class OpenDocumentParser implements Parser {
         //  rest of the file afterwards (TIKA-1353)
         // Only possible to guarantee that when opened from a file not a stream
 
-        ZipEntry entry = zipFile.getEntry(MANIFEST_NAME);
+        ZipArchiveEntry entry = zipFile.getEntry(MANIFEST_NAME);
         if (entry != null) {
             try (TikaInputStream tisZip = TikaInputStream.get(zipFile.getInputStream(entry))) {
-                handleZipEntry(entry, tisZip, metadata, context, handler, embeddedDocumentUtil);
+                handleZipArchiveEntry(entry, tisZip, metadata, context, handler, embeddedDocumentUtil);
             }
         }
 
         entry = zipFile.getEntry(META_NAME);
         if (entry != null) {
             try (TikaInputStream tisZip = TikaInputStream.get(zipFile.getInputStream(entry))) {
-                handleZipEntry(entry, tisZip, metadata, context, handler, embeddedDocumentUtil);
+                handleZipArchiveEntry(entry, tisZip, metadata, context, handler, embeddedDocumentUtil);
             }
         }
 
-        Enumeration<? extends ZipEntry> entries = zipFile.entries();
+        Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
         while (entries.hasMoreElements()) {
             entry = entries.nextElement();
             if (!META_NAME.equals(entry.getName())) {
                 try (TikaInputStream tis = TikaInputStream.get(zipFile.getInputStream(entry))) {
-                    handleZipEntry(entry, tis, metadata, context, handler, embeddedDocumentUtil);
+                    handleZipArchiveEntry(entry, tis, metadata, context, handler, embeddedDocumentUtil);
                 }
             }
         }
     }
 
-    private void handleZipEntry(ZipEntry entry, TikaInputStream tisZip, Metadata metadata,
+    private void handleZipArchiveEntry(ZipArchiveEntry entry, TikaInputStream tisZip, Metadata metadata,
                                 ParseContext context, ContentHandler handler,
                                 EmbeddedDocumentUtil embeddedDocumentUtil)
             throws IOException, SAXException, TikaException {
@@ -265,7 +265,8 @@ public class OpenDocumentParser implements Parser {
             //scrape everything under Thumbnails/ and Pictures/
             if (embeddedName.contains("Thumbnails/") || embeddedName.contains("Pictures/")) {
 
-                Metadata embeddedMetadata = new Metadata();
+                Metadata embeddedMetadata = Metadata.newInstance(context);
+                embeddedMetadata.set(TikaCoreProperties.INTERNAL_PATH, embeddedName);
 
                     embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, entry.getName());
                     if (embeddedName.startsWith("Thumbnails/")) {
@@ -307,9 +308,10 @@ public class OpenDocumentParser implements Parser {
         if (ignoreScriptFile(embeddedName)) {
             return;
         }
-        Metadata embeddedMetadata = new Metadata();
+        Metadata embeddedMetadata = Metadata.newInstance(context);
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
+        embeddedMetadata.set(TikaCoreProperties.INTERNAL_PATH, embeddedName);
         handler = new OpenDocumentMacroHandler(handler, context);
         try {
             tisZip.setCloseShield();

@@ -24,6 +24,9 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -31,6 +34,8 @@ import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.plugins.TikaPluginManager;
 
 public class PipesParser implements Closeable {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PipesParser.class);
 
     /**
      * Loads a PipesParser from a configuration file path.
@@ -74,16 +79,40 @@ public class PipesParser implements Closeable {
     private final PipesConfig pipesConfig;
     private final Path tikaConfigPath;
     private final List<PipesClient> clients = new ArrayList<>();
+    private final List<ServerManager> serverManagers = new ArrayList<>();
     private final ArrayBlockingQueue<PipesClient> clientQueue;
+    private final boolean isSharedMode;
 
     private PipesParser(PipesConfig pipesConfig, Path tikaConfigPath) {
         this.pipesConfig = pipesConfig;
         this.tikaConfigPath = tikaConfigPath;
+        this.isSharedMode = pipesConfig.isUseSharedServer();
         this.clientQueue = new ArrayBlockingQueue<>(pipesConfig.getNumClients());
-        for (int i = 0; i < pipesConfig.getNumClients(); i++) {
-            PipesClient client = new PipesClient(pipesConfig, tikaConfigPath);
-            clientQueue.offer(client);
-            clients.add(client);
+
+        if (isSharedMode) {
+            // Shared mode: one ServerManager for all clients
+            LOG.info("Using shared server mode with {} clients", pipesConfig.getNumClients());
+            SharedServerManager sharedManager = new SharedServerManager(
+                    pipesConfig, tikaConfigPath, pipesConfig.getNumClients());
+            serverManagers.add(sharedManager);
+
+            for (int i = 0; i < pipesConfig.getNumClients(); i++) {
+                PipesClient client = new PipesClient(pipesConfig, sharedManager);
+                clientQueue.offer(client);
+                clients.add(client);
+            }
+        } else {
+            // Per-client mode: each client has its own ServerManager
+            LOG.info("Using per-client server mode with {} clients", pipesConfig.getNumClients());
+            for (int i = 0; i < pipesConfig.getNumClients(); i++) {
+                PerClientServerManager serverManager = new PerClientServerManager(
+                        pipesConfig, tikaConfigPath, i);
+                serverManagers.add(serverManager);
+
+                PipesClient client = new PipesClient(pipesConfig, serverManager);
+                clientQueue.offer(client);
+                clients.add(client);
+            }
         }
     }
 
@@ -107,6 +136,8 @@ public class PipesParser implements Closeable {
     @Override
     public void close() throws IOException {
         List<IOException> exceptions = new ArrayList<>();
+
+        // First close all clients (closes their connections)
         for (PipesClient pipesClient : clients) {
             try {
                 pipesClient.close();
@@ -114,8 +145,41 @@ public class PipesParser implements Closeable {
                 exceptions.add(e);
             }
         }
-        if (exceptions.size() > 0) {
+
+        // Then close all server managers (shuts down server processes)
+        for (ServerManager serverManager : serverManagers) {
+            try {
+                serverManager.close();
+            } catch (IOException e) {
+                exceptions.add(e);
+            }
+        }
+
+        if (!exceptions.isEmpty()) {
             throw exceptions.get(0);
         }
+    }
+
+    /**
+     * Returns whether this parser is using shared server mode.
+     *
+     * @return true if using shared server mode
+     */
+    public boolean isSharedMode() {
+        return isSharedMode;
+    }
+
+    /**
+     * Returns the current server port. For testing purposes only.
+     * In shared mode, returns the port of the shared server.
+     * In per-client mode, returns the port of the first client's server.
+     *
+     * @return the current server port, or -1 if no server is running
+     */
+    public int getCurrentServerPort() {
+        if (serverManagers.isEmpty()) {
+            return -1;
+        }
+        return serverManagers.get(0).getPort();
     }
 }

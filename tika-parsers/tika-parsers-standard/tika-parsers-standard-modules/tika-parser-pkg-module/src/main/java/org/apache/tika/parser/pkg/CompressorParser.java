@@ -47,6 +47,7 @@ import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipParameters;
 import org.apache.commons.compress.compressors.gzip.GzipUtils;
 import org.apache.commons.compress.compressors.lzma.LZMACompressorInputStream;
 import org.apache.commons.compress.compressors.pack200.Pack200CompressorInputStream;
@@ -71,6 +72,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Parser for various compression formats.
@@ -234,22 +236,16 @@ public class CompressorParser implements Parser {
         }
 
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
-
         try {
-            Metadata entrydata = new Metadata();
-            String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-            if (name != null) {
-                if (name.endsWith(".tbz") || name.endsWith(".tbz2")) {
-                    name = name.substring(0, name.lastIndexOf(".")) + ".tar";
-                } else if (name.endsWith(".bz") || name.endsWith(".bz2") || name.endsWith(".xz") ||
-                        name.endsWith(".zlib") || name.endsWith(".pack") || name.endsWith(".br")) {
-                    name = name.substring(0, name.lastIndexOf("."));
-                } else if (name.length() > 0) {
-                    name = GzipUtils.getUncompressedFileName(name);
-                }
-                entrydata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
+            Metadata entrydata = Metadata.newInstance(context);
+            boolean foundName = false;
+            if (cis instanceof GzipCompressorInputStream) {
+                foundName = extractGzipMetadata((GzipCompressorInputStream) cis, entrydata);
+            }
+            if (! foundName) {
+                setName(metadata, entrydata);
             }
 
             // Use the delegate parser to parse the compressed document
@@ -266,6 +262,38 @@ public class CompressorParser implements Parser {
         }
 
         xhtml.endDocument();
+    }
+
+    private boolean extractGzipMetadata(GzipCompressorInputStream gzcis, Metadata metadata) {
+        GzipParameters gzipParameters = gzcis.getMetaData();
+        if (gzipParameters == null) {
+            return false;
+        }
+        String name = gzipParameters.getFileName();
+        if (!StringUtils.isBlank(name)) {
+            metadata.set(TikaCoreProperties.INTERNAL_PATH, name);
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
+            return true;
+        }
+        //TODO: modification, OS, comment
+        return false;
+    }
+
+    private void setName(Metadata parentMetadata, Metadata metadata) {
+        String name = parentMetadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+        //if parent's name is blank stop now
+        if (StringUtils.isBlank(name)) {
+            return;
+        }
+        if (name.endsWith(".tgz") || name.endsWith(".tbz") || name.endsWith(".tbz2")) {
+            name = name.substring(0, name.lastIndexOf(".")) + ".tar";
+        } else if (name.endsWith(".bz") || name.endsWith("gz") || name.endsWith(".bz2") || name.endsWith(".xz") || name.endsWith(".zlib") || name.endsWith(".pack") ||
+                name.endsWith(".br")) {
+            name = name.substring(0, name.lastIndexOf("."));
+        } else if (!name.isEmpty()) {
+            name = GzipUtils.getUncompressedFileName(name);
+        }
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
     }
 
     /**

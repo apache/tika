@@ -44,9 +44,9 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>tika-eval-app/src/test/resources/test-dirs/**</exclude> <!-- already checked -->
-          </excludes>
+          <inputExcludes>
+            <inputExclude>tika-eval-app/src/test/resources/test-dirs/**</inputExclude> <!-- already checked -->
+          </inputExcludes>
         </configuration>
       </plugin>
       <plugin>

@@ -202,7 +202,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     AbstractPDF2XHTML(PDDocument pdDocument, ContentHandler handler, ParseContext context,
                       Metadata metadata, PDFParserConfig config, Renderer renderer) throws IOException {
         this.pdDocument = pdDocument;
-        this.xhtml = new XHTMLContentHandler(handler, metadata);
+        this.xhtml = new XHTMLContentHandler(handler, metadata, context);
         this.context = context;
         this.metadata = metadata;
         this.config = config;
@@ -293,7 +293,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         if (pdfDocument.getDocumentCatalog().getAcroForm(null) != null &&
                 pdfDocument.getDocumentCatalog().getAcroForm(null).getXFA() != null) {
 
-            Metadata xfaMetadata = new Metadata();
+            Metadata xfaMetadata = Metadata.newInstance(context);
             xfaMetadata.set(Metadata.CONTENT_TYPE, XFA_MEDIA_TYPE.toString());
             xfaMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.METADATA.toString());
@@ -319,7 +319,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         if (tis == null) {
             return;
         }
-        Metadata xmpMetadata = new Metadata();
+        Metadata xmpMetadata = Metadata.newInstance(context);
         xmpMetadata.set(Metadata.CONTENT_TYPE, XMP_MEDIA_TYPE.toString());
         xmpMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.METADATA.toString());
@@ -458,7 +458,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         fileName = (fileName == null || "".equals(fileName.trim())) ? displayName : fileName;
 
         // TODO: other metadata?
-        Metadata embeddedMetadata = new Metadata();
+        Metadata embeddedMetadata = Metadata.newInstance(context);
         embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
         //if the stream is missing a size, -1 is returned
         long sz = pdEmbeddedFile.getSize();
@@ -634,7 +634,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
 
     private Metadata getCurrentPageMetadata(PDPage pdPage) {
-        Metadata pageMetadata = new Metadata();
+        Metadata pageMetadata = Metadata.newInstance(context);
         pageMetadata.set(TikaCoreProperties.TYPE, PDFParser.MEDIA_TYPE.toString());
         pageMetadata.set(TikaPagedText.PAGE_NUMBER, getCurrentPageNo());
         pageMetadata.set(TikaPagedText.PAGE_ROTATION, (float) pdPage.getRotation());
@@ -1067,7 +1067,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     }
 
     private Metadata getJavascriptMetadata(String trigger, String jsActionName, Charset charset) {
-        Metadata m = new Metadata();
+        Metadata m = Metadata.newInstance(context);
         m.set(Metadata.CONTENT_TYPE, "application/javascript");
         m.set(PDF.ACTION_TRIGGER, trigger);
         m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
@@ -1195,7 +1195,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                     OutputStream outputStream = Files.newOutputStream(update, StandardOpenOption.WRITE)) {
                 IOUtils.copyLarge(input, outputStream, 0, xRefOffset.getEndEofOffset());
             }
-            Metadata updateMetadata = new Metadata();
+            Metadata updateMetadata = Metadata.newInstance(context);
             updateMetadata.set(PDF.INCREMENTAL_UPDATE_NUMBER, count);
             updateMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.VERSION.toString());

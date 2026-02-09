@@ -1,0 +1,121 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Metadata Changes in Tika 4.x
+
+This document details the metadata key changes in Apache Tika 4.x.
+
+== Overview
+
+Tika 4.x prefixes all "user generated" metadata keys to prevent overwrites and improve
+namespace clarity. This is a security-focused change that prevents user-controlled data
+from potentially overwriting existing metadata values in the Metadata object.
+
+== Metadata Key Changes
+
+[cols="2,2,3"]
+|===
+|Category |Change |Details
+
+|HTML custom metadata
+|Prefixed with `html:`
+|Custom metadata from HTML documents now uses the `html:` prefix
+
+|MAPI metadata
+|Prefix changed to `mapi:`
+|Microsoft MAPI properties now use the `mapi:` prefix
+
+|Resource name
+|Renamed
+|`resourceName` changed to `X-TIKA:resourceName`
+
+|Unrecognized image metadata
+|Prefixed with `img:`
+|Unrecognized image metadata keys now use the `img:` prefix
+
+|Office metadata
+|Prefix changed
+|Changed from `meta` prefix to `office` prefix
+|===
+
+== Migration Steps
+
+When upgrading to Tika 4.x, you will need to update any code that references metadata keys
+directly:
+
+=== HTML Metadata
+
+[source,java]
+----
+// Before (3.x)
+String value = metadata.get("custom-key");
+
+// After (4.x)
+String value = metadata.get("html:custom-key");
+----
+
+=== MAPI Metadata
+
+[source,java]
+----
+// Before (3.x)
+String value = metadata.get("mapi:some-property");
+
+// After (4.x) - prefix remains mapi: but verify specific keys
+String value = metadata.get("mapi:some-property");
+----
+
+=== Resource Name
+
+[source,java]
+----
+// Before (3.x)
+String name = metadata.get("resourceName");
+
+// After (4.x)
+String name = metadata.get("X-TIKA:resourceName");
+----
+
+=== Image Metadata
+
+[source,java]
+----
+// Before (3.x)
+String value = metadata.get("unknown-image-key");
+
+// After (4.x)
+String value = metadata.get("img:unknown-image-key");
+----
+
+=== Office Metadata
+
+[source,java]
+----
+// Before (3.x)
+String value = metadata.get("meta:some-property");
+
+// After (4.x)
+String value = metadata.get("office:some-property");
+----
+
+== Rationale
+
+The namespacing of metadata keys provides several benefits:
+
+* *Security*: Prevents user-controlled content from overwriting internal metadata
+* *Clarity*: Makes it clear which parser or source generated a metadata key
+* *Consistency*: Provides a uniform approach to metadata naming across all parsers

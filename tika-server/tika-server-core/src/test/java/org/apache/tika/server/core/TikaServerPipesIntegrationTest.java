@@ -18,7 +18,6 @@ package org.apache.tika.server.core;
 
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig.DEFAULT_HANDLER_CONFIG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -43,10 +42,12 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.api.HandlerConfig;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
+import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.utils.ProcessUtils;
 
 public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
@@ -221,7 +222,9 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
 
     private String getJsonStringWithTimeout(String fileName, long timeoutMillis) throws IOException {
         ParseContext parseContext = new ParseContext();
-        parseContext.set(HandlerConfig.class, DEFAULT_HANDLER_CONFIG);
+        parseContext.set(ContentHandlerFactory.class,
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
+        parseContext.set(ParseMode.class, ParseMode.RMETA);
         parseContext.setJsonConfig("tika-task-timeout", "{\"timeoutMillis\":" + timeoutMillis + "}");
 
         FetchEmitTuple t = new FetchEmitTuple(fileName,
@@ -259,7 +262,9 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
 
     private String getJsonString(String fileName, FetchEmitTuple.ON_PARSE_EXCEPTION onParseException) throws IOException {
         ParseContext parseContext = new ParseContext();
-        parseContext.set(HandlerConfig.class, DEFAULT_HANDLER_CONFIG);
+        parseContext.set(ContentHandlerFactory.class,
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
+        parseContext.set(ParseMode.class, ParseMode.RMETA);
         FetchEmitTuple t = new FetchEmitTuple(fileName, new FetchKey(CXFTestBase.FETCHER_ID, fileName),
                 new EmitKey(CXFTestBase.EMITTER_JSON_ID, ""), new Metadata(), parseContext, onParseException);
         return JsonFetchEmitTuple.toJson(t);

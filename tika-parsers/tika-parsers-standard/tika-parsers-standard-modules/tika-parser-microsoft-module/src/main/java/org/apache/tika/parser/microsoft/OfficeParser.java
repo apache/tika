@@ -106,12 +106,14 @@ public class OfficeParser extends AbstractOfficeParser {
      * @param fs                        NPOIFS to extract from
      * @param xhtml                     SAX writer
      * @param embeddedDocumentExtractor extractor for embedded documents
+     * @param context                   parse context for creating metadata
      * @throws IOException  on IOException if it occurs during the extraction of the embedded doc
      * @throws SAXException on SAXException for writing to xhtml
      */
     public static void extractMacros(POIFSFileSystem fs, ContentHandler xhtml,
-                                     EmbeddedDocumentExtractor embeddedDocumentExtractor)
-            throws IOException, SAXException {
+                                     EmbeddedDocumentExtractor embeddedDocumentExtractor,
+                                     ParseContext context)
+            throws IOException, SAXException, TikaException {
 
         VBAMacroReader reader = null;
         Map<String, String> macros = null;
@@ -121,7 +123,7 @@ public class OfficeParser extends AbstractOfficeParser {
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
-            Metadata m = new Metadata();
+            Metadata m = Metadata.newInstance(context);
             m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
             m.set(Metadata.CONTENT_TYPE, "text/x-vbasic");
@@ -129,12 +131,12 @@ public class OfficeParser extends AbstractOfficeParser {
             if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
                 embeddedDocumentExtractor.parseEmbedded(
                         //pass in space character so that we don't trigger a zero-byte exception
-                        TikaInputStream.get(new byte[]{'\u0020'}), xhtml, m, new ParseContext(), true);
+                        TikaInputStream.get(new byte[]{'\u0020'}), xhtml, m, context, true);
             }
             return;
         }
         for (Map.Entry<String, String> e : macros.entrySet()) {
-            Metadata m = new Metadata();
+            Metadata m = Metadata.newInstance(context);
             m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
             m.set(Metadata.CONTENT_TYPE, "text/x-vbasic");
@@ -143,7 +145,7 @@ public class OfficeParser extends AbstractOfficeParser {
             }
             if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
                 try (TikaInputStream tis = TikaInputStream.get(e.getValue().getBytes(StandardCharsets.UTF_8))) {
-                    embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, new ParseContext(), true);
+                    embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, context, true);
                 }
             }
         }
@@ -160,7 +162,7 @@ public class OfficeParser extends AbstractOfficeParser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         configure(context);
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         final DirectoryNode root;
@@ -196,7 +198,7 @@ public class OfficeParser extends AbstractOfficeParser {
                 if (!isDirectoryNode) {
                     // if the "root" is a directory node, we assume that the macros have already
                     // been extracted from the parent's fileSystem -- TIKA-4116
-                    extractMacros(root.getFileSystem(), xhtml, EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context));
+                    extractMacros(root.getFileSystem(), xhtml, EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context), context);
                 }
 
             }

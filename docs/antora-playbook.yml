@@ -1,0 +1,66 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements. See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership. The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License. You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+site:
+  title: Apache Tika Documentation
+  url: https://tika.apache.org/docs
+  start_page: tika::index.adoc
+
+content:
+  sources:
+    - url: ..
+      start_path: docs
+      branches:
+        - HEAD           # current development (SNAPSHOT)
+        - docs/*         # released version branches (docs/4.0.0, docs/4.1.0, etc.)
+
+ui:
+  bundle:
+    url: https://gitlab.com/antora/antora-ui-default/-/jobs/artifacts/HEAD/raw/build/ui-bundle.zip?job=bundle-stable
+    snapshot: true
+  supplemental_files: ./supplemental-ui
+
+asciidoc:
+  attributes:
+    # Tika version attributes
+    tika-version: '4.0.0-SNAPSHOT'
+    tika-stable-version: '3.2.3'
+    # Enable source highlighting
+    source-highlighter: highlight.js
+    # Table of contents
+    toc: left
+    toclevels: 3
+    # Icons
+    icons: font
+    # Path attributes for includes
+    parser-examples: '../tika-parsers/tika-parsers-standard/tika-parsers-standard-package/src/test/resources/config-examples'
+    server-examples: '../tika-server/tika-server-core/src/test/resources/config-examples'
+    pipes-fs-examples: '../tika-pipes/tika-pipes-plugins/tika-pipes-file-system/src/test/resources/config-examples'
+
+antora:
+  extensions:
+    - require: '@antora/lunr-extension'
+      index_latest_only: true
+      snippet_length: 150
+
+output:
+  dir: ./target/site
+
+# Fail only on fatal errors during development (change to 'error' for CI)
+runtime:
+  log:
+    failure_level: fatal

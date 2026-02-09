@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -32,10 +31,8 @@ import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.filter.AttachmentCountingListFilter;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
-import org.apache.tika.metadata.filter.MockUpperCaseFilter;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
@@ -74,8 +71,11 @@ public class PipesClientTest {
     @Test
     public void testMetadataFilter(@TempDir Path tmp) throws Exception {
         ParseContext parseContext = new ParseContext();
-        MetadataFilter metadataFilter = new CompositeMetadataFilter(List.of(new MockUpperCaseFilter()));
-        parseContext.set(MetadataFilter.class, metadataFilter);
+        // Use JSON config approach for Jackson serialization compatibility
+        // Don't resolve here - let PipesServer resolve on its side
+        parseContext.setJsonConfig("metadata-filters", """
+            ["mock-upper-case-filter"]
+        """);
         PipesClient pipesClient = init(tmp, testDoc);
         PipesResult pipesResult = pipesClient.process(
                 new FetchEmitTuple(testDoc, new FetchKey(fetcherName, testDoc),
@@ -89,8 +89,11 @@ public class PipesClientTest {
     @Test
     public void testMetadataListFilter(@TempDir Path tmp) throws Exception {
         ParseContext parseContext = new ParseContext();
-        MetadataFilter metadataFilter = new CompositeMetadataFilter(List.of(new AttachmentCountingListFilter()));
-        parseContext.set(MetadataFilter.class, metadataFilter);
+        // Use JSON config approach for Jackson serialization compatibility
+        // Don't resolve here - let PipesServer resolve on its side
+        parseContext.setJsonConfig("metadata-filters", """
+            ["attachment-counting-list-filter"]
+        """);
 
         String testFile = "mock-embedded.xml";
 
@@ -175,8 +178,11 @@ public class PipesClientTest {
         //I did both manually during development, but unit tests are better. :D
         ParseContext parseContext = new ParseContext();
         parseContext.set(TikaTaskTimeout.class, new TikaTaskTimeout(1000));
-        MetadataFilter metadataFilter = new CompositeMetadataFilter(List.of(new AttachmentCountingListFilter()));
-        parseContext.set(MetadataFilter.class, metadataFilter);
+        // Use JSON config approach for Jackson serialization compatibility
+        // Don't resolve here - let PipesServer resolve on its side
+        parseContext.setJsonConfig("metadata-filters", """
+            ["attachment-counting-list-filter"]
+        """);
 
         String testFile = "mock-timeout-10s.xml";
         PipesClient pipesClient = init(tmp, testFile);
@@ -614,6 +620,54 @@ public class PipesClientTest {
                             pipesResult.message().contains("not found") ||
                             pipesResult.message().contains("emitter"),
                     "Error message should mention the missing emitter");
+        }
+    }
+
+    @Test
+    public void testCustomContentHandlerFactory(@TempDir Path tmp) throws Exception {
+        // Test that a custom ContentHandlerFactory configured in tika-config.json
+        // is properly used during parsing. The UppercasingContentHandlerFactory
+        // converts all extracted text to uppercase.
+        Path inputDir = tmp.resolve("input");
+        Files.createDirectories(inputDir);
+
+        // Create a simple mock XML file with known content
+        String mockContent = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
+                "<metadata action=\"add\" name=\"dc:creator\">Test Author</metadata>" +
+                "<write element=\"p\">Hello World from Tika</write>" +
+                "</mock>";
+        String testFile = "test-uppercase.xml";
+        Files.write(inputDir.resolve(testFile), mockContent.getBytes(StandardCharsets.UTF_8));
+
+        // Use the uppercasing config
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
+                "tika-config-uppercasing.json", tmp, inputDir, tmp.resolve("output"), false);
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+
+        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
+            FetchEmitTuple tuple = new FetchEmitTuple(testFile,
+                    new FetchKey(fetcherName, testFile),
+                    new EmitKey(), new Metadata(), new ParseContext(),
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
+
+            PipesResult pipesResult = pipesClient.process(tuple);
+
+            // Should succeed
+            assertTrue(pipesResult.isSuccess(),
+                    "Processing should succeed. Got status: " + pipesResult.status() +
+                            ", message: " + pipesResult.message());
+
+            Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
+            assertEquals(1, pipesResult.emitData().getMetadataList().size());
+
+            Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
+
+            // The content should be uppercased due to UppercasingContentHandlerFactory
+            String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
+            Assertions.assertNotNull(content, "Content should not be null");
+            assertTrue(content.contains("HELLO WORLD FROM TIKA"),
+                    "Content should be uppercased. Actual content: " + content);
         }
     }
 

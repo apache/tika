@@ -1,0 +1,81 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Security
+
+This page covers security considerations when using Apache Tika.
+
+== Security Model
+
+Apache Tika's security model describes the trust boundaries and assumptions that govern
+how Tika processes content. Understanding this model is essential for deploying Tika securely.
+
+* https://tika.apache.org/security-model.html[Apache Tika Security Model]
+
+== Known Vulnerabilities
+
+For information about known security vulnerabilities (CVEs) in Apache Tika and their
+remediation, please see:
+
+* https://tika.apache.org/security.html[Apache Tika Security Vulnerabilities]
+
+== External Command Security
+
+Apache Tika can be configured to use external system commands for certain operations,
+such as the `FileCommandDetector` and `ExternalParser` components.
+
+CAUTION: External command configuration should only be performed by trusted administrators.
+Never allow untrusted users to configure command paths or arguments.
+
+=== Security Best Practices
+
+1. **Restrict configuration access**: Only allow administrators to modify Tika configuration
+   files that specify external commands.
+
+2. **Use absolute paths**: Always configure external commands with absolute paths to prevent
+   PATH manipulation attacks.
+
+3. **Sandbox execution**: Consider running Tika in a container or sandbox environment to
+   limit the impact of any command execution vulnerabilities.
+
+4. **Audit command configuration**: Regularly review configured external commands and
+   their arguments.
+
+=== Affected Components
+
+* `FileCommandDetector`: Uses the system `file` command for MIME type detection
+* `ExternalParser`: Executes arbitrary external programs to extract content
+* `ExternalEmbedder`: Uses external tools to embed content
+
+== Credential Handling
+
+=== Password Storage in Memory
+
+Tika stores some credentials as Java String objects, which remain in memory until
+garbage collected. For environments with strict security requirements:
+
+1. **Use environment variables**: Configure credentials via environment variables
+   rather than configuration files where possible.
+
+2. **Use secret managers**: Integrate with HashiCorp Vault, AWS Secrets Manager,
+   or similar services for production deployments.
+
+3. **Enable encryption**: Use the AES encryption option in `HttpClientFactory`
+   for stored passwords.
+
+4. **Minimize credential scope**: Use credentials with minimum necessary privileges
+   and rotate them regularly.

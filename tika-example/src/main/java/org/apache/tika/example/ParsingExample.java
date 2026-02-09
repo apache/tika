@@ -167,7 +167,7 @@ public class ParsingExample {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test_recursive_embedded.docx");
         ParseContext context = new ParseContext();
-        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(factory, -1);
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(factory);
         try (TikaInputStream tis = TikaInputStream.get(ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx"))) {
             wrapper.parse(tis, handler, metadata, context);
         }

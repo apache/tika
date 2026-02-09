@@ -59,7 +59,7 @@ public class RarParser implements Parser {
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         EmbeddedDocumentExtractor extractor =
@@ -83,9 +83,9 @@ public class RarParser implements Parser {
             FileHeader header = rar.nextFileHeader();
             while (header != null && !Thread.currentThread().isInterrupted()) {
                 if (!header.isDirectory()) {
-                    Metadata entrydata = PackageParser.handleEntryMetadata(header.getFileName(),
-                            header.getCTime(), header.getMTime(), header.getFullUnpackSize(),
-                            xhtml);
+                    Metadata entrydata = AbstractArchiveParser.handleEntryMetadata(
+                            header.getFileName(), header.getCTime(), header.getMTime(),
+                            header.getFullUnpackSize(), xhtml, context);
                     try (TikaInputStream rarTis = TikaInputStream.get(rar.getInputStream(header))) {
                         if (extractor.shouldParseEmbedded(entrydata)) {
                             extractor.parseEmbedded(rarTis, handler, entrydata, context, true);

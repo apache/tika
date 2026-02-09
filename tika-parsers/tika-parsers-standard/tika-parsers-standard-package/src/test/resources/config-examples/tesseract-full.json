@@ -1,0 +1,35 @@
+{
+  "parsers": [
+    {
+      "tesseract-ocr-parser": {
+        "applyRotation": false,
+        "colorspace": "gray",
+        "density": 300,
+        "depth": 4,
+        "enableImagePreprocessing": false,
+        "filter": "triangle",
+        "imageMagickPath": "",
+        "inlineContent": false,
+        "language": "eng",
+        "maxFileSizeToOcr": 2147483647,
+        "minFileSizeToOcr": 0,
+        // Additional Tesseract configuration parameters as key-value pairs
+        "otherTesseractConfig": {
+          "preserve_interword_spaces": "1",
+          "textord_initialx_ile": "0.75",
+          "textord_noise_hfract": "0.15625"
+        },
+        // Options: TXT, HOCR
+        "outputType": "TXT",
+        "pageSeparator": "",
+        "pageSegMode": "1",
+        "preserveInterwordSpacing": false,
+        "resize": 200,
+        "skipOcr": false,
+        "tessdataPath": "",
+        "tesseractPath": "",
+        "timeoutSeconds": 120
+      }
+    }
+  ]
+}

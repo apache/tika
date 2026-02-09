@@ -42,9 +42,9 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>src/test/resources/test-documents/*</exclude>
-          </excludes>
+          <inputExcludes>
+            <inputExclude>src/test/resources/test-documents/*</inputExclude>
+          </inputExcludes>
         </configuration>
       </plugin>
       <plugin>

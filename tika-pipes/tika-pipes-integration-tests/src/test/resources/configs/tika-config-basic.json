@@ -1,4 +1,11 @@
 {
+  "content-handler-factory": {
+    "basic-content-handler-factory": {
+      "type": "TEXT",
+      "writeLimit": -1,
+      "throwOnWriteLimitReached": true
+    }
+  },
   "fetchers": {
     "fsf": {
       "file-system-fetcher": {
@@ -18,27 +25,15 @@
   },
   "pipes-iterator": {
     "file-system-pipes-iterator": {
-      "fspi": {
-        "basePath": "FETCHER_BASE_PATH",
-        "countTotal": true,
-        "baseConfig": {
-          "fetcherId": "fsf",
-          "emitterId": "fse",
-          "handlerConfig": {
-            "type": "TEXT",
-            "parseMode": "RMETA",
-            "writeLimit": -1,
-            "maxEmbeddedResources": -1,
-            "throwOnWriteLimitReached": true
-          },
-          "onParseException": "EMIT",
-          "maxWaitMs": 600000,
-          "queueSize": 10000
-        }
-      }
+      "basePath": "FETCHER_BASE_PATH",
+      "countTotal": true,
+      "fetcherId": "fsf",
+      "emitterId": "fse"
     }
   },
   "pipes": {
+    "parseMode": "RMETA",
+    "onParseException": "EMIT",
     "numClients": 4,
     "timeoutMillis": 5000,
     "emitIntermediateResults": "EMIT_INTERMEDIATE_RESULTS",
@@ -49,13 +44,10 @@
     }
   },
   "auto-detect-parser": {
-    "spoolToDisk": 1000000,
-    "outputThreshold": 1000000,
-    "skipContainerDocumentDigest": false,
-    "digesterFactory": {
-      "mock-digester-factory": {}
-    },
     "throwOnZeroBytes": false
   },
+  "parse-context": {
+    "mock-digester-factory": {}
+    },
   "plugin-roots": "PLUGINS_PATHS"
 }

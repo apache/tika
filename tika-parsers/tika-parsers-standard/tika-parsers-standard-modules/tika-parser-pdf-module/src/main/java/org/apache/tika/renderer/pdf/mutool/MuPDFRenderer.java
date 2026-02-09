@@ -111,7 +111,7 @@ public class MuPDFRenderer implements Renderer {
             String n = f.getName();
             if (m.reset(n).find()) {
                 int pageIndex = Integer.parseInt(m.group(1));
-                Metadata renderMetadata = new Metadata();
+                Metadata renderMetadata = Metadata.newInstance(parseContext);
                 renderMetadata.set(TikaPagedText.PAGE_NUMBER, pageIndex);
                 renderMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                         TikaCoreProperties.EmbeddedResourceType.RENDERING.name());

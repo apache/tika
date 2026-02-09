@@ -57,13 +57,13 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>src/test/resources/test-documents/**</exclude>
-            <exclude>tika-parser-nlp-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
-            <exclude>tika-age-recogniser/target/**</exclude>
-            <exclude>tika-parser-nlp-module/src/test/resources/org/apache/tika/parser/ner/*.bin</exclude>
-            <exclude>tika-parser-nlp-module/src/test/resources/org/apache/tika/parser/ner/opennlp/*.bin</exclude>
-          </excludes>
+          <inputExcludes>
+            <inputExclude>src/test/resources/test-documents/**</inputExclude>
+            <inputExclude>tika-parser-nlp-module/src/test/resources/test-documents/**</inputExclude> <!-- already checked -->
+            <inputExclude>tika-age-recogniser/target/**</inputExclude>
+            <inputExclude>tika-parser-nlp-module/src/test/resources/org/apache/tika/parser/ner/*.bin</inputExclude>
+            <inputExclude>tika-parser-nlp-module/src/test/resources/org/apache/tika/parser/ner/opennlp/*.bin</inputExclude>
+          </inputExcludes>
         </configuration>
       </plugin>
     </plugins>

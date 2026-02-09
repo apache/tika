@@ -107,7 +107,7 @@ class HtmlHandler extends TextContentHandler {
 
     public HtmlHandler(HtmlMapper mapper, ContentHandler handler, Metadata metadata,
                        ParseContext context, boolean extractScripts) {
-        this(mapper, new XHTMLContentHandler(handler, metadata), metadata, context, extractScripts);
+        this(mapper, new XHTMLContentHandler(handler, metadata, context), metadata, context, extractScripts);
     }
 
     @Override
@@ -332,9 +332,10 @@ class HtmlHandler extends TextContentHandler {
         }
     }
     private void handleSrcDoc(String string) throws SAXException {
-        Metadata m = new Metadata();
+        Metadata m = Metadata.newInstance(context);
         m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+        m.set(Metadata.CONTENT_TYPE, "text/html");
         m.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, "text/html");
         //TODO add metadata about iframe content?
         EmbeddedDocumentExtractor embeddedDocumentExtractor =
@@ -358,7 +359,7 @@ class HtmlHandler extends TextContentHandler {
         }
 
         //do anything with attrs?
-        Metadata m = new Metadata();
+        Metadata m = Metadata.newInstance(context);
         m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
         if (dataURIScheme.getMediaType() != null) {
@@ -382,7 +383,7 @@ class HtmlHandler extends TextContentHandler {
             return;
         }
         //do anything with attrs?
-        Metadata m = new Metadata();
+        Metadata m = Metadata.newInstance(context);
         m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
         String src = scriptAtts.getValue("src");
@@ -395,7 +396,7 @@ class HtmlHandler extends TextContentHandler {
         //try to scrape dataURISchemes from javascript
         List<DataURIScheme> dataURISchemes = dataURISchemeUtil.extract(script.toString());
         for (DataURIScheme dataURIScheme : dataURISchemes) {
-            Metadata dataUriMetadata = new Metadata();
+            Metadata dataUriMetadata = Metadata.newInstance(context);
             dataUriMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
             dataUriMetadata.set(Metadata.CONTENT_TYPE, dataURIScheme.getMediaType().toString());

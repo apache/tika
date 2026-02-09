@@ -50,10 +50,9 @@ public class TestS3PipesIterator {
         jsonConfig.put("profile", ""); // use one
         jsonConfig.put("credentialsProvider", "profile");
 
-        ObjectNode baseConfig = OBJECT_MAPPER.createObjectNode();
-        baseConfig.put("fetcherId", "s3");
-        baseConfig.put("emitterId", "fs");
-        jsonConfig.set("baseConfig", baseConfig);
+        // Add fetcherId and emitterId at root level (not nested in baseConfig)
+        jsonConfig.put("fetcherId", "s3");
+        jsonConfig.put("emitterId", "fs");
 
         ExtensionConfig extensionConfig = new ExtensionConfig("test-s3-iterator", "s3-pipes-iterator",
                 OBJECT_MAPPER.writeValueAsString(jsonConfig));

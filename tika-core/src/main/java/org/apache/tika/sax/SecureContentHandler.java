@@ -23,8 +23,10 @@ import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.OutputLimits;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Content handler decorator that attempts to prevent denial of service
@@ -88,6 +90,28 @@ public class SecureContentHandler extends ContentHandlerDecorator {
     public SecureContentHandler(ContentHandler handler, TikaInputStream stream) {
         super(handler);
         this.stream = stream;
+    }
+
+    /**
+     * Creates a new SecureContentHandler configured from OutputLimits in the ParseContext.
+     * <p>
+     * If OutputLimits is present in the context, the handler will be configured with those
+     * limits. Otherwise, default values are used.
+     *
+     * @param handler the content handler to decorate
+     * @param stream the input stream being parsed
+     * @param context the ParseContext (may be null)
+     * @return a configured SecureContentHandler
+     */
+    public static SecureContentHandler newInstance(ContentHandler handler, TikaInputStream stream,
+                                                    ParseContext context) {
+        SecureContentHandler sch = new SecureContentHandler(handler, stream);
+        OutputLimits limits = OutputLimits.get(context);
+        sch.setOutputThreshold(limits.getZipBombThreshold());
+        sch.setMaximumCompressionRatio(limits.getZipBombRatio());
+        sch.setMaximumDepth(limits.getMaxXmlDepth());
+        sch.setMaximumPackageEntryDepth(limits.getMaxPackageEntryDepth());
+        return sch;
     }
 
     /**

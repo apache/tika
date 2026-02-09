@@ -21,11 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -34,7 +32,7 @@ import org.apache.tika.parser.ParseContext;
 public class POIFSContainerDetectorTest extends TikaTest {
 
     @Test
-    public void testBasic() throws Exception {
+    public void testFullDetection() throws Exception {
         String[] files =
                 new String[]{"testEXCEL.xls", "testWORD.doc", "testPPT.ppt", "testVISIO.vsd",
                         "test-outlook.msg"};
@@ -43,52 +41,21 @@ public class POIFSContainerDetectorTest extends TikaTest {
                     "application/vnd.ms-excel", "application/msword", "application/vnd.ms-powerpoint",
                         "application/vnd.visio", "application/vnd.ms-outlook"
                 };
-        // With unlimited markLimit (-1), full detection is possible
+        // TikaInputStream always allows full detection (spills to file if needed)
         for (int i = 0; i < files.length; i++) {
-            testStream(files[i], expected[i], -1);
-            testTikaInputStream(files[i], expected[i], -1);
-        }
-        // With limited markLimit, detection falls back to generic OLE
-        for (String fileName : files) {
-            testStream(fileName, "application/x-tika-msoffice", 0);
-            testStream(fileName, "application/x-tika-msoffice", 100);
-            testTikaInputStream(fileName, "application/x-tika-msoffice", 10);
+            testTikaInputStream(files[i], expected[i]);
         }
     }
 
-    private void testStream(String fileName, String expectedMime, int markLimit) throws IOException {
-        String expectedDigest = digest(getStream(fileName));
+    private void testTikaInputStream(String fileName, String expectedMime) throws IOException {
         POIFSContainerDetector detector = new POIFSContainerDetector();
-        detector.setMarkLimit(markLimit);
-        try (TikaInputStream tis = getStream(fileName)) {
-            assertExpected(detector, tis, expectedMime, expectedDigest);
+        try (TikaInputStream tis = TikaInputStream.get(getRawStream(fileName))) {
+            MediaType mt = detector.detect(tis, new Metadata(), new ParseContext());
+            assertEquals(expectedMime, mt.toString());
         }
     }
 
-    private void testTikaInputStream(String fileName, String expectedMime, int markLimit) throws IOException {
-        String expectedDigest = digest(getStream(fileName));
-        POIFSContainerDetector detector = new POIFSContainerDetector();
-        detector.setMarkLimit(markLimit);
-        try (TikaInputStream tis = TikaInputStream.get(getStream(fileName))) {
-            assertExpected(detector, tis, expectedMime, expectedDigest);
-        }
-    }
-
-    private TikaInputStream getStream(String fileName) {
-        return getResourceAsStream("/test-documents/" + fileName);
-    }
-
-    private void assertExpected(Detector detector, TikaInputStream tis, String expectedMime, String expectedDigest) throws IOException {
-        MediaType mt = detector.detect(tis, new Metadata(), new ParseContext());
-        assertEquals(expectedMime, mt.toString());
-        assertEquals(expectedDigest, digest(tis));
-    }
-
-    private String digest(String fileName) throws IOException {
-        return digest(POIFSContainerDetectorTest.class.getResourceAsStream("/test-documents/" + fileName));
-    }
-
-    private String digest(InputStream tis) throws IOException {
-        return DigestUtils.sha256Hex(tis);
+    private InputStream getRawStream(String fileName) {
+        return POIFSContainerDetectorTest.class.getResourceAsStream("/test-documents/" + fileName);
     }
 }

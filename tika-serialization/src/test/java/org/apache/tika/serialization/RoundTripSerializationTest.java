@@ -209,14 +209,14 @@ public class RoundTripSerializationTest {
         assertEquals("text", node.get("other").asText());
     }
 
-    // ==================== parseContext Wrapper Format ====================
+    // ==================== parse-context Wrapper Format ====================
 
     @Test
     void testParseContextWrapperFormat() throws Exception {
         // Test that we can deserialize from wrapped format
         String wrappedJson = """
             {
-              "parseContext": {
+              "parse-context": {
                 "pdf-parser": {"ocrStrategy": "AUTO"}
               }
             }
@@ -236,7 +236,7 @@ public class RoundTripSerializationTest {
 
         String json = mapper.writeValueAsString(original);
 
-        assertFalse(json.contains("parseContext"), "Should serialize in flat format");
+        assertFalse(json.contains("parse-context"), "Should serialize in flat format");
         assertTrue(json.contains("pdf-parser"));
     }
 

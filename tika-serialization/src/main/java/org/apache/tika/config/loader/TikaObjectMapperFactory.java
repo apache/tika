@@ -16,6 +16,8 @@
  */
 package org.apache.tika.config.loader;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -47,7 +49,8 @@ public class TikaObjectMapperFactory {
             "renderers",
             "translators",
             "digester-factories",
-            "other-configs"
+            "content-handler-factories",
+            "parse-context"
     };
 
     private static ObjectMapper MAPPER = null;
@@ -65,7 +68,25 @@ public class TikaObjectMapperFactory {
      * @return configured ObjectMapper
      */
     public static ObjectMapper createMapper() {
-        ObjectMapper mapper = new ObjectMapper();
+        return createMapper(null);
+    }
+
+    /**
+     * Creates an ObjectMapper configured for Tika serialization with a custom JsonFactory.
+     * <p>
+     * This can be used to create mappers for binary formats like Smile:
+     * <pre>
+     * ObjectMapper smileMapper = TikaObjectMapperFactory.createMapper(new SmileFactory());
+     * </pre>
+     *
+     * @param factory the JsonFactory to use, or null for default JSON
+     * @return configured ObjectMapper
+     */
+    public static ObjectMapper createMapper(JsonFactory factory) {
+        ObjectMapper mapper = (factory != null) ? new ObjectMapper(factory) : new ObjectMapper();
+
+        // Allow comments in JSON config files (// and /* */ style)
+        mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
 
         // Fail on unknown properties to catch configuration errors early
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);

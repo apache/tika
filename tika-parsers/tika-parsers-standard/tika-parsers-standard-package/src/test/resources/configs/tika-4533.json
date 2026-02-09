@@ -1,16 +1,12 @@
 {
   "auto-detect-parser": {
-    "maximumCompressionRatio": 100,
-    "maximumDepth": 100,
-    "maximumPackageEntryDepth": 100,
-    "throwOnZeroBytes": false,
-    "digesterFactory": {
-      "commons-digester-factory": {
-        "markLimit": 100000,
+    "throwOnZeroBytes": false
+  },
+  "parse-context": {
+    "commons-digester-factory": {
         "digests": [
           { "algorithm": "SHA256" }
         ]
       }
     }
-  }
 }

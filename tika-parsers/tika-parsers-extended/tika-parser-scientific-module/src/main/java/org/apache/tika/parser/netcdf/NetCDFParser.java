@@ -94,7 +94,7 @@ public class NetCDFParser implements Parser {
             }
 
 
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
             xhtml.newline();
             xhtml.element("h1", "dimensions");

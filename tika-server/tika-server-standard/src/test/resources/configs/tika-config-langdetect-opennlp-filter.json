@@ -15,17 +15,26 @@
     }
   ],
   "auto-detect-parser": {
-    "spoolToDisk": 1000000,
-    "outputThreshold": 1000000,
-    "digesterFactory": {
-      "commons-digester-factory": {
-        "markLimit": 100000,
+    "throwOnZeroBytes": false
+  },
+  "parse-context": {
+    "commons-digester-factory": {
         "digests": [
           { "algorithm": "MD5" },
           { "algorithm": "SHA1", "encoding": "BASE32" }
         ]
       }
     },
-    "throwOnZeroBytes": false
-  }
+  "fetchers": {
+    "file-system-fetcher": {
+      "file-system-fetcher": {
+        "allowAbsolutePaths": true
+      }
+    }
+  },
+  "pipes": {
+    "numClients": 2,
+    "timeoutMillis": 30000
+  },
+  "plugin-roots": "target/plugins"
 }

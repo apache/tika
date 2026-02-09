@@ -38,45 +38,52 @@ public class PackageParserTest extends TikaTest {
 
     @Test
     public void testCoverage() throws Exception {
-        //test that the package parser covers all inputstreams handled
-        //by ArchiveStreamFactory.  When we update commons-compress, and they add
-        //a new stream type, we want to make sure that we're handling it.
+        // Test that the archive parsers collectively cover all input streams handled
+        // by ArchiveStreamFactory. When we update commons-compress, and they add
+        // a new stream type, we want to make sure that we're handling it.
         ArchiveStreamFactory archiveStreamFactory =
                 new ArchiveStreamFactory(StandardCharsets.UTF_8.name());
+
         PackageParser packageParser = new PackageParser();
+        ZipParser zipParser = new ZipParser();
+        SevenZParser sevenZParser = new SevenZParser();
         ParseContext parseContext = new ParseContext();
+
+        // Combine supported types from all archive parsers
+        Set<MediaType> allSupportedTypes = new HashSet<>();
+        allSupportedTypes.addAll(packageParser.getSupportedTypes(parseContext));
+        allSupportedTypes.addAll(zipParser.getSupportedTypes(parseContext));
+        allSupportedTypes.addAll(sevenZParser.getSupportedTypes(parseContext));
+
         for (String name : archiveStreamFactory.getInputStreamArchiveNames()) {
             MediaType mt = PackageConstants.getMediaType(name);
-            //use this instead of assertNotEquals so that we report the
-            //name of the missing stream
+            // Use this instead of assertNotEquals so that we report the
+            // name of the missing stream
             if (mt.equals(MediaType.OCTET_STREAM)) {
                 fail("getting octet-stream for: " + name);
             }
 
-            if (!packageParser.getSupportedTypes(parseContext).contains(mt)) {
-                fail("PackageParser should support: " + mt.toString());
+            if (!allSupportedTypes.contains(mt)) {
+                fail("Archive parsers should support: " + mt.toString());
             }
         }
     }
 
     @Test
-    public void testSpecializations() throws Exception {
-        //Test that our manually constructed list of children of zip and tar
-        //in PackageParser is current with TikaLoader's media type registry.
+    public void testZipSpecializations() throws Exception {
+        // Test that our manually constructed list of ZIP specializations
+        // in ZipParser is current with TikaLoader's media type registry.
         MediaTypeRegistry mediaTypeRegistry = TikaLoader.getMediaTypeRegistry();
-        Set<MediaType> currentSpecializations = new HashSet<>();
-        MediaType tar = MediaType.parse("application/x-tar");
+        Set<MediaType> currentZipSpecializations = new HashSet<>();
         for (MediaType type : mediaTypeRegistry.getTypes()) {
-            if (mediaTypeRegistry.isSpecializationOf(type, MediaType.APPLICATION_ZIP) ||
-                    mediaTypeRegistry.isSpecializationOf(type, tar)) {
-                currentSpecializations.add(type);
-//                System.out.println("\""+type.toString()+"\",");
+            if (mediaTypeRegistry.isSpecializationOf(type, MediaType.APPLICATION_ZIP)) {
+                currentZipSpecializations.add(type);
             }
         }
-        for (MediaType mediaType : currentSpecializations) {
-            assertTrue(PackageParser.PACKAGE_SPECIALIZATIONS.contains(mediaType),
+        for (MediaType mediaType : currentZipSpecializations) {
+            assertTrue(ZipParser.ZIP_SPECIALIZATIONS.contains(mediaType),
                     "missing: " + mediaType);
         }
-        assertEquals(currentSpecializations.size(), PackageParser.PACKAGE_SPECIALIZATIONS.size());
+        assertEquals(currentZipSpecializations.size(), ZipParser.ZIP_SPECIALIZATIONS.size());
     }
 }

@@ -237,7 +237,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("true", metadata.get("pdf:encrypted"));
         //pdf:encrypted, X-Parsed-By and Content-Type
-        assertEquals(8, metadata.names().length, "very little metadata should be parsed");
+        assertEquals(9, metadata.names().length, "very little metadata should be parsed");
         assertEquals(0, handler.toString().length());
     }
 
@@ -366,6 +366,13 @@ public class PDFParserTest extends TikaTest {
         XMLResult r = getXML("testPopupAnnotation.pdf");
         assertContains("this is the note", r.xml);
         assertContains("igalsh", r.xml);
+    }
+
+    // TIKA-4622 / PDFBOX-6145 make sure that annotations aren't missed if no page content stream
+    @Test
+    public void testAnnotationNoContents() throws Exception {
+        XMLResult r = getXML("testPDFFileEmbInAnnotation_noContents.pdf");
+        assertContains("Excel.xlsx", r.xml);
     }
 
     @Test
@@ -1518,7 +1525,7 @@ public class PDFParserTest extends TikaTest {
         BasicContentHandlerFactory factory = new BasicContentHandlerFactory(
                 BasicContentHandlerFactory.HANDLER_TYPE.TEXT, limit
         );
-        ContentHandler contentHandler = factory.getNewContentHandler();
+        ContentHandler contentHandler = factory.createHandler();
         Metadata metadata = new Metadata();
         ParseContext parseContext = new ParseContext();
         try (TikaInputStream tis = getResourceAsStream("/test-documents/" + fileName)) {

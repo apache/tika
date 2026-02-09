@@ -1,0 +1,49 @@
+{
+  "content-handler-factory": {
+    "uppercasing-content-handler-factory": {}
+  },
+  "fetchers": {
+    "fsf": {
+      "file-system-fetcher": {
+        "basePath": "FETCHER_BASE_PATH",
+        "extractFileSystemMetadata": false
+      }
+    }
+  },
+  "emitters": {
+    "fse": {
+      "file-system-emitter": {
+        "basePath": "EMITTER_BASE_PATH",
+        "fileExtension": "json",
+        "onExists": "EXCEPTION"
+      }
+    }
+  },
+  "pipes-iterator": {
+    "file-system-pipes-iterator": {
+      "basePath": "FETCHER_BASE_PATH",
+      "countTotal": true,
+      "fetcherId": "fsf",
+      "emitterId": "fse"
+    }
+  },
+  "pipes": {
+    "parseMode": "RMETA",
+    "onParseException": "EMIT",
+    "numClients": 4,
+    "timeoutMillis": 5000,
+    "emitIntermediateResults": "EMIT_INTERMEDIATE_RESULTS",
+    "forkedJvmArgs": ["-Xmx512m"],
+    "emitStrategy": {
+      "type": "DYNAMIC",
+      "thresholdBytes": 1000000
+    }
+  },
+  "auto-detect-parser": {
+    "throwOnZeroBytes": false
+  },
+  "parse-context": {
+    "mock-digester-factory": {}
+    },
+  "plugin-roots": "PLUGINS_PATHS"
+}

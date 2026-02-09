@@ -19,29 +19,31 @@ package org.apache.tika.digest;
 /**
  * Factory interface for creating Digester instances.
  * Implementations should be annotated with {@code @TikaComponent} and
- * provide bean properties for configuration (e.g., markLimit, digests).
+ * provide bean properties for configuration (e.g., digests).
  * <p>
- * This is used in {@link org.apache.tika.parser.AutoDetectParserConfig} to
- * configure digesting in the AutoDetectParser.
+ * Configure this factory in the "parse-context" section of tika-config.json.
+ * The factory is loaded into the ParseContext and used by AutoDetectParser
+ * during parsing to compute digests.
  * <p>
  * Example JSON configuration:
  * <pre>
- * "auto-detect-parser": {
- *   "digesterFactory": {
+ * {
+ *   "parse-context": {
  *     "commons-digester-factory": {
- *       "markLimit": 1000000,
  *       "digests": [
  *         { "algorithm": "MD5" },
  *         { "algorithm": "SHA256", "encoding": "BASE32" }
- *       ]
+ *       ],
+ *       "skipContainerDocumentDigest": true
  *     }
  *   }
  * }
  * </pre>
+ * <p>
+ * When using TikaLoader, call {@code loader.loadParseContext()} to get a
+ * ParseContext with the DigesterFactory already set.
  *
  * @see DigestDef
- * @see DigestAlgorithm
- * @see DigestEncoding
  */
 public interface DigesterFactory {
     /**
@@ -50,4 +52,16 @@ public interface DigesterFactory {
      * @return a new Digester instance
      */
     Digester build();
+
+    /**
+     * Returns whether to skip digesting for container (top-level) documents.
+     * When true, only embedded documents (depth &gt; 0) will be digested.
+     * <p>
+     * Default implementation returns false (digest everything).
+     *
+     * @return true if container documents should be skipped, false otherwise
+     */
+    default boolean isSkipContainerDocumentDigest() {
+        return false;
+    }
 }

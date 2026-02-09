@@ -1,4 +1,11 @@
 {
+  "content-handler-factory": {
+    "basic-content-handler-factory": {
+      "type": "TEXT",
+      "writeLimit": -1,
+      "throwOnWriteLimitReached": true
+    }
+  },
   "fetchers": {
     "fsf": {
       "file-system-fetcher": {
@@ -21,23 +28,13 @@
     "file-system-pipes-iterator": {
       "basePath": "FETCHER_BASE_PATH",
       "countTotal": true,
-      "baseConfig": {
-        "fetcherId": "fsf",
-        "emitterId": "fse",
-        "handlerConfig": {
-          "type": "TEXT",
-          "parseMode": "RMETA",
-          "writeLimit": -1,
-          "maxEmbeddedResources": -1,
-          "throwOnWriteLimitReached": true
-        },
-        "onParseException": "EMIT",
-        "maxWaitMs": 600000,
-        "queueSize": 10000
-      }
+      "fetcherId": "fsf",
+      "emitterId": "fse"
     }
   },
   "pipes": {
+    "parseMode": "RMETA",
+    "onParseException": "EMIT",
     "emitWithinMillis": 10000,
     "emitMaxEstimatedBytes": 100000,
     "queueSize": 10000,

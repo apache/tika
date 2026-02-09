@@ -78,7 +78,7 @@ import org.apache.tika.exception.TikaConfigException;
  *   ],
  *   "detectors": [
  *     "poifs-container-detector",       // String shorthand
- *     { "mime-types": { "markLimit": 10000 } }
+ *     { "default-detector": { "spoolTypes": ["application/zip", "application/pdf"] } }
  *   ],
  *
  *   // Pipes components (validated by validateKeys())
@@ -111,9 +111,11 @@ public class TikaJsonConfig {
             "detectors",
             "encoding-detectors",
             "metadata-filters",
+            "content-handler-factory",
             "renderers",
             "translator",
             "auto-detect-parser",
+            "parse-context",
             "server",
 
             // Pipes/plugin keys
@@ -341,12 +343,10 @@ public class TikaJsonConfig {
     }
 
     /**
-     * Validates that all top-level configuration keys are known or custom extensions.
+     * Validates that all top-level configuration keys are known.
      * <p>
      * This catches typos like "parser" instead of "parsers" or "pipes-reporter"
      * instead of "pipes-reporters".
-     * <p>
-     * The "other-configs" node is allowed for custom configurations.
      *
      * @throws TikaConfigException if unknown keys are found
      */
@@ -361,11 +361,6 @@ public class TikaJsonConfig {
         while (fieldNames.hasNext()) {
             String key = fieldNames.next();
 
-            // Ignore custom configs node
-            if (key.equals("other-configs")) {
-                continue;
-            }
-
             // Must be a known key
             if (!KNOWN_KEYS.contains(key)) {
                 unknownKeys.add(key);
@@ -375,8 +370,7 @@ public class TikaJsonConfig {
         if (!unknownKeys.isEmpty()) {
             throw new TikaConfigException(
                     "Unknown configuration key(s): " + unknownKeys + ". " +
-                    "Valid keys: " + KNOWN_KEYS + " " +
-                    "(or use 'other-configs' node for custom keys)");
+                    "Valid keys: " + KNOWN_KEYS);
         }
     }
 

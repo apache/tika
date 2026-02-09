@@ -1,10 +1,9 @@
 {
   "auto-detect-parser": {
-    "spoolToDisk": 1000000,
-    "outputThreshold": 1000000,
-    "digesterFactory": {
-      "commons-digester-factory": {
-        "markLimit": 1000000,
+    "throwOnZeroBytes": false
+  },
+  "parse-context": {
+    "commons-digester-factory": {
         "digests": [
           { "algorithm": "MD2" },
           { "algorithm": "MD5" },
@@ -14,7 +13,5 @@
           { "algorithm": "SHA512" }
         ]
       }
-    },
-    "throwOnZeroBytes": false
-  }
+    }
 }

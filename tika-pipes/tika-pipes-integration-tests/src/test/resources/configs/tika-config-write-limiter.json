@@ -1,0 +1,59 @@
+{
+  "content-handler-factory": {
+    "basic-content-handler-factory": {
+      "type": "TEXT",
+      "writeLimit": -1,
+      "throwOnWriteLimitReached": true
+    }
+  },
+  "fetchers": {
+    "fsf": {
+      "file-system-fetcher": {
+        "basePath": "FETCHER_BASE_PATH",
+        "extractFileSystemMetadata": false
+      }
+    }
+  },
+  "emitters": {
+    "fse": {
+      "file-system-emitter": {
+        "basePath": "EMITTER_BASE_PATH",
+        "fileExtension": "json",
+        "onExists": "EXCEPTION"
+      }
+    }
+  },
+  "pipes-iterator": {
+    "file-system-pipes-iterator": {
+      "basePath": "FETCHER_BASE_PATH",
+      "countTotal": true,
+      "fetcherId": "fsf",
+      "emitterId": "fse"
+    }
+  },
+  "pipes": {
+    "parseMode": "RMETA",
+    "onParseException": "EMIT",
+    "numClients": 1,
+    "timeoutMillis": 5000,
+    "emitIntermediateResults": false,
+    "forkedJvmArgs": ["-Xmx512m"],
+    "emitStrategy": {
+      "type": "DYNAMIC",
+      "thresholdBytes": 1000000
+    }
+  },
+  "auto-detect-parser": {
+    "throwOnZeroBytes": false
+  },
+  "parse-context": {
+    "standard-metadata-limiter-factory": {
+      "includeFields": ["dc:creator", "Content-Type", "X-TIKA:content"],
+      "maxKeySize": 100,
+      "maxFieldSize": 1000,
+      "maxTotalBytes": 10000,
+      "maxValuesPerField": 5
+    }
+  },
+  "plugin-roots": "PLUGINS_PATHS"
+}

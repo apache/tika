@@ -41,22 +41,6 @@ public class TikaServerConfig {
     public static final String DEFAULT_HOST = "localhost";
     public static final Set<String> LOG_LEVELS = new HashSet<>(Arrays.asList("debug", "info"));
     /**
-     * Number of milliseconds to wait per server task (parse, detect, unpack, translate,
-     * etc.) before timing out and shutting down the forked process.
-     */
-    public static final long DEFAULT_TASK_TIMEOUT_MILLIS = 300000;
-    /**
-     * Clients may not set a timeout less than this amount.  This hinders
-     * malicious clients from setting the timeout to a very low value
-     * and DoS the server by forcing timeout restarts.  Making tika-server
-     * available to untrusted clients is dangerous.
-     */
-    public static final long DEFAULT_MINIMUM_TIMEOUT_MILLIS = 30000;
-    /**
-     * How often to check to see that the task hasn't timed out
-     */
-    public static final long DEFAULT_TASK_PULSE_MILLIS = 10000;
-    /**
      * Number of milliseconds to wait for forked process to startup
      */
     public static final long DEFAULT_FORKED_STARTUP_MILLIS = 120000;
@@ -65,12 +49,17 @@ public class TikaServerConfig {
     private static final long DEFAULT_MAX_FILES = 100000;
     private static final int DEFAULT_DIGEST_MARK_LIMIT = 20 * 1024 * 1024;
     private static final String UNSECURE_WARNING =
-            "WARNING: You have chosen to run tika-server with unsecure features enabled.\n" + "Whoever has access to your service now has the same read permissions\n" +
-                    "as you've given your fetchers and the same write permissions " + "as your emitters.\n" + "Users could request and receive a sensitive file from your\n" +
-                    "drive or a webpage from your intranet and/or send malicious content to\n" + " your emitter endpoints.  See CVE-2015-3271.\n" +
+            "WARNING: You have chosen to run tika-server with unsecure features enabled.\n" +
+                    "Whoever has access to your service now has the same read permissions\n" +
+                    "as you've given your fetchers and the same write permissions as your emitters.\n" +
+                    "Users could request and receive a sensitive file from your\n" +
+                    "drive or a webpage from your intranet and/or send malicious content to\n" +
+                    "your emitter endpoints. See CVE-2015-3271.\n" +
+                    "Additionally, /config endpoints allow per-request parser configuration\n" +
+                    "which could enable dangerous operations.\n" +
                     "Please make sure you know what you are doing.";
     private static final List<String> ONLY_IN_FORK_MODE = Arrays.asList(
-            new String[]{"taskTimeoutMillis", "taskPulseMillis", "maxFiles", "javaPath", "maxRestarts", "numRestarts", "forkedStatusFile", "maxForkedStartupMillis",
+            new String[]{"maxFiles", "javaPath", "maxRestarts", "numRestarts", "forkedStatusFile", "maxForkedStartupMillis",
                     "tmpFilePrefix"});
     private static Pattern SYS_PROPS = Pattern.compile("\\$\\{sys:([-_0-9A-Za-z]+)\\}");
     /*
@@ -87,9 +76,6 @@ private long forkedProcessStartupMillis = DEFAULT_FORKED_PROCESS_STARTUP_MILLIS;
 private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLIS;
 
  */
-    private long taskTimeoutMillis = DEFAULT_TASK_TIMEOUT_MILLIS;
-    private long minimumTimeoutMillis = DEFAULT_MINIMUM_TIMEOUT_MILLIS;
-    private long taskPulseMillis = DEFAULT_TASK_PULSE_MILLIS;
     private boolean enableUnsecureFeatures = false;
     private String cors = "";
     private boolean returnStackTrace = false;
@@ -164,45 +150,6 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
 
     public void setPort(int port) {
         this.port = port;
-    }
-
-    /**
-     * How long to wait for a task before shutting down the forked server process
-     * and restarting it.
-     *
-     * @return
-     */
-    public long getTaskTimeoutMillis() {
-        return taskTimeoutMillis;
-    }
-
-    /**
-     * @param taskTimeoutMillis number of milliseconds to allow per task
-     *                          (parse, detection, unzipping, etc.)
-     */
-    public void setTaskTimeoutMillis(long taskTimeoutMillis) {
-        this.taskTimeoutMillis = taskTimeoutMillis;
-    }
-
-    /**
-     * How often to check to see that a task has timed out
-     *
-     * @return
-     */
-    public long getTaskPulseMillis() {
-        return taskPulseMillis;
-    }
-
-    public void setTaskPulseMillis(long taskPulseMillis) {
-        this.taskPulseMillis = taskPulseMillis;
-    }
-
-    public long getMinimumTimeoutMillis() {
-        return minimumTimeoutMillis;
-    }
-
-    public void setMinimumTimeoutMillis(long minimumTimeoutMillis) {
-        this.minimumTimeoutMillis = minimumTimeoutMillis;
     }
 
     public String getIdBase() {

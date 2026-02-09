@@ -114,7 +114,7 @@ public class EpubParser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
         // Because an EPub file is often made up of multiple XHTML files,
         //  we need explicit control over the start and end of the document
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         IOException caughtException = null;
         ContentHandler childHandler = new EmbeddedContentHandler(
@@ -171,7 +171,7 @@ public class EpubParser implements Parser {
         try (TemporaryResources resources = new TemporaryResources()) {
             Path salvaged =
                     resources.createTempFile(FilenameUtils.getSuffixFromPath(brokenZip.getFileName().toString()));
-            ZipSalvager.salvageCopy(brokenZip.toFile(), salvaged.toFile());
+            ZipSalvager.salvageCopy(brokenZip, salvaged);
             try (ZipFile zipFile = ZipFile.builder().setFile(salvaged.toFile()).get()) {
                 return bufferedParseZipFile(zipFile, bodyHandler, xhtml, metadata, context, false);
             } catch (EpubZipException e) {
@@ -356,7 +356,7 @@ public class EpubParser implements Parser {
                                 EmbeddedDocumentExtractor embeddedDocumentExtractor,
                                 XHTMLContentHandler xhtml, Metadata parentMetadata,
                                 ParseContext context)
-            throws IOException, SAXException {
+            throws IOException, SAXException, TikaException {
         if (hRefMediaPair.href == null) {
             return;
         }
@@ -366,7 +366,7 @@ public class EpubParser implements Parser {
         if (ze == null || !zipFile.canReadEntryData(ze)) {
             return;
         }
-        Metadata embeddedMetadata = new Metadata();
+        Metadata embeddedMetadata = Metadata.newInstance(context);
         if (!StringUtils.isBlank(hRefMediaPair.media)) {
             embeddedMetadata.set(Metadata.CONTENT_TYPE, hRefMediaPair.media);
         }

@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -322,42 +323,86 @@ public class TikaLoaderTest {
                 "Should NOT support application/test+optin (opt-in only, not in SPI)");
     }
 
-    // TODO: TIKA-SERIALIZATION-FOLLOWUP - Implement validation for common typos
-    @Disabled("TIKA-SERIALIZATION-FOLLOWUP: Validation for excludes typo not yet implemented")
     @Test
-    public void testExcludesInsteadOfExcludeThrowsException() throws Exception {
-        // Create a config with the common mistake: "excludes" instead of "exclude"
-        String invalidConfig = "{\n" +
-                "  \"parsers\": [\n" +
-                "    {\n" +
-                "      \"default-parser\": {\n" +
-                "        \"excludes\": [\"pdf-parser\"]\n" +
-                "      }\n" +
-                "    }\n" +
-                "  ]\n" +
-                "}";
+    public void testLoadConfigWithDefaults() throws Exception {
+        // Test the loadConfig method that merges JSON config with defaults
+        URL configUrl = getClass().getResource("/configs/embedded-limits-test.json");
+        Path configPath = Path.of(configUrl.toURI());
 
-        // Write to a temp file
-        Path tempFile = Files.createTempFile("test-invalid-excludes", ".json");
+        TikaLoader loader = TikaLoader.load(configPath);
+
+        // Create defaults - some values will be overridden by JSON, others kept
+        EmbeddedLimits defaults = new EmbeddedLimits();
+        // Default values from EmbeddedLimits: maxDepth=UNLIMITED, maxCount=UNLIMITED, throwOnMax*=false
+
+        // Load with defaults - JSON has: maxDepth=5, throwOnMaxDepth=true, maxCount=100, throwOnMaxCount=false
+        EmbeddedLimits config = loader.loadConfig(EmbeddedLimits.class, defaults);
+
+        assertNotNull(config, "Config should not be null");
+        assertEquals(5, config.getMaxDepth(), "maxDepth should be from JSON");
+        assertTrue(config.isThrowOnMaxDepth(), "throwOnMaxDepth should be from JSON");
+        assertEquals(100, config.getMaxCount(), "maxCount should be from JSON");
+        assertFalse(config.isThrowOnMaxCount(), "throwOnMaxCount should be from JSON");
+
+        // Verify original defaults object was NOT modified
+        assertEquals(EmbeddedLimits.UNLIMITED, defaults.getMaxDepth(), "Original defaults should be unchanged");
+    }
+
+    @Test
+    public void testLoadConfigMissingKeyReturnsDefaults() throws Exception {
+        // Test that loadConfig returns defaults when key is not in config
+        URL configUrl = getClass().getResource("/configs/test-loader-config.json");
+        Path configPath = Path.of(configUrl.toURI());
+
+        TikaLoader loader = TikaLoader.load(configPath);
+
+        // Create defaults
+        EmbeddedLimits defaults = new EmbeddedLimits(10, true, 500, false);
+
+        // Load with defaults - this config doesn't have embedded-limits
+        EmbeddedLimits config = loader.loadConfig(EmbeddedLimits.class, defaults);
+
+        // Should return the defaults since key is missing
+        assertEquals(10, config.getMaxDepth(), "Should return defaults when key missing");
+        assertTrue(config.isThrowOnMaxDepth(), "Should return defaults when key missing");
+        assertEquals(500, config.getMaxCount(), "Should return defaults when key missing");
+        assertFalse(config.isThrowOnMaxCount(), "Should return defaults when key missing");
+    }
+
+    // TODO: TIKA-SERIALIZATION-FOLLOWUP - Jackson may need configuration to fail on unknown properties
+    @Disabled("TIKA-SERIALIZATION-FOLLOWUP")
+    @Test
+    public void testInvalidBeanPropertyThrowsException() throws Exception {
+        // Config with a property that doesn't exist on DefaultDetector
+        String invalidConfig = """
+                {
+                  "detectors": [
+                    {
+                      "default-detector": {
+                        "nonExistentProperty": 12345
+                      }
+                    }
+                  ]
+                }
+                """;
+
+        Path tempFile = Files.createTempFile("test-invalid-property", ".json");
         try {
             Files.write(tempFile, invalidConfig.getBytes(StandardCharsets.UTF_8));
 
-            // Attempt to load should throw TikaConfigException
+            TikaLoader loader = TikaLoader.load(tempFile);
             try {
-                TikaLoader loader = TikaLoader.load(tempFile);
-                loader.get(Parser.class);
-                throw new AssertionError("Expected TikaConfigException to be thrown");
+                loader.loadDetectors();
+                throw new AssertionError("Expected TikaConfigException for invalid property");
             } catch (org.apache.tika.exception.TikaConfigException e) {
-                // Expected - verify the error message is helpful
-                assertTrue(e.getMessage().contains("excludes"),
-                        "Error message should mention 'excludes'");
-                assertTrue(e.getMessage().contains("exclude"),
-                        "Error message should mention the correct field 'exclude'");
-                assertTrue(e.getMessage().contains("singular"),
-                        "Error message should explain it should be singular");
+                // Expected - Jackson should fail on unknown property
+                assertTrue(e.getMessage().contains("nonExistentProperty") ||
+                                e.getCause().getMessage().contains("nonExistentProperty"),
+                        "Error should mention the invalid property name");
             }
         } finally {
             Files.deleteIfExists(tempFile);
         }
     }
+
 }

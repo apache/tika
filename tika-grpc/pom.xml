@@ -34,7 +34,6 @@
   </parent>
 
   <properties>
-    <grpc.version>1.78.0</grpc.version>
     <asarkar-grpc-test.version>2.0.0</asarkar-grpc-test.version>
     <awaitility.version>4.3.0</awaitility.version>
     <j2objc-annotations.version>3.1</j2objc-annotations.version>
@@ -473,10 +472,10 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>src/test/resources/certs/**</exclude>
-            <exclude>README.md</exclude>
-          </excludes>
+          <inputExcludes>
+            <inputExclude>src/test/resources/certs/**</inputExclude>
+            <inputExclude>README.md</inputExclude>
+          </inputExcludes>
         </configuration>
       </plugin>
       <plugin>

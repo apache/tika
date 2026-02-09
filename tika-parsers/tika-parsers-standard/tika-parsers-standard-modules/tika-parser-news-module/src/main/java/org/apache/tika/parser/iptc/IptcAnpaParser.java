@@ -29,6 +29,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
 
+import org.apache.commons.io.IOUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -103,7 +104,7 @@ public class IptcAnpaParser implements Parser {
         HashMap<String, String> properties = this.loadProperties(tis);
         this.setMetadata(metadata, properties);
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         // TODO: put body content here
         xhtml.startElement("p");
@@ -344,7 +345,7 @@ public class IptcAnpaParser implements Parser {
 
             if (finished) {
                 // now, we want to reset the stream to be sitting right on top of the finish marker
-                is.skip(read);
+                IOUtils.skipFully(is, read);
                 value = new byte[read - start];
                 System.arraycopy(buf, start, value, 0, read - start);
             } else {

@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -80,14 +81,17 @@ public class AutoDetectParserConfigTest extends TikaTest {
 
     @Test
     public void testWriteFilter() throws Exception {
-        //test to make sure that the decorator is only applied once for
-        //legacy (e.g. not RecursiveParserWrapperHandler) parsing
-        Parser p = TikaLoaderHelper.getLoader("tika-config-write-filter.json").loadAutoDetectParser();
-        List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", p);
-        for (Metadata metadata : metadataList) {
-            for (String k : metadata.names()) {
+        TikaLoader loader = TikaLoaderHelper.getLoader("tika-config-write-filter.json");
+        Parser p = loader.loadAutoDetectParser();
+        ParseContext parseContext = loader.loadParseContext();
+        Metadata metadata = Metadata.newInstance(parseContext);
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", p,
+                metadata, parseContext, true);
+        for (Metadata m : metadataList) {
+            for (String k : m.names()) {
                 assertTrue(k.startsWith("X-TIKA:") || k.startsWith("access_permission:")
-                        || k.equals("Content-Type") || k.equals("dc:creator"));
+                        || k.equals("Content-Type") || k.equals("dc:creator"),
+                        "unexpected key: " + k);
             }
         }
     }
@@ -96,8 +100,10 @@ public class AutoDetectParserConfigTest extends TikaTest {
     public void testDigests() throws Exception {
         //test to make sure that the decorator is only applied once for
         //legacy (e.g. not RecursiveParserWrapperHandler) parsing
-        Parser p = TikaLoaderHelper.getLoader("tika-config-digests.json").loadAutoDetectParser();
-        List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", p);
+        TikaLoader loader = TikaLoaderHelper.getLoader("tika-config-digests.json");
+        Parser p = loader.loadAutoDetectParser();
+        ParseContext context = loader.loadParseContext();
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", p, context);
         // SHA256 with BASE32 encoding includes encoding in the key
         assertEquals("SO67W5OGGMOFPMFQTHTNL5YU5EQXWPMNEPU7HKOZX2ULHRQICRZA====",
                 metadataList.get(0).get("X-TIKA:digest:SHA256:BASE32"));
@@ -115,8 +121,10 @@ public class AutoDetectParserConfigTest extends TikaTest {
     public void testDigestsSkipContainer() throws Exception {
         //test to make sure that the decorator is only applied once for
         //legacy (e.g. not RecursiveParserWrapperHandler) parsing
-        Parser p = TikaLoaderHelper.getLoader("tika-config-digests-skip-container.json").loadAutoDetectParser();
-        List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", p);
+        TikaLoader loader = TikaLoaderHelper.getLoader("tika-config-digests-skip-container.json");
+        Parser p = loader.loadAutoDetectParser();
+        ParseContext context = loader.loadParseContext();
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", p, context);
         // SHA256 with BASE32 encoding includes encoding in the key
         assertNull(metadataList.get(0).get("X-TIKA:digest:SHA256:BASE32"));
         assertNull(metadataList.get(0).get("X-TIKA:digest:MD5"));
@@ -130,8 +138,10 @@ public class AutoDetectParserConfigTest extends TikaTest {
     @Test
     public void testDigestsEmptyParser() throws Exception {
         //TIKA-3939 -- ensure that digesting happens even with EmptyParser
-        Parser p = TikaLoaderHelper.getLoader("tika-config-digests-pdf-only.json").loadAutoDetectParser();
-        List<Metadata> metadataList = getRecursiveMetadata("testPDF.pdf", p);
+        TikaLoader loader = TikaLoaderHelper.getLoader("tika-config-digests-pdf-only.json");
+        Parser p = loader.loadAutoDetectParser();
+        ParseContext context = loader.loadParseContext();
+        List<Metadata> metadataList = getRecursiveMetadata("testPDF.pdf", p, context);
         assertEquals(1, metadataList.size());
         assertEquals("4ef0d3bdb12ba603f4caf7d2e2c6112e",
                 metadataList.get(0).get("X-TIKA:digest:MD5"));
@@ -143,8 +153,10 @@ public class AutoDetectParserConfigTest extends TikaTest {
     public void testContainerZeroBytes() throws Exception {
         Path tmp = Files.createTempFile("tika-test", "");
         try {
-            Parser p = TikaLoaderHelper.getLoader("tika-config-digests.json").loadAutoDetectParser();
-            List<Metadata> metadataList = getRecursiveMetadata(tmp, p, true);
+            TikaLoader loader = TikaLoaderHelper.getLoader("tika-config-digests.json");
+            Parser p = loader.loadAutoDetectParser();
+            ParseContext context = loader.loadParseContext();
+            List<Metadata> metadataList = getRecursiveMetadata(tmp, p, context, true);
             assertEquals("d41d8cd98f00b204e9800998ecf8427e",
                     metadataList.get(0).get("X-TIKA:digest:MD5"));
             assertEquals("0", metadataList.get(0).get(Metadata.CONTENT_LENGTH));

@@ -74,7 +74,7 @@ public class OutlookPSTParser implements Parser {
 
         metadata.set(Metadata.CONTENT_TYPE, MS_OUTLOOK_PST_MIMETYPE.toString());
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         PSTFile pstFile = null;
@@ -89,7 +89,7 @@ public class OutlookPSTParser implements Parser {
                         "OST 2013 support not added yet. It will be when https://github.com/rjohnsondev/java-libpst/issues/60 is fixed.");
             }
             if (isValid) {
-                parseFolder(xhtml, pstFile.getRootFolder(), "/", embeddedExtractor);
+                parseFolder(xhtml, pstFile.getRootFolder(), "/", embeddedExtractor, context);
             }
         } catch (TikaException e) {
             throw e;
@@ -110,17 +110,21 @@ public class OutlookPSTParser implements Parser {
     }
 
     private void parseFolder(XHTMLContentHandler handler, PSTFolder pstFolder, String folderPath,
-                             EmbeddedDocumentExtractor embeddedExtractor) throws Exception {
+                             EmbeddedDocumentExtractor embeddedExtractor, ParseContext context) throws Exception {
         if (pstFolder.getContentCount() > 0) {
             PSTMessage pstMail = (PSTMessage) pstFolder.getNextChild();
             while (pstMail != null) {
-                Metadata metadata = new Metadata();
+                Metadata metadata = Metadata.newInstance(context);
+                metadata.set(Metadata.CONTENT_TYPE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
                 metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
-                metadata.set(PST.PST_FOLDER_PATH, folderPath);
-                metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, pstMail.getSubject() + ".msg");
+                String resourceName = pstMail.getSubject() + ".msg";
+                String internalPath = folderPath.endsWith("/") ?
+                        folderPath + resourceName : folderPath + "/" + resourceName;
+                metadata.set(TikaCoreProperties.INTERNAL_PATH, internalPath);
+                metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, resourceName);
                 long length = estimateSize(pstMail);
                 try (TikaInputStream tis = TikaInputStream.getFromContainer(pstMail, length, metadata)) {
-                    embeddedExtractor.parseEmbedded(tis, handler, metadata, new ParseContext(), true);
+                    embeddedExtractor.parseEmbedded(tis, handler, metadata, context, true);
                 }
                 pstMail = (PSTMessage) pstFolder.getNextChild();
             }
@@ -132,7 +136,7 @@ public class OutlookPSTParser implements Parser {
                 handler.element("h1", pstSubFolder.getDisplayName());
                 String subFolderPath = folderPath.endsWith("/") ? folderPath + pstSubFolder.getDisplayName() :
                         folderPath + "/" + pstFolder.getDisplayName();
-                parseFolder(handler, pstSubFolder, subFolderPath, embeddedExtractor);
+                parseFolder(handler, pstSubFolder, subFolderPath, embeddedExtractor, context);
                 handler.endElement("div");
             }
         }

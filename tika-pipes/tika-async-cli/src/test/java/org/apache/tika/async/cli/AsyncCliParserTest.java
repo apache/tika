@@ -17,9 +17,17 @@
 package org.apache.tika.async.cli;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.sax.BasicContentHandlerFactory;
 
@@ -83,4 +91,86 @@ public class AsyncCliParserTest {
     }
 
     //TODO -- test for file list with and without inputDir
+
+    @TempDir
+    Path tempDir;
+
+    @Test
+    public void testEnsurePluginRootsAddsDefault() throws Exception {
+        // Create a config without plugin-roots
+        Path configPath = tempDir.resolve("config-no-plugins.json");
+        Files.writeString(configPath, """
+            {
+              "pipes": {
+                "numClients": 2
+              }
+            }
+            """);
+
+        // ensurePluginRoots should create a new config with plugin-roots added
+        Path result = TikaAsyncCLI.ensurePluginRoots(configPath, null);
+
+        // Should return a different path (merged config)
+        assertFalse(result.equals(configPath), "Should create a new merged config");
+
+        // The merged config should have plugin-roots
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(result.toFile());
+        assertTrue(root.has("plugin-roots"), "Merged config should have plugin-roots");
+        assertEquals("plugins", root.get("plugin-roots").asText());
+
+        // Original config values should be preserved
+        assertTrue(root.has("pipes"));
+        assertEquals(2, root.get("pipes").get("numClients").asInt());
+
+        // Clean up
+        Files.deleteIfExists(result);
+    }
+
+    @Test
+    public void testEnsurePluginRootsPreservesExisting() throws Exception {
+        // Create a config with plugin-roots already set
+        Path configPath = tempDir.resolve("config-with-plugins.json");
+        Files.writeString(configPath, """
+            {
+              "plugin-roots": "/custom/plugins",
+              "pipes": {
+                "numClients": 4
+              }
+            }
+            """);
+
+        // ensurePluginRoots should return the original path (no merging needed)
+        Path result = TikaAsyncCLI.ensurePluginRoots(configPath, null);
+
+        // Should return the same path
+        assertEquals(configPath, result, "Should return original config when plugin-roots exists");
+    }
+
+    @Test
+    public void testEnsurePluginRootsUsesCommandLineOption() throws Exception {
+        // Create a config without plugin-roots
+        Path configPath = tempDir.resolve("config-no-plugins2.json");
+        Files.writeString(configPath, """
+            {
+              "pipes": {
+                "numClients": 2
+              }
+            }
+            """);
+
+        // ensurePluginRoots with a custom plugins dir
+        Path result = TikaAsyncCLI.ensurePluginRoots(configPath, "/my/custom/plugins");
+
+        // Should create a merged config with the custom plugins dir
+        assertFalse(result.equals(configPath));
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(result.toFile());
+        assertTrue(root.has("plugin-roots"));
+        assertEquals("/my/custom/plugins", root.get("plugin-roots").asText());
+
+        // Clean up
+        Files.deleteIfExists(result);
+    }
 }

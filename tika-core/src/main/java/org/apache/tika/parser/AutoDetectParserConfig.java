@@ -21,21 +21,17 @@ import java.io.Serializable;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.config.TikaComponent;
-import org.apache.tika.digest.Digester;
-import org.apache.tika.digest.DigesterFactory;
-import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.writefilter.MetadataWriteFilterFactory;
 import org.apache.tika.sax.ContentHandlerDecoratorFactory;
 
 /**
- * This config object can be used to tune how conservative we want to be
- * when parsing data that is extremely compressible and resembles a ZIP
- * bomb. Null values will be ignored and will not affect the default values
- * in SecureContentHandler.
+ * Configuration for AutoDetectParser behavior.
+ * <p>
+ * Note: Security limits (zip bomb thresholds, XML depth, etc.) are now configured
+ * via {@link org.apache.tika.config.OutputLimits} in the ParseContext, not here.
  * <p>
  * This is a config POJO. It uses standard Jackson deserialization for its
- * primitive fields, but component fields (like embeddedDocumentExtractorFactory)
+ * primitive fields, but component fields (like contentHandlerDecoratorFactory)
  * use compact format.
  */
 @TikaComponent(spi = false)
@@ -52,132 +48,12 @@ public class AutoDetectParserConfig implements Serializable {
 
     public static AutoDetectParserConfig DEFAULT = new AutoDetectParserConfig();
 
-    /**
-     * If this is not null and greater than -1, the AutoDetectParser
-     * will spool the stream to disk if the length of the stream is known
-     * ahead of time.
-     */
-    private Long spoolToDisk = null;
-
-    /**
-     * SecureContentHandler -- Desired output threshold in characters.
-     */
-    private Long outputThreshold = null;
-
-    /**
-     * SecureContentHandler -- Desired maximum compression ratio.
-     */
-    private Long maximumCompressionRatio = null;
-
-    /**
-     * SecureContentHandler -- Desired maximum XML nesting level.
-     */
-    private Integer maximumDepth = null;
-
-    /**
-     * SecureContentHandler -- Desired maximum package entry nesting level.
-     */
-    private Integer maximumPackageEntryDepth = null;
-
-    private MetadataWriteFilterFactory metadataWriteFilterFactory = null;
-
-    private EmbeddedDocumentExtractorFactory embeddedDocumentExtractorFactory = null;
-
     private ContentHandlerDecoratorFactory contentHandlerDecoratorFactory =
             NOOP_CONTENT_HANDLER_DECORATOR_FACTORY;
 
-    private DigesterFactory digesterFactory = null;
-
-    // Lazily built digester from the factory
-    private transient Digester digester = null;
-
-    /**
-     * If true, skip digesting for container (top-level) documents.
-     * Only embedded documents will be digested.
-     */
-    private boolean skipContainerDocumentDigest = false;
-
     private boolean throwOnZeroBytes = true;
 
-    /**
-     * Creates a SecureContentHandlerConfig using the passed in parameters.
-     *
-     * @param spoolToDisk
-     * @param outputThreshold          SecureContentHandler - character output threshold.
-     * @param maximumCompressionRatio  SecureContentHandler - max compression ratio allowed.
-     * @param maximumDepth             SecureContentHandler - maximum XML element nesting level.
-     * @param maximumPackageEntryDepth SecureContentHandler - maximum package entry nesting level.
-     */
-    public AutoDetectParserConfig(Long spoolToDisk, Long outputThreshold,
-                                  Long maximumCompressionRatio, Integer maximumDepth,
-                                  Integer maximumPackageEntryDepth) {
-        this.spoolToDisk = spoolToDisk;
-        this.outputThreshold = outputThreshold;
-        this.maximumCompressionRatio = maximumCompressionRatio;
-        this.maximumDepth = maximumDepth;
-        this.maximumPackageEntryDepth = maximumPackageEntryDepth;
-    }
-
     public AutoDetectParserConfig() {
-
-    }
-
-    public Long getSpoolToDisk() {
-        return spoolToDisk;
-    }
-
-    public void setSpoolToDisk(Long spoolToDisk) {
-        this.spoolToDisk = spoolToDisk;
-    }
-
-    public Long getOutputThreshold() {
-        return outputThreshold;
-    }
-
-    public void setOutputThreshold(Long outputThreshold) {
-        this.outputThreshold = outputThreshold;
-    }
-
-    public Long getMaximumCompressionRatio() {
-        return maximumCompressionRatio;
-    }
-
-    public void setMaximumCompressionRatio(Long maximumCompressionRatio) {
-        this.maximumCompressionRatio = maximumCompressionRatio;
-    }
-
-    public Integer getMaximumDepth() {
-        return maximumDepth;
-    }
-
-    public void setMaximumDepth(Integer maximumDepth) {
-        this.maximumDepth = maximumDepth;
-    }
-
-    public Integer getMaximumPackageEntryDepth() {
-        return maximumPackageEntryDepth;
-    }
-
-    public void setMaximumPackageEntryDepth(Integer maximumPackageEntryDepth) {
-        this.maximumPackageEntryDepth = maximumPackageEntryDepth;
-    }
-
-    public MetadataWriteFilterFactory getMetadataWriteFilterFactory() {
-        return this.metadataWriteFilterFactory;
-    }
-
-    public void setMetadataWriteFilterFactory(
-            MetadataWriteFilterFactory metadataWriteFilterFactory) {
-        this.metadataWriteFilterFactory = metadataWriteFilterFactory;
-    }
-
-    public void setEmbeddedDocumentExtractorFactory(
-            EmbeddedDocumentExtractorFactory embeddedDocumentExtractorFactory) {
-        this.embeddedDocumentExtractorFactory = embeddedDocumentExtractorFactory;
-    }
-
-    public EmbeddedDocumentExtractorFactory getEmbeddedDocumentExtractorFactory() {
-        return embeddedDocumentExtractorFactory;
     }
 
     public void setContentHandlerDecoratorFactory(
@@ -187,71 +63,6 @@ public class AutoDetectParserConfig implements Serializable {
 
     public ContentHandlerDecoratorFactory getContentHandlerDecoratorFactory() {
         return contentHandlerDecoratorFactory;
-    }
-
-    /**
-     * Sets the digester factory.
-     * This is the preferred method for configuring digesting via JSON serialization.
-     *
-     * @param digesterFactory the digester factory
-     */
-    public void setDigesterFactory(DigesterFactory digesterFactory) {
-        this.digesterFactory = digesterFactory;
-    }
-
-    /**
-     * Gets the digester factory.
-     *
-     * @return the digester factory, or null if not configured
-     */
-    public DigesterFactory getDigesterFactory() {
-        return digesterFactory;
-    }
-
-    /**
-     * Returns the Digester, lazily building it from the factory if needed.
-     * <p>
-     * Note: This method is intentionally not named getDigester() to avoid
-     * Jackson treating it as a bean property during serialization.
-     *
-     * @return the Digester, or null if no factory is configured
-     */
-    public Digester digester() {
-        if (digester == null && digesterFactory != null) {
-            digester = digesterFactory.build();
-        }
-        return digester;
-    }
-
-    /**
-     * Sets the digester directly. This is useful for programmatic configuration
-     * (e.g., from command-line arguments) when you don't have a DigesterFactory.
-     * <p>
-     * Note: This method is intentionally not named setDigester() to avoid
-     * Jackson treating it as a bean property during deserialization.
-     *
-     * @param digester the digester to use
-     */
-    public void digester(Digester digester) {
-        this.digester = digester;
-    }
-
-    /**
-     * Returns whether to skip digesting for container (top-level) documents.
-     *
-     * @return true if container documents should be skipped, false otherwise
-     */
-    public boolean isSkipContainerDocumentDigest() {
-        return skipContainerDocumentDigest;
-    }
-
-    /**
-     * Sets whether to skip digesting for container (top-level) documents.
-     *
-     * @param skipContainerDocumentDigest if true, only embedded documents will be digested
-     */
-    public void setSkipContainerDocumentDigest(boolean skipContainerDocumentDigest) {
-        this.skipContainerDocumentDigest = skipContainerDocumentDigest;
     }
 
     public void setThrowOnZeroBytes(boolean throwOnZeroBytes) {
@@ -264,14 +75,8 @@ public class AutoDetectParserConfig implements Serializable {
 
     @Override
     public String toString() {
-        return "AutoDetectParserConfig{" + "spoolToDisk=" + spoolToDisk + ", outputThreshold=" +
-                outputThreshold + ", maximumCompressionRatio=" + maximumCompressionRatio +
-                ", maximumDepth=" + maximumDepth + ", maximumPackageEntryDepth=" +
-                maximumPackageEntryDepth + ", metadataWriteFilterFactory=" +
-                metadataWriteFilterFactory + ", embeddedDocumentExtractorFactory=" +
-                embeddedDocumentExtractorFactory + ", contentHandlerDecoratorFactory=" +
-                contentHandlerDecoratorFactory + ", digesterFactory=" + digesterFactory +
-                ", skipContainerDocumentDigest=" + skipContainerDocumentDigest +
+        return "AutoDetectParserConfig{" +
+                "contentHandlerDecoratorFactory=" + contentHandlerDecoratorFactory +
                 ", throwOnZeroBytes=" + throwOnZeroBytes + '}';
     }
 }

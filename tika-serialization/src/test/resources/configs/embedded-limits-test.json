@@ -1,0 +1,10 @@
+{
+  "parse-context": {
+    "embedded-limits": {
+      "maxDepth": 5,
+      "throwOnMaxDepth": true,
+      "maxCount": 100,
+      "throwOnMaxCount": false
+    }
+  }
+}

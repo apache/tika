@@ -1,6 +1,6 @@
 {
-  "other-configs": {
-    "handler-config": {
+  "parse-context": {
+    "retry-config": {
       "timeout": 5000,
       "retries": 3,
       "enabled": true,

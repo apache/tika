@@ -1,0 +1,398 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Tika-App Integration Testing
+
+Integration tests for `tika-app` to be run from a distribution ZIP.
+
+== Setup
+
+[source,bash]
+----
+# Create test directory
+mkdir -p /tmp/tika-app-test
+cd /tmp/tika-app-test
+
+# Copy and extract distribution
+cp /path/to/tika-app-4.0.0-SNAPSHOT.zip .
+unzip tika-app-4.0.0-SNAPSHOT.zip
+cd tika-app-4.0.0-SNAPSHOT
+
+# Get test files
+cp /path/to/tika-main/tika-parsers/tika-parsers-standard/tika-parsers-standard-package/src/test/resources/test-documents/testPDF.pdf .
+cp /path/to/tika-main/tika-parsers/tika-parsers-standard/tika-parsers-standard-package/src/test/resources/test-documents/test_recursive_embedded.docx .
+cp /path/to/tika-main/tika-parsers/tika-parsers-standard/tika-parsers-standard-package/src/test/resources/test-documents/testHTML.html .
+----
+
+== Test Cases
+
+=== Test 1: Basic Text Extraction
+
+[source,bash]
+----
+java -jar tika-app.jar --text testPDF.pdf
+----
+
+*Expected:* Outputs extracted text from PDF.
+
+=== Test 2: Metadata Extraction
+
+[source,bash]
+----
+java -jar tika-app.jar --metadata testPDF.pdf
+----
+
+*Expected:* Outputs key=value metadata pairs.
+
+=== Test 3: JSON Output with Pretty Print
+
+[source,bash]
+----
+java -jar tika-app.jar --json --pretty-print testPDF.pdf
+----
+
+*Expected:* Clean, readable JSON output with metadata.
+
+=== Test 4: File Type Detection
+
+[source,bash]
+----
+java -jar tika-app.jar --detect testPDF.pdf
+----
+
+*Expected:* Returns `application/pdf`
+
+=== Test 5: Non-existent File Handling
+
+[source,bash]
+----
+java -jar tika-app.jar --text nonexistent_file.pdf
+----
+
+*Expected:* Clear error message (currently shows confusing "MalformedURLException: no protocol").
+
+=== Test 6: Recursive JSON Output
+
+[source,bash]
+----
+java -jar tika-app.jar --jsonRecursive test_recursive_embedded.docx
+----
+
+*Expected:* JSON array with metadata and content for main doc and all embedded documents.
+
+=== Test 7: Stdin Input
+
+[source,bash]
+----
+echo "Hello World" | java -jar tika-app.jar --text
+----
+
+*Expected:* Outputs "Hello World"
+
+=== Test 8: Extract Attachments (-z)
+
+[source,bash]
+----
+mkdir -p /tmp/tika-app-test/extract-out
+java -jar tika-app.jar -z --extract-dir=/tmp/tika-app-test/extract-out test_recursive_embedded.docx
+ls /tmp/tika-app-test/extract-out
+----
+
+*Expected:* Creates .json metadata file and extracts embedded files to extract-out directory.
+
+=== Test 9: Recursive Extract (-Z)
+
+[source,bash]
+----
+mkdir -p /tmp/tika-app-test/extract-recursive
+java -jar tika-app.jar -Z --extract-dir=/tmp/tika-app-test/extract-recursive test_recursive_embedded.docx
+ls -R /tmp/tika-app-test/extract-recursive
+----
+
+*Expected:* Extracts all nested embedded documents recursively.
+
+=== Test 10: Batch Mode (Simple)
+
+[source,bash]
+----
+mkdir -p /tmp/tika-app-test/batch-input
+mkdir -p /tmp/tika-app-test/batch-output
+cp testPDF.pdf testHTML.html /tmp/tika-app-test/batch-input/
+java -jar tika-app.jar /tmp/tika-app-test/batch-input /tmp/tika-app-test/batch-output
+ls /tmp/tika-app-test/batch-output
+----
+
+*Expected:* Creates .json files for each input file in output directory.
+
+=== Test 10b: Batch Mode with Output Options
+
+[source,bash]
+----
+mkdir -p /tmp/tika-app-test/batch-output2
+java -jar tika-app.jar -J -t /tmp/tika-app-test/batch-input /tmp/tika-app-test/batch-output2
+ls /tmp/tika-app-test/batch-output2
+----
+
+*Expected:* Creates .json files with text content (X-TIKA:content_handler should be ToTextContentHandler).
+
+=== Test 11: Version Check
+
+[source,bash]
+----
+java -jar tika-app.jar --version
+----
+
+*Expected:* Returns `Apache Tika X.X.X`
+
+=== Test 12: List Parsers
+
+[source,bash]
+----
+java -jar tika-app.jar --list-parsers
+----
+
+*Expected:* Hierarchical list of available parsers.
+
+=== Test 13: Language Detection
+
+[source,bash]
+----
+java -jar tika-app.jar --language testPDF.pdf
+----
+
+*Expected:* Returns detected language code.
+
+=== Test 14: Digest Computation
+
+[source,bash]
+----
+java -jar tika-app.jar --digest=md5 --json testPDF.pdf
+----
+
+*Expected:* JSON output includes `X-TIKA:digest:MD5` field.
+
+=== Test 15: URL Input
+
+[source,bash]
+----
+java -jar tika-app.jar --detect https://www.apache.org/
+----
+
+*Expected:* Returns `text/html`
+
+=== Test 16: XMP Output
+
+[source,bash]
+----
+java -jar tika-app.jar --xmp testPDF.pdf
+----
+
+*Expected:* Valid XMP metadata in RDF/XML format.
+
+=== Test 17: Boilerpipe Main Content
+
+[source,bash]
+----
+java -jar tika-app.jar --text-main testHTML.html
+----
+
+*Expected:* Returns only main content, not boilerplate.
+
+=== Test 18: Depth Limiting
+
+[source,bash]
+----
+java -jar tika-app.jar --maxEmbeddedDepth=1 --text test_recursive_embedded.docx
+----
+
+*Expected:* Limited depth of embedded document extraction.
+
+=== Test 19: GUI Mode
+
+[source,bash]
+----
+java -jar tika-app.jar
+----
+
+*Expected:* Opens GUI (skip in headless environments).
+
+== Advanced Tests: Custom Config
+
+These tests require creating a custom tika-config.json file.
+
+=== Test 20: Create Custom Config File
+
+Create `/tmp/tika-app-test/my-config.json`:
+[source,json]
+----
+{
+  "content-handler-factory": {
+    "basic-content-handler-factory": {
+      "type": "TEXT",
+      "writeLimit": 100000,
+      "throwOnWriteLimitReached": false
+    }
+  },
+  "parsers": [
+    {
+      "default-parser": {}
+    },
+    {
+      "pdf-parser": {
+        "extractActions": true,
+        "extractInlineImages": true,
+        "ocrStrategy": "NO_OCR"
+      }
+    },
+    {
+      "ooxml-parser": {
+        "includeDeletedContent": true,
+        "includeMoveFromContent": true,
+        "extractMacros": true
+      }
+    }
+  ],
+  "fetchers": {
+    "fsf": {
+      "file-system-fetcher": {
+        "basePath": "/tmp/tika-app-test/batch-input",
+        "extractFileSystemMetadata": true
+      }
+    }
+  },
+  "emitters": {
+    "fse": {
+      "file-system-emitter": {
+        "basePath": "/tmp/tika-app-test/config-output",
+        "fileExtension": "json",
+        "onExists": "REPLACE"
+      }
+    }
+  },
+  "pipes-iterator": {
+    "file-system-pipes-iterator": {
+      "basePath": "/tmp/tika-app-test/batch-input",
+      "countTotal": true,
+      "fetcherId": "fsf",
+      "emitterId": "fse"
+    }
+  },
+  "pipes": {
+    "parseMode": "RMETA",
+    "numClients": 2,
+    "timeoutMillis": 60000
+  },
+  "plugin-roots": "/tmp/tika-app-test/plugins"
+}
+----
+
+=== Test 21: Run with Custom Config
+
+[source,bash]
+----
+mkdir -p /tmp/tika-app-test/config-output
+java -jar tika-app.jar /tmp/tika-app-test/my-config.json
+ls /tmp/tika-app-test/config-output
+----
+
+*Expected:* Processes all files in batch-input using custom parser settings.
+
+=== Test 22: Async Mode with Config Flag
+
+[source,bash]
+----
+java -jar tika-app.jar -a --config=/tmp/tika-app-test/my-config.json
+----
+
+*Expected:* Same as Test 21 but using explicit async flag.
+
+=== Test 23: Unpack with Frictionless Format
+
+[source,bash]
+----
+mkdir -p /tmp/tika-app-test/frictionless-out
+java -jar tika-app.jar -Z --extract-dir=/tmp/tika-app-test/frictionless-out --unpack-format=FRICTIONLESS --unpack-include-metadata test_recursive_embedded.docx
+ls /tmp/tika-app-test/frictionless-out
+----
+
+*Expected:* Extracts embedded files in Frictionless data package format with metadata.json.
+
+=== Test 24: Unpack to Directory (not zipped)
+
+[source,bash]
+----
+mkdir -p /tmp/tika-app-test/unpack-dir-out
+java -jar tika-app.jar -Z --extract-dir=/tmp/tika-app-test/unpack-dir-out --unpack-mode=DIRECTORY test_recursive_embedded.docx
+ls -R /tmp/tika-app-test/unpack-dir-out
+----
+
+*Expected:* Extracts embedded files to directory structure instead of zipped.
+
+=== Test 25: Batch with Multiple Workers
+
+[source,bash]
+----
+mkdir -p /tmp/tika-app-test/multi-worker-out
+java -jar tika-app.jar -n 4 /tmp/tika-app-test/batch-input /tmp/tika-app-test/multi-worker-out
+----
+
+*Expected:* Processes files using 4 parallel forked clients.
+
+=== Test 26: Batch with Custom Timeout
+
+[source,bash]
+----
+mkdir -p /tmp/tika-app-test/timeout-out
+java -jar tika-app.jar -T 30000 /tmp/tika-app-test/batch-input /tmp/tika-app-test/timeout-out
+----
+
+*Expected:* Processes files with 30 second timeout per file.
+
+=== Test 27: Batch with Custom Heap
+
+[source,bash]
+----
+mkdir -p /tmp/tika-app-test/heap-out
+java -jar tika-app.jar -X 2g /tmp/tika-app-test/batch-input /tmp/tika-app-test/heap-out
+----
+
+*Expected:* Forked processes use 2GB heap.
+
+== Known Issues
+
+=== Issue 1: Confusing "no protocol" Error
+
+When a file doesn't exist, the error message is misleading:
+[source]
+----
+MalformedURLException: no protocol: nonexistent_file.pdf
+----
+
+Should say "File not found".
+
+=== Issue 2: INFO Message on Every Command
+
+Every command prints an INFO message to stderr about convenience features. Use `2>/dev/null` to suppress.
+
+=== Issue 3: Config Dump Options Not Implemented
+
+These options are not yet implemented in 4.x:
+
+* `--dump-minimal-config`
+* `--dump-current-config`
+* `--dump-static-config`
+* `--dump-static-full-config`

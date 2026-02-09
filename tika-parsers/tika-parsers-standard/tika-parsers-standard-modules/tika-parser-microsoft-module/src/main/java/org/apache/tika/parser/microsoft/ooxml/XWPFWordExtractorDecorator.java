@@ -60,14 +60,19 @@ import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTBookmark;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTFldChar;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTObject;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTP;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTR;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTSectPr;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTText;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.STFldCharType;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.EMFParser;
 import org.apache.tika.parser.microsoft.FormattingUtils;
@@ -83,7 +88,6 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     // could be improved by using the real delimiter in xchFollow [MS-DOC], v20140721, 2.4.6.3,
     // Part 3, Step 3
     private static final String LIST_DELIMITER = " ";
-
 
     //include all parts that might have embedded objects
     private final static String[] MAIN_PART_RELATIONS =
@@ -240,8 +244,54 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         //hyperlinks may or may not have hyperlink ids
         String lastHyperlinkId = null;
         boolean inHyperlink = false;
+        // Track field-based hyperlinks (using instrText/fldChar)
+        FieldHyperlinkTracker fieldTracker = new FieldHyperlinkTracker();
+        boolean inFieldHyperlink = false;
+
         // Do the iruns
         for (IRunElement run : paragraph.getIRuns()) {
+            // Check for field-based hyperlinks first (instrText HYPERLINK)
+            if (run instanceof XWPFRun) {
+                XWPFRun xwpfRun = (XWPFRun) run;
+                boolean wasInFieldHyperlink = fieldTracker.isInFieldHyperlink();
+                String fieldUrl = extractFieldLinks(xwpfRun, fieldTracker);
+
+                // If we just entered a field hyperlink, open the anchor tag
+                if (fieldUrl != null && !inFieldHyperlink) {
+                    // Close any existing relationship-based hyperlink first
+                    if (inHyperlink) {
+                        FormattingUtils.closeStyleTags(xhtml, formattingState);
+                        xhtml.endElement("a");
+                        inHyperlink = false;
+                        lastHyperlinkId = null;
+                    }
+                    FormattingUtils.closeStyleTags(xhtml, formattingState);
+                    xhtml.startElement("a", "href", fieldUrl);
+                    inFieldHyperlink = true;
+                    metadata.set(Office.HAS_FIELD_HYPERLINKS, true);
+                }
+
+                // If we just exited a field hyperlink, close the anchor tag
+                if (wasInFieldHyperlink && !fieldTracker.isInFieldHyperlink() && inFieldHyperlink) {
+                    FormattingUtils.closeStyleTags(xhtml, formattingState);
+                    xhtml.endElement("a");
+                    inFieldHyperlink = false;
+                }
+
+                // Emit any external refs (INCLUDEPICTURE, INCLUDETEXT, IMPORT, LINK) as anchors
+                if (fieldTracker.getLastExternalRefUrl() != null) {
+                    AttributesImpl extRefAtts = new AttributesImpl();
+                    extRefAtts.addAttribute("", "class", "class", "CDATA",
+                            "external-ref-" + fieldTracker.getLastExternalRefType());
+                    extRefAtts.addAttribute("", "href", "href", "CDATA",
+                            fieldTracker.getLastExternalRefUrl());
+                    xhtml.startElement("a", extRefAtts);
+                    xhtml.endElement("a");
+                    metadata.set(Office.HAS_FIELD_HYPERLINKS, true);
+                    fieldTracker.clearExternalRef();
+                }
+            }
+
             if (run instanceof XWPFHyperlinkRun) {
                 XWPFHyperlinkRun hyperlinkRun = (XWPFHyperlinkRun) run;
                 if (hyperlinkRun.getHyperlinkId() == null ||
@@ -283,6 +333,9 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         }
         FormattingUtils.closeStyleTags(xhtml, formattingState);
         if (inHyperlink) {
+            xhtml.endElement("a");
+        }
+        if (inFieldHyperlink) {
             xhtml.endElement("a");
         }
 
@@ -409,10 +462,9 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         if ("image/x-emf".equals(packagePart.getContentType())) {
             try (TikaInputStream tis = TikaInputStream.get(packagePart.getInputStream())) {
                 EMFParser p = new EMFParser();
-                Metadata m = new Metadata();
-                ParseContext pc = new ParseContext();
+                Metadata m = Metadata.newInstance(getParseContext());
                 ToTextContentHandler toTextContentHandler = new ToTextContentHandler();
-                p.parse(tis, toTextContentHandler, m, pc);
+                p.parse(tis, toTextContentHandler, m, getParseContext());
                 embeddedPartMetadata.setRenderedName(toTextContentHandler.toString().trim());
                 embeddedPartMetadata.setFullName(m.get(EMFParser.EMF_ICON_STRING));
             } catch (SecurityException e) {
@@ -468,6 +520,46 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     private void processSDTRun(XWPFSDT run, XHTMLContentHandler xhtml)
             throws SAXException, XmlException, IOException {
         xhtml.characters(run.getContent().getText());
+    }
+
+    /**
+     * Extracts field-based hyperlinks from a run by examining fldChar and instrText elements.
+     * This handles HYPERLINK field codes that are not relationship-based.
+     *
+     * @param run the run to examine
+     * @param tracker the field hyperlink tracker maintaining state across runs
+     * @return the hyperlink URL if this run starts a hyperlink, null otherwise
+     */
+    private String extractFieldLinks(XWPFRun run, FieldHyperlinkTracker tracker) {
+        CTR ctr = run.getCTR();
+        try (XmlCursor cursor = ctr.newCursor()) {
+            if (cursor.toFirstChild()) {
+                do {
+                    String localName = cursor.getName().getLocalPart();
+                    if ("fldChar".equals(localName)) {
+                        XmlObject obj = cursor.getObject();
+                        if (obj instanceof CTFldChar) {
+                            CTFldChar fldChar = (CTFldChar) obj;
+                            STFldCharType.Enum fldType = fldChar.getFldCharType();
+                            if (fldType == STFldCharType.BEGIN) {
+                                tracker.startField();
+                            } else if (fldType == STFldCharType.SEPARATE) {
+                                return tracker.separate();
+                            } else if (fldType == STFldCharType.END) {
+                                tracker.endField();
+                            }
+                        }
+                    } else if ("instrText".equals(localName)) {
+                        XmlObject obj = cursor.getObject();
+                        if (obj instanceof CTText) {
+                            CTText text = (CTText) obj;
+                            tracker.addInstrText(text.getStringValue());
+                        }
+                    }
+                } while (cursor.toNextSibling());
+            }
+        }
+        return null;
     }
 
     private void extractTable(XWPFTable table, XWPFListManager listManager,

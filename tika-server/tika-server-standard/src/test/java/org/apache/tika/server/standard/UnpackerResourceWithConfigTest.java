@@ -17,6 +17,7 @@
 package org.apache.tika.server.standard;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.image.BufferedImage;
@@ -24,12 +25,18 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.imageio.ImageIO;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
@@ -39,6 +46,7 @@ import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.config.JsonConfigHelper;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -49,9 +57,18 @@ import org.apache.tika.server.core.resource.UnpackerResource;
 import org.apache.tika.server.core.writer.TarWriter;
 import org.apache.tika.server.core.writer.ZipWriter;
 
+/**
+ * Tests for UnpackerResource with custom tika-config that enables PDF rendering.
+ * Uses pipes-based UNPACK mode.
+ */
 public class UnpackerResourceWithConfigTest extends CXFTestBase {
     private static final String BASE_PATH = "/unpack";
     private static final String ALL_PATH = BASE_PATH + "/all";
+
+    private static final String UNPACK_CONFIG_TEMPLATE = "/configs/cxf-unpack-test-template.json";
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    private Path unpackTempDir;
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
@@ -70,16 +87,40 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
 
     @Override
     protected InputStream getTikaConfigInputStream() throws IOException {
-        return this
-                .getClass()
-                .getResourceAsStream("/configs/tika-config-unpacker.json");
+        return this.getClass().getResourceAsStream("/configs/tika-config-unpacker.json");
     }
 
-    //Test that the PDFParser's renderer can be configured at parse time
-    //when specified in tika-config.json
+    @Override
+    protected InputStream getPipesConfigInputStream() throws IOException {
+        // Create temp directory for unpack emitter
+        unpackTempDir = Files.createTempDirectory("tika-unpack-test-");
+
+        Path pluginsDir = Paths.get("target/plugins").toAbsolutePath();
+
+        Map<String, Object> replacements = new HashMap<>();
+        replacements.put("UNPACK_EMITTER_BASE_PATH", unpackTempDir.toAbsolutePath().toString());
+        replacements.put("PLUGINS_PATHS", pluginsDir.toString().replace("\\", "/"));
+        replacements.put("TIMEOUT_MILLIS", 60000L);
+
+        JsonNode config = JsonConfigHelper.loadFromResource(UNPACK_CONFIG_TEMPLATE,
+                CXFTestBase.class, replacements);
+        String json = MAPPER.writeValueAsString(config);
+        return new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Override
+    protected Path getUnpackEmitterBasePath() {
+        return unpackTempDir;
+    }
+
+    /**
+     * Test that the PDFParser's renderer can be configured at parse time
+     * when specified in tika-config.json.
+     * POST to /unpack/all (not /unpack/all/config - URL changed in 4.0)
+     */
     @Test
     public void testPDFPerPageRenderColor() throws Exception {
-        //default is gray scale png; change to rgb and tiff
+        // Default is gray scale png; change to rgb and tiff
         String configJson = """
                 {
                   "pdf-parser": {
@@ -95,21 +136,24 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
         Attachment configAtt = new Attachment("config", "application/json",
                 new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
+        // URL changed: POST to /unpack/all instead of /unpack/all/config
         Response response = WebClient
-                .create(CXFTestBase.endPoint + ALL_PATH + "/config")
+                .create(endPoint + ALL_PATH)
                 .type("multipart/form-data")
                 .accept("application/zip")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
+
         Map<String, byte[]> results = readZipArchiveBytes((InputStream) response.getEntity());
         byte[] renderedImage = null;
         for (Map.Entry<String, byte[]> e : results.entrySet()) {
-            if (e
-                    .getKey()
-                    .startsWith("tika-pdfbox-rendering")) {
+            // With new naming, look for TIFF files
+            if (e.getKey().endsWith(".tiff") || e.getKey().endsWith(".tif")) {
                 renderedImage = e.getValue();
                 break;
             }
         }
+        assertNotNull(renderedImage, "Should have a rendered TIFF image");
+
         try (TikaInputStream tis = TikaInputStream.get(renderedImage)) {
             assertEquals("image/tiff", TikaLoader
                     .loadDefault()
@@ -120,23 +164,26 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
 
         try (InputStream is = new ByteArrayInputStream(renderedImage)) {
             BufferedImage image = ImageIO.read(is);
-            //top left
+            // Top left should be red
             AverageColor averageColor = getAverageColor(image, 0, image.getWidth() / 5, 0, image.getHeight() / 10);
             assertTrue(averageColor.getRed() > 250);
             assertTrue(averageColor.getGreen() < 1);
             assertTrue(averageColor.getBlue() < 1);
 
-            //bottom left = green
-            averageColor = getAverageColor(image, 0, image.getWidth() / 5, image.getHeight() / 2 + image.getHeight() / 10, image.getHeight() / 2 + 2 * image.getHeight() / 10);
-
+            // Bottom left should be green
+            averageColor = getAverageColor(image, 0, image.getWidth() / 5,
+                    image.getHeight() / 2 + image.getHeight() / 10,
+                    image.getHeight() / 2 + 2 * image.getHeight() / 10);
             assertTrue(averageColor.getRed() < 1);
             assertTrue(averageColor.getGreen() > 250);
             assertTrue(averageColor.getBlue() < 1);
 
-            //bottom right = blue
-            averageColor = getAverageColor(image, image.getWidth() / 2 + image.getWidth() / 10, image.getWidth() / 2 + 2 * image.getWidth() / 10,
-                    image.getHeight() / 2 + image.getHeight() / 10, image.getHeight() / 2 + 2 * image.getHeight() / 10);
-
+            // Bottom right should be blue
+            averageColor = getAverageColor(image,
+                    image.getWidth() / 2 + image.getWidth() / 10,
+                    image.getWidth() / 2 + 2 * image.getWidth() / 10,
+                    image.getHeight() / 2 + image.getHeight() / 10,
+                    image.getHeight() / 2 + 2 * image.getHeight() / 10);
             assertTrue(averageColor.getRed() < 1);
             assertTrue(averageColor.getGreen() < 1);
             assertTrue(averageColor.getBlue() > 250);
@@ -160,21 +207,24 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
         Attachment configAtt = new Attachment("config", "application/json",
                 new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
+        // URL changed: POST to /unpack/all instead of /unpack/all/config
         Response response = WebClient
-                .create(CXFTestBase.endPoint + ALL_PATH + "/config")
+                .create(endPoint + ALL_PATH)
                 .type("multipart/form-data")
                 .accept("application/zip")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
+
         Map<String, byte[]> results = readZipArchiveBytes((InputStream) response.getEntity());
         byte[] renderedImage = null;
         for (Map.Entry<String, byte[]> e : results.entrySet()) {
-            if (e
-                    .getKey()
-                    .startsWith("tika-pdfbox-rendering")) {
+            // With new naming, look for JPEG files
+            if (e.getKey().endsWith(".jpg") || e.getKey().endsWith(".jpeg")) {
                 renderedImage = e.getValue();
                 break;
             }
         }
+        assertNotNull(renderedImage, "Should have a rendered JPEG image");
+
         try (TikaInputStream tis = TikaInputStream.get(renderedImage)) {
             assertEquals("image/jpeg", TikaLoader
                     .loadDefault()
@@ -185,27 +235,29 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
 
         try (InputStream is = new ByteArrayInputStream(renderedImage)) {
             BufferedImage image = ImageIO.read(is);
-            //top left
+            // Top left - grayscale red
             AverageColor averageColor = getAverageColor(image, 0, image.getWidth() / 5, 0, image.getHeight() / 10);
-
             assertTrue(averageColor.getRed() > 140 && averageColor.getRed() < 160);
             assertTrue(averageColor.getGreen() > 140 && averageColor.getGreen() < 160);
             assertTrue(averageColor.getBlue() > 140 && averageColor.getBlue() < 160);
 
-            //bottom left = green
-            averageColor = getAverageColor(image, 0, image.getWidth() / 5, image.getHeight() / 2 + image.getHeight() / 10, image.getHeight() / 2 + 2 * image.getHeight() / 10);
-
+            // Bottom left - grayscale green
+            averageColor = getAverageColor(image, 0, image.getWidth() / 5,
+                    image.getHeight() / 2 + image.getHeight() / 10,
+                    image.getHeight() / 2 + 2 * image.getHeight() / 10);
             assertTrue(averageColor.getRed() < 210 && averageColor.getRed() > 190);
             assertTrue(averageColor.getGreen() < 210 && averageColor.getGreen() > 190);
             assertTrue(averageColor.getBlue() < 210 && averageColor.getBlue() > 190);
 
-            //bottom right = blue
-            averageColor = getAverageColor(image, image.getWidth() / 2 + image.getWidth() / 10, image.getWidth() / 2 + 2 * image.getWidth() / 10,
-                    image.getHeight() / 2 + image.getHeight() / 10, image.getHeight() / 2 + 2 * image.getHeight() / 10);
+            // Bottom right - grayscale blue
+            averageColor = getAverageColor(image,
+                    image.getWidth() / 2 + image.getWidth() / 10,
+                    image.getWidth() / 2 + 2 * image.getWidth() / 10,
+                    image.getHeight() / 2 + image.getHeight() / 10,
+                    image.getHeight() / 2 + 2 * image.getHeight() / 10);
             assertTrue(averageColor.getRed() < 100 && averageColor.getRed() > 90);
             assertTrue(averageColor.getGreen() < 100 && averageColor.getGreen() > 90);
             assertTrue(averageColor.getBlue() < 100 && averageColor.getBlue() > 90);
         }
     }
-
 }

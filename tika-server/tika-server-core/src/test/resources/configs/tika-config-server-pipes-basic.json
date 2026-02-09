@@ -1,0 +1,25 @@
+{
+  "fetchers": {
+    "file-system-fetcher": {
+      "file-system-fetcher": {
+        "allowAbsolutePaths": true
+      }
+    }
+  },
+  "server": {
+    "port": 9999,
+    "endpoints": [
+      "rmeta",
+      "status",
+      "tika"
+    ]
+  },
+  "pipes": {
+    "numClients": 2,
+    "timeoutMillis": 5000,
+    "forkedJvmArgs": [
+      "-Xmx256m"
+    ]
+  },
+  "plugin-roots": "target/plugins"
+}

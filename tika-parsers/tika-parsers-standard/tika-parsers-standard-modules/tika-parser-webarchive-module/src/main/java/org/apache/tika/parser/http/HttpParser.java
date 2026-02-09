@@ -58,7 +58,7 @@ public class HttpParser implements Parser {
         parser.lenientRequest();
         parser.lenientResponse();
         ByteBuffer buffer = ByteBuffer.allocate(1024);
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         tis.setCloseShield();
@@ -79,7 +79,7 @@ public class HttpParser implements Parser {
             //is there a way to handle non-lengthed bodies?
             if (contentLength > 0) {
                 MessageBody messageBody = LengthedBody.create(channel, buffer, contentLength);
-                Metadata payloadMetadata = new Metadata();
+                Metadata payloadMetadata = Metadata.newInstance(context);
                 try (TikaInputStream inner = TikaInputStream.get(messageBody.stream())) {
                     parsePayload(inner, xhtml, payloadMetadata, context);
                 }

@@ -81,7 +81,7 @@ public abstract class AbstractDBParser implements Parser {
 
         extractMetadata(connection, metadata);
 
-        xHandler = new XHTMLContentHandler(handler, metadata);
+        xHandler = new XHTMLContentHandler(handler, metadata, context);
         xHandler.startDocument();
 
         try {

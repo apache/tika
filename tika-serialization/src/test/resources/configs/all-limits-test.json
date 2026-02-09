@@ -1,0 +1,30 @@
+{
+  "parsers": [
+    "default-parser"
+  ],
+  "parse-context": {
+    "embedded-limits": {
+      "maxDepth": 10,
+      "throwOnMaxDepth": false,
+      "maxCount": 1000,
+      "throwOnMaxCount": false
+    },
+    "output-limits": {
+      "writeLimit": 100000,
+      "throwOnWriteLimit": false,
+      "maxXmlDepth": 100,
+      "maxPackageEntryDepth": 10,
+      "zipBombThreshold": 1000000,
+      "zipBombRatio": 100
+    },
+    "timeout-limits": {
+      "taskTimeoutMillis": 60000
+    },
+    "standard-metadata-limiter-factory": {
+      "maxTotalBytes": 1048576,
+      "maxFieldSize": 102400,
+      "maxKeySize": 1024,
+      "maxValuesPerField": 100
+    }
+  }
+}

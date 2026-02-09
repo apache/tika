@@ -1,0 +1,9 @@
+{
+  "metadata-filters": [
+    {
+      "json-config-only-filter": {
+        "prefix": "TEST_"
+      }
+    }
+  ]
+}

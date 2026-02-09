@@ -91,19 +91,19 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>tika-parser-code-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
-            <exclude>tika-parser-html-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
-            <exclude>tika-parser-image-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
-            <exclude>tika-parser-image-module/src/main/resources/com/github/jaiimageio/**</exclude> <!-- already checked -->
-            <exclude>tika-parser-pdf-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
-            <exclude>tika-parser-pkg-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
-            <exclude>tika-parser-text-module/**</exclude> <!-- already checked -->
-            <exclude>tika-parser-xml-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
-            <exclude>tika-parser-mail-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
-            <exclude>tika-parser-miscoffice-module/src/test/resources/test-documents/**</exclude> <!-- already checked -->
-            <exclude>tika-parser-html-commons/target/**</exclude>
-          </excludes>
+          <inputExcludes>
+            <inputExclude>tika-parser-code-module/src/test/resources/test-documents/**</inputExclude> <!-- already checked -->
+            <inputExclude>tika-parser-html-module/src/test/resources/test-documents/**</inputExclude> <!-- already checked -->
+            <inputExclude>tika-parser-image-module/src/test/resources/test-documents/**</inputExclude> <!-- already checked -->
+            <inputExclude>tika-parser-image-module/src/main/resources/com/github/jaiimageio/**</inputExclude> <!-- already checked -->
+            <inputExclude>tika-parser-pdf-module/src/test/resources/test-documents/**</inputExclude> <!-- already checked -->
+            <inputExclude>tika-parser-pkg-module/src/test/resources/test-documents/**</inputExclude> <!-- already checked -->
+            <inputExclude>tika-parser-text-module/**</inputExclude> <!-- already checked -->
+            <inputExclude>tika-parser-xml-module/src/test/resources/test-documents/**</inputExclude> <!-- already checked -->
+            <inputExclude>tika-parser-mail-module/src/test/resources/test-documents/**</inputExclude> <!-- already checked -->
+            <inputExclude>tika-parser-miscoffice-module/src/test/resources/test-documents/**</inputExclude> <!-- already checked -->
+            <inputExclude>tika-parser-html-commons/target/**</inputExclude>
+          </inputExcludes>
         </configuration>
       </plugin>
     </plugins>

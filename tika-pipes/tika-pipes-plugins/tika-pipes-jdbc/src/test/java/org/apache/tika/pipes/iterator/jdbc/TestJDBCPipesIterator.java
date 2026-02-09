@@ -163,12 +163,9 @@ public class TestJDBCPipesIterator {
         jsonConfig.put("fetchKeyColumn", "my_fetchkey");
         jsonConfig.put("emitKeyColumn", "my_fetchkey");
 
-        // Add baseConfig
-        ObjectNode baseConfig = OBJECT_MAPPER.createObjectNode();
-        baseConfig.put("fetcherId", "s3f");
-        baseConfig.put("emitterId", "s3e");
-        baseConfig.put("queueSize", 57);
-        jsonConfig.set("baseConfig", baseConfig);
+        // Add fetcherId and emitterId at root level (not nested in baseConfig)
+        jsonConfig.put("fetcherId", "s3f");
+        jsonConfig.put("emitterId", "s3e");
 
         ExtensionConfig extensionConfig = new ExtensionConfig("test-jdbc-iterator", "jdbc-pipes-iterator",
                 OBJECT_MAPPER.writeValueAsString(jsonConfig));

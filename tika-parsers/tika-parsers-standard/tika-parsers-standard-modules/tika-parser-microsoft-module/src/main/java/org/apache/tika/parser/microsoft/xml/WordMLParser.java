@@ -281,7 +281,7 @@ public class WordMLParser extends AbstractXML2003Parser {
         private void handleEmbedded(boolean outputHtml) throws SAXException {
             if (rawBytes != null) {
                 try (TikaInputStream tis = TikaInputStream.get(rawBytes)) {
-                    Metadata metadata = new Metadata();
+                    Metadata metadata = Metadata.newInstance(parseContext);
                     if (pictName != null) {
                         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, pictName);
                     }

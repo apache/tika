@@ -77,17 +77,17 @@ public class ZipParserTest extends AbstractPkgTest {
         assertContains("<div class=\"embedded\" id=\"test1.txt\" />", xml);
         assertContains("<div class=\"embedded\" id=\"test2.txt\" />", xml);
 
-        // Also make sure EMBEDDED_RELATIONSHIP_ID was
+        // Also make sure INTERNAL_PATH was
         // passed when parsing the embedded docs:
         ParseContext context = new ParseContext();
-        GatherRelIDsDocumentExtractor relIDs = new GatherRelIDsDocumentExtractor();
-        context.set(EmbeddedDocumentExtractor.class, relIDs);
+        GatherInternalPathsDocumentExtractor extractor = new GatherInternalPathsDocumentExtractor();
+        context.set(EmbeddedDocumentExtractor.class, extractor);
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testEmbedded.zip")) {
             AUTO_DETECT_PARSER.parse(tis, new BodyContentHandler(), new Metadata(), context);
         }
 
-        assertTrue(relIDs.allRelIDs.contains("test1.txt"));
-        assertTrue(relIDs.allRelIDs.contains("test2.txt"));
+        assertTrue(extractor.allInternalPaths.contains("test1.txt"));
+        assertTrue(extractor.allInternalPaths.contains("test2.txt"));
     }
 
     @Test
@@ -123,13 +123,13 @@ public class ZipParserTest extends AbstractPkgTest {
                 results.get(4).get("X-TIKA:EXCEPTION:embedded_exception"));
     }
 
-    private static class GatherRelIDsDocumentExtractor implements EmbeddedDocumentExtractor {
-        public Set<String> allRelIDs = new HashSet<>();
+    private static class GatherInternalPathsDocumentExtractor implements EmbeddedDocumentExtractor {
+        public Set<String> allInternalPaths = new HashSet<>();
 
         public boolean shouldParseEmbedded(Metadata metadata) {
-            String relID = metadata.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID);
-            if (relID != null) {
-                allRelIDs.add(relID);
+            String internalPath = metadata.get(TikaCoreProperties.INTERNAL_PATH);
+            if (internalPath != null) {
+                allInternalPaths.add(internalPath);
             }
             return false;
         }

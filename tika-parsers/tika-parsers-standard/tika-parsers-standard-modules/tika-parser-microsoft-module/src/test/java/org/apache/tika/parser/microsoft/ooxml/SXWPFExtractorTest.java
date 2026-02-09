@@ -848,4 +848,113 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContainsCount("inside-text", xml, 1);
     }
 
+    /**
+     * Test extraction of field-based hyperlinks using instrText/fldChar.
+     * These are hyperlinks embedded as field codes rather than relationship-based hyperlinks.
+     */
+    @Test
+    public void testInstrTextHyperlink() throws Exception {
+        String xml = getXML("testInstrLink.docx", parseContext).xml;
+        // The document contains a HYPERLINK field code in instrText
+        assertContains("<a href=\"https://exmaple.com/file\">", xml);
+        assertContains("Access Document(s)", xml);
+    }
+
+    /**
+     * Test extraction of external reference field codes (INCLUDEPICTURE, INCLUDETEXT, IMPORT, LINK).
+     * These can be used to hide malicious URLs in documents.
+     */
+    @Test
+    public void testExternalRefFieldCodes() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testExternalRefs.docx", parseContext);
+        Metadata m = metadataList.get(0);
+        // Check metadata flag is set
+        assertEquals("true", m.get(Office.HAS_FIELD_HYPERLINKS));
+
+        String xml = getXML("testExternalRefs.docx", parseContext).xml;
+        // Test INCLUDEPICTURE field code
+        assertContains("class=\"external-ref-INCLUDEPICTURE\"", xml);
+        assertContains("http://example.com/tracking.png", xml);
+        // Test INCLUDETEXT field code
+        assertContains("class=\"external-ref-INCLUDETEXT\"", xml);
+        assertContains("http://example.org/payload.txt", xml);
+        // Test IMPORT field code
+        assertContains("class=\"external-ref-IMPORT\"", xml);
+        assertContains("http://example.net/exploit.wmf", xml);
+        // Test LINK field code
+        assertContains("class=\"external-ref-LINK\"", xml);
+        assertContains("http://test.invalid/cmd.docx", xml);
+    }
+
+    /**
+     * Test extraction of hlinkHover (hover hyperlinks) and VML shape hrefs.
+     * These are sneaky ways to hide malicious URLs.
+     */
+    @Test
+    public void testHoverAndVmlHyperlinks() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testHoverAndVml.docx", parseContext);
+        Metadata m = metadataList.get(0);
+        // Check metadata flags are set
+        assertEquals("true", m.get(Office.HAS_HOVER_HYPERLINKS));
+        assertEquals("true", m.get(Office.HAS_VML_HYPERLINKS));
+
+        String xml = getXML("testHoverAndVml.docx", parseContext).xml;
+        // Test hlinkHover (activates on mouse hover, not click)
+        assertContains("class=\"external-ref-hlinkHover\"", xml);
+        assertContains("http://hover.example.com/phishing", xml);
+        // Test VML shape href
+        assertContains("class=\"external-ref-vml-shape-href\"", xml);
+        assertContains("http://vml.example.org/shape-link", xml);
+    }
+
+    /**
+     * Test detection of mail merge in Word documents.
+     * Mail merge can reference external data sources.
+     */
+    @Test
+    public void testMailMerge() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testMailMerge.docx", parseContext);
+        Metadata m = metadataList.get(0);
+        assertEquals("true", m.get(Office.HAS_MAIL_MERGE));
+    }
+
+    /**
+     * Test detection of attached external template.
+     * Templates can be fetched from malicious URLs.
+     */
+    @Test
+    public void testAttachedTemplate() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testAttachedTemplate.docx", parseContext);
+        Metadata m = metadataList.get(0);
+        assertEquals("true", m.get(Office.HAS_ATTACHED_TEMPLATE));
+
+        String xml = getXML("testAttachedTemplate.docx", parseContext).xml;
+        assertContains("class=\"external-ref-attachedTemplate\"", xml);
+        assertContains("example.com/templates", xml);
+    }
+
+    /**
+     * Test detection of subdocuments (master document linking external docs).
+     */
+    @Test
+    public void testSubdocument() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testSubdocument.docx", parseContext);
+        Metadata m = metadataList.get(0);
+        assertEquals("true", m.get(Office.HAS_SUBDOCUMENTS));
+
+        String xml = getXML("testSubdocument.docx", parseContext).xml;
+        assertContains("class=\"external-ref-subDocument\"", xml);
+        assertContains("example.org/chapters", xml);
+    }
+
+    /**
+     * Test detection of framesets (HTML frames loading external URLs).
+     */
+    @Test
+    public void testFrameset() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testFrameset.docx", parseContext);
+        Metadata m = metadataList.get(0);
+        assertEquals("true", m.get(Office.HAS_FRAMESETS));
+    }
+
 }

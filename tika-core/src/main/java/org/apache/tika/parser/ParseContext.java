@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
 
 /**
  * Parse context. Used to pass context information to Tika parsers.
@@ -220,6 +222,58 @@ public class ParseContext implements Serializable {
 
     public boolean isEmpty() {
         return context.isEmpty() && jsonConfigs.isEmpty();
+    }
+
+    /**
+     * Copies all entries from the source ParseContext into this one.
+     * Existing entries in this context are overwritten by source entries.
+     * <p>
+     * This copies both typed objects (from context map) and JSON configs.
+     *
+     * @param source the ParseContext to copy from
+     * @since Apache Tika 4.0
+     */
+    public void copyFrom(ParseContext source) {
+        if (source == null) {
+            return;
+        }
+        // Copy typed objects
+        context.putAll(source.context);
+        // Copy JSON configs
+        jsonConfigs.putAll(source.jsonConfigs);
+        // Copy resolved configs (if any)
+        if (source.resolvedConfigs != null && !source.resolvedConfigs.isEmpty()) {
+            if (resolvedConfigs == null) {
+                resolvedConfigs = new HashMap<>();
+            }
+            resolvedConfigs.putAll(source.resolvedConfigs);
+        }
+    }
+
+    /**
+     * Creates a new Metadata object with any configured limits applied.
+     * <p>
+     * If a {@link MetadataWriteLimiterFactory} is configured in this ParseContext, the returned
+     * Metadata will have a write limiter that enforces those limits. Otherwise,
+     * returns a plain Metadata object.
+     * <p>
+     * Parsers should use this method instead of {@code new Metadata()} when creating
+     * metadata for embedded documents, to ensure limits are applied at creation time
+     * rather than later during parsing.
+     * <p>
+     * Example usage:
+     * <pre>
+     * Metadata embeddedMetadata = Metadata.newInstance(context);
+     * embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
+     * // limits are already applied, no data bypasses the limiter
+     * </pre>
+     *
+     * @return a new Metadata object, with limits applied if configured
+     * @since Apache Tika 4.0
+     * @see Metadata#newInstance(ParseContext)
+     */
+    public Metadata newMetadata() {
+        return Metadata.newInstance(this);
     }
 
 

@@ -1,0 +1,50 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Migrating to Tika 4.x
+
+This section provides guides and background documentation for migrating to Apache Tika 4.x.
+
+See the xref:roadmap.adoc[Roadmap] for version timelines and support schedules.
+
+== Migration Guides
+
+* xref:migration-to-4x/migrating-to-4x.adoc[Migration Guide] - Step-by-step guide for upgrading from Tika 3.x to 4.x
+* xref:migration-to-4x/migrating-tika-server-4x.adoc[Tika Server Migration] - Breaking changes and new endpoints in tika-server 4.x
+* xref:migration-to-4x/metadata-changes-4x.adoc[Metadata Changes] - Detailed metadata key changes and migration examples
+
+== Background Documentation
+
+* xref:migration-to-4x/design-notes-4x.adoc[Design Notes] - Architectural decisions and design rationale
+* xref:migration-to-4x/serialization-4x.adoc[Serialization] - JSON serialization design and implementation details
+
+== TODOs / Missing Features in 4.x
+
+The following features from 3.x are not yet implemented in 4.x:
+
+=== Config Serialization
+
+The following tika-app options for dumping configuration are not yet available:
+
+* `--dump-minimal-config` - Print minimal TikaConfig
+* `--dump-current-config` - Print current TikaConfig
+* `--dump-static-config` - Print static config
+* `--dump-static-full-config` - Print static explicit config
+
+These require completing the JSON serialization support for TikaConfig objects. The underlying serialization infrastructure exists (see xref:migration-to-4x/serialization-4x.adoc[Serialization]) but the CLI integration is pending.
+
+*Workaround:* Manually create JSON config files using the templates in `tika-pipes/tika-async-cli/src/main/resources/config-template.json` as a starting point.

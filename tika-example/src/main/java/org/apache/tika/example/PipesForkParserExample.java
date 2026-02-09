@@ -26,7 +26,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.pipes.api.HandlerConfig;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.fork.PipesForkParser;
 import org.apache.tika.pipes.fork.PipesForkParserConfig;
@@ -277,7 +277,7 @@ public class PipesForkParserExample {
     public void parseEmbeddedDocumentsRmeta(Path filePath)
             throws IOException, InterruptedException, TikaException, PipesException {
         PipesForkParserConfig config = new PipesForkParserConfig()
-                .setParseMode(HandlerConfig.PARSE_MODE.RMETA);
+                .setParseMode(ParseMode.RMETA);
 
         try (PipesForkParser parser = new PipesForkParser(config);
              TikaInputStream tis = TikaInputStream.get(filePath)) {
@@ -334,7 +334,7 @@ public class PipesForkParserExample {
     public void parseEmbeddedDocumentsConcatenate(Path filePath)
             throws IOException, InterruptedException, TikaException, PipesException {
         PipesForkParserConfig config = new PipesForkParserConfig()
-                .setParseMode(HandlerConfig.PARSE_MODE.CONCATENATE);
+                .setParseMode(ParseMode.CONCATENATE);
 
         try (PipesForkParser parser = new PipesForkParser(config);
              TikaInputStream tis = TikaInputStream.get(filePath)) {

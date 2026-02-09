@@ -28,8 +28,6 @@ public class HwpStreamReader {
     private InputStream input;
     private byte[] buf;
 
-    private byte[] skipBuffer = new byte[8192];
-
     public HwpStreamReader(InputStream inputStream) {
         this.input = inputStream;
         buf = new byte[4];
@@ -103,10 +101,6 @@ public class HwpStreamReader {
     }
 
     public void skipFully(long toSkip) throws IOException {
-        //can't use commons-io skipFully in commons-io 2.12.0 and 2.13.0 (TIKA-4065 and IO-802)
-        long skipped = org.apache.tika.io.IOUtils.skip(input, toSkip, skipBuffer);
-        if (skipped != toSkip) {
-            throw new EOFException("Couldn't skip " + toSkip + ". Could only skip " + skipped);
-        }
+        IOUtils.skipFully(input, toSkip);
     }
 }

@@ -99,7 +99,7 @@ public class FeedParser implements Parser {
             metadata.set(TikaCoreProperties.DESCRIPTION, description);
             // store the other fields in the metadata
 
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
 
             xhtml.element("h1", title);

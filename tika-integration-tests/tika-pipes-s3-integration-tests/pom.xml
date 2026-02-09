@@ -55,7 +55,7 @@
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
-      <artifactId>junit-jupiter</artifactId>
+      <artifactId>testcontainers-junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -92,10 +92,10 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>src/test/resources/*.yml</exclude>
-            <exclude>src/test/resources/s3/*.json</exclude>
-          </excludes>
+          <inputExcludes>
+            <inputExclude>src/test/resources/*.yml</inputExclude>
+            <inputExclude>src/test/resources/s3/*.json</inputExclude>
+          </inputExcludes>
         </configuration>
       </plugin>
       <plugin>

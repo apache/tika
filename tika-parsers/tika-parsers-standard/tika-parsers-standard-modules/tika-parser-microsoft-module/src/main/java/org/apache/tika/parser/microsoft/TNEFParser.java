@@ -78,7 +78,7 @@ public class TNEFParser implements Parser {
             metadata.set(TikaCoreProperties.TITLE, subject);
             metadata.set(TikaCoreProperties.SUBJECT, subject);
         }
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         // Recurse into the message body RTF
         MAPIAttribute attr = msg.getMessageMAPIAttribute(MAPIProperty.RTF_COMPRESSED);
@@ -109,7 +109,7 @@ public class TNEFParser implements Parser {
                                 EmbeddedDocumentExtractor embeddedExtractor, ContentHandler handler,
                                 ParseContext context)
             throws IOException, SAXException, TikaException {
-        Metadata metadata = new Metadata();
+        Metadata metadata = Metadata.newInstance(context);
         if (name != null) {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
         }
@@ -118,8 +118,10 @@ public class TNEFParser implements Parser {
         }
 
         if (embeddedExtractor.shouldParseEmbedded(metadata)) {
-            embeddedExtractor.parseEmbedded(TikaInputStream.get(contents),
-                    new EmbeddedContentHandler(handler), metadata, context, true);
+            try (TikaInputStream tis = TikaInputStream.get(contents)) {
+                embeddedExtractor.parseEmbedded(tis,
+                        new EmbeddedContentHandler(handler), metadata, context, true);
+            }
         }
     }
 }

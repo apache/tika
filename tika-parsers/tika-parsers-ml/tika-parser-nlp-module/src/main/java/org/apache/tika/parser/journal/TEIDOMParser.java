@@ -80,7 +80,7 @@ public class TEIDOMParser {
         Document root = XMLReaderUtils
                 .buildDOM(new StringReader(source), parseContext);
 
-        Metadata metadata = new Metadata();
+        Metadata metadata = Metadata.newInstance(parseContext);
         createGrobidMetadata(source, root.getDocumentElement(), metadata);
         return metadata;
     }

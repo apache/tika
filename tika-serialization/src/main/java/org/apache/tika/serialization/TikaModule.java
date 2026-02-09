@@ -52,18 +52,26 @@ import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.digest.DigesterFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
+import org.apache.tika.extractor.UnpackSelector;
 import org.apache.tika.language.translate.Translator;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
-import org.apache.tika.metadata.writefilter.MetadataWriteFilterFactory;
+import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.DefaultParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.sax.ContentHandlerDecoratorFactory;
+import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.serialization.serdes.DefaultDetectorSerializer;
 import org.apache.tika.serialization.serdes.DefaultParserSerializer;
+import org.apache.tika.serialization.serdes.MetadataDeserializer;
+import org.apache.tika.serialization.serdes.MetadataSerializer;
+import org.apache.tika.serialization.serdes.ParseContextDeserializer;
+import org.apache.tika.serialization.serdes.ParseContextSerializer;
 
 /**
  * Jackson module that provides compact serialization for Tika components.
@@ -83,6 +91,11 @@ public class TikaModule extends SimpleModule {
 
     private static ObjectMapper sharedMapper;
 
+    // Plain JSON mapper for converting JsonNodes to JSON strings.
+    // This is needed because the main mapper may use a binary format (e.g., Smile)
+    // which doesn't support writeValueAsString().
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+
     /**
      * Interfaces that use compact format serialization.
      * Types implementing these interfaces will be serialized as:
@@ -101,8 +114,10 @@ public class TikaModule extends SimpleModule {
         COMPACT_FORMAT_INTERFACES.add(Renderer.class);
         COMPACT_FORMAT_INTERFACES.add(DigesterFactory.class);
         COMPACT_FORMAT_INTERFACES.add(EmbeddedDocumentExtractorFactory.class);
-        COMPACT_FORMAT_INTERFACES.add(MetadataWriteFilterFactory.class);
+        COMPACT_FORMAT_INTERFACES.add(MetadataWriteLimiterFactory.class);
         COMPACT_FORMAT_INTERFACES.add(ContentHandlerDecoratorFactory.class);
+        COMPACT_FORMAT_INTERFACES.add(ContentHandlerFactory.class);
+        COMPACT_FORMAT_INTERFACES.add(UnpackSelector.class);
     }
 
     /**
@@ -110,16 +125,56 @@ public class TikaModule extends SimpleModule {
      * Returns true if the type implements any of the registered compact format interfaces.
      */
     private static boolean usesCompactFormat(Class<?> type) {
+        return findContextKeyInterface(type) != null;
+    }
+
+    /**
+     * Finds the appropriate context key interface for a given type.
+     * This is used to determine which interface should be used as the ParseContext key
+     * when storing instances of this type.
+     * <p>
+     * Security note: This method only helps determine the context key - it does NOT
+     * affect which classes can be instantiated. Classes must still be registered
+     * via @TikaComponent to be deserializable.
+     *
+     * @param type the type to find the context key for
+     * @return the interface to use as context key, or null if none found
+     */
+    public static Class<?> findContextKeyInterface(Class<?> type) {
         for (Class<?> iface : COMPACT_FORMAT_INTERFACES) {
             if (iface.isAssignableFrom(type)) {
-                return true;
+                return iface;
             }
         }
-        return false;
+        return null;
     }
 
     public TikaModule() {
         super("TikaModule");
+
+        // Register MediaType serializers (string-based)
+        addSerializer(MediaType.class, new JsonSerializer<MediaType>() {
+            @Override
+            public void serialize(MediaType value, JsonGenerator gen, SerializerProvider serializers)
+                    throws IOException {
+                gen.writeString(value.toString());
+            }
+        });
+        addDeserializer(MediaType.class, new JsonDeserializer<MediaType>() {
+            @Override
+            public MediaType deserialize(JsonParser p, DeserializationContext ctxt)
+                    throws IOException {
+                return MediaType.parse(p.getValueAsString());
+            }
+        });
+
+        // Register Metadata serializers
+        addSerializer(Metadata.class, new MetadataSerializer());
+        addDeserializer(Metadata.class, new MetadataDeserializer());
+
+        // Register ParseContext serializers
+        addSerializer(ParseContext.class, new ParseContextSerializer());
+        addDeserializer(ParseContext.class, new ParseContextDeserializer());
     }
 
     /**
@@ -211,12 +266,9 @@ public class TikaModule extends SimpleModule {
      */
     private static class TikaComponentDeserializer extends JsonDeserializer<Object> {
         private final Class<?> expectedType;
-        // Plain mapper for property updates (avoids infinite recursion with registered types)
-        private final ObjectMapper plainMapper;
 
         TikaComponentDeserializer(Class<?> expectedType) {
             this.expectedType = expectedType;
-            this.plainMapper = new ObjectMapper();
         }
 
         @Override
@@ -291,19 +343,18 @@ public class TikaModule extends SimpleModule {
                 } else if (cleanedConfig == null || cleanedConfig.isEmpty()) {
                     // If no config, use default constructor
                     instance = clazz.getDeclaredConstructor().newInstance();
-                } else if (SelfConfiguring.class.isAssignableFrom(clazz)) {
-                    // SelfConfiguring components: prefer JsonConfig constructor if available
+                } else {
+                    // Try JsonConfig constructor first (works for any component)
                     Constructor<?> jsonConfigCtor = findJsonConfigConstructor(clazz);
                     if (jsonConfigCtor != null) {
-                        String json = mapper.writeValueAsString(cleanedConfig);
+                        // Use plain JSON mapper since the main mapper may be binary (Smile)
+                        String json = JSON_MAPPER.writeValueAsString(cleanedConfig);
                         instance = jsonConfigCtor.newInstance((JsonConfig) () -> json);
                     } else {
+                        // Fall back to no-arg constructor + Jackson bean deserialization
                         instance = clazz.getDeclaredConstructor().newInstance();
+                        mapper.readerForUpdating(instance).readValue(cleanedConfig);
                     }
-                } else {
-                    // Non-SelfConfiguring: use Jackson bean deserialization
-                    instance = clazz.getDeclaredConstructor().newInstance();
-                    plainMapper.readerForUpdating(instance).readValue(cleanedConfig);
                 }
 
                 // Call initialize() on Initializable components

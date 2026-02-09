@@ -1,0 +1,473 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Tika-Server Integration Testing
+
+Integration tests for `tika-server` to be run from a distribution ZIP.
+
+== Setup
+
+[source,bash]
+----
+# Create test directory
+mkdir -p /tmp/tika-server-test
+cd /tmp/tika-server-test
+
+# Copy and extract distribution
+cp /path/to/tika-server-standard-4.0.0-SNAPSHOT-bin.zip .
+unzip tika-server-standard-4.0.0-SNAPSHOT-bin.zip
+
+# Copy test files
+cp /path/to/test-documents/testPDF.pdf .
+cp /path/to/test-documents/testHTML.html .
+cp /path/to/test-documents/test_recursive_embedded.docx .
+----
+
+== Part 1: Default Mode Tests
+
+Start server in default mode (config endpoints disabled):
+
+[source,bash]
+----
+java -jar tika-server.jar --port 9998 &
+sleep 8
+curl -s http://localhost:9998/version
+----
+
+=== Test 1: GET /version
+
+[source,bash]
+----
+curl -s http://localhost:9998/version
+----
+
+*Expected:* `Apache Tika X.X.X`
+
+=== Test 2: PUT /detect/stream
+
+[source,bash]
+----
+curl -s -X PUT -T testPDF.pdf http://localhost:9998/detect/stream
+----
+
+*Expected:* `application/pdf`
+
+=== Test 3: PUT /tika/text
+
+[source,bash]
+----
+curl -s -X PUT -T testPDF.pdf http://localhost:9998/tika/text
+----
+
+*Expected:* Plain text content extracted from PDF.
+
+=== Test 4: PUT /tika/html
+
+[source,bash]
+----
+curl -s -X PUT -T testPDF.pdf http://localhost:9998/tika/html
+----
+
+*Expected:* HTML with metadata in `<meta>` tags and content in `<body>`.
+
+=== Test 5: PUT /tika/xml
+
+[source,bash]
+----
+curl -s -X PUT -T testPDF.pdf http://localhost:9998/tika/xml
+----
+
+*Expected:* XHTML content (starts with `<html xmlns=...>`).
+
+=== Test 6: PUT /tika/json
+
+[source,bash]
+----
+curl -s -X PUT -T testPDF.pdf http://localhost:9998/tika/json
+----
+
+*Expected:* JSON object with metadata and X-TIKA:content field.
+
+=== Test 7: PUT /meta
+
+[source,bash]
+----
+curl -s -X PUT -H "Accept: application/json" -T testPDF.pdf http://localhost:9998/meta
+----
+
+*Expected:* JSON object with metadata only (no content).
+
+=== Test 8: PUT /meta/{field}
+
+[source,bash]
+----
+curl -s -X PUT -T testPDF.pdf http://localhost:9998/meta/Content-Type
+----
+
+*Expected:* `Content-Type,application/pdf`
+
+=== Test 9: PUT /rmeta
+
+[source,bash]
+----
+curl -s -X PUT -T test_recursive_embedded.docx http://localhost:9998/rmeta
+----
+
+*Expected:* JSON array with metadata for main document and all embedded documents.
+
+=== Test 10: PUT /rmeta/text
+
+[source,bash]
+----
+curl -s -X PUT -T test_recursive_embedded.docx http://localhost:9998/rmeta/text
+----
+
+*Expected:* JSON array with ToTextContentHandler content.
+
+=== Test 11: PUT /language/stream
+
+[source,bash]
+----
+curl -s -X PUT -T testPDF.pdf http://localhost:9998/language/stream
+----
+
+*Expected:* Two-letter language code (e.g., `en`, `th`).
+
+=== Test 12: PUT /unpack/all
+
+[source,bash]
+----
+curl -s -X PUT -T test_recursive_embedded.docx http://localhost:9998/unpack/all -o /tmp/unpack.zip
+unzip -l /tmp/unpack.zip
+----
+
+*Expected:* ZIP file containing extracted embedded files plus `__TEXT__` and `__METADATA__` files.
+
+=== Test 13: GET /parsers
+
+[source,bash]
+----
+curl -s -H "Accept: text/plain" http://localhost:9998/parsers
+----
+
+*Expected:* Hierarchical list of available parsers.
+
+=== Test 14: GET /detectors
+
+[source,bash]
+----
+curl -s -H "Accept: text/plain" http://localhost:9998/detectors
+----
+
+*Expected:* List of available detectors.
+
+=== Test 15: GET /mime-types
+
+[source,bash]
+----
+curl -s -H "Accept: application/json" http://localhost:9998/mime-types
+----
+
+*Expected:* JSON object with all known MIME types.
+
+=== Test 16: POST /meta/form
+
+[source,bash]
+----
+curl -s -X POST -F "upload=@testPDF.pdf" -H "Accept: application/json" http://localhost:9998/meta/form
+----
+
+*Expected:* JSON metadata from multipart form upload.
+
+=== Test 17: POST /rmeta/form
+
+[source,bash]
+----
+curl -s -X POST -F "upload=@test_recursive_embedded.docx" http://localhost:9998/rmeta/form
+----
+
+*Expected:* JSON array with recursive metadata from multipart upload.
+
+=== Test 18: Config Endpoints Blocked (Default Mode)
+
+[source,bash]
+----
+curl -s -w "\nHTTP Status: %{http_code}\n" -X POST -F "file=@testPDF.pdf" http://localhost:9998/meta/config
+curl -s -w "\nHTTP Status: %{http_code}\n" -X POST -F "file=@testPDF.pdf" http://localhost:9998/rmeta/config
+curl -s -w "\nHTTP Status: %{http_code}\n" -X POST -F "file=@testPDF.pdf" http://localhost:9998/tika/config
+curl -s -w "\nHTTP Status: %{http_code}\n" -X POST -F "file=@testPDF.pdf" http://localhost:9998/unpack/config
+----
+
+*Expected:* All return HTTP 403 with message: "Config endpoints are disabled. Set enableUnsecureFeatures=true in server config."
+
+== Part 2: Tests with enableUnsecureFeatures
+
+Stop the default server and create a config file:
+
+[source,bash]
+----
+pkill -f "tika-server.jar"
+
+cat > tika-config-unsecure.json << 'EOF'
+{
+  "server": {
+    "port": 9998,
+    "host": "localhost",
+    "enableUnsecureFeatures": true
+  },
+  "parsers": [
+    {"default-parser": {}}
+  ],
+  "plugin-roots": "/tmp/tika-server-test/plugins"
+}
+EOF
+
+java -jar tika-server.jar -c tika-config-unsecure.json &
+sleep 10
+curl -s http://localhost:9998/version
+----
+
+=== Test 19: POST /meta/config
+
+[source,bash]
+----
+curl -s -X POST -F "file=@testPDF.pdf" -H "Accept: application/json" http://localhost:9998/meta/config
+----
+
+*Expected:* JSON metadata.
+
+=== Test 20: POST /meta/config with custom parser config
+
+[source,bash]
+----
+curl -s -X POST -F "file=@testPDF.pdf" \
+  -F 'config={"parsers":[{"pdf-parser":{"ocrStrategy":"NO_OCR"}}]}' \
+  -H "Accept: application/json" \
+  http://localhost:9998/meta/config
+----
+
+*Expected:* JSON metadata with custom PDF parser config applied.
+
+=== Test 21: POST /unpack/config
+
+[source,bash]
+----
+curl -s -X POST -F "file=@test_recursive_embedded.docx" http://localhost:9998/unpack/config -o /tmp/unpack-config.zip
+unzip -l /tmp/unpack-config.zip
+----
+
+*Expected:* ZIP with extracted embedded files.
+
+=== Test 22: POST /unpack/all/config
+
+[source,bash]
+----
+curl -s -X POST -F "file=@test_recursive_embedded.docx" http://localhost:9998/unpack/all/config -o /tmp/unpack-all.zip
+unzip -l /tmp/unpack-all.zip
+----
+
+*Expected:* ZIP with all recursively extracted files.
+
+== Server Options
+
+=== Test 23: Custom Port
+
+[source,bash]
+----
+java -jar tika-server.jar --port 9999 &
+sleep 8
+curl -s http://localhost:9999/version
+----
+
+*Expected:* Server responds on port 9999.
+
+=== Test 24: Custom Host
+
+[source,bash]
+----
+java -jar tika-server.jar --host 0.0.0.0 --port 9998 &
+----
+
+*Expected:* Server binds to all interfaces.
+
+=== Test 25: With Config File
+
+[source,bash]
+----
+java -jar tika-server.jar -c tika-config.json &
+----
+
+*Expected:* Server uses custom configuration.
+
+== Headers
+
+=== Test 26: X-Tika-OCRskipOcr Header
+
+[source,bash]
+----
+curl -s -X PUT -H "X-Tika-OCRskipOcr: true" -T testPDF.pdf http://localhost:9998/tika/text
+----
+
+*Expected:* Text extraction without OCR.
+
+=== Test 27: Content-Disposition Filename
+
+[source,bash]
+----
+curl -s -X PUT -H "Content-Disposition: attachment; filename=myfile.pdf" -T testPDF.pdf http://localhost:9998/meta/resourceName
+----
+
+*Expected:* Returns the filename from Content-Disposition header.
+
+== Error Handling
+
+=== Test 28: Non-existent Endpoint
+
+[source,bash]
+----
+curl -s -w "\nHTTP Status: %{http_code}\n" http://localhost:9998/nonexistent
+----
+
+*Expected:* 404 Not Found.
+
+=== Test 29: Invalid Method
+
+[source,bash]
+----
+curl -s -w "\nHTTP Status: %{http_code}\n" -X DELETE http://localhost:9998/tika/text
+----
+
+*Expected:* 405 Method Not Allowed.
+
+== Cleanup
+
+[source,bash]
+----
+pkill -f "tika-server.jar"
+rm -rf /tmp/tika-server-test
+----
+
+== Usability Test Results
+
+The following endpoints were tested and verified working:
+
+=== Default Mode (enableUnsecureFeatures=false)
+
+[cols="1,1,1", options="header"]
+|===
+|Endpoint |Method |Status
+
+|`/version` |GET |PASS
+|`/detect/stream` |PUT |PASS
+|`/tika` |PUT |PASS
+|`/tika/text` |PUT |PASS
+|`/tika/html` |PUT |PASS
+|`/tika/xml` |PUT |PASS
+|`/tika/json` |PUT |PASS
+|`/meta` |PUT |PASS
+|`/meta/{field}` |PUT |PASS
+|`/rmeta` |PUT |PASS
+|`/rmeta/text` |PUT |PASS
+|`/language/stream` |PUT |PASS
+|`/unpack/all` |PUT |PASS
+|`/parsers` |GET |PASS
+|`/detectors` |GET |PASS
+|`/mime-types` |GET |PASS
+|`/meta/form` |POST |PASS
+|`/rmeta/form` |POST |PASS
+|`/meta/config` |POST |BLOCKED (403) - Expected
+|`/rmeta/config` |POST |BLOCKED (403) - Expected
+|`/tika/config` |POST |BLOCKED (403) - Expected
+|`/unpack/config` |POST |BLOCKED (403) - Expected
+|===
+
+=== With enableUnsecureFeatures=true
+
+[cols="1,1,1", options="header"]
+|===
+|Endpoint |Method |Status
+
+|`/meta/config` |POST |PASS
+|`/rmeta/config` |POST |PASS
+|`/tika/config` |POST |PASS
+|`/unpack/config` |POST |PASS
+|`/unpack/all/config` |POST |PASS
+|===
+
+== Known Issues
+
+=== Issue 1: Language Detection Accuracy
+
+Short texts may not be detected reliably. The `/language/stream` endpoint works best with substantial text content.
+
+== Quick Reference
+
+=== Basic Parsing
+[source,bash]
+----
+# Text output
+curl -X PUT -T file.pdf http://localhost:9998/tika/text
+
+# HTML output
+curl -X PUT -T file.pdf http://localhost:9998/tika/html
+
+# JSON output (metadata + content)
+curl -X PUT -T file.pdf http://localhost:9998/tika/json
+----
+
+=== Metadata Only
+[source,bash]
+----
+curl -X PUT -H "Accept: application/json" -T file.pdf http://localhost:9998/meta
+----
+
+=== Recursive Metadata
+[source,bash]
+----
+curl -X PUT -T file.docx http://localhost:9998/rmeta
+curl -X PUT -T file.docx http://localhost:9998/rmeta/text
+----
+
+=== Detection
+[source,bash]
+----
+curl -X PUT -T file.pdf http://localhost:9998/detect/stream
+----
+
+=== Extract Embedded Files
+[source,bash]
+----
+curl -X PUT -T file.docx http://localhost:9998/unpack/all -o output.zip
+----
+
+== Implementation Notes
+
+=== Automatic Component Configuration
+
+The server automatically configures the required fetcher and emitter for pipes-based parsing:
+
+* **tika-server-fetcher**: A file-system-fetcher with `basePath` pointing to a dedicated temp directory for input files. This enables the `/tika`, `/rmeta`, and `/meta` endpoints to work with uploaded files.
+
+* **unpack-emitter**: A file-system-emitter with `basePath` pointing to a dedicated temp directory for unpacked files. This is only created when the `/unpack` endpoint is enabled (default). This enables the `/unpack/all` endpoint to return embedded files as a ZIP.
+
+Both temp directories are cleaned up on server shutdown.
+
+If a user config file does not include `plugin-roots`, the server automatically adds a default value pointing to a `plugins` directory in the current working directory.
+
+=== Security Boundary
+
+Child processes (pipes workers) are configured with `basePath` rather than `allowAbsolutePaths`, ensuring they can only access files within their designated temp directories. This provides a security boundary between the parent server process and forked child processes.

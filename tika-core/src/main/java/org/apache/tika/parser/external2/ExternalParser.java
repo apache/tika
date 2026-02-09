@@ -164,7 +164,7 @@ public class ExternalParser implements Parser {
             if (config.isReturnStderr()) {
                 metadata.set(ExternalProcess.STD_ERR, result.getStderr());
             }
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
             handleOutput(result, outFile, xhtml, metadata, context);
             xhtml.endDocument();

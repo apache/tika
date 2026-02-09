@@ -119,7 +119,7 @@ public class DigestDef {
      *
      * @return the metadata key
      */
-    public String getMetadataKey() {
+    public String metadataKey() {
         StringBuilder sb = new StringBuilder();
         sb.append(TikaCoreProperties.TIKA_META_PREFIX);
         sb.append("digest");

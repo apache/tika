@@ -17,7 +17,9 @@
 package org.apache.tika.serialization.serdes;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -46,22 +48,32 @@ import org.apache.tika.serialization.ComponentNameResolver;
  */
 public class ParseContextSerializer extends JsonSerializer<ParseContext> {
 
-    public static final String PARSE_CONTEXT = "parseContext";
+    public static final String PARSE_CONTEXT = "parse-context";
     public static final String TYPED = "typed";
+
+    // Plain mapper for serializing values without TikaModule's component wrapping
+    private static final ObjectMapper PLAIN_MAPPER = new ObjectMapper();
+
+    static {
+        // Allow serialization of classes with no properties
+        PLAIN_MAPPER.disable(com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS);
+    }
 
     @Override
     public void serialize(ParseContext parseContext, JsonGenerator gen,
                          SerializerProvider serializers) throws IOException {
         gen.writeStartObject();
 
-        ObjectMapper mapper = (ObjectMapper) gen.getCodec();
+        // Track which friendly names have been serialized under "typed"
+        // so we can skip them when serializing jsonConfigs (avoid duplicates)
+        Set<String> serializedNames = new HashSet<>();
 
         // First, serialize typed objects from the context map under "typed" key
         Map<String, Object> contextMap = parseContext.getContextMap();
         boolean hasTypedObjects = false;
 
         for (Map.Entry<String, Object> entry : contextMap.entrySet()) {
-            String className = entry.getKey();
+            String keyClassName = entry.getKey();
             Object value = entry.getValue();
 
             // Skip null values
@@ -69,10 +81,14 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
                 continue;
             }
 
-            // Try to find a friendly component name, otherwise use FQCN
-            String keyName = findComponentName(className);
+            // Use the actual value's class for serialization, not the key class (which may be an interface)
+            // This ensures we can deserialize back to the concrete class
+            String valueClassName = value.getClass().getName();
+
+            // Try to find a friendly component name for the value's class, otherwise use FQCN
+            String keyName = findComponentName(valueClassName);
             if (keyName == null) {
-                keyName = className;
+                keyName = valueClassName;
             }
 
             if (!hasTypedObjects) {
@@ -81,7 +97,12 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
                 hasTypedObjects = true;
             }
             gen.writeFieldName(keyName);
-            gen.writeRawValue(mapper.writeValueAsString(value));
+            // Use writeTree instead of writeRawValue for binary format support (e.g., Smile)
+            // and stricter validation (fails early if value can't be serialized)
+            gen.writeTree(PLAIN_MAPPER.valueToTree(value));
+
+            // Track this name so we skip it in jsonConfigs
+            serializedNames.add(keyName);
         }
 
         if (hasTypedObjects) {
@@ -89,10 +110,16 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
         }
 
         // Then, serialize JSON configs at the top level
+        // Skip entries that were already serialized under "typed" (they've been resolved)
         Map<String, JsonConfig> jsonConfigs = parseContext.getJsonConfigs();
         for (Map.Entry<String, JsonConfig> entry : jsonConfigs.entrySet()) {
+            if (serializedNames.contains(entry.getKey())) {
+                // Already serialized under "typed", skip to avoid duplicate
+                continue;
+            }
             gen.writeFieldName(entry.getKey());
-            gen.writeRawValue(entry.getValue().json());
+            // Parse the JSON string into a tree for binary format support
+            gen.writeTree(PLAIN_MAPPER.readTree(entry.getValue().json()));
         }
 
         gen.writeEndObject();

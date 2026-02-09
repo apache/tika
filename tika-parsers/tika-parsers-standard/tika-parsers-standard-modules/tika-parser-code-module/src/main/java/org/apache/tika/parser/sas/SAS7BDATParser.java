@@ -67,7 +67,7 @@ public class SAS7BDATParser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
         metadata.set(Metadata.CONTENT_TYPE, TYPE_SAS7BDAT.toString());
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         SasFileReader sas = new SasFileReaderImpl(tis);

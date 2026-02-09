@@ -48,6 +48,20 @@ import org.apache.tika.exception.TikaConfigException;
  */
 public class ComponentRegistry {
 
+    /**
+     * Built-in aliases for external dependencies.
+     * Maps component names to fully qualified class names.
+     */
+    private static final Map<String, String> BUILTIN_ALIASES = createBuiltinAliases();
+
+    private static Map<String, String> createBuiltinAliases() {
+        Map<String, String> aliases = new HashMap<>();
+        // UnpackConfig is in tika-pipes-core which can't depend on tika-core for @TikaComponent
+        aliases.put("unpack-config",
+                "org.apache.tika.pipes.core.extractor.UnpackConfig");
+        return Collections.unmodifiableMap(aliases);
+    }
+
     private final Map<String, ComponentInfo> components;
     private final Map<String, String> classNameToFriendlyName;  // Reverse lookup by class name
     private final ClassLoader classLoader;
@@ -106,6 +120,21 @@ public class ComponentRegistry {
      */
     public Map<String, ComponentInfo> getAllComponents() {
         return Collections.unmodifiableMap(components);
+    }
+
+    /**
+     * Returns all components marked as defaults.
+     *
+     * @return unmodifiable map of component names to component info for default implementations
+     */
+    public Map<String, ComponentInfo> getDefaultComponents() {
+        Map<String, ComponentInfo> defaults = new LinkedHashMap<>();
+        for (Map.Entry<String, ComponentInfo> entry : components.entrySet()) {
+            if (entry.getValue().isDefault()) {
+                defaults.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return Collections.unmodifiableMap(defaults);
     }
 
     /**
@@ -187,20 +216,28 @@ public class ComponentRegistry {
                             ": name or class is empty");
                 }
 
-                // Parse value: className or className:key=contextKeyClass
+                // Parse value: className or className:key=contextKeyClass[:default]
                 String className = value;
                 String contextKeyClassName = null;
+                boolean isDefault = false;
 
+                // Parse suffixes (e.g., :key=SomeClass:default)
                 int colonIndex = value.indexOf(':');
                 if (colonIndex != -1) {
                     className = value.substring(0, colonIndex);
-                    String suffix = value.substring(colonIndex + 1);
-                    if (suffix.startsWith("key=")) {
-                        contextKeyClassName = suffix.substring(4);
-                    } else {
-                        throw new TikaConfigException(
-                                "Invalid index file format at " + url + " line " + lineNumber +
-                                ": unknown suffix '" + suffix + "', expected 'key=...'");
+                    String suffixes = value.substring(colonIndex + 1);
+
+                    // Parse each colon-separated suffix
+                    for (String suffix : suffixes.split(":")) {
+                        if (suffix.startsWith("key=")) {
+                            contextKeyClassName = suffix.substring(4);
+                        } else if (suffix.equals("default")) {
+                            isDefault = true;
+                        } else if (!suffix.isEmpty()) {
+                            throw new TikaConfigException(
+                                    "Invalid index file format at " + url + " line " + lineNumber +
+                                    ": unknown suffix '" + suffix + "', expected 'key=...' or 'default'");
+                        }
                     }
                 }
 
@@ -221,7 +258,7 @@ public class ComponentRegistry {
                         }
                     }
 
-                    result.put(name, new ComponentInfo(clazz, selfConfiguring, contextKey));
+                    result.put(name, new ComponentInfo(clazz, selfConfiguring, contextKey, isDefault));
                 } catch (ClassNotFoundException e) {
                     throw new TikaConfigException(
                             "Component class not found: " + className + " (from " + url + ")", e);

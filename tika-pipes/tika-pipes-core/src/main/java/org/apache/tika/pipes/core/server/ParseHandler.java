@@ -31,22 +31,24 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.detect.Detector;
 import org.apache.tika.digest.Digester;
+import org.apache.tika.digest.DigesterFactory;
 import org.apache.tika.digest.SkipContainerDocumentDigest;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.extractor.DocumentSelector;
-import org.apache.tika.extractor.EmbeddedDocumentBytesHandler;
+import org.apache.tika.exception.WriteLimitReachedException;
+import org.apache.tika.extractor.UnpackHandler;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.ParseRecord;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.api.HandlerConfig;
-import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
-import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.pipes.api.ParseMode;
+import org.apache.tika.pipes.core.extractor.UnpackConfig;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.utils.ExceptionUtils;
@@ -56,22 +58,25 @@ class ParseHandler {
     private static final Logger LOG = LoggerFactory.getLogger(ParseHandler.class);
 
     private final Detector detector;
-    private final Digester digester;
     private final ArrayBlockingQueue<Metadata> intermediateResult;
     private final CountDownLatch countDownLatch;
     private final AutoDetectParser autoDetectParser;
     private final RecursiveParserWrapper recursiveParserWrapper;
+    private final ContentHandlerFactory defaultContentHandlerFactory;
+    private final ParseMode defaultParseMode;
 
 
-    ParseHandler(Detector detector, Digester digester, ArrayBlockingQueue<Metadata> intermediateResult,
+    ParseHandler(Detector detector, ArrayBlockingQueue<Metadata> intermediateResult,
                  CountDownLatch countDownLatch, AutoDetectParser autoDetectParser,
-                 RecursiveParserWrapper recursiveParserWrapper) {
+                 RecursiveParserWrapper recursiveParserWrapper, ContentHandlerFactory defaultContentHandlerFactory,
+                 ParseMode defaultParseMode) {
         this.detector = detector;
-        this.digester = digester;
         this.intermediateResult = intermediateResult;
         this.countDownLatch = countDownLatch;
         this.autoDetectParser = autoDetectParser;
         this.recursiveParserWrapper = recursiveParserWrapper;
+        this.defaultContentHandlerFactory = defaultContentHandlerFactory;
+        this.defaultParseMode = defaultParseMode;
     }
 
     PipesWorker.ParseDataOrPipesResult parseWithStream(FetchEmitTuple fetchEmitTuple, TikaInputStream stream, Metadata metadata, ParseContext parseContext)
@@ -79,25 +84,51 @@ class ParseHandler {
 
         List<Metadata> metadataList;
         //this adds the EmbeddedDocumentByteStore to the parsecontext
-        HandlerConfig handlerConfig = parseContext.get(HandlerConfig.class);
-        if (handlerConfig.getParseMode() == HandlerConfig.PARSE_MODE.RMETA) {
+        ParseMode parseMode = getParseMode(parseContext);
+        ContentHandlerFactory contentHandlerFactory = getContentHandlerFactory(parseContext);
+        if (parseMode == ParseMode.NO_PARSE) {
+            metadataList = detectOnly(fetchEmitTuple, stream, metadata, parseContext);
+        } else if (parseMode == ParseMode.RMETA || parseMode == ParseMode.UNPACK) {
+            // UNPACK uses the same recursive parsing as RMETA
+            // The difference is in setup (PipesWorker) - UNPACK has mandatory byte extraction
             metadataList =
-                    parseRecursive(fetchEmitTuple, handlerConfig, stream, metadata, parseContext);
+                    parseRecursive(fetchEmitTuple, contentHandlerFactory, stream, metadata, parseContext);
         } else {
-            metadataList = parseConcatenated(fetchEmitTuple, handlerConfig, stream, metadata,
+            metadataList = parseConcatenated(fetchEmitTuple, contentHandlerFactory, stream, metadata,
                     parseContext);
         }
 
         return new PipesWorker.ParseDataOrPipesResult(new MetadataListAndEmbeddedBytes(metadataList,
-                parseContext.get(EmbeddedDocumentBytesHandler.class)), null);
+                parseContext.get(UnpackHandler.class)), null);
+    }
+
+    private ParseMode getParseMode(ParseContext parseContext) {
+        ParseMode mode = parseContext.get(ParseMode.class);
+        if (mode != null) {
+            return mode;
+        }
+        // Fall back to default loaded from TikaLoader
+        return defaultParseMode;
+    }
+
+    private ContentHandlerFactory getContentHandlerFactory(ParseContext parseContext) {
+        ContentHandlerFactory factory = parseContext.get(ContentHandlerFactory.class);
+        if (factory != null) {
+            return factory;
+        }
+        // Fall back to default loaded from TikaLoader
+        return defaultContentHandlerFactory;
     }
 
 
 
     private void _preParse(FetchEmitTuple t, TikaInputStream tis, Metadata metadata,
                            ParseContext parseContext) {
-        if (digester != null) {
+        // Get DigesterFactory from ParseContext (configured via parse-context)
+        DigesterFactory digesterFactory = parseContext.get(DigesterFactory.class);
+        if (digesterFactory != null && !digesterFactory.isSkipContainerDocumentDigest()) {
             try {
+                Digester digester = digesterFactory.build();
                 digester.digest(tis, metadata, parseContext);
                 // Mark that we've already digested the container document so AutoDetectParser
                 // won't re-digest it during parsing
@@ -114,12 +145,12 @@ class ParseHandler {
         } catch (IOException e) {
             LOG.warn("problem detecting: " + t.getId(), e);
         }
-        EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);
-        if (embeddedDocumentBytesConfig != null &&
-                embeddedDocumentBytesConfig.isIncludeOriginal()) {
-            EmbeddedDocumentBytesHandler embeddedDocumentByteStore = parseContext.get(EmbeddedDocumentBytesHandler.class);
+        UnpackConfig unpackConfig = parseContext.get(UnpackConfig.class);
+        if (unpackConfig != null &&
+                unpackConfig.isIncludeOriginal()) {
+            UnpackHandler unpackHandler = parseContext.get(UnpackHandler.class);
             try (InputStream is = Files.newInputStream(tis.getPath())) {
-                embeddedDocumentByteStore.add(0, metadata, is);
+                unpackHandler.add(0, metadata, is);
             } catch (IOException e) {
                 LOG.warn("problem reading source file into embedded document byte store", e);
             }
@@ -132,15 +163,23 @@ class ParseHandler {
         return metadata;
     }
 
+    /**
+     * Performs digest (if configured) and content type detection only, without parsing.
+     */
+    private List<Metadata> detectOnly(FetchEmitTuple fetchEmitTuple, TikaInputStream stream,
+                                      Metadata metadata, ParseContext parseContext) {
+        _preParse(fetchEmitTuple, stream, metadata, parseContext);
+        return Collections.singletonList(metadata);
+    }
+
     public List<Metadata> parseRecursive(FetchEmitTuple fetchEmitTuple,
-                                              HandlerConfig handlerConfig, TikaInputStream stream,
+                                              ContentHandlerFactory contentHandlerFactory, TikaInputStream stream,
                                               Metadata metadata, ParseContext parseContext) throws InterruptedException {
         //Intentionally do not add the metadata filter here!
         //We need to let stacktraces percolate
+        // Embedded limits are now configured via EmbeddedLimits in ParseContext
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(handlerConfig.getType(),
-                        handlerConfig.getWriteLimit(), handlerConfig.isThrowOnWriteLimitReached(),
-                        parseContext), handlerConfig.getMaxEmbeddedResources());
+                contentHandlerFactory);
 
         long start = System.currentTimeMillis();
 
@@ -168,27 +207,18 @@ class ParseHandler {
     }
 
     public List<Metadata> parseConcatenated(FetchEmitTuple fetchEmitTuple,
-                                             HandlerConfig handlerConfig, TikaInputStream stream,
+                                             ContentHandlerFactory contentHandlerFactory, TikaInputStream stream,
                                              Metadata metadata, ParseContext parseContext) throws InterruptedException {
 
-        ContentHandlerFactory contentHandlerFactory =
-                new BasicContentHandlerFactory(handlerConfig.getType(),
-                        handlerConfig.getWriteLimit(), handlerConfig.isThrowOnWriteLimitReached(),
-                        parseContext);
+        ContentHandler handler = contentHandlerFactory.createHandler();
 
-        ContentHandler handler = contentHandlerFactory.getNewContentHandler();
-        parseContext.set(DocumentSelector.class, new DocumentSelector() {
-            final int maxEmbedded = handlerConfig.getMaxEmbeddedResources();
-            int embedded = 0;
-
-            @Override
-            public boolean select(Metadata metadata) {
-                if (maxEmbedded < 0) {
-                    return true;
-                }
-                return embedded++ < maxEmbedded;
-            }
-        });
+        // Configure ParseRecord for embedded document limits
+        // ParseRecord.newInstance reads from EmbeddedLimits in ParseContext
+        ParseRecord parseRecord = parseContext.get(ParseRecord.class);
+        if (parseRecord == null) {
+            parseRecord = ParseRecord.newInstance(parseContext);
+            parseContext.set(ParseRecord.class, parseRecord);
+        }
 
         String containerException = null;
         long start = System.currentTimeMillis();
@@ -196,11 +226,15 @@ class ParseHandler {
         //queue better be empty. we deserve an exception if not
         intermediateResult.add(metadata);
         countDownLatch.await();
+        boolean writeLimitReached = false;
         try {
             autoDetectParser.parse(stream, handler, metadata, parseContext);
         } catch (SAXException e) {
             containerException = ExceptionUtils.getStackTrace(e);
             LOG.warn("sax problem:" + fetchEmitTuple.getId(), e);
+            if (WriteLimitReachedException.isWriteLimitReached(e)) {
+                writeLimitReached = true;
+            }
         } catch (EncryptedDocumentException e) {
             containerException = ExceptionUtils.getStackTrace(e);
             LOG.warn("encrypted document:" + fetchEmitTuple.getId(), e);
@@ -214,6 +248,16 @@ class ParseHandler {
             metadata.add(TikaCoreProperties.TIKA_CONTENT, handler.toString());
             if (containerException != null) {
                 metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION, containerException);
+            }
+            if (writeLimitReached) {
+                metadata.set(TikaCoreProperties.WRITE_LIMIT_REACHED, true);
+            }
+            // Set limit reached flags from ParseRecord
+            if (parseRecord.isEmbeddedCountLimitReached()) {
+                metadata.set(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_LIMIT_REACHED, true);
+            }
+            if (parseRecord.isEmbeddedDepthLimitReached()) {
+                metadata.set(AbstractRecursiveParserWrapperHandler.EMBEDDED_DEPTH_LIMIT_REACHED, true);
             }
             if (LOG.isTraceEnabled()) {
                 LOG.trace("timer -- parse only time: {} ms", System.currentTimeMillis() - start);

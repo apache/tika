@@ -141,7 +141,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
                 new EmbeddedParserDecorator(getWrappedParser(), "/", "/", parserState);
         context.set(Parser.class, decorator);
         ContentHandler localHandler =
-                parserState.recursiveParserWrapperHandler.getNewContentHandler();
+                parserState.recursiveParserWrapperHandler.createHandler();
         long started = System.currentTimeMillis();
         parserState.recursiveParserWrapperHandler.startDocument();
         int writeLimit = -1;
@@ -185,6 +185,8 @@ public class RecursiveParserWrapper extends ParserDecorator {
         String objectName = "";
         if (metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY) != null) {
             objectName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+        } else if (metadata.get(TikaCoreProperties.INTERNAL_PATH) != null) {
+            objectName = FilenameUtils.getName(metadata.get(TikaCoreProperties.INTERNAL_PATH));
         } else if (metadata.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID) != null) {
             objectName = metadata.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID);
         } else if (metadata.get(TikaCoreProperties.VERSION_NUMBER) != null) {
@@ -223,10 +225,6 @@ public class RecursiveParserWrapper extends ParserDecorator {
         public void parse(TikaInputStream tis, ContentHandler ignore, Metadata metadata,
                           ParseContext context) throws IOException, SAXException, TikaException {
 
-            //Test to see if we should avoid parsing
-            if (parserState.recursiveParserWrapperHandler.hasHitMaximumEmbeddedResources()) {
-                return;
-            }
             // Work out what this thing is
             String objectName = getResourceName(metadata, parserState.unknownCount);
             String objectLocation = this.location + objectName;
@@ -241,7 +239,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
             metadata.set(TikaCoreProperties.EMBEDDED_ID, parserState.embeddedCount);
             //get a fresh handler
             ContentHandler localHandler =
-                    parserState.recursiveParserWrapperHandler.getNewContentHandler();
+                    parserState.recursiveParserWrapperHandler.createHandler();
             parserState.recursiveParserWrapperHandler.startEmbeddedDocument(localHandler, metadata);
 
             Parser preContextParser = context.get(Parser.class);

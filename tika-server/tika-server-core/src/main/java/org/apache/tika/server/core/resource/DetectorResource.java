@@ -51,16 +51,15 @@ public class DetectorResource {
     @Consumes("*/*")
     @Produces("text/plain")
     public String detect(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
-        Metadata met = new Metadata();
+        ParseContext parseContext = TikaResource.createParseContext();
+        Metadata met = Metadata.newInstance(parseContext);
 
         String filename = TikaResource.detectFilename(httpHeaders.getRequestHeaders());
         LOG.info("Detecting media type for Filename: {}", filename);
         met.add(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
-        ParseContext parseContext = new ParseContext();
-        long timeoutMillis = TikaResource.getTaskTimeout(parseContext);
-        long taskId = serverStatus.start(ServerStatus.TASK.DETECT, filename, timeoutMillis);
+        long taskId = serverStatus.start(ServerStatus.TASK.DETECT, filename);
 
-        try (TikaInputStream tis = TikaInputStream.get(TikaResource.getInputStream(is, met, httpHeaders, info))) {
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
             return TikaResource
                     .getTikaLoader()
                     .loadDetectors()
@@ -71,7 +70,6 @@ public class DetectorResource {
             return MediaType.OCTET_STREAM.toString();
         } catch (OutOfMemoryError e) {
             LOG.error("OOM while detecting: ({})", filename, e);
-            serverStatus.setStatus(ServerStatus.STATUS.OOM);
             throw e;
         } catch (Throwable e) {
             LOG.error("Exception while detecting: ({})", filename, e);

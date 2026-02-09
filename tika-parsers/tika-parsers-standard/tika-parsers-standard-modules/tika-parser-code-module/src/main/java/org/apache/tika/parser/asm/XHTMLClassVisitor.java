@@ -35,6 +35,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -51,9 +52,9 @@ class XHTMLClassVisitor extends ClassVisitor {
 
     private String packageName;
 
-    public XHTMLClassVisitor(ContentHandler handler, Metadata metadata) {
+    public XHTMLClassVisitor(ContentHandler handler, Metadata metadata, ParseContext context) {
         super(Opcodes.ASM9);
-        this.xhtml = new XHTMLContentHandler(handler, metadata);
+        this.xhtml = new XHTMLContentHandler(handler, metadata, context);
         this.metadata = metadata;
     }
 

@@ -30,6 +30,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -83,12 +84,14 @@ public class ISArchiveParser implements Parser {
             if (this.location == null) {
                 this.location = tis.getFile().getParent() + File.separator;
             }
-            this.studyFileName = tis.getFile().getName();
+            // Use resource name from metadata if available, fall back to file name
+            String resourceName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+            this.studyFileName = resourceName != null ? resourceName : tis.getFile().getName();
 
             File locationFile = new File(location);
             String[] investigationList = locationFile.list((dir, name) -> name.matches("i_.+\\.txt"));
 
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
 
             parseInvestigation(investigationList, xhtml, metadata, context);

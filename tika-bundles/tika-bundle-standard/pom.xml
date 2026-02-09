@@ -40,7 +40,6 @@
     from the tika-parsers component.
   </description>
   <url>https://tika.apache.org/</url>
-  <!-- pax doesn't yet work with junit4; checkstyle forbids junit4. -->
   <properties>
     <checkstyle.skip>true</checkstyle.skip>
   </properties>
@@ -90,7 +89,7 @@
     <dependency>
       <groupId>org.ops4j.pax.url</groupId>
       <artifactId>pax-url-aether</artifactId>
-      <version>3.0.1</version>
+      <version>3.0.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -400,10 +399,10 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>src/main/resources/META-INF/MANIFEST.MF</exclude>
-            <exclude>dependency-reduced-pom.xml</exclude>
-          </excludes>
+          <inputExcludes>
+            <inputExclude>src/main/resources/META-INF/MANIFEST.MF</inputExclude>
+            <inputExclude>dependency-reduced-pom.xml</inputExclude>
+          </inputExcludes>
         </configuration>
       </plugin>
           <plugin>

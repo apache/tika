@@ -95,7 +95,7 @@ public class IDMLParser implements Parser {
             zipStream = new ZipInputStream(tis);
         }
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(baseHandler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(baseHandler, metadata, context);
         xhtml.startDocument();
         EndDocumentShieldingContentHandler handler = new EndDocumentShieldingContentHandler(xhtml);
 
@@ -167,17 +167,17 @@ public class IDMLParser implements Parser {
         } else if (entry.getName().equals("META-INF/metadata.xml")) {
             XMPMetadataExtractor.parse(zip, metadata);
         } else if (entry.getName().contains("MasterSpreads")) {
-            Metadata embeddedMeta = new Metadata();
+            Metadata embeddedMeta = Metadata.newInstance(context);
             ContentAndMetadataExtractor.extract(zip, handler, embeddedMeta, context);
             int spreadCount = Integer.parseInt(embeddedMeta.get("PageCount"));
             masterSpreadCount += spreadCount;
         } else if (entry.getName().contains("Spreads/Spread")) {
-            Metadata embeddedMeta = new Metadata();
+            Metadata embeddedMeta = Metadata.newInstance(context);
             ContentAndMetadataExtractor.extract(zip, handler, embeddedMeta, context);
             int spreadCount = Integer.parseInt(embeddedMeta.get("PageCount"));
             pageCount += spreadCount;
         }  else if (entry.getName().contains("Stories")) {
-            ContentAndMetadataExtractor.extract(zip, handler, new Metadata(), context);
+            ContentAndMetadataExtractor.extract(zip, handler, Metadata.newInstance(context), context);
         }
 
     }

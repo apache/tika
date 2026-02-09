@@ -1,12 +1,9 @@
 {
-  "auto-detect-parser": {
-    "digesterFactory": {
-      "commons-digester-factory": {
-        "markLimit": 100000,
+  "parse-context": {
+    "commons-digester-factory": {
         "digests": [
           { "algorithm": "MD5" }
         ]
       }
     }
-  }
 }

@@ -1,0 +1,119 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Shared Server Mode (YOLO Mode)
+
+[WARNING]
+====
+Shared Server Mode is an **experimental, high-risk option** that trades reliability for reduced memory usage. It is **not the default** and should only be enabled when you fully understand the limitations.
+====
+
+== Overview
+
+By default, Tika Pipes runs each `PipesClient` with its own dedicated `PipesServer` JVM process. This provides isolation: if one document causes a crash, OOM, or timeout, only that single request is affected.
+
+Shared Server Mode changes this model: **all clients connect to a single shared server process**. This saves memory (N-1 JVMs worth) but means that **one failure affects all in-flight requests**.
+
+== Architecture Comparison
+
+[source]
+----
+Default Mode (Per-Client):              Shared Mode (YOLO):
+──────────────────────────              ────────────────────
+PipesClient-0 → Server-0 (JVM)          PipesClient-0 ─┐
+PipesClient-1 → Server-1 (JVM)          PipesClient-1 ─┼→ Shared Server (1 JVM)
+PipesClient-2 → Server-2 (JVM)          PipesClient-2 ─┤   with N connection handlers
+PipesClient-3 → Server-3 (JVM)          PipesClient-3 ─┘
+
+Memory: 4 JVMs                          Memory: 1 JVM
+Isolation: Per-request                  Isolation: None (shared fate)
+----
+
+== Limitations and Risks
+
+=== Blast Radius
+In default mode, a crash only affects one request. In shared mode, **all concurrent requests are lost** when the server crashes, times out, or runs out of memory.
+
+=== Resource Contention
+All concurrent parses share the same heap, CPU, and file handles. A memory-hungry document can starve other parses or trigger an OOM that kills everything.
+
+=== No Per-Document Memory Limits
+In per-client mode, each JVM has its own heap limit, providing natural isolation. In shared mode, you must size the heap for worst-case concurrent load.
+
+=== Timeout and OOM Blast Radius
+When a timeout or OutOfMemoryError occurs, the shared server must be killed and restarted. All other in-progress parses are lost.
+
+=== Multithreading Bugs in Parsers
+In per-client mode, each parse runs in its own JVM with a single thread, so thread-safety bugs in parsers are not exposed. In shared mode, multiple parses run concurrently in the same JVM, which may expose latent threading bugs in parsers or their dependencies. If you encounter strange behavior or crashes in shared mode that don't occur in per-client mode, threading issues in parsers are a likely cause.
+
+== When to Use Shared Mode
+
+Consider shared mode only when:
+
+* You have strict memory constraints and cannot run N separate JVMs
+* Your documents are well-behaved and unlikely to cause OOM or timeouts
+* You can tolerate occasional loss of multiple in-flight requests
+* You have tested thoroughly with your specific document corpus
+
+== Configuration
+
+Enable shared mode by setting `useSharedServer` to `true` in your pipes configuration:
+
+[source,json]
+----
+{
+  "pipes": {
+    "numClients": 4,
+    "useSharedServer": true,
+    "forkedJvmArgs": ["-Xmx4g"],
+    "timeoutMillis": 60000
+  }
+}
+----
+
+== Sizing Guidance
+
+When using shared mode, size the JVM heap for worst-case concurrent load:
+
+* If you have 4 clients and each document could use up to 500MB, you need at least 2GB heap (plus overhead for the JVM itself)
+* Add buffer for garbage collection overhead
+* Consider that peak memory may be higher than average
+
+In per-client mode, the same workload would use 4 x 500MB = 2GB total, but distributed across 4 isolated JVMs where one OOM only affects one request.
+
+== Recovery Behavior
+
+When a fatal error occurs (OOM, timeout, or crash):
+
+1. The affected client marks the server for restart
+2. The server process is terminated
+3. All other clients detect the restart is pending
+4. A new server process is started
+5. Clients reconnect and resume processing
+
+During this recovery window, **all in-flight requests from all clients are lost**.
+
+== Recommendation
+
+For production workloads, **use the default per-client mode** unless you have specific memory constraints that require shared mode. The isolation provided by per-client mode is valuable for reliability.
+
+If you must use shared mode:
+
+* Test thoroughly with your document corpus
+* Monitor for OOM and timeout events
+* Have retry logic at the application level for lost requests
+* Size the heap generously

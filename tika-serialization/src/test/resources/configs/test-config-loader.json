@@ -3,8 +3,8 @@
     {"pdf-parser": {}}
   ],
 
-  "other-configs": {
-    "handler-config": {
+  "parse-context": {
+    "retry-config": {
       "timeout": 5000,
       "retries": 3,
       "enabled": true
@@ -19,6 +19,10 @@
 
     "tika-task-timeout": {
       "millis": 30000
+    },
+
+    "spooling-strategy": {
+      "spoolTypes": ["application/zip", "application/pdf"]
     },
 
     "my-feature-settings": {

@@ -1,0 +1,340 @@
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+= Serialization and Configuration
+
+Tika 4.x uses JSON-based configuration and serialization throughout the system.
+This document explains how the serialization system works and how to create
+components that integrate with it.
+
+== Overview
+
+Tika's serialization system provides:
+
+* **JSON Configuration**: Configure Tika components using JSON files
+* **Friendly Names**: Reference components by name (e.g., `pdf-parser`) instead of class names
+* **ParseContext Serialization**: Send per-request configuration via `FetchEmitTuple`
+* **Security**: Only registered components can be instantiated from JSON
+
+The system is built on Jackson with custom serializers/deserializers in the
+`tika-serialization` module.
+
+== JSON Configuration Format
+
+Tika uses a compact format for component configuration:
+
+[source,json]
+----
+{
+  "auto-detect-parser": {
+    "throwOnZeroBytes": false
+  },
+  "parse-context": {
+    "commons-digester-factory": {
+      "digests": [
+        { "algorithm": "MD5" },
+        { "algorithm": "SHA256" }
+      ]
+    }
+  }
+}
+----
+
+Components can be specified as:
+
+* **String**: `"pdf-parser"` - creates instance with defaults
+* **Object**: `{"pdf-parser": {"ocrStrategy": "AUTO"}}` - creates configured instance
+
+== The @TikaComponent Annotation
+
+The `@TikaComponent` annotation is required for any class that should be
+configurable via JSON. It serves multiple purposes:
+
+1. **Registration**: Registers the class with a friendly name
+2. **Index Generation**: Creates lookup files for name-to-class resolution
+3. **SPI Registration**: Optionally registers for Java ServiceLoader
+4. **Security**: Acts as an allowlist for deserialization
+
+=== Basic Usage
+
+[source,java]
+----
+@TikaComponent
+public class MyCustomParser implements Parser {
+    // Parser implementation
+}
+----
+
+This automatically:
+
+* Generates friendly name `my-custom-parser` from the class name
+* Adds to `META-INF/tika/parsers.idx` for name lookup
+* Adds to `META-INF/services/org.apache.tika.parser.Parser` for SPI
+
+=== Annotation Attributes
+
+[cols="1,1,3"]
+|===
+| Attribute | Default | Description
+
+| `name`
+| (auto-generated)
+| Custom friendly name instead of deriving from class name
+
+| `spi`
+| `true`
+| Whether to register in `META-INF/services/` for ServiceLoader
+
+| `contextKey`
+| (auto-detected)
+| Class to use as ParseContext key (rarely needed)
+
+| `defaultFor`
+| (none)
+| Marks as default implementation for an interface
+|===
+
+=== Example with Attributes
+
+[source,java]
+----
+@TikaComponent(name = "my-parser", spi = false)
+public class MyInternalParser implements Parser {
+    // Not auto-discovered via SPI, but configurable via JSON
+}
+----
+
+== Context Key Detection
+
+When storing components in `ParseContext`, Tika needs to know which class
+to use as the lookup key. For example, `CommonsDigesterFactory` should be
+retrievable via `parseContext.get(DigesterFactory.class)`.
+
+=== Automatic Detection
+
+Tika automatically detects the context key by checking if your class implements
+one of these known interfaces:
+
+* `Parser`, `Detector`, `EncodingDetector`
+* `MetadataFilter`, `Translator`, `Renderer`
+* `DigesterFactory`, `ContentHandlerFactory`
+* `EmbeddedDocumentExtractorFactory`, `MetadataWriteLimiterFactory`
+
+[source,java]
+----
+@TikaComponent
+public class CommonsDigesterFactory implements DigesterFactory {
+    // Context key automatically detected as DigesterFactory.class
+}
+----
+
+=== Explicit Context Key
+
+For interfaces not in the auto-detection list, specify explicitly:
+
+[source,java]
+----
+@TikaComponent(contextKey = DocumentSelector.class)
+public class SkipEmbeddedDocumentSelector implements DocumentSelector { }
+----
+
+== Service Interface Categories
+
+=== First-Class Service Interfaces
+
+These are loaded via SPI and have dedicated index files:
+
+[cols="1,1"]
+|===
+| Interface | Index File
+
+| `Parser` | `parsers.idx`
+| `Detector` | `detectors.idx`
+| `EncodingDetector` | `encoding-detectors.idx`
+| `LanguageDetector` | `language-detectors.idx`
+| `Translator` | `translators.idx`
+| `Renderer` | `renderers.idx`
+| `MetadataFilter` | `metadata-filters.idx`
+|===
+
+=== ParseContext Components
+
+Components not implementing first-class interfaces go to `parse-context.idx`:
+
+* `DigesterFactory` - Digest/checksum calculation
+* `ContentHandlerFactory` - SAX content handler creation
+* `EmbeddedDocumentExtractorFactory` - Embedded document handling
+* `MetadataWriteLimiterFactory` - Metadata write limiting
+
+== Self-Configuring Components
+
+Components implementing `SelfConfiguring` handle their own configuration
+at runtime rather than during initial loading:
+
+[source,java]
+----
+@TikaComponent
+public class PDFParser extends AbstractParser implements SelfConfiguring {
+
+    private PDFParserConfig defaultConfig = new PDFParserConfig();
+
+    @Override
+    public void configure(ParseContext parseContext) {
+        PDFParserConfig config = ParseContextConfig.getConfig(
+            parseContext, "pdf-parser", PDFParserConfig.class, defaultConfig);
+        // Use config...
+    }
+}
+----
+
+Benefits:
+
+* Per-request configuration via `ParseContext`
+* Lazy loading - config only parsed when needed
+* Merging with defaults handled automatically
+
+== ParseContext Serialization
+
+`ParseContext` can be serialized to JSON for transmission (e.g., in `FetchEmitTuple`):
+
+[source,json]
+----
+{
+  "parseContext": {
+    "pdf-parser": {
+      "ocrStrategy": "AUTO",
+      "extractInlineImages": true
+    },
+    "commons-digester-factory": {
+      "digests": [{"algorithm": "SHA256"}]
+    }
+  }
+}
+----
+
+=== Typed Section
+
+For components that need immediate deserialization (not lazy loading):
+
+[source,json]
+----
+{
+  "parseContext": {
+    "typed": {
+      "handler-config": {
+        "type": "XML",
+        "writeLimit": 100000
+      }
+    }
+  }
+}
+----
+
+== Security Model
+
+The serialization system implements a security allowlist:
+
+1. **@TikaComponent Required**: Only annotated classes are registered
+2. **Registry Lookup**: Deserialization only instantiates registered classes
+3. **No Arbitrary Classes**: Unknown class names cause errors, not instantiation
+
+This prevents attacks where malicious JSON specifies dangerous classes
+for instantiation.
+
+[source,java]
+----
+// This will FAIL - class not registered
+{
+  "parse-context": {
+    "java.lang.Runtime": {}  // Error: Unknown component
+  }
+}
+----
+
+== Creating a Custom Component
+
+Complete example of a custom metadata filter:
+
+[source,java]
+----
+package com.example.tika;
+
+import org.apache.tika.config.TikaComponent;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.filter.MetadataFilter;
+
+@TikaComponent
+public class UpperCaseFilter implements MetadataFilter {
+
+    private String fieldName = "title";
+
+    public void setFieldName(String fieldName) {
+        this.fieldName = fieldName;
+    }
+
+    public String getFieldName() {
+        return fieldName;
+    }
+
+    @Override
+    public void filter(Metadata metadata) throws TikaException {
+        String value = metadata.get(fieldName);
+        if (value != null) {
+            metadata.set(fieldName, value.toUpperCase());
+        }
+    }
+}
+----
+
+Configure in JSON:
+
+[source,json]
+----
+{
+  "metadata-filters": [
+    {"upper-case-filter": {"fieldName": "dc:title"}}
+  ]
+}
+----
+
+Or with defaults:
+
+[source,json]
+----
+{
+  "metadata-filters": ["upper-case-filter"]
+}
+----
+
+== Troubleshooting
+
+=== "Unknown component name" Error
+
+* Ensure class has `@TikaComponent` annotation
+* Verify annotation processing ran during compilation
+* Check that `META-INF/tika/*.idx` file exists in JAR
+
+=== Component Not Found in ParseContext
+
+* Verify you're using the correct interface type for lookup
+* Check if explicit `contextKey` is needed
+* For self-configuring components, ensure `configure()` was called
+
+=== SPI Not Loading Component
+
+* Check that `spi = true` (the default)
+* Verify `META-INF/services/` file exists
+* Ensure JAR is on classpath

@@ -126,7 +126,7 @@ class PagesContentHandler extends DefaultHandler {
                 // We are in a footer
                 footers.hasAutoPageNumber = true;
                 footers.autoPageNumberFormat = attributes.getValue("sf:format");
-            } else {
+            } else if (headers != null) {
                 headers.hasAutoPageNumber = true;
                 headers.autoPageNumberFormat = attributes.getValue("sf:format");
             }

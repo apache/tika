@@ -130,7 +130,7 @@ public class AudioParser implements Parser {
                     UNSUPPORTED_AUDIO_FILE_EXCEPTION);
         }
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         xhtml.endDocument();
     }

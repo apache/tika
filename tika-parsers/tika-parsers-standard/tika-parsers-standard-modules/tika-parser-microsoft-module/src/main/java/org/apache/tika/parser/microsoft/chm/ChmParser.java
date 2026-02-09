@@ -64,7 +64,7 @@ public class ChmParser implements Parser {
         metadata.set(Metadata.CONTENT_TYPE, "application/vnd.ms-htmlhelp");
 
         // content
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         Parser htmlParser =
@@ -95,7 +95,7 @@ public class ChmParser implements Parser {
 
     private void parsePage(byte[] byteObject, Parser htmlParser, ContentHandler xhtml,
                            ParseContext context) throws TikaException, IOException, SAXException { // throws IOException
-        Metadata metadata = new Metadata();
+        Metadata metadata = Metadata.newInstance(context);
         ContentHandler handler = new EmbeddedContentHandler(new BodyContentHandler(xhtml));// -1
         try (TikaInputStream tis = TikaInputStream.get(byteObject)) {
             htmlParser.parse(tis, handler, metadata, context);

@@ -74,7 +74,7 @@ public class Pkcs7Parser implements Parser {
                 }
                 try (TikaInputStream contentTis = TikaInputStream.get(content.getContentStream())) {
                     Parser delegate = context.get(Parser.class, EmptyParser.INSTANCE);
-                    delegate.parse(contentTis, handler, new Metadata(), context);
+                    delegate.parse(contentTis, handler, Metadata.newInstance(context), context);
                 }
             } finally {
                 parser.close();

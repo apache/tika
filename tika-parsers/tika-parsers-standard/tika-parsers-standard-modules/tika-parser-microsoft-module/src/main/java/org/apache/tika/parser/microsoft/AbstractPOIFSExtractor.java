@@ -103,7 +103,7 @@ abstract class AbstractPOIFSExtractor {
                                           String mediaType, XHTMLContentHandler xhtml,
                                           boolean outputHtml)
             throws IOException, SAXException, TikaException {
-        handleEmbeddedResource(resource, new Metadata(), filename, relationshipID, storageClassID,
+        handleEmbeddedResource(resource, Metadata.newInstance(context), filename, relationshipID, storageClassID,
                 mediaType, xhtml, outputHtml);
     }
 
@@ -149,7 +149,7 @@ abstract class AbstractPOIFSExtractor {
     protected void handleEmbeddedOfficeDoc(DirectoryEntry dir, String resourceName,
                                            XHTMLContentHandler xhtml, boolean outputHtml)
             throws IOException, SAXException, TikaException {
-        handleEmbeddedOfficeDoc(dir, new Metadata(), resourceName, xhtml, outputHtml);
+        handleEmbeddedOfficeDoc(dir, Metadata.newInstance(context), resourceName, xhtml, outputHtml);
     }
     /**
      * Handle an office document that's embedded at the POIFS level
@@ -274,7 +274,7 @@ abstract class AbstractPOIFSExtractor {
 
     private void handleCompObj(DirectoryEntry parentDir, POIFSDocumentType type, String rName,
                                Metadata metadata, XHTMLContentHandler xhtml, boolean outputHtml)
-            throws IOException, SAXException {
+            throws IOException, SAXException, TikaException {
         //TODO: figure out if the equivalent of OLE 1.0's
         //getCommand() and getFileName() exist for OLE 2.0 to populate
         //TikaCoreProperties.ORIGINAL_RESOURCE_NAME
@@ -349,7 +349,7 @@ abstract class AbstractPOIFSExtractor {
 
     private void handleOLENative(DirectoryEntry dir, POIFSDocumentType type, String rName,
                                  Metadata metadata, XHTMLContentHandler xhtml, boolean outputHtml)
-            throws IOException, SAXException {
+            throws IOException, SAXException, TikaException {
         byte[] data = null;
         try {
             // Try to un-wrap the OLE10Native record:
@@ -375,6 +375,9 @@ abstract class AbstractPOIFSExtractor {
             EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
             return;
         }
+        if (data == null) {
+            return;
+        }
         try (TikaInputStream tis = TikaInputStream.get(data)) {
             parseEmbedded(dir, tis, xhtml, metadata, outputHtml);
         }
@@ -382,7 +385,7 @@ abstract class AbstractPOIFSExtractor {
 
     private void parseEmbedded(DirectoryEntry parentDir, TikaInputStream tis, XHTMLContentHandler xhtml,
                                Metadata metadata, boolean outputHtml) throws IOException,
-            SAXException {
+            SAXException, TikaException {
         if (!embeddedDocumentUtil.shouldParseEmbedded(metadata)) {
             return;
         }
@@ -395,7 +398,7 @@ abstract class AbstractPOIFSExtractor {
 
     private void parseEmbedded(DirectoryEntry dir, XHTMLContentHandler xhtml, Metadata metadata,
                                boolean outputHtml)
-            throws IOException, SAXException {
+            throws IOException, SAXException, TikaException {
         if (!embeddedDocumentUtil.shouldParseEmbedded(metadata)) {
             return;
         }

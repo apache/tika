@@ -78,7 +78,7 @@ public class EMFParser implements Parser {
                                        EmbeddedDocumentExtractor embeddedDocumentExtractor,
                                        ContentHandler handler, ParseContext context) throws TikaException, SAXException {
         try (TikaInputStream tis = TikaInputStream.get(data)) {
-            Metadata embeddedMetadata = new Metadata();
+            Metadata embeddedMetadata = Metadata.newInstance(context);
             if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
                 embeddedDocumentExtractor
                         .parseEmbedded(tis, new EmbeddedContentHandler(handler), embeddedMetadata, context, true);
@@ -98,7 +98,7 @@ public class EMFParser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         EmbeddedDocumentExtractor embeddedDocumentExtractor = null;
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         try {
             HemfPicture ex = new HemfPicture(tis);
@@ -252,7 +252,7 @@ public class EMFParser implements Parser {
                            EmbeddedDocumentExtractor embeddedDocumentExtractor,
                            ParseContext context)
             throws IOException, SAXException, TikaException {
-        Metadata embeddedMetadata = new Metadata();
+        Metadata embeddedMetadata = Metadata.newInstance(context);
         embeddedMetadata.set(Metadata.CONTENT_TYPE, WMF_MEDIA_TYPE.toString());
         if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
             try (TikaInputStream tis = TikaInputStream.get(bytes)) {

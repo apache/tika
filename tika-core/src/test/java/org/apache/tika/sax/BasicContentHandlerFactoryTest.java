@@ -73,7 +73,7 @@ public class BasicContentHandlerFactoryTest {
         Parser p = new MockParser(OVER_DEFAULT);
         ContentHandler handler =
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1)
-                        .getNewContentHandler();
+                        .createHandler();
         assertTrue(handler instanceof DefaultHandler);
         p.parse(null, handler, null, null);
         //unfortunatley, the DefaultHandler does not return "",
@@ -82,7 +82,7 @@ public class BasicContentHandlerFactoryTest {
         //tests that no write limit exception is thrown
         p = new MockParser(100);
         handler = new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, 5)
-                .getNewContentHandler();
+                .createHandler();
         assertTrue(handler instanceof DefaultHandler);
         p.parse(null, handler, null, null);
         assertContains("org.xml.sax.helpers.DefaultHandler", handler.toString());
@@ -92,7 +92,7 @@ public class BasicContentHandlerFactoryTest {
     public void testText() throws Exception {
         Parser p = new MockParser(OVER_DEFAULT);
         BasicContentHandlerFactory.HANDLER_TYPE type = BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
-        ContentHandler handler = new BasicContentHandlerFactory(type, -1).getNewContentHandler();
+        ContentHandler handler = new BasicContentHandlerFactory(type, -1).createHandler();
 
         assertTrue(handler instanceof ToTextContentHandler);
         p.parse(null, handler, null, null);
@@ -104,7 +104,7 @@ public class BasicContentHandlerFactoryTest {
         assertTrue(extracted.length() > 110000);
         //now test write limit
         p = new MockParser(10);
-        handler = new BasicContentHandlerFactory(type, 5).getNewContentHandler();
+        handler = new BasicContentHandlerFactory(type, 5).createHandler();
         assertTrue(handler instanceof WriteOutContentHandler);
         assertWriteLimitReached(p, (WriteOutContentHandler) handler);
         extracted = handler.toString();
@@ -114,7 +114,7 @@ public class BasicContentHandlerFactoryTest {
         //now test outputstream call
         p = new MockParser(OVER_DEFAULT);
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        handler = new BasicContentHandlerFactory(type, -1).getNewContentHandler(os, UTF_8);
+        handler = new BasicContentHandlerFactory(type, -1).createHandler(os, UTF_8);
         assertTrue(handler instanceof ToTextContentHandler);
         p.parse(null, handler, null, null);
         assertContains("This is the title", os.toByteArray());
@@ -125,7 +125,7 @@ public class BasicContentHandlerFactoryTest {
 
         p = new MockParser(10);
         os = new ByteArrayOutputStream();
-        handler = new BasicContentHandlerFactory(type, 5).getNewContentHandler(os, UTF_8);
+        handler = new BasicContentHandlerFactory(type, 5).createHandler(os, UTF_8);
         assertTrue(handler instanceof WriteOutContentHandler);
         assertWriteLimitReached(p, (WriteOutContentHandler) handler);
         //When writing to an OutputStream and a write limit is reached,
@@ -137,7 +137,7 @@ public class BasicContentHandlerFactoryTest {
     public void testHTML() throws Exception {
         Parser p = new MockParser(OVER_DEFAULT);
         BasicContentHandlerFactory.HANDLER_TYPE type = BasicContentHandlerFactory.HANDLER_TYPE.HTML;
-        ContentHandler handler = new BasicContentHandlerFactory(type, -1).getNewContentHandler();
+        ContentHandler handler = new BasicContentHandlerFactory(type, -1).createHandler();
 
         assertTrue(handler instanceof ToHTMLContentHandler);
         p.parse(null, handler, null, null);
@@ -148,7 +148,7 @@ public class BasicContentHandlerFactoryTest {
 
         //now test write limit
         p = new MockParser(10);
-        handler = new BasicContentHandlerFactory(type, 5).getNewContentHandler();
+        handler = new BasicContentHandlerFactory(type, 5).createHandler();
         assertTrue(handler instanceof WriteOutContentHandler);
         assertWriteLimitReached(p, (WriteOutContentHandler) handler);
         extracted = handler.toString();
@@ -158,7 +158,7 @@ public class BasicContentHandlerFactoryTest {
         //now test outputstream call
         p = new MockParser(OVER_DEFAULT);
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        handler = new BasicContentHandlerFactory(type, -1).getNewContentHandler(os, UTF_8);
+        handler = new BasicContentHandlerFactory(type, -1).createHandler(os, UTF_8);
         assertTrue(handler instanceof ToHTMLContentHandler);
         p.parse(null, handler, null, null);
         assertContains("This is the title", os.toByteArray());
@@ -170,7 +170,7 @@ public class BasicContentHandlerFactoryTest {
 
         p = new MockParser(10);
         os = new ByteArrayOutputStream();
-        handler = new BasicContentHandlerFactory(type, 5).getNewContentHandler(os, UTF_8);
+        handler = new BasicContentHandlerFactory(type, 5).createHandler(os, UTF_8);
         assertTrue(handler instanceof WriteOutContentHandler);
         assertWriteLimitReached(p, (WriteOutContentHandler) handler);
         assertEquals(0, os.toByteArray().length);
@@ -180,7 +180,7 @@ public class BasicContentHandlerFactoryTest {
     public void testXML() throws Exception {
         Parser p = new MockParser(OVER_DEFAULT);
         BasicContentHandlerFactory.HANDLER_TYPE type = BasicContentHandlerFactory.HANDLER_TYPE.HTML;
-        ContentHandler handler = new BasicContentHandlerFactory(type, -1).getNewContentHandler();
+        ContentHandler handler = new BasicContentHandlerFactory(type, -1).createHandler();
 
         assertTrue(handler instanceof ToXMLContentHandler);
         p.parse(null, handler, new Metadata(), null);
@@ -191,7 +191,7 @@ public class BasicContentHandlerFactoryTest {
 
         //now test write limit
         p = new MockParser(10);
-        handler = new BasicContentHandlerFactory(type, 5).getNewContentHandler();
+        handler = new BasicContentHandlerFactory(type, 5).createHandler();
         assertTrue(handler instanceof WriteOutContentHandler);
         assertWriteLimitReached(p, (WriteOutContentHandler) handler);
         extracted = handler.toString();
@@ -201,7 +201,7 @@ public class BasicContentHandlerFactoryTest {
         //now test outputstream call
         p = new MockParser(OVER_DEFAULT);
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        handler = new BasicContentHandlerFactory(type, -1).getNewContentHandler(os, UTF_8);
+        handler = new BasicContentHandlerFactory(type, -1).createHandler(os, UTF_8);
         assertTrue(handler instanceof ToXMLContentHandler);
         p.parse(null, handler, null, null);
 
@@ -214,7 +214,7 @@ public class BasicContentHandlerFactoryTest {
 
         p = new MockParser(10);
         os = new ByteArrayOutputStream();
-        handler = new BasicContentHandlerFactory(type, 5).getNewContentHandler(os, UTF_8);
+        handler = new BasicContentHandlerFactory(type, 5).createHandler(os, UTF_8);
         assertTrue(handler instanceof WriteOutContentHandler);
         assertWriteLimitReached(p, (WriteOutContentHandler) handler);
         assertEquals(0, os.toByteArray().length);
@@ -224,7 +224,7 @@ public class BasicContentHandlerFactoryTest {
     public void testBody() throws Exception {
         Parser p = new MockParser(OVER_DEFAULT);
         BasicContentHandlerFactory.HANDLER_TYPE type = BasicContentHandlerFactory.HANDLER_TYPE.BODY;
-        ContentHandler handler = new BasicContentHandlerFactory(type, -1).getNewContentHandler();
+        ContentHandler handler = new BasicContentHandlerFactory(type, -1).createHandler();
 
         assertTrue(handler instanceof BodyContentHandler);
 
@@ -236,7 +236,7 @@ public class BasicContentHandlerFactoryTest {
 
         //now test write limit
         p = new MockParser(10);
-        handler = new BasicContentHandlerFactory(type, 5).getNewContentHandler();
+        handler = new BasicContentHandlerFactory(type, 5).createHandler();
         assertTrue(handler instanceof BodyContentHandler);
         assertWriteLimitReached(p, (BodyContentHandler) handler);
         extracted = handler.toString();
@@ -246,7 +246,7 @@ public class BasicContentHandlerFactoryTest {
         //now test outputstream call
         p = new MockParser(OVER_DEFAULT);
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        handler = new BasicContentHandlerFactory(type, -1).getNewContentHandler(os, UTF_8);
+        handler = new BasicContentHandlerFactory(type, -1).createHandler(os, UTF_8);
         assertTrue(handler instanceof BodyContentHandler);
         p.parse(null, handler, null, null);
         assertNotContains("title", os.toByteArray());
@@ -257,7 +257,7 @@ public class BasicContentHandlerFactoryTest {
 
         p = new MockParser(10);
         os = new ByteArrayOutputStream();
-        handler = new BasicContentHandlerFactory(type, 5).getNewContentHandler(os, UTF_8);
+        handler = new BasicContentHandlerFactory(type, 5).createHandler(os, UTF_8);
         assertTrue(handler instanceof WriteOutContentHandler);
         assertWriteLimitReached(p, (WriteOutContentHandler) handler);
         assertEquals(0, os.toByteArray().length);

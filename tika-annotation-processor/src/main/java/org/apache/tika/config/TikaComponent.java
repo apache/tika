@@ -34,8 +34,8 @@ import java.lang.annotation.Target;
  *   <li>Component index files (META-INF/tika/{type}.idx) for name-based lookup</li>
  * </ul>
  *
- * <p>This annotation is only used at compile time by the annotation processor.
- * It is retained in .class files for tooling but not loaded by the runtime JVM.
+ * <p>This annotation is processed at compile time by the annotation processor.
+ * The contextKey is recorded in the .idx file for runtime resolution.
  *
  * <p>Example usage:
  * <pre>
@@ -57,6 +57,11 @@ import java.lang.annotation.Target;
  * {@code @TikaComponent(contextKey = MetadataFilter.class)}
  * public class MyFilter implements MetadataFilter, AnotherInterface {
  *     // explicit ParseContext key when class implements multiple known interfaces
+ * }
+ *
+ * {@code @TikaComponent(defaultFor = ContentHandlerFactory.class)}
+ * public class BasicContentHandlerFactory implements ContentHandlerFactory {
+ *     // marks this as the default implementation for ContentHandlerFactory
  * }
  * </pre>
  *
@@ -106,4 +111,24 @@ public @interface TikaComponent {
      * @return the class to use as ParseContext key, or void.class for auto-detection
      */
     Class<?> contextKey() default void.class;
+
+    /**
+     * Marks this component as the default implementation for the specified interface.
+     * <p>
+     * When set, this component will be used as the default when loading a ParseContext
+     * with defaults (via {@code loadParseContextWithDefaults()}) and no explicit
+     * configuration is provided for the interface.
+     * <p>
+     * The specified class should be an interface that this component implements.
+     * For example:
+     * <pre>
+     * {@code @TikaComponent(defaultFor = ContentHandlerFactory.class)}
+     * public class BasicContentHandlerFactory implements ContentHandlerFactory {
+     *     // This will be instantiated by default when no ContentHandlerFactory is configured
+     * }
+     * </pre>
+     *
+     * @return the interface this component is the default for, or void.class if not a default
+     */
+    Class<?> defaultFor() default void.class;
 }

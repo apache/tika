@@ -19,20 +19,22 @@ package org.apache.tika.pipes.core.server;
 import java.util.List;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentBytesHandler;
+import org.apache.tika.extractor.UnpackHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
-import org.apache.tika.pipes.core.extractor.EmittingEmbeddedDocumentBytesHandler;
+import org.apache.tika.pipes.core.extractor.EmittingUnpackHandler;
+import org.apache.tika.pipes.core.extractor.FrictionlessUnpackHandler;
+import org.apache.tika.pipes.core.extractor.TempFileUnpackHandler;
 
 class MetadataListAndEmbeddedBytes {
 
         List<Metadata> metadataList;
-        final EmbeddedDocumentBytesHandler embeddedDocumentBytesHandler;
+        final UnpackHandler unpackHandler;
 
         public MetadataListAndEmbeddedBytes(List<Metadata> metadataList,
-                                            EmbeddedDocumentBytesHandler embeddedDocumentBytesHandler) {
+                                            UnpackHandler unpackHandler) {
             this.metadataList = metadataList;
-            this.embeddedDocumentBytesHandler = embeddedDocumentBytesHandler;
+            this.unpackHandler = unpackHandler;
         }
 
         public List<Metadata> getMetadataList() {
@@ -43,30 +45,40 @@ class MetadataListAndEmbeddedBytes {
             filter.filter(metadataList);
         }
 
-        public EmbeddedDocumentBytesHandler getEmbeddedDocumentBytesHandler() {
-            return embeddedDocumentBytesHandler;
+        public UnpackHandler getUnpackHandler() {
+            return unpackHandler;
         }
 
         /**
-         * This tests whether there's any type of embedded document store
-         * ...that, for example, may require closing at the end of the parse.
+         * This tests whether there's an unpack handler that may require
+         * closing at the end of the parse.
          *
          * @return
          */
-        public boolean hasEmbeddedDocumentByteStore() {
-            return embeddedDocumentBytesHandler != null;
+        public boolean hasUnpackHandler() {
+            return unpackHandler != null;
         }
 
         /**
          * If the intent is that the metadata and byte store be packaged in a zip
          * or similar and emitted via a single stream emitter.
          * <p>
-         * This is basically a test that this is not an EmbeddedDocumentEmitterStore.
+         * Returns false for:
+         * - EmittingUnpackHandler: bytes are emitted individually during parsing
+         * - TempFileUnpackHandler: bytes are zipped and emitted by PipesWorker.zipAndEmitEmbeddedFiles()
+         * - FrictionlessUnpackHandler: bytes are emitted by PipesWorker.emitFrictionlessOutput()
          *
-         * @return
+         * @return true if bytes need to be packaged and emitted, false if already handled
          */
         public boolean toBePackagedForStreamEmitter() {
-            return !(embeddedDocumentBytesHandler instanceof EmittingEmbeddedDocumentBytesHandler);
+            // EmittingUnpackHandler emits bytes individually during parsing
+            // TempFileUnpackHandler collects bytes for zipping by PipesWorker
+            // FrictionlessUnpackHandler collects bytes for Frictionless Data Package by PipesWorker
+            // In all cases, the bytes are handled separately and don't need to be
+            // packaged here
+            return !(unpackHandler instanceof EmittingUnpackHandler) &&
+                    !(unpackHandler instanceof TempFileUnpackHandler) &&
+                    !(unpackHandler instanceof FrictionlessUnpackHandler);
         }
 
     @Override

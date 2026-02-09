@@ -16,11 +16,17 @@
  */
 package org.apache.tika.pipes.core;
 
+import java.io.Serializable;
+
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 
 /**
- * Configuration for emit strategy in PipesConfig.
+ * Configuration for emit strategy. Can be used in two ways:
+ * <ol>
+ *   <li>In PipesConfig for default emit strategy (configured via JSON)</li>
+ *   <li>In ParseContext for per-request override (set programmatically)</li>
+ * </ol>
  * <p>
  * Example JSON configuration:
  * <pre>
@@ -33,18 +39,16 @@ import org.apache.tika.exception.TikaException;
  *   }
  * }
  * </pre>
- * Or for simpler strategies:
+ * <p>
+ * Example per-request override:
  * <pre>
- * {
- *   "pipes": {
- *     "emitStrategy": {
- *       "type": "EMIT_ALL"
- *     }
- *   }
- * }
+ * ParseContext context = new ParseContext();
+ * context.set(EmitStrategyConfig.class, new EmitStrategyConfig(EmitStrategy.PASSBACK_ALL));
  * </pre>
  */
-public class EmitStrategyConfig {
+public class EmitStrategyConfig implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     /**
      * Default emit strategy for PipesServer.

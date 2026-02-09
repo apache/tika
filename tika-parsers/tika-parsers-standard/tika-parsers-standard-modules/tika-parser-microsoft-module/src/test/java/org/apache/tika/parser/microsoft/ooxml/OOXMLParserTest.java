@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -1704,6 +1705,9 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertEquals("audio/mpeg", metadataList.get(1).get(Metadata.CONTENT_TYPE));
         assertEquals("image/png", metadataList.get(2).get(Metadata.CONTENT_TYPE));
         assertEquals("image/jpeg", metadataList.get(3).get(Metadata.CONTENT_TYPE));
+        // Verify INTERNAL_PATH is set for embedded media
+        assertNotNull(metadataList.get(1).get(TikaCoreProperties.INTERNAL_PATH));
+        assertTrue(metadataList.get(1).get(TikaCoreProperties.INTERNAL_PATH).contains("/ppt/media/"));
     }
 
     @Test
@@ -1809,5 +1813,44 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         //TIKA-4474 -- test: files (passed as stream) no longer have limit on record size as they are spooled
         String content = getText("testRecordSizeExceeded.xlsx");
         assertContains("Repetitive content pattern 3 for compression test row 1", content);
+    }
+
+    /**
+     * Test extraction of field-based hyperlinks using instrText/fldChar.
+     * These are hyperlinks embedded as field codes rather than relationship-based hyperlinks.
+     * Uses the DOM-based XWPFWordExtractorDecorator.
+     */
+    @Test
+    public void testInstrTextHyperlink() throws Exception {
+        String xml = getXML("testInstrLink.docx").xml;
+        // The document contains a HYPERLINK field code in instrText
+        assertContains("<a href=\"https://exmaple.com/file\">", xml);
+        assertContains("Access Document(s)", xml);
+    }
+
+    /**
+     * Test extraction of external reference field codes (INCLUDEPICTURE, INCLUDETEXT, IMPORT, LINK).
+     * These can be used to hide malicious URLs in documents.
+     */
+    @Test
+    public void testExternalRefFieldCodes() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testExternalRefs.docx");
+        Metadata m = metadataList.get(0);
+        // Check metadata flag is set
+        assertEquals("true", m.get(Office.HAS_FIELD_HYPERLINKS));
+
+        String xml = getXML("testExternalRefs.docx").xml;
+        // Test INCLUDEPICTURE field code
+        assertContains("class=\"external-ref-INCLUDEPICTURE\"", xml);
+        assertContains("http://example.com/tracking.png", xml);
+        // Test INCLUDETEXT field code
+        assertContains("class=\"external-ref-INCLUDETEXT\"", xml);
+        assertContains("http://example.org/payload.txt", xml);
+        // Test IMPORT field code
+        assertContains("class=\"external-ref-IMPORT\"", xml);
+        assertContains("http://example.net/exploit.wmf", xml);
+        // Test LINK field code
+        assertContains("class=\"external-ref-LINK\"", xml);
+        assertContains("http://test.invalid/cmd.docx", xml);
     }
 }

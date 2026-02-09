@@ -1,0 +1,43 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Apache Tika Documentation
+
+WARNING: This reference guide was generated with the assistance of AI and requires
+human review before it can be fully trusted. This documentation serves as an example
+and a starting point, but more work remains. Contributions and corrections are welcome.
+
+The Apache Tika toolkit detects and extracts metadata and text from over a thousand
+different file types (such as PPT, XLS, and PDF). All of these file types can be parsed
+through a single interface, making Tika useful for search engine indexing, content
+analysis, translation, and much more.
+
+== Features
+
+* **Unified Interface** - Parse all supported file types through a single, consistent API
+* **Broad Format Support** - Over 1,000 different file types supported
+* **Metadata Extraction** - Automatically identify and extract document metadata
+* **Text Extraction** - Pull readable content from complex file formats
+* **Content Detection** - Identify file types regardless of file extension
+
+== Getting Started
+
+Use the navigation on the left to explore the documentation, or start with
+xref:using-tika/index.adoc[Using Tika] to choose your integration method.
+
+Apache Tika is an Apache Software Foundation project, formerly a subproject of Apache Lucene.
+

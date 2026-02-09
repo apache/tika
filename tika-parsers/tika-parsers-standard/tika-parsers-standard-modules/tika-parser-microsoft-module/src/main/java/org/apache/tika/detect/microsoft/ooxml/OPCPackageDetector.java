@@ -91,9 +91,12 @@ public class OPCPackageDetector implements ZipContainerDetector {
     static final MediaType THREE_MF = MediaType.application("vnd.ms-package.3dmanufacturing-3dmodel+xml");
 
     static final Set<String> OOXML_HINTS =
-            fillSet("word/document.xml", "_rels/.rels", "[Content_Types].xml",
+            fillSet("word/", "xl/", "ppt/", "docProps/",
+                    "word/document.xml", "_rels/.rels", "[Content_Types].xml",
                     "ppt/presentation.xml", "ppt/slides/slide1.xml", "xl/workbook.xml",
-                    "xl/sharedStrings.xml", "xl/worksheets/sheet1.xml");
+                    "xl/sharedStrings.xml", "xl/worksheets/sheet1.xml",
+                    "docProps/core.xml", "docProps/app.xml",
+                    "xl/styles.xml", "word/styles.xml", "word/fontTable.xml");
     private static final Pattern MACRO_TEMPLATE_PATTERN =
             Pattern.compile("macroenabledtemplate$", Pattern.CASE_INSENSITIVE);
     private static final String XPS_DOCUMENT =

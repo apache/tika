@@ -23,10 +23,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.pipes.api.pipesiterator.PipesIteratorBaseConfig;
-import org.apache.tika.pipes.api.pipesiterator.PipesIteratorConfig;
+import org.apache.tika.pipes.pipesiterator.PipesIteratorConfig;
 
-public class JsonPipesIteratorConfig implements PipesIteratorConfig {
+public class JsonPipesIteratorConfig extends PipesIteratorConfig {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -42,31 +41,26 @@ public class JsonPipesIteratorConfig implements PipesIteratorConfig {
     }
 
     private Path jsonPath;
-    private PipesIteratorBaseConfig baseConfig = null;
 
     public Path getJsonPath() {
         return jsonPath;
     }
 
     @Override
-    public PipesIteratorBaseConfig getBaseConfig() {
-        return baseConfig;
-    }
-
-    @Override
-    public final boolean equals(Object o) {
+    public boolean equals(Object o) {
         if (!(o instanceof JsonPipesIteratorConfig that)) {
             return false;
         }
-
-        return Objects.equals(jsonPath, that.jsonPath) &&
-                Objects.equals(baseConfig, that.baseConfig);
+        if (!super.equals(o)) {
+            return false;
+        }
+        return Objects.equals(jsonPath, that.jsonPath);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hashCode(jsonPath);
-        result = 31 * result + Objects.hashCode(baseConfig);
+        int result = super.hashCode();
+        result = 31 * result + Objects.hashCode(jsonPath);
         return result;
     }
 }

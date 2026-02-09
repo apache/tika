@@ -28,7 +28,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.PST;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -38,6 +38,7 @@ public class EmailVisitor implements FileVisitor<Path> {
     private final boolean processEmailAsMsg;
     private final XHTMLContentHandler xhtml;
     private final Metadata parentMetadata;
+    private final ParseContext parseContext;
     private final EmbeddedDocumentExtractor embeddedDocumentExtractor;
 
     public EmailVisitor(Path root, boolean processEmailAsMsg, XHTMLContentHandler xhtml, Metadata parentMetadata, ParseContext parseContext) {
@@ -45,6 +46,7 @@ public class EmailVisitor implements FileVisitor<Path> {
         this.processEmailAsMsg = processEmailAsMsg;
         this.xhtml = xhtml;
         this.parentMetadata = parentMetadata;
+        this.parseContext = parseContext;
         this.embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
     }
 
@@ -72,14 +74,15 @@ public class EmailVisitor implements FileVisitor<Path> {
     }
 
     private void process(Path file) throws IOException {
-        Metadata emailMetadata = new Metadata();
-        String pstPath = root
-                .relativize(file.getParent())
+        Metadata emailMetadata = Metadata.newInstance(parseContext);
+        String internalPath = root
+                .relativize(file)
                 .toString();
-        emailMetadata.set(PST.PST_FOLDER_PATH, pstPath);
+        emailMetadata.set(TikaCoreProperties.INTERNAL_PATH, internalPath);
+        emailMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, file.getFileName().toString());
         try (TikaInputStream tis = TikaInputStream.get(file)) {
             try {
-                embeddedDocumentExtractor.parseEmbedded(tis, xhtml, emailMetadata, new ParseContext(), true);
+                embeddedDocumentExtractor.parseEmbedded(tis, xhtml, emailMetadata, parseContext, true);
             } catch (SAXException e) {
                 throw new IOException(e);
             }

@@ -27,18 +27,20 @@ import org.apache.tika.digest.DigesterFactory;
 /**
  * Factory for {@link CommonsDigester} with configurable algorithms and encodings.
  * <p>
- * Default: markLimit = 1000000, MD5 with HEX encoding.
+ * Default: MD5 with HEX encoding.
  * <p>
- * Example JSON configuration:
+ * Example JSON configuration (in parse-context section):
  * <pre>
  * {
- *   "digesterFactory": {
- *     "commons-digester": {
- *       "markLimit": 1000000,
- *       "digests": [
- *         { "algorithm": "MD5" },
- *         { "algorithm": "SHA256", "encoding": "BASE32" }
- *       ]
+ *   "parse-context": {
+ *     "digester-factory": {
+ *       "commons-digester-factory": {
+ *         "digests": [
+ *           { "algorithm": "MD5" },
+ *           { "algorithm": "SHA256", "encoding": "BASE32" }
+ *         ],
+ *         "skipContainerDocumentDigest": false
+ *       }
  *     }
  *   }
  * }
@@ -47,8 +49,8 @@ import org.apache.tika.digest.DigesterFactory;
 @TikaComponent
 public class CommonsDigesterFactory implements DigesterFactory {
 
-    private int markLimit = 1000000;
     private List<DigestDef> digests = new ArrayList<>();
+    private boolean skipContainerDocumentDigest = false;
 
     public CommonsDigesterFactory() {
         digests.add(new DigestDef(DigestDef.Algorithm.MD5));
@@ -56,15 +58,16 @@ public class CommonsDigesterFactory implements DigesterFactory {
 
     @Override
     public Digester build() {
-        return new CommonsDigester(markLimit, digests);
+        return new CommonsDigester(digests);
     }
 
-    public int getMarkLimit() {
-        return markLimit;
+    @Override
+    public boolean isSkipContainerDocumentDigest() {
+        return skipContainerDocumentDigest;
     }
 
-    public void setMarkLimit(int markLimit) {
-        this.markLimit = markLimit;
+    public void setSkipContainerDocumentDigest(boolean skipContainerDocumentDigest) {
+        this.skipContainerDocumentDigest = skipContainerDocumentDigest;
     }
 
     public List<DigestDef> getDigests() {

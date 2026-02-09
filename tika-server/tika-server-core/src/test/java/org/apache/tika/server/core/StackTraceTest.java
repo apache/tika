@@ -20,10 +20,20 @@ package org.apache.tika.server.core;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
@@ -32,6 +42,7 @@ import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.config.JsonConfigHelper;
 import org.apache.tika.server.core.resource.DetectorResource;
 import org.apache.tika.server.core.resource.MetadataResource;
 import org.apache.tika.server.core.resource.RecursiveMetadataResource;
@@ -50,6 +61,11 @@ public class StackTraceTest extends CXFTestBase {
 
     private static final String[] PATHS = new String[]{"/tika", "/rmeta", "/unpack", "/meta",};
     private static final int UNPROCESSEABLE = 422;
+
+    private static final String UNPACK_CONFIG_TEMPLATE = "/configs/cxf-unpack-test-template.json";
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    private Path unpackTempDir;
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
@@ -74,23 +90,43 @@ public class StackTraceTest extends CXFTestBase {
         sf.setProviders(providers);
     }
 
+    @Override
+    protected InputStream getPipesConfigInputStream() throws IOException {
+        // Create temp directory for unpack emitter
+        unpackTempDir = Files.createTempDirectory("tika-stacktrace-test-");
+
+        Path pluginsDir = Paths.get("target/plugins").toAbsolutePath();
+
+        Map<String, Object> replacements = new HashMap<>();
+        replacements.put("UNPACK_EMITTER_BASE_PATH", unpackTempDir.toAbsolutePath().toString());
+        replacements.put("PLUGINS_PATHS", pluginsDir.toString().replace("\\", "/"));
+        replacements.put("TIMEOUT_MILLIS", 60000L);
+
+        JsonNode config = JsonConfigHelper.loadFromResource(UNPACK_CONFIG_TEMPLATE,
+                CXFTestBase.class, replacements);
+        String json = MAPPER.writeValueAsString(config);
+        return new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Override
+    protected Path getUnpackEmitterBasePath() {
+        return unpackTempDir;
+    }
+
     @Test
     public void testEncrypted() throws Exception {
         for (String path : PATHS) {
             if ("/rmeta".equals(path)) {
                 continue;
             }
-            String accept = "*/*";
-            if ("/tika".equals(path)) {
-                accept = "text/plain";
-            }
+            // Use path-based routing for /tika
+            String actualPath = "/tika".equals(path) ? "/tika/text" : path;
             Response response = WebClient
-                    .create(endPoint + path)
-                    .accept(accept)
+                    .create(endPoint + actualPath)
                     .header("Content-Disposition", "attachment; filename=" + TEST_PASSWORD_PROTECTED)
                     .put(ClassLoader.getSystemResourceAsStream(TEST_PASSWORD_PROTECTED));
-            assertNotNull(response, "null response: " + path);
-            assertEquals(UNPROCESSEABLE, response.getStatus(), "unprocessable: " + path);
+            assertNotNull(response, "null response: " + actualPath);
+            assertEquals(UNPROCESSEABLE, response.getStatus(), "unprocessable: " + actualPath);
             String msg = getStringFromInputStream((InputStream) response.getEntity());
             assertContains("org.apache.tika.exception.EncryptedDocumentException", msg);
         }
@@ -102,18 +138,16 @@ public class StackTraceTest extends CXFTestBase {
             if ("/rmeta".equals(path)) {
                 continue;
             }
-            String accept = "*/*";
-            if ("/tika".equals(path)) {
-                accept = "text/plain";
-            }
+            // Use path-based routing for /tika
+            String actualPath = "/tika".equals(path) ? "/tika/text" : path;
             Response response = WebClient
-                    .create(endPoint + path)
-                    .accept(accept)
+                    .create(endPoint + actualPath)
                     .put(ClassLoader.getSystemResourceAsStream(TEST_NULL));
             assertNotNull(response);
-            assertEquals(UNPROCESSEABLE, response.getStatus(), "unprocessable: " + path);
+            assertEquals(UNPROCESSEABLE, response.getStatus(), "unprocessable: " + actualPath);
             String msg = getStringFromInputStream((InputStream) response.getEntity());
-            assertContains("Caused by: java.lang.NullPointerException: null pointer message", msg);
+            // In pipes-based parsing, the exception is stored directly without wrapper
+            assertContains("java.lang.NullPointerException: null pointer message", msg);
         }
     }
 
@@ -123,17 +157,17 @@ public class StackTraceTest extends CXFTestBase {
         //that don't have a parser
         //no stack traces for 415
         for (String path : PATHS) {
-
+            // Use path-based routing for /tika
+            String actualPath = "/tika".equals(path) ? "/tika/text" : path;
             Response response = WebClient
-                    .create(endPoint + path)
-                    .accept("*:*")
+                    .create(endPoint + actualPath)
                     .put(ClassLoader.getSystemResourceAsStream("test-documents/testDigilite.fdf"));
             if (path.equals("/unpack")) {
                 //"NO CONTENT"
-                assertEquals(204, response.getStatus(), "bad type: " + path);
+                assertEquals(204, response.getStatus(), "bad type: " + actualPath);
             } else {
-                assertEquals(200, response.getStatus(), "bad type: " + path);
-                assertNotNull(response, "null response: " + path);
+                assertEquals(200, response.getStatus(), "bad type: " + actualPath);
+                assertNotNull(response, "null response: " + actualPath);
             }
         }
     }

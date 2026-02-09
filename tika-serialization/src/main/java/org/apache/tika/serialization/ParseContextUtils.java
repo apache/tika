@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.loader.ComponentInfo;
 import org.apache.tika.config.loader.ComponentInstantiator;
-import org.apache.tika.config.loader.ComponentRegistry;
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
@@ -60,18 +59,6 @@ public class ParseContextUtils {
     private static final ObjectMapper MAPPER = TikaObjectMapperFactory.getMapper();
 
     /**
-     * Known interfaces that should be used as ParseContext keys.
-     * When a component implements one of these interfaces, the interface is used as
-     * the key in ParseContext instead of the concrete class.
-     * <p>
-     * These are NOT auto-discovered via SPI - they require explicit configuration.
-     */
-    private static final List<Class<?>> KNOWN_CONTEXT_INTERFACES = List.of(
-            MetadataFilter.class
-            // Add other known interfaces as needed
-    );
-
-    /**
      * Mapping of array config keys to their context keys and composite wrapper factories.
      * Key: config name (e.g., "metadata-filters")
      * Value: (contextKey, componentInterface)
@@ -88,18 +75,17 @@ public class ParseContextUtils {
     /**
      * Resolves all JSON configs from ParseContext and adds them to the resolved cache.
      * <p>
-     * Iterates through all entries in jsonConfigs, looks up the friendly name in ComponentRegistry,
+     * Iterates through all entries in jsonConfigs, looks up the friendly name in
+     * ComponentNameResolver (which searches all registered component registries),
      * deserializes the JSON, and caches the instance in resolvedConfigs.
      * <p>
      * Components that implement {@link org.apache.tika.config.SelfConfiguring} are skipped -
      * they read their own config at runtime via {@link ConfigDeserializer}.
      * <p>
-     * The ParseContext key is determined by:
-     * <ol>
-     *   <li>Explicit contextKey from @TikaComponent annotation (if specified)</li>
-     *   <li>Auto-detected from {@link #KNOWN_CONTEXT_INTERFACES} (if component implements one)</li>
-     *   <li>The component's own class (default)</li>
-     * </ol>
+     * The ParseContext key is determined by the contextKey from the .idx file, which is
+     * auto-detected by the annotation processor from the service interface, or explicitly
+     * specified via {@code @TikaComponent(contextKey=...)}. Falls back to the component
+     * class if no contextKey is available.
      *
      * @param context the ParseContext to populate
      * @param classLoader the ClassLoader to use for loading component classes
@@ -115,7 +101,7 @@ public class ParseContextUtils {
         }
 
         // First, process known array configs (e.g., "metadata-filters")
-        // These don't depend on the other-configs registry
+        // These don't depend on the parse-context registry
         for (String friendlyName : new ArrayList<>(jsonConfigs.keySet())) {
             if (ARRAY_CONFIGS.containsKey(friendlyName)) {
                 JsonConfig jsonConfig = jsonConfigs.get(friendlyName);
@@ -125,87 +111,79 @@ public class ParseContextUtils {
             }
         }
 
-        // Then, try to load the "other-configs" registry for single component configs
-        try {
-            ComponentRegistry registry = new ComponentRegistry("other-configs", classLoader);
+        // Then, try to resolve single component configs using ComponentNameResolver
+        // This searches all registered component registries, not just "parse-context"
+        for (Map.Entry<String, JsonConfig> entry : jsonConfigs.entrySet()) {
+            String friendlyName = entry.getKey();
+            JsonConfig jsonConfig = entry.getValue();
 
-            for (Map.Entry<String, JsonConfig> entry : jsonConfigs.entrySet()) {
-                String friendlyName = entry.getKey();
-                JsonConfig jsonConfig = entry.getValue();
-
-                // Skip already resolved configs (including array configs)
-                if (context.getResolvedConfig(friendlyName) != null) {
-                    continue;
-                }
-
-                ComponentInfo info = null;
-                try {
-                    // Try to find this friendly name in the registry
-                    info = registry.getComponentInfo(friendlyName);
-
-                    // Skip self-configuring components - they handle their own config
-                    if (info.selfConfiguring()) {
-                        LOG.debug("'{}' is self-configuring, skipping resolution", friendlyName);
-                        continue;
-                    }
-
-                    // Determine the context key
-                    Class<?> contextKey = determineContextKey(info, friendlyName);
-
-                    // Deserialize and cache in resolvedConfigs, also add to context
-                    Object instance = MAPPER.readValue(jsonConfig.json(), info.componentClass());
-                    context.setResolvedConfig(friendlyName, instance);
-                    context.set((Class) contextKey, instance);
-
-                    LOG.debug("Resolved '{}' -> {} with key {}",
-                            friendlyName, info.componentClass().getName(), contextKey.getName());
-                } catch (TikaConfigException e) {
-                    // Not a registered component - that's okay, might be used for something else
-                    LOG.debug("'{}' not found in other-configs registry, skipping", friendlyName);
-                } catch (IOException e) {
-                    LOG.warn("Failed to deserialize component '{}' of type {}", friendlyName,
-                            info != null ? info.componentClass().getName() : "unknown", e);
-                }
+            // Skip already resolved configs (including array configs)
+            if (context.getResolvedConfig(friendlyName) != null) {
+                continue;
             }
-        } catch (TikaConfigException e) {
-            // other-configs registry not available - that's okay, array configs were still processed
-            LOG.debug("other-configs registry not available: {}", e.getMessage());
+
+            // Try to find this friendly name in any registered component registry
+            var optionalInfo = ComponentNameResolver.getComponentInfo(friendlyName);
+            if (optionalInfo.isEmpty()) {
+                // Not a registered component - that's okay, might be used for something else
+                LOG.debug("'{}' not found in any component registry, skipping", friendlyName);
+                continue;
+            }
+
+            ComponentInfo info = optionalInfo.get();
+
+            // Skip self-configuring components - they handle their own config
+            if (info.selfConfiguring()) {
+                LOG.debug("'{}' is self-configuring, skipping resolution", friendlyName);
+                continue;
+            }
+
+            // Determine the context key
+            Class<?> contextKey = determineContextKey(info);
+
+            try {
+                // Deserialize and cache in resolvedConfigs, also add to context
+                Object instance = MAPPER.readValue(jsonConfig.json(), info.componentClass());
+                context.setResolvedConfig(friendlyName, instance);
+                context.set((Class) contextKey, instance);
+
+                LOG.debug("Resolved '{}' -> {} with key {}",
+                        friendlyName, info.componentClass().getName(), contextKey.getName());
+            } catch (IOException e) {
+                LOG.warn("Failed to deserialize component '{}' of type {}", friendlyName,
+                        info.componentClass().getName(), e);
+            }
         }
     }
 
     /**
      * Determines the ParseContext key for a component.
+     * <p>
+     * Resolution order:
+     * <ol>
+     *   <li>Explicit contextKey from .idx file (via @TikaComponent annotation)</li>
+     *   <li>Auto-detect from implemented interfaces (using TikaModule.COMPACT_FORMAT_INTERFACES)</li>
+     *   <li>Fall back to the component class itself</li>
+     * </ol>
+     * <p>
+     * Security note: This only determines the context key - it does NOT affect which
+     * classes can be instantiated. Classes must still be registered via @TikaComponent.
      *
      * @param info the component info
-     * @param friendlyName the component's friendly name (for error messages)
      * @return the class to use as ParseContext key
-     * @throws TikaConfigException if the component implements multiple known interfaces
-     *                             and no explicit contextKey is specified
      */
-    private static Class<?> determineContextKey(ComponentInfo info, String friendlyName)
-            throws TikaConfigException {
-        // Use explicit contextKey if provided
+    private static Class<?> determineContextKey(ComponentInfo info) {
+        // Use explicit contextKey from .idx file if specified
         if (info.contextKey() != null) {
             return info.contextKey();
         }
-
-        // Auto-detect from known interfaces
-        List<Class<?>> matches = new ArrayList<>();
-        for (Class<?> iface : KNOWN_CONTEXT_INTERFACES) {
-            if (iface.isAssignableFrom(info.componentClass())) {
-                matches.add(iface);
-            }
+        // Auto-detect from implemented interfaces at runtime
+        Class<?> contextKeyInterface = TikaModule.findContextKeyInterface(info.componentClass());
+        if (contextKeyInterface != null) {
+            return contextKeyInterface;
         }
-
-        if (matches.size() > 1) {
-            throw new TikaConfigException(
-                    "Component '" + friendlyName + "' (" + info.componentClass().getName() +
-                    ") implements multiple known context interfaces: " + matches +
-                    ". Use @TikaComponent(contextKey=...) to specify which one to use.");
-        }
-
-        // Use the single matched interface, or fall back to the component class
-        return matches.isEmpty() ? info.componentClass() : matches.get(0);
+        // Fall back to the component class itself
+        return info.componentClass();
     }
 
     /**

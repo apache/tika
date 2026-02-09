@@ -12,6 +12,35 @@ Tika is a project of the [Apache Software Foundation](https://www.apache.org).
 
 Apache Tika, Tika, Apache, the Apache feather logo, and the Apache Tika project logo are trademarks of The Apache Software Foundation.
 
+Quick Start
+===========
+
+**Parse a file in Java:**
+
+```java
+import org.apache.tika.Tika;
+
+Tika tika = new Tika();
+String text = tika.parseToString(new File("document.pdf"));
+System.out.println(text);
+```
+
+**From the command line:**
+
+```bash
+java -jar tika-app-*.jar --text document.pdf
+```
+
+**Maven dependency:**
+
+```xml
+<dependency>
+    <groupId>org.apache.tika</groupId>
+    <artifactId>tika-parsers-standard-package</artifactId>
+    <version>4.x.y</version>
+</dependency>
+```
+
 Getting Started
 ===============
 Pre-built binaries of Apache Tika standalone applications are available
@@ -21,13 +50,15 @@ Tika jars can be fetched from Maven Central or your favourite Maven mirror.
 **Tika 2.X and support for Java 8 reached End of Life (EOL) in April, 2025. 
 See [Tika Roadmap 2.x, 3.x and beyond](https://cwiki.apache.org/confluence/display/TIKA/Tika+Roadmap+--+2.x%2C+3.x+and+Beyond).** 
 
-Tika is based on **Java 17** and uses the [Maven 3](https://maven.apache.org) build system. 
+Tika is based on **Java 17** and uses the [Maven 3](https://maven.apache.org) build system.
 **N.B.** [Docker](https://www.docker.com/products/personal) is used for tests in tika-integration-tests. If Docker is not installed, those tests are skipped.
 
 To build Tika from source, use the following command in the main directory:
 
-    mvn clean install
+    ./mvnw clean install
 
+The Maven wrapper (`mvnw`) is included in the repository and will automatically download
+the correct Maven version if needed. On Windows, use `mvnw.cmd` instead.
 
 The build consists of a number of components, including a standalone runnable jar that you can use to try out Tika features. You can run it like this:
 
@@ -36,12 +67,62 @@ The build consists of a number of components, including a standalone runnable ja
 
 To build a specific project (for example, tika-server-standard):
 
-    mvn clean install -am -pl :tika-server-standard
+    ./mvnw clean install -am -pl :tika-server-standard
 
 If the ossindex-maven-plugin is causing the build to fail because a dependency
 has now been discovered to have a vulnerability:
 
-    mvn clean install -Dossindex.skip
+    ./mvnw clean install -Dossindex.skip
+
+
+Faster Builds
+=============
+
+**Fast profile** - Use `-Pfast` to skip tests, checkstyle, and spotless:
+
+    ./mvnw clean install -Pfast
+
+**Parallel builds** - Add `-T1C` to build with 1 thread per CPU core:
+
+    ./mvnw clean install -Pfast -T1C
+
+**Maven Daemon (mvnd)** - Keeps a warm JVM running for 2-3x faster rebuilds:
+
+```bash
+# Install: https://github.com/apache/maven-mvnd
+# macOS: brew install mvndaemon/tap/mvnd
+
+# Use exactly like mvn
+mvnd clean install -Pfast
+mvnd test -pl :tika-core
+```
+
+**Combine both** for maximum speed during development:
+
+    mvnd clean install -Pfast -T1C
+
+
+Reproducible Builds
+===================
+
+Apache Tika supports [reproducible builds](https://reproducible-builds.org/). This means
+that building the same source code with the same JDK version should produce
+byte-for-byte identical artifacts, regardless of the build machine or time.
+
+Key configuration:
+- `project.build.outputTimestamp` is set in `tika-parent/pom.xml`
+- All Maven plugins are configured to produce deterministic output
+
+To verify the build plan supports reproducibility:
+
+    ./mvnw artifact:check-buildplan
+
+To verify two builds produce identical artifacts:
+
+    ./mvnw clean install -DskipTests
+    mv ~/.m2/repository/org/apache/tika tika-build-1
+    ./mvnw clean install -DskipTests
+    diff -r tika-build-1 ~/.m2/repository/org/apache/tika
 
 
 Maven Dependencies
@@ -92,13 +173,9 @@ Migrating to 4.x
 ================
 TBD
 
-Contributing via Github
-=======================
-See the [pull request template](https://github.com/apache/tika/blob/main/.github/pull_request_template.md).
-
-**NOTE:** Please open pull requests against the `main` branch.  We locked `master` in September 2020 and no longer use it.
-
-## Thanks to all the people who have contributed
+Contributing
+============
+See [CONTRIBUTING.md](CONTRIBUTING.md) and https://tika.apache.org/contribute.html
 
 [![contributors](https://contributors-img.web.app/image?repo=apache/tika)](https://github.com/apache/tika/graphs/contributors)
 
@@ -107,25 +184,25 @@ Building from a Specific Tag
 Let's assume that you want to build the 3.0.1 tag:
 ```
 0. Download and install hub.github.com
-1. git clone https://github.com/apache/tika.git 
+1. git clone https://github.com/apache/tika.git
 2. cd tika
 3. git checkout 3.0.1
-4. mvn clean install
+4. ./mvnw clean install
 ```
 
-If a new vulnerability has been discovered between the date of the 
+If a new vulnerability has been discovered between the date of the
 tag and the date you are building the tag, you may need to build with:
 
 ```
-4. mvn clean install -Dossindex.skip
+4. ./mvnw clean install -Dossindex.skip
 ```
 
 If a local test is not working in your environment, please notify
- the project at dev@tika.apache.org. As an immediate workaround, 
- you can turn off individual tests with e.g.: 
+ the project at dev@tika.apache.org. As an immediate workaround,
+ you can turn off individual tests with e.g.:
 
 ```
-4. mvn clean install -Dossindex.skip -Dtest=\!UnpackerResourceTest#testPDFImages
+4. ./mvnw clean install -Dossindex.skip -Dtest=\!UnpackerResourceTest#testPDFImages
 ```
 
 License (see also LICENSE.txt)
@@ -155,36 +232,17 @@ Apache Tika uses the Bouncy Castle generic encryption libraries for extracting t
 Mailing Lists
 =============
 
-Discussion about Tika takes place on the following mailing lists:
+* user@tika.apache.org - About using Tika
+* dev@tika.apache.org - About developing Tika
 
-* user@tika.apache.org    - About using Tika
-* dev@tika.apache.org     - About developing Tika
-
-Notification on all code changes are sent to the following mailing list:
-
-* commits@tika.apache.org
-
-The mailing lists are open to anyone and publicly archived.
-
-You can subscribe the mailing lists by sending a message to 
-[LIST]-subscribe@tika.apache.org (for example, user-subscribe@...).  
-To unsubscribe, send a message to [LIST]-unsubscribe@tika.apache.org.  
-For more instructions, send a message to [LIST]-help@tika.apache.org.
+Subscribe by sending a message to `{list}-subscribe@tika.apache.org`.
 
 Issue Tracker
 =============
 
-If you encounter errors in Tika or want to suggest an improvement or a new feature,
- please visit the [Tika issue tracker](https://issues.apache.org/jira/browse/TIKA). 
- There you can also find the latest information on known issues and 
- recent bug fixes and enhancements.
+https://issues.apache.org/jira/browse/TIKA
 
-Build Issues
-============
+Security
+========
 
-*TODO*
-
-* Need to install jce
-
-* If you find any other issues while building, please email the dev@tika.apache.org
-  list.
+See [SECURITY.md](SECURITY.md) and https://tika.apache.org/security.html

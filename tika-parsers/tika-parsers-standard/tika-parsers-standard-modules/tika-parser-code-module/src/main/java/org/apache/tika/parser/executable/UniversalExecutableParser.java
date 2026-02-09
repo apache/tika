@@ -63,7 +63,7 @@ public class UniversalExecutableParser implements Parser {
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
         EmbeddedDocumentExtractor extractor =
@@ -157,7 +157,7 @@ public class UniversalExecutableParser implements Parser {
             IOUtils.readFully(tis, perArchMachO);
             currentOffset += perArchMachO.length;
 
-            var perArchMetadata = new Metadata();
+            var perArchMetadata = Metadata.newInstance(context);
             var tikaInputStream = TikaInputStream.get(perArchMachO, perArchMetadata);
             if (extractor.shouldParseEmbedded(perArchMetadata)) {
                 extractor.parseEmbedded(tikaInputStream, xhtml, perArchMetadata, context, true);

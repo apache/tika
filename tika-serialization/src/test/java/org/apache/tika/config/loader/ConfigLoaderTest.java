@@ -27,33 +27,37 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.io.SpoolingStrategy;
+import org.apache.tika.mime.MediaType;
 
 /**
  * Unit tests for {@link ConfigLoader}.
  */
 public class ConfigLoaderTest {
 
-    private TikaLoader tikaLoader;
+    private TikaJsonConfig tikaJsonConfig;
     private ConfigLoader configLoader;
 
     @BeforeEach
     public void setUp() throws Exception {
         Path configPath = Paths.get(
                 getClass().getResource("/configs/test-config-loader.json").toURI());
-        tikaLoader = TikaLoader.load(configPath);
-        configLoader = tikaLoader.configs();
+        tikaJsonConfig = TikaJsonConfig.load(configPath);
+        ObjectMapper objectMapper = TikaObjectMapperFactory.getMapper();
+        configLoader = new ConfigLoader(tikaJsonConfig, objectMapper);
     }
 
     // ==================== Test POJOs ====================
 
     /**
-     * Simple config POJO with properties.
+     * Simple config POJO with properties for testing config loading.
      */
-    public static class HandlerConfig {
+    public static class RetryConfig {
         private int timeout;
         private int retries;
         private boolean enabled;
@@ -185,7 +189,7 @@ public class ConfigLoaderTest {
 
     @Test
     public void testLoadByExplicitKey() throws Exception {
-        HandlerConfig config = configLoader.load("handler-config", HandlerConfig.class);
+        RetryConfig config = configLoader.load("retry-config", RetryConfig.class);
 
         assertNotNull(config);
         assertEquals(5000, config.getTimeout());
@@ -195,7 +199,7 @@ public class ConfigLoaderTest {
 
     @Test
     public void testLoadByClassNameKebabCase() throws Exception {
-        HandlerConfig config = configLoader.load(HandlerConfig.class);
+        RetryConfig config = configLoader.load(RetryConfig.class);
 
         assertNotNull(config);
         assertEquals(5000, config.getTimeout());
@@ -212,6 +216,20 @@ public class ConfigLoaderTest {
     }
 
     @Test
+    public void testLoadSpoolingStrategy() throws Exception {
+        // SpoolingStrategy -> "spooling-strategy"
+        // JSON has "spooling-strategy" with spoolTypes: ["application/zip", "application/pdf"]
+        SpoolingStrategy strategy = configLoader.load(SpoolingStrategy.class);
+
+        assertNotNull(strategy);
+        assertEquals(2, strategy.getSpoolTypes().size());
+        assertTrue(strategy.getSpoolTypes().contains(MediaType.application("zip")));
+        assertTrue(strategy.getSpoolTypes().contains(MediaType.application("pdf")));
+        // Verify default types are NOT present (we replaced the set)
+        assertFalse(strategy.getSpoolTypes().contains(MediaType.application("x-tika-msoffice")));
+    }
+
+    @Test
     public void testLoadByClassNameMyFeatureSettings() throws Exception {
         // MyFeatureSettings -> "my-feature-settings" (full name, no suffix stripping)
         // JSON has "my-feature-settings"
@@ -224,20 +242,20 @@ public class ConfigLoaderTest {
 
     @Test
     public void testLoadWithDefaultValue() throws Exception {
-        HandlerConfig config = configLoader.load("handler-config", HandlerConfig.class);
+        RetryConfig config = configLoader.load("retry-config", RetryConfig.class);
         assertNotNull(config);
 
         // Non-existent key with default
-        HandlerConfig defaultConfig = new HandlerConfig();
+        RetryConfig defaultConfig = new RetryConfig();
         defaultConfig.setTimeout(9999);
 
-        HandlerConfig result = configLoader.load("non-existent", HandlerConfig.class, defaultConfig);
+        RetryConfig result = configLoader.load("non-existent", RetryConfig.class, defaultConfig);
         assertEquals(9999, result.getTimeout());
     }
 
     @Test
     public void testLoadMissingKeyReturnsNull() throws Exception {
-        HandlerConfig config = configLoader.load("non-existent-key", HandlerConfig.class);
+        RetryConfig config = configLoader.load("non-existent-key", RetryConfig.class);
         assertNull(config);
     }
 
@@ -270,10 +288,11 @@ public class ConfigLoaderTest {
         // because Jackson can't instantiate interfaces directly
         Path configPath = Paths.get(
                 getClass().getResource("/configs/test-interface-no-type.json").toURI());
-        TikaLoader loader = TikaLoader.load(configPath);
+        TikaJsonConfig config = TikaJsonConfig.load(configPath);
+        ConfigLoader loader = new ConfigLoader(config, TikaObjectMapperFactory.getMapper());
 
         TikaConfigException ex = assertThrows(TikaConfigException.class, () ->
-                loader.configs().load("handler-no-type", TestHandler.class));
+                loader.load("handler-no-type", TestHandler.class));
         assertTrue(ex.getMessage().contains("Failed to deserialize"));
     }
 
@@ -312,7 +331,7 @@ public class ConfigLoaderTest {
 
     @Test
     public void testHasKey() throws Exception {
-        assertTrue(configLoader.hasKey("handler-config"));
+        assertTrue(configLoader.hasKey("retry-config"));
         assertTrue(configLoader.hasKey("simple-handler"));
         assertFalse(configLoader.hasKey("non-existent"));
     }
@@ -321,10 +340,11 @@ public class ConfigLoaderTest {
     public void testLoadInvalidClassName() throws Exception {
         Path configPath = Paths.get(
                 getClass().getResource("/configs/test-invalid-class.json").toURI());
-        TikaLoader loader = TikaLoader.load(configPath);
+        TikaJsonConfig config = TikaJsonConfig.load(configPath);
+        ConfigLoader loader = new ConfigLoader(config, TikaObjectMapperFactory.getMapper());
 
         TikaConfigException ex = assertThrows(TikaConfigException.class, () ->
-                loader.configs().load("handler", TestHandler.class));
+                loader.load("handler", TestHandler.class));
 
         assertTrue(ex.getMessage().contains("Class not found"));
     }
@@ -334,10 +354,11 @@ public class ConfigLoaderTest {
         // String class name that doesn't implement the interface
         Path configPath = Paths.get(
                 getClass().getResource("/configs/test-wrong-type.json").toURI());
-        TikaLoader loader = TikaLoader.load(configPath);
+        TikaJsonConfig config = TikaJsonConfig.load(configPath);
+        ConfigLoader loader = new ConfigLoader(config, TikaObjectMapperFactory.getMapper());
 
         TikaConfigException ex = assertThrows(TikaConfigException.class, () ->
-                loader.configs().load("handler", TestHandler.class));
+                loader.load("handler", TestHandler.class));
 
         assertTrue(ex.getMessage().contains("not assignable"));
     }
@@ -347,13 +368,14 @@ public class ConfigLoaderTest {
         // Verify that unexpected/unrecognized fields cause an exception
         Path configPath = Paths.get(
                 getClass().getResource("/configs/test-unexpected-field.json").toURI());
-        TikaLoader loader = TikaLoader.load(configPath);
+        TikaJsonConfig config = TikaJsonConfig.load(configPath);
+        ConfigLoader loader = new ConfigLoader(config, TikaObjectMapperFactory.getMapper());
 
         TikaConfigException ex = assertThrows(TikaConfigException.class, () ->
-                loader.configs().load("handler-config", HandlerConfig.class));
+                loader.load("retry-config", RetryConfig.class));
 
         // Should contain information about the unrecognized field
-        assertTrue(ex.getMessage().contains("handler-config") ||
+        assertTrue(ex.getMessage().contains("retry-config") ||
                    ex.getCause().getMessage().contains("Unrecognized") ||
                    ex.getCause().getMessage().contains("unexpectedField"),
                    "Exception should mention the unrecognized field");
@@ -370,7 +392,7 @@ public class ConfigLoaderTest {
 
     @Test
     public void testLoadByClassWithDefault() throws Exception {
-        HandlerConfig config = configLoader.load(HandlerConfig.class);
+        RetryConfig config = configLoader.load(RetryConfig.class);
         assertNotNull(config);
 
         // Non-existent class
@@ -391,23 +413,24 @@ public class ConfigLoaderTest {
         // Load config that merges defaults with partial JSON
         Path configPath = Paths.get(
                 getClass().getResource("/configs/test-partial-config.json").toURI());
-        TikaLoader loader = TikaLoader.load(configPath);
+        TikaJsonConfig config = TikaJsonConfig.load(configPath);
+        ConfigLoader loader = new ConfigLoader(config, TikaObjectMapperFactory.getMapper());
 
         // Set up defaults
-        HandlerConfig defaults = new HandlerConfig();
+        RetryConfig defaults = new RetryConfig();
         defaults.setTimeout(30000);
         defaults.setRetries(2);
         defaults.setEnabled(false);
 
         // JSON only has: { "enabled": true }
-        HandlerConfig config = loader.configs().loadWithDefaults("handler-config",
-                                                                  HandlerConfig.class,
+        RetryConfig result = loader.loadWithDefaults("retry-config",
+                                                                  RetryConfig.class,
                                                                   defaults);
 
-        assertNotNull(config);
-        assertEquals(30000, config.getTimeout()); // ✅ From defaults
-        assertEquals(2, config.getRetries());      // ✅ From defaults
-        assertTrue(config.isEnabled());            // ✅ From JSON (overridden)
+        assertNotNull(result);
+        assertEquals(30000, result.getTimeout()); // ✅ From defaults
+        assertEquals(2, result.getRetries());      // ✅ From defaults
+        assertTrue(result.isEnabled());            // ✅ From JSON (overridden)
     }
 
     @Test
@@ -415,34 +438,35 @@ public class ConfigLoaderTest {
         // Test that JSON can override all defaults
         Path configPath = Paths.get(
                 getClass().getResource("/configs/test-partial-config.json").toURI());
-        TikaLoader loader = TikaLoader.load(configPath);
+        TikaJsonConfig config = TikaJsonConfig.load(configPath);
+        ConfigLoader loader = new ConfigLoader(config, TikaObjectMapperFactory.getMapper());
 
-        HandlerConfig defaults = new HandlerConfig();
+        RetryConfig defaults = new RetryConfig();
         defaults.setTimeout(30000);
         defaults.setRetries(2);
         defaults.setEnabled(false);
 
         // JSON has: { "timeout": 10000, "retries": 5, "enabled": false }
-        HandlerConfig config = loader.configs().loadWithDefaults("handler-config-full",
-                                                                  HandlerConfig.class,
+        RetryConfig result = loader.loadWithDefaults("retry-config-full",
+                                                                  RetryConfig.class,
                                                                   defaults);
 
-        assertNotNull(config);
-        assertEquals(10000, config.getTimeout()); // All overridden
-        assertEquals(5, config.getRetries());
-        assertFalse(config.isEnabled());
+        assertNotNull(result);
+        assertEquals(10000, result.getTimeout()); // All overridden
+        assertEquals(5, result.getRetries());
+        assertFalse(result.isEnabled());
     }
 
     @Test
     public void testLoadWithDefaultsMissingKey() throws Exception {
         // When key doesn't exist, should return original defaults unchanged
-        HandlerConfig defaults = new HandlerConfig();
+        RetryConfig defaults = new RetryConfig();
         defaults.setTimeout(30000);
         defaults.setRetries(2);
         defaults.setEnabled(false);
 
-        HandlerConfig config = configLoader.loadWithDefaults("non-existent-key",
-                                                              HandlerConfig.class,
+        RetryConfig config = configLoader.loadWithDefaults("non-existent-key",
+                                                              RetryConfig.class,
                                                               defaults);
 
         assertNotNull(config);
@@ -456,20 +480,21 @@ public class ConfigLoaderTest {
         // Test the class-name version
         Path configPath = Paths.get(
                 getClass().getResource("/configs/test-partial-config.json").toURI());
-        TikaLoader loader = TikaLoader.load(configPath);
+        TikaJsonConfig config = TikaJsonConfig.load(configPath);
+        ConfigLoader loader = new ConfigLoader(config, TikaObjectMapperFactory.getMapper());
 
-        HandlerConfig defaults = new HandlerConfig();
+        RetryConfig defaults = new RetryConfig();
         defaults.setTimeout(30000);
         defaults.setRetries(2);
         defaults.setEnabled(false);
 
-        // Uses kebab-case: HandlerConfig -> "handler-config"
-        HandlerConfig config = loader.configs().loadWithDefaults(HandlerConfig.class, defaults);
+        // Uses kebab-case: RetryConfig -> "retry-config"
+        RetryConfig result = loader.loadWithDefaults(RetryConfig.class, defaults);
 
-        assertNotNull(config);
-        assertEquals(30000, config.getTimeout());
-        assertEquals(2, config.getRetries());
-        assertTrue(config.isEnabled()); // Overridden from JSON
+        assertNotNull(result);
+        assertEquals(30000, result.getTimeout());
+        assertEquals(2, result.getRetries());
+        assertTrue(result.isEnabled()); // Overridden from JSON
     }
 
     @Test
@@ -477,22 +502,23 @@ public class ConfigLoaderTest {
         // Demonstrate difference between load() and loadWithDefaults()
         Path configPath = Paths.get(
                 getClass().getResource("/configs/test-partial-config.json").toURI());
-        TikaLoader loader = TikaLoader.load(configPath);
+        TikaJsonConfig config = TikaJsonConfig.load(configPath);
+        ConfigLoader loader = new ConfigLoader(config, TikaObjectMapperFactory.getMapper());
 
-        HandlerConfig defaults = new HandlerConfig();
+        RetryConfig defaults = new RetryConfig();
         defaults.setTimeout(30000);
         defaults.setRetries(2);
         defaults.setEnabled(false);
 
         // Using load() - creates new object, loses defaults
-        HandlerConfig config1 = loader.configs().load("handler-config", HandlerConfig.class);
+        RetryConfig config1 = loader.load("retry-config", RetryConfig.class);
         assertEquals(0, config1.getTimeout());  // ❌ Lost default!
         assertEquals(0, config1.getRetries());  // ❌ Lost default!
         assertTrue(config1.isEnabled());        // ✅ From JSON
 
         // Using loadWithDefaults() - merges into defaults
-        HandlerConfig config2 = loader.configs().loadWithDefaults("handler-config",
-                                                                   HandlerConfig.class,
+        RetryConfig config2 = loader.loadWithDefaults("retry-config",
+                                                                   RetryConfig.class,
                                                                    defaults);
         assertEquals(30000, config2.getTimeout()); // ✅ Kept default!
         assertEquals(2, config2.getRetries());     // ✅ Kept default!
@@ -506,16 +532,17 @@ public class ConfigLoaderTest {
         // Verify that the original defaults object is NOT modified
         Path configPath = Paths.get(
                 getClass().getResource("/configs/test-partial-config.json").toURI());
-        TikaLoader loader = TikaLoader.load(configPath);
+        TikaJsonConfig config = TikaJsonConfig.load(configPath);
+        ConfigLoader loader = new ConfigLoader(config, TikaObjectMapperFactory.getMapper());
 
-        HandlerConfig defaults = new HandlerConfig();
+        RetryConfig defaults = new RetryConfig();
         defaults.setTimeout(30000);
         defaults.setRetries(2);
         defaults.setEnabled(false);
 
         // Load config with partial override (JSON only has "enabled": true)
-        HandlerConfig result = loader.configs().loadWithDefaults("handler-config",
-                                                                  HandlerConfig.class,
+        RetryConfig result = loader.loadWithDefaults("retry-config",
+                                                                  RetryConfig.class,
                                                                   defaults);
 
         // Verify result has merged values
@@ -539,19 +566,20 @@ public class ConfigLoaderTest {
         // Verify defaults can be safely reused for multiple loads
         Path configPath = Paths.get(
                 getClass().getResource("/configs/test-partial-config.json").toURI());
-        TikaLoader loader = TikaLoader.load(configPath);
+        TikaJsonConfig config = TikaJsonConfig.load(configPath);
+        ConfigLoader loader = new ConfigLoader(config, TikaObjectMapperFactory.getMapper());
 
-        HandlerConfig defaults = new HandlerConfig();
+        RetryConfig defaults = new RetryConfig();
         defaults.setTimeout(30000);
         defaults.setRetries(2);
         defaults.setEnabled(false);
 
         // Load multiple times with same defaults
-        HandlerConfig config1 = loader.configs().loadWithDefaults("handler-config",
-                                                                   HandlerConfig.class,
+        RetryConfig config1 = loader.loadWithDefaults("retry-config",
+                                                                   RetryConfig.class,
                                                                    defaults);
-        HandlerConfig config2 = loader.configs().loadWithDefaults("handler-config-full",
-                                                                   HandlerConfig.class,
+        RetryConfig config2 = loader.loadWithDefaults("retry-config-full",
+                                                                   RetryConfig.class,
                                                                    defaults);
 
         // Verify results are different
@@ -564,8 +592,8 @@ public class ConfigLoaderTest {
         assertFalse(defaults.isEnabled());
 
         // Use defaults one more time
-        HandlerConfig config3 = loader.configs().loadWithDefaults("non-existent",
-                                                                   HandlerConfig.class,
+        RetryConfig config3 = loader.loadWithDefaults("non-existent",
+                                                                   RetryConfig.class,
                                                                    defaults);
         assertEquals(defaults, config3);  // Should return original when key missing
     }
@@ -575,13 +603,14 @@ public class ConfigLoaderTest {
         // Test with nested/complex objects to ensure deep copy works
         Path configPath = Paths.get(
                 getClass().getResource("/configs/test-partial-config.json").toURI());
-        TikaLoader loader = TikaLoader.load(configPath);
+        TikaJsonConfig config = TikaJsonConfig.load(configPath);
+        ConfigLoader loader = new ConfigLoader(config, TikaObjectMapperFactory.getMapper());
 
         TikaTaskTimeout defaults = new TikaTaskTimeout();
         defaults.setMillis(60000);
 
         // Note: tika-task-timeout in JSON has millis: 30000
-        TikaTaskTimeout result = loader.configs().loadWithDefaults("tika-task-timeout",
+        TikaTaskTimeout result = loader.loadWithDefaults("tika-task-timeout",
                                                                     TikaTaskTimeout.class,
                                                                     defaults);
 
@@ -595,13 +624,13 @@ public class ConfigLoaderTest {
     @Test
     public void testLoadWithDefaultsMissingKeyDoesNotClone() throws Exception {
         // When key is missing, should return the original object (no unnecessary cloning)
-        HandlerConfig defaults = new HandlerConfig();
+        RetryConfig defaults = new RetryConfig();
         defaults.setTimeout(30000);
         defaults.setRetries(2);
         defaults.setEnabled(false);
 
-        HandlerConfig result = configLoader.loadWithDefaults("non-existent-key",
-                                                              HandlerConfig.class,
+        RetryConfig result = configLoader.loadWithDefaults("non-existent-key",
+                                                              RetryConfig.class,
                                                               defaults);
 
         // Should return the exact same object when key is missing
@@ -616,20 +645,21 @@ public class ConfigLoaderTest {
         // Demonstrate that defaults can be safely shared across threads
         Path configPath = Paths.get(
                 getClass().getResource("/configs/test-partial-config.json").toURI());
-        TikaLoader loader = TikaLoader.load(configPath);
+        TikaJsonConfig config = TikaJsonConfig.load(configPath);
+        ConfigLoader loader = new ConfigLoader(config, TikaObjectMapperFactory.getMapper());
 
         // Shared defaults object
-        HandlerConfig sharedDefaults = new HandlerConfig();
+        RetryConfig sharedDefaults = new RetryConfig();
         sharedDefaults.setTimeout(30000);
         sharedDefaults.setRetries(2);
         sharedDefaults.setEnabled(false);
 
         // Simulate concurrent usage (not a real concurrency test, just demonstrates safety)
-        HandlerConfig result1 = loader.configs().loadWithDefaults("handler-config",
-                                                                   HandlerConfig.class,
+        RetryConfig result1 = loader.loadWithDefaults("retry-config",
+                                                                   RetryConfig.class,
                                                                    sharedDefaults);
-        HandlerConfig result2 = loader.configs().loadWithDefaults("handler-config-full",
-                                                                   HandlerConfig.class,
+        RetryConfig result2 = loader.loadWithDefaults("retry-config-full",
+                                                                   RetryConfig.class,
                                                                    sharedDefaults);
 
         // Both results should be valid

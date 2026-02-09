@@ -25,18 +25,17 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.digest.DigestDef;
+import org.apache.tika.digest.DigesterFactory;
 import org.apache.tika.digest.SkipContainerDocumentDigest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.AutoDetectParserConfig;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.digestutils.CommonsDigester;
 import org.apache.tika.parser.digestutils.CommonsDigesterFactory;
 
 /**
  * Tests for SkipContainerDocumentDigest functionality with MockParser and embedded documents.
+ * DigesterFactory is now configured via ParseContext (via parse-context in JSON).
  */
 public class SkipContainerDocumentDigestTest extends TikaTest {
 
@@ -46,14 +45,16 @@ public class SkipContainerDocumentDigestTest extends TikaTest {
     @Test
     public void testDigestContainerAndEmbedded() throws Exception {
         // skipContainerDocumentDigest = false means digest everything
-        AutoDetectParserConfig config = new AutoDetectParserConfig();
-        config.digester(new CommonsDigester(100000, DigestDef.Algorithm.MD5));
-        config.setSkipContainerDocumentDigest(false);
+        CommonsDigesterFactory factory = new CommonsDigesterFactory();
+        factory.setSkipContainerDocumentDigest(false);
 
         AutoDetectParser parser = new AutoDetectParser();
-        parser.setAutoDetectParserConfig(config);
 
-        List<Metadata> metadataList = getRecursiveMetadata("mock_embedded_for_digest.xml", parser);
+        ParseContext context = new ParseContext();
+        context.set(DigesterFactory.class, factory);
+
+        List<Metadata> metadataList = getRecursiveMetadata("mock_embedded_for_digest.xml",
+                parser, new Metadata(), context, false);
 
         // Should have container + embedded
         assertEquals(2, metadataList.size());
@@ -70,14 +71,16 @@ public class SkipContainerDocumentDigestTest extends TikaTest {
     @Test
     public void testSkipContainerDigestOnly() throws Exception {
         // skipContainerDocumentDigest = true means skip container, digest only embedded
-        AutoDetectParserConfig config = new AutoDetectParserConfig();
-        config.digester(new CommonsDigester(100000, DigestDef.Algorithm.MD5));
-        config.setSkipContainerDocumentDigest(true);
+        CommonsDigesterFactory factory = new CommonsDigesterFactory();
+        factory.setSkipContainerDocumentDigest(true);
 
         AutoDetectParser parser = new AutoDetectParser();
-        parser.setAutoDetectParserConfig(config);
 
-        List<Metadata> metadataList = getRecursiveMetadata("mock_embedded_for_digest.xml", parser);
+        ParseContext context = new ParseContext();
+        context.set(DigesterFactory.class, factory);
+
+        List<Metadata> metadataList = getRecursiveMetadata("mock_embedded_for_digest.xml",
+                parser, new Metadata(), context, false);
 
         // Should have container + embedded
         assertEquals(2, metadataList.size());
@@ -94,15 +97,14 @@ public class SkipContainerDocumentDigestTest extends TikaTest {
     @Test
     public void testSkipContainerDocumentDigestMarkerInParseContext() throws Exception {
         // Test that the SkipContainerDocumentDigest marker in ParseContext works
-        AutoDetectParserConfig config = new AutoDetectParserConfig();
-        config.digester(new CommonsDigester(100000, DigestDef.Algorithm.MD5));
-        config.setSkipContainerDocumentDigest(false); // Config says digest all
+        CommonsDigesterFactory factory = new CommonsDigesterFactory();
+        factory.setSkipContainerDocumentDigest(false); // Factory says digest all
 
         AutoDetectParser parser = new AutoDetectParser();
-        parser.setAutoDetectParserConfig(config);
 
-        // Set the marker in ParseContext to override config
+        // Set both factory and the marker in ParseContext - marker overrides factory
         ParseContext context = new ParseContext();
+        context.set(DigesterFactory.class, factory);
         context.set(SkipContainerDocumentDigest.class, SkipContainerDocumentDigest.INSTANCE);
 
         List<Metadata> metadataList = getRecursiveMetadata("mock_embedded_for_digest.xml",
@@ -111,7 +113,7 @@ public class SkipContainerDocumentDigestTest extends TikaTest {
         // Should have container + embedded
         assertEquals(2, metadataList.size());
 
-        // Container should NOT have digest because ParseContext marker overrides config
+        // Container should NOT have digest because ParseContext marker overrides factory
         assertNull(metadataList.get(0).get(DIGEST_KEY),
                 "Container document should NOT have digest when ParseContext marker is set");
 
@@ -122,12 +124,8 @@ public class SkipContainerDocumentDigestTest extends TikaTest {
 
     @Test
     public void testNoDigesterConfigured() throws Exception {
-        // When no digester is configured, no digests should be computed
-        AutoDetectParserConfig config = new AutoDetectParserConfig();
-        // Don't set any digester
-
+        // When no digester is configured in ParseContext, no digests should be computed
         AutoDetectParser parser = new AutoDetectParser();
-        parser.setAutoDetectParserConfig(config);
 
         List<Metadata> metadataList = getRecursiveMetadata("mock_embedded_for_digest.xml", parser);
 
@@ -142,21 +140,52 @@ public class SkipContainerDocumentDigestTest extends TikaTest {
     }
 
     @Test
-    public void testDigestWithFactory() throws Exception {
-        // Test using the factory pattern
+    public void testDigestWithFactoryInParseContext() throws Exception {
+        // Test that DigesterFactory in ParseContext is used
         CommonsDigesterFactory factory = new CommonsDigesterFactory();
-        factory.setMarkLimit(100000);
-
-        AutoDetectParserConfig config = new AutoDetectParserConfig();
-        config.setDigesterFactory(factory);
-        config.setSkipContainerDocumentDigest(false);
+        factory.setSkipContainerDocumentDigest(false);
 
         AutoDetectParser parser = new AutoDetectParser();
-        parser.setAutoDetectParserConfig(config);
 
-        List<Metadata> metadataList = getRecursiveMetadata("mock_embedded_for_digest.xml", parser);
+        ParseContext context = new ParseContext();
+        context.set(DigesterFactory.class, factory);
+
+        List<Metadata> metadataList = getRecursiveMetadata("mock_embedded_for_digest.xml",
+                parser, new Metadata(), context, false);
 
         // Should have container + embedded
         assertEquals(2, metadataList.size());
+
+        // Both should have digest
+        assertNotNull(metadataList.get(0).get(DIGEST_KEY),
+                "Container document should have digest when ParseContext provides factory");
+        assertNotNull(metadataList.get(1).get(DIGEST_KEY),
+                "Embedded document should have digest when ParseContext provides factory");
+    }
+
+    @Test
+    public void testSkipContainerOnFactory() throws Exception {
+        // Test skipContainerDocumentDigest configured on the factory
+        CommonsDigesterFactory factory = new CommonsDigesterFactory();
+        factory.setSkipContainerDocumentDigest(true);
+
+        AutoDetectParser parser = new AutoDetectParser();
+
+        ParseContext context = new ParseContext();
+        context.set(DigesterFactory.class, factory);
+
+        List<Metadata> metadataList = getRecursiveMetadata("mock_embedded_for_digest.xml",
+                parser, new Metadata(), context, false);
+
+        // Should have container + embedded
+        assertEquals(2, metadataList.size());
+
+        // Container should NOT have digest because factory says to skip
+        assertNull(metadataList.get(0).get(DIGEST_KEY),
+                "Container document should NOT have digest when factory.skipContainerDocumentDigest=true");
+
+        // Embedded should have digest
+        assertNotNull(metadataList.get(1).get(DIGEST_KEY),
+                "Embedded document should have digest");
     }
 }

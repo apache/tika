@@ -21,6 +21,8 @@ import java.util.ArrayList;
 
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.ParseMode;
 
 public class PipesConfig {
 
@@ -41,11 +43,20 @@ public class PipesConfig {
 
     public static final long DEFAULT_HEARTBEAT_INTERVAL_MS = 1000;
 
+    public static final boolean DEFAULT_USE_SHARED_SERVER = false;
+
     /**
      * The emit strategy configuration determines how the forked PipesServer handles emitting data.
      * See {@link EmitStrategyConfig} for details.
      */
     private EmitStrategyConfig emitStrategy = new EmitStrategyConfig(EmitStrategyConfig.DEFAULT_EMIT_STRATEGY);
+
+    /**
+     * When true, multiple PipesClients connect to a single shared PipesServer process
+     * instead of each client spawning its own server. This reduces memory overhead
+     * and startup time at the cost of reduced isolation - one crash affects all in-flight requests.
+     */
+    private boolean useSharedServer = DEFAULT_USE_SHARED_SERVER;
 
     private long timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
     private long socketTimeoutMs = DEFAULT_SOCKET_TIMEOUT_MS;
@@ -85,9 +96,27 @@ public class PipesConfig {
      */
     private boolean stopOnlyOnFatal = false;
 
+    /**
+     * Default parse mode for how embedded documents are handled.
+     * Can be overridden per-file via ParseContext.
+     */
+    private ParseMode parseMode = ParseMode.RMETA;
+
+    /**
+     * Default behavior when a parse exception occurs.
+     */
+    private FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT;
+
     private ArrayList<String> forkedJvmArgs = new ArrayList<>();
     private String javaPath = "java";
-    
+
+    /**
+     * Optional directory for temporary files during pipes-based parsing.
+     * If not set, the system default temp directory will be used.
+     * Consider using a RAM-backed filesystem (e.g., /dev/shm) for better performance.
+     */
+    private String tempDirectory = null;
+
     /**
      * Type of ConfigStore to use for distributed state management.
      * Options: "memory" (default), "ignite"
@@ -361,6 +390,52 @@ public class PipesConfig {
         this.stopOnlyOnFatal = stopOnlyOnFatal;
     }
 
+    /**
+     * Gets the default parse mode for how embedded documents are handled.
+     *
+     * @return the default parse mode
+     */
+    public ParseMode getParseMode() {
+        return parseMode;
+    }
+
+    /**
+     * Sets the default parse mode for how embedded documents are handled.
+     * This can be overridden per-file via ParseContext.
+     *
+     * @param parseMode the parse mode (RMETA or CONCATENATE)
+     */
+    public void setParseMode(ParseMode parseMode) {
+        this.parseMode = parseMode;
+    }
+
+    /**
+     * Sets the default parse mode from a string.
+     *
+     * @param parseMode the parse mode name (rmeta or concatenate)
+     */
+    public void setParseMode(String parseMode) {
+        this.parseMode = ParseMode.parse(parseMode);
+    }
+
+    /**
+     * Gets the default behavior when a parse exception occurs.
+     *
+     * @return the parse exception behavior
+     */
+    public FetchEmitTuple.ON_PARSE_EXCEPTION getOnParseException() {
+        return onParseException;
+    }
+
+    /**
+     * Sets the default behavior when a parse exception occurs.
+     *
+     * @param onParseException the parse exception behavior
+     */
+    public void setOnParseException(FetchEmitTuple.ON_PARSE_EXCEPTION onParseException) {
+        this.onParseException = onParseException;
+    }
+
     public String getConfigStoreType() {
         return configStoreType;
     }
@@ -375,5 +450,51 @@ public class PipesConfig {
 
     public void setConfigStoreParams(String configStoreParams) {
         this.configStoreParams = configStoreParams;
+    }
+
+    /**
+     * Gets the directory for temporary files during pipes-based parsing.
+     *
+     * @return the temp directory path, or null to use system default
+     */
+    public String getTempDirectory() {
+        return tempDirectory;
+    }
+
+    /**
+     * Sets the directory for temporary files during pipes-based parsing.
+     * If not set, the system default temp directory will be used.
+     * Consider using a RAM-backed filesystem (e.g., /dev/shm or /tmpfs) for better performance.
+     *
+     * @param tempDirectory the temp directory path, or null to use system default
+     */
+    public void setTempDirectory(String tempDirectory) {
+        this.tempDirectory = tempDirectory;
+    }
+
+    /**
+     * Returns whether shared server mode is enabled.
+     *
+     * @return true if shared server mode is enabled
+     * @see #setUseSharedServer(boolean)
+     */
+    public boolean isUseSharedServer() {
+        return useSharedServer;
+    }
+
+    /**
+     * Sets whether to use shared server mode.
+     * <p>
+     * When {@code true}, multiple PipesClients connect to a single shared PipesServer
+     * process instead of each client having its own dedicated server. This reduces
+     * memory overhead but sacrifices isolation: one crash affects all in-flight requests.
+     * <p>
+     * <b>Not recommended for production.</b> See the Tika Pipes documentation for
+     * limitations and guidance.
+     *
+     * @param useSharedServer true to enable shared server mode, false for per-client mode (default)
+     */
+    public void setUseSharedServer(boolean useSharedServer) {
+        this.useSharedServer = useSharedServer;
     }
 }
