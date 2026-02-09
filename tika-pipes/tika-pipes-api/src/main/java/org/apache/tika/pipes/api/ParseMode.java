@@ -54,6 +54,20 @@ public enum ParseMode {
     NO_PARSE,
 
     /**
+     * Concatenates content and emits only the raw content string, with no
+     * metadata and no JSON wrapper.
+     * <p>
+     * This mode parses like CONCATENATE (producing a single metadata object with
+     * merged content from all embedded documents), but at emit time, emitters
+     * write only the value of {@code X-TIKA:content} as a raw string instead of
+     * serializing the full metadata list as JSON.
+     * <p>
+     * This is useful when you want plain text, markdown, or HTML output files
+     * without any metadata overhead.
+     */
+    CONTENT_ONLY,
+
+    /**
      * Extracts embedded document bytes and emits them, with full RMETA metadata.
      * <p>
      * This mode parses like RMETA (returning a metadata object per document) AND
@@ -88,7 +102,7 @@ public enum ParseMode {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(
                     "Invalid parse mode: '" + modeString + "'. " +
-                            "Must be one of: RMETA, CONCATENATE, NO_PARSE, UNPACK");
+                            "Must be one of: RMETA, CONCATENATE, CONTENT_ONLY, NO_PARSE, UNPACK");
         }
     }
 }

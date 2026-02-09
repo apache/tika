@@ -33,6 +33,60 @@ java -jar tika-server-standard.jar
 
 The server starts on port 9998 by default.
 
+== Endpoints
+
+=== Content Extraction (`/tika`)
+
+The `/tika` endpoint extracts content from a document as plain text.
+
+[source,bash]
+----
+curl -T document.pdf http://localhost:9998/tika
+----
+
+==== Markdown Output (`/tika/md`)
+
+The `/tika/md` endpoint extracts content as Markdown, preserving structural semantics
+like headings, lists, tables, and emphasis:
+
+[source,bash]
+----
+curl -T document.docx http://localhost:9998/tika/md
+----
+
+==== Custom Handler Type
+
+Use the `X-Tika-Handler` header to control the output format. Valid values: `text` (default),
+`html`, `xml`, `markdown`, `ignore`.
+
+[source,bash]
+----
+curl -T document.pdf -H "X-Tika-Handler: markdown" http://localhost:9998/tika
+----
+
+=== Recursive Metadata (`/rmeta`)
+
+The `/rmeta` endpoint returns metadata for the container document and all embedded documents
+as a JSON array of metadata objects.
+
+[source,bash]
+----
+curl -T document.pdf http://localhost:9998/rmeta
+----
+
+Content handler can be specified in the URL path:
+
+* `/rmeta/text` - plain text content (default)
+* `/rmeta/html` - HTML content
+* `/rmeta/xml` - XHTML content
+* `/rmeta/markdown` - Markdown content
+* `/rmeta/ignore` - metadata only, no content
+
+[source,bash]
+----
+curl -T document.docx http://localhost:9998/rmeta/markdown
+----
+
 == Topics
 
 * xref:using-tika/server/tls.adoc[TLS/SSL Configuration] - Secure your server with TLS and mutual authentication
