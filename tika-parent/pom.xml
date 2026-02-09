@@ -687,7 +687,7 @@
       <dependency>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>animal-sniffer-annotations</artifactId>
-        <version>1.26</version>
+        <version>1.27</version>
       </dependency>
       <dependency>
         <groupId>com.googlecode.json-simple</groupId>
