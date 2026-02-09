@@ -1,0 +1,139 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Parse Modes
+
+Tika Pipes uses `ParseMode` to control how documents are parsed and how results are emitted.
+The parse mode is set on the `ParseContext` or configured in `PipesConfig`.
+
+== Available Parse Modes
+
+[cols="1,3"]
+|===
+|Mode |Description
+
+|`RMETA`
+|Default mode. Each embedded document produces a separate `Metadata` object.
+Results are returned as a JSON array of metadata objects.
+
+|`CONCATENATE`
+|All content from embedded documents is concatenated into a single content field.
+Results are returned as a single `Metadata` object with all metadata preserved.
+
+|`CONTENT_ONLY`
+|Parses like `CONCATENATE` but emits only the raw extracted content — no JSON wrapper,
+no metadata fields. Useful when you want just the text, markdown, or HTML output.
+
+|`NO_PARSE`
+|Skip parsing entirely. Useful for pipelines that only need to fetch and emit raw bytes.
+
+|`UNPACK`
+|Extract raw bytes from embedded documents. See xref:pipes/unpack-config.adoc[Extracting Embedded Bytes].
+|===
+
+== CONCATENATE Mode
+
+`CONCATENATE` merges all content from embedded documents into a single content field
+while preserving all metadata from parsing:
+
+[source,json]
+----
+{
+  "parseContext": {
+    "parseMode": "CONCATENATE"
+  }
+}
+----
+
+The result is a single `Metadata` object containing the concatenated content in
+`X-TIKA:content` along with all other metadata fields (title, author, content type, etc.).
+
+== CONTENT_ONLY Mode
+
+`CONTENT_ONLY` is designed for use cases where you want just the extracted content
+written to storage — no JSON wrapping, no metadata overhead. This is particularly
+useful for:
+
+* Extracting markdown files from a document corpus
+* Building plain text search indexes
+* Generating HTML versions of documents
+
+[source,json]
+----
+{
+  "parseContext": {
+    "parseMode": "CONTENT_ONLY"
+  }
+}
+----
+
+=== How It Works
+
+1. Documents are parsed identically to `CONCATENATE` mode — all embedded content is
+   merged into a single content field.
+2. A metadata filter automatically strips all metadata except `X-TIKA:content` and
+   `X-TIKA:CONTAINER_EXCEPTION` (for error tracking).
+3. When the emitter is a `StreamEmitter` (such as the filesystem or S3 emitter), the
+   raw content string is written directly as bytes — no JSON serialization.
+
+=== Metadata Filtering
+
+By default, `CONTENT_ONLY` mode applies an `IncludeFieldMetadataFilter` that retains
+only `X-TIKA:content` and `X-TIKA:CONTAINER_EXCEPTION`. If you set your own
+`MetadataFilter` on the `ParseContext`, your filter takes priority.
+
+=== CLI Usage
+
+The `tika-async-cli` batch processor supports `CONTENT_ONLY` via the `--content-only`
+flag:
+
+[source,bash]
+----
+java -jar tika-async-cli.jar -i /input -o /output -h m --content-only
+----
+
+This produces `.md` files (when using the `m` handler type) containing only the
+extracted markdown content.
+
+=== Content Handler Types
+
+The content format depends on the configured handler type:
+
+[cols="1,1,2"]
+|===
+|Handler |Extension |Description
+
+|`t` (text)
+|`.txt`
+|Plain text output
+
+|`h` (html)
+|`.html`
+|HTML output
+
+|`x` (xml)
+|`.xml`
+|XHTML output
+
+|`m` (markdown)
+|`.md`
+|Markdown output
+
+|`b` (body)
+|`.txt`
+|Body content handler output
+|===

@@ -19,8 +19,12 @@ package org.apache.tika.pipes.core.server;
 
 import static org.apache.tika.pipes.core.server.PipesWorker.metadataIsEmpty;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.filter.IncludeFieldMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.filter.NoOpFilter;
 import org.apache.tika.parser.ParseContext;
@@ -109,7 +114,10 @@ class EmitHandler {
             return new PipesResult(PipesResult.RESULT_STATUS.EMITTER_INITIALIZATION_EXCEPTION, ExceptionUtils.getStackTrace(e));
         }
         try {
-            if (isExtractEmbeddedBytes &&
+            ParseMode parseMode = parseContext.get(ParseMode.class);
+            if (parseMode == ParseMode.CONTENT_ONLY && emitter instanceof StreamEmitter) {
+                emitContentOnly((StreamEmitter) emitter, emitKey, parseData, parseContext);
+            } else if (isExtractEmbeddedBytes &&
                     parseData.toBePackagedForStreamEmitter()) {
                 emitContentsAndBytes(emitter, emitKey, parseData);
             } else {
@@ -139,6 +147,23 @@ class EmitHandler {
             return new PipesResult(PipesResult.RESULT_STATUS.EMIT_SUCCESS);
         } else {
             return new PipesResult(PipesResult.RESULT_STATUS.EMIT_SUCCESS_PARSE_EXCEPTION, parseExceptionStack);
+        }
+    }
+
+    private void emitContentOnly(StreamEmitter emitter, EmitKey emitKey,
+                                  MetadataListAndEmbeddedBytes parseData,
+                                  ParseContext parseContext) throws IOException {
+        List<Metadata> metadataList = parseData.getMetadataList();
+        String content = "";
+        if (metadataList != null && !metadataList.isEmpty()) {
+            String val = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
+            if (val != null) {
+                content = val;
+            }
+        }
+        byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
+        try (InputStream is = new ByteArrayInputStream(bytes)) {
+            emitter.emit(emitKey.getEmitKey(), is, new Metadata(), parseContext);
         }
     }
 
@@ -210,7 +235,14 @@ class EmitHandler {
     private void filterMetadata(MetadataListAndEmbeddedBytes parseData, ParseContext parseContext) {
         MetadataFilter filter = parseContext.get(MetadataFilter.class);
         if (filter == null) {
-            filter = defaultMetadataFilter;
+            ParseMode parseMode = parseContext.get(ParseMode.class);
+            if (parseMode == ParseMode.CONTENT_ONLY) {
+                filter = new IncludeFieldMetadataFilter(
+                        Set.of(TikaCoreProperties.TIKA_CONTENT.getName(),
+                                TikaCoreProperties.CONTAINER_EXCEPTION.getName()));
+            } else {
+                filter = defaultMetadataFilter;
+            }
         }
         if (filter instanceof NoOpFilter) {
             return;

@@ -93,6 +93,11 @@ class ParseHandler {
             // The difference is in setup (PipesWorker) - UNPACK has mandatory byte extraction
             metadataList =
                     parseRecursive(fetchEmitTuple, contentHandlerFactory, stream, metadata, parseContext);
+        } else if (parseMode == ParseMode.CONCATENATE || parseMode == ParseMode.CONTENT_ONLY) {
+            // CONTENT_ONLY parses identically to CONCATENATE; the difference is
+            // at emit time where emitters write only the raw content string
+            metadataList = parseConcatenated(fetchEmitTuple, contentHandlerFactory, stream, metadata,
+                    parseContext);
         } else {
             metadataList = parseConcatenated(fetchEmitTuple, contentHandlerFactory, stream, metadata,
                     parseContext);

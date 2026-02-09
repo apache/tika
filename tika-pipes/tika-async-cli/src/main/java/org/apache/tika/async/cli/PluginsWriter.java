@@ -27,7 +27,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.core.PipesConfig;
+import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.utils.StringUtils;
 
 public class PluginsWriter {
@@ -101,11 +103,40 @@ public class PluginsWriter {
             if (simpleAsyncConfig.getTimeoutMs() != null) {
                 pipesConfig.setTimeoutMillis(simpleAsyncConfig.getTimeoutMs());
             }
+            if (simpleAsyncConfig.isContentOnly()) {
+                pipesConfig.setParseMode(ParseMode.CONTENT_ONLY);
+            } else if (simpleAsyncConfig.isConcatenate()) {
+                pipesConfig.setParseMode(ParseMode.CONCATENATE);
+            }
+
+            // For content-only mode, change the emitter file extension based on handler type
+            if (simpleAsyncConfig.isContentOnly()) {
+                String ext = getFileExtensionForHandlerType(simpleAsyncConfig.getHandlerType());
+                if (emitters != null && emitters.has("fse")) {
+                    ObjectNode fse = (ObjectNode) emitters.get("fse");
+                    if (fse != null && fse.has("file-system-emitter")) {
+                        ObjectNode fsEmitter = (ObjectNode) fse.get("file-system-emitter");
+                        fsEmitter.put("fileExtension", ext);
+                    }
+                }
+            }
+
             root.set("pipes", objectMapper.valueToTree(pipesConfig));
 
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(output.toFile(), root);
         } catch (Exception e) {
             throw new IOException(e);
         }
+    }
+
+    private static String getFileExtensionForHandlerType(
+            BasicContentHandlerFactory.HANDLER_TYPE handlerType) {
+        return switch (handlerType) {
+            case MARKDOWN -> "md";
+            case HTML -> "html";
+            case XML -> "xml";
+            case BODY, TEXT -> "txt";
+            default -> "txt";
+        };
     }
 }

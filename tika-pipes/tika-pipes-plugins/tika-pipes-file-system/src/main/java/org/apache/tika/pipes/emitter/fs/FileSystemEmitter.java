@@ -117,6 +117,7 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
                 return;
             }
         }
+
         if (config.onExists() == FileSystemEmitterConfig.ON_EXISTS.EXCEPTION) {
             try (Writer writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8,
                     StandardOpenOption.CREATE_NEW)) { //CREATE_NEW forces an IOException if the file already exists
@@ -126,7 +127,6 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
             try (Writer writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8)) {
                 JsonMetadataList.toJson(metadataList, writer, config.prettyPrint());
             }
-
         }
     }
 

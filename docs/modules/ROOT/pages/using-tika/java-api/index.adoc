@@ -100,11 +100,23 @@ For example, use `TikaInputStream.get(path)` for a `Path`, or `TikaInputStream.g
 for a `byte[]`. This allows Tika to access the underlying resource efficiently and enables
 features like mark/reset support that many parsers and detectors require.
 
-=== Utility Classes
+=== Content Handlers
+
+Tika provides several content handlers that control the output format:
 
 **BodyContentHandler**:: Extracts and converts the body content to streams or strings.
 
+**ToTextContentHandler**:: Outputs plain text.
+
+**ToHTMLContentHandler**:: Outputs HTML.
+
+**ToXMLContentHandler**:: Outputs XHTML/XML.
+
+**ToMarkdownContentHandler**:: Outputs Markdown, preserving structural semantics like headings, lists, tables, code blocks, emphasis, and links.
+
 **ParsingReader**:: Uses background threading to return extracted text as character streams.
+
+Use `BasicContentHandlerFactory` to create handlers by type: `TEXT`, `HTML`, `XML`, `BODY`, `MARKDOWN`, `IGNORE`.
 
 === Key Metadata Properties
 
