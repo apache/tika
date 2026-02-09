@@ -99,7 +99,6 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
-import org.apache.tika.sax.ToMarkdownContentHandler;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.ToMarkdownContentHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
