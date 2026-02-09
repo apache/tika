@@ -119,7 +119,7 @@ public abstract class ExternalTestBase {
         Files.createDirectories(targetDir);
 
         for (int i = fromIndex; i <= toIndex; i++) {
-            String zipName = String.format("%03d.zip", i);
+            String zipName = String.format(java.util.Locale.ROOT, "%03d.zip", i);
             String url = DIGITAL_CORPORA_ZIP_FILES_URL + "/" + zipName;
             Path zipPath = targetDir.resolve(zipName);
             

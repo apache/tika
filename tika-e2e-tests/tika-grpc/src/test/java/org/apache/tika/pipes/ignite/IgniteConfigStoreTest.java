@@ -191,7 +191,7 @@ class IgniteConfigStoreTest {
         // Start a thread to consume and log output, watching for Ignite startup
         Thread logThread = new Thread(() -> {
             try (java.io.BufferedReader reader = new java.io.BufferedReader(
-                    new java.io.InputStreamReader(localGrpcProcess.getInputStream()))) {
+                    new java.io.InputStreamReader(localGrpcProcess.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     log.info("tika-grpc: {}", line);
@@ -352,7 +352,7 @@ class IgniteConfigStoreTest {
         Process findProcess = findPb.start();
         
         try (java.io.BufferedReader reader = new java.io.BufferedReader(
-                new java.io.InputStreamReader(findProcess.getInputStream()))) {
+                new java.io.InputStreamReader(findProcess.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
             String pidStr = reader.readLine();
             if (pidStr != null && !pidStr.trim().isEmpty()) {
                 long pid = Long.parseLong(pidStr.trim());
@@ -528,7 +528,7 @@ class IgniteConfigStoreTest {
         Files.createDirectories(targetDir);
 
         for (int i = fromIndex; i <= toIndex; i++) {
-            String zipName = String.format("%03d.zip", i);
+            String zipName = String.format(java.util.Locale.ROOT, "%03d.zip", i);
             String url = DIGITAL_CORPORA_ZIP_FILES_URL + "/" + zipName;
             Path zipPath = targetDir.resolve(zipName);
             
