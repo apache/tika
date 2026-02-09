@@ -680,7 +680,7 @@
       <dependency>
         <groupId>com.google.errorprone</groupId>
         <artifactId>error_prone_annotations</artifactId>
-        <version>2.46.0</version>
+        <version>2.47.0</version>
       </dependency>
       <!-- avoid dependency convergence error in Google Cloud Storage fetcher
            starting with grpc 1.79.0 with google cloud 2.62.1 -->
