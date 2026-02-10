@@ -48,6 +48,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -69,6 +71,7 @@ import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
 @Testcontainers
 @Slf4j
 @Tag("E2ETest")
+@DisabledOnOs(value = OS.WINDOWS, disabledReason = "Maven not on PATH and Docker/Testcontainers not supported on Windows CI")
 class IgniteConfigStoreTest {
     
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();

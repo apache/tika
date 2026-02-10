@@ -30,6 +30,8 @@ import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import org.apache.tika.FetchAndParseReply;
 import org.apache.tika.FetchAndParseRequest;
@@ -40,6 +42,7 @@ import org.apache.tika.pipes.ExternalTestBase;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
 
 @Slf4j
+@DisabledOnOs(value = OS.WINDOWS, disabledReason = "Docker/Testcontainers not supported on Windows CI")
 class FileSystemFetcherTest extends ExternalTestBase {
     
     @Test
