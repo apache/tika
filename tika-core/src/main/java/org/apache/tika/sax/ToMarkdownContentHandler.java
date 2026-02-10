@@ -81,6 +81,9 @@ public class ToMarkdownContentHandler extends DefaultHandler {
     // Track if we've written any content at all
     private boolean hasContent = false;
 
+    // Track if meaningful (non-whitespace) content was written since last block separator
+    private boolean hasContentSinceLastSeparator = false;
+
     public ToMarkdownContentHandler(Writer writer) {
         this.writer = writer;
     }
@@ -392,6 +395,14 @@ public class ToMarkdownContentHandler extends DefaultHandler {
             return;
         }
 
+        // Skip whitespace-only text at line start; preserve inline spaces
+        if (text.trim().isEmpty()) {
+            if (!atLineStart) {
+                write(" ");
+            }
+            return;
+        }
+
         // Escape markdown special characters in normal text
         text = escapeMarkdown(text);
 
@@ -404,6 +415,7 @@ public class ToMarkdownContentHandler extends DefaultHandler {
         if (!text.isEmpty()) {
             write(text);
             hasContent = true;
+            hasContentSinceLastSeparator = true;
         }
     }
 
@@ -431,6 +443,9 @@ public class ToMarkdownContentHandler extends DefaultHandler {
             writer.write(s);
             if (!s.isEmpty()) {
                 atLineStart = s.charAt(s.length() - 1) == '\n';
+                if (!s.trim().isEmpty()) {
+                    hasContentSinceLastSeparator = true;
+                }
             }
         } catch (IOException e) {
             throw new SAXException("Error writing: " + s, e);
@@ -438,10 +453,13 @@ public class ToMarkdownContentHandler extends DefaultHandler {
     }
 
     private void emitBlockSeparator() throws SAXException {
-        if (needsBlockSeparator && hasContent) {
+        if (needsBlockSeparator && hasContent && hasContentSinceLastSeparator) {
             write("\n\n");
             needsBlockSeparator = false;
             atLineStart = true;
+            hasContentSinceLastSeparator = false;
+        } else {
+            needsBlockSeparator = false;
         }
     }
 
