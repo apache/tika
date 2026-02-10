@@ -155,6 +155,18 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- Configure RAT to exclude files that don't need license headers -->
+            <plugin>
+                <groupId>org.apache.rat</groupId>
+                <artifactId>apache-rat-plugin</artifactId>
+                <configuration>
+                    <inputExcludes>
+                        <inputExclude>**/README*.md</inputExclude>
+                        <inputExclude>src/test/resources/docker-compose*.yml</inputExclude>
+                        <inputExclude>src/test/resources/log4j2.xml</inputExclude>
+                    </inputExcludes>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>

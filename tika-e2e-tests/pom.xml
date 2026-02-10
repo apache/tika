@@ -156,5 +156,19 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.rat</groupId>
+                <artifactId>apache-rat-plugin</artifactId>
+                <configuration>
+                    <inputExcludes>
+                        <inputExclude>README.md</inputExclude>
+                        <inputExclude>**/README.md</inputExclude>
+                        <inputExclude>**/target/**</inputExclude>
+                        <inputExclude>**/.idea/**</inputExclude>
+                    </inputExcludes>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 </project>
