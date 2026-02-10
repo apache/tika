@@ -630,6 +630,74 @@ public class ToMarkdownContentHandlerTest {
     }
 
     @Test
+    public void testNoExcessiveBlankLines() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+
+        // Simulate SAX events with whitespace text nodes between elements,
+        // as typically produced by XHTML parsers
+        startElement(handler, "div");
+        chars(handler, "\n  ");
+        startElement(handler, "p");
+        chars(handler, "First");
+        endElement(handler, "p");
+        chars(handler, "\n  ");
+        endElement(handler, "div");
+
+        chars(handler, "\n  ");
+
+        startElement(handler, "div");
+        chars(handler, "\n  ");
+        endElement(handler, "div");
+
+        chars(handler, "\n  ");
+
+        startElement(handler, "div");
+        chars(handler, "\n  ");
+        startElement(handler, "p");
+        chars(handler, "Second");
+        endElement(handler, "p");
+        chars(handler, "\n  ");
+        endElement(handler, "div");
+
+        handler.endDocument();
+
+        String result = handler.toString();
+        // Should not have more than one blank line (two consecutive newlines) anywhere
+        assertFalse(result.contains("\n\n\n"),
+                "Output should not contain triple newlines: " + result);
+        assertContains("First", result);
+        assertContains("Second", result);
+    }
+
+    @Test
+    public void testInlineSpacesPreserved() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+
+        startElement(handler, "p");
+        startElement(handler, "b");
+        chars(handler, "bold");
+        endElement(handler, "b");
+        chars(handler, " ");
+        startElement(handler, "i");
+        chars(handler, "italic");
+        endElement(handler, "i");
+        endElement(handler, "p");
+
+        handler.endDocument();
+
+        String result = handler.toString();
+        // Space between bold and italic should be preserved
+        assertTrue(result.contains("**bold** *italic*"));
+    }
+
+    private static void assertContains(String needle, String haystack) {
+        assertTrue(haystack.contains(needle),
+                "Expected to find '" + needle + "' in: " + haystack);
+    }
+
+    @Test
     public void testHandlerTypeParsingMarkdown() {
         assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.MARKDOWN,
                 BasicContentHandlerFactory.parseHandlerType("markdown",
