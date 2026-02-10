@@ -764,10 +764,11 @@ public class TikaResource {
         LOG.debug("produceRawOutput: handlerType={}, contentHandlerFactory={}",
                 handlerTypeName, context.get(ContentHandlerFactory.class));
 
-        // Parse with pipes
+        // Parse with pipes using CONTENT_ONLY mode - the metadata filter in
+        // EmitHandler will strip everything except X-TIKA:content
         List<Metadata> metadataList;
         try {
-            metadataList = parseWithPipes(tis, metadata, context, ParseMode.CONCATENATE);
+            metadataList = parseWithPipes(tis, metadata, context, ParseMode.CONTENT_ONLY);
         } finally {
             tis.close();
         }
@@ -776,6 +777,8 @@ public class TikaResource {
 
         // For raw streaming endpoints, throw exception if there was a parse error
         // (JSON endpoints return exceptions in metadata)
+        // Note: CONTAINER_EXCEPTION is extracted before the metadata filter runs,
+        // so it's available in the passback even though the filter strips it
         if (!metadataList.isEmpty()) {
             String exception = metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION);
             if (exception != null && !exception.isEmpty()) {

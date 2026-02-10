@@ -100,6 +100,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.apache.tika.sax.ToMarkdownContentHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
 import org.apache.tika.sax.boilerpipe.BoilerpipeContentHandler;
 import org.apache.tika.serialization.JsonMetadata;
@@ -225,6 +226,12 @@ public class TikaCLI {
      * Fork mode plugins directory.
      */
     private String forkPluginsDir = null;
+    private final OutputType MARKDOWN = new OutputType() {
+        @Override
+        protected ContentHandler getContentHandler(OutputStream output, Metadata metadata) throws Exception {
+            return new BodyContentHandler(new ToMarkdownContentHandler(getOutputWriter(output, encoding)));
+        }
+    };
     private final OutputType XML = new OutputType() {
         @Override
         protected ContentHandler getContentHandler(OutputStream output, Metadata metadata) throws Exception {
@@ -483,6 +490,8 @@ public class TikaCLI {
             type = XML;
         } else if (arg.equals("-h") || arg.equals("--html")) {
             type = HTML;
+        } else if (arg.equals("--md")) {
+            type = MARKDOWN;
         } else if (arg.equals("-t") || arg.equals("--text")) {
             type = TEXT;
         } else if (arg.equals("-T") || arg.equals("--text-main")) {
@@ -744,6 +753,7 @@ public class TikaCLI {
         out.println("    -x  or --xml           Output XHTML content (default)");
         out.println("    -h  or --html          Output HTML content");
         out.println("    -t  or --text          Output plain text content (body)");
+        out.println("    --md                   Output Markdown content (body)");
         out.println("    -T  or --text-main     Output plain text content (main content only via boilerpipe handler)");
         out.println("    -A  or --text-all      Output all text content");
         out.println("    -m  or --metadata      Output only metadata");

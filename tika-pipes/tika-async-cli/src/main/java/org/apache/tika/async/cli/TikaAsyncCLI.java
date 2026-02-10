@@ -67,12 +67,14 @@ public class TikaAsyncCLI {
         options.addOption("X", "Xmx", true, "heap for the forked clients in usual jvm heap amount, e.g. -X 1g");
         options.addOption("?", "help", false, "this help message");
         options.addOption("T", "timeoutMs", true, "timeout for each parse in milliseconds");
-        options.addOption("h", "handlerType", true, "handler type: t=text, h=html, x=xml, b=body, i=ignore");
+        options.addOption("h", "handlerType", true, "handler type: t=text, h=html, x=xml, m=markdown, b=body, i=ignore");
         options.addOption("p", "pluginsDir", true, "plugins directory");
         //options.addOption("l", "fileList", true, "file list");
         options.addOption("c", "config", true, "tikaConfig.json");
         options.addOption("z", "unzipShallow", false, "extract raw bytes from direct attachments only (depth=1)");
         options.addOption("Z", "unzipRecursive", false, "extract raw bytes from all attachments recursively");
+        options.addOption(null, "concatenate", false, "concatenate content from all embedded documents into a single content field");
+        options.addOption(null, "content-only", false, "output only extracted content (no metadata, no JSON wrapper); implies --concatenate");
         options.addOption(null, "unpack-format", true,
                 "output format for unpacking: REGULAR (default) or FRICTIONLESS");
         options.addOption(null, "unpack-mode", true,
@@ -224,6 +226,10 @@ public class TikaAsyncCLI {
             pluginsDir = line.getOptionValue('p');
         }
 
+        // Parse mode options
+        boolean contentOnly = line.hasOption("content-only");
+        boolean concatenate = line.hasOption("concatenate") || contentOnly;
+
         // Frictionless Data Package options
         String unpackFormat = null;
         String unpackMode = null;
@@ -282,17 +288,19 @@ public class TikaAsyncCLI {
 
         return new SimpleAsyncConfig(inputDir, outputDir,
                 numClients, timeoutMs, xmx, fileList, tikaConfig, handlerType,
-                extractBytesMode, pluginsDir, unpackFormat, unpackMode, unpackIncludeMetadata);
+                extractBytesMode, pluginsDir, concatenate, contentOnly,
+                unpackFormat, unpackMode, unpackIncludeMetadata);
     }
 
     private static BasicContentHandlerFactory.HANDLER_TYPE getHandlerType(String t) throws TikaConfigException {
         return switch (t) {
             case "x" -> BasicContentHandlerFactory.HANDLER_TYPE.XML;
             case "h" -> BasicContentHandlerFactory.HANDLER_TYPE.HTML;
+            case "m" -> BasicContentHandlerFactory.HANDLER_TYPE.MARKDOWN;
             case "b" -> BasicContentHandlerFactory.HANDLER_TYPE.BODY;
             case "i" -> BasicContentHandlerFactory.HANDLER_TYPE.IGNORE;
             case "t" -> BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
-            default -> throw new TikaConfigException("Can't understand " + t + " as a handler type. Must be one of: x(ml), h(tml), b(ody), i(gnore), t(ext)");
+            default -> throw new TikaConfigException("Can't understand " + t + " as a handler type. Must be one of: x(ml), h(tml), m(arkdown), b(ody), i(gnore), t(ext)");
         };
     }
 

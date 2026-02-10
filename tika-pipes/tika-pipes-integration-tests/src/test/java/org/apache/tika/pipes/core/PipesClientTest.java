@@ -17,6 +17,9 @@
 package org.apache.tika.pipes.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
@@ -35,6 +38,7 @@ import org.apache.tika.metadata.filter.CompositeMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
@@ -719,5 +723,87 @@ public class PipesClientTest {
             Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
             assertEquals("Heartbeat Test", metadata.get("dc:creator"));
         }
+    }
+
+    @Test
+    public void testContentOnlyMode(@TempDir Path tmp) throws Exception {
+        // Test that CONTENT_ONLY mode strips all metadata except X-TIKA:content
+        PipesClient pipesClient = init(tmp, testDoc);
+
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.CONTENT_ONLY);
+
+        PipesResult pipesResult = pipesClient.process(
+                new FetchEmitTuple(testDoc, new FetchKey(fetcherName, testDoc),
+                        new EmitKey(), new Metadata(), parseContext,
+                        FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+        assertNotNull(pipesResult.emitData().getMetadataList());
+        assertEquals(1, pipesResult.emitData().getMetadataList().size());
+        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
+
+        // Content should be present
+        String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
+        assertNotNull(content, "TIKA_CONTENT should be present in CONTENT_ONLY mode");
+        assertFalse(content.isEmpty(), "TIKA_CONTENT should not be empty");
+
+        // Other metadata should be stripped by the IncludeFieldMetadataFilter
+        assertNull(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY),
+                "RESOURCE_NAME should be stripped in CONTENT_ONLY mode");
+        assertNull(metadata.get(Metadata.CONTENT_TYPE),
+                "CONTENT_TYPE should be stripped in CONTENT_ONLY mode");
+    }
+
+    @Test
+    public void testContentOnlyModeWithUserFilter(@TempDir Path tmp) throws Exception {
+        // Test that CONTENT_ONLY mode respects a user-provided MetadataFilter
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.CONTENT_ONLY);
+        // Set a user metadata filter via JSON - this should override the default CONTENT_ONLY filter
+        parseContext.setJsonConfig("metadata-filters", """
+            ["mock-upper-case-filter"]
+        """);
+
+        PipesClient pipesClient = init(tmp, testDoc);
+        PipesResult pipesResult = pipesClient.process(
+                new FetchEmitTuple(testDoc, new FetchKey(fetcherName, testDoc),
+                        new EmitKey(), new Metadata(), parseContext,
+                        FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+        assertNotNull(pipesResult.emitData().getMetadataList());
+        assertEquals(1, pipesResult.emitData().getMetadataList().size());
+        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
+
+        // User filter (uppercase) should take effect instead of CONTENT_ONLY filter
+        // So all metadata should still be present (but uppercased)
+        assertEquals("TESTOVERLAPPINGTEXT.PDF",
+                metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY),
+                "User filter should take priority over CONTENT_ONLY filter");
+    }
+
+    @Test
+    public void testConcatenateMode(@TempDir Path tmp) throws Exception {
+        // Test that CONCATENATE mode returns a single metadata object with content
+        // but preserves all metadata fields (unlike CONTENT_ONLY)
+        String testFile = "mock-embedded.xml";
+        PipesClient pipesClient = init(tmp, testFile);
+
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.CONCATENATE);
+
+        PipesResult pipesResult = pipesClient.process(
+                new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
+                        new EmitKey(), new Metadata(), parseContext,
+                        FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+        assertNotNull(pipesResult.emitData().getMetadataList());
+        // CONCATENATE produces a single metadata object (not one per embedded doc)
+        assertEquals(1, pipesResult.emitData().getMetadataList().size());
+        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
+
+        // Content should be present
+        String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
+        assertNotNull(content, "TIKA_CONTENT should be present in CONCATENATE mode");
+
+        // All metadata should still be present (unlike CONTENT_ONLY)
+        assertNotNull(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY),
+                "RESOURCE_NAME should be preserved in CONCATENATE mode");
     }
 }
