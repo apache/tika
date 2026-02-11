@@ -48,8 +48,10 @@
   },
   "parse-context": {
     "mock-digester-factory": {},
+    "sax-output-config": {
+      "writeFileNameToContent": false
+    },
     "runpack-extractor-factory": {
-      "writeFileNameToContent": false,
       "maxEmbeddedBytesForExtraction": 10
     }
   },

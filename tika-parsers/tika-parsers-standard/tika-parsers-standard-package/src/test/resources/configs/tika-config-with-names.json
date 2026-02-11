@@ -1,7 +1,7 @@
 {
   "parse-context": {
-    "standard-extractor-factory": {
-        "writeFileNameToContent": true
-      }
+    "sax-output-config": {
+      "writeFileNameToContent": true
     }
+  }
 }

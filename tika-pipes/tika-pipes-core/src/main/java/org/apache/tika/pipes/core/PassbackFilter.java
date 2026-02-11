@@ -17,12 +17,26 @@
 package org.apache.tika.pipes.core;
 
 import java.io.Serializable;
+import java.util.List;
 
-import org.apache.tika.metadata.filter.MetadataFilter;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
 
 /**
  * Filter/Select some of the emitted output and pass it back to the client parser.
+ * <p>
+ * This is intentionally NOT a MetadataFilter. MetadataFilter is applied before emission
+ * to transform metadata (e.g., remove fields, compute digests). PassbackFilter is applied
+ * after emission to select metadata to pass back from the forked PipesServer to the parent.
+ * They share a method signature but serve entirely different purposes.
  */
-public abstract class PassbackFilter extends MetadataFilter implements Serializable {
+public abstract class PassbackFilter implements Serializable {
 
+    /**
+     * Filters the metadata list in place, selecting which data to pass back to the client.
+     *
+     * @param metadataList the list to filter (must be mutable)
+     * @throws TikaException if filtering fails
+     */
+    public abstract void filter(List<Metadata> metadataList) throws TikaException;
 }

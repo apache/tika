@@ -36,13 +36,16 @@ public class AutoDetectParserConfigTest extends TikaTest {
 
     @Test
     public void testConfiguringEmbeddedDocExtractor() throws Exception {
-
-        Parser p = TikaLoaderHelper.getLoader("tika-config-no-names.json").loadAutoDetectParser();
-        String xml = getXML("testEmbedded.zip", p).xml;
+        TikaLoader noNamesLoader = TikaLoaderHelper.getLoader("tika-config-no-names.json");
+        Parser p = noNamesLoader.loadAutoDetectParser();
+        ParseContext noNamesContext = noNamesLoader.loadParseContext();
+        String xml = getXML("testPPT_EmbeddedPDF.pptx", p, new Metadata(), noNamesContext).xml;
         assertNotContained("<h1>image3.jpg</h1>", xml);
 
-        p = TikaLoaderHelper.getLoader("tika-config-with-names.json").loadAutoDetectParser();
-        xml = getXML("testPPT_EmbeddedPDF.pptx", p).xml;
+        TikaLoader withNamesLoader = TikaLoaderHelper.getLoader("tika-config-with-names.json");
+        p = withNamesLoader.loadAutoDetectParser();
+        ParseContext withNamesContext = withNamesLoader.loadParseContext();
+        xml = getXML("testPPT_EmbeddedPDF.pptx", p, new Metadata(), withNamesContext).xml;
         assertContains("<h1>image3.jpg</h1>", xml);
     }
 
