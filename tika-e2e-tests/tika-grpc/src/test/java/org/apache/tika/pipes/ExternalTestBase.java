@@ -55,7 +55,7 @@ import org.apache.tika.FetchAndParseReply;
 
 /**
  * Base class for Tika gRPC end-to-end tests.
- * Uses Docker Compose to start tika-grpc server and runs tests against it.
+ * Can run with either local server (default in CI) or Docker Compose.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Testcontainers
@@ -69,12 +69,134 @@ public abstract class ExternalTestBase {
     public static final int GOV_DOCS_FROM_IDX = Integer.parseInt(System.getProperty("govdocs1.fromIndex", "1"));
     public static final int GOV_DOCS_TO_IDX = Integer.parseInt(System.getProperty("govdocs1.toIndex", "1"));
     public static final String DIGITAL_CORPORA_ZIP_FILES_URL = "https://corp.digitalcorpora.org/corpora/files/govdocs1/zipfiles";
+    private static final boolean USE_LOCAL_SERVER = Boolean.parseBoolean(System.getProperty("tika.e2e.useLocalServer", "false"));
+    private static final int GRPC_PORT = Integer.parseInt(System.getProperty("tika.e2e.grpcPort", "50052"));
     
     public static DockerComposeContainer<?> composeContainer;
+    private static Process localGrpcProcess;
 
     @BeforeAll
     static void setup() throws Exception {
         loadGovdocs1();
+        
+        if (USE_LOCAL_SERVER) {
+            startLocalGrpcServer();
+        } else {
+            startDockerGrpcServer();
+        }
+    }
+    
+    private static void startLocalGrpcServer() throws Exception {
+        log.info("Starting local tika-grpc server using Maven exec");
+        
+        Path tikaGrpcDir = findTikaGrpcDirectory();
+        Path configFile = Path.of("src/test/resources/tika-config.json").toAbsolutePath();
+        
+        if (!Files.exists(configFile)) {
+            throw new IllegalStateException("Config file not found: " + configFile);
+        }
+        
+        log.info("Using tika-grpc from: {}", tikaGrpcDir);
+        log.info("Using config file: {}", configFile);
+        
+        String javaHome = System.getProperty("java.home");
+        String javaCmd = javaHome + "/bin/java";
+        
+        ProcessBuilder pb = new ProcessBuilder(
+            "mvn",
+            "exec:exec",
+            "-Dexec.executable=" + javaCmd,
+            "-Dexec.args=" +
+                "--add-opens=java.base/java.lang=ALL-UNNAMED " +
+                "--add-opens=java.base/java.nio=ALL-UNNAMED " +
+                "--add-opens=java.base/java.util=ALL-UNNAMED " +
+                "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED " +
+                "-classpath %classpath " +
+                "org.apache.tika.pipes.grpc.TikaGrpcServer " +
+                "-c " + configFile + " " +
+                "-p " + GRPC_PORT
+        );
+        
+        pb.directory(tikaGrpcDir.toFile());
+        pb.redirectErrorStream(true);
+        pb.redirectOutput(ProcessBuilder.Redirect.PIPE);
+        
+        localGrpcProcess = pb.start();
+        
+        // Start thread to consume output
+        Thread logThread = new Thread(() -> {
+            try (java.io.BufferedReader reader = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(localGrpcProcess.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    log.info("tika-grpc: {}", line);
+                }
+            } catch (IOException e) {
+                log.error("Error reading server output", e);
+            }
+        });
+        logThread.setDaemon(true);
+        logThread.start();
+        
+        // Wait for server to be ready
+        waitForServerReady();
+        
+        log.info("Local tika-grpc server started successfully on port {}", GRPC_PORT);
+    }
+    
+    private static Path findTikaGrpcDirectory() {
+        Path currentDir = Path.of("").toAbsolutePath();
+        Path tikaRootDir = currentDir;
+        
+        while (tikaRootDir != null && 
+               !(Files.exists(tikaRootDir.resolve("tika-grpc")) && 
+                 Files.exists(tikaRootDir.resolve("tika-e2e-tests")))) {
+            tikaRootDir = tikaRootDir.getParent();
+        }
+        
+        if (tikaRootDir == null) {
+            throw new IllegalStateException("Cannot find tika root directory. " +
+                "Current dir: " + currentDir);
+        }
+        
+        return tikaRootDir.resolve("tika-grpc");
+    }
+    
+    private static void waitForServerReady() throws Exception {
+        int maxAttempts = 60;
+        for (int i = 0; i < maxAttempts; i++) {
+            try {
+                ManagedChannel testChannel = ManagedChannelBuilder
+                    .forAddress("localhost", GRPC_PORT)
+                    .usePlaintext()
+                    .build();
+                
+                try {
+                    // Try a simple connection
+                    testChannel.getState(true);
+                    TimeUnit.MILLISECONDS.sleep(100);
+                    if (testChannel.getState(false).toString().contains("READY")) {
+                        log.info("gRPC server is ready!");
+                        return;
+                    }
+                } finally {
+                    testChannel.shutdown();
+                    testChannel.awaitTermination(1, TimeUnit.SECONDS);
+                }
+            } catch (Exception e) {
+                // Server not ready yet
+            }
+            TimeUnit.SECONDS.sleep(1);
+        }
+        
+        if (localGrpcProcess != null && localGrpcProcess.isAlive()) {
+            localGrpcProcess.destroyForcibly();
+        }
+        throw new RuntimeException("Local gRPC server failed to start within timeout");
+    }
+    
+    private static void startDockerGrpcServer() {
+        log.info("Starting Docker Compose tika-grpc server");
         
         composeContainer = new DockerComposeContainer<>(
                 new File("src/test/resources/docker-compose.yml"))
@@ -109,7 +231,18 @@ public abstract class ExternalTestBase {
 
     @AfterAll
     void close() {
-        if (composeContainer != null) {
+        if (USE_LOCAL_SERVER && localGrpcProcess != null) {
+            log.info("Stopping local gRPC server");
+            localGrpcProcess.destroy();
+            try {
+                if (!localGrpcProcess.waitFor(10, TimeUnit.SECONDS)) {
+                    localGrpcProcess.destroyForcibly();
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                localGrpcProcess.destroyForcibly();
+            }
+        } else if (composeContainer != null) {
             composeContainer.close();
         }
     }
@@ -189,12 +322,21 @@ public abstract class ExternalTestBase {
     }
 
     public static ManagedChannel getManagedChannel() {
-        return ManagedChannelBuilder
-                .forAddress(composeContainer.getServiceHost("tika-grpc", 50052), 
-                           composeContainer.getServicePort("tika-grpc", 50052))
-                .usePlaintext()
-                .executor(Executors.newCachedThreadPool())
-                .maxInboundMessageSize(160 * 1024 * 1024)
-                .build();
+        if (USE_LOCAL_SERVER) {
+            return ManagedChannelBuilder
+                    .forAddress("localhost", GRPC_PORT)
+                    .usePlaintext()
+                    .executor(Executors.newCachedThreadPool())
+                    .maxInboundMessageSize(160 * 1024 * 1024)
+                    .build();
+        } else {
+            return ManagedChannelBuilder
+                    .forAddress(composeContainer.getServiceHost("tika-grpc", 50052), 
+                               composeContainer.getServicePort("tika-grpc", 50052))
+                    .usePlaintext()
+                    .executor(Executors.newCachedThreadPool())
+                    .maxInboundMessageSize(160 * 1024 * 1024)
+                    .build();
+        }
     }
 }

@@ -30,8 +30,6 @@ import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 
 import org.apache.tika.FetchAndParseReply;
 import org.apache.tika.FetchAndParseRequest;
@@ -42,7 +40,6 @@ import org.apache.tika.pipes.ExternalTestBase;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
 
 @Slf4j
-@DisabledOnOs(value = OS.WINDOWS, disabledReason = "Docker/Testcontainers not supported on Windows CI")
 class FileSystemFetcherTest extends ExternalTestBase {
     
     @Test
@@ -54,10 +51,13 @@ class FileSystemFetcherTest extends ExternalTestBase {
 
         // Create and save the fetcher dynamically
         FileSystemFetcherConfig config = new FileSystemFetcherConfig();
-        config.setBasePath("/tika/govdocs1");
+        // Use local path when running in local mode, Docker path otherwise  
+        boolean useLocalServer = Boolean.parseBoolean(System.getProperty("tika.e2e.useLocalServer", "false"));
+        String basePath = useLocalServer ? TEST_FOLDER.getAbsolutePath() : GOV_DOCS_FOLDER;
+        config.setBasePath(basePath);
         
         String configJson = OBJECT_MAPPER.writeValueAsString(config);
-        log.info("Creating fetcher with config: {}", configJson);
+        log.info("Creating fetcher with config (basePath={}): {}", basePath, configJson);
         
         SaveFetcherReply saveReply = blockingStub.saveFetcher(SaveFetcherRequest
                 .newBuilder()
