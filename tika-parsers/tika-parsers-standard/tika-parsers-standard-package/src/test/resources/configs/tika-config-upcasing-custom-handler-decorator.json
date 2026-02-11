@@ -5,7 +5,7 @@
   },
   "parse-context": {
     "commons-digester-factory": {},
-    "standard-extractor-factory": {
+    "sax-output-config": {
       "writeFileNameToContent": true
     }
   }

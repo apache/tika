@@ -163,6 +163,15 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
         }
 
         ComponentInfo info = infoOpt.get();
+
+        // Self-configuring components (e.g., parsers) stay as JSON configs and are
+        // accessed by string key at runtime via ParseContextConfig.getConfig().
+        // They never get resolved to typed objects in the context map, so multiple
+        // self-configuring components with the same context key are not duplicates.
+        if (info.selfConfiguring()) {
+            return;
+        }
+
         Class<?> contextKey = determineContextKey(info);
 
         String existingName = seenContextKeys.get(contextKey);

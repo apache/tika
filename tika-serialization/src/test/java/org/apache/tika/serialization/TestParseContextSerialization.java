@@ -465,6 +465,34 @@ public class TestParseContextSerialization {
     }
 
     /**
+     * Test that multiple self-configuring components (e.g., parsers) with the same
+     * context key are allowed.  Self-configuring components stay as JSON configs and
+     * are accessed by string key at runtime, so they never conflict in the context map.
+     */
+    @Test
+    public void testSelfConfiguringComponentsAllowDuplicateContextKeys() throws Exception {
+        // Both parsers resolve to Parser.class as context key, but Parser extends
+        // SelfConfiguring, so they should be allowed to coexist.
+        String json = """
+                {
+                  "configurable-test-parser": {
+                    "maxItems": 5
+                  },
+                  "minimal-test-parser": {}
+                }
+                """;
+
+        ObjectMapper mapper = createMapper();
+        // Should NOT throw - self-configuring components skip duplicate detection
+        ParseContext deserialized = mapper.readValue(json, ParseContext.class);
+
+        assertTrue(deserialized.hasJsonConfig("configurable-test-parser"),
+                "configurable-test-parser should be stored as JSON config");
+        assertTrue(deserialized.hasJsonConfig("minimal-test-parser"),
+                "minimal-test-parser should be stored as JSON config");
+    }
+
+    /**
      * Test that a single component per context key is allowed (no false positives).
      */
     @Test
