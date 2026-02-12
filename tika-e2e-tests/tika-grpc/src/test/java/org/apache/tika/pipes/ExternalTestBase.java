@@ -100,10 +100,12 @@ public abstract class ExternalTestBase {
         log.info("Using config file: {}", configFile);
         
         String javaHome = System.getProperty("java.home");
-        String javaCmd = javaHome + "/bin/java";
+        boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+        String javaCmd = javaHome + (isWindows ? "\\bin\\java.exe" : "/bin/java");
+        String mvnCmd = isWindows ? "mvn.cmd" : "mvn";
         
         ProcessBuilder pb = new ProcessBuilder(
-            "mvn",
+            mvnCmd,
             "exec:exec",
             "-Dexec.executable=" + javaCmd,
             "-Dexec.args=" +
