@@ -35,6 +35,7 @@
   <packaging>pom</packaging>
   <modules>
     <module>tika-eval-core</module>
+    <module>tika-eval-lite</module>
     <module>tika-eval-app</module>
   </modules>
 
