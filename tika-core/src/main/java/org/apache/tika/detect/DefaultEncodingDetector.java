@@ -16,10 +16,16 @@
  */
 package org.apache.tika.detect;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Collection;
 import javax.imageio.spi.ServiceRegistry;
 
 import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.textquality.TextQualityScorer;
 
 /**
  * A composite encoding detector based on all the {@link EncodingDetector} implementations
@@ -31,10 +37,16 @@ import org.apache.tika.config.ServiceLoader;
  * If you need to control the order of the Detectors, you should instead
  * construct your own {@link CompositeDetector} and pass in the list
  * of Detectors in the required order.
+ * <p>
+ * When a real {@link TextQualityScorer} is on the classpath, this detector
+ * delegates to {@link TextQualityEncodingDetector} for collect-all-then-arbitrate
+ * behavior. Otherwise, it uses first-match-wins from {@link CompositeEncodingDetector}.
  *
  * @since Apache Tika 1.15
  */
 public class DefaultEncodingDetector extends CompositeEncodingDetector {
+
+    private final TextQualityEncodingDetector qualityDetector;
 
     public DefaultEncodingDetector() {
         this(new ServiceLoader(DefaultEncodingDetector.class.getClassLoader()));
@@ -42,12 +54,29 @@ public class DefaultEncodingDetector extends CompositeEncodingDetector {
 
     public DefaultEncodingDetector(ServiceLoader loader) {
         super(loader.loadServiceProviders(EncodingDetector.class));
+        this.qualityDetector = initQualityDetector();
     }
 
     public DefaultEncodingDetector(ServiceLoader loader,
                                    Collection<Class<? extends EncodingDetector>>
                                            excludeEncodingDetectors) {
         super(loader.loadServiceProviders(EncodingDetector.class), excludeEncodingDetectors);
+        this.qualityDetector = initQualityDetector();
     }
 
+    private TextQualityEncodingDetector initQualityDetector() {
+        if (!TextQualityScorer.getScorers().isEmpty()) {
+            return new TextQualityEncodingDetector(getDetectors());
+        }
+        return null;
+    }
+
+    @Override
+    public Charset detect(TikaInputStream tis, Metadata metadata,
+                          ParseContext parseContext) throws IOException {
+        if (qualityDetector != null) {
+            return qualityDetector.detect(tis, metadata, parseContext);
+        }
+        return super.detect(tis, metadata, parseContext);
+    }
 }
