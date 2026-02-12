@@ -101,6 +101,12 @@ class EmitHandler {
     private PipesResult emit(String taskId, EmitKey emitKey,
                       boolean isExtractEmbeddedBytes, MetadataListAndEmbeddedBytes parseData,
                       String parseExceptionStack, ParseContext parseContext) {
+        // If no emitter specified, skip emission and return success
+        if (emitKey == EmitKey.NO_EMIT || emitKey.getEmitterId() == null) {
+            LOG.debug("No emitter specified for task id '{}', skipping emission", taskId);
+            return new PipesResult(PipesResult.RESULT_STATUS.PARSE_SUCCESS);
+        }
+        
         Emitter emitter = null;
 
         try {

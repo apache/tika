@@ -1,30 +1,43 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.tika.pipes.filesystem;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import io.grpc.ManagedChannel;
-import io.grpc.stub.StreamObserver;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.tika.FetchAndParseReply;
-import org.apache.tika.FetchAndParseRequest;
-import org.apache.tika.GetFetcherReply;
-import org.apache.tika.GetFetcherRequest;
-import org.apache.tika.SaveFetcherReply;
-import org.apache.tika.SaveFetcherRequest;
-import org.apache.tika.TikaGrpc;
-import org.apache.tika.pipes.ExternalTestBase;
-import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
+
+import io.grpc.ManagedChannel;
+import io.grpc.stub.StreamObserver;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+import org.apache.tika.FetchAndParseReply;
+import org.apache.tika.FetchAndParseRequest;
+import org.apache.tika.SaveFetcherReply;
+import org.apache.tika.SaveFetcherRequest;
+import org.apache.tika.TikaGrpc;
+import org.apache.tika.pipes.ExternalTestBase;
+import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
 
 @Slf4j
 class FileSystemFetcherTest extends ExternalTestBase {
@@ -38,10 +51,13 @@ class FileSystemFetcherTest extends ExternalTestBase {
 
         // Create and save the fetcher dynamically
         FileSystemFetcherConfig config = new FileSystemFetcherConfig();
-        config.setBasePath("/tika/govdocs1");
+        // Use local path when running in local mode, Docker path otherwise  
+        boolean useLocalServer = Boolean.parseBoolean(System.getProperty("tika.e2e.useLocalServer", "false"));
+        String basePath = useLocalServer ? TEST_FOLDER.getAbsolutePath() : GOV_DOCS_FOLDER;
+        config.setBasePath(basePath);
         
         String configJson = OBJECT_MAPPER.writeValueAsString(config);
-        log.info("Creating fetcher with config: {}", configJson);
+        log.info("Creating fetcher with config (basePath={}): {}", basePath, configJson);
         
         SaveFetcherReply saveReply = blockingStub.saveFetcher(SaveFetcherRequest
                 .newBuilder()
