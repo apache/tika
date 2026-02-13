@@ -17,6 +17,7 @@
 package org.apache.tika.parser.odf;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -64,7 +65,7 @@ public class ODFParserTest extends TikaTest {
         assertEquals("test2", macro2.get(TikaCoreProperties.RESOURCE_NAME_KEY));
 
         Metadata image = metadataList.get(3);
-        assertEquals("image/png", image.get(Metadata.CONTENT_TYPE));
+        assertImageContentType("image/png", image.get(Metadata.CONTENT_TYPE));
     }
 
     @Test
@@ -100,7 +101,7 @@ public class ODFParserTest extends TikaTest {
         assertEquals("test1", macro.get(TikaCoreProperties.RESOURCE_NAME_KEY));
 
         Metadata image = metadataList.get(2);
-        assertEquals("image/png", image.get(Metadata.CONTENT_TYPE));
+        assertImageContentType("image/png", image.get(Metadata.CONTENT_TYPE));
     }
 
     @Test
@@ -151,7 +152,7 @@ public class ODFParserTest extends TikaTest {
         assertEquals("test", macro.get(TikaCoreProperties.RESOURCE_NAME_KEY));
 
         Metadata image = metadataList.get(2);
-        assertEquals("image/png", image.get(Metadata.CONTENT_TYPE));
+        assertImageContentType("image/png", image.get(Metadata.CONTENT_TYPE));
     }
 
 
@@ -178,7 +179,7 @@ public class ODFParserTest extends TikaTest {
         assertEquals("test1", macro.get(TikaCoreProperties.RESOURCE_NAME_KEY));
 
         Metadata image = metadataList.get(2);
-        assertEquals("image/png", image.get(Metadata.CONTENT_TYPE));
+        assertImageContentType("image/png", image.get(Metadata.CONTENT_TYPE));
     }
 
     @Test
@@ -203,5 +204,16 @@ public class ODFParserTest extends TikaTest {
         assertContains("If WsGQFM Or 2 Then", macro.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("test", macro.get(TikaCoreProperties.RESOURCE_NAME_KEY));
 
+    }
+
+    /**
+     * Asserts that the actual content type matches the expected type,
+     * allowing for the "ocr-" prefix that appears when tesseract is available.
+     * e.g., "image/png" matches both "image/png" and "image/ocr-png".
+     */
+    private void assertImageContentType(String expected, String actual) {
+        String ocrVariant = expected.replace("image/", "image/ocr-");
+        assertTrue(expected.equals(actual) || ocrVariant.equals(actual),
+                "Expected " + expected + " or " + ocrVariant + " but got: " + actual);
     }
 }

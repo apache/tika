@@ -107,6 +107,15 @@ public class ParserLoader extends AbstractSpiComponentLoader<Parser> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
+    protected Class<? extends Parser> unwrapClass(Parser component) {
+        if (component instanceof ParserDecorator pd) {
+            return (Class<? extends Parser>) pd.getWrappedParser().getClass();
+        }
+        return component.getClass();
+    }
+
+    @Override
     protected Parser postProcess(Parser parser, LoaderContext context)
             throws TikaConfigException {
         // Inject EncodingDetector and Renderer into parsers that need them

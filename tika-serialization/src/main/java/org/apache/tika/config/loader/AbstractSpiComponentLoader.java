@@ -100,13 +100,13 @@ public abstract class AbstractSpiComponentLoader<T> implements ComponentLoader<T
             T special = handleSpecialName(name, entry.getValue(), context);
             if (special != null) {
                 components.add(special);
-                configuredClasses.add((Class<? extends T>) special.getClass());
+                configuredClasses.add(unwrapClass(special));
                 continue;
             }
 
             T component = loadComponent(name, entry.getValue(), context);
             components.add(component);
-            configuredClasses.add((Class<? extends T>) component.getClass());
+            configuredClasses.add(unwrapClass(component));
         }
 
         // Combine exclusions: explicit from config + auto (configured classes)
@@ -298,6 +298,17 @@ public abstract class AbstractSpiComponentLoader<T> implements ComponentLoader<T
             Set<Class<? extends U>> exclusions,
             JsonNode configNode
     ) {}
+
+    /**
+     * Unwrap a component to get the underlying class for auto-exclusion purposes.
+     * When a component is wrapped in a decorator (e.g., ParserDecorator for mime filtering),
+     * we need to exclude the underlying class from SPI, not the decorator class.
+     * Subclasses can override this for type-specific unwrapping.
+     */
+    @SuppressWarnings("unchecked")
+    protected Class<? extends T> unwrapClass(T component) {
+        return (Class<? extends T>) component.getClass();
+    }
 
     // ==================== Accessors for subclasses ====================
 

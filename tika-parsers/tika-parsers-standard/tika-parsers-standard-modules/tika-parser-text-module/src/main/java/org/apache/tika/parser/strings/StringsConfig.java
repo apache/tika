@@ -16,7 +16,11 @@
  */
 package org.apache.tika.parser.strings;
 
+import java.io.File;
 import java.io.Serializable;
+
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Configuration for the "strings" (or strings-alternative) command.
@@ -29,6 +33,8 @@ public class StringsConfig implements Serializable {
 
     private String stringsPath = "";
 
+    private String filePath = "";
+
     // Minimum sequence length (characters) to print
     private int minLength = 4;
 
@@ -37,6 +43,46 @@ public class StringsConfig implements Serializable {
 
     // Maximum time (seconds) to wait for the strings process termination
     private int timeoutSeconds = 120;
+
+    /**
+     * Returns the "strings" installation folder.
+     *
+     * @return the "strings" installation folder.
+     */
+    public String getStringsPath() {
+        return stringsPath;
+    }
+
+    /**
+     * Sets the "strings" installation folder.
+     *
+     * @param stringsPath the "strings" installation folder.
+     */
+    public void setStringsPath(String stringsPath) throws TikaConfigException {
+        if (stringsPath != null && !stringsPath.isEmpty() &&
+                !stringsPath.endsWith(File.separator)) {
+            stringsPath += File.separatorChar;
+        }
+        this.stringsPath = stringsPath;
+    }
+
+    /**
+     * Returns the path to the "file" command.
+     *
+     * @return the path to the "file" command.
+     */
+    public String getFilePath() {
+        return filePath;
+    }
+
+    /**
+     * Sets the path to the "file" command.
+     *
+     * @param filePath the path to the "file" command.
+     */
+    public void setFilePath(String filePath) throws TikaConfigException {
+        this.filePath = filePath;
+    }
 
     /**
      * Returns the minimum sequence length (characters) to print.
@@ -102,5 +148,39 @@ public class StringsConfig implements Serializable {
             throw new IllegalArgumentException("Invalid timeout");
         }
         this.timeoutSeconds = timeoutSeconds;
+    }
+
+    /**
+     * RuntimeConfig blocks modification of security-sensitive path fields at runtime.
+     * When a config is obtained from ParseContext (i.e. user-provided at parse time),
+     * it should be deserialized as a RuntimeConfig to prevent path injection.
+     * <p>
+     * This class is deserialized by ConfigDeserializer (in tika-serialization) which uses
+     * Jackson to populate fields via setters. If the JSON contains any path fields, the
+     * overridden setters will throw TikaConfigException.
+     */
+    public static class RuntimeConfig extends StringsConfig {
+
+        public RuntimeConfig() {
+            super();
+        }
+
+        @Override
+        public void setStringsPath(String stringsPath) throws TikaConfigException {
+            if (!StringUtils.isBlank(stringsPath)) {
+                throw new TikaConfigException(
+                        "Cannot modify stringsPath at runtime. " +
+                                "Paths must be configured at parser initialization time.");
+            }
+        }
+
+        @Override
+        public void setFilePath(String filePath) throws TikaConfigException {
+            if (!StringUtils.isBlank(filePath)) {
+                throw new TikaConfigException(
+                        "Cannot modify filePath at runtime. " +
+                                "Paths must be configured at parser initialization time.");
+            }
+        }
     }
 }

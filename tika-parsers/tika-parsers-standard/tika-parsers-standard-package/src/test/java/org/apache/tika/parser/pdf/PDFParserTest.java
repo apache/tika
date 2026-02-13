@@ -250,9 +250,9 @@ public class PDFParserTest extends TikaTest {
         assertEquals("Press Quality(1).joboptions",
                 metadatas.get(3).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("Unit10.doc", metadatas.get(4).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertEquals(MediaType.image("jpeg").toString(),
+        assertImageContentType("image/jpeg",
                 metadatas.get(1).get(Metadata.CONTENT_TYPE));
-        assertEquals(MediaType.image("tiff").toString(),
+        assertImageContentType("image/tiff",
                 metadatas.get(2).get(Metadata.CONTENT_TYPE));
         assertEquals("text/plain; charset=ISO-8859-1", metadatas.get(3).get(Metadata.CONTENT_TYPE));
         assertEquals(TYPE_DOC.toString(), metadatas.get(4).get(Metadata.CONTENT_TYPE));
@@ -339,7 +339,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals(5, metadataList.size());
         //inlined jpeg metadata
         Metadata jpegMetadata = metadataList.get(1);
-        assertEquals("image/jpeg", jpegMetadata.get(Metadata.CONTENT_TYPE));
+        assertImageContentType("image/jpeg", jpegMetadata.get(Metadata.CONTENT_TYPE));
         //the metadata parse will fail if the stream is not correctly decoded
         assertEquals("1425", jpegMetadata.get(Metadata.IMAGE_LENGTH));
     }
@@ -694,5 +694,16 @@ public class PDFParserTest extends TikaTest {
         public Map<Integer, byte[]> getEmbedded() {
             return embedded;
         }
+    }
+
+    /**
+     * Asserts that the actual content type matches the expected type,
+     * allowing for the "ocr-" prefix that appears when tesseract is available.
+     * e.g., "image/jpeg" matches both "image/jpeg" and "image/ocr-jpeg".
+     */
+    private void assertImageContentType(String expected, String actual) {
+        String ocrVariant = expected.replace("image/", "image/ocr-");
+        assertTrue(expected.equals(actual) || ocrVariant.equals(actual),
+                "Expected " + expected + " or " + ocrVariant + " but got: " + actual);
     }
 }

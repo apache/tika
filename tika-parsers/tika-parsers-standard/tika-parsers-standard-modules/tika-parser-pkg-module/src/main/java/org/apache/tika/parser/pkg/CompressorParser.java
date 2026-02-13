@@ -89,14 +89,30 @@ public class CompressorParser implements Parser {
      * Configuration class for JSON deserialization.
      */
     public static class Config {
-        public int memoryLimitInKb = 100000;
-        public boolean decompressConcatenated = false;
+        private int memoryLimitInKb = 100000;
+        private boolean decompressConcatenated = false;
+
+        public int getMemoryLimitInKb() {
+            return memoryLimitInKb;
+        }
+
+        public void setMemoryLimitInKb(int memoryLimitInKb) {
+            this.memoryLimitInKb = memoryLimitInKb;
+        }
+
+        public boolean isDecompressConcatenated() {
+            return decompressConcatenated;
+        }
+
+        public void setDecompressConcatenated(boolean decompressConcatenated) {
+            this.decompressConcatenated = decompressConcatenated;
+        }
     }
 
     private static Set<MediaType> SUPPORTED_TYPES;
     private static Map<String, String> MIMES_TO_NAME;
 
-    private boolean decompressConcatenated = false;
+    private Config defaultConfig = new Config();
 
     static {
         Set<MediaType> TMP_SET = new HashSet<>(MediaType
@@ -136,8 +152,6 @@ public class CompressorParser implements Parser {
     }
 
 
-    private int memoryLimitInKb = 100000;//100MB
-
     public CompressorParser() {
     }
 
@@ -147,8 +161,7 @@ public class CompressorParser implements Parser {
      * @param config the configuration
      */
     public CompressorParser(Config config) {
-        this.memoryLimitInKb = config.memoryLimitInKb;
-        this.decompressConcatenated = config.decompressConcatenated;
+        this.defaultConfig = config;
     }
 
     /**
@@ -210,10 +223,11 @@ public class CompressorParser implements Parser {
         CompressorInputStream cis;
         try {
             CompressorParserOptions options =
-                    context.get(CompressorParserOptions.class, metadata1 -> decompressConcatenated);
+                    context.get(CompressorParserOptions.class,
+                        metadata1 -> defaultConfig.isDecompressConcatenated());
             CompressorStreamFactory factory =
                     new CompressorStreamFactory(options.decompressConcatenated(metadata),
-                            memoryLimitInKb);
+                            defaultConfig.getMemoryLimitInKb());
             //if we've already identified it via autodetect
             //trust that and go with the appropriate name
             //to avoid calling CompressorStreamFactory.detect() twice
@@ -310,20 +324,8 @@ public class CompressorParser implements Parser {
         return MIMES_TO_NAME.get(mimeString);
     }
 
-    public void setMemoryLimitInKb(int memoryLimitInKb) {
-        this.memoryLimitInKb = memoryLimitInKb;
-    }
-
-    public int getMemoryLimitInKb() {
-        return this.memoryLimitInKb;
-    }
-
-    public void setDecompressConcatenated(boolean decompressConcatenated) {
-        this.decompressConcatenated = decompressConcatenated;
-    }
-
-    public boolean isDecompressConcatenated() {
-        return this.decompressConcatenated;
+    public Config getDefaultConfig() {
+        return defaultConfig;
     }
 
 }

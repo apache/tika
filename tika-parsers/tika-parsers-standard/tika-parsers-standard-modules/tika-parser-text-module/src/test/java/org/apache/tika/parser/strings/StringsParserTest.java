@@ -34,7 +34,7 @@ import org.apache.tika.sax.BodyContentHandler;
 
 public class StringsParserTest extends TikaTest {
     public static boolean canRun() {
-        String[] checkCmd = {new StringsParser().getStringsPath() + getStringsProg(), "--version"};
+        String[] checkCmd = {new StringsParser().getDefaultConfig().getStringsPath() + getStringsProg(), "--version"};
         return ExternalParser.check(checkCmd);
     }
 

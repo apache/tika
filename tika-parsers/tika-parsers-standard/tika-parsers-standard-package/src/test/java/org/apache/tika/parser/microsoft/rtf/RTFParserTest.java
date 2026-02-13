@@ -83,7 +83,16 @@ public class RTFParserTest extends TikaTest {
             assertEquals(p.fileName,
                     FilenameUtils.getName(metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH)));
 
-            assertEquals(p.mimeType, metadata.get(Metadata.CONTENT_TYPE));
+            // When tesseract is available, image types may get an "ocr-" prefix
+            String actualType = metadata.get(Metadata.CONTENT_TYPE);
+            if (p.mimeType.startsWith("image/")) {
+                String ocrVariant = p.mimeType.replace("image/", "image/ocr-");
+                assertTrue(p.mimeType.equals(actualType) || ocrVariant.equals(actualType),
+                        "Expected " + p.mimeType + " or " + ocrVariant +
+                                " but got: " + actualType);
+            } else {
+                assertEquals(p.mimeType, actualType);
+            }
         }
         assertEquals("C:\\Users\\tallison\\AppData\\Local\\Temp\\testJPEG_普林斯顿.jpg",
                 metadataList.get(46).get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));

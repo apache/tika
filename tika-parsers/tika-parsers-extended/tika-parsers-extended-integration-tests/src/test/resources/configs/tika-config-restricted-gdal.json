@@ -1,6 +1,9 @@
 {
   "parsers": [
     {
+      "default-parser": {}
+    },
+    {
       "gdal-parser": {
         "_mime-exclude": ["image/jpeg", "image/png", "image/jp2", "image/gif"]
       }

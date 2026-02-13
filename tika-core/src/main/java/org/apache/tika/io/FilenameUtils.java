@@ -345,19 +345,34 @@ public class FilenameUtils {
         if (mime == null) {
             return defaultValue;
         }
+        String ext = lookupExtension(mime);
+        if (ext != null) {
+            return ext;
+        }
+        // Handle OCR media types (e.g., image/ocr-jpeg -> image/jpeg)
+        // These are internal routing types that don't have registered extensions
+        if (mime.startsWith("image/ocr-")) {
+            String normalized = "image/" + mime.substring("image/ocr-".length());
+            ext = lookupExtension(normalized);
+            if (ext != null) {
+                return ext;
+            }
+        }
+        return ".bin";
+    }
+
+    private static String lookupExtension(String mime) {
         try {
             String ext = MIME_TYPES
                     .forName(mime)
                     .getExtension();
-            if (StringUtils.isBlank(ext)) {
-                return ".bin";
-            } else {
+            if (!StringUtils.isBlank(ext)) {
                 return ext;
             }
         } catch (MimeTypeException e) {
             //swallow
         }
-        return ".bin";
+        return null;
     }
 
 }

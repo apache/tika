@@ -39,10 +39,18 @@ public class UniversalEncodingDetector implements EncodingDetector {
      * Configuration class for JSON deserialization.
      */
     public static class Config implements Serializable {
-        public int markLimit = DEFAULT_MARK_LIMIT;
+        private int markLimit = DEFAULT_MARK_LIMIT;
+
+        public int getMarkLimit() {
+            return markLimit;
+        }
+
+        public void setMarkLimit(int markLimit) {
+            this.markLimit = markLimit;
+        }
     }
 
-    private int markLimit = DEFAULT_MARK_LIMIT;
+    private Config defaultConfig = new Config();
 
     /**
      * Default constructor for SPI loading.
@@ -56,7 +64,7 @@ public class UniversalEncodingDetector implements EncodingDetector {
      * @param config the configuration
      */
     public UniversalEncodingDetector(Config config) {
-        this.markLimit = config.markLimit;
+        this.defaultConfig = config;
     }
 
     /**
@@ -74,6 +82,7 @@ public class UniversalEncodingDetector implements EncodingDetector {
             return null;
         }
 
+        int markLimit = defaultConfig.getMarkLimit();
         tis.mark(markLimit);
         try {
             UniversalEncodingListener listener = new UniversalEncodingListener(metadata);
@@ -95,17 +104,7 @@ public class UniversalEncodingDetector implements EncodingDetector {
         }
     }
 
-    public int getMarkLimit() {
-        return markLimit;
-    }
-
-    /**
-     * How far into the stream to read for charset detection.
-     * Default is 8192.
-     *
-     * @param markLimit
-     */
-    public void setMarkLimit(int markLimit) {
-        this.markLimit = markLimit;
+    public Config getDefaultConfig() {
+        return defaultConfig;
     }
 }

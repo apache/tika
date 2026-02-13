@@ -45,7 +45,7 @@ import org.apache.tika.utils.StringUtils;
 
 public class DWGParserTest extends TikaTest {
     public boolean canRun(DWGParser parser)  {
-        String dwgRead = parser.getDwgReadExecutable();
+        String dwgRead = parser.getDefaultConfig().getDwgReadExecutable();
 
         if (!StringUtils.isBlank(dwgRead) && !Files.isRegularFile(Paths.get(dwgRead))) {
             return false;

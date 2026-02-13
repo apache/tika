@@ -97,8 +97,14 @@ public class AutoDetectParserTest extends TikaTest {
             ParseContext pc = new ParseContext();
             TikaLoader.loadDefault().loadAutoDetectParser().parse(tis, handler, metadata, pc);
 
-            assertEquals(tp.realType, metadata.get(Metadata.CONTENT_TYPE),
-                    "Bad content type: " + tp);
+            String actualType = metadata.get(Metadata.CONTENT_TYPE);
+            // When tesseract is available, image types may get an "ocr-" prefix
+            String ocrVariant = tp.realType.startsWith("image/") ?
+                    tp.realType.replace("image/", "image/ocr-") : null;
+            assertTrue(tp.realType.equals(actualType) ||
+                            (ocrVariant != null && ocrVariant.equals(actualType)),
+                    "Bad content type: " + tp +
+                            " ==> expected: <" + tp.realType + "> but was: <" + actualType + ">");
 
             if (tp.expectedContentFragment != null) {
                 assertTrue(handler.toString().contains(tp.expectedContentFragment),

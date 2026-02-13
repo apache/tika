@@ -27,6 +27,8 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.utils.StringUtils;
+
 public class GeoParserConfig implements Serializable {
     private static final long serialVersionUID = -3167692634278575818L;
     private static final Logger LOG = LoggerFactory.getLogger(GeoParserConfig.class);
@@ -104,4 +106,46 @@ public class GeoParserConfig implements Serializable {
         this.gazetteerRestEndpoint = gazetteerRestEndpoint;
     }
 
+    /**
+     * RuntimeConfig blocks modification of security-sensitive URL/path fields at runtime.
+     * When a config is obtained from ParseContext (i.e. user-provided at parse time),
+     * it should be deserialized as a RuntimeConfig to prevent URL/path injection.
+     * <p>
+     * This class is deserialized by ConfigDeserializer (in tika-serialization) which uses
+     * Jackson to populate fields via setters. If the JSON contains any URL/path fields, the
+     * overridden setters will throw TikaConfigException.
+     */
+    public static class RuntimeConfig extends GeoParserConfig {
+
+        public RuntimeConfig() {
+            super();
+        }
+
+        @Override
+        public void setNerModelUrl(URL url) {
+            if (url != null) {
+                throw new IllegalArgumentException(
+                        "Cannot modify nerModelUrl at runtime. " +
+                                "URLs must be configured at parser initialization time.");
+            }
+        }
+
+        @Override
+        public void setNERModelPath(String path) {
+            if (!StringUtils.isBlank(path)) {
+                throw new IllegalArgumentException(
+                        "Cannot modify NER model path at runtime. " +
+                                "Paths must be configured at parser initialization time.");
+            }
+        }
+
+        @Override
+        public void setGazetteerRestEndpoint(String gazetteerRestEndpoint) {
+            if (!StringUtils.isBlank(gazetteerRestEndpoint)) {
+                throw new IllegalArgumentException(
+                        "Cannot modify gazetteerRestEndpoint at runtime. " +
+                                "URLs must be configured at parser initialization time.");
+            }
+        }
+    }
 }

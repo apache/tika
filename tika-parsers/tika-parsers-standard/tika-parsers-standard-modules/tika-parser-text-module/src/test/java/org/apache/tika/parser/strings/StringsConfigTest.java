@@ -47,10 +47,10 @@ public class StringsConfigTest extends TikaTest {
                 (StringsParser) ((CompositeParser) parser).getAllComponentParsers()
                         .get(0);
 
-        assertEquals(StringsEncoding.BIGENDIAN_16_BIT, p.getStringsEncoding(),
+        assertEquals(StringsEncoding.BIGENDIAN_16_BIT, p.getDefaultConfig().getEncoding(),
                 "Invalid overridden encoding value");
-        assertEquals(4, p.getMinLength(), "Invalid default min-len value");
-        assertEquals(60, p.getTimeoutSeconds(), "Invalid overridden timeout value");
+        assertEquals(4, p.getDefaultConfig().getMinLength(), "Invalid default min-len value");
+        assertEquals(60, p.getDefaultConfig().getTimeoutSeconds(), "Invalid overridden timeout value");
     }
 
     @Test
@@ -62,10 +62,10 @@ public class StringsConfigTest extends TikaTest {
         StringsParser p =
                 (StringsParser) ((CompositeParser) parser).getAllComponentParsers()
                         .get(0);
-        assertEquals(StringsEncoding.BIGENDIAN_16_BIT, p.getStringsEncoding(),
+        assertEquals(StringsEncoding.BIGENDIAN_16_BIT, p.getDefaultConfig().getEncoding(),
                 "Invalid overridden encoding value");
-        assertEquals(3, p.getMinLength(), "Invalid overridden min-len value");
-        assertEquals(60, p.getTimeoutSeconds(), "Invalid overridden timeout value");
+        assertEquals(3, p.getDefaultConfig().getMinLength(), "Invalid overridden min-len value");
+        assertEquals(60, p.getDefaultConfig().getTimeoutSeconds(), "Invalid overridden timeout value");
     }
 
     @Test

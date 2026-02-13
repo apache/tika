@@ -70,16 +70,17 @@ public class PSDParser implements Parser {
     private static final int MAX_DATA_LENGTH_BYTES = 10_000_000;
     private static final int MAX_BLOCKS = 10000;
 
-    private int maxDataLengthBytes = MAX_DATA_LENGTH_BYTES;
+    private PSDParserConfig defaultConfig = new PSDParserConfig();
 
     public PSDParser() {
     }
 
+    public PSDParser(PSDParserConfig config) {
+        this.defaultConfig = config;
+    }
+
     public PSDParser(JsonConfig jsonConfig) {
-        PSDParserConfig config = ConfigDeserializer.buildConfig(jsonConfig, PSDParserConfig.class);
-        if (config != null && config.maxDataLengthBytes > 0) {
-            this.maxDataLengthBytes = config.maxDataLengthBytes;
-        }
+        this(ConfigDeserializer.buildConfig(jsonConfig, PSDParserConfig.class));
     }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -142,7 +143,7 @@ public class PSDParser implements Parser {
         //infinite loop by only reading 10000 blocks
         int blocks = 0;
         while (read < imageResourcesSectionSize && blocks < MAX_BLOCKS) {
-            ResourceBlock rb = new ResourceBlock(tis, maxDataLengthBytes);
+            ResourceBlock rb = new ResourceBlock(tis, defaultConfig.getMaxDataLengthBytes());
             if (rb.totalLength <= 0) {
                 //break;
             }
@@ -174,12 +175,8 @@ public class PSDParser implements Parser {
         xhtml.endDocument();
     }
 
-    public void setMaxDataLengthBytes(int maxDataLengthBytes) {
-        this.maxDataLengthBytes = maxDataLengthBytes;
-    }
-
-    public int getMaxDataLengthBytes() {
-        return maxDataLengthBytes;
+    public PSDParserConfig getDefaultConfig() {
+        return defaultConfig;
     }
 
     private static class ResourceBlock {
@@ -288,6 +285,14 @@ public class PSDParser implements Parser {
      * Configuration class for PSDParser.
      */
     public static class PSDParserConfig {
-        public int maxDataLengthBytes;
+        private int maxDataLengthBytes = MAX_DATA_LENGTH_BYTES;
+
+        public int getMaxDataLengthBytes() {
+            return maxDataLengthBytes;
+        }
+
+        public void setMaxDataLengthBytes(int maxDataLengthBytes) {
+            this.maxDataLengthBytes = maxDataLengthBytes;
+        }
     }
 }

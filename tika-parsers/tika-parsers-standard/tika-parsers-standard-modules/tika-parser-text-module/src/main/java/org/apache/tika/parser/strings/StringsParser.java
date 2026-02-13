@@ -69,22 +69,22 @@ public class StringsParser implements Parser, Initializable {
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.OCTET_STREAM);
 
-    private StringsConfig defaultStringsConfig = new StringsConfig();
-
-    private String filePath = "";
+    private StringsConfig defaultConfig = new StringsConfig();
 
     private FileCommandDetector fileCommandDetector;
 
     private boolean stringsPresent = false;
     private boolean hasEncodingOption = false;//whether or not the strings app allows -e
 
-    private String stringsPath = "";
-
     public StringsParser() {
     }
 
+    public StringsParser(StringsConfig config) {
+        this.defaultConfig = config;
+    }
+
     public StringsParser(JsonConfig jsonConfig) {
-        defaultStringsConfig = ConfigDeserializer.buildConfig(jsonConfig, StringsConfig.class);
+        defaultConfig = ConfigDeserializer.buildConfig(jsonConfig, StringsConfig.class);
     }
 
     public static String getStringsProg() {
@@ -103,7 +103,7 @@ public class StringsParser implements Parser, Initializable {
         if (!stringsPresent) {
             return;
         }
-        StringsConfig stringsConfig = context.get(StringsConfig.class, defaultStringsConfig);
+        StringsConfig stringsConfig = context.get(StringsConfig.class, defaultConfig);
 
         try (TemporaryResources tmp = new TemporaryResources()) {
             File input = tis.getFile();
@@ -137,11 +137,9 @@ public class StringsParser implements Parser, Initializable {
 
     /**
      * Checks if the "strings" command is supported.
-     *
-     * @return Returns returns {@code true} if the strings command is supported.
      */
     private void checkForStrings() {
-        String stringsProg = getStringsPath() + getStringsProg();
+        String stringsProg = defaultConfig.getStringsPath() + getStringsProg();
 
 
         String[] checkCmd = {stringsProg, "--version"};
@@ -153,7 +151,7 @@ public class StringsParser implements Parser, Initializable {
             // Check if the -e option (encoding) is supported
             if (!SystemUtils.IS_OS_WINDOWS) {
                 String[] checkOpt =
-                        {stringsProg, "-e", "" + defaultStringsConfig.getEncoding().get(),
+                        {stringsProg, "-e", "" + defaultConfig.getEncoding().get(),
                                 "/dev/null"};
                 int[] errorValues =
                         {1, 2}; // Exit status code: 1 = general error; 2 = incorrect usage.
@@ -181,7 +179,7 @@ public class StringsParser implements Parser, Initializable {
     private int doStrings(File input, StringsConfig config, XHTMLContentHandler xhtml)
             throws IOException, TikaException, SAXException {
 
-        String stringsProg = getStringsPath() + getStringsProg();
+        String stringsProg = defaultConfig.getStringsPath() + getStringsProg();
 
         // Builds the command array
         ArrayList<String> cmdList = new ArrayList<>(4);
@@ -238,51 +236,15 @@ public class StringsParser implements Parser, Initializable {
         });
     }
 
-    public String getStringsPath() {
-        return stringsPath;
-    }
-
-    /**
-     * Sets the "strings" installation folder.
-     *
-     * @param path the "strings" installation folder.
-     */
-    public void setStringsPath(String path) {
-        if (!path.isEmpty() && !path.endsWith(File.separator)) {
-            path += File.separatorChar;
-        }
-        this.stringsPath = path;
-    }
-
-    public void setEncoding(String encoding) {
-        defaultStringsConfig.setEncoding(StringsEncoding.valueOf(encoding));
-    }
-
-    public int getMinLength() {
-        return defaultStringsConfig.getMinLength();
-    }
-
-    public void setMinLength(int minLength) {
-        defaultStringsConfig.setMinLength(minLength);
-    }
-
-    public int getTimeoutSeconds() {
-        return defaultStringsConfig.getTimeoutSeconds();
-    }
-
-    public void setTimeoutSeconds(int timeoutSeconds) {
-        defaultStringsConfig.setTimeoutSeconds(timeoutSeconds);
-    }
-
-    public StringsEncoding getStringsEncoding() {
-        return defaultStringsConfig.getEncoding();
+    public StringsConfig getDefaultConfig() {
+        return defaultConfig;
     }
 
     @Override
     public void initialize() throws TikaConfigException {
         checkForStrings();
         fileCommandDetector = new FileCommandDetector();
-        fileCommandDetector.setFilePath(filePath);
-        fileCommandDetector.setTimeoutMs(defaultStringsConfig.getTimeoutSeconds() * 1000);
+        fileCommandDetector.setFilePath(defaultConfig.getFilePath());
+        fileCommandDetector.setTimeoutMs(defaultConfig.getTimeoutSeconds() * 1000);
     }
 }
