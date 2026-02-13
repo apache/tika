@@ -358,6 +358,18 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 xmlResult.metadata.get(Metadata.CONTENT_TYPE));
         assertTrue(xmlResult.xml.contains("snoska"));
+        //TIKA-4657 -- footnote content should be in a div with class "footnote"
+        // and should not be nested inside the paragraph
+        assertContains("<div class=\"footnote\">", xmlResult.xml);
+        assertNotContained("<p><div class=\"footnote\">", xmlResult.xml);
+    }
+
+    @Test
+    public void testEndnoteWithTable() throws Exception {
+        XMLResult xmlResult = getXML("testWORD_endnote_table.docx");
+        assertContains("Cat Property Act", xmlResult.xml);
+        //TIKA-4657 -- endnote content should be in a div with class "endnote"
+        assertContains("<div class=\"endnote\">", xmlResult.xml);
     }
 
     /**

@@ -41,6 +41,8 @@ import org.apache.poi.xwpf.usermodel.ICell;
 import org.apache.poi.xwpf.usermodel.IRunElement;
 import org.apache.poi.xwpf.usermodel.ISDTContent;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFEndnote;
+import org.apache.poi.xwpf.usermodel.XWPFFootnote;
 import org.apache.poi.xwpf.usermodel.XWPFHeaderFooter;
 import org.apache.poi.xwpf.usermodel.XWPFHyperlink;
 import org.apache.poi.xwpf.usermodel.XWPFHyperlinkRun;
@@ -347,11 +349,6 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             xhtml.characters(commentText);
         }
 
-        String footnameText = paragraph.getFootnoteText();
-        if (footnameText != null && footnameText.length() > 0) {
-            xhtml.characters(footnameText + "\n");
-        }
-
         // Also extract any paragraphs embedded in text boxes
         //Note "w:txbxContent//"...must look for all descendant paragraphs
         //not just the immediate children of txbxContent -- TIKA-2807
@@ -366,8 +363,52 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         // Finish this paragraph
         xhtml.endElement(tag);
 
+        // Extract footnote/endnote content after the paragraph close tag
+        // to avoid invalid nested block elements (TIKA-4657)
+        extractFootnoteEndnoteContent(paragraph, listManager, xhtml);
+
         if (headerFooterPolicy != null && config.isIncludeHeadersAndFooters()) {
             extractFooters(xhtml, headerFooterPolicy, listManager);
+        }
+    }
+
+    private void extractFootnoteEndnoteContent(XWPFParagraph paragraph,
+                                                  XWPFListManager listManager,
+                                                  XHTMLContentHandler xhtml)
+            throws SAXException, XmlException, IOException {
+        String nsW = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+        QName footnoteRefQName = new QName(nsW, "footnoteReference");
+        QName endnoteRefQName = new QName(nsW, "endnoteReference");
+        QName idQName = new QName(nsW, "id");
+        for (XmlObject obj : paragraph.getCTP().selectPath(
+                "declare namespace w='http://schemas.openxmlformats.org/wordprocessingml/2006/main'"
+                        + " .//w:footnoteReference | .//w:endnoteReference")) {
+            XmlObject idAttr = obj.selectAttribute(idQName);
+            if (idAttr == null) {
+                continue;
+            }
+            int id;
+            try {
+                id = Integer.parseInt(idAttr.getDomNode().getNodeValue());
+            } catch (NumberFormatException e) {
+                continue;
+            }
+            boolean isFootnote = obj.getDomNode().getLocalName().equals("footnoteReference");
+            if (isFootnote) {
+                XWPFFootnote footnote = document.getFootnoteByID(id);
+                if (footnote != null) {
+                    xhtml.startElement("div", "class", "footnote");
+                    extractIBodyText(footnote, listManager, xhtml);
+                    xhtml.endElement("div");
+                }
+            } else {
+                XWPFEndnote endnote = document.getEndnoteByID(id);
+                if (endnote != null) {
+                    xhtml.startElement("div", "class", "endnote");
+                    extractIBodyText(endnote, listManager, xhtml);
+                    xhtml.endElement("div");
+                }
+            }
         }
     }
 
