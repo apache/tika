@@ -211,7 +211,12 @@ public class SXWPFExtractorTest extends TikaTest {
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 xmlResult.metadata.get(Metadata.CONTENT_TYPE));
         assertTrue(xmlResult.xml.contains("snoska"));
+    }
 
+    @Test
+    public void testEndnoteWithTable() throws Exception {
+        XMLResult xmlResult = getXML("testWORD_endnote_table.docx", parseContext);
+        assertContains("Cat Property Act", xmlResult.xml);
     }
 
     /**
