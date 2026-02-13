@@ -313,15 +313,15 @@
     <spotless.header.file>${maven.multiModuleProjectDirectory}/tika-parent/license-header.txt</spotless.header.file>
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.62.1</google.cloud.version>
-    <aws2.version>2.41.24</aws2.version>
+    <google.cloud.version>2.63.0</google.cloud.version>
+    <aws2.version>2.41.28</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
     -->
     <asm.version>9.9.1</asm.version>
     <azure.version>1.3.4</azure.version>
-    <biz.aqute.version>7.1.0</biz.aqute.version>
+    <biz.aqute.version>7.2.1</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!--  used by POI, PDFBox and Jackcess encrypt ...try to sync -->
     <bouncycastle.version>1.83</bouncycastle.version>
