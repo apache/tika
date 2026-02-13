@@ -26,6 +26,7 @@ This section covers advanced usage and internals of Apache Tika.
 * xref:advanced/spooling.adoc[TikaInputStream and Spooling] - Understanding how TikaInputStream handles buffering, caching, and spooling to disk
 * xref:advanced/embedded-documents.adoc[Embedded Document Metadata] - Understanding how Tika tracks embedded documents and their paths
 * xref:advanced/zip-detection.adoc[ZIP Detection and Salvaging] - How Tika detects and recovers truncated ZIP-based files
+* xref:advanced/tika-eval.adoc[Text Quality Scoring] - Measuring extracted text quality using character bigram profiles
 
 == Integration Testing
 

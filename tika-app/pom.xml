@@ -55,6 +55,11 @@
       <artifactId>tika-xmp</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-eval-lite</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <!-- this brings in tika-core -->
     <dependency>
       <groupId>${project.groupId}</groupId>

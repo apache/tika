@@ -181,6 +181,12 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>tika-eval-lite</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>tika-parser-zip-commons</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
