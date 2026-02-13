@@ -18,6 +18,9 @@ package org.apache.tika.parser.microsoft.libpst;
 
 import java.io.Serializable;
 
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.utils.StringUtils;
+
 public class LibPstParserConfig implements Serializable {
 
     private long timeoutSeconds = 600;
@@ -40,6 +43,12 @@ public class LibPstParserConfig implements Serializable {
      * max emails to process. Will process everything if this value is < 0
      */
     private int maxEmails = -1;
+
+    /**
+     * This should include the path up to but not including 'readpst', e.g. "C:\my_bin" where
+     * readpst is at "C:\my_bin\readpst"
+     */
+    private String readPstPath = "";
 
     public long getTimeoutSeconds() {
         return timeoutSeconds;
@@ -79,5 +88,38 @@ public class LibPstParserConfig implements Serializable {
 
     public void setMaxEmails(int maxEmails) {
         this.maxEmails = maxEmails;
+    }
+
+    public String getReadPstPath() {
+        return readPstPath;
+    }
+
+    public void setReadPstPath(String readPstPath) throws TikaConfigException {
+        this.readPstPath = readPstPath;
+    }
+
+    /**
+     * RuntimeConfig blocks modification of security-sensitive path fields at runtime.
+     * When a config is obtained from ParseContext (i.e. user-provided at parse time),
+     * it should be deserialized as a RuntimeConfig to prevent path injection.
+     * <p>
+     * This class is deserialized by ConfigDeserializer (in tika-serialization) which uses
+     * Jackson to populate fields via setters. If the JSON contains any path fields, the
+     * overridden setters will throw TikaConfigException.
+     */
+    public static class RuntimeConfig extends LibPstParserConfig {
+
+        public RuntimeConfig() {
+            super();
+        }
+
+        @Override
+        public void setReadPstPath(String readPstPath) throws TikaConfigException {
+            if (!StringUtils.isBlank(readPstPath)) {
+                throw new TikaConfigException(
+                        "Cannot modify readPstPath at runtime. " +
+                                "Paths must be configured at parser initialization time.");
+            }
+        }
     }
 }

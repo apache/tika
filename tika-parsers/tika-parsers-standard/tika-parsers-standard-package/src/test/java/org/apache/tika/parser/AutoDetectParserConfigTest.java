@@ -93,7 +93,7 @@ public class AutoDetectParserConfigTest extends TikaTest {
         for (Metadata m : metadataList) {
             for (String k : m.names()) {
                 assertTrue(k.startsWith("X-TIKA:") || k.startsWith("access_permission:")
-                        || k.equals("Content-Type") || k.equals("dc:creator"),
+                        || k.startsWith("Content-") || k.equals("dc:creator"),
                         "unexpected key: " + k);
             }
         }

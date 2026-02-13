@@ -162,7 +162,7 @@ public class TikaResource {
      * @param context the ParseContext to merge into
      * @throws IOException if parsing fails
      */
-    public static void mergeParseContextFromConfig(String configJson, ParseContext context) throws IOException {
+    public static void mergeParseContextFromConfig(String configJson, ParseContext context) throws IOException, TikaConfigException {
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(configJson);
         // Use root directly - the JSON should contain parser configs at the top level
@@ -239,7 +239,7 @@ public class TikaResource {
      */
     public static TikaInputStream setupMultipartConfig(List<Attachment> attachments,
                                                         Metadata metadata,
-                                                        ParseContext context) throws IOException {
+                                                        ParseContext context) throws IOException, TikaConfigException {
         Attachment fileAtt = null;
         Attachment configAtt = null;
 
@@ -616,7 +616,7 @@ public class TikaResource {
     @Produces("text/xml")
     @Path("config")
     public StreamingOutput postRaw(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
-            throws IOException {
+            throws IOException, TikaConfigException {
         ParseContext context = createParseContext();
         Metadata metadata = Metadata.newInstance(context);
         TikaInputStream tis = setupMultipartConfig(attachments, metadata, context);
@@ -639,7 +639,7 @@ public class TikaResource {
     @Produces("text/plain")
     @Path("config/text")
     public StreamingOutput postText(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
-            throws IOException {
+            throws IOException, TikaConfigException {
         ParseContext context = createParseContext();
         Metadata metadata = Metadata.newInstance(context);
         TikaInputStream tis = setupMultipartConfig(attachments, metadata, context);
@@ -661,7 +661,7 @@ public class TikaResource {
     @Produces("text/html")
     @Path("config/html")
     public StreamingOutput postHtml(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
-            throws IOException {
+            throws IOException, TikaConfigException {
         ParseContext context = createParseContext();
         Metadata metadata = Metadata.newInstance(context);
         TikaInputStream tis = setupMultipartConfig(attachments, metadata, context);
@@ -683,7 +683,7 @@ public class TikaResource {
     @Produces("text/xml")
     @Path("config/xml")
     public StreamingOutput postXml(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
-            throws IOException {
+            throws IOException, TikaConfigException {
         ParseContext context = createParseContext();
         Metadata metadata = Metadata.newInstance(context);
         TikaInputStream tis = setupMultipartConfig(attachments, metadata, context);
@@ -705,7 +705,7 @@ public class TikaResource {
     @Produces("text/plain")
     @Path("config/md")
     public StreamingOutput postMarkdown(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
-            throws IOException {
+            throws IOException, TikaConfigException {
         ParseContext context = createParseContext();
         Metadata metadata = Metadata.newInstance(context);
         TikaInputStream tis = setupMultipartConfig(attachments, metadata, context);
@@ -729,7 +729,7 @@ public class TikaResource {
     @Produces("application/json")
     @Path("config/json")
     public Metadata postJson(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
-            throws IOException {
+            throws IOException, TikaConfigException {
         ParseContext context = createParseContext();
         Metadata metadata = Metadata.newInstance(context);
         TikaInputStream tis = setupMultipartConfig(attachments, metadata, context);

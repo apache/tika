@@ -514,7 +514,7 @@ public class PDFParserTest extends TikaTest {
                 "Left column line 1 Left column line 2 Right column line 1 Right column line 2",
                 content);
 
-        parser.setSortByPosition(true);
+        parser.getPDFParserConfig().setSortByPosition(true);
         tis = getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf");
         content = getText(tis, parser);
         content = content.replaceAll("\\s+", " ");

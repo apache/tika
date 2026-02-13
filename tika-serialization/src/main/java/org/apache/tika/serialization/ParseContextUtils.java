@@ -90,7 +90,8 @@ public class ParseContextUtils {
      * @param context the ParseContext to populate
      * @param classLoader the ClassLoader to use for loading component classes
      */
-    public static void resolveAll(ParseContext context, ClassLoader classLoader) {
+    public static void resolveAll(ParseContext context, ClassLoader classLoader)
+            throws TikaConfigException {
         if (context == null) {
             return;
         }
@@ -150,8 +151,8 @@ public class ParseContextUtils {
                 LOG.debug("Resolved '{}' -> {} with key {}",
                         friendlyName, info.componentClass().getName(), contextKey.getName());
             } catch (IOException e) {
-                LOG.warn("Failed to deserialize component '{}' of type {}", friendlyName,
-                        info.componentClass().getName(), e);
+                throw new TikaConfigException("Failed to deserialize component '" +
+                        friendlyName + "' of type " + info.componentClass().getName(), e);
             }
         }
     }
@@ -203,7 +204,8 @@ public class ParseContextUtils {
      */
     @SuppressWarnings("unchecked")
     private static boolean resolveArrayConfig(String configName, JsonConfig jsonConfig,
-                                              ParseContext context, ClassLoader classLoader) {
+                                              ParseContext context, ClassLoader classLoader)
+            throws TikaConfigException {
         ArrayConfigInfo configInfo = ARRAY_CONFIGS.get(configName);
         if (configInfo == null) {
             return false;
@@ -212,8 +214,8 @@ public class ParseContextUtils {
         try {
             JsonNode arrayNode = MAPPER.readTree(jsonConfig.json());
             if (!arrayNode.isArray()) {
-                LOG.warn("Expected array for '{}', got: {}", configName, arrayNode.getNodeType());
-                return false;
+                throw new TikaConfigException("Expected array for '" + configName +
+                        "', got: " + arrayNode.getNodeType());
             }
 
             List<Object> components = new ArrayList<>();
@@ -231,18 +233,14 @@ public class ParseContextUtils {
                     typeName = item.fieldNames().next();
                     configNode = item.get(typeName);
                 } else {
-                    LOG.warn("Unexpected item format in '{}': {}", configName, item);
-                    continue;
+                    throw new TikaConfigException("Unexpected item format in '" +
+                            configName + "': " + item);
                 }
 
-                try {
-                    Object component = ComponentInstantiator.instantiate(
-                            typeName, configNode, MAPPER, classLoader);
-                    components.add(component);
-                    LOG.debug("Instantiated '{}' for '{}'", typeName, configName);
-                } catch (TikaConfigException e) {
-                    LOG.warn("Failed to instantiate '{}' for '{}': {}", typeName, configName, e.getMessage());
-                }
+                Object component = ComponentInstantiator.instantiate(
+                        typeName, configNode, MAPPER, classLoader);
+                components.add(component);
+                LOG.debug("Instantiated '{}' for '{}'", typeName, configName);
             }
 
             // Create the composite and add to ParseContext
@@ -257,7 +255,8 @@ public class ParseContextUtils {
                 }
             }
         } catch (IOException e) {
-            LOG.warn("Failed to parse array config '{}': {}", configName, e.getMessage());
+            throw new TikaConfigException("Failed to parse array config '" +
+                    configName + "'", e);
         }
 
         return false;

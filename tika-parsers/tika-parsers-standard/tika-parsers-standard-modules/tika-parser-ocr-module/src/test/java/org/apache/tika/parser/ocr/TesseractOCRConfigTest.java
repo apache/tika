@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.CompositeParser;
 
 public class TesseractOCRConfigTest extends TikaTest {
@@ -179,18 +178,18 @@ public class TesseractOCRConfigTest extends TikaTest {
     }
 
     @Test
-    public void testDataPathCheck() throws TikaConfigException {
-        TesseractOCRParser parser = new TesseractOCRParser();
+    public void testDataPathCheck() {
+        TesseractOCRConfig config = new TesseractOCRConfig();
         assertThrows(IllegalArgumentException.class, () -> {
-            parser.setTessdataPath("blah\u0000deblah");
+            config.setTessdataPath("blah\u0000deblah");
         });
     }
 
     @Test
-    public void testPathCheck() throws TikaConfigException {
-        TesseractOCRParser parser = new TesseractOCRParser();
+    public void testPathCheck() {
+        TesseractOCRConfig config = new TesseractOCRConfig();
         assertThrows(IllegalArgumentException.class, () -> {
-            parser.setTesseractPath("blah\u0000deblah");
+            config.setTesseractPath("blah\u0000deblah");
         });
     }
 

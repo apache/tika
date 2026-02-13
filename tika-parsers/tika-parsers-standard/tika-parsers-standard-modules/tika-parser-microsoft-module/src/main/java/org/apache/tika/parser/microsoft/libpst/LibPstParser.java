@@ -30,7 +30,9 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Initializable;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -62,10 +64,19 @@ public class LibPstParser implements Parser, Initializable {
     private static final int MAX_STDERR = 10000;
     private static final String READ_PST_COMMAND = "readpst";
 
-    private final LibPstParserConfig defaultConfig = new LibPstParserConfig();
-    //for security purposes, this cannot be set via the parseContext. This must
-    //be set via config
-    private String readPstPath = "";
+    private LibPstParserConfig defaultConfig = new LibPstParserConfig();
+
+    public LibPstParser() {
+    }
+
+    public LibPstParser(LibPstParserConfig config) {
+        this.defaultConfig = config;
+    }
+
+    public LibPstParser(JsonConfig jsonConfig) {
+        defaultConfig = ConfigDeserializer.buildConfig(jsonConfig, LibPstParserConfig.class);
+    }
+
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext parseContext) {
         return SUPPORTED;
@@ -147,6 +158,7 @@ public class LibPstParser implements Parser, Initializable {
 
     @Override
     public void initialize() throws TikaConfigException {
+        String readPstPath = defaultConfig.getReadPstPath();
         if (readPstPath.contains("\u0000")) {
             throw new TikaConfigException("path can't include null values");
         }
@@ -187,6 +199,7 @@ public class LibPstParser implements Parser, Initializable {
     }
 
     private String getFullReadPstCommand() throws TikaConfigException {
+        String readPstPath = defaultConfig.getReadPstPath();
         if (StringUtils.isBlank(readPstPath)) {
             return READ_PST_COMMAND;
         }
@@ -196,29 +209,7 @@ public class LibPstParser implements Parser, Initializable {
         return readPstPath + READ_PST_COMMAND;
     }
 
-    public void setTimeoutSeconds(long timeoutSeconds) {
-        defaultConfig.setTimeoutSeconds(timeoutSeconds);
+    public LibPstParserConfig getDefaultConfig() {
+        return defaultConfig;
     }
-
-    public void setProcessEmailAsMsg(boolean processEmailAsMsg) {
-        defaultConfig.setProcessEmailAsMsg(processEmailAsMsg);
-    }
-
-    public void setIncludeDeleted(boolean includeDeleted) {
-        defaultConfig.setIncludeDeleted(includeDeleted);
-    }
-
-    public void setMaxEmails(int maxEmails) {
-        defaultConfig.setMaxEmails(maxEmails);
-    }
-
-    /**
-     * This should include the path up to but not including 'readpst', e.g. "C:\my_bin" where
-     * readpst is at "C:\my_bin\readpst"
-     * @param readPstPath
-     */
-    public void setReadPstPath(String readPstPath) {
-        this.readPstPath = readPstPath;
-    }
-
 }

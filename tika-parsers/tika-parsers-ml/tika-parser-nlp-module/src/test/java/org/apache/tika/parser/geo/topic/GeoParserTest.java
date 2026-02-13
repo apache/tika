@@ -110,7 +110,7 @@ public class GeoParserTest extends TikaTest {
         GeoParser geoParser = (GeoParser) findParser(p, GeoParser.class);
         assertNotNull(geoParser);
         assertEquals("http://localhost/gazetteerRestEndpoint",
-                geoParser.getGazetteerRestEndpoint());
-        assertEquals(new URI("file:/ner/model/url").toURL(), geoParser.getNerModelUrl());
+                geoParser.getDefaultConfig().getGazetteerRestEndpoint());
+        assertEquals(new URI("file:/ner/model/url").toURL(), geoParser.getDefaultConfig().getNerModelUrl());
     }
 }

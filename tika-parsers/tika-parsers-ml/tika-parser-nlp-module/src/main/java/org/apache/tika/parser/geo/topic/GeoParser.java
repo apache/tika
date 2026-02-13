@@ -17,7 +17,6 @@
 package org.apache.tika.parser.geo.topic;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -170,27 +169,7 @@ public class GeoParser implements Parser {
         return this.available;
     }
 
-    public String getGazetteerRestEndpoint() {
-        return defaultConfig.getGazetteerRestEndpoint();
-    }
-
-    public void setGazetteerRestEndpoint(String gazetteerRestEndpoint) {
-        defaultConfig.setGazetteerRestEndpoint(gazetteerRestEndpoint);
-    }
-
-    public URL getNerModelUrl() {
-        return defaultConfig.getNerModelUrl();
-    }
-
-    /**
-     * @param nerModelUrl url for the NER model
-     * @throws IllegalArgumentException for a malformed URL
-     */
-    public void setNerModelUrl(String nerModelUrl) {
-        try {
-            defaultConfig.setNerModelUrl(new URL(nerModelUrl));
-        } catch (MalformedURLException e) {
-            throw new IllegalArgumentException("malformed url " + nerModelUrl, e);
-        }
+    public GeoParserConfig getDefaultConfig() {
+        return defaultConfig;
     }
 }

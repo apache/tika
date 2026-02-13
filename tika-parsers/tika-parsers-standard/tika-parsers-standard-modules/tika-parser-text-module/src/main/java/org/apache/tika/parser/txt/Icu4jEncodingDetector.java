@@ -150,45 +150,4 @@ public class Icu4jEncodingDetector implements EncodingDetector {
         return defaultConfig;
     }
 
-    public boolean isStripMarkup() {
-        return getDefaultConfig().isStripMarkup();
-    }
-
-    /**
-     * Whether or not to attempt to strip html-ish markup
-     * from the stream before sending it to the underlying
-     * detector.
-     * <p>
-     * The underlying detector may still apply its own stripping
-     * if this is set to <code>false</code>.
-     *
-     * @param stripMarkup whether or not to attempt to strip markup before
-     *                    sending the stream to the underlying detector
-     */
-    public void setStripMarkup(boolean stripMarkup) {
-        this.getDefaultConfig().stripMarkup = stripMarkup;
-    }
-
-    public int getMarkLimit() {
-        return this.getDefaultConfig().markLimit;
-    }
-
-    /**
-     * How far into the stream to read for charset detection.
-     * Default is 12000.
-     *
-     * @param markLimit
-     */
-    public void setMarkLimit(int markLimit) {
-        this.getDefaultConfig().markLimit = markLimit;
-    }
-
-    public void setIgnoreCharsets(List<String> charsetsToIgnore) {
-        this.getDefaultConfig().getIgnoreCharsets().clear();
-        this.getDefaultConfig().getIgnoreCharsets().addAll(charsetsToIgnore);
-    }
-
-    public List<String> getIgnoreCharsets() {
-        return getDefaultConfig().getIgnoreCharsets();
-    }
 }

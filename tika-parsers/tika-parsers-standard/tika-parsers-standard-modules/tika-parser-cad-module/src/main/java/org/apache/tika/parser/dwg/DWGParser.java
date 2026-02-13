@@ -26,6 +26,7 @@ import org.apache.poi.util.StringUtil;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
@@ -45,6 +46,19 @@ import org.apache.tika.sax.XHTMLContentHandler;
  */
 @TikaComponent
 public class DWGParser extends AbstractDWGParser {
+
+    public DWGParser() {
+        super();
+    }
+
+    public DWGParser(DWGParserConfig config) {
+        super(config);
+    }
+
+    public DWGParser(JsonConfig jsonConfig) {
+        super(jsonConfig);
+    }
+
     public static String DWG_CUSTOM_META_PREFIX = "dwg-custom:";
     /**
      * Serial version UID

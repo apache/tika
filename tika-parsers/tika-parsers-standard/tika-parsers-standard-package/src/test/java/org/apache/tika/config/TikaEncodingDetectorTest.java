@@ -209,15 +209,15 @@ public class TikaEncodingDetectorTest extends TikaTest {
                     ((CompositeEncodingDetector) encodingDetector).getDetectors()) {
                 if (childEncodingDetector instanceof HtmlEncodingDetector) {
                     assertEquals(64000,
-                            ((HtmlEncodingDetector) childEncodingDetector).getMarkLimit(),
+                            ((HtmlEncodingDetector) childEncodingDetector).getDefaultConfig().getMarkLimit(),
                             childParser.getClass().toString());
                 } else if (childEncodingDetector instanceof UniversalEncodingDetector) {
                     assertEquals(64001,
-                            ((UniversalEncodingDetector) childEncodingDetector).getMarkLimit(),
+                            ((UniversalEncodingDetector) childEncodingDetector).getDefaultConfig().getMarkLimit(),
                             childParser.getClass().toString());
                 } else if (childEncodingDetector instanceof Icu4jEncodingDetector) {
                     assertEquals(64002,
-                            ((Icu4jEncodingDetector) childEncodingDetector).getDefaultConfig().markLimit,
+                            ((Icu4jEncodingDetector) childEncodingDetector).getDefaultConfig().getMarkLimit(),
                             childParser.getClass().toString());
                 }
             }

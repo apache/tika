@@ -288,7 +288,7 @@ public class TikaResourceTest extends CXFTestBase {
             return;
         }
 
-        // Test no_ocr strategy
+        // Test no_ocr strategy - use /config/text to get plain text (no XHTML envelope)
         String configJson = """
                 {
                   "pdf-parser": {
@@ -303,14 +303,15 @@ public class TikaResourceTest extends CXFTestBase {
                 new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         Response response = WebClient
-                .create(endPoint + TIKA_PATH + "/config")
+                .create(endPoint + TIKA_PATH + "/config/text")
                 .type("multipart/form-data")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
         String responseMsg = getStringFromInputStream((InputStream) response.getEntity());
-        assertEquals("", responseMsg.trim());
+        // With NO_OCR, the OCR text should not be present
+        assertNotFound("Happy New Year 2003!", responseMsg);
 
-        // Test Tesseract skipOcr via JSON config
-        configJson = "{\"parseContext\": {\"tesseract-ocr-parser\": {\"skipOcr\": true}}}";
+        // Test Tesseract skipOcr via JSON config - use /config/text
+        configJson = "{\"tesseract-ocr-parser\": {\"skipOcr\": true}}";
         fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"testOCR.pdf\"");
         fileAtt = new Attachment("file",
                 ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"), fileCd);
@@ -318,11 +319,12 @@ public class TikaResourceTest extends CXFTestBase {
                 new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         response = WebClient
-                .create(endPoint + TIKA_PATH + "/config")
+                .create(endPoint + TIKA_PATH + "/config/text")
                 .type("multipart/form-data")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
         responseMsg = getStringFromInputStream((InputStream) response.getEntity());
-        assertEquals("", responseMsg.trim());
+        // With skipOcr=true, the OCR text should not be present
+        assertNotFound("Happy New Year 2003!", responseMsg);
 
         // Test ocr_only strategy
         configJson = """

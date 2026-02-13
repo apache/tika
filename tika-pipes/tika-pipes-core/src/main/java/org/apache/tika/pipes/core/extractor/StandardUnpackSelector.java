@@ -76,10 +76,15 @@ public class StandardUnpackSelector implements UnpackSelector {
             }
         }
 
-        if (excludeMimeTypes.contains(mime)) {
+        // Also compute normalized mime for OCR types (image/ocr-jpeg -> image/jpeg)
+        String normalizedMime = normalizeOcrType(mime);
+
+        if (excludeMimeTypes.contains(mime) || excludeMimeTypes.contains(normalizedMime)) {
             return false;
         }
-        if (!includeMimeTypes.isEmpty() && !includeMimeTypes.contains(mime)) {
+        if (!includeMimeTypes.isEmpty()
+                && !includeMimeTypes.contains(mime)
+                && !includeMimeTypes.contains(normalizedMime)) {
             return false;
         }
 
@@ -129,6 +134,17 @@ public class StandardUnpackSelector implements UnpackSelector {
 
     public void setExcludeEmbeddedResourceTypes(Set<String> excludeEmbeddedResourceTypes) {
         this.excludeEmbeddedResourceTypes = new HashSet<>(excludeEmbeddedResourceTypes);
+    }
+
+    /**
+     * Normalize OCR media types (e.g., image/ocr-jpeg -> image/jpeg).
+     * These are internal routing types used by AbstractImageParser for tesseract delegation.
+     */
+    private static String normalizeOcrType(String mime) {
+        if (mime != null && mime.startsWith("image/ocr-")) {
+            return "image/" + mime.substring("image/ocr-".length());
+        }
+        return mime;
     }
 
     @Override

@@ -17,6 +17,7 @@
 package org.apache.tika.parser.html;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URISyntaxException;
 import java.nio.file.Path;
@@ -45,7 +46,10 @@ public class HtmlParserTest extends TikaTest {
         //make sure that you've truncated the data: value
         assertContains("src=\"data:\"", content);
         Metadata imgMetadata = metadataList.get(1);
-        assertEquals("image/jpeg", imgMetadata.get(Metadata.CONTENT_TYPE));
+        // When tesseract is available, image types may get an "ocr-" prefix
+        String imgType = imgMetadata.get(Metadata.CONTENT_TYPE);
+        assertTrue("image/jpeg".equals(imgType) || "image/ocr-jpeg".equals(imgType),
+                "Expected image/jpeg or image/ocr-jpeg but got: " + imgType);
         assertContains("moscow-birds", Arrays.asList(imgMetadata.getValues(TikaCoreProperties.SUBJECT)));
     }
 
@@ -62,7 +66,10 @@ public class HtmlParserTest extends TikaTest {
                 .get(TikaCoreProperties.TIKA_CONTENT);
         assertContains("some content", content);
         Metadata imgMetadata = metadataList.get(1);
-        assertEquals("image/jpeg", imgMetadata.get(Metadata.CONTENT_TYPE));
+        // When tesseract is available, image types may get an "ocr-" prefix
+        String imgType = imgMetadata.get(Metadata.CONTENT_TYPE);
+        assertTrue("image/jpeg".equals(imgType) || "image/ocr-jpeg".equals(imgType),
+                "Expected image/jpeg or image/ocr-jpeg but got: " + imgType);
         assertContains("moscow-birds", Arrays.asList(imgMetadata.getValues(TikaCoreProperties.SUBJECT)));
     }
 

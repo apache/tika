@@ -312,7 +312,7 @@ public class TesseractOCRParserTest extends TikaTest {
 
     private Set<String> getLangs() throws Exception {
         TesseractOCRParser p = new TesseractOCRParser();
-        p.setPreloadLangs(true);
+        p.getDefaultConfig().setPreloadLangs(true);
         p.initialize();
         return p.getLangs();
     }

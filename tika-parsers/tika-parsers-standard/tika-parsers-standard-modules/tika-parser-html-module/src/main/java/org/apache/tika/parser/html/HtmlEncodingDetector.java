@@ -58,7 +58,15 @@ public class HtmlEncodingDetector implements EncodingDetector {
      * Configuration class for JSON deserialization.
      */
     public static class Config implements Serializable {
-        public int markLimit = DEFAULT_MARK_LIMIT;
+        private int markLimit = DEFAULT_MARK_LIMIT;
+
+        public int getMarkLimit() {
+            return markLimit;
+        }
+
+        public void setMarkLimit(int markLimit) {
+            this.markLimit = markLimit;
+        }
     }
     private static final Pattern HTTP_META_PATTERN =
             Pattern.compile("(?is)<\\s*meta(?:/|\\s+)([^<>]+)");
@@ -108,7 +116,7 @@ public class HtmlEncodingDetector implements EncodingDetector {
         CHARSETS_UNSUPPORTED_BY_IANA = Collections.unmodifiableSet(unsupported);
     }
 
-    private int markLimit = DEFAULT_MARK_LIMIT;
+    private Config defaultConfig = new Config();
 
     /**
      * Default constructor for SPI loading.
@@ -122,7 +130,7 @@ public class HtmlEncodingDetector implements EncodingDetector {
      * @param config the configuration
      */
     public HtmlEncodingDetector(Config config) {
-        this.markLimit = config.markLimit;
+        this.defaultConfig = config;
     }
 
     /**
@@ -141,6 +149,7 @@ public class HtmlEncodingDetector implements EncodingDetector {
         }
 
         // Read enough of the text stream to capture possible meta tags
+        int markLimit = defaultConfig.getMarkLimit();
         tis.mark(markLimit);
         byte[] buffer = new byte[markLimit];
         int n = 0;
@@ -199,17 +208,7 @@ public class HtmlEncodingDetector implements EncodingDetector {
         return null;
     }
 
-    public int getMarkLimit() {
-        return markLimit;
-    }
-
-    /**
-     * How far into the stream to read for charset detection.
-     * Default is 8192.
-     *
-     * @param markLimit
-     */
-    public void setMarkLimit(int markLimit) {
-        this.markLimit = markLimit;
+    public Config getDefaultConfig() {
+        return defaultConfig;
     }
 }

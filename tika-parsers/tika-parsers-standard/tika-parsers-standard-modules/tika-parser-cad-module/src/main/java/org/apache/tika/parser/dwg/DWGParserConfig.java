@@ -42,7 +42,7 @@ public class DWGParserConfig implements Serializable, Initializable {
     // we need to remove non UTF chars and Nan's (dwgread outputs these as nan)
     private String cleanDwgReadRegexToReplace = "[^\\x20-\\x7e]";
     private String cleanDwgReadReplaceWith = "";
-    @SuppressWarnings("unused") 
+    @SuppressWarnings("unused")
     private boolean hasDwgRead;
     private static final Logger LOG = LoggerFactory.getLogger(DWGParserConfig.class);
 
@@ -112,8 +112,8 @@ public class DWGParserConfig implements Serializable, Initializable {
         this.cleanDwgReadOutputBatchSize = cleanDwgReadOutputBatchSize;
     }
 
-    public void setDwgReadtimeout(long dwgReadtimeout) {
-        this.dwgReadTimeout = dwgReadtimeout;
+    public void setDwgReadTimeout(long dwgReadTimeout) {
+        this.dwgReadTimeout = dwgReadTimeout;
     }
 
     public void setCleanDwgReadRegexToReplace(String cleanDwgReadRegexToReplace) {
@@ -124,4 +124,28 @@ public class DWGParserConfig implements Serializable, Initializable {
         this.cleanDwgReadReplaceWith = cleanDwgReadReplaceWith;
     }
 
+    /**
+     * RuntimeConfig blocks modification of security-sensitive path fields at runtime.
+     * When a config is obtained from ParseContext (i.e. user-provided at parse time),
+     * it should be deserialized as a RuntimeConfig to prevent path injection.
+     * <p>
+     * This class is deserialized by ConfigDeserializer (in tika-serialization) which uses
+     * Jackson to populate fields via setters. If the JSON contains any path fields, the
+     * overridden setters will throw TikaConfigException.
+     */
+    public static class RuntimeConfig extends DWGParserConfig {
+
+        public RuntimeConfig() {
+            super();
+        }
+
+        @Override
+        public void setDwgReadExecutable(String dwgReadExecutable) {
+            if (!StringUtils.isBlank(dwgReadExecutable)) {
+                throw new IllegalArgumentException(
+                        "Cannot modify dwgReadExecutable at runtime. " +
+                                "Paths must be configured at parser initialization time.");
+            }
+        }
+    }
 }

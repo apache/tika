@@ -93,19 +93,69 @@ public class SiegfriedDetector implements Detector {
      * Configuration class for JSON deserialization.
      */
     public static class Config {
-        public String siegfriedPath = DEFAULT_SIEGFRIED_PATH;
-        public int maxBytes = 1_000_000;
-        public long timeoutMs = DEFAULT_TIMEOUT_MS;
-        public boolean useMime = false;
+        private String siegfriedPath = DEFAULT_SIEGFRIED_PATH;
+        private int maxBytes = 1_000_000;
+        private long timeoutMs = DEFAULT_TIMEOUT_MS;
+        private boolean useMime = false;
+
+        public String getSiegfriedPath() {
+            return siegfriedPath;
+        }
+
+        public void setSiegfriedPath(String siegfriedPath) {
+            this.siegfriedPath = siegfriedPath;
+        }
+
+        public int getMaxBytes() {
+            return maxBytes;
+        }
+
+        public void setMaxBytes(int maxBytes) {
+            this.maxBytes = maxBytes;
+        }
+
+        public long getTimeoutMs() {
+            return timeoutMs;
+        }
+
+        public void setTimeoutMs(long timeoutMs) {
+            this.timeoutMs = timeoutMs;
+        }
+
+        public boolean isUseMime() {
+            return useMime;
+        }
+
+        public void setUseMime(boolean useMime) {
+            this.useMime = useMime;
+        }
     }
 
-    private final Config config;
+    /**
+     * RuntimeConfig blocks modification of security-sensitive path fields at runtime.
+     */
+    public static class RuntimeConfig extends Config {
+        public RuntimeConfig() {
+            super();
+        }
+
+        @Override
+        public void setSiegfriedPath(String siegfriedPath) {
+            if (!StringUtils.isBlank(siegfriedPath)) {
+                throw new IllegalArgumentException(
+                        "Cannot modify siegfriedPath at runtime. " +
+                                "Paths must be configured at detector initialization time.");
+            }
+        }
+    }
+
+    private final Config defaultConfig;
 
     /**
      * Default constructor.
      */
     public SiegfriedDetector() {
-        this.config = new Config();
+        this.defaultConfig = new Config();
     }
 
     /**
@@ -115,7 +165,7 @@ public class SiegfriedDetector implements Detector {
      * @param jsonConfig JSON configuration
      */
     public SiegfriedDetector(JsonConfig jsonConfig) {
-        this.config = ConfigDeserializer.buildConfig(jsonConfig, Config.class);
+        this.defaultConfig = ConfigDeserializer.buildConfig(jsonConfig, Config.class);
     }
 
     public static boolean checkHasSiegfried(String siegfriedCommandPath) {
@@ -134,11 +184,11 @@ public class SiegfriedDetector implements Detector {
     public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
             throws IOException {
         if (hasSiegfriedCommand == null) {
-            hasSiegfriedCommand = checkHasSiegfried(this.config.siegfriedPath);
+            hasSiegfriedCommand = checkHasSiegfried(this.defaultConfig.getSiegfriedPath());
         }
         if (!hasSiegfriedCommand) {
             if (!HAS_WARNED) {
-                LOGGER.warn("'siegfried' command isn't working: '" + config.siegfriedPath + "'");
+                LOGGER.warn("'siegfried' command isn't working: '" + defaultConfig.getSiegfriedPath() + "'");
                 HAS_WARNED = true;
             }
             return MediaType.OCTET_STREAM;
@@ -147,31 +197,17 @@ public class SiegfriedDetector implements Detector {
         return detectOnPath(tis.getPath(), metadata);
     }
 
-    /**
-     * As default behavior, Tika runs Siegfried to add its detection
-     * to the metadata, but NOT to use detection in determining parsers
-     * etc.  If this is set to <code>true</code>, this detector
-     * will return the first mime detected by Siegfried and that
-     * mime will be used by the AutoDetectParser to select the appropriate
-     * parser.
-     *
-     * @param useMime
-     */
-    public void setUseMime(boolean useMime) {
-        this.config.useMime = useMime;
-    }
-
-    public boolean isUseMime() {
-        return config.useMime;
+    public Config getDefaultConfig() {
+        return defaultConfig;
     }
 
     private MediaType detectOnPath(Path path, Metadata metadata) throws IOException {
 
-        String[] args = new String[]{ProcessUtils.escapeCommandLine(config.siegfriedPath), "-json",
+        String[] args = new String[]{ProcessUtils.escapeCommandLine(defaultConfig.getSiegfriedPath()), "-json",
                 ProcessUtils.escapeCommandLine(path.toAbsolutePath().toString())};
         ProcessBuilder builder = new ProcessBuilder(args);
-        FileProcessResult result = ProcessUtils.execute(builder, config.timeoutMs, 1000000, 1000);
-        return processResult(result, metadata, config.useMime);
+        FileProcessResult result = ProcessUtils.execute(builder, defaultConfig.getTimeoutMs(), 1000000, 1000);
+        return processResult(result, metadata, defaultConfig.isUseMime());
     }
 
     protected static MediaType processResult(FileProcessResult result, Metadata metadata,
@@ -267,25 +303,4 @@ public class SiegfriedDetector implements Detector {
         }
     }
 
-    public void setSiegfriedPath(String fileCommandPath) {
-        //this opens up a potential command vulnerability.
-        //Don't ever let an untrusted user set this.
-        this.config.siegfriedPath = fileCommandPath;
-        checkHasSiegfried(this.config.siegfriedPath);
-    }
-
-    /**
-     * If this is not called on a TikaInputStream, this detector
-     * will spool up to this many bytes to a file to be detected
-     * by the 'file' command.
-     *
-     * @param maxBytes
-     */
-    public void setMaxBytes(int maxBytes) {
-        this.config.maxBytes = maxBytes;
-    }
-
-    public void setTimeoutMs(long timeoutMs) {
-        this.config.timeoutMs = timeoutMs;
-    }
 }

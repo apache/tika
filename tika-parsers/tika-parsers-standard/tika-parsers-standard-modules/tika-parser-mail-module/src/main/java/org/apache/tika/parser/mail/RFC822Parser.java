@@ -61,7 +61,15 @@ public class RFC822Parser implements Parser {
      * Configuration class for JSON deserialization.
      */
     public static class Config {
-        public boolean extractAllAlternatives = false;
+        private boolean extractAllAlternatives = false;
+
+        public boolean isExtractAllAlternatives() {
+            return extractAllAlternatives;
+        }
+
+        public void setExtractAllAlternatives(boolean extractAllAlternatives) {
+            this.extractAllAlternatives = extractAllAlternatives;
+        }
     }
 
     private static final Set<MediaType> SUPPORTED_TYPES =
@@ -71,7 +79,7 @@ public class RFC822Parser implements Parser {
     //built lazily and then reused
     private Detector detector;
 
-    private boolean extractAllAlternatives = false;
+    private Config defaultConfig = new Config();
 
     public RFC822Parser() {
     }
@@ -82,7 +90,7 @@ public class RFC822Parser implements Parser {
      * @param config the configuration
      */
     public RFC822Parser(Config config) {
-        this.extractAllAlternatives = config.extractAllAlternatives;
+        this.defaultConfig = config;
     }
 
     /**
@@ -120,7 +128,7 @@ public class RFC822Parser implements Parser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
 
         MailContentHandler mch = new MailContentHandler(xhtml, localDetector, metadata, context,
-                config.isStrictParsing(), extractAllAlternatives);
+                config.isStrictParsing(), defaultConfig.isExtractAllAlternatives());
         parser.setContentHandler(mch);
         parser.setContentDecoding(true);
         parser.setNoRecurse();
@@ -156,19 +164,7 @@ public class RFC822Parser implements Parser {
         }
     }
 
-    /**
-     * Until version 1.17, Tika handled all body parts as embedded objects (see TIKA-2478).
-     * In 1.17, we modified the parser to select only the best alternative body
-     * parts for multipart/alternative sections, and we inline the content
-     * as we do for .msg files.
-     * <p>
-     * The legacy behavior can be set by setting {@link #extractAllAlternatives}
-     * to <code>true</code>.  As of 1.17, the default value is <code>false</code>
-     *
-     * @param extractAllAlternatives whether or not to extract all alternative parts
-     * @since 1.17
-     */
-    public void setExtractAllAlternatives(boolean extractAllAlternatives) {
-        this.extractAllAlternatives = extractAllAlternatives;
+    public Config getDefaultConfig() {
+        return defaultConfig;
     }
 }
