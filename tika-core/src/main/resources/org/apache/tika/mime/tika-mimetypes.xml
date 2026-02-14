@@ -1025,6 +1025,7 @@
   <mime-type type="application/rtf">
     <_comment>Rich Text Format File</_comment>
     <alias type="text/rtf"/>
+    <alias type="application/msword"/>
     <magic priority="50">
       <match value="{\\rtf" type="string" offset="0"/>
     </magic>
@@ -1245,11 +1246,13 @@
   <mime-type type="application/vnd.apple.pages">
     <root-XML localName="document" namespaceURI="http://developer.apple.com/namespaces/sl" />
     <sub-class-of type="application/vnd.apple.iwork" />
+    <alias type="application/x-iwork-pages-sffpages"/>
     <glob pattern="*.pages"/>
   </mime-type>
   <mime-type type="application/vnd.apple.numbers">
     <root-XML localName="document" namespaceURI="http://developer.apple.com/namespaces/ls" />
     <sub-class-of type="application/vnd.apple.iwork" />
+    <alias type="application/x-iwork-numbers-sffnumbers"/>
     <glob pattern="*.numbers"/>
   </mime-type>
   <mime-type type="application/x-tika-iworks-protected">
@@ -6588,7 +6591,9 @@
         <match value="0x6a703220" type="string" offset="20"/>
       </match>
     </magic>
+    <alias type="image/jpx"/>
     <glob pattern="*.jp2"/>
+    <glob pattern="*.jpf"/>
   </mime-type>
 
   <mime-type type="image/jpeg">
@@ -6601,6 +6606,7 @@
       <!-- It is followed by another marker that starts with FF. -->
       <match value="0xffd8ff" type="string" offset="0"/>
     </magic>
+    <alias type="image/jpg"/>
     <glob pattern="*.jpg"/>
     <glob pattern="*.jpeg"/>
     <glob pattern="*.jpe"/>
@@ -6621,18 +6627,6 @@
     </magic>
     <glob pattern="*.jpm"/>
     <glob pattern="*.jpgm"/>
-  </mime-type>
-
-  <mime-type type="image/jpx">
-    <sub-class-of type="image/x-jp2-container" />
-    <acronym>JP2</acronym>
-    <_comment>JPEG 2000 Part 2 (JPX)</_comment>
-    <magic priority="50">
-      <match value="0x0000000C6A5020200D0A870A" type="string" offset="0">
-        <match value="0x6a707820" type="string" offset="20"/>
-      </match>
-    </magic>
-    <glob pattern="*.jpf"/>
   </mime-type>
 
   <mime-type type="image/naplps"/>
@@ -6701,6 +6695,7 @@
     <_comment>Photoshop Image</_comment>
     <alias type="image/x-psd"/>
     <alias type="application/photoshop"/>
+    <alias type="application/x-photoshop"/>
     <magic priority="50">
       <!-- Version of 0x0001 is PSD -->
       <match value="8BPS\x00\x01" type="string" offset="0"/>
@@ -6709,7 +6704,7 @@
     </magic>
     <glob pattern="*.psd"/>
   </mime-type>
-
+	
   <mime-type type="image/vnd.adobe.premiere">
     <glob pattern="*.ppj"/>
     <root-XML localName="PremiereData"/>
@@ -7673,6 +7668,7 @@
         <match value="\nVERSION:2.0" type="string" offset="15:360"/>
       </match>
     </magic>
+    <alias type="application/ics"/>
     <glob pattern="*.ics"/>
     <glob pattern="*.ifb"/>
     <sub-class-of type="text/plain"/>
@@ -8506,6 +8502,7 @@
         <match value="VERSION:1.0" type="string" offset="15:30"/>
       </match>
     </magic>
+    <alias type="text/vcard" />
     <glob pattern="*.vcs"/>
     <sub-class-of type="text/plain"/>
   </mime-type>
@@ -8986,4 +8983,9 @@
     <sub-class-of type="text/plain"/>
   </mime-type>
 
+  <mime-type type="application/vnd.apple.pkpass">
+    <_comment>Apple PKPASS</_comment>
+    <glob pattern="*.pkpass"/>
+  </mime-type>
+	
 </mime-info>
