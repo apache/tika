@@ -37,6 +37,7 @@
 ** xref:advanced/setting-limits.adoc[Setting Limits]
 ** xref:advanced/spooling.adoc[Spooling]
 ** xref:advanced/embedded-documents.adoc[Embedded Document Metadata]
+** xref:advanced/tika-eval.adoc[Text Quality Scoring]
 * xref:developers/index.adoc[Developers]
 ** xref:developers/serialization.adoc[Serialization and Configuration]
 * xref:faq.adoc[FAQ]
