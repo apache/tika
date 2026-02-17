@@ -605,6 +605,39 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
+     * @return maximum total pixels (width &times; height) allowed for a
+     * rendered page image before OCR is skipped
+     */
+    public long getOcrMaxImagePixels() {
+        return ocr.getMaxImagePixels();
+    }
+
+    /**
+     * Set the maximum total pixels (width &times; height) for a rendered
+     * page image. Pages exceeding this limit are skipped for OCR.
+     * Default is 100,000,000 (100 megapixels).
+     */
+    public void setOcrMaxImagePixels(long ocrMaxImagePixels) {
+        ocr.setMaxImagePixels(ocrMaxImagePixels);
+    }
+
+    /**
+     * @return maximum number of pages to OCR per document, or {@code -1}
+     * for no limit
+     */
+    public int getOcrMaxPagesToOcr() {
+        return ocr.getMaxPagesToOcr();
+    }
+
+    /**
+     * Set the maximum number of pages to OCR per document.
+     * Default is {@code -1} (no limit).
+     */
+    public void setOcrMaxPagesToOcr(int ocrMaxPagesToOcr) {
+        ocr.setMaxPagesToOcr(ocrMaxPagesToOcr);
+    }
+
+    /**
      * @return whether or not to extract PDActions
      * @see #setExtractActions(boolean)
      */

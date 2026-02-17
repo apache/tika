@@ -82,7 +82,7 @@ public class PDFParserTest extends TikaTest {
     public static Level PDFBOX_LOG_LEVEL = Level.INFO;
     private static Boolean hasTesseract = null;
 
-    private static Boolean hasMuPDF = null;
+    private static Boolean hasPoppler = null;
 
     public static boolean canRunOCR() throws TikaConfigException {
         if (hasTesseract != null) {
@@ -92,12 +92,12 @@ public class PDFParserTest extends TikaTest {
         return hasTesseract;
     }
 
-    public static boolean hasMuPDF() throws TikaConfigException {
-        if (hasMuPDF != null) {
-            return hasMuPDF;
+    public static boolean hasPoppler() throws TikaConfigException {
+        if (hasPoppler != null) {
+            return hasPoppler;
         }
-        hasMuPDF = ExternalParser.check(new String[]{"mutool", "-v"});
-        return hasMuPDF;
+        hasPoppler = ExternalParser.check(new String[]{"pdftoppm", "-v"});
+        return hasPoppler;
     }
 
     @BeforeAll
@@ -459,13 +459,10 @@ public class PDFParserTest extends TikaTest {
     }
 
     @Test
-    @Disabled("there's a subtle problem in setting the bytes in the TikaInputStream that needs to be fixed")
-    public void testMuPDFInOCR() throws Exception {
-        //TODO -- need to add "rendered by" to confirm that mutool was actually called
-        //and that there wasn't some backoff to PDFBox the PDFParser
+    public void testPopplerInOCR() throws Exception {
         assumeTrue(canRunOCR(), "can't run OCR");
-        assumeTrue(hasMuPDF(), "does not have mupdf");
-        Parser p = TikaLoaderHelper.getLoader("tika-rendering-mupdf-config.json").loadAutoDetectParser();
+        assumeTrue(hasPoppler(), "does not have poppler (pdftoppm)");
+        Parser p = TikaLoaderHelper.getLoader("tika-rendering-poppler-config.json").loadAutoDetectParser();
         String text = getText(getResourceAsStream("/test-documents/testOCR.pdf"), p);
         assertContains("Happy", text.trim());
     }
