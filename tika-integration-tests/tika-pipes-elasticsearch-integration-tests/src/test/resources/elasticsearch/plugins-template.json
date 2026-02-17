@@ -1,0 +1,78 @@
+{
+  "content-handler-factory": {
+    "basic-content-handler-factory": {
+      "type": "TEXT",
+      "writeLimit": -1,
+      "throwOnWriteLimitReached": true
+    }
+  },
+  "fetchers": {
+    "fsf": {
+      "file-system-fetcher": {
+        "basePath": "FETCHER_BASE_PATH"
+      }
+    }
+  },
+  "emitters": {
+    "ese": {
+      "elasticsearch-emitter": {
+        "elasticsearchUrl": "ELASTICSEARCH_URL",
+        "updateStrategy": "UPDATE_STRATEGY",
+        "attachmentStrategy": "ATTACHMENT_STRATEGY",
+        "commitWithin": 10,
+        "idField": "_id",
+        "embeddedFileFieldName": "embedded",
+        "httpClientConfig": {
+          "authScheme": "http",
+          "connectionTimeout": 60,
+          "socketTimeout": 60
+        }
+      }
+    }
+  },
+  "pipes-iterator": {
+    "file-system-pipes-iterator": {
+      "basePath": "FETCHER_BASE_PATH",
+      "countTotal": true,
+      "fetcherId": "fsf",
+      "emitterId": "ese"
+    }
+  },
+  "pipes": {
+    "parseMode": "PARSE_MODE",
+    "onParseException": "EMIT",
+    "emitStrategy": {
+      "type": "DYNAMIC",
+      "thresholdBytes": 10000
+    },
+    "emitMaxEstimatedBytes": 100000,
+    "emitWithinMillis": 60000,
+    "numEmitters": 1,
+    "numClients": 3,
+    "forkedJvmArgs": [
+      "-Xmx512m",
+      "-XX:ParallelGCThreads=2",
+      "LOG4J_JVM_ARG"
+    ],
+    "timeoutMillis": 60000
+  },
+  "metadata-filters": [
+    {
+      "date-normalizing-metadata-filter": {}
+    },
+    {
+      "field-name-mapping-filter": {
+        "excludeUnmapped": true,
+        "mappings": {
+          "X-TIKA:content": "content",
+          "Content-Length": "length",
+          "dc:creator": "creators",
+          "dc:title": "title",
+          "Content-Type": "mime",
+          "X-TIKA:EXCEPTION:container_exception": "tika_exception"
+        }
+      }
+    }
+  ],
+  "plugin-roots": "target/plugins"
+}
