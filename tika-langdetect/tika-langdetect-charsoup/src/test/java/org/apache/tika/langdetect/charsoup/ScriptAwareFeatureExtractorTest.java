@@ -318,16 +318,36 @@ public class ScriptAwareFeatureExtractorTest {
             int kind = rng.nextInt(10);
             int cp;
             switch (kind) {
-                case 0: cp = rng.nextInt(128); break;
-                case 1: cp = 0x00C0 + rng.nextInt(0x0180); break;
-                case 2: cp = 0x0400 + rng.nextInt(0x0100); break;
-                case 3: cp = 0x0600 + rng.nextInt(0x0100); break;
-                case 4: cp = 0x4E00 + rng.nextInt(0x5000); break;
-                case 5: cp = 0xAC00 + rng.nextInt(0x2BA4); break;
-                case 6: cp = 0x10000 + rng.nextInt(0x10000); break;
-                case 7: cp = rng.nextInt(32); break;
-                case 8: cp = 0x0900 + rng.nextInt(0x0080); break;
-                default: cp = rng.nextInt(0xD800); break;
+                case 0:
+                    cp = rng.nextInt(128);
+                    break;
+                case 1:
+                    cp = 0x00C0 + rng.nextInt(0x0180);
+                    break;
+                case 2:
+                    cp = 0x0400 + rng.nextInt(0x0100);
+                    break;
+                case 3:
+                    cp = 0x0600 + rng.nextInt(0x0100);
+                    break;
+                case 4:
+                    cp = 0x4E00 + rng.nextInt(0x5000);
+                    break;
+                case 5:
+                    cp = 0xAC00 + rng.nextInt(0x2BA4);
+                    break;
+                case 6:
+                    cp = 0x10000 + rng.nextInt(0x10000);
+                    break;
+                case 7:
+                    cp = rng.nextInt(32);
+                    break;
+                case 8:
+                    cp = 0x0900 + rng.nextInt(0x0080);
+                    break;
+                default:
+                    cp = rng.nextInt(0xD800);
+                    break;
             }
             sb.appendCodePoint(cp);
         }
