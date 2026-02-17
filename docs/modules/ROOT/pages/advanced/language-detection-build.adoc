@@ -1,0 +1,351 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Building the CharSoup Language Detector
+
+This page documents how the `tika-langdetect-charsoup` language detection model
+was trained, the decisions made along the way, and the final comparison against
+the existing OpenNLP-based detector. For architecture and API details, see
+xref:advanced/language-detection.adoc[Language Detection].
+
+== Training Corpus
+
+Training data was downloaded from the
+https://wortschatz.uni-leipzig.de/en/download[Leipzig Corpora Collection] using
+`download_corpus.py` (checked into the repository). For each of the ~300 ISO 639-3
+languages available, the script selects the largest available corpus (preferring
+100K–300K sentence sizes) and extracts `*-sentences.txt` files.
+
+=== Deduplication
+
+Many Leipzig corpora contain a high proportion of exact-duplicate sentences.
+During data preparation, exact duplicates within each language are removed.
+Deduplication removed **1,928,709 sentences** across the corpus, with some
+languages losing over 50% of their data.
+
+=== Language Code Merging
+
+Several languages have multiple ISO 639-3 codes that refer to the same language
+or are indistinguishable by character features. These are merged during data
+preparation:
+
+[cols="1,1"]
+|===
+| Merged From | Merged To
+
+| `azj` (North Azerbaijani) | `aze` (Azerbaijani)
+| `cmn` (Mandarin Chinese) | `zho` (Chinese)
+| `ekk` (Standard Estonian) | `est` (Estonian)
+| `lvs` (Standard Latvian) | `lav` (Latvian)
+| `nor` (Norwegian) | `nob` (Norwegian Bokmål)
+| `pes` (Iranian Persian) | `fas` (Persian)
+| `plt` (Plateau Malagasy) | `mlg` (Malagasy)
+| `zsm` (Standard Malay) | `msa` (Malay)
+|===
+
+=== Filtering Low-Resource Languages
+
+Languages with fewer than **10,000 sentences** after deduplication were excluded.
+This threshold ensures enough data for the model to learn useful distributions
+even after the mislabel-filtering step. **49 low-resource languages** were dropped.
+
+=== Final Dataset
+
+After deduplication, merging, and filtering, the corpus contained:
+
+[cols="1,1"]
+|===
+| Split | Sentences
+
+| Train
+| 11,570,595
+
+| Dev
+| 1,446,250
+
+| Test
+| 1,446,486
+|===
+
+**199 languages** are represented in the final model.
+
+== Training Configuration
+
+* **Hash buckets:** 8,192
+* **Optimizer:** AdamW (lr=0.001, mini-batch 128) × 2 epochs, then
+  Hogwild! SGD (lr=0.01→0.001, 12 threads) × 3 max epochs
+* **Within-epoch early stopping:** checkpoint every 200K sentences; stop if
+  F1 range over last 5 checkpoints < 0.005
+* **Across-epoch patience:** stop if no improvement for 2 consecutive epochs
+* **Hardware:** Apple Silicon (M-series), 12 cores
+* **JVM:** `-Xmx10g`
+
+== Training Run
+
+=== Pass 1: Initial Training (11.6M sentences, 199 classes)
+
+[cols="1,1,1,1,1"]
+|===
+| Epoch | Optimizer | Dev F1 | Processed | Time
+
+| 1
+| Adam (lr=0.001)
+| 0.9404
+| 1.47M / 11.6M (early-stopped)
+| 32s
+
+| 2
+| Adam (lr=0.001)
+| 0.9457
+| 1.60M / 11.6M (early-stopped)
+| 31s
+
+| 3
+| SGD (lr=0.010)
+| 0.9398
+| 1.00M / 11.6M (early-stopped)
+| 3s
+
+| 4
+| SGD (lr=0.006)
+| 0.9452
+| 1.00M / 11.6M (early-stopped)
+| 3s
+|===
+
+Early stopping triggered after epoch 4 (no improvement over best F1 of 0.9457).
+Pass 1 total: **120 seconds**.
+
+=== Mislabeled Sentence Filtering
+
+The Pass 1 model was used to predict each training sentence. Sentences where the
+prediction did not match the label were removed — these are typically English
+text in a non-English corpus, transliterated text, or other noise.
+
+**Result:** removed **303,580 / 11,570,595 sentences (2.6%)**, leaving
+11,267,015 sentences for Pass 2.
+
+=== Pass 2: Retraining on Filtered Data (11.3M sentences, 199 classes)
+
+[cols="1,1,1,1,1"]
+|===
+| Epoch | Optimizer | Dev F1 | Processed | Time
+
+| 1
+| Adam (lr=0.001)
+| 0.9411
+| 1.60M / 11.3M (early-stopped)
+| 30s
+
+| 2
+| Adam (lr=0.001)
+| 0.9430
+| 1.07M / 11.3M (early-stopped)
+| 20s
+
+| 3
+| SGD (lr=0.010)
+| 0.9397
+| 1.00M / 11.3M (early-stopped)
+| 3s
+
+| 4
+| SGD (lr=0.006)
+| 0.9432
+| 1.00M / 11.3M (early-stopped)
+| 3s
+|===
+
+Early stopping triggered after epoch 4. Pass 2 total: **107 seconds**.
+
+=== Final Steps
+
+[cols="1,1"]
+|===
+| Step | Time
+
+| INT8 Quantization | <1s
+| Test set evaluation | 22s
+| Model export | <1s
+|===
+
+**Final quantized test accuracy: 94.81%** on 1,446,486 test sentences across
+199 languages.
+
+**Model file size: 1.6 MB** (199 classes × 8,192 buckets × 1 byte + headers).
+
+=== Total Pipeline Time
+
+[cols="1,1"]
+|===
+| Step | Wall Clock
+
+| Data preparation + dedup + shuffle | 103s
+| Pass 1 (4 epochs with early stopping) | 120s
+| Mislabel filtering | 110s
+| Pass 2 (4 epochs with early stopping) | 107s
+| Quantize + evaluate + export | 22s
+| **Total** | **7.7 minutes**
+|===
+
+== Confusable Language Groups
+
+Certain languages are so similar at the character level that distinguishing them
+is inherently difficult. The model defines these groups:
+
+.Peer groups (politically/culturally distinct, linguistically near-identical)
+* `nob` / `nno` / `nor` / `dan` — Norwegian Bokmål, Nynorsk, Norwegian (generic), Danish
+* `hrv` / `srp` / `bos` / `hbs` — Croatian, Serbian (Latin), Bosnian, Serbo-Croatian
+* `msa` / `zlm` / `zsm` / `ind` — Malay / Indonesian variants
+* `pes` / `prs` / `fas` — Persian, Dari, Farsi
+* `zho` / `cmn` / `wuu` / `yue` — Chinese macro/regional variants
+* `tat` / `bak` — Tatar, Bashkir (Cyrillic Turkic)
+
+.Code variant groups (same language, different ISO 639-3 codes)
+* `aze` / `azj` — Azerbaijani
+* `ekk` / `est` — Estonian
+* `lvs` / `lav` — Latvian
+* `plt` / `mlg` — Malagasy (Plateau / generic)
+* `khk` / `mon` — Mongolian (Khalkha / generic)
+* `ydd` / `yid` — Yiddish (Eastern / generic)
+* `sme` / `smi` — Sami (Northern / generic)
+
+These groups are used in:
+
+1. **Training** — group-aware mislabel filtering (prevents removing valid
+   Bokmål labeled as Nynorsk)
+2. **Evaluation** — "group accuracy" metric alongside strict accuracy
+
+== Comparison: CharSoup vs OpenNLP
+
+The `CompareDetectors` tool evaluates both detectors on the same 1.45M-sentence
+test set. The CharSoup model covers 199 languages; OpenNLP covers roughly 128.
+
+=== Shared-Language Accuracy (123 Languages Both Models Support)
+
+An apples-to-apples comparison restricted to the 123 languages both models can
+identify (1,146,734 test sentences):
+
+[cols="1,1,1,1"]
+|===
+| Metric | CharSoup | OpenNLP | Delta
+
+| Accuracy (all)
+| **96.00%**
+| 89.68%
+| +6.3pp
+
+| Accuracy (short ≤ 50 chars)
+| **94.20%**
+| 86.23%
+| +8.0pp
+
+| Accuracy (full sentences)
+| **96.38%**
+| 90.39%
+| +6.0pp
+|===
+
+=== Group Accuracy (Confusable Languages Counted as Correct)
+
+When predictions within the same confusable group are counted as correct,
+evaluated on the full test set (all languages each model covers):
+
+[cols="1,1,1"]
+|===
+| Metric | CharSoup | OpenNLP
+
+| Group accuracy (all)
+| **97.15%**
+| 76.05%
+
+| Group accuracy (short ≤ 50 chars)
+| **95.25%**
+| 70.26%
+
+| Group accuracy (full sentences)
+| **97.57%**
+| 77.35%
+|===
+
+Note: OpenNLP's lower group accuracy on the full test set reflects the 76
+languages it does not cover (scored as 0%). On the shared languages, OpenNLP
+performs respectably.
+
+=== Resource Usage
+
+[cols="1,1,1"]
+|===
+| Metric | CharSoup | OpenNLP
+
+| Throughput
+| **~510K sent/sec**
+| ~135K sent/sec
+
+| Model heap
+| **~2 MB**
+| ~79 MB
+
+| Model file (on disk)
+| **1.6 MB**
+| 22 MB
+
+| Runtime dependencies
+| **None** (tika-core only)
+| OpenNLP + model
+|===
+
+== Summary
+
+[cols="1,1,1"]
+|===
+| | CharSoup | OpenNLP
+
+| Languages
+| **199**
+| ~128
+
+| Shared-lang accuracy
+| **96.00%**
+| 89.68%
+
+| Short-text accuracy
+| **94.20%**
+| 86.23%
+
+| Throughput
+| **510K sent/sec**
+| 135K sent/sec
+
+| Memory
+| **2 MB**
+| 79 MB
+
+| Model file (on disk)
+| **1.6 MB**
+| 22 MB
+
+| Runtime dependencies
+| **None** (tika-core only)
+| OpenNLP + model
+|===
+
+== References
+
+For the academic references behind the techniques used in training and inference,
+see the xref:advanced/language-detection.adoc#_references[References section] of
+the main language detection page.

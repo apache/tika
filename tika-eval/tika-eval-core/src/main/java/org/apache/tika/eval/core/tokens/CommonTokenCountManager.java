@@ -104,12 +104,19 @@ public class CommonTokenCountManager {
             return langCode;
         }
         tryToLoad(langCode);
-        LangModel model = commonTokenMap.get(langCode);
-        if (model == null) {
-            return defaultLangCode;
+        if (commonTokenMap.get(langCode) != null) {
+            return langCode;
         }
-        return langCode;
 
+        // For -x-ltr variants (RTL text extracted as LTR), the word list
+        // is the same as the base language — the characters are reversed
+        // in the raw text but the tokenizer produces the same words.
+        if (langCode.endsWith("-x-ltr")) {
+            String baseLang = langCode.substring(0, langCode.length() - "-x-ltr".length());
+            return getActualLangCode(baseLang);
+        }
+
+        return defaultLangCode;
     }
 
     public void close() throws IOException {

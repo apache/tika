@@ -16,34 +16,49 @@
  */
 package org.apache.tika.eval.core.textstats;
 
-import org.apache.lucene.util.PriorityQueue;
+import java.util.Comparator;
+import java.util.PriorityQueue;
 
 import org.apache.tika.eval.core.tokens.TokenIntPair;
 
-public class TokenCountPriorityQueue extends PriorityQueue<TokenIntPair> {
+/**
+ * Bounded min-heap that keeps the top-N TokenIntPairs by value.
+ * Replaces the former Lucene PriorityQueue-based implementation.
+ */
+public class TokenCountPriorityQueue {
+
+    private final int maxSize;
+    private final PriorityQueue<TokenIntPair> queue;
 
     public TokenCountPriorityQueue(int maxSize) {
-        super(maxSize);
+        this.maxSize = maxSize;
+        this.queue = new PriorityQueue<>(maxSize + 1,
+                Comparator.comparingLong(TokenIntPair::getValue)
+                        .thenComparing(Comparator.comparing(TokenIntPair::getToken).reversed()));
     }
 
-    @Override
-    protected boolean lessThan(TokenIntPair arg0, TokenIntPair arg1) {
-        if (arg0.getValue() < arg1.getValue()) {
-            return true;
-        } else if (arg0.getValue() > arg1.getValue()) {
-            return false;
+    public TokenIntPair top() {
+        return queue.peek();
+    }
+
+    public int size() {
+        return queue.size();
+    }
+
+    public void insertWithOverflow(TokenIntPair element) {
+        if (queue.size() < maxSize) {
+            queue.offer(element);
+        } else if (queue.peek() != null && element.getValue() > queue.peek().getValue()) {
+            queue.poll();
+            queue.offer(element);
         }
-        return arg1.getToken().compareTo(arg0.getToken()) < 0;
     }
 
     public TokenIntPair[] getArray() {
-        TokenIntPair[] topN = new TokenIntPair[size()];
-        //now we reverse the queue
-        TokenIntPair term = pop();
+        TokenIntPair[] topN = new TokenIntPair[queue.size()];
         int i = topN.length - 1;
-        while (term != null && i > -1) {
-            topN[i--] = term;
-            term = pop();
+        while (!queue.isEmpty() && i >= 0) {
+            topN[i--] = queue.poll();
         }
         return topN;
     }

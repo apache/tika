@@ -1,0 +1,348 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Language Detection
+
+Tika includes two language detection implementations:
+
+* **TikaLanguageDetector** (`tika-langdetect-charsoup`) — a built-in hash-based
+  detector with zero runtime dependencies beyond `tika-core`. This is the
+  recommended detector for new deployments.
+* **OpenNLPDetector** (`tika-langdetect-opennlp`) — based on Apache OpenNLP's
+  language detection models.
+
+Both implement the `org.apache.tika.language.detect.LanguageDetector` SPI interface
+and are loaded automatically via Tika's service discovery.
+
+== Architecture: TikaLanguageDetector
+
+The built-in detector uses a simple but effective architecture based on
+character n-gram language identification (<<cavnar1994>>):
+
+1. **Preprocessing** — truncate, strip URLs/emails, NFC normalize
+2. **Feature extraction** — character bigrams, word unigrams, and CJK unigrams
+   with script-aware boundary detection, hashed via FNV-1a (<<fnv>>) into a
+   fixed-size bucket vector using the feature hashing trick (<<weinberger2009>>)
+3. **Classification** — multinomial logistic regression / softmax
+   (<<bishop2006>>) with INT8 quantized weights (<<jacob2018>>)
+
+=== Feature Extraction
+
+The `ScriptAwareFeatureExtractor` produces the following features from
+preprocessed text:
+
+* **Character bigrams** — adjacent character pairs with word-boundary sentinels
+  (`_`). For example, `"hello"` produces `_h`, `he`, `el`, `ll`, `lo`, `o_`.
+* **Word unigrams** — full word tokens hashed as features. This captures
+  function words and short words that are highly discriminative for many
+  languages (e.g., "the", "de", "и").
+* **CJK character unigrams** — individual Han, Hiragana, and Katakana characters
+  emitted as features. CJK scripts pack much more information per character than
+  alphabetic scripts, making unigrams valuable.
+* **CJK space bridging** — when CJK characters are separated by whitespace
+  (common in tokenized corpora), the extractor bridges the gap and still
+  produces bigrams across the space. This prevents tokenization artifacts from
+  degrading CJK language detection.
+* **Japanese script family** — Han, Hiragana, and Katakana are treated as a
+  single script "family" for boundary detection. Japanese text freely mixes all
+  three scripts within words and phrases, so script transitions within this
+  family do not create word boundaries.
+
+All features are hashed to bucket indices via FNV-1a. The current model uses
+8,192 buckets.
+
+=== Preprocessing Pipeline
+
+Text goes through the following steps (shared between training and inference):
+
+[source]
+----
+raw text
+  → truncate to 100K chars
+  → strip URLs (https?://...) and emails (user@host)
+  → NFC Unicode normalization
+  → skip transparent characters (see below)
+  → case fold via Character.toLowerCase()
+  → extract features (bigrams, word unigrams, CJK unigrams)
+  → FNV-1a hash each feature into bucket vector
+----
+
+=== Transparent Character Handling
+
+Certain codepoints are treated as _transparent_ — they are skipped entirely so that
+base letters on either side form a contiguous bigram. This is critical for correct
+Arabic and Hebrew processing:
+
+* **Unicode nonspacing marks (Mn)** — Arabic harakat (fatha, damma, kasra, shadda,
+  sukun, tanwin, superscript alef) and Hebrew niqqud. Without this, diacritics
+  break words into isolated single-letter fragments because `Character.isLetter()`
+  returns `false` for `Mn` codepoints.
+
+* **Arabic Tatweel / Kashida (U+0640)** — a typographic stretching character classified
+  as a letter but carrying no linguistic information. "كتب" and "كـتـب" produce
+  identical bigrams.
+
+* **ZWNJ (U+200C) and ZWJ (U+200D)** — Zero Width Non-Joiner / Joiner, used
+  in Persian, Arabic, Urdu, and Kurdish to control cursive joining. These are not
+  word boundaries; bigrams span across them.
+
+A fast guard (`cp < 0x0300`) short-circuits the check for ASCII and Latin text,
+adding zero overhead to the common case.
+
+== Training the Model
+
+Training is fully reproducible from source. All tooling lives in the Tika repository
+under `tika-langdetect/tika-langdetect-charsoup/src/test/`.
+
+=== Prerequisites
+
+* Java 17+
+* Python 3.8+ with `requests` package (`pip install requests`)
+
+=== Step 1: Download Training Data
+
+The training data comes from the https://wortschatz.uni-leipzig.de/en/download[Leipzig Corpora Collection]
+(<<goldhahn2012>>), downloaded via a script in the repository:
+
+[source,bash]
+----
+pip install requests
+
+python tika-langdetect/tika-langdetect-charsoup/src/test/python/download_corpus.py \
+    ~/datasets/lang-detect \
+    --max-per-lang 100000
+----
+
+This downloads one corpus per language (preferring 100K-sized corpora) from
+`downloads.wortschatz-leipzig.de` and writes them in Leipzig format:
+
+[source]
+----
+~/datasets/lang-detect/
+    eng/sentences.txt     (lineNum<TAB>sentence)
+    deu/sentences.txt
+    ara/sentences.txt
+    ...
+----
+
+Use `--merge-all` to download and merge all available corpora per language
+(slower, more data).
+
+=== Step 2: Train the Model
+
+The training pipeline is a Java main class that can be run directly:
+
+[source,bash]
+----
+mvn -pl tika-langdetect/tika-langdetect-charsoup test-compile
+
+java -Xmx10g -cp tika-langdetect/tika-langdetect-charsoup/target/test-classes:\
+tika-langdetect/tika-langdetect-charsoup/target/classes \
+    org.apache.tika.langdetect.charsoup.tools.TrainLanguageModel \
+    ~/datasets/lang-detect \
+    tika-langdetect/tika-langdetect-charsoup/src/main/resources/org/apache/tika/langdetect/charsoup/langdetect.bin \
+    8192
+----
+
+Arguments: `<corpusDir> <outputFile> [numBuckets] [maxPerLang]`
+
+=== Training Pipeline Steps
+
+The `TrainLanguageModel` pipeline proceeds as follows:
+
+1. **Read corpus** — load all `lang/sentences.txt` files from the corpus directory
+2. **Deduplicate** — remove exact-duplicate sentences within each language
+3. **Merge language codes** — consolidate duplicate ISO 639-3 codes that refer to
+   the same language (e.g., `azj`→`aze`, `cmn`→`zho`, `ekk`→`est`, `lvs`→`lav`,
+   `nor`→`nob`, `pes`→`fas`, `plt`→`mlg`, `zsm`→`msa`)
+4. **Filter low-resource languages** — drop languages with fewer than 10,000
+   sentences after deduplication
+5. **Stratified split** — 80% train / 10% dev / 10% test, stratified by language
+6. **Global shuffle** — shuffle the entire training file so languages are
+   interleaved (critical for mini-batch training)
+7. **Pass 1: Initial training** — AdamW optimizer (mini-batch, 1 thread) followed
+   by Hogwild! parallel SGD, with within-epoch early stopping
+8. **Filter mislabeled sentences** — use the Pass 1 model to predict each training
+   sentence; remove sentences not classified as their labeled language
+9. **Pass 2: Retrain** — same optimizer schedule on the filtered training data
+10. **INT8 quantization** — convert float32 weights to signed 8-bit integers with
+    per-class scaling factors
+11. **Evaluate** — report quantized model accuracy on the held-out test set
+12. **Export** — write the binary LDM1 model file
+
+Each step prints its wall-clock time so bottlenecks are immediately visible.
+
+=== Optimizer Schedule
+
+Training uses a two-phase optimizer:
+
+1. **AdamW** (<<loshchilov2019>>) — decoupled weight decay Adam optimizer for the
+   first 2 epochs, single-threaded with mini-batch gradient accumulation
+   (batch size 128). This quickly learns good initial weights.
+2. **Hogwild! SGD** (<<niu2011>>) — lock-free parallel stochastic gradient descent
+   for up to 3 more epochs, with linearly decaying learning rate. Each of the
+   12 threads processes its slice of the data and writes gradient updates directly
+   to shared weight arrays with no synchronization.
+
+Within-epoch early stopping monitors dev-set F1 at regular checkpoints. If the
+F1 range over the last 5 checkpoints is below a threshold, the epoch ends early.
+Across-epoch patience stops training if no improvement is seen for 2 consecutive
+epochs.
+
+=== Step 3: Compare with OpenNLP (optional)
+
+A comparison tool evaluates both detectors on the same test split, broken out
+by text length (short <= 50 chars vs full sentences):
+
+[source,bash]
+----
+java -cp <classpath-with-both-detectors> \
+    org.apache.tika.langdetect.charsoup.tools.CompareDetectors \
+    ~/datasets/lang-detect-output/preprocessed/test_raw.txt \
+    ~/datasets/lang-detect-output/langdetect-8k.bin \
+    ~/datasets/lang-detect-output/comparison-report.txt
+----
+
+Arguments: `<testSplitFile> <modelFile> [outputReport] [threads]`
+
+For a full write-up of the training run, the decisions made, and detailed
+benchmark numbers, see
+xref:advanced/language-detection-build.adoc[Building the Language Detector].
+
+== Model Format (LDM1)
+
+The binary model format is:
+
+[source]
+----
+4 bytes   magic: 0x4C444D31 ("LDM1")
+4 bytes   numBuckets (int32 big-endian)
+4 bytes   numClasses (int32 big-endian)
+
+For each class:
+  2 bytes   label length (uint16)
+  N bytes   label (UTF-8)
+
+numClasses × 4 bytes   per-class scales (float32)
+numClasses × 4 bytes   per-class biases (float32)
+numBuckets × numClasses bytes   weight matrix (int8, bucket-major)
+----
+
+The weight matrix is stored in **bucket-major** order: for each bucket, all class
+weights are contiguous. This layout is optimal for sparse inference, where only
+non-zero buckets are visited.
+
+The model file is stored as a classpath resource at
+`org/apache/tika/langdetect/charsoup/langdetect.bin` and loaded statically
+by `TikaLanguageDetector`.
+
+=== Memory-Mapped Loading
+
+For deployment scenarios that benefit from off-heap memory (e.g., multiple JVM
+instances sharing the same model), the `CharSoupModel.loadMapped(Path)` method
+loads the model via `MappedByteBuffer`. A companion `saveSplit(Path, Path)`
+method writes the raw weights and metadata as separate files for true zero-copy
+loading.
+
+For the default classpath resource (1.6 MB), heap loading is used and the
+performance difference is negligible.
+
+== WordTokenizer (tika-eval integration)
+
+The same preprocessing pipeline is exposed as a general-purpose word tokenizer
+via `org.apache.tika.langdetect.charsoup.WordTokenizer`. This replaces the former
+Lucene-based tokenizer in `tika-eval`:
+
+* `tokenize(String)` — alphabetic and ideographic tokens only (CJK bigrams)
+* `tokenizeAlphanumeric(String, Consumer)` — also emits digit-only runs as tokens
+
+The alphanumeric variant is used by `tika-eval` so it can still distinguish
+alphabetic token count from total (alphanumeric) token count. The alpha-only
+variant is a separate code path with zero per-character overhead from the
+numeric check, keeping the language detection hot path fast.
+
+== References
+
+The language detector draws on several well-established techniques.
+
+[bibliography]
+- [[[cavnar1994]]] W. B. Cavnar and J. M. Trenkle,
+  "N-Gram-Based Text Categorization,"
+  in _Proceedings of the Third Annual Symposium on Document Analysis and
+  Information Retrieval (SDAIR-94)_, Las Vegas, NV, 1994, pp. 161–175. +
+  The foundational paper establishing character n-gram profiles as an effective
+  and language-independent text classification method. +
+  https://dsspace.uwindsor.ca/bitstream/handle/10680/1765/10-1.1.53.9367.pdf
+
+- [[[weinberger2009]]] K. Weinberger, A. Dasgupta, J. Attenberg, J. Langford,
+  and A. Smola,
+  "Feature Hashing for Large Scale Multitask Learning,"
+  in _Proceedings of the 26th International Conference on Machine Learning
+  (ICML)_, Montreal, Canada, 2009, pp. 1113–1120. +
+  Provides the theoretical justification for hashing features into a fixed-size
+  bucket vector instead of maintaining an explicit vocabulary. +
+  https://arxiv.org/abs/0902.2206
+
+- [[[fnv]]] G. Fowler, L. C. Noll, K.-P. Vo, and D. Eastlake,
+  "The FNV Non-Cryptographic Hash Algorithm,"
+  IETF Internet-Draft, 2012. +
+  The specific hash function used for feature hashing. FNV-1a provides
+  excellent distribution for short inputs (2–4 byte bigrams) with minimal
+  computation. +
+  https://datatracker.ietf.org/doc/html/draft-eastlake-fnv-17
+
+- [[[niu2011]]] F. Niu, B. Recht, C. Ré, and S. J. Wright,
+  "HOGWILD!: A Lock-Free Approach to Parallelizing Stochastic Gradient
+  Descent,"
+  in _Advances in Neural Information Processing Systems (NeurIPS)_, vol. 24,
+  2011, pp. 693–701. +
+  Proves that lock-free asynchronous SGD converges for sparse optimization
+  problems. This is the theoretical basis for the multi-threaded SGD phase. +
+  https://arxiv.org/abs/1106.5730
+
+- [[[loshchilov2019]]] I. Loshchilov and F. Hutter,
+  "Decoupled Weight Decay Regularization,"
+  in _International Conference on Learning Representations (ICLR)_, 2019. +
+  Describes the AdamW optimizer: Adam with decoupled weight decay, used for
+  the initial training phase. +
+  https://arxiv.org/abs/1711.05101
+
+- [[[bishop2006]]] C. M. Bishop,
+  _Pattern Recognition and Machine Learning_,
+  Springer, 2006, ISBN 978-0-387-31073-2, §4.3.4. +
+  Standard reference for multinomial logistic regression (softmax
+  classification), the model used for the final prediction layer.
+
+- [[[goldhahn2012]]] D. Goldhahn, T. Eckart, and U. Quasthoff,
+  "Building Large Monolingual Dictionaries at the Leipzig Corpora Collection:
+  From 100 to 200 Languages,"
+  in _Proceedings of the Eighth International Conference on Language Resources
+  and Evaluation (LREC)_, Istanbul, Turkey, 2012, pp. 759–765. +
+  The Leipzig Corpora Collection provides the training data: sentence corpora
+  for 300+ languages drawn from news, web crawls, and Wikipedia. +
+  https://aclanthology.org/L12-1154/
+
+- [[[jacob2018]]] B. Jacob, S. Kligys, B. Chen, M. Zhu, M. Tang, A. Howard,
+  H. Adam, and D. Kalenichenko,
+  "Quantization and Training of Neural Networks for Efficient
+  Integer-Arithmetic-Only Inference,"
+  in _Proceedings of the IEEE Conference on Computer Vision and Pattern
+  Recognition (CVPR)_, 2018, pp. 2704–2713. +
+  Establishes the principles of INT8 quantization with per-channel scale factors
+  that we apply to compress the weight matrix from float32 to int8, reducing
+  model size by ~4× with negligible accuracy loss. +
+  https://arxiv.org/abs/1712.05877

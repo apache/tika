@@ -16,7 +16,8 @@
  */
 package org.apache.tika.eval.core.util;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.List;
 
@@ -29,14 +30,18 @@ import org.apache.tika.language.detect.LanguageResult;
 public class LanguageIdTest {
     @Test
     @Timeout(10000)
-    public void testDefenseAgainstBadRegexInOpenNLP() throws Exception {
-        //TIKA-2777
+    public void testLongRepetitiveInput() throws Exception {
+        //TIKA-2777 — originally tested OpenNLP regex defense.
+        //Now verifies the bigram detector handles degenerate input quickly.
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 50000; i++) {
             sb.append("a");
         }
         LanguageIDWrapper wrapper = new LanguageIDWrapper();
         List<LanguageResult> languages = wrapper.calculate(sb.toString());
-        assertEquals("mri", languages.get(0).getLanguage());
+        // The detector should return *something* without hanging;
+        // the exact language for 50K repeated 'a' chars is not meaningful.
+        assertNotNull(languages);
+        assertFalse(languages.isEmpty());
     }
 }
