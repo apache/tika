@@ -39,7 +39,7 @@ import org.apache.tika.parser.ParseContext;
 @TikaComponent(defaultFor = ContentHandlerFactory.class)
 public class BasicContentHandlerFactory implements StreamingContentHandlerFactory, WriteLimiter {
 
-    private HANDLER_TYPE type = HANDLER_TYPE.TEXT;
+    private HANDLER_TYPE type = HANDLER_TYPE.MARKDOWN;
     private int writeLimit = -1;
     private boolean throwOnWriteLimitReached = true;
     private transient ParseContext parseContext;
@@ -225,6 +225,11 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
      */
     public HANDLER_TYPE getType() {
         return type;
+    }
+
+    @Override
+    public String getHandlerTypeName() {
+        return type.name();
     }
 
     /**

@@ -102,9 +102,19 @@ public interface TikaCoreProperties {
 
     Property PARSE_TIME_MILLIS = Property.internalText(TIKA_META_PREFIX + "parse_time_millis");
     /**
-     * Simple class name of the content handler
+     * Simple class name of the content handler.
+     * @deprecated Use {@link #TIKA_CONTENT_HANDLER_TYPE} for the handler type enum value.
      */
+    @Deprecated
     Property TIKA_CONTENT_HANDLER = Property.internalText(TIKA_META_PREFIX + "content_handler");
+
+    /**
+     * The handler type used to produce {@link #TIKA_CONTENT}.
+     * Value is the {@link org.apache.tika.sax.BasicContentHandlerFactory.HANDLER_TYPE}
+     * enum name (e.g. {@code TEXT}, {@code MARKDOWN}, {@code HTML}, {@code XML}).
+     */
+    Property TIKA_CONTENT_HANDLER_TYPE =
+            Property.internalText(TIKA_META_PREFIX + "content_handler_type");
     Property TIKA_CONTENT = Property.internalText(TIKA_META_PREFIX + "content");
     /**
      * Use this to store parse exception information in the Metadata object.

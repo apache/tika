@@ -251,6 +251,8 @@ class ParseHandler {
             LOG.warn("parse exception: " + fetchEmitTuple.getId(), e);
         } finally {
             metadata.add(TikaCoreProperties.TIKA_CONTENT, handler.toString());
+            metadata.set(TikaCoreProperties.TIKA_CONTENT_HANDLER_TYPE,
+                    contentHandlerFactory.getHandlerTypeName());
             if (containerException != null) {
                 metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION, containerException);
             }
