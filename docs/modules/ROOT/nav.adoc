@@ -32,6 +32,8 @@
 ** xref:migration-to-4x/serialization-4x.adoc[Serialization Changes]
 ** xref:migration-to-4x/metadata-changes-4x.adoc[Metadata Changes]
 ** xref:migration-to-4x/design-notes-4x.adoc[Design Notes]
+** xref:migration-to-4x/chunk-strategies.adoc[Chunk Strategies]
+** xref:migration-to-4x/inference-handler-requirements.adoc[Inference Handler Requirements]
 * xref:advanced/index.adoc[Advanced]
 ** xref:advanced/robustness.adoc[Robustness]
 ** xref:advanced/setting-limits.adoc[Setting Limits]
