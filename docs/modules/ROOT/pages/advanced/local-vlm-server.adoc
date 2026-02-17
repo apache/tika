@@ -1,0 +1,445 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Running a Local VLM Server for OCR
+
+This guide shows how to run an open-source Vision-Language Model (VLM)
+locally as an OpenAI-compatible endpoint, so that Tika's
+xref:configuration/parsers/vlm-parsers.adoc[`OpenAIVLMParser`] can use it
+for OCR without any cloud API keys.
+
+This is useful for:
+
+* Air-gapped / offline environments
+* Avoiding per-request API costs
+* Processing sensitive documents that cannot leave your network
+* Evaluation and testing
+
+The server wraps a Hugging Face model in a lightweight FastAPI app that
+exposes the `/v1/chat/completions` endpoint in the OpenAI format.
+
+== Prerequisites
+
+* macOS with Apple Silicon (M1/M2/M3/M4) or a Linux box with an NVIDIA GPU
+* https://github.com/pyenv/pyenv[pyenv] installed (`brew install pyenv` on macOS)
+* ~5 GB disk for model weights (downloaded on first run)
+* (Optional) https://poppler.freedesktop.org/[poppler] for PDF-to-image
+  conversion: `brew install poppler`
+
+== Supported models
+
+Any Hugging Face causal vision-language model works. Two good options:
+
+[cols="1,1,1,1"]
+|===
+|Model |Size |License |Notes
+
+|https://huggingface.co/jinaai/jina-vlm[jinaai/jina-vlm]
+|2.4B
+|CC BY-NC 4.0
+|Good OCR quality; non-commercial license
+
+|https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct[Qwen/Qwen2-VL-2B-Instruct]
+|2B
+|Apache 2.0
+|Permissive license; comparable quality
+|===
+
+To use a different model, pass `--model <name>` when starting the server.
+
+== Setup
+
+=== 1. Install Python 3.12
+
+Python 3.14 is too new for the ML ecosystem. Install 3.12 via pyenv:
+
+[source,bash]
+----
+pyenv install 3.12.10
+----
+
+=== 2. Create a project directory and virtual environment
+
+[source,bash]
+----
+mkdir ~/vlm-server && cd ~/vlm-server
+pyenv local 3.12.10
+python3 -m venv .venv
+source .venv/bin/activate
+----
+
+=== 3. Install dependencies
+
+IMPORTANT: Use transformers 4.x (not 5.x). The Jina VLM model code imports
+`CommonKwargs` which was removed in transformers 5. The model also requires
+`einops`.
+
+[source,bash]
+----
+pip install torch torchvision "transformers>=4.49,<5" pillow requests \
+    accelerate einops fastapi uvicorn
+----
+
+== The server script
+
+Save the following as `server.py`:
+
+[source,python]
+----
+#!/usr/bin/env python3
+"""
+OpenAI-compatible chat completions server for local VLMs on macOS Apple Silicon.
+
+Loads the model once at startup and serves requests via a local-only HTTP endpoint.
+Supports image inputs as URLs, file paths, or base64 data URIs.
+
+Usage:
+    python server.py
+    python server.py --port 8000
+    python server.py --model Qwen/Qwen2-VL-2B-Instruct --port 8000
+"""
+
+import argparse
+import base64
+import io
+import time
+import uuid
+
+import torch
+import uvicorn
+from fastapi import FastAPI
+from PIL import Image
+from pydantic import BaseModel
+from transformers import AutoModelForCausalLM, AutoProcessor, GenerationConfig
+
+
+# --- Request / response models (OpenAI-compatible subset) ---
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str | list
+
+class ChatRequest(BaseModel):
+    model: str = "jina-vlm"
+    messages: list[ChatMessage]
+    max_tokens: int = 1024
+    temperature: float = 0.0
+
+class ChatChoice(BaseModel):
+    index: int = 0
+    message: dict
+    finish_reason: str = "stop"
+
+class ChatUsage(BaseModel):
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+
+class ChatResponse(BaseModel):
+    id: str
+    object: str = "chat.completion"
+    created: int
+    model: str
+    choices: list[ChatChoice]
+    usage: ChatUsage
+
+
+app = FastAPI(title="VLM server")
+
+model = None
+processor = None
+device = None
+
+
+def load_image(src: str) -> Image.Image:
+    """Load an image from a URL, file path, or base64 data URI."""
+    if src.startswith("data:"):
+        header, data = src.split(",", 1)
+        return Image.open(io.BytesIO(base64.b64decode(data)))
+    elif src.startswith("http://") or src.startswith("https://"):
+        import requests
+        return Image.open(io.BytesIO(requests.get(src, timeout=30).content))
+    else:
+        return Image.open(src)
+
+
+def parse_messages(messages: list[ChatMessage]):
+    """Convert OpenAI-style messages to transformers conversation + images."""
+    conversation = []
+    images = []
+    for msg in messages:
+        if isinstance(msg.content, str):
+            conversation.append({
+                "role": msg.role,
+                "content": [{"type": "text", "text": msg.content}]
+            })
+        elif isinstance(msg.content, list):
+            parts = []
+            for part in msg.content:
+                if part.get("type") == "text":
+                    parts.append({"type": "text", "text": part["text"]})
+                elif part.get("type") == "image_url":
+                    url = part["image_url"]["url"]
+                    images.append(load_image(url))
+                    parts.append({"type": "image", "image": url})
+            conversation.append({"role": msg.role, "content": parts})
+    return conversation, images
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
+@app.post("/v1/chat/completions")
+def chat_completions(req: ChatRequest):
+    conversation, images = parse_messages(req.messages)
+    text = processor.apply_chat_template(
+        conversation, add_generation_prompt=True
+    )
+
+    if images:
+        inputs = processor(
+            text=[text], images=images,
+            padding="longest", return_tensors="pt"
+        )
+    else:
+        inputs = processor(
+            text=[text], padding="longest", return_tensors="pt"
+        )
+
+    inputs = {
+        k: v.to(model.device) if isinstance(v, torch.Tensor) else v
+        for k, v in inputs.items()
+    }
+
+    output = model.generate(
+        **inputs,
+        generation_config=GenerationConfig(
+            max_new_tokens=req.max_tokens,
+            do_sample=req.temperature > 0,
+            temperature=req.temperature if req.temperature > 0 else None,
+        ),
+        return_dict_in_generate=True,
+        use_model_defaults=True,
+    )
+
+    response_text = processor.tokenizer.decode(
+        output.sequences[0][inputs["input_ids"].shape[-1]:],
+        skip_special_tokens=True,
+    )
+
+    prompt_tokens = inputs["input_ids"].shape[-1]
+    completion_tokens = output.sequences[0].shape[-1] - prompt_tokens
+
+    return ChatResponse(
+        id=f"chatcmpl-{uuid.uuid4().hex[:12]}",
+        created=int(time.time()),
+        model=req.model,
+        choices=[ChatChoice(
+            message={"role": "assistant", "content": response_text}
+        )],
+        usage=ChatUsage(
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            total_tokens=prompt_tokens + completion_tokens,
+        ),
+    )
+
+
+def main():
+    global model, processor, device
+
+    parser = argparse.ArgumentParser(
+        description="VLM OpenAI-compatible server (localhost only)"
+    )
+    parser.add_argument(
+        "--model", type=str, default="jinaai/jina-vlm",
+        help="Hugging Face model name or local path"
+    )
+    parser.add_argument(
+        "--port", type=int, default=8000, help="Port (default: 8000)"
+    )
+    args = parser.parse_args()
+
+    if torch.backends.mps.is_available():
+        device = "mps"
+        print("Using Apple Silicon GPU (MPS)")
+    else:
+        device = "cpu"
+        print("MPS not available, using CPU (this will be slow)")
+
+    print(f"Loading model {args.model}...")
+    processor = AutoProcessor.from_pretrained(
+        args.model, use_fast=False, trust_remote_code=True
+    )
+    model = AutoModelForCausalLM.from_pretrained(
+        args.model, device_map=device,
+        torch_dtype=torch.float16, trust_remote_code=True,
+    )
+    print(f"Model loaded. Starting server on http://127.0.0.1:{args.port}")
+    uvicorn.run(app, host="127.0.0.1", port=args.port)
+
+
+if __name__ == "__main__":
+    main()
+----
+
+== Starting the server
+
+[source,bash]
+----
+source .venv/bin/activate
+python server.py                              # default: jina-vlm on port 8000
+python server.py --model Qwen/Qwen2-VL-2B-Instruct  # use Qwen instead
+python server.py --port 9000                  # custom port
+----
+
+The first run downloads ~5 GB of model weights. Subsequent runs use the
+Hugging Face cache.
+
+The server binds to `127.0.0.1` only — it is not accessible from the
+network.
+
+== Verify the server is running
+
+[source,bash]
+----
+curl http://localhost:8000/health
+# {"status":"ok"}
+----
+
+== Configure Tika to use it
+
+Point the `OpenAIVLMParser` at your local server:
+
+[source,json]
+----
+{
+  "parsers": [
+    {
+      "openai-vlm-parser": {
+        "baseUrl": "http://127.0.0.1:8000",
+        "model": "jinaai/jina-vlm",
+        "timeoutSeconds": 600
+      }
+    }
+  ]
+}
+----
+
+A generous `timeoutSeconds` is recommended — local inference on Apple
+Silicon takes 10-60 seconds per page depending on model size and image
+resolution.
+
+== Testing with curl
+
+=== Text-only query
+
+[source,bash]
+----
+curl http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "jina-vlm",
+    "messages": [{"role": "user", "content": "What is the capital of France?"}]
+  }'
+----
+
+=== Image from URL
+
+[source,bash]
+----
+curl http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "jina-vlm",
+    "messages": [{
+      "role": "user",
+      "content": [
+        {"type": "image_url", "image_url": {"url": "https://picsum.photos/800/600"}},
+        {"type": "text", "text": "Describe this image"}
+      ]
+    }]
+  }'
+----
+
+=== Local image (base64)
+
+[source,bash]
+----
+curl http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "jina-vlm",
+    "messages": [{
+      "role": "user",
+      "content": [
+        {
+          "type": "image_url",
+          "image_url": {
+            "url": "data:image/png;base64,'"$(base64 -i page.png)"'"
+          }
+        },
+        {
+          "type": "text",
+          "text": "Extract all visible text from this image as markdown."
+        }
+      ]
+    }]
+  }'
+----
+
+== Troubleshooting
+
+=== `ImportError: cannot import name 'CommonKwargs'`
+
+You have transformers 5.x. The Jina VLM model code requires 4.x:
+
+[source,bash]
+----
+pip install "transformers>=4.49,<5"
+rm -rf ~/.cache/huggingface/modules/transformers_modules/jinaai/jina_hyphen_vlm
+----
+
+=== `ImportError: ... einops`
+
+[source,bash]
+----
+pip install einops
+----
+
+=== `UserWarning: MPS: The constant padding of more than 3 dimensions ...`
+
+Harmless performance warning from PyTorch's MPS backend on Apple Silicon.
+Results are correct; some operations fall back to a slower code path.
+Safe to ignore.
+
+== Performance notes
+
+* Jina VLM (2.4B) on M3 Max: ~15-30 seconds per page image
+* Model loading at startup: ~20-30 seconds
+* Keeping the server running avoids reloading the model per request
+* Consider `timeoutSeconds: 600` or higher in the Tika config for large
+  or complex images
+
+== Licensing
+
+* **Jina VLM** (`jinaai/jina-vlm`): CC BY-NC 4.0 (non-commercial).
+  Contact https://jina.ai/contact-sales/[Jina AI] for commercial licensing.
+* **Qwen2-VL** (`Qwen/Qwen2-VL-2B-Instruct`): Apache 2.0 (permissive,
+  commercial use OK).
