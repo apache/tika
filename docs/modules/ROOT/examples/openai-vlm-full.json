@@ -1,0 +1,18 @@
+{
+  "parsers": [
+    {
+      "openai-vlm-parser": {
+        "baseUrl": "http://127.0.0.1:8000",
+        "model": "jinaai/jina-vlm",
+        "prompt": "Extract all visible text from this image. Return the text in markdown format, preserving the original structure (headings, lists, tables, paragraphs). Do not describe the image. Only return the extracted text.",
+        "maxTokens": 4096,
+        "timeoutSeconds": 300,
+        "apiKey": "",
+        "inlineContent": true,
+        "skipOcr": false,
+        "minFileSizeToOcr": 0,
+        "maxFileSizeToOcr": 52428800
+      }
+    }
+  ]
+}
