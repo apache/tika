@@ -51,7 +51,7 @@ public interface ContentHandlerFactory extends Serializable {
      *
      * @return handler type name, never {@code null}
      */
-    default String getHandlerTypeName() {
+    default String handlerTypeName() {
         return "UNKNOWN";
     }
 }

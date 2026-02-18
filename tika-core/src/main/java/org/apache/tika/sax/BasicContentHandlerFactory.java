@@ -228,7 +228,7 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
     }
 
     @Override
-    public String getHandlerTypeName() {
+    public String handlerTypeName() {
         return type.name();
     }
 
