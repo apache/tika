@@ -239,14 +239,14 @@ public class ConnectionHandler implements Runnable, Closeable {
                 } catch (OutOfMemoryError e) {
                     handleCrash(OOM, fetchEmitTuple.getId(), e);
                     LOG.error("handlerId={}: exiting server due to OOM", handlerId);
-                    System.exit(1);
+                    System.exit(PipesServer.OOM_EXIT_CODE);
                 } catch (ExecutionException e) {
                     Throwable t = e.getCause();
                     LOG.error("handlerId={}: crash processing {}", handlerId, fetchEmitTuple.getId(), t);
                     if (t instanceof OutOfMemoryError) {
                         handleCrash(OOM, fetchEmitTuple.getId(), t);
                         LOG.error("handlerId={}: exiting server due to OOM", handlerId);
-                        System.exit(1);
+                        System.exit(PipesServer.OOM_EXIT_CODE);
                     }
                     handleCrash(PipesServer.PROCESSING_STATUS.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), t);
                     return;
@@ -279,7 +279,7 @@ public class ConnectionHandler implements Runnable, Closeable {
         write(TIMEOUT.getByte());
         // Timeout means a parsing thread is stuck - the JVM must be restarted
         LOG.error("handlerId={}: exiting server due to timeout", handlerId);
-        System.exit(1);
+        System.exit(PipesServer.TIMEOUT_EXIT_CODE);
     }
 
     private void handleCrash(PipesServer.PROCESSING_STATUS processingStatus, String id, Throwable t) {

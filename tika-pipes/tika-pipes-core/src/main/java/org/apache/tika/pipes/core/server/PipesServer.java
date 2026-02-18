@@ -442,7 +442,7 @@ public class PipesServer implements AutoCloseable {
             }
         } catch (Throwable t) {
             LOG.error("main loop error (did the forking process shut down?)", t);
-            exit(1);
+            exit(UNSPECIFIED_CRASH_EXIT_CODE);
         }
     }
 
@@ -656,7 +656,7 @@ public class PipesServer implements AutoCloseable {
             write(processingStatus, bytes);
         } catch (IOException e) {
             LOG.error("problem writing emit data (forking process shutdown?)", e);
-            exit(1);
+            exit(UNSPECIFIED_CRASH_EXIT_CODE);
         }
     }
 
@@ -666,7 +666,7 @@ public class PipesServer implements AutoCloseable {
             write(INTERMEDIATE_RESULT, bytes);
         } catch (IOException e) {
             LOG.error("problem writing intermediate data (forking process shutdown?)", e);
-            exit(1);
+            exit(UNSPECIFIED_CRASH_EXIT_CODE);
         }
     }
 
@@ -674,6 +674,15 @@ public class PipesServer implements AutoCloseable {
         int b = input.read();
         if (b == ACK.getByte()) {
             return;
+        }
+        if (b == PipesClient.COMMANDS.SHUT_DOWN.getByte()) {
+            LOG.info("pipesClientId={}: received SHUT_DOWN in awaitAck, shutting down gracefully", pipesClientId);
+            try {
+                close();
+            } catch (Exception e) {
+                //swallow
+            }
+            exit(0);
         }
         LOG.error("pipesClientId={}: expected ACK but got byte={}", pipesClientId, HexFormat.of().formatHex(new byte[]{ (byte) b}));
         throw new IOException("Wasn't expecting byte=" + HexFormat.of().formatHex(new byte[]{ (byte) b}));
@@ -685,7 +694,7 @@ public class PipesServer implements AutoCloseable {
             output.flush();
         } catch (IOException e) {
             LOG.error("problem writing data (forking process shutdown?)", e);
-            exit(1);
+            exit(UNSPECIFIED_CRASH_EXIT_CODE);
         }
     }
 
@@ -696,7 +705,7 @@ public class PipesServer implements AutoCloseable {
             awaitAck();
         } catch (IOException e) {
             LOG.error("pipesClientId={}: problem writing data (forking process shutdown?)", pipesClientId, e);
-            exit(1);
+            exit(UNSPECIFIED_CRASH_EXIT_CODE);
         }
     }
 
@@ -711,7 +720,7 @@ public class PipesServer implements AutoCloseable {
             awaitAck();
         } catch (IOException e) {
             LOG.error("problem writing data (forking process shutdown?)", e);
-            exit(1);
+            exit(UNSPECIFIED_CRASH_EXIT_CODE);
         }
     }
 }
