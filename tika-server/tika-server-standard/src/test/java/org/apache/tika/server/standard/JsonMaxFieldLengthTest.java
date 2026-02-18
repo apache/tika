@@ -69,6 +69,7 @@ public class JsonMaxFieldLengthTest extends CXFTestBase {
 
     @Test
     public void testLargeJson(@TempDir Path dir) throws Exception {
+        //TIKA-4154
         int len = StreamReadConstraints.DEFAULT_MAX_STRING_LEN + 100;
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < len; i++) {
