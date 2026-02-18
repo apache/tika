@@ -258,6 +258,19 @@ public class Tess4JParser implements Parser, Initializable {
             Tesseract tesseract = createTesseract(defaultConfig);
             pool.add(tesseract);
         }
+        // Tess4J loads the native library lazily on first doOCR call.
+        // Force it now so UnsatisfiedLinkError is caught by initialize().
+        Tesseract probe = pool.peek();
+        if (probe != null) {
+            try {
+                BufferedImage tiny = new BufferedImage(1, 1,
+                        BufferedImage.TYPE_BYTE_GRAY);
+                probe.doOCR(tiny);
+            } catch (TesseractException e) {
+                // Expected — OCR on a 1x1 image may fail,
+                // but the native library loaded successfully
+            }
+        }
     }
 
     /**
