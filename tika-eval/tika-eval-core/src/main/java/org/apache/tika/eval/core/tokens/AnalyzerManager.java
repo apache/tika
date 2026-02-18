@@ -16,68 +16,55 @@
  */
 package org.apache.tika.eval.core.tokens;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
+import java.util.function.Consumer;
 
-import org.apache.lucene.analysis.Analyzer;
-
+/**
+ * Manages tokenization for tika-eval. Uses {@link TikaEvalTokenizer} in
+ * {@link TikaEvalTokenizer.Mode#STANDARD STANDARD} mode, which includes
+ * alphabetic, ideographic, and numeric tokens with NFKD normalization,
+ * case folding, and CJK bigrams. No minimum length filter or skip list
+ * is applied — those are only used in
+ * {@link TikaEvalTokenizer.Mode#COMMON_TOKENS COMMON_TOKENS} mode.
+ */
 public class AnalyzerManager {
 
-    private final static String GENERAL = "general";
-    private static final String ALPHA_IDEOGRAPH = "alpha";
-    private static final String COMMON_TOKENS = "common_tokens";
+    private final int maxTokens;
 
-    private final Analyzer generalAnalyzer;
-    private final Analyzer commonTokensAnalyzer;
-
-    private AnalyzerManager(Analyzer generalAnalyzer, Analyzer commonTokensAnalyzer) {
-        this.generalAnalyzer = generalAnalyzer;
-        this.commonTokensAnalyzer = commonTokensAnalyzer;
+    private AnalyzerManager(int maxTokens) {
+        this.maxTokens = maxTokens;
     }
 
     public static AnalyzerManager newInstance(int maxTokens) {
-        Map<String, Analyzer> map;
-        try (InputStream is = AnalyzerManager.class.getClassLoader()
-                .getResourceAsStream("lucene-analyzers.json")) {
-            try (Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8)) {
-                map = AnalyzerDeserializer.buildAnalyzers(reader, maxTokens);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Can't find lucene-analyzers.json?!");
-        }
-        Analyzer general = map.get(GENERAL);
-        Analyzer alphaIdeo = map.get(ALPHA_IDEOGRAPH);
-        Analyzer common = map.get(COMMON_TOKENS);
-        if (general == null) {
-            throw new IllegalStateException("Must specify " + GENERAL + " analyzer");
-        }
-        if (common == null) {
-            throw new IllegalStateException("Must specify " + COMMON_TOKENS + " analyzer");
-        }
-
-        return new AnalyzerManager(general, common);
+        return new AnalyzerManager(maxTokens);
     }
 
     /**
-     * This analyzer should be used to extract all tokens.
+     * Tokenize the given text and return a TokenCounts object.
      *
-     * @return
+     * @param text input text
+     * @return token counts
      */
-    public Analyzer getGeneralAnalyzer() {
-        return generalAnalyzer;
+    public TokenCounts tokenize(String text) {
+        TokenCounts counts = new TokenCounts();
+        TikaEvalTokenizer.tokenize(text, TikaEvalTokenizer.Mode.STANDARD, maxTokens,
+                counts::increment);
+        return counts;
     }
 
     /**
-     * This analyzer should be used to generate common tokens lists from
-     * large corpora.  It is not used by tika-eval in profiling or comparing.
+     * Tokenize and stream tokens to a consumer, respecting maxTokens limit.
      *
-     * @return
+     * @param text     input text
+     * @param consumer receives each token string
      */
-    public Analyzer getCommonTokensAnalyzer() {
-        return commonTokensAnalyzer;
+    public void tokenize(String text, Consumer<String> consumer) {
+        TikaEvalTokenizer.tokenize(text, TikaEvalTokenizer.Mode.STANDARD, maxTokens, consumer);
+    }
+
+    /**
+     * Get the max token limit.
+     */
+    public int getMaxTokens() {
+        return maxTokens;
     }
 }

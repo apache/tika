@@ -102,6 +102,21 @@
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
+        <artifactId>tika-langdetect-charsoup-core</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-langdetect-charsoup-core</artifactId>
+        <version>4.0.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-langdetect-charsoup</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
         <artifactId>tika-langdetect-tika</artifactId>
         <version>${revision}</version>
       </dependency>

@@ -34,6 +34,8 @@
 ** xref:migration-to-4x/metadata-changes-4x.adoc[Metadata Changes]
 ** xref:migration-to-4x/design-notes-4x.adoc[Design Notes]
 * xref:advanced/index.adoc[Advanced]
+** xref:advanced/language-detection.adoc[Language Detection]
+** xref:advanced/language-detection-build.adoc[Building the Language Detector]
 ** xref:advanced/robustness.adoc[Robustness]
 ** xref:advanced/setting-limits.adoc[Setting Limits]
 ** xref:advanced/spooling.adoc[Spooling]

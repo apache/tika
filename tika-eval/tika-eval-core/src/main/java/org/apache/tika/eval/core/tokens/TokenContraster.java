@@ -16,10 +16,11 @@
  */
 package org.apache.tika.eval.core.tokens;
 
+import java.util.Comparator;
 import java.util.Map;
+import java.util.PriorityQueue;
 
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.lucene.util.PriorityQueue;
 
 /**
  * Computes some corpus contrast statistics.
@@ -136,30 +137,44 @@ public class TokenContraster {
 
     }
 
-    static class TokenCountDiffQueue extends PriorityQueue<TokenCountDiff> {
+    /**
+     * Bounded min-heap for TokenCountDiff, keeping the top-N by diff value.
+     */
+    static class TokenCountDiffQueue {
+
+        private final int maxSize;
+        private final PriorityQueue<TokenCountDiff> queue;
 
         TokenCountDiffQueue(int maxSize) {
-            super(maxSize);
+            this.maxSize = maxSize;
+            this.queue = new PriorityQueue<>(maxSize + 1,
+                    Comparator.comparingInt((TokenCountDiff d) -> d.diff)
+                            .thenComparing(d -> d.token, Comparator.reverseOrder()));
         }
 
-        @Override
-        protected boolean lessThan(TokenCountDiff arg0, TokenCountDiff arg1) {
-            if (arg0.diff < arg1.diff) {
-                return true;
-            } else if (arg0.diff > arg1.diff) {
-                return false;
+        TokenCountDiff top() {
+            return queue.peek();
+        }
+
+        int size() {
+            return queue.size();
+        }
+
+        void insertWithOverflow(TokenCountDiff element) {
+            if (queue.size() < maxSize) {
+                queue.offer(element);
+            } else if (queue.peek() != null && element.diff > queue.peek().diff) {
+                queue.poll();
+                queue.offer(element);
             }
-            return arg1.token.compareTo(arg0.token) < 0;
         }
 
         public TokenIntPair[] getArray() {
-            TokenIntPair[] topN = new TokenIntPair[size()];
-            //now we reverse the queue
-            TokenCountDiff token = pop();
+            TokenIntPair[] topN = new TokenIntPair[queue.size()];
             int i = topN.length - 1;
-            while (token != null && i > -1) {
+            while (!queue.isEmpty() && i >= 0) {
+                TokenCountDiff token = queue.poll();
                 topN[i--] = new TokenIntPair(token.token, token.diff);
-                token = pop();
             }
             return topN;
         }
