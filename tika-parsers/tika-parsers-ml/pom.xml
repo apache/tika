@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parsers</artifactId>
-    <version>4.0.0-SNAPSHOT</version>
+    <version>${revision}</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -36,6 +36,7 @@
     <module>tika-parser-nlp-module</module>
     <module>tika-parser-nlp-package</module>
     <module>tika-inference</module>
+    <module>tika-parser-vlm-ocr-module</module>
     <module>tika-transcribe-aws</module>
   </modules>
 

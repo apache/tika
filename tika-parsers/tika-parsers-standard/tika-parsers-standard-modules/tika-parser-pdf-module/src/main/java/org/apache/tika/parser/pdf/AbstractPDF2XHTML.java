@@ -62,6 +62,7 @@ import org.apache.pdfbox.pdmodel.PDPageTree;
 import org.apache.pdfbox.pdmodel.common.COSObjectable;
 import org.apache.pdfbox.pdmodel.common.PDDestinationOrAction;
 import org.apache.pdfbox.pdmodel.common.PDNameTreeNode;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDComplexFileSpecification;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDEmbeddedFile;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDFileSpecification;
@@ -541,6 +542,12 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         if (c != null) {
             c.increment();
         }
+
+        // Enforce maxPagesToOcr limit
+        int maxPagesToOcr = config.getOcrMaxPagesToOcr();
+        if (maxPagesToOcr > 0 && c != null && c.getCount() > maxPagesToOcr) {
+            return;
+        }
         MediaType ocrImageMediaType = MediaType.image("ocr-" + config.getOcrImageFormat().getFormatName());
         if (!ocrParser.getSupportedTypes(context).contains(ocrImageMediaType)) {
             if (ocrStrategy == OCR_ONLY || ocrStrategy == OCR_AND_TEXT_EXTRACTION) {
@@ -672,6 +679,26 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         int id = renderingTracker.getNextId();
 
         try {
+            // Check estimated pixel dimensions before rendering to
+            // prevent OOM on pathologically large pages
+            long maxPixels = config.getOcrMaxImagePixels();
+            if (maxPixels > 0) {
+                PDPage currentPage = pdDocument.getPage(pageIndex);
+                PDRectangle mediaBox = currentPage.getMediaBox();
+                long estWidth = (long) Math.ceil(mediaBox.getWidth() / 72.0 * dpi);
+                long estHeight = (long) Math.ceil(mediaBox.getHeight() / 72.0 * dpi);
+                long estPixels = estWidth * estHeight;
+                if (estPixels > maxPixels) {
+                    metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM,
+                            "Skipping OCR for page " + (pageIndex + 1)
+                                    + ": estimated " + estPixels
+                                    + " pixels exceeds maxImagePixels="
+                                    + maxPixels);
+                    return new RenderResult(RenderResult.STATUS.EXCEPTION,
+                            id, null, pageMetadata);
+                }
+            }
+
             BufferedImage image =
                     renderer.renderImageWithDPI(pageIndex, dpi, config.getOcrImageType().getPdfBoxImageType());
 

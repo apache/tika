@@ -1,0 +1,10 @@
+{
+  "parsers": [
+    {
+      "claude-vlm-parser": {
+        "apiKey": "sk-ant-your-key-here",
+        "model": "claude-sonnet-4-20250514"
+      }
+    }
+  ]
+}
