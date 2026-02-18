@@ -1,0 +1,294 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Text Quality Scoring (tika-eval-lite)
+
+The `tika-eval-lite` module provides a lightweight text quality scorer
+that measures how well extracted text matches known language patterns.
+It uses character bigram frequency profiles derived from language corpora
+and requires no external dependencies beyond `tika-core`.
+
+== Overview
+
+The scorer computes the average log~2~-likelihood per character bigram
+against language-specific profiles. Higher (less negative) scores indicate
+text that better matches known language patterns. The score is naturally
+normalized by text length, so short and long texts produce comparable
+values.
+
+Scores are designed for *comparison*, not absolute thresholds. Compare
+two text variants (e.g., forward vs reversed, charset A vs charset B)
+against the same language -- the higher score wins.
+
+== Use Cases
+
+* **RTL text direction detection** -- Score both the original and
+  reversed text against the same language profile. The higher score
+  indicates the correct reading order.
+* **Charset detection** -- Score text decoded under candidate charsets.
+  The highest-scoring charset is most likely correct.
+* **Mojibake / junk detection** -- Compare the extracted text's score
+  against known-good text in the same language. A significantly lower
+  score suggests garbled or wrong-charset text.
+
+== Maven Dependency
+
+[source,xml]
+----
+<dependency>
+  <groupId>org.apache.tika</groupId>
+  <artifactId>tika-eval-lite</artifactId>
+  <version>${tika.version}</version>
+</dependency>
+----
+
+The module depends only on `tika-core` (provided scope). When
+`tika-eval-lite` is on the classpath, `TextQualityScorer.getDefault()`
+returns the `BigramTextQualityScorer` via the ServiceLoader/SPI
+mechanism. When it is absent, a no-op scorer is returned.
+
+== Basic Usage
+
+[source,java]
+----
+import org.apache.tika.textquality.TextQualityScorer;
+import org.apache.tika.textquality.TextQualityResult;
+
+TextQualityScorer scorer = TextQualityScorer.getDefault();
+
+TextQualityResult result = scorer.score("The quick brown fox...");
+
+double score      = result.getScore();       // e.g. -8.03
+String language   = result.getLanguage();     // e.g. "eng"
+double confidence = result.getConfidence();   // gap to 2nd-best
+int bigramCount   = result.getBigramCount();  // bigrams analyzed
+----
+
+=== Scoring Against a Specific Language
+
+When comparing two variants of the same text (e.g., for RTL detection
+or charset selection), score both against the same language profile:
+
+[source,java]
+----
+TextQualityResult forward = scorer.score(text, "ara");
+TextQualityResult reversed = scorer.score(reversedText, "ara");
+
+// Higher score wins
+if (forward.getScore() > reversed.getScore()) {
+    // forward is the correct reading order
+}
+----
+
+=== Configuring Maximum Text Length
+
+By default, only the first 10,000 characters are analyzed. Beyond this
+length, additional text adds negligible precision. To change:
+
+[source,java]
+----
+BigramTextQualityScorer scorer = new BigramTextQualityScorer();
+scorer.setMaxTextLength(20_000);
+----
+
+== How It Works
+
+=== Character Bigram Extraction
+
+Input text is first normalized with NFKD decomposition and combining
+mark (diacritic) removal. This matches the ICU folding applied to the
+Wikipedia and Leipzig corpus data used to build the profiles. It also
+prevents Arabic tashkeel (fatha, kasra, shadda, etc.) from breaking
+the bigram chain.
+
+The scorer then extracts consecutive pairs of lowercase letters. Non-letter
+characters (digits, punctuation, whitespace) act as word boundaries. For
+each word, three types of bigrams are emitted:
+
+* **Internal bigrams**: consecutive letter pairs (`he`, `el`, `ll`, `lo`)
+* **Word-start bigram**: `_h` (boundary marker + first letter)
+* **Word-end bigram**: `o_` (last letter + boundary marker)
+
+For example, `"Hello, World!"` produces: `_h`, `he`, `el`, `ll`, `lo`,
+`o_`, `_w`, `wo`, `or`, `rl`, `ld`, `d_`.
+
+Word-boundary bigrams are critical for RTL detection because word-initial
+and word-final character patterns are highly directional. For example,
+Hebrew final forms (sofit letters like ך ,ם ,ן) appear at word ends in
+forward text but at word starts when reversed.
+
+=== Language Profiles
+
+Each language profile contains the top 500 character bigrams (including
+word-boundary bigrams) and their log~2~-probabilities. Profiles are
+derived from the `common_tokens` data in `tika-eval-core`, which was
+built from Wikipedia and Leipzig corpus data processed through ICU
+folding (NFKC normalization, case folding, diacritic removal). The
+profiles cover 148 languages. Profiles from corpora with fewer than
+500,000 total bigram occurrences are excluded to avoid unreliable
+probability estimates.
+
+Each profile file includes precomputed statistics in its header:
+
+[cols="1,3"]
+|===
+| Header | Description
+
+| `TOTAL_BIGRAMS`
+| Total bigram occurrences in the source corpus.
+
+| `UNIQUE_BIGRAMS`
+| Distinct bigram types observed in the corpus.
+
+| `UNSEEN_LOG_PROB`
+| Estimated log~2~-probability for bigrams not in the profile
+  (see <<unseen-estimation>>).
+
+| `EXPECTED_SCORE`
+| Expected average log~2~-likelihood for perfect text drawn from
+  this language's distribution (negative entropy). Stored for
+  reference; not used by the scorer at runtime.
+|===
+
+=== Scoring Algorithm
+
+For each language profile, the scorer computes:
+
+[stem]
+++++
+\text{score} = \frac{1}{N} \sum_{i=1}^{N} \log_2 P(b_i)
+++++
+
+where _N_ is the total bigram count and _P(b~i~)_ is the probability
+of bigram _b~i~_ under the profile. Bigrams not in the profile receive
+the profile's unseen log-probability.
+
+The language with the highest score is selected as the best match. The
+*confidence* is the score difference between the best and second-best
+language.
+
+[[unseen-estimation]]
+=== Unseen Bigram Estimation
+
+Rather than using an arbitrary fixed penalty for bigrams not in the
+profile, the scorer uses held-out estimation from the corpus statistics:
+
+[stem]
+++++
+P_{\text{unseen}} = \frac{1 - \sum_{j=1}^{K} P(b_j)}{U - K}
+++++
+
+where _K_ is the number of bigrams in the profile (500), _U_ is the
+total number of unique bigrams in the corpus, and the numerator is the
+remaining probability mass not covered by the profile.
+
+This produces per-language calibrated penalties:
+
+* *English* (606 unique bigrams, top-500 covers ~99%): unseen
+  log~2~-prob = -19.4 (harsh -- almost all bigrams are known)
+* *Arabic* (835 unique bigrams, top-500 covers ~99%): unseen
+  log~2~-prob = -15.2
+* *Chinese* (29,673 unique bigrams, top-500 covers ~14.5%): unseen
+  log~2~-prob = -15.4
+
+Note that Arabic and Chinese have similar per-bigram unseen penalties
+despite very different coverage. This is because the ratio of remaining
+mass to unseen count converges. The practical difference is captured by
+how *often* unseen bigrams are hit, which is reflected in the expected
+score.
+
+== Known Limitations
+
+=== CJK Coverage
+
+The top-500 bigram profiles cover only ~14.5% of Chinese character
+bigrams (compared to ~99% for English). This means most CJK bigrams
+in the input text will hit the unseen floor penalty, compressing the
+score range and reducing discrimination between good and garbled CJK
+text.
+
+For CJK mojibake detection, complement bigram scoring with
+script-level checks: replacement characters (U+FFFD), unexpected
+script mixing, and CID/GID fallback patterns are more reliable
+signals than bigram scores for CJK text.
+
+=== Arabic Alphabet Symmetry
+
+Arabic has a small alphabet (28 letters). Approximately 82% of bigrams
+in the Arabic profile have their reverse also present in the profile.
+This means the forward/reverse score difference for Arabic text is
+modest (~0.6 bits/bigram), compared to Hebrew (~1.2 bits/bigram)
+which benefits from distinctive sofit (final-form) letters at word
+boundaries.
+
+Arabic RTL detection still works -- the signal is real, just smaller.
+Word-boundary bigrams help significantly (Arabic word-start and
+word-end patterns are more asymmetric than internal bigrams).
+
+=== Not a Language Detector
+
+While the scorer identifies the best-matching language profile, it
+is not designed as a general-purpose language detector. It lacks
+the sophistication of dedicated tools (e.g., language priors,
+n-gram interpolation, script-based shortcuts). Use it for quality
+scoring and comparison, not language identification.
+
+=== Raw Scores Are Language-Dependent
+
+Raw scores vary by language (e.g., English ~-8.0 vs Chinese ~-13.7
+for good text) because languages differ in character inventory size
+and bigram entropy. Each profile's header includes an `EXPECTED_SCORE`
+(the negative entropy of the language model) for reference, but
+the scorer does not use it at runtime. All three intended use cases
+-- RTL detection, charset detection, and mojibake detection -- work
+by comparing two variants, so absolute score normalization is
+unnecessary.
+
+== Regenerating Profiles
+
+Profiles are generated from `tika-eval-core`'s `common_tokens` data.
+The generation logic is documented and reproducible via
+`BigramProfileGenerator`:
+
+[source,bash]
+----
+java -cp tika-eval-lite.jar \
+  org.apache.tika.eval.textquality.BigramProfileGenerator \
+  path/to/common_tokens \
+  path/to/output/bigram_profiles \
+  500
+----
+
+The generator reads each language's token file, decomposes words into
+character bigrams weighted by term frequency, selects the top-N, and
+writes profile files with all precomputed statistics.
+
+== Architecture
+
+The interface and result class live in `tika-core` to allow scoring
+without pulling in additional dependencies:
+
+* `org.apache.tika.textquality.TextQualityScorer` -- abstract class
+  with SPI discovery
+* `org.apache.tika.textquality.TextQualityResult` -- immutable result
+
+The implementation lives in `tika-eval-lite`:
+
+* `org.apache.tika.eval.textquality.BigramTextQualityScorer` --
+  bigram-based scorer (discovered via `META-INF/services`)
+* `org.apache.tika.eval.textquality.BigramProfileGenerator` --
+  profile generation and documentation of formulas

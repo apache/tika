@@ -26,6 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.language.detect.LanguageConfidence;
 import org.apache.tika.language.detect.LanguageDetector;
@@ -52,6 +55,9 @@ import org.apache.tika.language.detect.LanguageResult;
  */
 @TikaComponent
 public class CharSoupLanguageDetector extends LanguageDetector {
+
+    private static final Logger LOG =
+            LoggerFactory.getLogger(CharSoupLanguageDetector.class);
 
     private static final String MODEL_RESOURCE =
             "/org/apache/tika/langdetect/charsoup/langdetect.bin";
@@ -267,6 +273,43 @@ public class CharSoupLanguageDetector extends LanguageDetector {
         return lastEntropy;
     }
 
+    /**
+     * Compare multiple candidate texts and return the key of the one with
+     * the strongest language signal (lowest entropy). This is useful for
+     * encoding detection: decode raw bytes with each candidate charset,
+     * pass the decoded texts here, and the winner is the best charset.
+     *
+     * @param candidates map of arbitrary keys to candidate text strings
+     * @param <K>        key type (e.g., {@link java.nio.charset.Charset})
+     * @return the key whose text has the strongest language signal,
+     *         or {@code null} if the map is empty
+     */
+    public <K> K compareLanguageSignal(Map<K, String> candidates) {
+        if (candidates.isEmpty()) {
+            return null;
+        }
+
+        float bestEntropy = Float.MAX_VALUE;
+        K bestKey = null;
+
+        for (Map.Entry<K, String> entry : candidates.entrySet()) {
+            reset();
+            addText(entry.getValue());
+            detectAll();
+            float entropy = getDistributionEntropy();
+
+            LOG.debug("compareLanguageSignal: {} -> entropy={}",
+                    entry.getKey(), entropy);
+
+            if (entropy < bestEntropy) {
+                bestEntropy = entropy;
+                bestKey = entry.getKey();
+            }
+        }
+
+        return bestKey;
+    }
+
     @Override
     public LanguageDetector loadModels() throws IOException {
         // Models are loaded statically; nothing to do.
@@ -368,24 +411,45 @@ public class CharSoupLanguageDetector extends LanguageDetector {
     }
 
     /**
+     * Maximum meaningful entropy (bits) for normalizing confidenceScore.
+     * log2(numClasses) for ~165 classes is ~7.4. We cap at 7.0 so that
+     * even moderately uncertain text gets a near-zero confidenceScore.
+     */
+    private static final float MAX_ENTROPY = 7.0f;
+
+    /**
+     * Convert entropy to a 0-1 confidence score. Lower entropy = higher confidence.
+     * Uses 1/(1+entropy) to preserve discrimination even at very low entropies,
+     * unlike a linear mapping which saturates at 1.0 too quickly.
+     */
+    private static float entropyToConfidenceScore(float entropy) {
+        return 1.0f / (1.0f + entropy);
+    }
+
+    /**
      * Build sorted LanguageResult list from raw probabilities.
      */
     private List<LanguageResult> buildResults(float[] probs) {
         // Compute entropy on collapsed distribution
         float[] collapsed = collapseGroups(probs, GROUP_INDICES);
         lastEntropy = CharSoupModel.entropy(collapsed);
+        float confScore = entropyToConfidenceScore(lastEntropy);
 
         // Build results from raw probabilities sorted by probability descending
         List<LanguageResult> results = new ArrayList<>(MODEL.getNumClasses());
         for (int c = 0; c < MODEL.getNumClasses(); c++) {
             results.add(new LanguageResult(
-                    MODEL.getLabel(c), toConfidence(probs[c], lastEntropy), probs[c]));
+                    MODEL.getLabel(c), toConfidence(probs[c], lastEntropy),
+                    probs[c], confScore));
         }
         results.sort((a, b) -> Float.compare(b.getRawScore(), a.getRawScore()));
 
-        // If top score is below NONE threshold, return NULL
+        // If top score is below NONE threshold, return a NULL-like result
+        // but preserve the confidenceScore so encoding arbitration can
+        // still compare across candidate decodings.
         if (results.get(0).getConfidence() == LanguageConfidence.NONE) {
-            return Collections.singletonList(LanguageResult.NULL);
+            return Collections.singletonList(
+                    new LanguageResult("", LanguageConfidence.NONE, 0.0f, confScore));
         }
 
         return results;

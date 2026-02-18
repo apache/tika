@@ -415,6 +415,14 @@ public interface TikaCoreProperties {
     Property ENCODING_DETECTOR = Property.externalText(TIKA_META_PREFIX + "encodingDetector");
 
     /**
+     * Diagnostic trace showing which encoding detectors ran and what each returned,
+     * plus the arbitration method used when detectors disagreed.
+     * Example: {@code "HtmlEncodingDetector->UTF-8, Icu4jEncodingDetector->windows-1256 (scored)"}
+     */
+    Property ENCODING_DETECTION_TRACE =
+            Property.externalText(TIKA_META_PREFIX + "encodingDetectionTrace");
+
+    /**
      * General metadata key for the count of non-final versions available within a file.  This
      * was added initially to support generalizing incremental updates in PDF.
      */

@@ -31,14 +31,32 @@ public class LanguageResult {
     // greater confidence.
     private final float rawScore;
 
+    // Detector-agnostic confidence score (0.0 to 1.0, higher = more confident).
+    // Detectors can populate this however makes sense for their internals
+    // (e.g., entropy-derived for CharSoup, probability-based for OpenNLP).
+    // Defaults to rawScore for backwards compatibility.
+    private final float confidenceScore;
+
     /**
      * @param language ISO 639-1 language code (plus optional country code)
      * @param rawScore confidence of detector in the result.
      */
     public LanguageResult(String language, LanguageConfidence confidence, float rawScore) {
+        this(language, confidence, rawScore, rawScore);
+    }
+
+    /**
+     * @param language        ISO 639-1 language code (plus optional country code)
+     * @param rawScore        detector-specific score (e.g., softmax probability)
+     * @param confidenceScore detector-agnostic confidence (0.0 to 1.0, higher = more confident).
+     *                        For comparing results across different decodings or detectors.
+     */
+    public LanguageResult(String language, LanguageConfidence confidence,
+                          float rawScore, float confidenceScore) {
         this.language = language;
         this.confidence = confidence;
         this.rawScore = rawScore;
+        this.confidenceScore = confidenceScore;
     }
 
     /**
@@ -52,6 +70,16 @@ public class LanguageResult {
 
     public float getRawScore() {
         return rawScore;
+    }
+
+    /**
+     * Detector-agnostic confidence score (0.0 to 1.0). Higher values indicate
+     * the detector is more confident in the result. This can be used to compare
+     * results across different text decodings (e.g., for encoding detection)
+     * without knowing the detector implementation.
+     */
+    public float getConfidenceScore() {
+        return confidenceScore;
     }
 
     public LanguageConfidence getConfidence() {

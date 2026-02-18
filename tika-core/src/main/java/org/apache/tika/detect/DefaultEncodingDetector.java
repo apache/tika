@@ -22,15 +22,20 @@ import javax.imageio.spi.ServiceRegistry;
 import org.apache.tika.config.ServiceLoader;
 
 /**
- * A composite encoding detector based on all the {@link EncodingDetector} implementations
- * available through the {@link ServiceRegistry service provider mechanism}.  Those
- * loaded via the service provider mechanism are ordered by how they appear in the
- * file, if there is a single service file.  If multiple, there is no guarantee of order.
- * <p>
- * <p>
- * If you need to control the order of the Detectors, you should instead
- * construct your own {@link CompositeDetector} and pass in the list
- * of Detectors in the required order.
+ * A composite encoding detector based on all the {@link EncodingDetector}
+ * implementations available through the
+ * {@link ServiceRegistry service provider mechanism}.
+ *
+ * <p>Those loaded via the service provider mechanism are ordered by how
+ * they appear in the file, if there is a single service file. If
+ * multiple, there is no guarantee of order.</p>
+ *
+ * <p>If you need to control the order of the Detectors, you should
+ * instead construct your own {@link CompositeEncodingDetector} and pass
+ * in the list of Detectors in the required order.</p>
+ *
+ * <p>{@link MetaEncodingDetector} handling (collect-all-then-arbitrate)
+ * is provided by {@link CompositeEncodingDetector}.</p>
  *
  * @since Apache Tika 1.15
  */
@@ -47,7 +52,7 @@ public class DefaultEncodingDetector extends CompositeEncodingDetector {
     public DefaultEncodingDetector(ServiceLoader loader,
                                    Collection<Class<? extends EncodingDetector>>
                                            excludeEncodingDetectors) {
-        super(loader.loadServiceProviders(EncodingDetector.class), excludeEncodingDetectors);
+        super(loader.loadServiceProviders(EncodingDetector.class),
+                excludeEncodingDetectors);
     }
-
 }
