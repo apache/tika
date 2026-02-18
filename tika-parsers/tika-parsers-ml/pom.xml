@@ -37,6 +37,7 @@
     <module>tika-parser-nlp-package</module>
     <module>tika-inference</module>
     <module>tika-parser-vlm-ocr-module</module>
+    <module>tika-parser-tess4j-module</module>
     <module>tika-transcribe-aws</module>
   </modules>
 

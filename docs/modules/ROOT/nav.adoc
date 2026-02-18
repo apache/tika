@@ -27,6 +27,7 @@
 ** xref:configuration/parsers/pdf-parser.adoc[PDF Parser]
 ** xref:configuration/parsers/tesseract-ocr-parser.adoc[Tesseract OCR]
 ** xref:configuration/parsers/vlm-parsers.adoc[VLM Parsers (Claude, Gemini, OpenAI)]
+** xref:configuration/parsers/tess4j-parser.adoc[Tess4J OCR (In-Process)]
 * xref:migration-to-4x/index.adoc[Migration to 4.x]
 ** xref:migration-to-4x/migrating-to-4x.adoc[Migration Guide]
 ** xref:migration-to-4x/migrating-tika-server-4x.adoc[Tika Server Migration]

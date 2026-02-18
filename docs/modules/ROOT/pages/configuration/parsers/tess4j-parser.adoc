@@ -1,0 +1,282 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Tess4J OCR Parser
+
+The `Tess4JParser` is an OCR parser that calls the Tesseract native library
+in-process via https://github.com/nguyenq/tess4j[Tess4J] and JNA, rather
+than spawning a `tesseract` child process for every image. This eliminates
+per-file process-spawn overhead and can be significantly faster when
+processing large batches of images.
+
+Because the native Tesseract handle is *not thread-safe*, the parser
+maintains a configurable pool of `Tesseract` instances. Multiple threads
+borrow from the pool and return instances when done, so the parser is safe
+for concurrent use.
+
+[WARNING]
+====
+This parser loads native C/{cpp} libraries (Tesseract, Leptonica) into
+the JVM via JNA. A segfault or memory leak in the native code *will*
+crash your entire JVM.
+
+*You should run this parser in a forked child process using tika-pipes,
+ideally inside a Docker container.* Do not load it into a long-lived
+application server process unless you are comfortable with the risk.
+====
+
+== Module dependency
+
+The parser lives in the `tika-parser-tess4j-module` artifact:
+
+[source,xml]
+----
+<dependency>
+  <groupId>org.apache.tika</groupId>
+  <artifactId>tika-parser-tess4j-module</artifactId>
+  <version>${tika.version}</version>
+</dependency>
+----
+
+== Prerequisites
+
+You *must* have the Tesseract and Leptonica shared libraries installed on
+the machine where the parser runs. The tess4j jar bundles Windows DLLs
+only -- on macOS and Linux you are responsible for installing the native
+libraries yourself.
+
+* *Debian / Ubuntu:* `apt-get install libtesseract-dev libleptonica-dev tesseract-ocr-eng`
+* *RHEL / Fedora:* `dnf install tesseract-devel leptonica-devel tesseract-langpack-eng`
+* *macOS (Homebrew):* `brew install tesseract`
+
+You also need the tessdata language files. The `dataPath` configuration
+option must point to the directory containing them (e.g.,
+`/usr/share/tesseract-ocr/5/tessdata`).
+
+== Native library path (`jna.library.path`)
+
+[CAUTION]
+====
+JNA must be able to find `libtesseract` and `libleptonica` at runtime.
+The tess4j jar does *not* bundle these libraries for macOS or Linux.
+If JNA cannot find them on the default library search path, the parser
+will silently disable itself.
+
+You have several options:
+
+1. Set `nativeLibPath` in the parser configuration (recommended). The
+   parser will prepend this to the `jna.library.path` system property at
+   initialization time.
+2. Set the `jna.library.path` JVM system property yourself, e.g.,
+   `-Djna.library.path=/opt/homebrew/lib`.
+3. Install the libraries into a directory that is already on the default
+   search path (e.g., `/usr/lib`).
+
+*You are on your own here.* The correct path depends entirely on your OS,
+distribution, and how you installed Tesseract. Common values:
+
+[cols="1,2"]
+|===
+|Platform |Typical `nativeLibPath`
+
+|Debian / Ubuntu
+|`/usr/lib/x86_64-linux-gnu`
+
+|RHEL / Fedora
+|`/usr/lib64`
+
+|macOS (Homebrew, Apple Silicon)
+|`/opt/homebrew/lib`
+
+|macOS (Homebrew, Intel)
+|`/usr/local/lib`
+
+|Docker (see below)
+|`/usr/lib/x86_64-linux-gnu`
+|===
+====
+
+== Basic Configuration
+
+[source,json]
+----
+include::example$tess4j-basic.json[]
+----
+
+== Full Configuration
+
+[source,json]
+----
+include::example$tess4j-full.json[]
+----
+
+== Configuration options reference
+
+[cols="2,1,3"]
+|===
+|Property |Default |Description
+
+|`dataPath`
+|`""` (empty)
+|Path to the tessdata directory containing language data files. *Required*
+on macOS and Linux.
+
+|`nativeLibPath`
+|`""` (empty)
+|Path to the directory containing `libtesseract` and `libleptonica` shared
+libraries. Prepended to `jna.library.path` at initialization time.
+
+|`language`
+|`"eng"`
+|Tesseract language(s). Multiple languages separated by `+`
+(e.g., `eng+fra`).
+
+|`pageSegMode`
+|`1`
+|Page segmentation mode (0-13). 1 = automatic with OSD.
+
+|`ocrEngineMode`
+|`3`
+|OCR engine mode. 0 = legacy, 1 = LSTM only, 2 = legacy + LSTM,
+3 = default (whatever is available).
+
+|`poolSize`
+|`2`
+|Number of `Tesseract` instances in the pool. Set this to the number of
+threads that will call the parser concurrently. Each instance consumes
+native memory.
+
+|`timeoutSeconds`
+|`120`
+|Maximum time (seconds) to wait for a pooled `Tesseract` instance before
+throwing an exception.
+
+|`dpi`
+|`300`
+|DPI for image rendering.
+
+|`minFileSizeToOcr`
+|`0`
+|Minimum input file size in bytes. Smaller files are skipped.
+
+|`maxFileSizeToOcr`
+|`2147483647` (~2 GB)
+|Maximum input file size in bytes. Larger files are skipped.
+
+|`skipOcr`
+|`false`
+|Runtime kill-switch to disable the parser entirely.
+|===
+
+== Recommended: Docker + tika-pipes
+
+Because this parser loads native code into the JVM, the safest deployment
+is a Docker container running tika-pipes with forked child processes.
+If the native code crashes, only the child process dies -- tika-pipes will
+respawn it automatically.
+
+A minimal `Dockerfile`:
+
+[source,dockerfile]
+----
+FROM eclipse-temurin:21-jre
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        libtesseract-dev \
+        libleptonica-dev \
+        tesseract-ocr-eng && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy your tika-pipes application and config
+COPY target/tika-pipes-app.jar /app/tika-pipes-app.jar
+COPY tika-config.json /app/tika-config.json
+
+WORKDIR /app
+ENTRYPOINT ["java", "-jar", "tika-pipes-app.jar"]
+----
+
+With the following parser configuration:
+
+[source,json]
+----
+{
+  "parsers": [
+    {
+      "name": "tess4j-parser",
+      "dataPath": "/usr/share/tesseract-ocr/5/tessdata",
+      "nativeLibPath": "/usr/lib/x86_64-linux-gnu",
+      "poolSize": 4
+    }
+  ]
+}
+----
+
+TIP: Set `poolSize` equal to the number of forked parser threads to
+maximize throughput without over-allocating native memory.
+
+== Tess4J vs. TesseractOCRParser
+
+[cols="1,2,2"]
+|===
+|Aspect |`TesseractOCRParser` |`Tess4JParser`
+
+|How it calls Tesseract
+|Spawns a new `tesseract` child process per image
+|Calls the native library in-process via JNA
+
+|Startup overhead
+|Process fork + exec per file
+|One-time JNA initialization; pooled thereafter
+
+|Thread safety
+|Naturally safe (separate processes)
+|Safe via pooled instances
+
+|Crash isolation
+|Child process crashes do not affect the JVM
+|A native crash *will* take down the JVM
+
+|Dependencies
+|`tesseract` binary on `PATH`
+|`libtesseract` + `libleptonica` shared libraries + JNA
+
+|Best for
+|Safety-first deployments, light OCR workloads
+|High-throughput batch processing in Docker / tika-pipes
+|===
+
+== Per-request configuration
+
+Override configuration for a single parse call by placing a `Tess4JConfig`
+on the `ParseContext`:
+
+[source,java]
+----
+Tess4JConfig override = new Tess4JConfig();
+override.setLanguage("fra");
+override.setPageSegMode(6);
+
+ParseContext context = new ParseContext();
+context.set(Tess4JConfig.class, override);
+----
+
+Note: `dataPath` and `nativeLibPath` cannot be changed at parse time
+(they are locked at parser initialization). Attempting to set them in a
+runtime config will throw `TikaConfigException`.
+
+@since Apache Tika 4.0
