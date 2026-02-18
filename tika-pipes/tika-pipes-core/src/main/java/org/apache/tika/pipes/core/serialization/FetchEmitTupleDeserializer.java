@@ -38,13 +38,11 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
-import org.apache.tika.serialization.ParseContextUtils;
 import org.apache.tika.serialization.serdes.ParseContextDeserializer;
 
 public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple> {
@@ -64,12 +62,6 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
         Metadata metadata = readMetadata(root);
         JsonNode parseContextNode = root.get(PARSE_CONTEXT);
         ParseContext parseContext = parseContextNode == null ? new ParseContext() : ParseContextDeserializer.readParseContext(parseContextNode, mapper);
-        // Resolve all friendly-named components from jsonConfigs to actual objects
-        try {
-            ParseContextUtils.resolveAll(parseContext, FetchEmitTupleDeserializer.class.getClassLoader());
-        } catch (TikaConfigException e) {
-            throw new IOException("Failed to resolve parse-context components", e);
-        }
         FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = readOnParseException(root);
 
         return new FetchEmitTuple(id, new FetchKey(fetcherId, fetchKey, fetchRangeStart, fetchRangeEnd),
