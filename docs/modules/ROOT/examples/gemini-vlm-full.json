@@ -1,0 +1,18 @@
+{
+  "parsers": [
+    {
+      "gemini-vlm-parser": {
+        "baseUrl": "https://generativelanguage.googleapis.com",
+        "model": "gemini-2.5-flash",
+        "prompt": "Extract all visible text from this image. Return the text in markdown format, preserving the original structure (headings, lists, tables, paragraphs). Do not describe the image. Only return the extracted text.",
+        "maxTokens": 4096,
+        "timeoutSeconds": 300,
+        "apiKey": "your-gemini-api-key",
+        "inlineContent": true,
+        "skipOcr": false,
+        "minFileSizeToOcr": 0,
+        "maxFileSizeToOcr": 52428800
+      }
+    }
+  ]
+}

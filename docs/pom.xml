@@ -24,7 +24,7 @@ under the License.
     <parent>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>tika-docs</artifactId>

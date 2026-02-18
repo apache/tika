@@ -32,7 +32,7 @@
 
   <groupId>org.apache.tika</groupId>
   <artifactId>tika-parent</artifactId>
-  <version>4.0.0-SNAPSHOT</version>
+  <version>${revision}</version>
   <packaging>pom</packaging>
 
   <name>Apache Tika parent</name>
@@ -282,6 +282,7 @@
   </contributors>
 
   <properties>
+    <revision>4.0.0-SNAPSHOT</revision>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
     <maven.compiler.release>17</maven.compiler.release>
@@ -314,7 +315,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.63.0</google.cloud.version>
-    <aws2.version>2.41.28</aws2.version>
+    <aws2.version>2.41.29</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -437,8 +438,8 @@
     <sis.version>1.6</sis.version>
     <snappy.version>1.1.10.8</snappy.version>
     <solrj.version>9.10.0</solrj.version>
-    <spring.version>7.0.3</spring.version>
-    <sqlite.version>3.51.1.0</sqlite.version>
+    <spring.version>7.0.4</spring.version>
+    <sqlite.version>3.51.2.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>2.0.3</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
@@ -1186,6 +1187,31 @@
     </pluginManagement>
     <plugins>
       <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>flatten-maven-plugin</artifactId>
+        <version>1.6.0</version>
+        <configuration>
+          <updatePomFile>true</updatePomFile>
+          <flattenMode>resolveCiFriendliesOnly</flattenMode>
+        </configuration>
+        <executions>
+          <execution>
+            <id>flatten</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>flatten</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>flatten.clean</id>
+            <phase>clean</phase>
+            <goals>
+              <goal>clean</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
         <version>0.8.14</version>
@@ -1349,6 +1375,9 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
         <version>${maven.shade.version}</version>
+        <configuration>
+          <dependencyReducedPomLocation>${project.build.directory}/dependency-reduced-pom.xml</dependencyReducedPomLocation>
+        </configuration>
       </plugin>
       <!-- assembly must happen after shade so that
         tika-server's -bin.tgz/zip includes the uber jar

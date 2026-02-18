@@ -29,6 +29,8 @@ This section covers advanced usage and internals of Apache Tika.
 * xref:advanced/embedded-documents.adoc[Embedded Document Metadata] - Understanding how Tika tracks embedded documents and their paths
 * xref:advanced/zip-detection.adoc[ZIP Detection and Salvaging] - How Tika detects and recovers truncated ZIP-based files
 
+* xref:advanced/local-vlm-server.adoc[Running a Local VLM Server] - Run an open-source VLM locally as an OpenAI-compatible endpoint for air-gapped OCR
+
 == Integration Testing
 
 * xref:advanced/integration-testing/tika-app.adoc[Testing with Tika App] - Integration testing strategies for Tika App
