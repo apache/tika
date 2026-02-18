@@ -286,7 +286,7 @@ public class TikaLoader {
     /**
      * Loads and returns the content handler factory.
      * If "content-handler-factory" section exists in config, uses that factory.
-     * If section missing, returns a default BasicContentHandlerFactory with TEXT handler.
+     * If section missing, returns a default BasicContentHandlerFactory with MARKDOWN handler.
      * Results are cached - subsequent calls return the same instance.
      *
      * <p>Example JSON:
@@ -315,10 +315,12 @@ public class TikaLoader {
                     throw new TikaConfigException("Failed to load content-handler-factory", e);
                 }
             }
-            // Default to BasicContentHandlerFactory with TEXT handler if not configured
+            // Default to BasicContentHandlerFactory with MARKDOWN handler if not configured.
+            // Markdown preserves structural boundaries (headings, lists, code blocks)
+            // which enables higher-quality chunking in the inference pipeline.
             if (contentHandlerFactory == null) {
                 contentHandlerFactory = new BasicContentHandlerFactory(
-                        BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1);
+                        BasicContentHandlerFactory.HANDLER_TYPE.MARKDOWN, -1);
             }
         }
         return contentHandlerFactory;
