@@ -23,15 +23,16 @@ using the corpus index maintained at:
 https://gist.github.com/imvladikon/70c35d6b1fb83635a024751667be0112
 
 For each language, it selects the single largest available corpus
-(preferring 100K–300K sized corpora for balance) and downloads it.
-Multiple corpora per language are merged if --merge-all is set.
+and downloads it. Multiple corpora per language are merged if
+--merge-all is set. Duplicate ISO 639-3 codes are merged to
+canonical codes (e.g., cmn -> zho, pes -> fas).
 
 Usage:
     pip install requests
     python download_corpus.py <output_dir> [--max-per-lang N] [--merge-all]
 
 Example:
-    python download_corpus.py ~/datasets/lang-detect --max-per-lang 100000
+    python download_corpus.py ~/datasets/leipzig --merge-all
 
 Output structure:
     output_dir/
@@ -63,8 +64,8 @@ LEIPZIG_INDEX_URL = (
     "b91875489ccf7eb1ca8270e1138faf1db43952ec/leipzig_urls.json"
 )
 
-# Preferred corpus sizes, in priority order (largest practical first)
-SIZE_PRIORITY = {"300K": 0, "100K": 1, "1M": 2, "30K": 3, "10K": 4}
+# Preferred corpus sizes, in priority order (largest first)
+SIZE_PRIORITY = {"1M": 0, "300K": 1, "100K": 2, "30K": 3, "10K": 4}
 
 
 def parse_size(size_str: str) -> int:
@@ -80,8 +81,7 @@ def parse_size(size_str: str) -> int:
 def select_best_corpus(corpora: list[dict]) -> dict:
     """Select the best single corpus for a language.
 
-    Prefers 100K size (large enough for good coverage, small enough to download quickly).
-    Falls back to the largest available.
+    Prefers 1M size, then falls back to smaller corpora.
     """
     # Sort by size priority, then by year descending (newer is better)
     def sort_key(c):
@@ -167,6 +167,22 @@ def interleave_by_source(corpora: list[dict]) -> list[dict]:
     return result
 
 
+LANG_MERGE_MAP = {
+    "azj": "aze",
+    "ekk": "est",
+    "pes": "fas",
+    "zsm": "msa",
+    "nor": "nob",
+    "plt": "mlg",
+    "cmn": "zho",
+    "lvs": "lav",
+    "gug": "grn",
+    "quz": "que",
+    "swa": "swh",
+    "yid": "ydd",
+}
+
+
 def download_and_write(output_dir: Path, max_per_lang: int, merge_all: bool):
     """Download corpora and write to Leipzig format."""
     print("Fetching corpus index...")
@@ -174,16 +190,32 @@ def download_and_write(output_dir: Path, max_per_lang: int, merge_all: bool):
     resp.raise_for_status()
     index = resp.json()
 
-    # Group corpora by language_short (ISO 639-3)
+    # Group corpora by canonical language code, merging duplicates
     by_lang: dict[str, list[dict]] = defaultdict(list)
     for data_id, record in index.items():
         lang = record.get("language_short", "").strip()
         if not lang:
             continue
         record["data_id"] = data_id
-        by_lang[lang].append(record)
+        canonical = LANG_MERGE_MAP.get(lang, lang)
+        if canonical != lang:
+            record["_original_lang"] = lang
+        by_lang[canonical].append(record)
 
-    print(f"Index has {len(index)} corpora across {len(by_lang)} languages")
+    merged_counts = defaultdict(list)
+    for data_id, record in index.items():
+        orig = record.get("_original_lang")
+        if orig:
+            canonical = LANG_MERGE_MAP[orig]
+            merged_counts[canonical].append(orig)
+    if merged_counts:
+        print("Language merges applied:")
+        for canon, originals in sorted(merged_counts.items()):
+            unique_originals = sorted(set(originals))
+            print(f"  {', '.join(unique_originals)} -> {canon} ({len(originals)} corpora)")
+        print()
+
+    print(f"Index has {len(index)} corpora across {len(by_lang)} canonical languages")
     print(f"Output directory: {output_dir}")
     print(f"Max sentences per language: {max_per_lang:,}")
     print(f"Merge all corpora per language: {merge_all}")
@@ -221,6 +253,8 @@ def download_and_write(output_dir: Path, max_per_lang: int, merge_all: bool):
         print(f"  [{lang}] {len(corpora)} corpora available")
 
         all_sentences = []
+        seen_hashes: set[int] = set()
+        dupes_removed = 0
         lang_sources: dict[str, int] = defaultdict(int)
 
         if merge_all:
@@ -235,9 +269,18 @@ def download_and_write(output_dir: Path, max_per_lang: int, merge_all: bool):
                     sents = download_and_extract_sentences(
                         corpus["url"], remaining
                     )
-                    before = len(all_sentences)
-                    all_sentences.extend(sents)
-                    lang_sources[src] += len(all_sentences) - before
+                    added = 0
+                    for s in sents:
+                        h = hash(s)
+                        if h not in seen_hashes:
+                            seen_hashes.add(h)
+                            all_sentences.append(s)
+                            added += 1
+                            if len(all_sentences) >= max_per_lang:
+                                break
+                        else:
+                            dupes_removed += 1
+                    lang_sources[src] += added
                 except Exception as e:
                     print(f"    WARN: Failed {corpus['data_id']}: {e}")
                     continue
@@ -246,9 +289,16 @@ def download_and_write(output_dir: Path, max_per_lang: int, merge_all: bool):
             best = select_best_corpus(corpora)
             print(f"    Selected: {best['data_id']} ({best.get('size', '?')})")
             try:
-                all_sentences = download_and_extract_sentences(
+                sents = download_and_extract_sentences(
                     best["url"], max_per_lang
                 )
+                for s in sents:
+                    h = hash(s)
+                    if h not in seen_hashes:
+                        seen_hashes.add(h)
+                        all_sentences.append(s)
+                    else:
+                        dupes_removed += 1
                 lang_sources[parse_source_type(best.get("data_id", ""))] = len(all_sentences)
             except Exception as e:
                 print(f"    ERROR: Failed to download {best['data_id']}: {e}")
@@ -260,8 +310,8 @@ def download_and_write(output_dir: Path, max_per_lang: int, merge_all: bool):
             failed.append(lang)
             continue
 
-        # Truncate to max
-        all_sentences = all_sentences[:max_per_lang]
+        if dupes_removed > 0:
+            print(f"    Deduplicated: removed {dupes_removed:,} duplicate sentences")
 
         # Write Leipzig format
         lang_dir = output_dir / lang
@@ -303,8 +353,8 @@ def main():
     parser.add_argument(
         "--max-per-lang",
         type=int,
-        default=100_000,
-        help="Maximum sentences per language (default: 100000)",
+        default=6_000_000,
+        help="Maximum sentences per language (default: 6000000)",
     )
     parser.add_argument(
         "--merge-all",

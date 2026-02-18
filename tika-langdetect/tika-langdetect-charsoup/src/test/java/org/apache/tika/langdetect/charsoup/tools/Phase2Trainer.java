@@ -106,15 +106,15 @@ public class Phase2Trainer {
 
     // --- Training schedule ---
     private int adamEpochs = 2;
-    private int maxEpochs = 5;
+    private int maxEpochs = 8;
 
     // --- Early stopping: within-epoch ---
     private int checkpointInterval = 200_000;
     private int rollingWindow = 5;
-    private double withinEpochThreshold = 0.005;
+    private double withinEpochThreshold = 0.002;
 
     // --- Early stopping: across-epoch ---
-    private int patience = 2;
+    private int patience = 3;
     private double acrossEpochThreshold = 0.001;
     private int devSubsampleSize = 20_000;
 
@@ -125,7 +125,7 @@ public class Phase2Trainer {
      * update. Standard ML mini-batch — NOT just I/O
      * batching.
      */
-    private int miniBatchSize = 128;
+    private int miniBatchSize = 64;
 
     // --- I/O batching ---
     /**
@@ -290,27 +290,61 @@ public class Phase2Trainer {
     public void train(Path trainFile,
                       List<LabeledSentence> devData)
             throws IOException {
-        // First pass: scan file to build label index,
-        // count lines, and find chunk byte offsets
         long scanStart = System.nanoTime();
         int totalLines = scanLabels(trainFile);
-        chunkByteOffsets = scanChunkOffsets(trainFile);
         if (verbose) {
             System.out.printf(Locale.US,
-                    "Scanned: %,d lines, %d classes, "
-                            + "%d chunks  [%.1f s]%n",
+                    "Scanned: %,d lines, %d classes  "
+                            + "[%.1f s]%n",
                     totalLines, numClasses,
-                    chunkByteOffsets.length,
                     elapsed(scanStart));
         }
+        initializeWeights();
+        trainEpochs(trainFile, devData);
+    }
 
-        // Initialize weights and Adam state
+    /**
+     * Initialize the model with known labels, then train
+     * with epoch-level resampling. Before each epoch, the
+     * caller provides a freshly sampled and shuffled training
+     * file via {@code epochFileSupplier}.
+     *
+     * @param allLabels         all language labels
+     * @param epochFileSupplier called before each epoch to
+     *                          produce a training file
+     * @param devData           fixed dev set for evaluation
+     */
+    public void trainWithResampling(
+            String[] allLabels,
+            EpochFileSupplier epochFileSupplier,
+            List<LabeledSentence> devData)
+            throws IOException {
+        initializeLabels(allLabels);
+        initializeWeights();
+        trainEpochs(null, devData, epochFileSupplier);
+    }
+
+    @FunctionalInterface
+    public interface EpochFileSupplier {
+        Path supply(int epochNum) throws IOException;
+    }
+
+    private void initializeLabels(String[] allLabels) {
+        this.labels = allLabels.clone();
+        Arrays.sort(this.labels);
+        this.labelIndex = new HashMap<>();
+        for (int i = 0; i < labels.length; i++) {
+            this.labelIndex.put(labels[i], i);
+        }
+        this.numClasses = labels.length;
+    }
+
+    private void initializeWeights() {
         weights = new float[numBuckets][numClasses];
         biases = new float[numClasses];
         globalStep = new AtomicLong(0);
 
         if (adamThreads > 1) {
-            // Per-thread moment arrays for Hogwild Adam
             perThreadMW =
                     new float[adamThreads][numBuckets][numClasses];
             perThreadVW =
@@ -325,7 +359,6 @@ public class Phase2Trainer {
             mBias = null;
             vBias = null;
         } else {
-            // Shared moment arrays for single-thread Adam
             mW = new float[numBuckets][numClasses];
             vW = new float[numBuckets][numClasses];
             mBias = new float[numClasses];
@@ -336,19 +369,40 @@ public class Phase2Trainer {
             perThreadVBias = null;
             perThreadStep = null;
         }
+    }
 
-        // Sample fixed dev subsample for within-epoch checks
+    /**
+     * Run the epoch loop. If {@code staticFile} is non-null,
+     * trains from that file every epoch (original behavior).
+     * If {@code supplier} is non-null, calls it before each
+     * epoch to get a fresh training file.
+     */
+    private void trainEpochs(Path staticFile,
+                              List<LabeledSentence> devData)
+            throws IOException {
+        trainEpochs(staticFile, devData, null);
+    }
+
+    private void trainEpochs(Path staticFile,
+                              List<LabeledSentence> devData,
+                              EpochFileSupplier supplier)
+            throws IOException {
+
+        // For static file, scan chunk offsets once
+        if (staticFile != null) {
+            chunkByteOffsets = scanChunkOffsets(staticFile);
+        }
+
         List<LabeledSentence> devSubsample =
                 sampleDevSubset(devData, devSubsampleSize);
 
         if (verbose) {
             System.out.printf(Locale.US,
-                    "Training: %,d samples, %d classes, "
-                            + "%,d buckets, "
+                    "Training: %d classes, %,d buckets, "
                             + "Adam=%d thread(s), "
                             + "SGD=%d thread(s)%n",
-                    totalLines, numClasses,
-                    numBuckets, adamThreads, sgdThreads);
+                    numClasses, numBuckets,
+                    adamThreads, sgdThreads);
             System.out.printf(Locale.US,
                     "Schedule: Adam(lr=%.4f) x%d epochs, "
                             + "SGD(lr=%.4f->%.4f) x%d max%n",
@@ -393,13 +447,28 @@ public class Phase2Trainer {
                             + frac * (sgdLrEnd - sgdLrStart);
                 }
 
+                // Resolve training file for this epoch
+                Path trainFile;
+                if (supplier != null) {
+                    trainFile = supplier.supply(epoch);
+                    chunkByteOffsets =
+                            scanChunkOffsets(trainFile);
+                } else {
+                    trainFile = staticFile;
+                }
+
+                int totalLines = 0;
+                for (int i = 0;
+                     i < chunkByteOffsets.length; i++) {
+                    totalLines += chunkSize;
+                }
+
                 String optLabel = useAdam
                         ? String.format(Locale.US,
                         "Adam(lr=%.4f)", adamLr)
                         : String.format(Locale.US,
                         "SGD(lr=%.4f)", sgdLr);
 
-                // Stream the training file
                 EpochResult result = trainEpochStreaming(
                         pool, trainFile, useAdam, sgdLr,
                         devSubsample, epoch);
@@ -407,7 +476,6 @@ public class Phase2Trainer {
                 long epochMs = (System.nanoTime()
                         - epochStart) / 1_000_000;
 
-                // Full dev eval
                 F1Result devResult = devData != null
                         ? evaluateMacroF1(devData) : null;
                 double devF1 = devResult != null
@@ -418,14 +486,13 @@ public class Phase2Trainer {
                             "Epoch %d/%d  %s  "
                                     + "avgLoss=%.4f  "
                                     + "devF1=%.4f (%d langs)  "
-                                    + "processed=%,d/%,d"
+                                    + "processed=%,d"
                                     + "%s  [%,d ms]%n",
                             epoch + 1, maxEpochs, optLabel,
                             result.avgLoss, devF1,
                             devResult != null
                                     ? devResult.numLangs : 0,
                             result.sentencesProcessed,
-                            totalLines,
                             result.earlyStopped
                                     ? " (early-stopped)"
                                     : "",
@@ -567,7 +634,7 @@ public class Phase2Trainer {
      * epochs. Within each chunk, lines keep their original
      * (pre-shuffled) order.
      */
-    private int chunkSize = 500_000;
+    private int chunkSize = 100_000;
 
     public Phase2Trainer setChunkSize(int size) {
         this.chunkSize = size;
@@ -1279,6 +1346,9 @@ public class Phase2Trainer {
         return numBuckets;
     }
 
+    public int getNumClasses() {
+        return numClasses;
+    }
 
     public FeatureExtractor getExtractor() {
         return createExtractor();
@@ -1286,6 +1356,17 @@ public class Phase2Trainer {
 
     public Map<String, Integer> getLabelIndex() {
         return labelIndex;
+    }
+
+    /**
+     * Predict using caller-supplied buffers to avoid per-call allocation.
+     * Safe to call from multiple threads provided each thread has its own
+     * {@code ext}, {@code featureBuf}, and {@code logitBuf}.
+     */
+    public String predictBuffered(String text, FeatureExtractor ext,
+                                  int[] featureBuf, float[] logitBuf) {
+        extractInto(ext, text, featureBuf);
+        return labels[predictFromBuf(featureBuf, logitBuf)];
     }
 
     // ================================================================

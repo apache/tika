@@ -18,15 +18,13 @@ package org.apache.tika.eval.core.tokens;
 
 import java.util.function.Consumer;
 
-import org.apache.tika.langdetect.charsoup.WordTokenizer;
-
 /**
- * Manages tokenization for tika-eval. Replaces the former Lucene analyzer-based
- * implementation with the shared WordTokenizer from tika-langdetect-charsoup.
- * <p>
- * The tokenizer uses the same preprocessing pipeline as the language detector:
- * NFC normalization, URL/email stripping, case folding via Character.toLowerCase.
- * Alphabetic text produces whole words; ideographic text produces character bigrams.
+ * Manages tokenization for tika-eval. Uses {@link TikaEvalTokenizer} in
+ * {@link TikaEvalTokenizer.Mode#STANDARD STANDARD} mode, which includes
+ * alphabetic, ideographic, and numeric tokens with NFKD normalization,
+ * case folding, and CJK bigrams. No minimum length filter or skip list
+ * is applied — those are only used in
+ * {@link TikaEvalTokenizer.Mode#COMMON_TOKENS COMMON_TOKENS} mode.
  */
 public class AnalyzerManager {
 
@@ -42,38 +40,25 @@ public class AnalyzerManager {
 
     /**
      * Tokenize the given text and return a TokenCounts object.
-     * Emits both alphabetic words and numeric tokens.
      *
      * @param text input text
      * @return token counts
      */
     public TokenCounts tokenize(String text) {
         TokenCounts counts = new TokenCounts();
-        int[] tokenCount = {0};
-        WordTokenizer.tokenizeAlphanumeric(text, token -> {
-            if (tokenCount[0] < maxTokens) {
-                counts.increment(token);
-                tokenCount[0]++;
-            }
-        });
+        TikaEvalTokenizer.tokenize(text, TikaEvalTokenizer.Mode.STANDARD, maxTokens,
+                counts::increment);
         return counts;
     }
 
     /**
      * Tokenize and stream tokens to a consumer, respecting maxTokens limit.
-     * Emits both alphabetic words and numeric tokens.
      *
      * @param text     input text
      * @param consumer receives each token string
      */
     public void tokenize(String text, Consumer<String> consumer) {
-        int[] tokenCount = {0};
-        WordTokenizer.tokenizeAlphanumeric(text, token -> {
-            if (tokenCount[0] < maxTokens) {
-                consumer.accept(token);
-                tokenCount[0]++;
-            }
-        });
+        TikaEvalTokenizer.tokenize(text, TikaEvalTokenizer.Mode.STANDARD, maxTokens, consumer);
     }
 
     /**

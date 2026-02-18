@@ -121,7 +121,7 @@ public class ConfusionDumper {
             int total = totals.getOrDefault(lang, 0);
             int correct = corrects.getOrDefault(lang, 0);
             if (total == 0) {
-                System.out.printf("%s: no test samples found%n%n", lang);
+                System.out.printf(Locale.US, "%s: no test samples found%n%n", lang);
                 continue;
             }
 

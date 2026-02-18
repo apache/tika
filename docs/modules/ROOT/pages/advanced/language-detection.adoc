@@ -19,7 +19,7 @@
 
 Tika includes two language detection implementations:
 
-* **TikaLanguageDetector** (`tika-langdetect-charsoup`) — a built-in hash-based
+* **CharSoupLanguageDetector** (`tika-langdetect-charsoup`) — a built-in hash-based
   detector with zero runtime dependencies beyond `tika-core`. This is the
   recommended detector for new deployments.
 * **OpenNLPDetector** (`tika-langdetect-opennlp`) — based on Apache OpenNLP's
@@ -28,7 +28,7 @@ Tika includes two language detection implementations:
 Both implement the `org.apache.tika.language.detect.LanguageDetector` SPI interface
 and are loaded automatically via Tika's service discovery.
 
-== Architecture: TikaLanguageDetector
+== Architecture: CharSoupLanguageDetector
 
 The built-in detector uses a simple but effective architecture based on
 character n-gram language identification (<<cavnar1994>>):
@@ -123,28 +123,48 @@ The training data comes from the https://wortschatz.uni-leipzig.de/en/download[L
 pip install requests
 
 python tika-langdetect/tika-langdetect-charsoup/src/test/python/download_corpus.py \
-    ~/datasets/lang-detect \
-    --max-per-lang 100000
+    ~/datasets/leipzig \
+    --max-per-lang 6000000
 ----
 
-This downloads one corpus per language (preferring 100K-sized corpora) from
-`downloads.wortschatz-leipzig.de` and writes them in Leipzig format:
+The script downloads multiple corpora per language (preferring the largest
+available — 1M, 300K, 100K), merges variant language codes to canonical forms
+(e.g., `cmn`→`zho`), and deduplicates sentences during download. This produces
+Leipzig-format directories:
 
 [source]
 ----
-~/datasets/lang-detect/
+~/datasets/leipzig/
     eng/sentences.txt     (lineNum<TAB>sentence)
     deu/sentences.txt
     ara/sentences.txt
     ...
 ----
 
-Use `--merge-all` to download and merge all available corpora per language
-(slower, more data).
+The target of 6 million unique sentences per language provides stable frequency
+estimates for both the language model and the common token lists used by
+`tika-eval`.
+
+=== Step 1a: Corpus Cleaning (Language-Specific)
+
+Some Leipzig web-crawl corpora contain significant contamination from related
+languages. Pashto (`pus`) is a known case — roughly 18% of its Leipzig sentences
+are actually Dari, Persian, or Bosnian (which share Arabic script). A filtering
+script removes sentences that lack any Pashto-specific character:
+
+[source,bash]
+----
+python tika-langdetect/tika-langdetect-charsoup/src/test/python/filter_pashto.py \
+    ~/datasets/leipzig
+----
+
+This keeps only sentences containing at least one of: ښ ځ ږ ټ ډ ړ ڼ ۍ. The
+original file is preserved as `sentences.txt.bak`. The same cleaned corpus
+should be used for both language model training and common token generation.
 
 === Step 2: Train the Model
 
-The training pipeline is a Java main class that can be run directly:
+The training pipeline is a Java main class:
 
 [source,bash]
 ----
@@ -153,12 +173,20 @@ mvn -pl tika-langdetect/tika-langdetect-charsoup test-compile
 java -Xmx10g -cp tika-langdetect/tika-langdetect-charsoup/target/test-classes:\
 tika-langdetect/tika-langdetect-charsoup/target/classes \
     org.apache.tika.langdetect.charsoup.tools.TrainLanguageModel \
-    ~/datasets/lang-detect \
+    ~/datasets/leipzig \
     tika-langdetect/tika-langdetect-charsoup/src/main/resources/org/apache/tika/langdetect/charsoup/langdetect.bin \
-    8192
+    8192 \
+    5000000
 ----
 
-Arguments: `<corpusDir> <outputFile> [numBuckets] [maxPerLang]`
+Arguments: `<corpusDir> <outputFile> [numBuckets] [targetEpochTotal]`
+
+The `targetEpochTotal` parameter (default 5,000,000) sets the desired total
+sentence count per training epoch. A flat cap is found by binary search such
+that the sum of per-language samples hits the target: languages with fewer
+sentences than the cap contribute all their data, while larger languages are
+uniformly capped. This produces near-uniform class representation without
+oversampling small corpora.
 
 === Training Pipeline Steps
 
@@ -166,25 +194,52 @@ The `TrainLanguageModel` pipeline proceeds as follows:
 
 1. **Read corpus** — load all `lang/sentences.txt` files from the corpus directory
 2. **Deduplicate** — remove exact-duplicate sentences within each language
-3. **Merge language codes** — consolidate duplicate ISO 639-3 codes that refer to
-   the same language (e.g., `azj`→`aze`, `cmn`→`zho`, `ekk`→`est`, `lvs`→`lav`,
-   `nor`→`nob`, `pes`→`fas`, `plt`→`mlg`, `zsm`→`msa`)
+   (FNV-1a 64-bit hashing)
+3. **Merge language codes** — consolidate duplicate ISO 639-3 codes
+   (see <<_language_code_merging>>)
 4. **Filter low-resource languages** — drop languages with fewer than 10,000
    sentences after deduplication
-5. **Stratified split** — 80% train / 10% dev / 10% test, stratified by language
-6. **Global shuffle** — shuffle the entire training file so languages are
-   interleaved (critical for mini-batch training)
-7. **Pass 1: Initial training** — AdamW optimizer (mini-batch, 1 thread) followed
-   by Hogwild! parallel SGD, with within-epoch early stopping
-8. **Filter mislabeled sentences** — use the Pass 1 model to predict each training
-   sentence; remove sentences not classified as their labeled language
-9. **Pass 2: Retrain** — same optimizer schedule on the filtered training data
-10. **INT8 quantization** — convert float32 weights to signed 8-bit integers with
-    per-class scaling factors
-11. **Evaluate** — report quantized model accuracy on the held-out test set
-12. **Export** — write the binary LDM1 model file
+5. **Stratified split** — for each language:
+   * **Test**: 10% (max 20,000 sentences), stored **raw** (no preprocessing)
+   * **Dev**: 10% (max 20,000 sentences), stored **preprocessed**
+   * **Training pool**: remainder, stored **preprocessed** in per-language files
+6. **Pass 1: Initial training** with epoch-level resampling — each epoch samples
+   up to `epochMaxPerLang` sentences per language from the pool, shuffles, and
+   trains. AdamW for the first 2 epochs, then Hogwild! SGD.
+7. **Filter mislabeled sentences** — use the Pass 1 model to predict each sentence
+   in the training pool; remove sentences not classified as their labeled language
+   (or a language within the same confusable group)
+8. **Pass 2: Retrain** — same optimizer and resampling on the filtered pool
+9. **INT8 quantization** — convert float32 weights to signed 8-bit integers with
+   per-class scaling factors
+10. **Evaluate** — report quantized model accuracy on the **raw** test set (full
+    end-to-end pipeline: preprocessing + feature extraction + classification)
+11. **Export** — write the binary LDM1 model file
 
-Each step prints its wall-clock time so bottlenecks are immediately visible.
+The dev set is preprocessed so that within-epoch and across-epoch F1 checks
+can evaluate against the weight matrix directly without re-running the
+preprocessing pipeline each time. The test set is kept raw to verify the
+full detection path end-to-end.
+
+=== Epoch-Level Resampling
+
+Rather than training on a fixed shuffled file each epoch, the pipeline
+resamples from the training pool before each epoch:
+
+* Binary-search for a flat cap C such that the sum of `min(n_i, C)` across
+  all languages equals `targetEpochTotal` (default 5M)
+* For each language, reservoir-sample up to C sentences from its pool file
+* Interleave samples from all languages into a single shuffled epoch file
+* Train one epoch on the result
+
+This ensures that:
+
+* **High-resource languages** (e.g., English with 6M+ sentences) are capped
+  uniformly, preventing them from dominating gradient updates
+* **Low-resource languages** contribute their full data every epoch (they fall
+  below the cap and are never downsampled)
+* **Diversity across epochs** — each epoch draws a fresh random sample, so
+  high-resource languages see their full corpus spread across multiple epochs
 
 === Optimizer Schedule
 
@@ -192,11 +247,9 @@ Training uses a two-phase optimizer:
 
 1. **AdamW** (<<loshchilov2019>>) — decoupled weight decay Adam optimizer for the
    first 2 epochs, single-threaded with mini-batch gradient accumulation
-   (batch size 128). This quickly learns good initial weights.
+   (batch size 64). This quickly learns good initial weights.
 2. **Hogwild! SGD** (<<niu2011>>) — lock-free parallel stochastic gradient descent
-   for up to 3 more epochs, with linearly decaying learning rate. Each of the
-   12 threads processes its slice of the data and writes gradient updates directly
-   to shared weight arrays with no synchronization.
+   for up to 6 more epochs, with linearly decaying learning rate.
 
 Within-epoch early stopping monitors dev-set F1 at regular checkpoints. If the
 F1 range over the last 5 checkpoints is below a threshold, the epoch ends early.
@@ -248,7 +301,7 @@ non-zero buckets are visited.
 
 The model file is stored as a classpath resource at
 `org/apache/tika/langdetect/charsoup/langdetect.bin` and loaded statically
-by `TikaLanguageDetector`.
+by `CharSoupLanguageDetector`.
 
 === Memory-Mapped Loading
 

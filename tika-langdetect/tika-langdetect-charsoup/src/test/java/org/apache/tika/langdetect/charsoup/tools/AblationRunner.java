@@ -73,7 +73,7 @@ public class AblationRunner {
                 .availableProcessors();
 
         System.out.println("Train file: " + trainFile);
-        System.out.printf("Threads: %d%n", threads);
+        System.out.printf(Locale.US, "Threads: %d%n", threads);
 
         // Load dev + test via reservoir sampling
         System.out.println("Loading dev + test...");

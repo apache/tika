@@ -18,189 +18,293 @@
 = Building the CharSoup Language Detector
 
 This page documents how the `tika-langdetect-charsoup` language detection model
-was trained, the decisions made along the way, and the final comparison against
+is trained, the decisions made along the way, and benchmark comparisons against
 the existing OpenNLP-based detector. For architecture and API details, see
 xref:advanced/language-detection.adoc[Language Detection].
 
 == Training Corpus
 
-Training data was downloaded from the
+Training data is downloaded from the
 https://wortschatz.uni-leipzig.de/en/download[Leipzig Corpora Collection] using
-`download_corpus.py` (checked into the repository). For each of the ~300 ISO 639-3
-languages available, the script selects the largest available corpus (preferring
-100K–300K sentence sizes) and extracts `*-sentences.txt` files.
+`download_corpus.py` (checked into the repository). The script downloads multiple
+corpora per language (preferring 1M, then 300K, 100K sizes), targeting up to
+6 million unique sentences per language. During download, sentences are merged
+across variant language codes and deduplicated in memory so the per-language cap
+applies to unique sentences only.
+
+[source,bash]
+----
+python tika-langdetect/tika-langdetect-charsoup/src/test/python/download_corpus.py \
+    ~/datasets/leipzig \
+    --max-per-lang 6000000
+----
+
+The 6 million target provides stable frequency estimates for both the language
+model and the common token lists used by `tika-eval`. High-resource languages
+like English require downloading many archives because news corpora have high
+duplication rates.
 
 === Deduplication
 
-Many Leipzig corpora contain a high proportion of exact-duplicate sentences.
-During data preparation, exact duplicates within each language are removed.
-Deduplication removed **1,928,709 sentences** across the corpus, with some
-languages losing over 50% of their data.
+Many Leipzig corpora contain a high proportion of exact-duplicate sentences,
+especially news corpora where the same headlines and wire stories appear in
+multiple archives. Deduplication is performed at two stages:
 
+1. **During download** — the download script deduplicates within each canonical
+   language using Python's built-in `hash()`. This ensures the `--max-per-lang`
+   cap applies to unique sentences.
+2. **During data preparation** — the Java training pipeline applies FNV-1a 64-bit
+   hashing for a more robust second-pass deduplication.
+
+[[_language_code_merging]]
 === Language Code Merging
 
 Several languages have multiple ISO 639-3 codes that refer to the same language
-or are indistinguishable by character features. These are merged during data
-preparation:
+or are indistinguishable by character features. These are merged during both
+download and training:
+
+[cols="1,1,1"]
+|===
+| Merged From | Merged To | Note
+
+| `azj` (North Azerbaijani) | `aze` (Azerbaijani) | Code variant
+| `cmn` (Mandarin Chinese) | `zho` (Chinese) | Code variant
+| `ekk` (Standard Estonian) | `est` (Estonian) | Code variant
+| `gug` (Paraguayan Guaraní) | `grn` (Guaraní) | Code variant
+| `lvs` (Standard Latvian) | `lav` (Latvian) | Code variant
+| `nor` (Norwegian) | `nob` (Norwegian Bokmål) | Code variant
+| `pes` (Iranian Persian) | `fas` (Persian) | Code variant
+| `plt` (Plateau Malagasy) | `mlg` (Malagasy) | Code variant
+| `quz` (Cusco Quechua) | `que` (Quechua) | Code variant
+| `swa` (Swahili macrolanguage) | `swh` (Coastal Swahili) | Code variant
+| `yid` (Yiddish macrolanguage) | `ydd` (Eastern Yiddish) | Code variant
+| `zsm` (Standard Malay) | `msa` (Malay) | Code variant
+|===
+
+The same merge map is maintained in three places and must be kept in sync:
+
+* `download_corpus.py` — `LANG_MERGE_MAP`
+* `TrainLanguageModel.java` — `LANG_MERGE_MAP`
+* `CommonTokenGenerator.java` — `LANG_MERGE_MAP`
+
+=== Corpus Cleaning: Pashto
+
+Leipzig web-crawl data for Pashto (`pus`) was found to contain approximately
+18% contamination from Dari, Persian, and Bosnian. These languages share Arabic
+script, so the contamination only becomes apparent at the word/character level.
+
+A filtering script (`filter_pashto.py`) removes sentences that lack any
+Pashto-specific character. The Pashto-unique characters used as the filter are:
 
 [cols="1,1"]
 |===
-| Merged From | Merged To
+| Character | Name
 
-| `azj` (North Azerbaijani) | `aze` (Azerbaijani)
-| `cmn` (Mandarin Chinese) | `zho` (Chinese)
-| `ekk` (Standard Estonian) | `est` (Estonian)
-| `lvs` (Standard Latvian) | `lav` (Latvian)
-| `nor` (Norwegian) | `nob` (Norwegian Bokmål)
-| `pes` (Iranian Persian) | `fas` (Persian)
-| `plt` (Plateau Malagasy) | `mlg` (Malagasy)
-| `zsm` (Standard Malay) | `msa` (Malay)
+| ښ | Xe
+| ځ | Dze
+| ږ | Zhe
+| ټ | Te (retroflex)
+| ډ | Dal (retroflex)
+| ړ | Re (retroflex)
+| ڼ | Nun (retroflex)
+| ۍ | Ye (feminine)
 |===
+
+These characters do not appear in Dari, Persian, or Urdu. The filter is
+high-precision: some genuine short Pashto sentences are lost, but the remaining
+data is substantially cleaner.
+
+[source,bash]
+----
+python tika-langdetect/tika-langdetect-charsoup/src/test/python/filter_pashto.py \
+    ~/datasets/leipzig
+----
+
+The script rewrites `pus/sentences.txt` in place and saves a backup as
+`sentences.txt.bak`. The cleaned corpus should be used for both language model
+training and common token generation.
+
+Other languages may benefit from similar cleaning in the future. The general
+approach — identifying script-unique characters that distinguish a language from
+its confusable relatives — can be applied to any language where contamination is
+suspected.
 
 === Filtering Low-Resource Languages
 
-Languages with fewer than **10,000 sentences** after deduplication were excluded.
+Languages with fewer than **10,000 sentences** after deduplication are excluded.
 This threshold ensures enough data for the model to learn useful distributions
-even after the mislabel-filtering step. **49 low-resource languages** were dropped.
+even after the mislabel-filtering step.
 
-=== Final Dataset
+=== Explicit Language Exclusions
 
-After deduplication, merging, and filtering, the corpus contained:
+Some languages meet the 10,000-sentence minimum but are explicitly excluded
+because they cause one of two problems:
 
-[cols="1,1"]
+1. **Collateral damage** — their presence causes a closely related majority
+   language to drop significantly in accuracy, because character n-grams
+   cannot reliably distinguish between them.
+2. **Unacceptable own accuracy** — their own detection accuracy is too low to
+   be useful, typically because their written form is nearly identical to a
+   larger language's.
+
+Exclusion decisions are made by evaluating per-language accuracy on the held-out
+test set after a full training run, then examining both own accuracy and any drop
+in accuracy for related languages. The threshold for "collateral damage" is
+informed by the gap between strict accuracy and group accuracy for the affected
+majority language.
+
+[cols="1,1,1,3"]
 |===
-| Split | Sentences
+| Language | Code | Own Accuracy | Reason for Exclusion
 
-| Train
-| 11,570,595
+| Venetian
+| `vec`
+| 72.0%
+| Italian (`ita`) dropped from its expected range to **83.6%** — a 14.5pp gap
+  between strict and group accuracy. Venetian and Italian are indistinguishable
+  at the character n-gram level; the collateral damage to a major language is
+  unacceptable.
 
-| Dev
-| 1,446,250
+| Tosk Albanian
+| `als`
+| 69.7%
+| Standard Albanian (`sqi`) collapsed to **51.6%** strict accuracy. Adding Tosk
+  Albanian effectively broke Albanian detection.
 
-| Test
-| 1,446,486
+| Madurese
+| `mad`
+| 9.1%
+| Near-random accuracy on 1,003 test sentences. Written in Latin script,
+  Madurese is indistinguishable from Javanese and Indonesian at the character
+  level.
+
+| Anaang
+| `anw`
+| 32.5%
+| 32.5% accuracy on only 3,036 test sentences — below any useful quality bar,
+  with no clear confusable partner to explain the failure.
+
+| Konkani
+| `knn`
+| 46.2%
+| Uses Devanagari script (same as Marathi). The character n-gram profile is
+  too similar to Marathi to distinguish reliably; less than half of Konkani
+  text is correctly identified.
+
+| Gilaki
+| `glk`
+| 88.6%
+| Northwestern Iranian language whose script profile overlaps with Persian and
+  Mazanderani. 88.6% is below the quality bar for included languages.
+
+| Kituba (Monokutuba)
+| `mkw`
+| 80.1%
+| Bantu contact language whose character profile overlaps with Kongo and
+  Lingala. 80.1% accuracy is not high enough to justify inclusion.
+
 |===
 
-**199 languages** are represented in the final model.
+These exclusions are enforced in `TrainLanguageModel.EXCLUDED_LANGS` and applied
+during data preparation, before the training pool is written. If future corpus
+growth or model improvements make these languages reliably distinguishable, they
+can be removed from the exclusion set.
+
+== Data Splitting Strategy
+
+The data split is designed to maximize use of large corpora while maintaining
+stable evaluation sets:
+
+[cols="1,1,1"]
+|===
+| Split | Size | Preprocessing
+
+| **Test**
+| 10% per language (max 20,000)
+| Raw (no preprocessing)
+
+| **Dev**
+| 10% per language (max 20,000)
+| Preprocessed (NFC, lowercase, URL/email stripped)
+
+| **Training pool**
+| Remainder
+| Preprocessed, stored as per-language files
+|===
+
+*Why raw test?* The test set evaluates the full end-to-end pipeline including
+preprocessing, feature extraction, and classification. This catches regressions
+in any stage.
+
+*Why preprocessed dev?* Dev evaluation happens at every checkpoint and at the end
+of every epoch. Preprocessing is deterministic, so pre-applying it once avoids
+redundant work and gives the same result as running the full pipeline.
+
+*Why per-language pool files?* Epoch-level resampling (see below) needs to sample
+a fixed number of sentences per language. Storing each language in its own file
+makes this trivial.
 
 == Training Configuration
 
 * **Hash buckets:** 8,192
-* **Optimizer:** AdamW (lr=0.001, mini-batch 128) × 2 epochs, then
-  Hogwild! SGD (lr=0.01→0.001, 12 threads) × 3 max epochs
+* **Target epoch total:** 5,000,000 sentences per epoch. A flat cap C is
+  found by binary search such that Σ min(n_i, C) ≈ 5M. Languages below
+  C contribute all their data; languages above C are uniformly capped,
+  giving near-uniform class representation without oversampling.
+* **Optimizer:** AdamW (lr=0.001, mini-batch 64) × 2 epochs, then
+  Hogwild! SGD (lr=0.01→0.001) × 6 max epochs
 * **Within-epoch early stopping:** checkpoint every 200K sentences; stop if
   F1 range over last 5 checkpoints < 0.005
 * **Across-epoch patience:** stop if no improvement for 2 consecutive epochs
-* **Hardware:** Apple Silicon (M-series), 12 cores
 * **JVM:** `-Xmx10g`
 
-== Training Run
+=== Epoch-Level Resampling
 
-=== Pass 1: Initial Training (11.6M sentences, 199 classes)
+Rather than training on a single shuffled flat file, each epoch draws a fresh
+sample from the training pool:
 
-[cols="1,1,1,1,1"]
-|===
-| Epoch | Optimizer | Dev F1 | Processed | Time
+1. Binary-search for a flat cap C such that `Σ min(n_i, C) ≈ 5,000,000`
+2. For each language, randomly sample up to C sentences from its pool file
+3. Concatenate all sampled sentences into one epoch file
+4. Globally shuffle
+5. Train one epoch on the result
 
-| 1
-| Adam (lr=0.001)
-| 0.9404
-| 1.47M / 11.6M (early-stopped)
-| 32s
+This balances data exposure across languages:
 
-| 2
-| Adam (lr=0.001)
-| 0.9457
-| 1.60M / 11.6M (early-stopped)
-| 31s
+* **High-resource languages** (e.g., English with millions of sentences) are
+  capped at C per epoch, preventing them from dominating gradient updates
+* **Different samples each epoch** ensure the model eventually sees the full
+  corpus for high-resource languages across multiple epochs
+* **Low-resource languages** (fewer than C sentences) contribute all their
+  data every epoch, ensuring they are not underrepresented
 
-| 3
-| SGD (lr=0.010)
-| 0.9398
-| 1.00M / 11.6M (early-stopped)
-| 3s
+== Training Pipeline
 
-| 4
-| SGD (lr=0.006)
-| 0.9452
-| 1.00M / 11.6M (early-stopped)
-| 3s
-|===
+=== Pass 1: Initial Training
 
-Early stopping triggered after epoch 4 (no improvement over best F1 of 0.9457).
-Pass 1 total: **120 seconds**.
+AdamW for 2 epochs followed by Hogwild! SGD for up to 3 more epochs, each
+with epoch-level resampling from the full training pool.
 
 === Mislabeled Sentence Filtering
 
-The Pass 1 model was used to predict each training sentence. Sentences where the
-prediction did not match the label were removed — these are typically English
-text in a non-English corpus, transliterated text, or other noise.
+The Pass 1 model predicts each sentence in the entire training pool. Sentences
+where the prediction does not match the label are removed — unless the
+prediction falls within the same confusable language group (e.g., a sentence
+labeled `nob` predicted as `nno` is kept).
 
-**Result:** removed **303,580 / 11,570,595 sentences (2.6%)**, leaving
-11,267,015 sentences for Pass 2.
+This filtering is applied once to the full pool, producing a `pool_filtered/`
+directory that is used for Pass 2.
 
-=== Pass 2: Retraining on Filtered Data (11.3M sentences, 199 classes)
+=== Pass 2: Retraining on Filtered Data
 
-[cols="1,1,1,1,1"]
-|===
-| Epoch | Optimizer | Dev F1 | Processed | Time
-
-| 1
-| Adam (lr=0.001)
-| 0.9411
-| 1.60M / 11.3M (early-stopped)
-| 30s
-
-| 2
-| Adam (lr=0.001)
-| 0.9430
-| 1.07M / 11.3M (early-stopped)
-| 20s
-
-| 3
-| SGD (lr=0.010)
-| 0.9397
-| 1.00M / 11.3M (early-stopped)
-| 3s
-
-| 4
-| SGD (lr=0.006)
-| 0.9432
-| 1.00M / 11.3M (early-stopped)
-| 3s
-|===
-
-Early stopping triggered after epoch 4. Pass 2 total: **107 seconds**.
+Same optimizer schedule and resampling strategy, but drawing from the filtered
+pool. This typically improves accuracy by 0.3–0.5 percentage points.
 
 === Final Steps
 
-[cols="1,1"]
-|===
-| Step | Time
-
-| INT8 Quantization | <1s
-| Test set evaluation | 22s
-| Model export | <1s
-|===
-
-**Final quantized test accuracy: 94.81%** on 1,446,486 test sentences across
-199 languages.
-
-**Model file size: 1.6 MB** (199 classes × 8,192 buckets × 1 byte + headers).
-
-=== Total Pipeline Time
-
-[cols="1,1"]
-|===
-| Step | Wall Clock
-
-| Data preparation + dedup + shuffle | 103s
-| Pass 1 (4 epochs with early stopping) | 120s
-| Mislabel filtering | 110s
-| Pass 2 (4 epochs with early stopping) | 107s
-| Quantize + evaluate + export | 22s
-| **Total** | **7.7 minutes**
-|===
+1. **INT8 quantization** — convert float32 weights to int8 with per-class scales
+2. **Evaluate** — test the quantized model on the raw test set (full pipeline)
+3. **Export** — write the LDM1 binary model file
 
 == Confusable Language Groups
 
@@ -230,15 +334,171 @@ These groups are used in:
    Bokmål labeled as Nynorsk)
 2. **Evaluation** — "group accuracy" metric alongside strict accuracy
 
-== Comparison: CharSoup vs OpenNLP
+== Common Token Lists (tika-eval)
 
-The `CompareDetectors` tool evaluates both detectors on the same 1.45M-sentence
-test set. The CharSoup model covers 199 languages; OpenNLP covers roughly 128.
+The same Leipzig corpus is used to generate common token frequency lists for
+`tika-eval`. The `CommonTokenGenerator` in `tika-eval-core` applies:
 
-=== Shared-Language Accuracy (123 Languages Both Models Support)
+* `TikaEvalTokenizer` in `COMMON_TOKENS` mode (NFKD normalization, minimum
+  length 3, no numbers, no HTML terms)
+* The same language merge map and FNV-1a deduplication as the training pipeline
 
-An apples-to-apples comparison restricted to the 123 languages both models can
-identify (1,146,734 test sentences):
+This ensures consistency between the language model's training data and the
+common token lists.
+
+[source,bash]
+----
+java -cp tika-eval/tika-eval-core/target/test-classes:\
+tika-eval/tika-eval-core/target/classes:\
+tika-langdetect/tika-langdetect-charsoup/target/classes \
+    org.apache.tika.eval.core.tokens.tools.CommonTokenGenerator \
+    ~/datasets/leipzig \
+    /tmp/common_tokens_new \
+    30000 10
+----
+
+Arguments: `<corpusDir> <outputDir> [topN] [minDocFreq]`
+
+== Current Build: v2
+
+=== v2 Training Configuration
+
+* **Languages:** 200 (207 corpus languages minus 7 explicit exclusions)
+* **Hash buckets:** 8,192
+* **Target epoch total:** 5,000,000 sentences. A flat cap is found by binary
+  search such that `Σ min(n_i, cap) ≈ 5M`. High-resource languages are
+  uniformly downsampled; low-resource languages contribute all their data.
+* **Feature extractor:** `ScriptAwareFeatureExtractor` — character bigrams,
+  word unigrams, CJK character unigrams, with script-aware boundary detection
+* **Optimizer:** AdamW (lr=0.001, mini-batch=64) × 2 epochs, then Hogwild!
+  SGD (lr=0.01→0.001) × 6 max epochs
+* **Chunk size:** 100,000 lines (50 chunks per 5M epoch for smooth SGD)
+* **JVM:** `-Xmx4g`
+
+=== v2 Test Set
+
+[cols="1,1"]
+|===
+| Split | Sentences
+
+| All | 2,558,571
+| Short (≤ 50 chars) | 434,302
+| Full (> 50 chars) | 2,124,269
+|===
+
+200 languages included. OpenNLP supports 123 of these languages
+(2,150,828 shared-language test sentences).
+
+=== v2 Comparison: CharSoup vs OpenNLP (all 200 languages)
+
+OpenNLP returns no prediction for the 77 languages it does not support,
+counting as incorrect in the all-languages figures below.
+
+[cols="1,1,1,1"]
+|===
+| Metric | CharSoup | OpenNLP | Delta
+
+| Accuracy (all)
+| **95.24%**
+| 76.71%
+| +18.5pp
+
+| Accuracy (short ≤ 50 chars)
+| **93.51%**
+| 69.89%
+| +23.6pp
+
+| Accuracy (full sentences)
+| **95.59%**
+| 78.10%
+| +17.5pp
+
+| Group accuracy (all)
+| **97.40%**
+| 80.74%
+| +16.7pp
+
+| Group accuracy (short)
+| **95.77%**
+| 74.50%
+| +21.3pp
+
+| Group accuracy (full)
+| **97.73%**
+| 82.02%
+| +15.7pp
+|===
+
+=== v2 Comparison: CharSoup vs OpenNLP (123 shared languages)
+
+Apples-to-apples on the 123 languages both detectors support
+(2,150,828 test sentences):
+
+[cols="1,1,1,1"]
+|===
+| Metric | CharSoup | OpenNLP | Delta
+
+| Accuracy (all)
+| **96.42%**
+| 91.25%
+| +5.2pp
+
+| Accuracy (short ≤ 50 chars)
+| **94.44%**
+| 87.41%
+| +7.0pp
+
+| Accuracy (full sentences)
+| **96.80%**
+| 91.99%
+| +4.8pp
+|===
+
+=== v2 Resource Usage
+
+[cols="1,1,1"]
+|===
+| Metric | CharSoup | OpenNLP
+
+| Throughput
+| **~487K sent/sec**
+| ~136K sent/sec
+
+| Model heap
+| **~2.0 MB**
+| ~79.1 MB
+
+| Model file (on disk)
+| **1.6 MB**
+| 22 MB
+
+| Runtime dependencies
+| **None** (tika-core only)
+| OpenNLP + model
+|===
+
+== Historical Build: v1 (Initial Release)
+
+The numbers below are from the initial model build using 100K sentences per
+language. They are preserved here for reference.
+
+=== v1 Corpus
+
+[cols="1,1"]
+|===
+| Split | Sentences
+
+| Train | 11,570,595
+| Dev | 1,446,250
+| Test | 1,446,486
+|===
+
+199 languages, 49 low-resource languages dropped, 1,928,709 duplicate sentences
+removed.
+
+=== v1 Comparison: CharSoup vs OpenNLP
+
+Evaluated on the 123 languages both models support (1,146,734 test sentences):
 
 [cols="1,1,1,1"]
 |===
@@ -260,33 +520,7 @@ identify (1,146,734 test sentences):
 | +6.0pp
 |===
 
-=== Group Accuracy (Confusable Languages Counted as Correct)
-
-When predictions within the same confusable group are counted as correct,
-evaluated on the full test set (all languages each model covers):
-
-[cols="1,1,1"]
-|===
-| Metric | CharSoup | OpenNLP
-
-| Group accuracy (all)
-| **97.15%**
-| 76.05%
-
-| Group accuracy (short ≤ 50 chars)
-| **95.25%**
-| 70.26%
-
-| Group accuracy (full sentences)
-| **97.57%**
-| 77.35%
-|===
-
-Note: OpenNLP's lower group accuracy on the full test set reflects the 76
-languages it does not cover (scored as 0%). On the shared languages, OpenNLP
-performs respectably.
-
-=== Resource Usage
+=== v1 Resource Usage
 
 [cols="1,1,1"]
 |===
@@ -299,41 +533,6 @@ performs respectably.
 | Model heap
 | **~2 MB**
 | ~79 MB
-
-| Model file (on disk)
-| **1.6 MB**
-| 22 MB
-
-| Runtime dependencies
-| **None** (tika-core only)
-| OpenNLP + model
-|===
-
-== Summary
-
-[cols="1,1,1"]
-|===
-| | CharSoup | OpenNLP
-
-| Languages
-| **199**
-| ~128
-
-| Shared-lang accuracy
-| **96.00%**
-| 89.68%
-
-| Short-text accuracy
-| **94.20%**
-| 86.23%
-
-| Throughput
-| **510K sent/sec**
-| 135K sent/sec
-
-| Memory
-| **2 MB**
-| 79 MB
 
 | Model file (on disk)
 | **1.6 MB**

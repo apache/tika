@@ -26,9 +26,9 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -37,6 +37,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.tika.langdetect.charsoup.CharSoupFeatureExtractor;
 import org.apache.tika.langdetect.charsoup.CharSoupModel;
@@ -45,48 +49,106 @@ import org.apache.tika.langdetect.charsoup.FeatureExtractor;
 /**
  * Two-pass training pipeline for the bigram language detector.
  * <p>
- * Usage: {@code TrainLanguageModel <corpusDir> <outputFile> [numBuckets] [maxPerLang]}
+ * <strong>WARNING — feature extraction must stay in sync with
+ * {@link org.apache.tika.langdetect.charsoup.CharSoupFeatureExtractor}.</strong>
+ * Training uses {@code CharSoupFeatureExtractor} directly, so any change to
+ * that class's preprocessing or hashing automatically applies here. However,
+ * if you change training hyper-parameters (bucket count, n-gram order, etc.)
+ * you must also update the corresponding inference constants and retrain from
+ * scratch; there is no automatic check that the saved model matches the
+ * current code.
  * </p>
+ * <p>
+ * Usage: {@code TrainLanguageModel <corpusDir> <outputFile> [numBuckets] [epochMaxPerLang]}
  * <h3>Pipeline</h3>
  * <ol>
- *   <li>Read corpus from {@code corpusDir} (Leipzig format: {@code lang/sentences.txt})</li>
- *   <li>Merge duplicate ISO 639-3 codes (e.g., cmn → zho, azj → aze)</li>
- *   <li>Deduplicate sentences within each language</li>
- *   <li>Split into train/dev/test (80/10/10, stratified by language)</li>
- *   <li><b>Pass 1</b>: Train initial model (AdamW → SGD, streaming)</li>
- *   <li><b>Filter</b>: Remove mislabeled sentences from training data
- *       (respecting confusable groups)</li>
- *   <li><b>Pass 2</b>: Retrain on filtered data</li>
- *   <li>Quantize to INT8</li>
- *   <li>Evaluate quantized model on test set</li>
- *   <li>Export to binary LDM1 v5 format</li>
+ *   <li>Read corpus, merge ISO 639-3 codes, dedup, split into
+ *       test (10%, max 20K, raw), dev (10%, max 20K, preprocessed),
+ *       and training pool (rest, preprocessed, per-language files)</li>
+ *   <li><b>Pass 1</b>: Train with epoch-level resampling
+ *       (cap per language per epoch)</li>
+ *   <li><b>Filter</b>: Remove mislabeled sentences from entire
+ *       training pool (respecting confusable groups)</li>
+ *   <li><b>Pass 2</b>: Retrain on filtered pool with resampling</li>
+ *   <li>Quantize to INT8, evaluate on raw test, export</li>
  * </ol>
  */
 public class TrainLanguageModel {
 
     private static final int DEFAULT_NUM_BUCKETS = 8_192;
-
-    /**
-     * Minimum sentences required per language. Languages with fewer
-     * sentences are dropped before training.
-     */
+    private static final long DEFAULT_TARGET_EPOCH_TOTAL = 5_000_000L;
     private static final int MIN_SENTENCES_PER_LANG = 10_000;
+    private static final int MAX_TEST_PER_LANG = 20_000;
+    private static final int MAX_DEV_PER_LANG = 20_000;
 
     /**
-     * Merge map for duplicate ISO 639-3 codes that refer to the same
-     * language. Maps non-canonical → canonical.
+     * Languages explicitly excluded from the model despite having enough
+     * corpus data to meet the {@link #MIN_SENTENCES_PER_LANG} threshold.
+     * Each exclusion is justified by one of two criteria:
+     *
+     * <ul>
+     *   <li><b>Collateral damage</b> — adding the language causes a closely
+     *       related majority language to drop significantly in accuracy,
+     *       because the model cannot reliably distinguish them at the
+     *       character n-gram level.</li>
+     *   <li><b>Unacceptable own accuracy</b> — the language's own detection
+     *       accuracy is too low to be useful, typically because its written
+     *       form is nearly identical to one or more larger languages.</li>
+     * </ul>
+     *
+     * Decisions were made by evaluating per-language accuracy on a held-out
+     * test set and examining the drop in accuracy for related languages.
+     * See the build documentation for per-language justifications.
      */
+    static final Set<String> EXCLUDED_LANGS;
+    static {
+        Set<String> ex = new HashSet<>();
+        // Venetian (vec): 72.0% own accuracy; Italian (ita) dropped to
+        // 83.6% (a 14.5pp gap vs group accuracy). Collateral damage
+        // to a major language is unacceptable.
+        ex.add("vec");
+        // Tosk Albanian (als): 69.7% own accuracy; Standard Albanian (sqi)
+        // collapsed to 51.6% strict accuracy. Albanian is broken by its
+        // presence.
+        ex.add("als");
+        // Madurese (mad): 9.1% own accuracy on 1,003 test sentences —
+        // essentially random. Written in Latin script, indistinguishable
+        // from Javanese/Indonesian at the character level.
+        ex.add("mad");
+        // Anaang (anw): 32.5% own accuracy on only 3,036 test sentences.
+        // Below any useful quality bar; no confusable partner to explain
+        // the failure.
+        ex.add("anw");
+        // Konkani (knn): 46.2% own accuracy. Uses Devanagari script
+        // (same as Marathi), and its character n-gram profile is too
+        // similar to Marathi to distinguish reliably.
+        ex.add("knn");
+        // Gilaki (glk): 88.6% own accuracy. Northwestern Iranian language
+        // whose script profile overlaps with Persian and Mazanderani;
+        // below the quality bar we want for included languages.
+        ex.add("glk");
+        // Kituba / Monokutuba (mkw): 80.1% own accuracy. Bantu contact
+        // language whose character profile overlaps with Kongo and Lingala;
+        // accuracy is not high enough to justify inclusion.
+        ex.add("mkw");
+        EXCLUDED_LANGS = Collections.unmodifiableSet(ex);
+    }
+
     private static final Map<String, String> LANG_MERGE_MAP;
     static {
         Map<String, String> m = new HashMap<>();
-        m.put("azj", "aze");  // Azerbaijani
-        m.put("ekk", "est");  // Estonian
-        m.put("pes", "fas");  // Persian (Western Farsi)
-        m.put("zsm", "msa");  // Malay (Standard)
-        m.put("nor", "nob");  // Norwegian → Bokmål
-        m.put("plt", "mlg");  // Malagasy (Plateau)
-        m.put("cmn", "zho");  // Chinese (Mandarin)
-        m.put("lvs", "lav");  // Latvian (Standard)
+        m.put("azj", "aze");
+        m.put("ekk", "est");
+        m.put("pes", "fas");
+        m.put("zsm", "msa");
+        m.put("nor", "nob");
+        m.put("plt", "mlg");
+        m.put("cmn", "zho");
+        m.put("lvs", "lav");
+        m.put("gug", "grn");
+        m.put("quz", "que");
+        m.put("swa", "swh");
+        m.put("yid", "ydd");
         LANG_MERGE_MAP = Collections.unmodifiableMap(m);
     }
 
@@ -94,7 +156,7 @@ public class TrainLanguageModel {
         if (args.length < 2) {
             System.err.println(
                     "Usage: TrainLanguageModel <corpusDir> <outputFile>"
-                            + " [numBuckets] [maxPerLang]");
+                            + " [numBuckets] [targetEpochTotal]");
             System.exit(1);
         }
 
@@ -102,106 +164,138 @@ public class TrainLanguageModel {
         Path outputFile = Paths.get(args[1]);
         int numBuckets = args.length > 2
                 ? Integer.parseInt(args[2]) : DEFAULT_NUM_BUCKETS;
-        int maxPerLang = args.length > 3
-                ? Integer.parseInt(args[3]) : 0;
+        long targetEpochTotal = args.length > 3
+                ? Long.parseLong(args[3])
+                : DEFAULT_TARGET_EPOCH_TOTAL;
 
         Path prepDir = (outputFile.getParent() != null
                 ? outputFile.getParent()
                 : Paths.get(".")).resolve("preprocessed");
 
         System.out.println("=== Language Model Training Pipeline ===");
-        System.out.println("Corpus:     " + corpusDir);
-        System.out.println("Output:     " + outputFile);
-        System.out.println("Prep dir:   " + prepDir);
-        System.out.println("Buckets:    " + numBuckets);
-        System.out.println("MaxPerLang: "
-                + (maxPerLang > 0 ? maxPerLang : "unlimited"));
+        System.out.println("Corpus:          " + corpusDir);
+        System.out.println("Output:          " + outputFile);
+        System.out.println("Prep dir:        " + prepDir);
+        System.out.println("Buckets:         " + numBuckets);
+        System.out.printf(Locale.US,
+                "TargetEpochTotal: %,d%n", targetEpochTotal);
         System.out.println();
 
         long pipelineStart = System.nanoTime();
         long stepStart;
 
         // ---- Data preparation ----
-        Path trainFile = prepDir.resolve("train.txt");
+        Path poolDir = prepDir.resolve("pool");
         Path devFile = prepDir.resolve("dev.txt");
-        Path testFile = prepDir.resolve("test.txt");
+        Path testFile = prepDir.resolve("test_raw.txt");
 
-        if (Files.exists(trainFile) && Files.exists(devFile)
+        if (Files.isDirectory(poolDir)
+                && Files.exists(devFile)
                 && Files.exists(testFile)) {
-            stepStart = System.nanoTime();
             System.out.println(
-                    "--- Preprocessed splits found — skipping data prep ---");
-            System.out.printf(Locale.US, "  [%.1f s]%n", elapsed(stepStart));
+                    "--- Preprocessed data found — skipping data prep ---");
         } else {
             stepStart = System.nanoTime();
             System.out.println("--- Step 1: Data preparation ---");
-            Files.createDirectories(prepDir);
-            int[] counts = prepareDataStreaming(
-                    corpusDir, prepDir, maxPerLang,
-                    MIN_SENTENCES_PER_LANG);
+            Files.createDirectories(poolDir);
+            int[] counts = prepareData(corpusDir, prepDir);
             System.out.printf(Locale.US,
-                    "Prepared: train=%,d  dev=%,d  test=%,d%n",
+                    "Prepared: pool=%,d  dev=%,d  test=%,d%n",
                     counts[0], counts[1], counts[2]);
             System.out.printf(Locale.US,
                     "  [%.1f s]%n", elapsed(stepStart));
         }
 
-        // Load dev data into memory for evaluation
+        // Collect all labels from pool directory
+        String[] allLabels = collectLabels(poolDir);
+        System.out.printf(Locale.US,
+                "Languages in pool: %d%n%n", allLabels.length);
+
+        // Load fixed dev data
         stepStart = System.nanoTime();
-        System.out.println("\n--- Loading dev data ---");
+        System.out.println("--- Loading dev data ---");
         List<LabeledSentence> devData =
                 readPreprocessedFile(devFile);
         System.out.printf(Locale.US,
                 "Dev: %,d sentences  [%.1f s]%n",
                 devData.size(), elapsed(stepStart));
 
-        // ---- Pass 1: Train initial model ----
+        Path epochFile = prepDir.resolve("epoch_train.txt");
+
+        // ---- Pass 1 ----
         stepStart = System.nanoTime();
-        System.out.println("\n--- Step 2: Pass 1 — Initial training ---");
+        System.out.println(
+                "\n--- Step 2: Pass 1 — Initial training ---");
+        Map<String, Integer> pass1Targets =
+                computePerLangTargets(
+                        scanPoolSizes(poolDir),
+                        targetEpochTotal);
         Phase2Trainer pass1 = new Phase2Trainer(numBuckets)
                 .setPreprocessed(true);
-        pass1.train(trainFile, devData);
-        System.out.printf(Locale.US, "  [%.1f s]%n", elapsed(stepStart));
+        pass1.trainWithResampling(allLabels,
+                epochNum -> createEpochFile(
+                        poolDir, epochFile,
+                        pass1Targets, epochNum),
+                devData);
+        System.out.printf(Locale.US, "  [%.1f s]%n",
+                elapsed(stepStart));
 
-        // ---- Filter mislabeled sentences ----
+        // ---- Filter training pool ----
         stepStart = System.nanoTime();
         System.out.println(
                 "\n--- Step 3: Filtering mislabeled sentences ---");
-        Path filteredFile = prepDir.resolve("train_filtered.txt");
-        int[] filterCounts = filterMislabeled(
-                pass1, trainFile, filteredFile);
+        Path filteredPoolDir = prepDir.resolve("pool_filtered");
+        long[] filterCounts = filterPool(
+                pass1, poolDir, filteredPoolDir);
         System.out.printf(Locale.US,
-                "Kept %,d / %,d sentences (removed %,d = %.1f%%)%n",
+                "Kept %,d / %,d sentences "
+                        + "(removed %,d = %.1f%%)%n",
                 filterCounts[0], filterCounts[1],
                 filterCounts[1] - filterCounts[0],
                 100.0 * (filterCounts[1] - filterCounts[0])
                         / filterCounts[1]);
-        System.out.printf(Locale.US, "  [%.1f s]%n", elapsed(stepStart));
+        System.out.printf(Locale.US, "  [%.1f s]%n",
+                elapsed(stepStart));
 
-        // ---- Pass 2: Retrain on filtered data ----
+        // ---- Pass 2 ----
         stepStart = System.nanoTime();
         System.out.println(
-                "\n--- Step 4: Pass 2 — Retraining on filtered data ---");
+                "\n--- Step 4: Pass 2 — Retraining on "
+                        + "filtered data ---");
+        String[] filteredLabels =
+                collectLabels(filteredPoolDir);
+        Map<String, Integer> pass2Targets =
+                computePerLangTargets(
+                        scanPoolSizes(filteredPoolDir),
+                        targetEpochTotal);
         Phase2Trainer pass2 = new Phase2Trainer(numBuckets)
                 .setPreprocessed(true);
-        pass2.train(filteredFile, devData);
-        System.out.printf(Locale.US, "  [%.1f s]%n", elapsed(stepStart));
+        pass2.trainWithResampling(filteredLabels,
+                epochNum -> createEpochFile(
+                        filteredPoolDir, epochFile,
+                        pass2Targets, epochNum),
+                devData);
+        System.out.printf(Locale.US, "  [%.1f s]%n",
+                elapsed(stepStart));
 
         // ---- Quantize ----
         stepStart = System.nanoTime();
         System.out.println("\n--- Step 5: Quantizing to INT8 ---");
         CharSoupModel quantized = ModelQuantizer.quantize(pass2);
-        System.out.printf(Locale.US, "  [%.1f s]%n", elapsed(stepStart));
+        System.out.printf(Locale.US, "  [%.1f s]%n",
+                elapsed(stepStart));
 
-        // ---- Evaluate on test set ----
+        // ---- Evaluate on raw test set ----
         stepStart = System.nanoTime();
-        System.out.println("\n--- Step 6: Evaluating on test set ---");
+        System.out.println(
+                "\n--- Step 6: Evaluating on raw test set ---");
         List<LabeledSentence> testData =
-                readPreprocessedFile(prepDir.resolve("test.txt"));
+                readPreprocessedFile(testFile);
         double testAcc = evaluateQuantized(quantized, testData);
         System.out.printf(Locale.US,
                 "Test accuracy (quantized): %.4f%n", testAcc);
-        System.out.printf(Locale.US, "  [%.1f s]%n", elapsed(stepStart));
+        System.out.printf(Locale.US, "  [%.1f s]%n",
+                elapsed(stepStart));
 
         // ---- Export ----
         stepStart = System.nanoTime();
@@ -217,7 +311,8 @@ public class TrainLanguageModel {
         System.out.printf(Locale.US,
                 "Model saved: %s (%.1f MB)%n",
                 outputFile, fileSize / (1024.0 * 1024.0));
-        System.out.printf(Locale.US, "  [%.1f s]%n", elapsed(stepStart));
+        System.out.printf(Locale.US, "  [%.1f s]%n",
+                elapsed(stepStart));
 
         double totalMin = (System.nanoTime() - pipelineStart)
                 / 1_000_000_000.0 / 60.0;
@@ -230,42 +325,341 @@ public class TrainLanguageModel {
     }
 
     // ================================================================
-    //  Mislabeled sentence filtering
+    //  Epoch file creation (resampling from pool)
     // ================================================================
 
     /**
-     * Stream through the training file and write only sentences that
-     * the model classifies correctly (or within a confusable group).
+     * Sample up to {@code maxPerLang} sentences from each
+     * per-language pool file and write to a single epoch
+     * training file with languages interleaved.
+     * <p>
+     * Two-phase approach to stay memory-efficient:
+     * <ol>
+     *   <li><b>Sample</b>: reservoir-sample each language
+     *       one at a time into a per-language temp file.
+     *       Peak memory = one language's reservoir.</li>
+     *   <li><b>Interleave</b>: open all temp files, randomly
+     *       pick a language for each line, write to epoch
+     *       file. Memory = reader buffers only (~200 × 8 KB).
+     *       </li>
+     * </ol>
+     * Interleaving is critical: without it, the epoch file
+     * would contain single-language blocks that cause
+     * catastrophic forgetting during SGD.
      *
-     * @return int[2]: {kept, total}
+     * @return the epoch file path
      */
-    static int[] filterMislabeled(Phase2Trainer trainer,
-                                   Path inputFile,
-                                   Path outputFile) throws IOException {
-        int kept = 0;
-        int total = 0;
-        try (BufferedReader reader = Files.newBufferedReader(
-                inputFile, StandardCharsets.UTF_8);
-             BufferedWriter writer = Files.newBufferedWriter(
-                     outputFile, StandardCharsets.UTF_8)) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                int tab = line.indexOf('\t');
-                if (tab < 0) {
+    static Path createEpochFile(Path poolDir, Path epochFile,
+                                Map<String, Integer> perLangTargets,
+                                int epochNum)
+            throws IOException {
+        Random rng = new Random(42L + epochNum * 31L);
+
+        List<String> langs = new ArrayList<>();
+        List<Path> poolFiles = new ArrayList<>();
+        try (DirectoryStream<Path> ds =
+                     Files.newDirectoryStream(poolDir)) {
+            for (Path langFile : ds) {
+                if (!Files.isRegularFile(langFile)) {
                     continue;
                 }
-                total++;
-                String lang = line.substring(0, tab);
-                String text = line.substring(tab + 1);
-                String predicted = trainer.predict(text);
-                if (CompareDetectors.isGroupMatch(lang, predicted)) {
-                    writer.write(line);
-                    writer.newLine();
-                    kept++;
+                langs.add(
+                        langFile.getFileName().toString());
+                poolFiles.add(langFile);
+            }
+        }
+
+        // Phase 1: reservoir sample each language into a
+        // temp file (one language in memory at a time)
+        Path sampledDir =
+                Files.createTempDirectory("epoch_sampled_");
+        List<Path> sampledFiles =
+                new ArrayList<>(langs.size());
+
+        for (int i = 0; i < poolFiles.size(); i++) {
+            int target = perLangTargets.getOrDefault(
+                    langs.get(i), 0);
+            List<String> reservoir = new ArrayList<>();
+            try (BufferedReader reader =
+                         Files.newBufferedReader(
+                                 poolFiles.get(i),
+                                 StandardCharsets.UTF_8)) {
+                String line;
+                int lineNum = 0;
+                while ((line = reader.readLine()) != null) {
+                    if (lineNum < target) {
+                        reservoir.add(line);
+                    } else {
+                        int j = rng.nextInt(lineNum + 1);
+                        if (j < target) {
+                            reservoir.set(j, line);
+                        }
+                    }
+                    lineNum++;
+                }
+            }
+
+            Collections.shuffle(reservoir, rng);
+            Path sampledFile =
+                    sampledDir.resolve(langs.get(i));
+            try (BufferedWriter sw =
+                         Files.newBufferedWriter(
+                                 sampledFile,
+                                 StandardCharsets.UTF_8)) {
+                for (String text : reservoir) {
+                    sw.write(text);
+                    sw.newLine();
+                }
+            }
+            sampledFiles.add(sampledFile);
+        }
+
+        // Phase 2: interleave into epoch file by randomly
+        // picking among active languages for each line
+        int numLangs = langs.size();
+        BufferedReader[] readers =
+                new BufferedReader[numLangs];
+        String[] pending = new String[numLangs];
+        List<Integer> active = new ArrayList<>(numLangs);
+        int totalWritten = 0;
+
+        try (BufferedWriter w = Files.newBufferedWriter(
+                epochFile, StandardCharsets.UTF_8)) {
+            for (int i = 0; i < numLangs; i++) {
+                readers[i] = Files.newBufferedReader(
+                        sampledFiles.get(i),
+                        StandardCharsets.UTF_8);
+                pending[i] = readers[i].readLine();
+                if (pending[i] != null) {
+                    active.add(i);
+                }
+            }
+
+            while (!active.isEmpty()) {
+                int pick = rng.nextInt(active.size());
+                int idx = active.get(pick);
+
+                w.write(langs.get(idx));
+                w.write('\t');
+                w.write(pending[idx]);
+                w.newLine();
+                totalWritten++;
+
+                pending[idx] = readers[idx].readLine();
+                if (pending[idx] == null) {
+                    readers[idx].close();
+                    readers[idx] = null;
+                    int last = active.size() - 1;
+                    active.set(pick, active.get(last));
+                    active.remove(last);
+                }
+            }
+        } finally {
+            for (BufferedReader r : readers) {
+                if (r != null) {
+                    r.close();
+                }
+            }
+            for (Path f : sampledFiles) {
+                Files.deleteIfExists(f);
+            }
+            Files.deleteIfExists(sampledDir);
+        }
+
+        System.out.printf(Locale.US,
+                "  Epoch %d: sampled %,d sentences%n",
+                epochNum + 1, totalWritten);
+        return epochFile;
+    }
+
+    // ================================================================
+    //  Pool size scanning and per-language target computation
+    // ================================================================
+
+    /**
+     * Count lines in each per-language pool file.
+     */
+    static Map<String, Long> scanPoolSizes(Path poolDir)
+            throws IOException {
+        Map<String, Long> sizes = new HashMap<>();
+        try (DirectoryStream<Path> ds =
+                     Files.newDirectoryStream(poolDir)) {
+            for (Path p : ds) {
+                if (!Files.isRegularFile(p)) {
+                    continue;
+                }
+                long count = 0;
+                try (BufferedReader br =
+                             Files.newBufferedReader(
+                                     p,
+                                     StandardCharsets.UTF_8)) {
+                    while (br.readLine() != null) {
+                        count++;
+                    }
+                }
+                sizes.put(p.getFileName().toString(), count);
+            }
+        }
+        return sizes;
+    }
+
+    /**
+     * Compute per-language epoch targets by binary-searching
+     * for a flat cap C such that {@code Σ min(n_i, C) ≈ targetTotal}.
+     * Languages with fewer sentences than C contribute all their
+     * data; larger languages are uniformly capped.
+     */
+    static Map<String, Integer> computePerLangTargets(
+            Map<String, Long> poolSizes,
+            long targetTotal) {
+        long totalAvailable = poolSizes.values().stream()
+                .mapToLong(Long::longValue).sum();
+
+        if (totalAvailable <= targetTotal) {
+            System.out.printf(Locale.US,
+                    "  Pool total=%,d <= target=%,d;"
+                            + " using all data%n",
+                    totalAvailable, targetTotal);
+            Map<String, Integer> targets = new HashMap<>();
+            poolSizes.forEach((lang, size) ->
+                    targets.put(lang, (int) Math.min(
+                            size, Integer.MAX_VALUE)));
+            return targets;
+        }
+
+        long lo = 0;
+        long hi = poolSizes.values().stream()
+                .mapToLong(Long::longValue).max().orElse(0);
+        while (lo < hi - 1) {
+            long mid = (lo + hi) / 2;
+            long total = poolSizes.values().stream()
+                    .mapToLong(n -> Math.min(n, mid)).sum();
+            if (total < targetTotal) {
+                lo = mid;
+            } else {
+                hi = mid;
+            }
+        }
+        long cap = hi;
+        long actualTotal = poolSizes.values().stream()
+                .mapToLong(n -> Math.min(n, cap)).sum();
+        long capped = poolSizes.values().stream()
+                .filter(n -> n > cap).count();
+        System.out.printf(Locale.US,
+                "  Epoch cap=%,d  actual=%,d  target=%,d"
+                        + "  (%d/%d langs capped)%n",
+                cap, actualTotal, targetTotal,
+                capped, poolSizes.size());
+
+        Map<String, Integer> targets = new HashMap<>();
+        poolSizes.forEach((lang, size) ->
+                targets.put(lang,
+                        (int) Math.min(size, cap)));
+        return targets;
+    }
+
+    // ================================================================
+    //  Mislabeled sentence filtering (pool-based)
+    // ================================================================
+
+    /**
+     * Filter all per-language pool files in parallel. For each
+     * sentence, if the model's prediction doesn't match the label
+     * (respecting confusable groups), it is removed.
+     * <p>
+     * Each worker thread reuses its own extractor and feature/logit
+     * buffers to avoid per-sentence allocation overhead.
+     *
+     * @return long[2]: {kept, total}
+     */
+    static long[] filterPool(Phase2Trainer trainer,
+                             Path poolDir, Path filteredDir)
+            throws IOException {
+        Files.createDirectories(filteredDir);
+
+        List<Path> langFiles = new ArrayList<>();
+        try (DirectoryStream<Path> ds =
+                     Files.newDirectoryStream(poolDir)) {
+            for (Path p : ds) {
+                if (Files.isRegularFile(p)) {
+                    langFiles.add(p);
                 }
             }
         }
-        return new int[]{kept, total};
+        langFiles.sort(Comparator.comparing(
+                p -> p.getFileName().toString()));
+
+        int numLangs = langFiles.size();
+        AtomicLong keptTotal = new AtomicLong();
+        AtomicLong grandTotal = new AtomicLong();
+        AtomicLong langsProcessed = new AtomicLong();
+
+        int threads = Runtime.getRuntime().availableProcessors();
+        ExecutorService exec =
+                Executors.newFixedThreadPool(threads);
+        List<Future<?>> futures = new ArrayList<>(numLangs);
+
+        for (Path langFile : langFiles) {
+            futures.add(exec.submit(() -> {
+                String lang =
+                        langFile.getFileName().toString();
+                Path outFile = filteredDir.resolve(lang);
+                FeatureExtractor ext = trainer.getExtractor();
+                int[] featureBuf =
+                        new int[trainer.getNumBuckets()];
+                float[] logitBuf =
+                        new float[trainer.getNumClasses()];
+                long langKept = 0;
+                long langTotal = 0;
+                try (BufferedReader reader =
+                             Files.newBufferedReader(
+                                     langFile,
+                                     StandardCharsets.UTF_8);
+                     BufferedWriter writer =
+                             Files.newBufferedWriter(
+                                     outFile,
+                                     StandardCharsets.UTF_8)) {
+                    String text;
+                    while ((text = reader.readLine())
+                            != null) {
+                        langTotal++;
+                        String predicted =
+                                trainer.predictBuffered(
+                                        text, ext,
+                                        featureBuf, logitBuf);
+                        if (CompareDetectors.isGroupMatch(
+                                lang, predicted)) {
+                            writer.write(text);
+                            writer.newLine();
+                            langKept++;
+                        }
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(
+                            "Filter failed: " + lang, e);
+                }
+                keptTotal.addAndGet(langKept);
+                grandTotal.addAndGet(langTotal);
+                long done = langsProcessed.incrementAndGet();
+                System.out.printf(Locale.US,
+                        "  %s: kept %,d/%,d"
+                                + "  [%d/%d langs done]%n",
+                        lang, langKept, langTotal,
+                        done, numLangs);
+            }));
+        }
+
+        exec.shutdown();
+        for (Future<?> f : futures) {
+            try {
+                f.get();
+            } catch (Exception e) {
+                throw new RuntimeException(
+                        "Filter thread failed", e);
+            }
+        }
+
+        return new long[]{keptTotal.get(), grandTotal.get()};
     }
 
     // ================================================================
@@ -273,7 +667,7 @@ public class TrainLanguageModel {
     // ================================================================
 
     static double evaluateQuantized(CharSoupModel model,
-                                     List<LabeledSentence> data) {
+                                    List<LabeledSentence> data) {
         FeatureExtractor extractor = model.createExtractor();
         Map<String, Integer> labelIndex = new HashMap<>();
         for (int i = 0; i < model.getNumClasses(); i++) {
@@ -283,10 +677,12 @@ public class TrainLanguageModel {
         int correct = 0;
         int total = 0;
         for (LabeledSentence s : data) {
-            Integer trueIdx = labelIndex.get(s.getLanguage());
+            Integer trueIdx =
+                    labelIndex.get(s.getLanguage());
             if (trueIdx == null) {
                 continue;
             }
+            // Test data is raw; extract runs full pipeline
             int[] features = extractor.extract(s.getText());
             float[] probs = model.predict(features);
             int predicted = argmax(probs);
@@ -309,40 +705,34 @@ public class TrainLanguageModel {
     }
 
     // ================================================================
-    //  Data preparation (streaming, one language at a time)
+    //  Data preparation
     // ================================================================
 
     /**
-     * Prepare train/dev/test splits by streaming through the corpus
-     * one language directory at a time.
+     * Prepare data splits from corpus:
+     * <ul>
+     *   <li>{@code pool/} — per-language preprocessed files
+     *       for training</li>
+     *   <li>{@code dev.txt} — fixed dev set, preprocessed</li>
+     *   <li>{@code test_raw.txt} — fixed test set, raw</li>
+     * </ul>
      *
-     * @return int[3]: {trainCount, devCount, testCount}
+     * @return int[3]: {poolCount, devCount, testCount}
      */
-    static int[] prepareDataStreaming(Path corpusDir, Path prepDir,
-                                      int maxPerLang,
-                                      int minPerLang)
+    static int[] prepareData(Path corpusDir, Path prepDir)
             throws IOException {
-        Path trainFile = prepDir.resolve("train.txt");
+        Path poolDir = prepDir.resolve("pool");
         Path devFile = prepDir.resolve("dev.txt");
-        Path testFile = prepDir.resolve("test.txt");
-        Path rawDevFile = prepDir.resolve("dev_raw.txt");
-        Path rawTestFile = prepDir.resolve("test_raw.txt");
+        Path testFile = prepDir.resolve("test_raw.txt");
 
-        Files.deleteIfExists(trainFile);
-        Files.deleteIfExists(devFile);
-        Files.deleteIfExists(testFile);
-        Files.deleteIfExists(rawDevFile);
-        Files.deleteIfExists(rawTestFile);
+        Files.createDirectories(poolDir);
 
-        int totalTrain = 0, totalDev = 0, totalTest = 0;
+        int totalPool = 0, totalDev = 0, totalTest = 0;
         int langCount = 0;
         int droppedCount = 0;
         long totalDupes = 0;
         Map<String, Integer> langCounts = new TreeMap<>();
         List<String> dropped = new ArrayList<>();
-
-        float trainRatio = 0.8f;
-        float devRatio = 0.1f;
 
         List<Path> langDirs = new ArrayList<>();
         try (DirectoryStream<Path> dirs =
@@ -355,50 +745,26 @@ public class TrainLanguageModel {
         langDirs.sort((a, b) -> a.getFileName().toString()
                 .compareTo(b.getFileName().toString()));
 
-        // Accumulate merged language data
         Map<String, List<LabeledSentence>> mergeAccum =
                 new HashMap<>();
 
-        try (BufferedWriter trainWriter = Files.newBufferedWriter(
-                     trainFile, StandardCharsets.UTF_8,
-                     StandardOpenOption.CREATE,
-                     StandardOpenOption.APPEND);
-             BufferedWriter devWriter = Files.newBufferedWriter(
-                     devFile, StandardCharsets.UTF_8,
-                     StandardOpenOption.CREATE,
-                     StandardOpenOption.APPEND);
+        try (BufferedWriter devWriter = Files.newBufferedWriter(
+                     devFile, StandardCharsets.UTF_8);
              BufferedWriter testWriter = Files.newBufferedWriter(
-                     testFile, StandardCharsets.UTF_8,
-                     StandardOpenOption.CREATE,
-                     StandardOpenOption.APPEND);
-             BufferedWriter rawDevWriter = Files.newBufferedWriter(
-                     rawDevFile, StandardCharsets.UTF_8,
-                     StandardOpenOption.CREATE,
-                     StandardOpenOption.APPEND);
-             BufferedWriter rawTestWriter = Files.newBufferedWriter(
-                     rawTestFile, StandardCharsets.UTF_8,
-                     StandardOpenOption.CREATE,
-                     StandardOpenOption.APPEND)) {
+                     testFile, StandardCharsets.UTF_8)) {
 
             for (Path langDir : langDirs) {
-                String dirName = langDir.getFileName().toString();
+                String dirName =
+                        langDir.getFileName().toString();
                 if (dirName.startsWith("_")) {
                     continue;
                 }
 
-                List<LabeledSentence> sentences;
-                if (maxPerLang > 0) {
-                    sentences = new ArrayList<>(maxPerLang);
-                    CorpusReader.readLanguageDirSampled(
-                            langDir, dirName, maxPerLang,
-                            sentences);
-                } else {
-                    sentences = new ArrayList<>();
-                    CorpusReader.readLanguageDir(
-                            langDir, dirName, sentences);
-                }
+                List<LabeledSentence> sentences =
+                        new ArrayList<>();
+                CorpusReader.readLanguageDir(
+                        langDir, dirName, sentences);
 
-                // Deduplicate
                 int beforeDedup = sentences.size();
                 sentences = dedup(sentences);
                 int removed = beforeDedup - sentences.size();
@@ -413,11 +779,9 @@ public class TrainLanguageModel {
                     }
                 }
 
-                // Apply language code merge
                 String canonLang = LANG_MERGE_MAP.getOrDefault(
                         dirName, dirName);
 
-                // Relabel
                 if (!canonLang.equals(dirName)) {
                     List<LabeledSentence> relabeled =
                             new ArrayList<>(sentences.size());
@@ -428,10 +792,10 @@ public class TrainLanguageModel {
                     sentences = relabeled;
                     System.out.printf(Locale.US,
                             "  %s → %s (%,d sentences)%n",
-                            dirName, canonLang, sentences.size());
+                            dirName, canonLang,
+                            sentences.size());
                 }
 
-                // If this lang merges with another, accumulate
                 if (!canonLang.equals(dirName)) {
                     mergeAccum.computeIfAbsent(canonLang,
                             k -> new ArrayList<>())
@@ -439,7 +803,6 @@ public class TrainLanguageModel {
                     continue;
                 }
 
-                // Check if accumulated merge data exists
                 List<LabeledSentence> accumulated =
                         mergeAccum.remove(canonLang);
                 if (accumulated != null) {
@@ -447,22 +810,26 @@ public class TrainLanguageModel {
                     sentences = dedup(sentences);
                 }
 
-                if (sentences.size() < minPerLang) {
+                if (EXCLUDED_LANGS.contains(canonLang)) {
+                    dropped.add(canonLang + "(excluded)");
+                    droppedCount++;
+                    continue;
+                }
+
+                if (sentences.size() < MIN_SENTENCES_PER_LANG) {
                     dropped.add(canonLang + "("
                             + sentences.size() + ")");
                     droppedCount++;
                     continue;
                 }
 
-                int[] written = writeGroup(sentences,
-                        canonLang,
-                        trainRatio, devRatio,
-                        trainWriter, devWriter, testWriter,
-                        rawDevWriter, rawTestWriter,
-                        langCounts);
-                totalTrain += written[0];
+                int[] written = writeLanguageSplit(
+                        sentences, canonLang, poolDir,
+                        devWriter, testWriter);
+                totalPool += written[0];
                 totalDev += written[1];
                 totalTest += written[2];
+                langCounts.put(canonLang, sentences.size());
 
                 langCount++;
                 if (langCount % 50 == 0) {
@@ -472,42 +839,39 @@ public class TrainLanguageModel {
                 }
             }
 
-            // Flush any remaining accumulated merge data
+            // Flush remaining merged languages
             for (Map.Entry<String, List<LabeledSentence>> e
                     : mergeAccum.entrySet()) {
                 String lang = e.getKey();
                 List<LabeledSentence> sentences =
                         dedup(e.getValue());
-                if (sentences.size() < minPerLang) {
+                if (EXCLUDED_LANGS.contains(lang)) {
+                    dropped.add(lang + "(excluded)");
+                    droppedCount++;
+                    continue;
+                }
+                if (sentences.size() < MIN_SENTENCES_PER_LANG) {
                     dropped.add(lang + "("
                             + sentences.size() + ")");
                     droppedCount++;
                     continue;
                 }
-                int[] written = writeGroup(sentences, lang,
-                        trainRatio, devRatio,
-                        trainWriter, devWriter, testWriter,
-                        rawDevWriter, rawTestWriter,
-                        langCounts);
-                totalTrain += written[0];
+                int[] written = writeLanguageSplit(
+                        sentences, lang, poolDir,
+                        devWriter, testWriter);
+                totalPool += written[0];
                 totalDev += written[1];
                 totalTest += written[2];
+                langCounts.put(lang, sentences.size());
                 langCount++;
             }
         }
-
-        // Shuffle training file so languages are interleaved.
-        // Without this, mini-batches would see one language
-        // at a time since data is written language-by-language.
-        System.out.println("Shuffling training data...");
-        shuffleFile(trainFile, 42L);
 
         // Report
         if (totalDupes > 0) {
             System.out.printf(Locale.US,
                     "Deduplicated: removed %,d duplicate"
-                            + " sentences%n",
-                    totalDupes);
+                            + " sentences%n", totalDupes);
         }
         if (!dropped.isEmpty()) {
             dropped.sort(String::compareTo);
@@ -518,7 +882,8 @@ public class TrainLanguageModel {
         System.out.println("Languages included: "
                 + langCounts.size());
         langCounts.entrySet().stream()
-                .sorted(Map.Entry.<String, Integer>comparingByValue()
+                .sorted(Map.Entry
+                        .<String, Integer>comparingByValue()
                         .reversed())
                 .limit(20)
                 .forEach(e -> System.out.printf(Locale.US,
@@ -529,52 +894,94 @@ public class TrainLanguageModel {
                     + (langCounts.size() - 20) + " more");
         }
 
-        return new int[]{totalTrain, totalDev, totalTest};
+        return new int[]{totalPool, totalDev, totalTest};
     }
 
     /**
-     * Shuffle, split, preprocess, and write one language group.
+     * Split one language's sentences into test, dev, and pool.
+     * <ul>
+     *   <li>Test: 10% (max 20K), written raw</li>
+     *   <li>Dev: 10% (max 20K), written preprocessed</li>
+     *   <li>Pool: rest, written preprocessed to per-language file</li>
+     * </ul>
      *
-     * @return int[3]: {train, dev, test} counts
+     * @return int[3]: {pool, dev, test} counts
      */
-    private static int[] writeGroup(
+    private static int[] writeLanguageSplit(
             List<LabeledSentence> sentences, String lang,
-            float trainRatio, float devRatio,
-            BufferedWriter trainWriter,
+            Path poolDir,
             BufferedWriter devWriter,
-            BufferedWriter testWriter,
-            BufferedWriter rawDevWriter,
-            BufferedWriter rawTestWriter,
-            Map<String, Integer> langCounts) throws IOException {
+            BufferedWriter testWriter) throws IOException {
 
         Random rng = new Random(lang.hashCode() + 42L);
         Collections.shuffle(sentences, rng);
 
         int n = sentences.size();
-        int trainEnd = (int) (n * trainRatio);
-        int devEnd = trainEnd + (int) (n * devRatio);
+        int testCount = Math.min(
+                (int) (n * 0.1f), MAX_TEST_PER_LANG);
+        int devCount = Math.min(
+                (int) ((n - testCount) * 0.1f / 0.9f),
+                MAX_DEV_PER_LANG);
+        int poolStart = testCount + devCount;
 
-        for (int i = 0; i < trainEnd; i++) {
-            String cleaned = CharSoupFeatureExtractor.preprocess(
-                    sentences.get(i).getText());
-            writeLine(trainWriter, lang, cleaned);
-        }
-        for (int i = trainEnd; i < devEnd; i++) {
+        // Test: raw text
+        for (int i = 0; i < testCount; i++) {
             String raw = sentences.get(i).getText();
-            String cleaned =
-                    CharSoupFeatureExtractor.preprocess(raw);
-            writeLine(devWriter, lang, cleaned);
-            writeLine(rawDevWriter, lang, raw);
+            testWriter.write(lang);
+            testWriter.write('\t');
+            testWriter.write(raw);
+            testWriter.newLine();
         }
-        for (int i = devEnd; i < n; i++) {
-            String raw = sentences.get(i).getText();
+
+        // Dev: preprocessed
+        for (int i = testCount; i < testCount + devCount; i++) {
             String cleaned =
-                    CharSoupFeatureExtractor.preprocess(raw);
-            writeLine(testWriter, lang, cleaned);
-            writeLine(rawTestWriter, lang, raw);
+                    CharSoupFeatureExtractor.preprocess(
+                            sentences.get(i).getText());
+            devWriter.write(lang);
+            devWriter.write('\t');
+            devWriter.write(cleaned);
+            devWriter.newLine();
         }
-        langCounts.put(lang, n);
-        return new int[]{trainEnd, devEnd - trainEnd, n - devEnd};
+
+        // Pool: preprocessed, one file per language
+        Path poolFile = poolDir.resolve(lang);
+        try (BufferedWriter pw = Files.newBufferedWriter(
+                poolFile, StandardCharsets.UTF_8)) {
+            for (int i = poolStart; i < n; i++) {
+                String cleaned =
+                        CharSoupFeatureExtractor.preprocess(
+                                sentences.get(i).getText());
+                pw.write(cleaned);
+                pw.newLine();
+            }
+        }
+
+        return new int[]{n - poolStart, devCount, testCount};
+    }
+
+    // ================================================================
+    //  Helpers
+    // ================================================================
+
+    /**
+     * Collect all language labels from the pool directory
+     * (file names = language codes).
+     */
+    static String[] collectLabels(Path poolDir)
+            throws IOException {
+        List<String> labels = new ArrayList<>();
+        try (DirectoryStream<Path> ds =
+                     Files.newDirectoryStream(poolDir)) {
+            for (Path p : ds) {
+                if (Files.isRegularFile(p)) {
+                    labels.add(
+                            p.getFileName().toString());
+                }
+            }
+        }
+        Collections.sort(labels);
+        return labels.toArray(new String[0]);
     }
 
     static List<LabeledSentence> dedup(
@@ -607,37 +1014,5 @@ public class TrainLanguageModel {
             }
         }
         return sentences;
-    }
-
-    /**
-     * Shuffle all lines of a file in-place. Reads all lines
-     * into memory, shuffles, and rewrites. Requires enough
-     * heap for the full file contents.
-     */
-    static void shuffleFile(Path file, long seed)
-            throws IOException {
-        List<String> lines = new ArrayList<>(
-                Files.readAllLines(file, StandardCharsets.UTF_8));
-        System.out.printf(Locale.US,
-                "  Read %,d lines, shuffling...%n",
-                lines.size());
-        Collections.shuffle(lines, new Random(seed));
-        try (BufferedWriter w = Files.newBufferedWriter(
-                file, StandardCharsets.UTF_8)) {
-            for (String line : lines) {
-                w.write(line);
-                w.newLine();
-            }
-        }
-        System.out.println("  Shuffle complete.");
-    }
-
-    private static void writeLine(
-            BufferedWriter writer, String lang, String text)
-            throws IOException {
-        writer.write(lang);
-        writer.write('\t');
-        writer.write(text);
-        writer.newLine();
     }
 }

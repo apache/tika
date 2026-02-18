@@ -19,84 +19,50 @@ package org.apache.tika.eval.app;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.eval.core.tokens.AlphaIdeographFilterFactory;
 import org.apache.tika.eval.core.tokens.AnalyzerManager;
+import org.apache.tika.eval.core.tokens.TikaEvalTokenizer;
+import org.apache.tika.eval.core.tokens.TokenCounts;
 
 public class AnalyzerManagerTest {
 
     @Test
-    public void testGeneral() throws Exception {
+    public void testGeneral() {
         AnalyzerManager analyzerManager = AnalyzerManager.newInstance(100000);
-        Analyzer general = analyzerManager.getGeneralAnalyzer();
-        TokenStream ts = general.tokenStream("f", "tHe quick aaaa aaa anD dirty dog");
-        ts.reset();
+        TokenCounts counts = analyzerManager.tokenize(
+                "tHe quick aaaa aaa anD dirty dog");
 
-        CharTermAttribute termAtt = ts.getAttribute(CharTermAttribute.class);
-        Set<String> seen = new HashSet<>();
-        while (ts.incrementToken()) {
-            seen.add(termAtt.toString());
-        }
-        ts.end();
-        ts.close();
-
-        assertTrue(seen.contains("the"));
-        assertTrue(seen.contains("and"));
-        assertTrue(seen.contains("dog"));
-
+        assertTrue(counts.getTokens().containsKey("the"));
+        assertTrue(counts.getTokens().containsKey("and"));
+        assertTrue(counts.getTokens().containsKey("dog"));
     }
 
     @Test
-    public void testCommon() throws Exception {
-        AnalyzerManager analyzerManager = AnalyzerManager.newInstance(100000);
-        Analyzer common = analyzerManager.getCommonTokensAnalyzer();
-        TokenStream ts = common.tokenStream("f", "th 5,000.12 5000 and dirty dog");
-        ts.reset();
-        CharTermAttribute termAtt = ts.getAttribute(CharTermAttribute.class);
-        Set<String> seen = new HashSet<>();
-        while (ts.incrementToken()) {
-            String t = termAtt.toString();
-            if (AlphaIdeographFilterFactory.isAlphabetic(t.toCharArray(), t.length()) && t.contains("5")) {
-                fail("Shouldn't have found a numeric");
-            }
-            seen.add(termAtt.toString());
-        }
-        ts.end();
-        ts.close();
+    public void testCommon() {
+        List<String> tokens = TikaEvalTokenizer.tokenize(
+                "th 5,000.12 5000 and dirty dog",
+                TikaEvalTokenizer.Mode.COMMON_TOKENS);
 
-        assertTrue(seen.contains("dirty"));
-        assertFalse(seen.contains("the"));
+        // tokens shorter than 3 chars and numbers excluded in COMMON_TOKENS mode
+        assertFalse(tokens.contains("th"));
+        assertFalse(tokens.contains("5000"));
 
+        assertTrue(tokens.contains("dirty"));
+        assertTrue(tokens.contains("dog"));
     }
 
     @Test
-    public void testTokenCountFilter() throws Exception {
+    public void testTokenCountLimit() {
         AnalyzerManager analyzerManager = AnalyzerManager.newInstance(1000000);
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 1001000; i++) {
             sb.append("the ");
         }
-        TokenStream ts = analyzerManager
-                .getGeneralAnalyzer()
-                .tokenStream("f", sb.toString());
-        ts.reset();
-        CharTermAttribute termAtt = ts.getAttribute(CharTermAttribute.class);
-        int tokens = 0;
-        while (ts.incrementToken()) {
-            tokens++;
-        }
-
-        assertEquals(1000000, tokens);
-
+        TokenCounts counts = analyzerManager.tokenize(sb.toString());
+        assertEquals(1000000, counts.getTotalTokens());
     }
-
 }

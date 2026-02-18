@@ -177,7 +177,7 @@ public class QuickF1Eval {
                 sharedCanonical.size(), sharedData.size());
 
         StringBuilder report = new StringBuilder();
-        report.append(String.format(
+        report.append(String.format(Locale.US,
                 "=== Macro F1 Evaluation "
                         + "(shared langs%s) ===%n",
                 doCollapse ? ", confusables collapsed"
@@ -206,7 +206,7 @@ public class QuickF1Eval {
                     }
                 }
                 if (relevant) {
-                    report.append(String.format(
+                    report.append(String.format(Locale.US,
                             "  {%s} -> %s%n",
                             String.join("/", g), g[0]));
                 }

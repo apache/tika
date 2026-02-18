@@ -222,7 +222,7 @@ public class CrossDomainEval {
 
         // ---- Build report ----
         StringBuilder report = new StringBuilder();
-        report.append(String.format(
+        report.append(String.format(Locale.US,
                 "=== Cross-Domain Evaluation: %s ===%n%n",
                 dataset.toUpperCase(Locale.ROOT)));
         report.append(String.format(Locale.US,

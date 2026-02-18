@@ -53,7 +53,7 @@ public class TrigramAblation {
         int threads = Runtime.getRuntime().availableProcessors();
 
         System.out.println("Train file: " + trainFile);
-        System.out.printf("Threads: %d%n", threads);
+        System.out.printf(Locale.US, "Threads: %d%n", threads);
 
         System.out.println("Loading dev + test...");
         long t0 = System.nanoTime();

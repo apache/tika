@@ -322,7 +322,7 @@ public abstract class ProfilerBase {
         calculators.add(new ContentLengthCalculator());
         calculators.add(new UnicodeBlockCounter(maxContentLengthForLangId));
 
-        return new CompositeTextStatsCalculator(calculators, analyzerManager.getGeneralAnalyzer(), langIder);
+        return new CompositeTextStatsCalculator(calculators, analyzerManager, langIder);
     }
 
     /**

@@ -43,7 +43,7 @@ import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
 
 /**
- * Compares the built-in TikaLanguageDetector (bigram model) against
+ * Compares the built-in CharSoupLanguageDetector (bigram model) against
  * the OpenNLP-based language detector on a test split.
  * <p>
  * Results are broken out by text length:
