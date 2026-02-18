@@ -107,6 +107,12 @@
           </archive>
         </configuration>
         <executions>
+          <!-- Disable the default jar execution in package phase since
+               pre-test-jar already creates the main artifact earlier. -->
+          <execution>
+            <id>default-jar</id>
+            <phase>none</phase>
+          </execution>
           <execution>
             <id>pre-test-jar</id>
             <phase>process-test-resources</phase>
