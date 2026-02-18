@@ -101,6 +101,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.apache.tika.sax.ToMarkdownContentHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
 import org.apache.tika.sax.boilerpipe.BoilerpipeContentHandler;
 import org.apache.tika.serialization.JsonMetadata;
@@ -203,6 +204,12 @@ public class TikaCLI {
     private boolean pipeMode = true;
     private boolean fork = false;
     private boolean prettyPrint;
+    private final OutputType MARKDOWN = new OutputType() {
+        @Override
+        protected ContentHandler getContentHandler(OutputStream output, Metadata metadata) throws Exception {
+            return new BodyContentHandler(new ToMarkdownContentHandler(getOutputWriter(output, encoding)));
+        }
+    };
     private final OutputType XML = new OutputType() {
         @Override
         protected ContentHandler getContentHandler(OutputStream output, Metadata metadata) throws Exception {
@@ -405,6 +412,8 @@ public class TikaCLI {
             type = XML;
         } else if (arg.equals("-h") || arg.equals("--html")) {
             type = HTML;
+        } else if (arg.equals("--md")) {
+            type = MARKDOWN;
         } else if (arg.equals("-t") || arg.equals("--text")) {
             type = TEXT;
         } else if (arg.equals("-T") || arg.equals("--text-main")) {
@@ -500,6 +509,8 @@ public class TikaCLI {
             handlerType = BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
         } else if (type.equals(TEXT_MAIN)) {
             handlerType = BasicContentHandlerFactory.HANDLER_TYPE.BODY;
+        } else if (type.equals(MARKDOWN)) {
+            handlerType = BasicContentHandlerFactory.HANDLER_TYPE.MARKDOWN;
         } else if (type.equals(METADATA)) {
             handlerType = BasicContentHandlerFactory.HANDLER_TYPE.IGNORE;
         }
@@ -530,12 +541,13 @@ public class TikaCLI {
         out.println("    -t  or --text          Output plain text content (body)");
         out.println("    -T  or --text-main     Output plain text content (main content only via boilerpipe handler)");
         out.println("    -A  or --text-all      Output all text content");
-        out.println("    -m  or --metadata      Output only metadata");
+        out.println("    --md                   Output Markdown content (body)");
+        out.println("    -m  or --metadata      Output only metadata (no content)");
         out.println("    -j  or --json          Output metadata in JSON");
         out.println("    -y  or --xmp           Output metadata in XMP");
         out.println("    -J  or --jsonRecursive Output metadata and content from all");
         out.println("                           embedded files (choose content type");
-        out.println("                           with -x, -h, -t or -m; default is -x)");
+        out.println("                           with -x, -h, --md, -t or -m; default is -x)");
         out.println("    -a  or --async         Run Tika in async mode; must specify details in a" + " tikaConfig file");
         out.println("    -l  or --language      Output only language");
         out.println("    -d  or --detect        Detect document type");
