@@ -171,6 +171,18 @@ public class TikaCLITest {
     }
 
     /**
+     * Tests --md option of the cli
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testMarkdownOutput() throws Exception {
+        String content = getParamOutContent("--md", resourcePrefix + "coffee.xls");
+        assertTrue(content.contains("# Sheet1"), "Expected markdown heading");
+        assertTrue(content.contains("| ---"), "Expected markdown table separator");
+    }
+
+    /**
      * Tests -A option of the cli
      *
      * @throws Exception
