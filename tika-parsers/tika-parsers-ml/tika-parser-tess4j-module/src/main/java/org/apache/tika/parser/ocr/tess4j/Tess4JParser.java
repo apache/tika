@@ -214,12 +214,16 @@ public class Tess4JParser implements Parser, Initializable {
 
     @Override
     public void initialize() throws TikaConfigException {
+        if (defaultConfig.isSkipOcr()) {
+            initialized = false;
+            return;
+        }
         try {
             configureNativeLibPath();
             initPool();
             initialized = true;
             LOG.info("Tess4J parser initialized with pool size {}", defaultConfig.getPoolSize());
-        } catch (UnsatisfiedLinkError e) {
+        } catch (UnsatisfiedLinkError | NoClassDefFoundError e) {
             LOG.warn("Tess4J native library not available: {}. " +
                     "Tess4JParser will be disabled.", e.getMessage());
             initialized = false;
