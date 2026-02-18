@@ -1,0 +1,83 @@
+%PDF
+--c8adf8f7-cf5b-40dd-97dd-77e90a7b117a
+Content-ID: <0e647234-04b6-4236-ac2d-716be38883f5@resteasy-multipart>
+Content-Type: application/xop+xml;charset="UTF-8";type="text/xml"
+
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><contentResponse><documentTitle>DocRedes</documentTitle><mimeType>application/pdf</mimeType><fileName>file0.pdf</fileName><content><xop:Include xmlns:xop="http://www.w3.org/2004/08/xop/include" href="cid:147cae09-4bf6-4a1b-beda-aa2ad1e62152%40resteasy-multipart"/></content></contentResponse>
+--c8adf8f7-cf5b-40dd-97dd-77e90a7b117a
+Content-Transfer-Encoding: binary
+Content-ID: <147cae09-4bf6-4a1b-beda-aa2ad1e62152@resteasy-multipart>
+Content-Type: application/octet-stream
+
+%PDF-1.4
+%öäüß
+1 0 obj
+<<
+/Type /Catalog
+/Version /1.4
+/Pages 2 0 R
+>>
+endobj
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+3 0 obj
+<<
+/Type /Page
+/MediaBox [0.0 0.0 595.27563 708.66144]
+/Rotate 0
+/Parent 2 0 R
+/Contents 4 0 R
+/Resources 5 0 R
+>>
+endobj
+4 0 obj
+<<
+/Filter /FlateDecode
+/Length 138
+>>
+stream
+xœmÍ=Â0àİ§ğKš´‰CÖˆ¿ùQšBYš–ó“†"—'½OÏÕ>=û˜.'1ƒDU.Ç$gDm5håN)­qHĞAu,J#w“³÷¼dnaãCÆk˜â-m‘ïpàwIN6ftÓø«Lí„"Kÿp;<úqm-Œs¤Vo¿Ì"4³
+endstream
+endobj
+5 0 obj
+<<
+/Font 6 0 R
+>>
+endobj
+6 0 obj
+<<
+/F1 7 0 R
+>>
+endobj
+7 0 obj
+<<
+/Type /Font
+/Subtype /Type1
+/BaseFont /Helvetica-Bold
+/Encoding /WinAnsiEncoding
+>>
+endobj
+xref
+0 8
+0000000000 65535 f
+0000000015 00000 n
+0000000078 00000 n
+0000000135 00000 n
+0000000265 00000 n
+0000000477 00000 n
+0000000510 00000 n
+0000000541 00000 n
+trailer
+<<
+/Root 1 0 R
+/ID [<67958C3BB055C279A604333B6D1E389B> <67958C3BB055C279A604333B6D1E389B>]
+/Size 8
+>>
+startxref
+643
+%%EOF
