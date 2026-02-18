@@ -1,0 +1,10 @@
+{
+  "parsers": [
+    {
+      "gemini-vlm-parser": {
+        "apiKey": "your-gemini-api-key",
+        "model": "gemini-2.5-flash"
+      }
+    }
+  ]
+}

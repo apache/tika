@@ -123,6 +123,31 @@ public class OcrConfig implements Serializable {
     private ImageFormat imageFormat = ImageFormat.PNG;
     private float imageQuality = 1.0f;
 
+    /**
+     * Maximum total pixels (width &times; height) allowed for a rendered
+     * page image before OCR is skipped for that page. This prevents OOM
+     * from rendering pathologically large PDF pages (e.g., architectural
+     * drawings, maps) via PDFBox's in-process renderer.
+     * <p>
+     * When using the Poppler renderer, prefer {@code maxScaleTo} on
+     * {@code PopplerRenderer} instead — it prevents the large image from
+     * ever being created. This limit is the safety net for the PDFBox
+     * rendering path.
+     * <p>
+     * Default is 100,000,000 (100 megapixels, roughly 10,000 &times;
+     * 10,000). Set to {@code -1} for no limit (not recommended).
+     */
+    private long maxImagePixels = 100_000_000L;
+
+    /**
+     * Maximum number of pages to OCR per document. Pages beyond this
+     * limit are processed for text extraction only (if applicable)
+     * but not rendered or sent to OCR.
+     * <p>
+     * Default is {@code -1} (no limit — all pages are eligible for OCR).
+     */
+    private int maxPagesToOcr = -1;
+
     public Strategy getStrategy() {
         return strategy;
     }
@@ -177,5 +202,40 @@ public class OcrConfig implements Serializable {
 
     public void setImageQuality(float imageQuality) {
         this.imageQuality = imageQuality;
+    }
+
+    public long getMaxImagePixels() {
+        return maxImagePixels;
+    }
+
+    /**
+     * Set the maximum total pixels (width &times; height) for a rendered
+     * page image. Pages exceeding this limit are skipped for OCR.
+     * Default is 100,000,000. Set to {@code -1} for no limit (not recommended).
+     */
+    public void setMaxImagePixels(long maxImagePixels) {
+        if (maxImagePixels < 1 && maxImagePixels != -1) {
+            throw new IllegalArgumentException(
+                    "maxImagePixels must be -1 (no limit) or at least 1, got: "
+                            + maxImagePixels);
+        }
+        this.maxImagePixels = maxImagePixels;
+    }
+
+    public int getMaxPagesToOcr() {
+        return maxPagesToOcr;
+    }
+
+    /**
+     * Set the maximum number of pages to OCR per document.
+     * Default is {@code -1} (no limit). Must be {@code -1} or at least {@code 1}.
+     */
+    public void setMaxPagesToOcr(int maxPagesToOcr) {
+        if (maxPagesToOcr < 1 && maxPagesToOcr != -1) {
+            throw new IllegalArgumentException(
+                    "maxPagesToOcr must be -1 (no limit) or at least 1, got: "
+                            + maxPagesToOcr);
+        }
+        this.maxPagesToOcr = maxPagesToOcr;
     }
 }
