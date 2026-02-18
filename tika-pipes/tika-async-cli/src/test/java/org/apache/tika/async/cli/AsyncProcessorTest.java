@@ -50,6 +50,8 @@ import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.async.AsyncProcessor;
 import org.apache.tika.pipes.core.extractor.UnpackConfig;
+import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.serialization.JsonMetadataList;
 
 /**
@@ -121,6 +123,8 @@ public class AsyncProcessorTest extends TikaTest {
         ParseContext parseContext = new ParseContext();
         parseContext.set(ParseMode.class, ParseMode.UNPACK);
         parseContext.set(UnpackConfig.class, unpackConfig);
+        parseContext.set(ContentHandlerFactory.class,
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
         FetchEmitTuple t =
                 new FetchEmitTuple("myId-1", new FetchKey("fsf", "mock.xml"),
                         new EmitKey("fse-json", "emit-1"), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);

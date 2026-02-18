@@ -252,7 +252,7 @@ class ParseHandler {
         } finally {
             metadata.add(TikaCoreProperties.TIKA_CONTENT, handler.toString());
             metadata.set(TikaCoreProperties.TIKA_CONTENT_HANDLER_TYPE,
-                    contentHandlerFactory.getHandlerTypeName());
+                    contentHandlerFactory.handlerTypeName());
             if (containerException != null) {
                 metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION, containerException);
             }
