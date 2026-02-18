@@ -16,12 +16,6 @@
  */
 package org.apache.tika.pipes.core.server;
 
-import static org.apache.tika.pipes.core.PipesClient.COMMANDS.ACK;
-import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.FINISHED;
-import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.INTERMEDIATE_RESULT;
-import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.OOM;
-import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.TIMEOUT;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
@@ -64,7 +58,6 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.pipes.api.FetchEmitTuple;
-import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.core.EmitStrategy;
 import org.apache.tika.pipes.core.EmitStrategyConfig;
@@ -73,16 +66,17 @@ import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.config.ConfigStore;
 import org.apache.tika.pipes.core.config.ConfigStoreFactory;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
-import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.pipes.core.extractor.UnpackExtractorFactory;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.apache.tika.pipes.core.protocol.PipesMessage;
+import org.apache.tika.pipes.core.protocol.PipesMessageType;
+import org.apache.tika.pipes.core.protocol.ShutDownReceivedException;
 import org.apache.tika.pipes.core.serialization.JsonPipesIpc;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.serialization.ParseContextUtils;
 import org.apache.tika.utils.ExceptionUtils;
-import org.apache.tika.utils.StringUtils;
 
 /**
  * This server is forked from the PipesClient.  This class isolates
@@ -97,60 +91,14 @@ public class PipesServer implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(PipesServer.class);
 
     public static final int AUTH_TOKEN_LENGTH_BYTES = 32;
-    public static final int MAX_FETCH_EMIT_TUPLE_BYTES = 100 * 1024 * 1024; // 100MB
 
     private final long heartbeatIntervalMs;
     private final String pipesClientId;
 
-    //this has to be some number not close to 0-3
-    //it looks like the server crashes with exit value 3 on uncaught OOM, for example
-    public static final int TIMEOUT_EXIT_CODE = 17;
-    public static final int OOM_EXIT_CODE = 18;
-    public static final int UNSPECIFIED_CRASH_EXIT_CODE = 19;
-
-
-    public enum PROCESSING_STATUS {
-        READY, INTERMEDIATE_RESULT, WORKING, FINISHED,
-        OOM(OOM_EXIT_CODE), TIMEOUT(TIMEOUT_EXIT_CODE), UNSPECIFIED_CRASH(UNSPECIFIED_CRASH_EXIT_CODE);
-
-        int exitCode = -1;
-        public static PROCESSING_STATUS lookup(int b) {
-            if (b < 1) {
-                throw new IllegalArgumentException("bad result value: " + b);
-            }
-            int ordinal = b - 1;
-            if (ordinal >= PROCESSING_STATUS.values().length) {
-                throw new IllegalArgumentException("ordinal > than array length? " + ordinal);
-            }
-            return PROCESSING_STATUS.values()[ordinal];
-        }
-        PROCESSING_STATUS() {
-
-        }
-
-        PROCESSING_STATUS(int exitCode) {
-            this.exitCode = exitCode;
-        }
-
-        public int getExitCode() {
-            return exitCode;
-        }
-
-        public byte getByte() {
-            return (byte) (ordinal() + 1);
-        }
-    }
-
     private Detector detector;
 
-
-
-    private final Object[] lock = new Object[0];
     private final DataInputStream input;
     private final DataOutputStream output;
-    //if an extract is larger than this value, emit it directly;
-    //if it is smaller than this value, write it back to the
-    //PipesClient so that it can cache the extracts and then batch emit.
 
     private final TikaLoader tikaLoader;
     private final PipesConfig pipesConfig;
@@ -166,6 +114,7 @@ public class PipesServer implements AutoCloseable {
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final ExecutorCompletionService<PipesResult> executorCompletionService = new ExecutorCompletionService<>(executorService);
     private final EmitStrategy emitStrategy;
+    private final ServerProtocolIO protocolIO;
 
     public static PipesServer load(int port, Path tikaConfigPath) throws Exception {
             String pipesClientId = System.getProperty("pipesClientId", "unknown");
@@ -195,23 +144,12 @@ public class PipesServer implements AutoCloseable {
         } catch (Exception e) {
             LOG.error("Failed to start up", e);
             try {
-                // Write FINISHED status byte and await ACK
-                dos.writeByte(FINISHED.getByte());
-                dos.flush();
-                int ack = dis.read();
-                if (ack != PipesClient.COMMANDS.ACK.getByte()) {
-                    LOG.warn("Expected ACK but got: {}", ack);
-                }
-
-                // Write error message and await ACK
                 String msg = ExceptionUtils.getStackTrace(e);
                 byte[] bytes = msg.getBytes(StandardCharsets.UTF_8);
-                dos.writeInt(bytes.length);
-                dos.write(bytes);
-                dos.flush();
-                ack = dis.read();
-                if (ack != PipesClient.COMMANDS.ACK.getByte()) {
-                    LOG.warn("Expected ACK but got: {}", ack);
+                PipesMessage.startupFailed(bytes).write(dos);
+                PipesMessage ackMsg = PipesMessage.read(dis);
+                if (ackMsg.type() != PipesMessageType.ACK) {
+                    LOG.warn("Expected ACK but got: {}", ackMsg.type());
                 }
             } catch (IOException ioException) {
                 LOG.error("Failed to send startup failure message to client", ioException);
@@ -250,6 +188,7 @@ public class PipesServer implements AutoCloseable {
         }
 
         emitStrategy = pipesConfig.getEmitStrategy().getType();
+        this.protocolIO = new ServerProtocolIO(input, output);
     }
 
 
@@ -365,84 +304,73 @@ public class PipesServer implements AutoCloseable {
     }
 
     public void mainLoop() {
-        write(PROCESSING_STATUS.READY.getByte());
+        try {
+            PipesMessage.ready().write(output);
+        } catch (IOException e) {
+            LOG.error("pipesClientId={}: failed to send READY", pipesClientId, e);
+            exit(PipesMessageType.UNSPECIFIED_CRASH.getExitCode().orElse(19));
+            return;
+        }
         LOG.debug("pipesClientId={}: sent READY, entering main loop", pipesClientId);
         ArrayBlockingQueue<Metadata> intermediateResult = new ArrayBlockingQueue<>(1);
 
         //main loop
         try {
-            long start = System.currentTimeMillis();
             while (true) {
-                int request = input.read();
-                LOG.trace("pipesClientId={}: received command byte={}", pipesClientId, HexFormat.of().formatHex(new byte[]{(byte)request}));
-                if (request == -1) {
-                    LOG.debug("received -1 from client; shutting down");
-                    exit(0);
+                PipesMessage msg = PipesMessage.read(input);
+                LOG.trace("pipesClientId={}: received message type={}", pipesClientId, msg.type());
+
+                switch (msg.type()) {
+                    case PING:
+                        PipesMessage.ping().write(output);
+                        break;
+                    case NEW_REQUEST:
+                        intermediateResult.clear();
+                        CountDownLatch countDownLatch = new CountDownLatch(1);
+
+                        FetchEmitTuple fetchEmitTuple;
+                        try {
+                            fetchEmitTuple = JsonPipesIpc.fromBytes(msg.payload(), FetchEmitTuple.class);
+                        } catch (IOException e) {
+                            LOG.error("problem deserializing FetchEmitTuple", e);
+                            handleCrash(PipesMessageType.UNSPECIFIED_CRASH, "unknown", e);
+                            break; // unreachable after handleCrash/exit, but needed for compilation
+                        }
+                        // Validate before merging with global config
+                        ServerProtocolIO.validateFetchEmitTuple(fetchEmitTuple);
+                        // Create merged ParseContext: defaults from tika-config + request overrides
+                        ParseContext mergedContext = createMergedParseContext(fetchEmitTuple.getParseContext());
+                        // Resolve friendly-named configs in ParseContext to actual objects
+                        ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
+
+                        PipesWorker pipesWorker = getPipesWorker(intermediateResult, fetchEmitTuple, mergedContext, countDownLatch);
+                        executorCompletionService.submit(pipesWorker);
+                        try {
+                            loopUntilDone(fetchEmitTuple, mergedContext, executorCompletionService, intermediateResult, countDownLatch);
+                        } catch (Throwable t) {
+                            LOG.error("Serious problem processing request", t);
+                        }
+                        break;
+                    case SHUT_DOWN:
+                        LOG.debug("shutting down");
+                        try {
+                            close();
+                        } catch (Exception e) {
+                            //swallow
+                        }
+                        System.exit(0);
+                        break;
+                    default:
+                        String errorMsg = String.format(Locale.ROOT,
+                                "pipesClientId=%s: Unexpected message type %s in command position",
+                                pipesClientId, msg.type());
+                        LOG.error(errorMsg);
+                        throw new IllegalStateException(errorMsg);
                 }
-
-                // Validate that we received a command byte, not a status/ACK byte
-                if (request == PipesClient.COMMANDS.ACK.getByte()) {
-                    String msg = String.format(Locale.ROOT,
-                            "pipesClientId=%s: PROTOCOL ERROR - Received ACK (byte=0x%02x) when expecting a command. " +
-                            "This indicates a protocol synchronization issue where the server missed consuming an ACK. " +
-                            "Valid commands are: PING(0x%02x), NEW_REQUEST(0x%02x), SHUT_DOWN(0x%02x). " +
-                            "This is likely a bug in the server's message handling - check that all status messages " +
-                            "that trigger client ACKs are properly awaiting those ACKs.",
-                            pipesClientId, (byte)request,
-                            PipesClient.COMMANDS.PING.getByte(),
-                            PipesClient.COMMANDS.NEW_REQUEST.getByte(),
-                            PipesClient.COMMANDS.SHUT_DOWN.getByte());
-                    LOG.error(msg);
-                    throw new IllegalStateException(msg);
-                }
-
-                if (request == PipesClient.COMMANDS.PING.getByte()) {
-                    writeNoAck(PipesClient.COMMANDS.PING.getByte());
-                } else if (request == PipesClient.COMMANDS.NEW_REQUEST.getByte()) {
-                    intermediateResult.clear();
-                    CountDownLatch countDownLatch = new CountDownLatch(1);
-
-                    FetchEmitTuple fetchEmitTuple = readFetchEmitTuple();
-                    // Validate before merging with global config
-                    validateFetchEmitTuple(fetchEmitTuple);
-                    // Create merged ParseContext: defaults from tika-config + request overrides
-                    ParseContext mergedContext = createMergedParseContext(fetchEmitTuple.getParseContext());
-                    // Resolve friendly-named configs in ParseContext to actual objects
-                    ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
-
-                    PipesWorker pipesWorker = getPipesWorker(intermediateResult, fetchEmitTuple, mergedContext, countDownLatch);
-                    executorCompletionService.submit(pipesWorker);
-                    //set progress counter
-                    try {
-                        loopUntilDone(fetchEmitTuple, mergedContext, executorCompletionService, intermediateResult, countDownLatch);
-                    } catch (Throwable t) {
-                        LOG.error("Serious problem: {}", HexFormat.of().formatHex(new byte[]{(byte)request}), t);
-                    }
-                } else if (request == PipesClient.COMMANDS.SHUT_DOWN.getByte()) {
-                    LOG.debug("shutting down");
-                    try {
-                        close();
-                    } catch (Exception e) {
-                        //swallow
-                    }
-                    System.exit(0);
-                } else {
-                    String msg = String.format(Locale.ROOT,
-                            "pipesClientId=%s: Unexpected byte 0x%02x in command position. " +
-                            "Expected one of: PING(0x%02x), ACK(0x%02x), NEW_REQUEST(0x%02x), SHUT_DOWN(0x%02x)",
-                            pipesClientId, (byte)request,
-                            PipesClient.COMMANDS.PING.getByte(),
-                            PipesClient.COMMANDS.ACK.getByte(),
-                            PipesClient.COMMANDS.NEW_REQUEST.getByte(),
-                            PipesClient.COMMANDS.SHUT_DOWN.getByte());
-                    LOG.error(msg);
-                    throw new IllegalStateException(msg);
-                }
-                output.flush();
             }
         } catch (Throwable t) {
             LOG.error("main loop error (did the forking process shut down?)", t);
-            exit(UNSPECIFIED_CRASH_EXIT_CODE);
+            exit(PipesMessageType.UNSPECIFIED_CRASH.getExitCode().orElse(19));
         }
     }
 
@@ -463,7 +391,7 @@ public class PipesServer implements AutoCloseable {
                                ArrayBlockingQueue<Metadata> intermediateResult, CountDownLatch countDownLatch) throws InterruptedException, IOException {
         Instant start = Instant.now();
         long timeoutMillis = PipesClient.getTimeoutMillis(pipesConfig, mergedContext);
-        long mockProgressCounter = 0;
+        long progressCounter = 1;
         boolean wroteIntermediateResult = false;
 
         while (true) {
@@ -484,54 +412,54 @@ public class PipesServer implements AutoCloseable {
                 try {
                     pipesResult = future.get();
                 } catch (OutOfMemoryError e) {
-                    handleCrash(OOM, fetchEmitTuple.getId(), e);
+                    handleCrash(PipesMessageType.OOM, fetchEmitTuple.getId(), e);
+                    return; // handleCrash calls exit(), but guard against unexpected return
                 } catch (ExecutionException e) {
                     Throwable t = e.getCause();
                     LOG.error("crash: {}", fetchEmitTuple.getId(), t);
                     if (t instanceof OutOfMemoryError) {
-                        handleCrash(OOM, fetchEmitTuple.getId(), t);
+                        handleCrash(PipesMessageType.OOM, fetchEmitTuple.getId(), t);
+                        return;
                     }
-                    handleCrash(PROCESSING_STATUS.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), t);
+                    handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), t);
+                    return;
                 }
                 LOG.debug("executor completionService finished task: id={} status={}", fetchEmitTuple.getId(), pipesResult.status());
-                write(FINISHED, pipesResult);
+                writeFinished(pipesResult);
                 return;
             }
 
-            // Send heartbeat if we've waited long enough
+            // Send fire-and-forget heartbeat if we've waited long enough
             long elapsed = System.currentTimeMillis() - start.toEpochMilli();
-            if (elapsed > mockProgressCounter * heartbeatIntervalMs) {
-                LOG.debug("still processing: {}", mockProgressCounter);
-                write(PROCESSING_STATUS.WORKING.getByte());
-                output.writeLong(mockProgressCounter++);
-                output.flush();
+            if (elapsed > progressCounter * heartbeatIntervalMs) {
+                LOG.debug("still processing: {}", progressCounter);
+                PipesMessage.working(progressCounter++).write(output);
             }
 
-            checkTimeout(start, timeoutMillis);
+            if (checkTimeout(start, timeoutMillis, fetchEmitTuple.getId())) {
+                return; // handleCrash calls exit(), but guard against unexpected return
+            }
         }
 
     }
 
-    private void checkTimeout(Instant start, long timeoutMillis) throws IOException {
-
+    private boolean checkTimeout(Instant start, long timeoutMillis, String id) {
         if (Duration.between(start, Instant.now()).toMillis() > timeoutMillis) {
-            write(TIMEOUT.getByte());
-            exit(TIMEOUT_EXIT_CODE);
+            handleCrash(PipesMessageType.TIMEOUT, id,
+                    new RuntimeException("Server-side timeout after " + timeoutMillis + "ms"));
+            return true;
         }
+        return false;
     }
 
-    private void handleCrash(PROCESSING_STATUS processingStatus, String id, Throwable t) {
-        LOG.error("{}: {}", processingStatus, id, t);
-        String msg = (t != null) ? ExceptionUtils.getStackTrace(t) : "";
+    private void handleCrash(PipesMessageType crashType, String id, Throwable t) {
+        LOG.error("{}: {}", crashType, id, t);
         try {
-            byte[] bytes = JsonPipesIpc.toBytes(msg);
-            write(processingStatus, bytes);
-            awaitAck();
+            protocolIO.writeCrash(crashType, t);
         } catch (IOException e) {
-            //swallow
             LOG.warn("problem writing crash info to client", e);
         }
-        exit(processingStatus.getExitCode());
+        exit(crashType.getExitCode().orElse(19));
     }
 
 
@@ -548,48 +476,6 @@ public class PipesServer implements AutoCloseable {
             LOG.debug("exiting: {}", exitCode);
         }
         System.exit(exitCode);
-    }
-
-
-    private FetchEmitTuple readFetchEmitTuple() {
-        try {
-            int length = input.readInt();
-            if (length < 0 || length > MAX_FETCH_EMIT_TUPLE_BYTES) {
-                throw new IOException("FetchEmitTuple length " + length +
-                        " exceeds maximum allowed size of " + MAX_FETCH_EMIT_TUPLE_BYTES + " bytes");
-            }
-            byte[] bytes = new byte[length];
-            input.readFully(bytes);
-            return JsonPipesIpc.fromBytes(bytes, FetchEmitTuple.class);
-        } catch (IOException e) {
-            LOG.error("problem reading/deserializing FetchEmitTuple", e);
-            handleCrash(PROCESSING_STATUS.UNSPECIFIED_CRASH, "unknown", e);
-        }
-        //unreachable - handleCrash calls exit
-        return null;
-    }
-
-    /**
-     * Validates the FetchEmitTuple before merging with global config.
-     * If the tuple explicitly sets UnpackConfig with an emitter but ParseMode is not UNPACK,
-     * that's a configuration error.
-     */
-    private void validateFetchEmitTuple(FetchEmitTuple fetchEmitTuple) throws TikaConfigException {
-        ParseContext requestContext = fetchEmitTuple.getParseContext();
-        if (requestContext == null) {
-            return;
-        }
-        UnpackConfig unpackConfig = requestContext.get(UnpackConfig.class);
-        ParseMode parseMode = requestContext.get(ParseMode.class);
-
-        // If tuple explicitly has UnpackConfig with emitter but not UNPACK mode, that's an error
-        if (unpackConfig != null && !StringUtils.isBlank(unpackConfig.getEmitter())
-                && parseMode != ParseMode.UNPACK) {
-            throw new TikaConfigException(
-                    "FetchEmitTuple has UnpackConfig with emitter '" + unpackConfig.getEmitter() +
-                    "' but ParseMode is " + parseMode + ". " +
-                    "To extract embedded bytes, set ParseMode.UNPACK in the ParseContext.");
-        }
     }
 
     protected void initializeResources() throws TikaException, IOException, SAXException {
@@ -634,93 +520,50 @@ public class PipesServer implements AutoCloseable {
     private ConfigStore createConfigStore(PipesConfig pipesConfig, TikaPluginManager tikaPluginManager) throws TikaException {
         String configStoreType = pipesConfig.getConfigStoreType();
         String configStoreParams = pipesConfig.getConfigStoreParams();
-        
+
         if (configStoreType == null || "memory".equals(configStoreType)) {
             // Use default in-memory store (no persistence)
             return null;
         }
-        
+
         ExtensionConfig storeConfig = new ExtensionConfig(
             configStoreType, configStoreType, configStoreParams);
-        
+
         return ConfigStoreFactory.createConfigStore(
                 tikaPluginManager,
                 configStoreType,
                 storeConfig);
     }
 
-
-    private void write(PROCESSING_STATUS processingStatus, PipesResult pipesResult) {
+    private void writeFinished(PipesResult pipesResult) {
         try {
-            byte[] bytes = JsonPipesIpc.toBytes(pipesResult);
-            write(processingStatus, bytes);
+            protocolIO.writeFinished(pipesResult);
+        } catch (ShutDownReceivedException e) {
+            handleShutDown();
         } catch (IOException e) {
             LOG.error("problem writing emit data (forking process shutdown?)", e);
-            exit(UNSPECIFIED_CRASH_EXIT_CODE);
+            exit(PipesMessageType.UNSPECIFIED_CRASH.getExitCode().orElse(19));
         }
     }
 
     private void writeIntermediate(Metadata metadata) {
         try {
-            byte[] bytes = JsonPipesIpc.toBytes(metadata);
-            write(INTERMEDIATE_RESULT, bytes);
+            protocolIO.writeIntermediate(metadata);
+        } catch (ShutDownReceivedException e) {
+            handleShutDown();
         } catch (IOException e) {
             LOG.error("problem writing intermediate data (forking process shutdown?)", e);
-            exit(UNSPECIFIED_CRASH_EXIT_CODE);
+            exit(PipesMessageType.UNSPECIFIED_CRASH.getExitCode().orElse(19));
         }
     }
 
-    private void awaitAck() throws IOException {
-        int b = input.read();
-        if (b == ACK.getByte()) {
-            return;
-        }
-        if (b == PipesClient.COMMANDS.SHUT_DOWN.getByte()) {
-            LOG.info("pipesClientId={}: received SHUT_DOWN in awaitAck, shutting down gracefully", pipesClientId);
-            try {
-                close();
-            } catch (Exception e) {
-                //swallow
-            }
-            exit(0);
-        }
-        LOG.error("pipesClientId={}: expected ACK but got byte={}", pipesClientId, HexFormat.of().formatHex(new byte[]{ (byte) b}));
-        throw new IOException("Wasn't expecting byte=" + HexFormat.of().formatHex(new byte[]{ (byte) b}));
-    }
-
-    private void writeNoAck(byte b) {
+    private void handleShutDown() {
+        LOG.info("pipesClientId={}: received SHUT_DOWN, shutting down gracefully", pipesClientId);
         try {
-            output.write(b);
-            output.flush();
-        } catch (IOException e) {
-            LOG.error("problem writing data (forking process shutdown?)", e);
-            exit(UNSPECIFIED_CRASH_EXIT_CODE);
+            close();
+        } catch (Exception e) {
+            //swallow
         }
-    }
-
-    private void write(byte b) {
-        try {
-            output.write(b);
-            output.flush();
-            awaitAck();
-        } catch (IOException e) {
-            LOG.error("pipesClientId={}: problem writing data (forking process shutdown?)", pipesClientId, e);
-            exit(UNSPECIFIED_CRASH_EXIT_CODE);
-        }
-    }
-
-
-    private void write(PROCESSING_STATUS status, byte[] bytes) {
-        try {
-            write(status.getByte());
-            int len = bytes.length;
-            output.writeInt(len);
-            output.write(bytes);
-            output.flush();
-            awaitAck();
-        } catch (IOException e) {
-            LOG.error("problem writing data (forking process shutdown?)", e);
-            exit(UNSPECIFIED_CRASH_EXIT_CODE);
-        }
+        exit(0);
     }
 }
