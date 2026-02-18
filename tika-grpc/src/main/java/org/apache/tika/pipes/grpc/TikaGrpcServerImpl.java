@@ -71,6 +71,7 @@ import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.config.ConfigStore;
 import org.apache.tika.pipes.core.config.ConfigStoreFactory;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.apache.tika.pipes.ignite.server.IgniteStoreServer;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.plugins.TikaPluginManager;
 
@@ -89,6 +90,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     ConfigStore configStore;
     Path tikaConfigPath;
     PluginManager pluginManager;
+    private IgniteStoreServer igniteStoreServer;
 
     TikaGrpcServerImpl(String tikaConfigPath) throws TikaConfigException, IOException {
         this(tikaConfigPath, null);
@@ -158,16 +160,13 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
             com.fasterxml.jackson.databind.JsonNode params = mapper.readTree(config.json());
             
-            String cacheName = params.has("cacheName") ? params.get("cacheName").asText() : "tika-config-store";
-            String cacheMode = params.has("cacheMode") ? params.get("cacheMode").asText() : "REPLICATED";
+            String tableName = params.has("tableName") ? params.get("tableName").asText() : 
+                              params.has("cacheName") ? params.get("cacheName").asText() : "tika_config_store";
             String instanceName = params.has("igniteInstanceName") ? params.get("igniteInstanceName").asText() : "TikaIgniteServer";
             
-            // Direct instantiation - no reflection needed
-            org.apache.ignite.cache.CacheMode mode = org.apache.ignite.cache.CacheMode.valueOf(cacheMode);
-            org.apache.tika.pipes.ignite.server.IgniteStoreServer server = 
-                new org.apache.tika.pipes.ignite.server.IgniteStoreServer(cacheName, mode, instanceName);
+            igniteStoreServer = new IgniteStoreServer(tableName, instanceName);
             
-            server.startAsync();
+            igniteStoreServer.start();
             
             LOG.info("Embedded Ignite server started successfully");
             
@@ -227,8 +226,17 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             if (StringUtils.isNotBlank(additionalFetchConfigJson)) {
                 parseContext.setJsonConfig(request.getFetcherId(), additionalFetchConfigJson);
             }
+            
+            // Use emitter ID from request if provided, otherwise use NO_EMIT
+            EmitKey emitKey;
+            if (StringUtils.isNotBlank(request.getEmitterId())) {
+                emitKey = new EmitKey(request.getEmitterId(), request.getFetchKey());
+            } else {
+                emitKey = EmitKey.NO_EMIT;
+            }
+            
             PipesResult pipesResult = pipesClient.process(new FetchEmitTuple(request.getFetchKey(), new FetchKey(fetcher.getExtensionConfig().id(), request.getFetchKey()),
-                    new EmitKey(), tikaMetadata, parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+                    emitKey, tikaMetadata, parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
             FetchAndParseReply.Builder fetchReplyBuilder =
                     FetchAndParseReply.newBuilder()
                                       .setFetchKey(request.getFetchKey())
@@ -476,6 +484,21 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                     .withDescription("Failed to delete pipes iterator: " + e.getMessage())
                     .withCause(e)
                     .asRuntimeException());
+        }
+    }
+    
+    /**
+     * Cleanup resources including the embedded Ignite server if running.
+     */
+    public void shutdown() {
+        if (igniteStoreServer != null) {
+            LOG.info("Shutting down embedded Ignite server");
+            try {
+                igniteStoreServer.close();
+                igniteStoreServer = null;
+            } catch (Exception e) {
+                LOG.error("Error shutting down Ignite server", e);
+            }
         }
     }
 }
