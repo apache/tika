@@ -53,7 +53,7 @@ import org.apache.tika.language.detect.LanguageResult;
  * keeping the implementation simple and predictable.
  * </p>
  */
-@TikaComponent
+@TikaComponent(name = "charsoup-language-detector")
 public class CharSoupLanguageDetector extends LanguageDetector {
 
     private static final Logger LOG =

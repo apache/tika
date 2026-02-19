@@ -54,7 +54,7 @@ import org.apache.tika.parser.ParseContext;
  *
  * @since Apache Tika 3.2
  */
-@TikaComponent
+@TikaComponent(name = "charsoup-encoding-detector")
 public class CharSoupEncodingDetector implements MetaEncodingDetector {
 
     private static final long serialVersionUID = 1L;

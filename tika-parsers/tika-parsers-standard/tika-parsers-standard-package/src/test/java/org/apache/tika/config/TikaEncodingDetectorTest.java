@@ -272,6 +272,24 @@ public class TikaEncodingDetectorTest extends TikaTest {
 
 
     @Test
+    public void testExcludeCharSoupEncodingDetector() throws Exception {
+        TikaLoader tikaLoader = TikaLoaderHelper.getLoader(
+                "TIKA-4671-exclude-charsoup-encoding-detector.json");
+        EncodingDetector detector = tikaLoader.loadEncodingDetectors();
+        assertTrue(detector instanceof CompositeEncodingDetector);
+        List<EncodingDetector> detectors =
+                ((CompositeEncodingDetector) detector).getDetectors();
+        // 3 base detectors, no MetaEncodingDetector
+        assertEquals(3, detectors.size());
+        assertTrue(detectors.get(0) instanceof HtmlEncodingDetector);
+        assertTrue(detectors.get(1) instanceof UniversalEncodingDetector);
+        assertTrue(detectors.get(2) instanceof Icu4jEncodingDetector);
+        for (EncodingDetector d : detectors) {
+            assertNotContained("CharSoup", d.getClass().getSimpleName());
+        }
+    }
+
+    @Test
     public void testArabicMisleadingCharsetHtml() throws Exception {
         // This HTML file is encoded in windows-1256 but declares charset=UTF-8
         // in the meta tag. The CharSoupEncodingDetector should override the
