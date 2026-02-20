@@ -46,11 +46,13 @@ public class RTFParserTest extends TikaTest {
     public void testEmbeddedMonster() throws Exception {
 
         Map<Integer, Pair> expected = new HashMap<>();
-        expected.put(3, new Pair("Hw.txt", "text/plain; charset=ISO-8859-1"));
+        // Hw.txt is pure ASCII; new ML-based chain correctly returns UTF-8
+        expected.put(3, new Pair("Hw.txt", "text/plain; charset=UTF-8"));
         expected.put(4, new Pair("file_0.doc", "application/msword"));
         expected.put(7, new Pair("file_1.xlsx",
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
-        expected.put(10, new Pair("text.html", "text/html; charset=windows-1252"));
+        // text.html: ASCII HTML with no charset declaration; new chain correctly returns UTF-8
+        expected.put(10, new Pair("text.html", "text/html; charset=UTF-8"));
         expected.put(11, new Pair("html-within-zip.zip", "application/zip"));
         expected.put(12,
                 new Pair("test-zip-of-zip_\u666E\u6797\u65AF\u987F.zip", "application/zip"));

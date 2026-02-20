@@ -17,6 +17,7 @@
 # First non-null result wins among base detectors.
 # MetaEncodingDetectors (e.g. charsoup-encoding-detector) are partitioned
 # out by CompositeEncodingDetector and run after all base detectors.
+org.apache.tika.detect.encoding.HttpHeaderEncodingDetector
 org.apache.tika.detect.encoding.BomEncodingDetector
 org.apache.tika.detect.html.StandardHtmlEncodingDetector
 org.apache.tika.detect.encoding.MlEncodingDetector

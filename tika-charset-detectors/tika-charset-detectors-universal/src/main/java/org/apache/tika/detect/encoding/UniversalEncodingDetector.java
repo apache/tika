@@ -28,7 +28,38 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
-@TikaComponent(spi = false)
+// TODO(TIKA-XXXX): UniversalEncodingDetector is registered as SPI (spi=true) as a
+// workaround for a weakness in MlEncodingDetector with short, repetitive CJK byte sequences
+// such as Shift_JIS / EUC-JP / Big5 / GBK filenames in ZIP archives.
+//
+// Root cause: MlEncodingDetector uses byte bigram statistics trained on natural-language text.
+// A 9-byte Shift_JIS filename repeated ~11 times to reach MIN_BYTES_FOR_DETECTING_CHARSET
+// produces an artificial, perfectly periodic bigram distribution that doesn't match anything
+// in the model's training corpus.  The model currently returns ISO-8859-7 (Greek) for the
+// pattern [0x95,0xB6,0x8F,0xCD] repeated — bytes that are structurally valid Shift_JIS
+// double-byte pairs but look like high Latin/Greek bytes to a statistical model.
+//
+// Universal (juniversalchardet) correctly identifies these via its state-machine prober,
+// which checks byte-level structural validity rather than learned distributions.
+// CharSoupEncodingDetector arbitrates between ML and Universal: when language scoring is
+// inconclusive (as it is for a repeated 9-byte filename), it falls back to the candidate
+// with the fewest U+FFFD replacement characters — which is always the structurally valid one.
+//
+// Follow-up work once the MADLAD training data is fully downloaded and the model is retrained:
+//   1. Add Shift_JIS (cp932), EUC-JP, EUC-KR, Big5, and GBK training samples that include
+//      SHORT natural-text content (words, short sentences — not just paragraphs) to improve
+//      ML detection in the 20–100 byte range where it currently has a gap.
+//   2. Evaluate using EvalCharsetDetectors / DiagnoseCharsetDetector with short CJK inputs
+//      to measure improvement and find remaining weak spots.
+//
+// Universal is NOT a temporary workaround to be replaced — it is a structural complement to
+// the statistical ML approach.  Rule-based state-machine probers (Universal) win on very short
+// or repetitive byte sequences because they apply encoding-spec constraints (is byte N a valid
+// lead byte? is byte N+1 a valid trail byte?) and need no statistical texture at all.
+// Statistical models (ML) win on longer, varied natural text where distributions are rich.
+// This is a well-known pattern: rules beat statistics at the extremes; statistics beat rules
+// in the ambiguous middle.  The ML + Universal + CharSoup design exploits both strengths.
+@TikaComponent
 public class UniversalEncodingDetector implements EncodingDetector {
 
     private static final int BUFSIZE = 1024;

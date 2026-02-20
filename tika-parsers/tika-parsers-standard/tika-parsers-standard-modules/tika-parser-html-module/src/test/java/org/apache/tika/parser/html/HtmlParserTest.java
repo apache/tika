@@ -266,7 +266,9 @@ public class HtmlParserTest extends TikaTest {
             new JSoupParser().parse(tis,
                     new BodyContentHandler(), metadata, new ParseContext());
         }
-        assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING));
+        // The WHATWG HTML spec intentionally maps charset label "ISO-8859-1" to
+        // windows-1252 (they share the same code-points for U+0080–U+009F)
+        assertEquals("windows-1252", metadata.get(Metadata.CONTENT_ENCODING));
     }
 
     /**
@@ -1001,7 +1003,7 @@ public class HtmlParserTest extends TikaTest {
         }
         assertEquals("text/html; charset=UTF-ELEVEN",
                 metadata.get(TikaCoreProperties.CONTENT_TYPE_HINT));
-        assertEquals("text/html; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("text/html; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
 
         test = "<html><head><meta http-equiv=\"content-type\" content=\"application/pdf\">" +
                 "</head><title>title</title><body>body</body></html>";
@@ -1013,7 +1015,7 @@ public class HtmlParserTest extends TikaTest {
                             metadata, new ParseContext());
         }
         assertEquals("application/pdf", metadata.get(TikaCoreProperties.CONTENT_TYPE_HINT));
-        assertEquals("text/html; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("text/html; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
 
         //test two content values
         test =
@@ -1028,7 +1030,7 @@ public class HtmlParserTest extends TikaTest {
                             metadata, new ParseContext());
         }
         assertEquals("application/pdf", metadata.get(TikaCoreProperties.CONTENT_TYPE_HINT));
-        assertEquals("text/html; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("text/html; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
     }
 
     @Test
@@ -1048,7 +1050,8 @@ public class HtmlParserTest extends TikaTest {
 
         assertEquals("text/html; charset=iso-8859-1",
                 metadata.get(TikaCoreProperties.CONTENT_TYPE_HINT));
-        assertEquals("application/xhtml+xml; charset=ISO-8859-1",
+        // The WHATWG spec maps the "iso-8859-1" label to windows-1252
+        assertEquals("application/xhtml+xml; charset=windows-1252",
                 metadata.get(Metadata.CONTENT_TYPE));
 
         test = "<?xml version=\"1.0\" ?>" +
@@ -1067,7 +1070,8 @@ public class HtmlParserTest extends TikaTest {
 
         assertEquals("text/html; charset=iso-NUMBER_SEVEN",
                 metadata.get(TikaCoreProperties.CONTENT_TYPE_HINT));
-        assertEquals("application/xhtml+xml; charset=ISO-8859-1",
+        // Invalid charset label "iso-NUMBER_SEVEN" is ignored; pure ASCII content → UTF-8
+        assertEquals("application/xhtml+xml; charset=UTF-8",
                 metadata.get(Metadata.CONTENT_TYPE));
 
     }

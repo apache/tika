@@ -150,7 +150,7 @@ public class MlEncodingDetector implements EncodingDetector {
 
         byte[] probe = readProbe(input);
         if (probe.length == 0) {
-            return null;
+            return StandardCharsets.UTF_8;
         }
 
         // HZ-GB-2312: Java's built-in charsets don't include HZ, so try the
@@ -172,13 +172,24 @@ public class MlEncodingDetector implements EncodingDetector {
             return structural;
         }
 
-        // Tier 2: statistical model
-        List<Prediction> predictions = runModel(probe, false, 1);
-        if (predictions.isEmpty() || predictions.get(0).getConfidence() < minConfidence) {
-            return null;
+        // Tier 2: statistical model — always return a best-guess rather than null,
+        // since MlEncodingDetector is the last base detector in the default chain.
+        // Mirror detectAll(): exclude UTF-8 from model candidates if the probe
+        // contains byte sequences that are structurally invalid UTF-8.
+        StructuralEncodingRules.Utf8Result utf8 = StructuralEncodingRules.checkUtf8(probe);
+        boolean excludeUtf8 = (utf8 == StructuralEncodingRules.Utf8Result.NOT_UTF8);
+
+        List<Prediction> predictions = runModel(probe, excludeUtf8, 1);
+        if (!predictions.isEmpty()) {
+            Charset cs = labelToCharset(predictions.get(0).getLabel());
+            if (cs != null) {
+                return cs;
+            }
         }
 
-        return labelToCharset(predictions.get(0).getLabel());
+        // When UTF-8 is structurally excluded (probe has invalid UTF-8 sequences)
+        // returning UTF-8 would be incorrect.  ISO-8859-1 is the safe Western fallback.
+        return excludeUtf8 ? StandardCharsets.ISO_8859_1 : StandardCharsets.UTF_8;
     }
 
     /**
@@ -221,11 +232,21 @@ public class MlEncodingDetector implements EncodingDetector {
             return StandardCharsets.UTF_8;
         }
 
-        // UTF-8 grammar: only use the structural check to EXCLUDE UTF-8 (NOT_UTF8).
-        // DEFINITIVE_UTF8 is not used as an early exit because valid UTF-8 grammar
-        // is a necessary but not sufficient condition — Big5, ISO-8859-1, and other
-        // encodings can produce byte sequences that satisfy UTF-8 grammar by
-        // coincidence, causing false positives.  The model identifies UTF-8 correctly
+        // DEFINITIVE_UTF8 — the probe contains at least one real multi-byte UTF-8
+        // sequence (lead byte + continuation byte(s)) and no invalid sequences.
+        // This is a strong signal: single-byte encodings like ISO-8859-1 produce
+        // lone high bytes that typically form invalid UTF-8 (e.g. 0xE1 'á' is a
+        // 3-byte lead that needs two continuation bytes; ASCII letters don't qualify).
+        // Big5 second bytes often fall outside the 0x80–0xBF continuation range,
+        // so they also produce NOT_UTF8.  DEFINITIVE_UTF8 therefore implies the
+        // content was almost certainly written as UTF-8.
+        StructuralEncodingRules.Utf8Result utf8Structural = StructuralEncodingRules.checkUtf8(probe);
+        if (utf8Structural == StructuralEncodingRules.Utf8Result.DEFINITIVE_UTF8) {
+            return StandardCharsets.UTF_8;
+        }
+
+        // UTF-8 grammar: only use the structural check to EXCLUDE UTF-8 (NOT_UTF8)
+        // for AMBIGUOUS content (no multi-byte sequences) — the model identifies UTF-8 correctly
         // from byte-frequency features without the grammar shortcut.
         return null;
     }
@@ -317,19 +338,24 @@ public class MlEncodingDetector implements EncodingDetector {
     }
 
     private static byte[] readProbe(TikaInputStream is) throws IOException {
-        byte[] buf = new byte[MAX_PROBE_BYTES];
-        int total = 0;
-        int n;
-        while (total < buf.length &&
-               (n = is.read(buf, total, buf.length - total)) != -1) {
-            total += n;
+        is.mark(MAX_PROBE_BYTES);
+        try {
+            byte[] buf = new byte[MAX_PROBE_BYTES];
+            int total = 0;
+            int n;
+            while (total < buf.length &&
+                   (n = is.read(buf, total, buf.length - total)) != -1) {
+                total += n;
+            }
+            if (total == buf.length) {
+                return buf;
+            }
+            byte[] trimmed = new byte[total];
+            System.arraycopy(buf, 0, trimmed, 0, total);
+            return trimmed;
+        } finally {
+            is.reset();
         }
-        if (total == buf.length) {
-            return buf;
-        }
-        byte[] trimmed = new byte[total];
-        System.arraycopy(buf, 0, trimmed, 0, total);
-        return trimmed;
     }
 
     /**

@@ -217,7 +217,7 @@ public abstract class TikaPipesSolrTestBase {
         try (SolrClient solrClient = new Http2SolrClient.Builder(solrEndpoint).build()) {
             solrClient.commit(collection, true, true);
             assertEquals(numDocs, solrClient.query(collection,
-                            new SolrQuery("mime_s:\"text/html; charset=ISO-8859-1\"")).getResults()
+                            new SolrQuery("mime_s:\"text/html; charset=UTF-8\"")).getResults()
                     .getNumFound());
             assertEquals(numDocs,
                     solrClient.query(collection, new SolrQuery("content_s:*initial*")).getResults()
@@ -251,7 +251,7 @@ public abstract class TikaPipesSolrTestBase {
         try (SolrClient solrClient = new Http2SolrClient.Builder(solrEndpoint).build()) {
             solrClient.commit(collection, true, true);
             assertEquals(numDocs, solrClient.query(collection,
-                            new SolrQuery("mime_s:\"text/html; charset=ISO-8859-1\"")).getResults()
+                            new SolrQuery("mime_s:\"text/html; charset=UTF-8\"")).getResults()
                     .getNumFound());
             assertEquals(numDocs,
                     solrClient.query(collection, new SolrQuery("content_s:*updated*")).getResults()

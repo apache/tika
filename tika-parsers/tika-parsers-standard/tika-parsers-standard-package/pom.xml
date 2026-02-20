@@ -30,6 +30,18 @@
   <artifactId>tika-parsers-standard-package</artifactId>
 
   <dependencies>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-charset-detectors-icu4j</artifactId>
+      <version>${revision}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-charset-detectors-universal</artifactId>
+      <version>${revision}</version>
+      <scope>test</scope>
+    </dependency>
     <!-- Optional OSGi dependency, used only when running within OSGi -->
     <dependency>
       <groupId>org.osgi</groupId>

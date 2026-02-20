@@ -28,7 +28,7 @@ import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.ml.LinearModel;
+import org.apache.tika.detect.encoding.LinearModel;
 
 public class LinearModelTest {
 
