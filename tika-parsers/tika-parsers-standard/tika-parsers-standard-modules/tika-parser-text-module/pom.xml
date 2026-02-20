@@ -31,8 +31,9 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.github.albfernandez</groupId>
-      <artifactId>juniversalchardet</artifactId>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-charset-detectors-core</artifactId>
+      <version>${revision}</version>
     </dependency>
     <dependency>
       <groupId>commons-codec</groupId>

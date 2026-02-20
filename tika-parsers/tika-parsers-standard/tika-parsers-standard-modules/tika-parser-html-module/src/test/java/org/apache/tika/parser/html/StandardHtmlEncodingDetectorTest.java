@@ -29,11 +29,11 @@ import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.detect.html.StandardHtmlEncodingDetector;
+import org.apache.tika.detect.html.charsets.ReplacementCharset;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.html.charsetdetector.StandardHtmlEncodingDetector;
-import org.apache.tika.parser.html.charsetdetector.charsets.ReplacementCharset;
 
 public class StandardHtmlEncodingDetectorTest {
     private Metadata metadata = new Metadata();

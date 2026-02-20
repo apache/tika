@@ -117,6 +117,26 @@
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
+        <artifactId>tika-charset-detectors-core</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-charset-detectors-icu4j</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-charset-detectors-universal</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-charset-detectors-tools</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
         <artifactId>tika-langdetect-tika</artifactId>
         <version>${revision}</version>
       </dependency>

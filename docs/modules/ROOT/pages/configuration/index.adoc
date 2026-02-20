@@ -37,6 +37,7 @@ xref:migration-to-4x/index.adoc[Migration Guide] for details on converting to JS
 === Other Configuration
 
 * xref:configuration/digesters.adoc[Digesters] - Computing cryptographic hashes of documents
+* xref:configuration/encoding-detectors.adoc[Encoding Detectors] - Configuring charset/encoding detection
 
 // Add links to specific topics as they are created
 // * xref:json-config.adoc[JSON Configuration Reference]

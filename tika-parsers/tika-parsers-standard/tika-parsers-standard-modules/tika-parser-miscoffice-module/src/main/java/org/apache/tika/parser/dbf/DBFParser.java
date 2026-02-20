@@ -31,6 +31,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.detect.encoding.Icu4jEncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -38,7 +39,6 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.txt.Icu4jEncodingDetector;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**

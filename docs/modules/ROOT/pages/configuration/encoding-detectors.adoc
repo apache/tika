@@ -1,0 +1,194 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Configuring Encoding Detectors
+
+Tika uses a chain of _encoding detectors_ to determine the character encoding
+of plain text and HTML content.  The chain is controlled by
+`DefaultEncodingDetector`, which loads detectors via the Java service-provider
+interface (SPI) and runs them in registration order.
+
+== Default Detection Chain
+
+When `tika-charset-detectors-core` (and optionally `tika-langdetect-charsoup`)
+are on the classpath the default chain is:
+
+[cols="1,2,1"]
+|===
+|Step |Detector |Returns non-null when…
+
+|1
+|`bom-encoding-detector`
+|A UTF-8, UTF-16 LE/BE, or UTF-32 LE/BE byte-order mark is present.
+
+|2
+|`standard-html-encoding-detector`
+|An HTML `<meta charset="…">` or `Content-Type` http-equiv tag is found (WHATWG spec prescan algorithm).
+
+|3
+|`ml-encoding-detector`
+|The built-in statistical model classifies the byte stream (covers ~46 encodings).
+
+|4 _(if present)_
+|`charsoup-encoding-detector`
+|A `MetaEncodingDetector` that runs after steps 1–3.  When all base detectors
+agree it returns their unanimous result; when they disagree it uses
+language-detection scoring to pick the winner.
+|===
+
+NOTE: `charsoup-encoding-detector` is supplied by `tika-langdetect-charsoup`.
+It is loaded automatically when that module is on the classpath and requires no
+extra configuration.
+
+== Available Detectors
+
+All detectors implement `org.apache.tika.detect.EncodingDetector` and can be
+referenced by name in JSON configuration.
+
+[cols="2,2,3"]
+|===
+|Name |Module |Description
+
+|`bom-encoding-detector`
+|`tika-charset-detectors-core`
+|Byte-order mark detection (UTF-8/16/32).  No external dependencies.
+
+|`http-header-encoding-detector`
+|`tika-charset-detectors-core`
+|Reads the charset from the `Content-Type` metadata field (e.g. as set from an
+HTTP response header).  Not in the default chain; useful when Tika is fed
+content with pre-populated metadata.
+
+|`html-encoding-detector`
+|`tika-charset-detectors-core`
+|Regex-based HTML meta-charset sniffing.
+
+|`standard-html-encoding-detector`
+|`tika-charset-detectors-core`
+|WHATWG-spec HTML charset prescan (more precise than the regex variant, but
+slower).  Not in the default chain.
+
+|`ml-encoding-detector`
+|`tika-charset-detectors-core`
+|Statistical multinomial logistic regression model trained on ~46 encodings.
+Self-contained: the model is bundled as a resource (~185 KB).
+
+|`icu4j-encoding-detector`
+|`tika-charset-detectors-icu4j`
+|Wraps ICU4J `CharsetDetector`.  Requires `com.ibm.icu:icu4j` on the classpath.
+Not in the default chain.
+
+|`universal-encoding-detector`
+|`tika-charset-detectors-universal`
+|Wraps `juniversalchardet` (com.github.albfernandez fork).  Requires
+`com.github.albfernandez:juniversalchardet` on the classpath.  Not in the
+default chain.
+
+|`charsoup-encoding-detector`
+|`tika-langdetect-charsoup`
+|Language-aware arbitrator (`MetaEncodingDetector`).  Runs after all base
+detectors and uses CharSoup language scoring to break ties.
+|===
+
+== Configuration Examples
+
+=== Exclude a detector from the default chain
+
+[source,json]
+----
+{
+  "encoding-detectors": [
+    {
+      "default-encoding-detector": {
+        "exclude": ["ml-encoding-detector"]
+      }
+    }
+  ]
+}
+----
+
+=== Recreate the pre-4.x default (HTML + juniversalchardet + ICU4J)
+
+This was Tika's default chain before 4.x.  To use it, add
+`tika-charset-detectors-icu4j` and `tika-charset-detectors-universal` to your
+dependencies, then supply a config that replaces the default chain entirely:
+
+[source,json]
+----
+{
+  "encoding-detectors": [
+    {"html-encoding-detector": {}},
+    {"universal-encoding-detector": {}},
+    {"icu4j-encoding-detector": {}}
+  ]
+}
+----
+
+=== Add ICU4J after the ML detector (belt-and-suspenders)
+
+[source,json]
+----
+{
+  "encoding-detectors": [
+    {
+      "default-encoding-detector": {}
+    },
+    {
+      "icu4j-encoding-detector": {}
+    }
+  ]
+}
+----
+
+NOTE: When using `default-encoding-detector` alongside additional detectors,
+the additional ones are appended after the defaults.  The
+`charsoup-encoding-detector` (`MetaEncodingDetector`) is always partitioned to
+run last regardless of registration order.
+
+=== Configure the HTML detector's read limit
+
+[source,json]
+----
+{
+  "encoding-detectors": [
+    {
+      "html-encoding-detector": {
+        "markLimit": 16384
+      }
+    },
+    {"ml-encoding-detector": {}}
+  ]
+}
+----
+
+=== Configure the ICU4J detector
+
+[source,json]
+----
+{
+  "encoding-detectors": [
+    {"bom-encoding-detector": {}},
+    {"html-encoding-detector": {}},
+    {
+      "icu4j-encoding-detector": {
+        "stripMarkup": true,
+        "ignoreCharsets": ["IBM420", "IBM424"]
+      }
+    }
+  ]
+}
+----

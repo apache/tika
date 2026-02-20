@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.tika.ml.LinearModel;
+import org.apache.tika.detect.encoding.LinearModel;
 
 /**
  * Defines symmetric confusable groups for language detection.
