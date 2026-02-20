@@ -1,0 +1,347 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+ <parent>
+   <artifactId>felix-parent</artifactId>
+   <groupId>org.apache.felix</groupId>
+   <version>9</version>
+   <relativePath>../../pom/pom.xml</relativePath>
+ </parent>
+
+ <modelVersion>4.0.0</modelVersion>
+
+ <artifactId>maven-bundle-plugin</artifactId>
+ <version>6.0.0</version>
+ <packaging>maven-plugin</packaging>
+
+ <name>Maven Bundle Plugin</name>
+ <description>
+  Provides a maven plugin that supports creating an OSGi bundle
+  from the contents of the compilation classpath along with its
+  resources and dependencies. Plus a zillion other features.
+  The plugin uses the Bnd tool (http://www.aqute.biz/Code/Bnd)
+ </description>
+
+ <url>http://felix.apache.org/components/bundle-plugin/</url>
+
+ <scm>
+     <connection>scm:git:https://github.com/apache/felix-dev.git</connection>
+     <developerConnection>scm:git:https://github.com/apache/felix-dev.git</developerConnection>
+     <url>https://gitbox.apache.org/repos/asf?p=felix-dev.git</url>
+    <tag>maven-bundle-plugin-6.0.0</tag>
+  </scm>
+
+ <!-- Support for publishing the mvn site. -->
+  <distributionManagement>
+    <site>
+      <id>apache.website</id>
+      <url>https://gitbox.apache.org/repos/asf?p=felix-dev.git</url>
+    </site>
+  </distributionManagement>
+
+ <properties>
+   <felix.java.version>8</felix.java.version>
+   <maven.site.path>bundle-plugin-archives/bundle-plugin-LATEST</maven.site.path>
+   <project.build.outputTimestamp>1732531078</project.build.outputTimestamp>
+ </properties>
+
+ <build>
+  <pluginManagement>
+   <plugins>
+    <plugin>
+     <groupId>org.apache.maven.plugins</groupId>
+     <artifactId>maven-plugin-plugin</artifactId>
+     <version>3.6.4</version>
+     <executions>
+      <execution>
+       <id>default-descriptor</id>
+       <phase>process-classes</phase>
+      </execution>
+     </executions>
+    </plugin>
+    <plugin>
+      <artifactId>maven-site-plugin</artifactId>
+      <version>3.4</version>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.maven</groupId>
+          <artifactId>maven-archiver</artifactId>
+          <version>2.6</version>
+        </dependency>
+        <dependency>
+          <groupId>org.codehaus.plexus</groupId>
+          <artifactId>plexus-archiver</artifactId>
+          <version>4.8.0</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.maven.doxia</groupId>
+          <artifactId>doxia-core</artifactId>
+          <version>1.6</version>
+          <exclusions>
+            <exclusion>
+              <artifactId>xercesImpl</artifactId>
+              <groupId>xerces</groupId>
+            </exclusion>
+          </exclusions>
+        </dependency>
+      </dependencies>
+      <configuration>
+        <topSiteURL>scm:svn:https://svn.apache.org/repos/infra/websites/production/felix/content/components/${maven.site.path}</topSiteURL>
+      </configuration>
+    </plugin>
+    <plugin>
+      <artifactId>maven-scm-publish-plugin</artifactId>
+      <version>1.1</version>
+      <configuration>
+        <checkoutDirectory>${user.home}/maven-sites/${maven.site.path}</checkoutDirectory>
+        <tryUpdate>true</tryUpdate>
+      </configuration>
+    </plugin>
+   </plugins>
+  </pluginManagement>
+  <plugins>
+   <plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-plugin-plugin</artifactId>
+   </plugin>
+   <plugin>
+    <groupId>org.apache.rat</groupId>
+    <artifactId>apache-rat-plugin</artifactId>
+    <configuration>
+     <excludes>
+      <exclude>**/*.mf</exclude>
+      <exclude>**/*.MF</exclude>
+      <exclude>src/repo/**/*.pom</exclude>
+      <exclude>**/org.apache.felix_maven-bundle-plugin_manifest_xx</exclude>
+     </excludes>
+    </configuration>
+   </plugin>
+      <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <configuration>
+              <source>17</source>
+              <target>17</target>
+          </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-invoker-plugin</artifactId>
+        <version>3.2.1</version>
+        <configuration>
+          <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+          <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
+          <postBuildHookScript>verify</postBuildHookScript>
+          <goals>
+            <goal>install</goal>
+          </goals>
+        </configuration>
+        <executions>
+          <execution>
+            <id>integration-test</id>
+            <goals>
+              <goal>install</goal>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+  </plugins>
+ </build>
+
+ <dependencies>
+  <dependency>
+    <groupId>org.osgi</groupId>
+    <artifactId>org.osgi.core</artifactId>
+    <version>6.0.0</version>
+  </dependency>
+  <dependency>
+    <groupId>biz.aQute.bnd</groupId>
+    <artifactId>biz.aQute.bndlib</artifactId>
+    <version>7.0.0</version>
+  </dependency>
+  <dependency>
+    <groupId>org.slf4j</groupId>
+    <artifactId>slf4j-api</artifactId>
+    <version>1.7.25</version>
+  </dependency>
+  <dependency>
+    <groupId>org.apache.felix</groupId>
+    <artifactId>org.apache.felix.bundlerepository</artifactId>
+    <version>1.6.6</version>
+  </dependency>
+  <dependency>
+    <groupId>org.apache.felix</groupId>
+    <artifactId>org.apache.felix.utils</artifactId>
+    <version>1.6.0</version>
+  </dependency>
+  <dependency>
+    <groupId>org.apache.maven</groupId>
+    <artifactId>maven-core</artifactId>
+    <version>3.8.1</version>
+    <scope>provided</scope>
+  </dependency>
+  <dependency>
+    <groupId>org.apache.maven</groupId>
+    <artifactId>maven-model</artifactId>
+    <version>3.3.9</version>
+    <scope>provided</scope>
+  </dependency>
+  <dependency>
+    <groupId>org.apache.maven</groupId>
+    <artifactId>maven-artifact</artifactId>
+    <version>3.3.9</version>
+    <scope>provided</scope>
+  </dependency>
+  <dependency>
+    <groupId>org.apache.maven</groupId>
+    <artifactId>maven-compat</artifactId>
+    <version>3.8.1</version>
+    <scope>provided</scope>
+  </dependency>
+  <dependency>
+    <groupId>org.apache.maven.reporting</groupId>
+    <artifactId>maven-reporting-api</artifactId>
+    <version>3.0</version>
+  </dependency>
+  <dependency>
+   <groupId>org.apache.maven</groupId>
+   <artifactId>maven-archiver</artifactId>
+   <version>3.5.2</version>
+  </dependency>
+  <dependency>
+   <groupId>org.apache.maven.shared</groupId>
+   <artifactId>maven-dependency-tree</artifactId>
+   <version>3.0</version>
+  </dependency>
+  <dependency>
+   <groupId>org.codehaus.plexus</groupId>
+   <artifactId>plexus-utils</artifactId>
+   <version>3.3.0</version>
+  </dependency>
+  <dependency>
+   <groupId>org.sonatype.plexus</groupId>
+   <artifactId>plexus-build-api</artifactId>
+   <version>0.0.7</version>
+  </dependency>
+  <dependency>
+   <groupId>org.apache.maven.doxia</groupId>
+   <artifactId>doxia-sink-api</artifactId>
+   <version>1.0</version>
+  </dependency>
+  <dependency>
+   <groupId>org.apache.maven.doxia</groupId>
+   <artifactId>doxia-site-renderer</artifactId>
+   <version>1.0</version>
+  </dependency>
+  <dependency>
+   <groupId>org.apache.maven.plugin-tools</groupId>
+   <artifactId>maven-plugin-annotations</artifactId>
+   <version>3.4</version>
+   <scope>provided</scope>
+  </dependency>
+  <dependency>
+   <groupId>org.apache.maven.plugin-testing</groupId>
+   <artifactId>maven-plugin-testing-harness</artifactId>
+   <version>3.3.0</version>
+   <scope>test</scope>
+  </dependency>
+  <dependency>
+   <groupId>org.eclipse.aether</groupId>
+   <artifactId>aether-impl</artifactId>
+   <version>1.1.0</version>
+   <scope>test</scope>
+  </dependency>
+  <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.1</version>
+      <scope>test</scope>
+  </dependency>
+ </dependencies>
+
+ <reporting>
+  <plugins>
+   <plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-plugin-plugin</artifactId>
+   </plugin>
+   <plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-changes-plugin</artifactId>
+    <version>2.9</version>
+    <configuration>
+     <component>12311143</component>
+     <versionPrefix>maven-bundle-plugin-</versionPrefix>
+     <statusIds>Resolved,Closed</statusIds>
+     <!-- 1000 gets a 403 -->
+     <maxEntries>100</maxEntries>
+     <issueManagementSystems>
+      <issueManagementSystem>JIRA</issueManagementSystem>
+     </issueManagementSystems>
+     <useJql>true</useJql>
+    </configuration>
+   </plugin>
+  </plugins>
+ </reporting>
+
+  <profiles>
+    <!-- This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself. -->
+    <profile>
+      <id>only-eclipse</id>
+      <activation>
+        <property>
+          <name>m2e.version</name>
+        </property>
+      </activation>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>org.eclipse.m2e</groupId>
+              <artifactId>lifecycle-mapping</artifactId>
+              <version>1.0.0</version>
+              <configuration>
+                <lifecycleMappingMetadata>
+                  <pluginExecutions>
+                    <pluginExecution>
+                      <pluginExecutionFilter>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-plugin-plugin</artifactId>
+                        <versionRange>[3.4,)</versionRange>
+                        <goals>
+                          <goal>descriptor</goal>
+                          <goal>helpmojo</goal>
+                        </goals>
+                      </pluginExecutionFilter>
+                      <action>
+                        <ignore />
+                      </action>
+                    </pluginExecution>
+                  </pluginExecutions>
+                </lifecycleMappingMetadata>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
+    </profile>
+  </profiles>
+
+</project>

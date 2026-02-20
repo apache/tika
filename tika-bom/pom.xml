@@ -102,13 +102,13 @@
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
-        <artifactId>tika-ml-core</artifactId>
+        <artifactId>tika-langdetect-charsoup-core</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
-        <artifactId>tika-ml-chardetect</artifactId>
-        <version>${revision}</version>
+        <artifactId>tika-langdetect-charsoup-core</artifactId>
+        <version>4.0.0-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>

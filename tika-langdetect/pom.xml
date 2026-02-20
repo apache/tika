@@ -34,6 +34,7 @@
   <modules>
     <module>tika-langdetect-test-commons</module>
     <module>tika-langdetect-tika</module>
+    <module>tika-langdetect-charsoup-core</module>
     <module>tika-langdetect-charsoup</module>
     <module>tika-langdetect-lingo24</module>
     <module>tika-langdetect-optimaize</module>

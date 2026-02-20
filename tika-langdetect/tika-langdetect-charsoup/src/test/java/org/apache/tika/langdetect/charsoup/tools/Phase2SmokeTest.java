@@ -30,7 +30,7 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
 
-import org.apache.tika.ml.LinearModel;
+import org.apache.tika.langdetect.charsoup.CharSoupModel;
 
 /**
  * Smoke test for Phase2Trainer. Streams training data from
@@ -112,7 +112,7 @@ public class Phase2SmokeTest {
         // Quantize
         System.out.println("\nQuantizing...");
         t0 = System.nanoTime();
-        LinearModel model =
+        CharSoupModel model =
                 ModelQuantizer.quantize(trainer);
         System.out.printf(Locale.US,
                 "Quantized [%.1f s]%n", elapsed(t0));
@@ -123,7 +123,7 @@ public class Phase2SmokeTest {
         t0 = System.nanoTime();
         double testAcc =
                 TrainLanguageModel.evaluateQuantized(
-                        model, test, false, false);
+                        model, test);
         System.out.printf(Locale.US,
                 "Test accuracy (quantized): %.4f  "
                         + "[%.1f s]%n",

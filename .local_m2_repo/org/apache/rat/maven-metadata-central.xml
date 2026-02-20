@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <plugins>
+    <plugin>
+      <name>Apache Creadur RAT::Plugin4Maven</name>
+      <prefix>apache-rat</prefix>
+      <artifactId>apache-rat-plugin</artifactId>
+    </plugin>
+    <plugin>
+      <name>Rat::Plugin4Maven</name>
+      <prefix>apache-rat</prefix>
+      <artifactId>apache-rat-plugin</artifactId>
+    </plugin>
+    <plugin>
+      <name>Apache Creadur Rat::Plugin4Maven</name>
+      <prefix>apache-rat</prefix>
+      <artifactId>apache-rat-plugin</artifactId>
+    </plugin>
+  </plugins>
+</metadata>

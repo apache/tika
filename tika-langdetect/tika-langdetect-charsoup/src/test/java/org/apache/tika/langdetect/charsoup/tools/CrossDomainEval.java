@@ -39,10 +39,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.tika.langdetect.charsoup.CharSoupFeatureExtractor;
-import org.apache.tika.langdetect.charsoup.ScriptAwareFeatureExtractor;
-import org.apache.tika.langdetect.charsoup.TextFeatureExtractor;
+import org.apache.tika.langdetect.charsoup.CharSoupModel;
+import org.apache.tika.langdetect.charsoup.FeatureExtractor;
 import org.apache.tika.language.detect.LanguageDetector;
-import org.apache.tika.ml.LinearModel;
 
 /**
  * Cross-domain evaluation: test bigram model and OpenNLP on external
@@ -92,12 +91,12 @@ public class CrossDomainEval {
         // ---- Load bigram model (with heap measurement) ----
         System.out.println("Loading bigram model: " + modelFile);
         long heapBefore = usedHeap();
-        LinearModel model;
+        CharSoupModel model;
         try (InputStream is = new BufferedInputStream(
                 Files.newInputStream(modelFile))) {
-            model = LinearModel.load(is);
+            model = CharSoupModel.load(is);
         }
-        TextFeatureExtractor extractor = new ScriptAwareFeatureExtractor(model.getNumBuckets());
+        FeatureExtractor extractor = model.createExtractor();
         long bigramHeapBytes = usedHeap() - heapBefore;
         Set<String> modelLangs = new HashSet<>(
                 Arrays.asList(model.getLabels()));
@@ -734,7 +733,7 @@ public class CrossDomainEval {
      * accuracy.
      */
     static String detailedBigramAnalysis(
-            LinearModel model, TextFeatureExtractor extractor,
+            CharSoupModel model, FeatureExtractor extractor,
             List<LabeledSentence> data, int threads)
             throws Exception {
 
@@ -757,8 +756,8 @@ public class CrossDomainEval {
                 List<Future<DetailedStats>> futures =
                         new ArrayList<>();
                 for (List<LabeledSentence> chunk : chunks) {
-                    TextFeatureExtractor te =
-                            new ScriptAwareFeatureExtractor(model.getNumBuckets());
+                    FeatureExtractor te =
+                            model.createExtractor();
                     futures.add(pool.submit(
                             () -> detailedChunk(
                                     model, te, chunk)));
@@ -957,7 +956,7 @@ public class CrossDomainEval {
      * Evaluate a chunk of data collecting detailed per-prediction stats.
      */
     private static DetailedStats detailedChunk(
-            LinearModel model, TextFeatureExtractor extractor,
+            CharSoupModel model, FeatureExtractor extractor,
             List<LabeledSentence> data) {
         DetailedStats stats = new DetailedStats();
         for (LabeledSentence s : data) {
@@ -966,7 +965,7 @@ public class CrossDomainEval {
             int[] features =
                     extractor.extractFromPreprocessed(cleaned);
             float[] probs = model.predict(features);
-            float entropy = LinearModel.entropy(probs);
+            float entropy = CharSoupModel.entropy(probs);
 
             int predIdx = 0;
             for (int c = 1; c < probs.length; c++) {

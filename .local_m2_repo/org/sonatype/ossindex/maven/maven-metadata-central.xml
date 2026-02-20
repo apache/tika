@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <plugins>
+    <plugin>
+      <name>${project.groupId}:${project.artifactId}</name>
+      <prefix>ossindex</prefix>
+      <artifactId>ossindex-maven-plugin</artifactId>
+    </plugin>
+  </plugins>
+</metadata>

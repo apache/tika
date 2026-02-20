@@ -30,9 +30,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.apache.tika.langdetect.charsoup.ScriptAwareFeatureExtractor;
-import org.apache.tika.langdetect.charsoup.TextFeatureExtractor;
-import org.apache.tika.ml.LinearModel;
+import org.apache.tika.langdetect.charsoup.CharSoupModel;
+import org.apache.tika.langdetect.charsoup.FeatureExtractor;
 
 /**
  * Dumps a confusion matrix for a specified set of languages.
@@ -72,11 +71,11 @@ public class ConfusionDumper {
 
         // Load model
         System.out.println("Loading model: " + modelFile);
-        LinearModel model;
+        CharSoupModel model;
         try (InputStream is = new BufferedInputStream(Files.newInputStream(modelFile))) {
-            model = LinearModel.load(is);
+            model = CharSoupModel.load(is);
         }
-        TextFeatureExtractor extractor = new ScriptAwareFeatureExtractor(model.getNumBuckets());
+        FeatureExtractor extractor = model.createExtractor();
         System.out.printf(Locale.US, "  %d classes, %d buckets%n",
                 model.getNumClasses(), model.getNumBuckets());
 

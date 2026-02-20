@@ -158,6 +158,8 @@ public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrappe
                 metadata.add(TikaCoreProperties.TIKA_CONTENT, content);
                 metadata.add(TikaCoreProperties.TIKA_CONTENT_HANDLER,
                         handler.getClass().getSimpleName());
+                metadata.set(TikaCoreProperties.TIKA_CONTENT_HANDLER_TYPE,
+                        getContentHandlerFactory().handlerTypeName());
             }
         }
     }

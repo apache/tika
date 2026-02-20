@@ -1,0 +1,1050 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2007-present Sonatype, Inc. All rights reserved.
+
+    This program is licensed to you under the Apache License Version 2.0,
+    and you may not use this file except in compliance with the Apache License Version 2.0.
+    You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the Apache License Version 2.0 is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
+
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.sonatype.buildsupport</groupId>
+  <artifactId>buildsupport</artifactId>
+  <name>${project.groupId}:${project.artifactId}</name>
+  <packaging>pom</packaging>
+
+  <version>28</version>
+
+  <description>
+    Sonatype common build configuration.
+  </description>
+
+  <url>http://www.sonatype.com/</url>
+  <inceptionYear>2007</inceptionYear>
+
+  <organization>
+    <name>Sonatype, Inc.</name>
+    <url>http://www.sonatype.com</url>
+  </organization>
+
+  <licenses>
+    <license>
+      <name>ASL2</name>
+      <url>http://opensource.org/licenses/Apache-2.0</url>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>Sonatype, Inc.</name>
+      <organization>Sonatype, Inc.</organization>
+    </developer>
+  </developers>
+
+  <scm>
+    <url>https://github.com/sonatype/buildsupport</url>
+    <connection>scm:git:git://github.com/sonatype/buildsupport.git</connection>
+    <developerConnection>scm:git:git@github.com:sonatype/buildsupport.git</developerConnection>
+  </scm>
+
+  <ciManagement>
+    <system>Jenkins</system>
+    <url>https://jenkins.ci.sonatype.dev</url>
+  </ciManagement>
+
+  <issueManagement>
+    <system>Jira</system>
+    <url>https://issues.sonatype.org</url>
+  </issueManagement>
+
+  <properties>
+    <!--
+    Define buildsupport version, this value must always be a constant
+    -->
+    <buildsupport.version>28</buildsupport.version>
+
+    <!--
+    File encodings.
+    -->
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+    <!--
+    Build timestamp.
+    -->
+    <maven.build.timestamp.format>yyyyMMddHHmm</maven.build.timestamp.format>
+    <build.timestamp>${maven.build.timestamp}</build.timestamp>
+
+    <!--
+    Reproducible build defaults.
+    -->
+    <project.build.outputTimestamp>X</project.build.outputTimestamp>
+
+    <!--
+    Enforcement.
+    -->
+    <buildsupport-checkmaven.skip>false</buildsupport-checkmaven.skip>
+    <buildsupport-checkmaven.fail>true</buildsupport-checkmaven.fail>
+    <!-- match the min. Maven version as reported by versions:display-plugin-updates -->
+    <maven.version.range>[3.5.0,)</maven.version.range>
+    <buildsupport-bestpractices.skip>false</buildsupport-bestpractices.skip>
+    <buildsupport-bestpractices.fail>true</buildsupport-bestpractices.fail>
+
+    <!--
+    Test defaults.
+    -->
+    <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
+    <surefire.failIfNoSpecifiedTests>false</surefire.failIfNoSpecifiedTests>
+    <failsafe.timeout>600</failsafe.timeout>
+    <it.failIfNoSpecifiedTests>false</it.failIfNoSpecifiedTests>
+
+    <!--
+    Compiler defaults.
+    -->
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+
+    <!--
+    Release configuration.
+    -->
+    <localCheckout>true</localCheckout>
+    <pushChanges>false</pushChanges>
+
+    <!-- license maven plugin version for sharing with licenses module name spaced to avoid inheritance conflicts -->
+    <buildsupport.license-maven-plugin.version>2.11</buildsupport.license-maven-plugin.version>
+
+    <!--
+    Deployment configuration.  Default configuration is public.
+    -->
+    <public.serverId>sonatype-public</public.serverId>
+    <public.nexusUrl>https://repository.sonatype.org</public.nexusUrl>
+
+    <public-release.serverId>${public.serverId}</public-release.serverId>
+    <public-release.url>
+      https://repository.sonatype.org/service/local/staging/deploy/maven2
+    </public-release.url>
+
+    <public-snapshot.serverId>${public.serverId}</public-snapshot.serverId>
+    <public-snapshot.url>
+      https://repository.sonatype.org/content/repositories/snapshots
+    </public-snapshot.url>
+
+    <!--<public-site.serverId>${public.serverId}</public-site.serverId>-->
+    <!--<public-site.url>-->
+      <!--dav:https://repository.sonatype.org/content/sites/oss-sites-->
+    <!--</public-site.url>-->
+
+    <!--
+    Staging configuration.
+    -->
+    <staging.serverId>${public.serverId}</staging.serverId>
+    <staging.nexusUrl>${public.nexusUrl}</staging.nexusUrl>
+    <staging.progressTimeout>15</staging.progressTimeout>
+    <staging.autoReleaseAfterClose>false</staging.autoReleaseAfterClose>
+  </properties>
+
+  <distributionManagement>
+    <repository>
+      <id>${public-release.serverId}</id>
+      <url>${public-release.url}</url>
+    </repository>
+
+    <snapshotRepository>
+      <id>${public-snapshot.serverId}</id>
+      <url>${public-snapshot.url}</url>
+    </snapshotRepository>
+
+    <!--<site>-->
+      <!--<id>${public-site.serverId}</id>-->
+      <!--<url>${public-site.url}</url>-->
+    <!--</site>-->
+  </distributionManagement>
+
+  <modules>
+    <module>licenses</module>
+    <module>private-parent</module>
+    <module>public-parent</module>
+  </modules>
+
+  <build>
+    <defaultGoal>install</defaultGoal>
+
+    <!--
+    Main filtered and unfiltered resources.
+    -->
+    <resources>
+      <resource>
+        <directory>${project.basedir}/src/main/resources</directory>
+        <filtering>false</filtering>
+        <includes>
+          <include>**/*</include>
+        </includes>
+      </resource>
+
+      <resource>
+        <directory>${project.basedir}/src/main/filtered-resources</directory>
+        <filtering>true</filtering>
+        <includes>
+          <include>**/*</include>
+        </includes>
+      </resource>
+
+      <!-- alt filtering location -->
+      <resource>
+        <directory>${project.basedir}/src/main/resources-filtered</directory>
+        <filtering>true</filtering>
+        <includes>
+          <include>**/*</include>
+        </includes>
+      </resource>
+    </resources>
+
+    <!--
+    Test filtered and unfiltered resources.
+    -->
+    <testResources>
+      <testResource>
+        <directory>${project.basedir}/src/test/resources</directory>
+        <filtering>false</filtering>
+        <includes>
+          <include>**/*</include>
+        </includes>
+      </testResource>
+
+      <testResource>
+        <directory>${project.basedir}/src/test/filtered-resources</directory>
+        <filtering>true</filtering>
+        <includes>
+          <include>**/*</include>
+        </includes>
+      </testResource>
+
+      <!-- alt filtering location -->
+      <testResource>
+        <directory>${project.basedir}/src/test/resources-filtered</directory>
+        <filtering>true</filtering>
+        <includes>
+          <include>**/*</include>
+        </includes>
+      </testResource>
+    </testResources>
+
+    <!--
+    Plugin defaults.
+    -->
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <version>3.0.0</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <!-- https://issues.apache.org/jira/browse/MASSEMBLY-941 fileModes regression for reproducible builds since 3.2.0 -->
+          <version>3.3.0</version>
+          <configuration>
+            <tarLongFileMode>gnu</tarLongFileMode>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>3.1.1</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>3.1.0</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.8.1</version>
+          <configuration>
+            <source>${maven.compiler.source}</source>
+            <target>${maven.compiler.target}</target>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>3.1.2</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <!-- 3.0.0-M1 regression with altDeploymentRepository https://issues.apache.org/jira/browse/MDEPLOY-244 -->
+          <version>2.8.2</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>3.0.0-M3</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.codehaus.mojo</groupId>
+              <artifactId>extra-enforcer-rules</artifactId>
+              <version>1.3</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-gpg-plugin</artifactId>
+          <version>3.0.1</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-install-plugin</artifactId>
+          <version>2.5.2</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-invoker-plugin</artifactId>
+          <version>3.2.1</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>3.2.0</version>
+          <configuration>
+            <archive>
+              <manifest>
+                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+              </manifest>
+            </archive>
+          </configuration>
+          <dependencies>
+            <dependency>
+              <groupId>org.codehaus.plexus</groupId>
+              <artifactId>plexus-archiver</artifactId>
+              <version>4.2.3</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jarsigner-plugin</artifactId>
+          <version>3.0.0</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>3.2.0</version>
+          <configuration>
+            <notimestamp>true</notimestamp>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-plugin-plugin</artifactId>
+          <version>3.6.0</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-pmd-plugin</artifactId>
+          <version>3.14.0</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-release-plugin</artifactId>
+          <version>2.5.2</version>
+          <configuration>
+            <autoVersionSubmodules>true</autoVersionSubmodules>
+            <goals>deploy</goals>
+            <!-- pushChanges and localCheckout for dvcs and require a 'git push origin \-\-tags :' after release:perform -->
+            <localCheckout>${localCheckout}</localCheckout>
+            <pushChanges>${pushChanges}</pushChanges>
+            <!--  forked path prevents hang see MGPG-9 -->
+            <mavenExecutorId>forked-path</mavenExecutorId>
+            <releaseProfiles>release</releaseProfiles>
+            <useReleaseProfile>false</useReleaseProfile>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-remote-resources-plugin</artifactId>
+          <version>1.7.0</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-repository-plugin</artifactId>
+          <version>2.4</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>3.2.0</version>
+          <configuration>
+            <!-- Assume properties files will be read by j.u.Properties and are already encoded ISO-8859-1 -->
+            <propertiesEncoding>ISO-8859-1</propertiesEncoding>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-scm-plugin</artifactId>
+          <version>1.11.2</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-shade-plugin</artifactId>
+          <version>3.2.4</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-site-plugin</artifactId>
+          <version>3.9.1</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>3.2.1</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>2.22.2</version>
+          <configuration>
+            <forkCount>1</forkCount>
+            <reuseForks>true</reuseForks>
+            <redirectTestOutputToFile>${maven.test.redirectTestOutputToFile}</redirectTestOutputToFile>
+            <failIfNoSpecifiedTests>${surefire.failIfNoSpecifiedTests}</failIfNoSpecifiedTests>
+            <systemPropertyVariables>
+              <java.awt.headless>true</java.awt.headless>
+              <java.io.tmpdir>${java.io.tmpdir}</java.io.tmpdir>
+            </systemPropertyVariables>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>2.22.2</version>
+          <configuration>
+            <trimStackTrace>false</trimStackTrace>
+            <forkCount>1</forkCount>
+            <reuseForks>false</reuseForks>
+            <redirectTestOutputToFile>${maven.test.redirectTestOutputToFile}</redirectTestOutputToFile>
+            <failIfNoSpecifiedTests>${it.failIfNoSpecifiedTests}</failIfNoSpecifiedTests>
+            <forkedProcessTimeoutInSeconds>${failsafe.timeout}</forkedProcessTimeoutInSeconds>
+            <systemPropertyVariables>
+              <java.awt.headless>true</java.awt.headless>
+              <java.io.tmpdir>${java.io.tmpdir}</java.io.tmpdir>
+            </systemPropertyVariables>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-war-plugin</artifactId>
+          <version>3.3.1</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.felix</groupId>
+          <artifactId>maven-bundle-plugin</artifactId>
+          <!-- 5.1.1 has a regression that would only affect select projects https://issues.apache.org/jira/browse/FELIX-6337 -->
+          <version>5.1.1</version>
+          <configuration>
+            <instructions>
+              <!-- avoid WARNING No translation found for macro: project.name since we default to ${project.name} -->
+              <Bundle-Description>${project.description}</Bundle-Description>
+            </instructions>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.codehaus.gmavenplus</groupId>
+          <artifactId>gmavenplus-plugin</artifactId>
+          <version>1.12.1</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>animal-sniffer-maven-plugin</artifactId>
+          <version>1.19</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>build-helper-maven-plugin</artifactId>
+          <version>3.2.0</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>buildnumber-maven-plugin</artifactId>
+          <version>1.4</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>3.0.0</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.eclipse.sisu</groupId>
+          <artifactId>sisu-maven-plugin</artifactId>
+          <version>0.3.4</version>
+        </plugin>
+
+        <!--
+        Enhanced deployment configuration.  See 'buildsupport-staging' profile to disable.
+        -->
+        <plugin>
+          <groupId>org.sonatype.plugins</groupId>
+          <artifactId>nexus-staging-maven-plugin</artifactId>
+          <version>1.6.8</version>
+          <extensions>true</extensions>
+          <configuration>
+            <nexusUrl>${staging.nexusUrl}</nexusUrl>
+            <serverId>${staging.serverId}</serverId>
+            <altStagingDirectory>${staging.directory}</altStagingDirectory>
+            <autoReleaseAfterClose>${staging.autoReleaseAfterClose}</autoReleaseAfterClose>
+            <keepStagingRepositoryOnCloseRuleFailure>true</keepStagingRepositoryOnCloseRuleFailure>
+            <stagingProgressTimeoutMinutes>${staging.progressTimeout}</stagingProgressTimeoutMinutes>
+            <tags>
+              <localUsername>${user.name}</localUsername>
+              <javaVersion>${java.version}</javaVersion>
+            </tags>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.sonatype.plugins</groupId>
+          <artifactId>sisu-maven-plugin</artifactId>
+          <version>1.4</version>
+        </plugin>
+
+        <plugin>
+          <groupId>com.github.eirslett</groupId>
+          <artifactId>frontend-maven-plugin</artifactId>
+          <version>1.11.0</version>
+        </plugin>
+
+        <plugin>
+          <groupId>com.github.wvengen</groupId>
+          <artifactId>proguard-maven-plugin</artifactId>
+          <version>2.3.1</version>
+        </plugin>
+
+        <!--
+        See 'license-check' and 'license-format' profiles.
+        -->
+        <plugin>
+          <groupId>com.mycila</groupId>
+          <artifactId>license-maven-plugin</artifactId>
+          <version>${buildsupport.license-maven-plugin.version}</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.sonatype.buildsupport</groupId>
+              <artifactId>licenses</artifactId>
+              <version>${buildsupport.version}</version>
+            </dependency>
+          </dependencies>
+          <configuration>
+            <encoding>UTF-8</encoding>
+            <strictCheck>true</strictCheck>
+            <useDefaultExcludes>false</useDefaultExcludes>
+            <header>${project.basedir}/header.txt</header>
+            <aggregate>true</aggregate>
+            <includes>
+              <include>**/pom.xml</include>
+              <include>**/*.xml</include>
+              <include>**/*.xsd</include>
+              <include>**/*.xjb</include>
+              <include>**/*.properties</include>
+              <include>**/*.ini</include>
+              <include>**/*.java</include>
+              <include>**/*.groovy</include>
+              <include>**/*.scala</include>
+              <include>**/*.aj</include>
+              <include>**/*.js</include>
+              <include>**/*.jsx</include>
+              <include>**/*.css</include>
+              <include>**/*.scss</include>
+              <include>**/*.help</include>
+              <include>**/*.proto</include>
+              <include>**/*.sm</include>
+              <include>**/*.ts</include>
+              <include>**/*.tsx</include>
+              <include>**/*.bat</include>
+              <include>**/*.xsl</include>
+              <include>**/*.html</include>
+              <include>**/*.vm</include>
+              <include>**/*.md</include>
+              <include>**/*.sh</include>
+              <include>**/*.bash</include>
+              <include>**/*.rb</include>
+            </includes>
+            <excludes>
+              <exclude>**/target/**</exclude>
+              <exclude>**/.*/**</exclude>
+              <exclude>**/dependency-reduced-pom.xml</exclude>
+              <exclude>**/nbactions*.xml</exclude>
+              <exclude>**/nb-configuration.xml</exclude>
+              <exclude>**/atlassian-ide-plugin.xml</exclude>
+              <exclude>**/release.properties</exclude>
+              <exclude>**/META-INF/services/**</exclude>
+            </excludes>
+            <mapping>
+              <aj>JAVADOC_STYLE</aj>
+              <groovy>SLASHSTAR_STYLE</groovy>
+              <help>SCRIPT_STYLE</help>
+              <ini>SCRIPT_STYLE</ini>
+              <java>SLASHSTAR_STYLE</java>
+              <jsx>SLASHSTAR_STYLE</jsx>
+              <scss>JAVADOC_STYLE</scss>
+              <md>XML_STYLE</md>
+              <proto>DOUBLESLASH_STYLE</proto>
+              <scala>SLASHSTAR_STYLE</scala>
+              <sm>DOUBLESLASH_STYLE</sm>
+              <ts>SLASHSTAR_STYLE</ts>
+              <tsx>SLASHSTAR_STYLE</tsx>
+              <vm>VELOCITY_STYLE</vm>
+              <xjb>XML_STYLE</xjb>
+            </mapping>
+            <headerDefinitions>
+              <headerDefinition>buildsupportHeaders.xml</headerDefinition>
+            </headerDefinitions>
+            <properties>
+              <project.organization.name>${project.organization.name}</project.organization.name>
+            </properties>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>com.sonatype.clm</groupId>
+          <artifactId>clm-maven-plugin</artifactId>
+          <version>2.17.0-02</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>buildsupport-checkmaven</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <skip>${buildsupport-checkmaven.skip}</skip>
+              <fail>${buildsupport-checkmaven.fail}</fail>
+              <rules>
+                <requireMavenVersion>
+                  <version>${maven.version.range}</version>
+                  <message>Maven version range unsatisfied by property maven.version.range='${maven.version.range}'. Either set a desired range, skip this execution, or change to a warning only.</message>
+                </requireMavenVersion>
+              </rules>
+            </configuration>
+          </execution>
+          <execution>
+            <id>buildsupport-bestpractices</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <skip>${buildsupport-bestpractices.skip}</skip>
+              <fail>${buildsupport-bestpractices.fail}</fail>
+              <rules>
+                <requireNoRepositories>
+                  <!-- the leading space is intentional for this message due to a bug -->
+                  <message> Best Practice: never define repositories in pom.xml - use a repository manager instead</message>
+                </requireNoRepositories>
+                <requireProfileIdsExist>
+                  <message>Best Practice: do not ask for profiles to be activated that do not exist</message>
+                </requireProfileIdsExist>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+
+    <!--
+    Instrument tests for code coverage specifically when reporting to sonarqube
+    -->
+    <profile>
+      <id>buildsupport-sonar-coverage</id>
+      <activation>
+        <property>
+          <name>sonar.host.url</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>0.8.6</version>
+            <executions>
+              <execution>
+                <id>default-prepare-agent</id>
+                <goals>
+                  <goal>prepare-agent</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>default-report</id>
+                <goals>
+                  <goal>report</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!--
+    Allow disabling of source-jar generation.
+    -->
+    <profile>
+      <id>buildsupport-sources</id>
+      <activation>
+        <property>
+          <name>!buildsupport-sources.skip</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+                <configuration>
+                  <includePom>true</includePom>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!--
+    Allow disabling of staging integration.
+    -->
+    <profile>
+      <id>buildsupport-staging</id>
+      <activation>
+        <property>
+          <name>!buildsupport-staging.skip</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.sonatype.plugins</groupId>
+            <artifactId>nexus-staging-maven-plugin</artifactId>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!--
+      Per https://reproducible-builds.org/specs/source-date-epoch/ ingest reproducible build timestamp from environment
+    -->
+    <profile>
+      <id>buildsupport-reproducible-SOURCE_DATE_EPOCH</id>
+      <activation>
+        <property>
+          <name>env.SOURCE_DATE_EPOCH</name>
+        </property>
+      </activation>
+      <properties>
+        <project.build.outputTimestamp>${env.SOURCE_DATE_EPOCH}</project.build.outputTimestamp>
+      </properties>
+    </profile>
+
+    <!--
+    match the default reproducible timestamp of a gradle build, helpful when comparing maven outputs to gradle outputs
+    -->
+    <profile>
+      <id>buildsupport-reproducible-gradle</id>
+      <!-- when Gradle preserveFileTimestamps is false then archive timestamps are fixed value -->
+      <!-- https://github.com/gradle/gradle/commit/0209b5dd909c9df421db6c6dd3bcad42032ed4e3 -->
+      <!-- no ability yet to override the default gradle timestamp https://github.com/gradle/gradle/issues/14819 -->
+      <properties>
+        <project.build.outputTimestamp>1980-02-01T00:00:00Z</project.build.outputTimestamp>
+      </properties>
+    </profile>
+
+    <!--
+    For reproducible builds validate timestamp property and configure plugins to work correctly
+    -->
+    <profile>
+      <id>buildsupport-reproducible</id>
+      <activation>
+        <property>
+          <name>reproducible</name>
+        </property>
+      </activation>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>org.apache.felix</groupId>
+              <artifactId>maven-bundle-plugin</artifactId>
+              <configuration>
+                <instructions>
+                  <!-- remove Bnd-LastModified plus the default removeheaders -->
+                  <!-- https://issues.apache.org/jira/browse/FELIX-6304 -->
+                  <_removeheaders>Include-Resource,Private-Package,Bnd-LastModified</_removeheaders>
+                  <_reproducible>true</_reproducible>
+                </instructions>
+              </configuration>
+              <dependencies>
+                <dependency>
+                  <groupId>org.codehaus.plexus</groupId>
+                  <artifactId>plexus-archiver</artifactId>
+                  <version>4.2.3</version>
+                </dependency>
+              </dependencies>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-enforcer-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>buildsupport-reproducible-check</id>
+                <goals>
+                  <goal>enforce</goal>
+                </goals>
+                <configuration>
+                  <rules>
+                    <requireProperty>
+                      <property>project.build.outputTimestamp</property>
+                      <message>You must set project.build.outputTimestamp as a system property or in the pom</message>
+                      <regex><![CDATA[^(X|(3\d{8}|4\d{9})|(?<year>[0-9]{4})-(?<month>1[0-2]|0[1-9])-(?<day>3[01]|0[1-9]|[12][0-9])T(?<hour>2[0-3]|[01][0-9]):(?<minute>[0-5][0-9]):(?<second>[0-5][0-9])(?<timezone>Z|[+-](?:2[0-3]|[01][0-9]):[0-5][0-9]))$]]></regex>
+                      <regexMessage>project.build.outputTimestamp='${project.build.outputTimestamp}' but should be one of a) a single char 'X' meaning disabled , b) seconds since EPOCH , c) ISO8601 date. If date, it should be Feb 1 1980 or more recent.</regexMessage>
+                    </requireProperty>
+                    <bannedDependencies>
+                      <includes>
+                        <!-- https://issues.apache.org/jira/browse/MSHARED-661 - no Built-By in archives -->
+                        <!-- https://issues.apache.org/jira/browse/MSHARED-796 - Build-Jdk java-specification.version -->
+                        <include>org.apache.maven:maven-archiver:(,3.5.0)</include>
+                      </includes>
+                    </bannedDependencies>
+                  </rules>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>buildsupport-reproducible-info</id>
+                <phase>validate</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <echo level="info" message="project.build.outputTimestamp='${project.build.outputTimestamp}'" />
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!--
+    Verify license headers; use: mvn -Plicense-check -N
+    -->
+    <profile>
+      <id>license-check</id>
+      <build>
+        <defaultGoal>com.mycila:license-maven-plugin:check</defaultGoal>
+      </build>
+    </profile>
+
+    <!--
+    Format license headers; use: mvn -Plicense-format -N
+    -->
+    <profile>
+      <id>license-format</id>
+      <build>
+        <defaultGoal>com.mycila:license-maven-plugin:format</defaultGoal>
+      </build>
+    </profile>
+
+    <!--
+    Turn off strict javadoc checks in Java-8.
+    -->
+    <profile>
+      <id>javadoc-java8</id>
+      <activation>
+        <jdk>[1.8,)</jdk>
+      </activation>
+
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-javadoc-plugin</artifactId>
+              <configuration>
+                <!-- Prevent javadoc lint warnings from failing builds -->
+                <doclint>none</doclint>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
+    </profile>
+
+    <!--
+    Release configuration.
+    -->
+    <profile>
+      <id>release</id>
+      <build>
+        <!--
+        Configure deployment plugins in DM so buildsupport-staging profile can disable advanced deployment to nexus.
+        -->
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-deploy-plugin</artifactId>
+              <configuration>
+                <updateReleaseInfo>true</updateReleaseInfo>
+              </configuration>
+            </plugin>
+
+            <plugin>
+              <groupId>org.sonatype.plugins</groupId>
+              <artifactId>nexus-staging-maven-plugin</artifactId>
+              <configuration>
+                <updateReleaseInfo>true</updateReleaseInfo>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-enforcer-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>enforce-release</id>
+                <goals>
+                  <goal>enforce</goal>
+                </goals>
+                <configuration>
+                  <rules>
+                    <!--
+                    Disallow SNAPSHOT dependencies.
+                    -->
+                    <requireReleaseDeps>
+                      <searchTransitive>true</searchTransitive>
+                      <failWhenParentIsSnapshot>true</failWhenParentIsSnapshot>
+                    </requireReleaseDeps>
+
+                    <!--
+                    Disallow SNAPSHOT, RELEASE, LATEST or pinned-SNAPSHOT plugins.
+                    -->
+                    <requirePluginVersions>
+                      <banSnapshots>true</banSnapshots>
+                      <banRelease>true</banRelease>
+                      <banLatest>true</banLatest>
+                      <banTimestamps>true</banTimestamps>
+                    </requirePluginVersions>
+                  </rules>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <configuration>
+              <!--suppress MavenModelInspection -->
+              <passphrase>${gpg.passphrase}</passphrase>
+              <useAgent>true</useAgent>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+</project>

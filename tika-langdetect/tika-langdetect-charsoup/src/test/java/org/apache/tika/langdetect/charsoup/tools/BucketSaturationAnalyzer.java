@@ -25,8 +25,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.tika.langdetect.charsoup.FeatureExtractor;
 import org.apache.tika.langdetect.charsoup.ScriptAwareFeatureExtractor;
-import org.apache.tika.langdetect.charsoup.TextFeatureExtractor;
 
 /**
  * Analyzes bucket saturation for different bucket sizes and extractors.
@@ -77,7 +77,7 @@ public class BucketSaturationAnalyzer {
         System.out.println("-".repeat(76));
 
         for (int numBuckets : BUCKET_SIZES) {
-            TextFeatureExtractor extractor =
+            FeatureExtractor extractor =
                     new ScriptAwareFeatureExtractor(numBuckets);
 
             int[] nzPerSentence = new int[allData.size()];
@@ -138,7 +138,7 @@ public class BucketSaturationAnalyzer {
                 "Lang", "Count", "MeanNZ", "Sat%", "CorpNZ");
         System.out.println("-".repeat(46));
 
-        TextFeatureExtractor ext1k =
+        FeatureExtractor ext1k =
                 new ScriptAwareFeatureExtractor(1024);
 
         // Group by language

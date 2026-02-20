@@ -1,0 +1,515 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2018-present Sonatype, Inc. All rights reserved.
+
+    This program is licensed to you under the Apache License Version 2.0,
+    and you may not use this file except in compliance with the Apache License Version 2.0.
+    You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the Apache License Version 2.0 is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
+
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.sonatype.buildsupport</groupId>
+    <artifactId>public-parent</artifactId>
+    <version>28</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>org.sonatype.ossindex.maven</groupId>
+  <artifactId>ossindex-maven</artifactId>
+  <name>${project.groupId}:${project.artifactId}</name>
+  <packaging>pom</packaging>
+
+  <version>3.2.0</version>
+
+  <url>https://sonatype.github.io/ossindex-maven/</url>
+
+  <scm>
+    <connection>scm:git:git://github.com/sonatype/ossindex-maven.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/sonatype/ossindex-maven.git</developerConnection>
+    <url>https://github.com/sonatype/ossindex-maven</url>
+  </scm>
+
+  <inceptionYear>2018</inceptionYear>
+
+  <licenses>
+    <license>
+      <name>ASL2</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+
+  <issueManagement>
+    <system>github</system>
+    <url>https://github.com/sonatype/ossindex-maven/issues</url>
+  </issueManagement>
+
+  <ciManagement>
+    <system>jenkins</system>
+    <url>https://jenkins.zion.aws.s/job/ossindex/job/ossindex-maven/</url>
+  </ciManagement>
+
+  <!--<repositories>-->
+    <!--<repository>-->
+      <!--<id>sonatype-public</id>-->
+      <!--<url>https://repository.sonatype.org/content/groups/sonatype-public-grid/</url>-->
+      <!--<releases>-->
+        <!--<enabled>true</enabled>-->
+      <!--</releases>-->
+      <!--<snapshots>-->
+        <!--<enabled>true</enabled>-->
+      <!--</snapshots>-->
+    <!--</repository>-->
+  <!--</repositories>-->
+
+  <!--<pluginRepositories>-->
+    <!--<pluginRepository>-->
+      <!--<id>sonatype-public</id>-->
+      <!--<url>https://repository.sonatype.org/content/groups/sonatype-public-grid/</url>-->
+      <!--<releases>-->
+        <!--<enabled>true</enabled>-->
+      <!--</releases>-->
+      <!--<snapshots>-->
+        <!--<enabled>true</enabled>-->
+      <!--</snapshots>-->
+    <!--</pluginRepository>-->
+  <!--</pluginRepositories>-->
+
+  <distributionManagement>
+    <site>
+      <id>sonatype-ghpages</id>
+      <url>scm:git:ssh://git@github.com/sonatype/ossindex-maven.git</url>
+    </site>
+  </distributionManagement>
+
+  <properties>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+
+    <apache-maven.version>3.5.0</apache-maven.version>
+    <maven.plugin-annotations.version>3.6.0</maven.plugin-annotations.version>
+    <jackson.version>2.9.10</jackson.version>
+    <dionysus.version>1.0.3</dionysus.version>
+
+    <ossindex.baseUrl>https://ossindex.sonatype.org</ossindex.baseUrl>
+
+    <build.notes>t:local, u:${user.name}</build.notes>
+  </properties>
+
+  <modules>
+    <module>common</module>
+    <module>enforcer-rules</module>
+    <module>maven-plugin</module>
+    <module>testsuite</module>
+  </modules>
+
+  <dependencyManagement>
+    <dependencies>
+      <!--
+      Using "android" flavor for Java-7 compatibility; https://github.com/google/guava/wiki/Compatibility#older-jdks
+      -->
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>28.1-android</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>animal-sniffer-annotations</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+
+      <dependency>
+        <groupId>com.google.code.findbugs</groupId>
+        <artifactId>jsr305</artifactId>
+        <version>3.0.2</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.sonatype.ossindex</groupId>
+        <artifactId>ossindex-service-client</artifactId>
+        <version>1.8.1</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-plugin-api</artifactId>
+        <version>${apache-maven.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.maven.plugin-tools</groupId>
+        <artifactId>maven-plugin-annotations</artifactId>
+        <version>${maven.plugin-annotations.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-core</artifactId>
+        <version>${apache-maven.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-embedder</artifactId>
+        <version>${apache-maven.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-compat</artifactId>
+        <version>${apache-maven.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-settings</artifactId>
+        <version>${apache-maven.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-artifact</artifactId>
+        <version>${apache-maven.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.maven.shared</groupId>
+        <artifactId>maven-dependency-tree</artifactId>
+        <version>3.1.0</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-annotations</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+
+      <!--<dependency>-->
+        <!--<groupId>org.apache.maven.shared</groupId>-->
+        <!--<artifactId>maven-verifier</artifactId>-->
+        <!--<version>1.6</version>-->
+      <!--</dependency>-->
+
+      <!--<dependency>-->
+      <!--<groupId>org.codehaus.plexus</groupId>-->
+      <!--<artifactId>plexus-component-annotations</artifactId>-->
+      <!--<version>1.7.1</version>-->
+      <!--</dependency>-->
+
+      <dependency>
+        <groupId>org.sonatype.goodies</groupId>
+        <artifactId>goodies-testsupport</artifactId>
+        <version>2.2.4</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.codehaus.groovy</groupId>
+        <artifactId>groovy-all</artifactId>
+        <version>2.4.11</version>
+      </dependency>
+
+      <!-- INTERNAL -->
+
+      <dependency>
+        <groupId>org.sonatype.ossindex.maven</groupId>
+        <artifactId>ossindex-maven-common</artifactId>
+        <version>3.2.0</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.sonatype.ossindex.maven</groupId>
+        <artifactId>ossindex-maven-enforcer-rules</artifactId>
+        <version>3.2.0</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.sonatype.ossindex.maven</groupId>
+        <artifactId>ossindex-maven-plugin</artifactId>
+        <version>3.2.0</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-plugin-plugin</artifactId>
+          <version>3.5.2</version>
+        </plugin>
+
+        <!--<plugin>-->
+        <!--<groupId>org.codehaus.plexus</groupId>-->
+        <!--<artifactId>plexus-component-metadata</artifactId>-->
+        <!--<version>1.7.1</version>-->
+        <!--</plugin>-->
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-invoker-plugin</artifactId>
+          <version>3.1.0</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>3.0.1</version>
+          <configuration>
+            <source>${maven.compiler.source}</source>
+            <additionalOptions>
+              <!-- Turn off strict javadoc checks in Java-8 -->
+              <option>-Xdoclint:none</option>
+            </additionalOptions>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jxr-plugin</artifactId>
+          <version>2.5</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.codehaus.gmaven</groupId>
+          <artifactId>groovy-maven-plugin</artifactId>
+          <version>2.1</version>
+        </plugin>
+
+        <plugin>
+          <groupId>com.mycila</groupId>
+          <artifactId>license-maven-plugin</artifactId>
+          <configuration>
+            <excludes combine.children="append">
+              <exclude>src/site/hugo/**</exclude>
+              <exclude>*/src/it/projects/**</exclude>
+            </excludes>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.sonatype.goodies.dionysus</groupId>
+          <artifactId>dionysus-maven-plugin</artifactId>
+          <version>${dionysus.version}</version>
+          <configuration>
+            <theme>
+              <groupId>org.sonatype.goodies.dionysus</groupId>
+              <artifactId>dionysus-hugo-theme</artifactId>
+              <version>${dionysus.version}</version>
+            </theme>
+            <mavenGoals>
+              <goal>javadoc:aggregate</goal>
+              <goal>jxr:aggregate</goal>
+            </mavenGoals>
+            <generators>
+              <mavenLicenses/>
+              <mavenModules/>
+              <mavenPom/>
+              <mavenPlugin/>
+            </generators>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <dependencies>
+          <dependency>
+            <groupId>org.owasp.maven.enforcer</groupId>
+            <artifactId>class-file-format-rule</artifactId>
+            <version>1.0.0</version>
+          </dependency>
+        </dependencies>
+        <executions>
+          <execution>
+            <id>checks</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireMavenVersion>
+                  <version>[3.3,)</version>
+                </requireMavenVersion>
+                <requireJavaVersion>
+                  <version>[1.7,)</version>
+                </requireJavaVersion>
+              </rules>
+            </configuration>
+          </execution>
+          <execution>
+            <id>enforce-classfileformat</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <byteCodeRule implementation="org.owasp.maven.enforcer.rule.ClassFileFormatRule">
+                  <supportedClassFileFormat>52</supportedClassFileFormat>
+                </byteCodeRule>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>animal-sniffer-maven-plugin</artifactId>
+        <configuration>
+          <signature>
+            <groupId>org.codehaus.mojo.signature</groupId>
+            <artifactId>java18</artifactId>
+            <version>1.0</version>
+          </signature>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>test</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <dependencies>
+          <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-eclipse-compiler</artifactId>
+            <version>2.9.2-01</version>
+          </dependency>
+          <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-eclipse-batch</artifactId>
+            <version>2.4.3-01</version>
+          </dependency>
+        </dependencies>
+        <configuration>
+          <compilerId>groovy-eclipse-compiler</compilerId>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.eclipse.sisu</groupId>
+        <artifactId>sisu-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>main-index</goal>
+              <goal>test-index</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>buildnumber-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>validate</phase>
+            <goals>
+              <goal>create</goal>
+            </goals>
+            <configuration>
+              <buildNumberPropertyName>build.tag</buildNumberPropertyName>
+              <getRevisionOnlyOnce>true</getRevisionOnlyOnce>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>com.sonatype.clm</groupId>
+        <artifactId>clm-maven-plugin</artifactId>
+        <version>2.8.1-01</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>index</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>it</id>
+      <activation>
+        <property>
+          <name>it</name>
+          <value>true</value>
+        </property>
+      </activation>
+
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>dionysus-generate-data</id>
+    </profile>
+
+    <profile>
+      <id>dionysus-generate-maven-site</id>
+
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-enforcer-plugin</artifactId>
+              <configuration>
+                <!-- site generation causes problems with project dependency resolution? -->
+                <skip>true</skip>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
+    </profile>
+  </profiles>
+
+</project>

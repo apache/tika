@@ -37,11 +37,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.tika.langdetect.charsoup.CharSoupFeatureExtractor;
-import org.apache.tika.langdetect.charsoup.ScriptAwareFeatureExtractor;
-import org.apache.tika.langdetect.charsoup.TextFeatureExtractor;
+import org.apache.tika.langdetect.charsoup.CharSoupModel;
+import org.apache.tika.langdetect.charsoup.FeatureExtractor;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
-import org.apache.tika.ml.LinearModel;
 
 /**
  * Compares the built-in CharSoupLanguageDetector (bigram model) against
@@ -160,11 +159,11 @@ public class CompareDetectors {
         // ---- Load bigram model ----
         System.out.println("\nLoading bigram model: " + modelFile);
         long heapBefore = usedHeap();
-        LinearModel bigramModel;
+        CharSoupModel bigramModel;
         try (InputStream is = new BufferedInputStream(Files.newInputStream(modelFile))) {
-            bigramModel = LinearModel.load(is);
+            bigramModel = CharSoupModel.load(is);
         }
-        TextFeatureExtractor extractor = new ScriptAwareFeatureExtractor(bigramModel.getNumBuckets());
+        FeatureExtractor extractor = bigramModel.createExtractor();
         long bigramHeapBytes = usedHeap() - heapBefore;
         System.out.printf(Locale.US, "  Bigram model: %d classes, %d buckets, ~%.1f MB heap%n",
                 bigramModel.getNumClasses(), bigramModel.getNumBuckets(),
@@ -277,10 +276,10 @@ public class CompareDetectors {
 
     /**
      * Evaluate bigram model in parallel by partitioning data across threads.
-     * LinearModel is thread-safe (read-only weights); each thread uses its own
-     * TextFeatureExtractor (they allocate thread-local int[] arrays).
+     * CharSoupModel is thread-safe (read-only weights); each thread uses its own
+     * FeatureExtractor (they allocate thread-local int[] arrays).
      */
-    static EvalResult evaluateBigramParallel(LinearModel model, TextFeatureExtractor extractor,
+    static EvalResult evaluateBigramParallel(CharSoupModel model, FeatureExtractor extractor,
                                              List<LabeledSentence> data, String name,
                                              int numThreads) throws Exception {
         if (data.isEmpty()) {
@@ -299,7 +298,7 @@ public class CompareDetectors {
                 final List<LabeledSentence> chunk = chunks.get(i);
                 final String chunkName = name + "-t" + i;
                 // Each thread gets its own extractor instance
-                final TextFeatureExtractor threadExtractor = new ScriptAwareFeatureExtractor(model.getNumBuckets());
+                final FeatureExtractor threadExtractor = model.createExtractor();
                 futures.add(pool.submit(
                         () -> evaluateBigramChunk(model, threadExtractor, chunk, chunkName)));
             }
@@ -327,7 +326,7 @@ public class CompareDetectors {
     }
 
     /** Single-threaded bigram evaluation on a chunk of data. */
-    static EvalResult evaluateBigramChunk(LinearModel model, TextFeatureExtractor extractor,
+    static EvalResult evaluateBigramChunk(CharSoupModel model, FeatureExtractor extractor,
                                           List<LabeledSentence> data, String name) {
         EvalResult result = new EvalResult(name);
         if (data.isEmpty()) {

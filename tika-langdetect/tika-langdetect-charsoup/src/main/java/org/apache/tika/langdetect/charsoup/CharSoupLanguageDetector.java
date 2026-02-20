@@ -18,18 +18,21 @@ package org.apache.tika.langdetect.charsoup;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.language.detect.LanguageConfidence;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
-import org.apache.tika.ml.LinearModel;
-import org.apache.tika.ml.Prediction;
 
 /**
  * Hash-based bigram language detector using INT8-quantized multinomial logistic regression.
@@ -50,8 +53,11 @@ import org.apache.tika.ml.Prediction;
  * keeping the implementation simple and predictable.
  * </p>
  */
-@TikaComponent
+@TikaComponent(name = "charsoup-language-detector")
 public class CharSoupLanguageDetector extends LanguageDetector {
+
+    private static final Logger LOG =
+            LoggerFactory.getLogger(CharSoupLanguageDetector.class);
 
     private static final String MODEL_RESOURCE =
             "/org/apache/tika/langdetect/charsoup/langdetect.bin";
@@ -93,7 +99,24 @@ public class CharSoupLanguageDetector extends LanguageDetector {
      * summed and assigned to the top scorer, so the model reports confidence
      * in the <em>group</em> rather than a noisy choice within it.
      */
-    static final String[][] CONFUSABLE_GROUPS = LanguageConfusables.GROUPS;
+    static final String[][] CONFUSABLE_GROUPS = {
+            {"nob", "nno", "nor", "dan"},       // Scandinavian + Norwegian variants
+            {"hrv", "srp", "bos", "hbs"},       // South Slavic + Serbo-Croatian
+            {"msa", "zlm", "zsm", "ind"},       // Malay / Indonesian
+            {"pes", "prs", "fas"},               // Persian / Dari
+            {"zho", "cmn", "wuu", "yue"},        // Chinese varieties
+            {"aze", "azj"},                      // Azerbaijani
+            {"ekk", "est"},                      // Estonian
+            {"lvs", "lav"},                      // Latvian
+            {"plt", "mlg"},                      // Malagasy
+            {"khk", "mon"},                      // Mongolian
+            {"ydd", "yid"},                      // Yiddish
+            {"sme", "smi"},                      // Sami
+            {"sqi", "als"},                      // Albanian / Tosk Albanian
+            {"tat", "bak"},                      // Tatar / Bashkir
+            {"ita", "vec"},                      // Italian / Venetian
+            {"spa", "arg", "ast"},               // Spanish / Aragonese / Asturian
+    };
 
     /**
      * Maps each class index to the array of all class indices in its group.
@@ -102,45 +125,97 @@ public class CharSoupLanguageDetector extends LanguageDetector {
      */
     private static int[][] GROUP_INDICES;
 
-    private static final LinearModel MODEL;
-    private static final TextFeatureExtractor EXTRACTOR;
+    private static final CharSoupModel MODEL;
+    private static final FeatureExtractor EXTRACTOR;
     private static final Set<String> SUPPORTED_LANGUAGES;
-
-    /**
-     * System property to override the model loaded at startup.
-     * Set to an absolute path to a LDM1 binary on disk, e.g.:
-     * {@code -Dtika.langdetect.charsoup.model=/path/to/langdetect.bin}
-     * When unset the bundled classpath resource is used.
-     */
-    public static final String MODEL_PATH_PROPERTY =
-            "tika.langdetect.charsoup.model";
 
     static {
         try {
-            String overridePath = System.getProperty(MODEL_PATH_PROPERTY);
-            if (overridePath != null) {
-                MODEL = LinearModel.loadFromPath(java.nio.file.Paths.get(overridePath));
-                System.out.println("[CharSoupLanguageDetector] loaded model from disk: "
-                        + overridePath);
-            } else {
-                MODEL = LinearModel.loadFromClasspath(MODEL_RESOURCE);
-            }
-            EXTRACTOR = new ScriptAwareFeatureExtractor(MODEL.getNumBuckets());
+            MODEL = CharSoupModel.loadFromClasspath(MODEL_RESOURCE);
+            EXTRACTOR = MODEL.createExtractor();
             Set<String> langs = new HashSet<>();
             Collections.addAll(langs, MODEL.getLabels());
             SUPPORTED_LANGUAGES = Collections.unmodifiableSet(langs);
             GROUP_INDICES = buildGroupIndices(MODEL);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to load language model", e);
+            throw new RuntimeException("Failed to load built-in language model: " + MODEL_RESOURCE,
+                    e);
         }
     }
 
-    private static int[][] buildGroupIndices(LinearModel model) {
-        return LanguageConfusables.buildGroupIndices(model);
+    /**
+     * Build a mapping from each class index to the set of class indices in its
+     * confusable group. Only groups where at least 2 members are present in the
+     * model are created; singletons are left as no-ops.
+     */
+    private static int[][] buildGroupIndices(CharSoupModel model) {
+        // Build label → index map
+        Map<String, Integer> labelIdx = new HashMap<>();
+        for (int i = 0; i < model.getNumClasses(); i++) {
+            labelIdx.put(model.getLabel(i), i);
+        }
+
+        // For each class, determine its group members (by index)
+        int[][] result = new int[model.getNumClasses()][];
+        boolean[] assigned = new boolean[model.getNumClasses()];
+
+        for (String[] group : CONFUSABLE_GROUPS) {
+            // Collect indices of group members present in the model
+            List<Integer> members = new ArrayList<>();
+            for (String lang : group) {
+                Integer idx = labelIdx.get(lang);
+                if (idx != null) {
+                    members.add(idx);
+                }
+            }
+            if (members.size() >= 2) {
+                int[] memberArr = members.stream().mapToInt(Integer::intValue).toArray();
+                for (int idx : memberArr) {
+                    result[idx] = memberArr;
+                    assigned[idx] = true;
+                }
+            }
+        }
+
+        // Singletons: classes not in any group
+        for (int i = 0; i < result.length; i++) {
+            if (!assigned[i]) {
+                result[i] = new int[]{i};
+            }
+        }
+        return result;
     }
 
+    /**
+     * Collapse confusable group probabilities: sum each group's probabilities
+     * and assign the total to the highest-scoring member. Other members get 0.
+     * Returns a new array; the input is not modified.
+     */
     static float[] collapseGroups(float[] probs, int[][] groupIndices) {
-        return LanguageConfusables.collapseGroups(probs, groupIndices);
+        float[] collapsed = Arrays.copyOf(probs, probs.length);
+        boolean[] visited = new boolean[probs.length];
+
+        for (int i = 0; i < probs.length; i++) {
+            if (visited[i] || groupIndices[i].length <= 1) {
+                continue;
+            }
+            int[] group = groupIndices[i];
+            // Find the top scorer and sum
+            float sum = 0f;
+            int best = group[0];
+            for (int idx : group) {
+                sum += probs[idx];
+                if (probs[idx] > probs[best]) {
+                    best = idx;
+                }
+                visited[idx] = true;
+            }
+            // Assign sum to top scorer, zero the rest
+            for (int idx : group) {
+                collapsed[idx] = (idx == best) ? sum : 0f;
+            }
+        }
+        return collapsed;
     }
 
     private final StringBuilder buffer = new StringBuilder();
@@ -196,6 +271,126 @@ public class CharSoupLanguageDetector extends LanguageDetector {
      */
     public float getDistributionEntropy() {
         return lastEntropy;
+    }
+
+    /**
+     * Minimum confidence (inverse logit of the max logit) for a candidate to
+     * be considered a genuine language match. If no candidate exceeds this
+     * threshold, the comparison is inconclusive and {@code null} is returned.
+     * <p>
+     * 0.88 corresponds to a raw logit of ~2.0. Typical values:
+     * <ul>
+     *   <li>Arabic (windows-1256): 0.9999994 (logit +14.3)</li>
+     *   <li>UTF-8 garbled: 0.97 (logit +3.5)</li>
+     *   <li>EBCDIC garbage: 0.79 (logit +1.3) — below threshold</li>
+     *   <li>Short English: 0.025 (logit -3.7) — well below threshold</li>
+     * </ul>
+     */
+    private static final float MIN_CONFIDENCE_THRESHOLD = 0.88f;
+
+    /**
+     * Maximum ratio of junk characters (U+FFFD replacement chars + C0/C1
+     * control chars) allowed in a candidate text. Candidates exceeding
+     * this ratio are discarded before language scoring — they are almost
+     * certainly decoded with the wrong charset.
+     * <p>
+     * Typical values:
+     * <ul>
+     *   <li>Correct decoding: 0.00</li>
+     *   <li>UTF-8 decoding of windows-1256 bytes: 0.80</li>
+     *   <li>IBM500 decoding of ASCII bytes: 0.23</li>
+     * </ul>
+     */
+    private static final float MAX_JUNK_RATIO = 0.10f;
+
+    /**
+     * Compare multiple candidate texts and return the key of the one with
+     * the strongest language signal. Candidates with a high ratio of
+     * replacement or control characters are discarded first. Remaining
+     * candidates are scored using the inverse logit (sigmoid) of the
+     * model's maximum pre-softmax logit.
+     * <p>
+     * Returns {@code null} if no candidate exceeds the minimum confidence
+     * threshold, indicating the comparison is inconclusive.
+     *
+     * @param candidates map of arbitrary keys to candidate text strings
+     * @param <K>        key type (e.g., {@link java.nio.charset.Charset})
+     * @return the key whose text has the strongest language signal,
+     *         or {@code null} if the map is empty or no candidate is
+     *         confident enough
+     */
+    public <K> K compareLanguageSignal(Map<K, String> candidates) {
+        if (candidates.isEmpty()) {
+            return null;
+        }
+
+        float bestConfidence = Float.NEGATIVE_INFINITY;
+        K bestKey = null;
+
+        for (Map.Entry<K, String> entry : candidates.entrySet()) {
+            float junkRatio = junkRatio(entry.getValue());
+            if (junkRatio > MAX_JUNK_RATIO) {
+                LOG.debug("compareLanguageSignal: {} -> skipped (junkRatio={})",
+                        entry.getKey(), junkRatio);
+                continue;
+            }
+
+            int[] features = EXTRACTOR.extract(entry.getValue());
+            float[] logits = MODEL.predictLogits(features);
+            float confidence = sigmoid(max(logits));
+
+            LOG.debug("compareLanguageSignal: {} -> confidence={}",
+                    entry.getKey(), confidence);
+
+            if (confidence > bestConfidence) {
+                bestConfidence = confidence;
+                bestKey = entry.getKey();
+            }
+        }
+
+        if (bestConfidence < MIN_CONFIDENCE_THRESHOLD) {
+            LOG.debug("compareLanguageSignal: inconclusive (bestConfidence={} < {})",
+                    bestConfidence, MIN_CONFIDENCE_THRESHOLD);
+            return null;
+        }
+
+        return bestKey;
+    }
+
+    /**
+     * Ratio of junk characters (U+FFFD replacement + ISO control + C1
+     * control range U+0080-U+009F) to total characters. High values
+     * indicate a wrong-charset decoding.
+     */
+    static float junkRatio(String text) {
+        if (text == null || text.isEmpty()) {
+            return 0f;
+        }
+        int junk = 0;
+        int total = 0;
+        for (int i = 0; i < text.length(); ) {
+            int cp = text.codePointAt(i);
+            i += Character.charCount(cp);
+            total++;
+            if (cp == 0xFFFD || Character.isISOControl(cp)) {
+                junk++;
+            }
+        }
+        return total == 0 ? 0f : (float) junk / total;
+    }
+
+    private static float sigmoid(float x) {
+        return 1.0f / (1.0f + (float) Math.exp(-x));
+    }
+
+    private static float max(float[] arr) {
+        float m = Float.NEGATIVE_INFINITY;
+        for (float v : arr) {
+            if (v > m) {
+                m = v;
+            }
+        }
+        return m;
     }
 
     @Override
@@ -273,7 +468,6 @@ public class CharSoupLanguageDetector extends LanguageDetector {
         }
 
         int len = text.length();
-        float[] bestLogits = null;
         float[] bestProbs = null;
         float bestEntropy = Float.MAX_VALUE;
 
@@ -282,14 +476,12 @@ public class CharSoupLanguageDetector extends LanguageDetector {
             String chunk = text.substring(start, end);
 
             int[] features = EXTRACTOR.extract(chunk);
-            float[] logits = MODEL.predictLogits(features);
-            float[] probs = LinearModel.softmax(logits.clone());
+            float[] probs = MODEL.predict(features);
             float[] collapsed = collapseGroups(probs, GROUP_INDICES);
-            float entropy = LinearModel.entropy(collapsed);
+            float entropy = CharSoupModel.entropy(collapsed);
 
             if (entropy < bestEntropy) {
                 bestEntropy = entropy;
-                bestLogits = logits;
                 bestProbs = probs;
             }
 
@@ -298,43 +490,49 @@ public class CharSoupLanguageDetector extends LanguageDetector {
             }
         }
 
-        return buildResults(bestLogits, bestProbs);
+        return buildResults(bestProbs);
     }
 
     /**
-     * Build a {@link Prediction} list from raw logits and softmax probabilities.
-     * Predictions are sorted by probability descending.
+     * Maximum meaningful entropy (bits) for normalizing confidenceScore.
+     * log2(numClasses) for ~165 classes is ~7.4. We cap at 7.0 so that
+     * even moderately uncertain text gets a near-zero confidenceScore.
      */
-    public List<Prediction> buildPredictions(float[] logits, float[] probs) {
-        List<Prediction> predictions = new ArrayList<>(MODEL.getNumClasses());
-        for (int c = 0; c < MODEL.getNumClasses(); c++) {
-            predictions.add(new Prediction(MODEL.getLabel(c), logits[c], probs[c]));
-        }
-        predictions.sort((a, b) -> Double.compare(b.getProbability(), a.getProbability()));
-        return predictions;
+    private static final float MAX_ENTROPY = 7.0f;
+
+    /**
+     * Convert entropy to a 0-1 confidence score. Lower entropy = higher confidence.
+     * Uses 1/(1+entropy) to preserve discrimination even at very low entropies,
+     * unlike a linear mapping which saturates at 1.0 too quickly.
+     */
+    private static float entropyToConfidenceScore(float entropy) {
+        return 1.0f / (1.0f + entropy);
     }
 
     /**
-     * Build sorted LanguageResult list from raw logits and softmax probabilities.
-     * Uses {@link Prediction} internally; adapts to {@link LanguageResult} for the
-     * {@link LanguageDetector} interface boundary.
+     * Build sorted LanguageResult list from raw probabilities.
      */
-    private List<LanguageResult> buildResults(float[] logits, float[] probs) {
+    private List<LanguageResult> buildResults(float[] probs) {
+        // Compute entropy on collapsed distribution
         float[] collapsed = collapseGroups(probs, GROUP_INDICES);
-        lastEntropy = LinearModel.entropy(collapsed);
+        lastEntropy = CharSoupModel.entropy(collapsed);
+        float confScore = entropyToConfidenceScore(lastEntropy);
 
-        List<Prediction> predictions = buildPredictions(logits, probs);
-
-        List<LanguageResult> results = new ArrayList<>(predictions.size());
-        for (Prediction p : predictions) {
+        // Build results from raw probabilities sorted by probability descending
+        List<LanguageResult> results = new ArrayList<>(MODEL.getNumClasses());
+        for (int c = 0; c < MODEL.getNumClasses(); c++) {
             results.add(new LanguageResult(
-                    p.getLabel(),
-                    toConfidence((float) p.getProbability(), lastEntropy),
-                    (float) p.getProbability()));
+                    MODEL.getLabel(c), toConfidence(probs[c], lastEntropy),
+                    probs[c], confScore));
         }
+        results.sort((a, b) -> Float.compare(b.getRawScore(), a.getRawScore()));
 
+        // If top score is below NONE threshold, return a NULL-like result
+        // but preserve the confidenceScore so encoding arbitration can
+        // still compare across candidate decodings.
         if (results.get(0).getConfidence() == LanguageConfidence.NONE) {
-            return Collections.singletonList(LanguageResult.NULL);
+            return Collections.singletonList(
+                    new LanguageResult("", LanguageConfidence.NONE, 0.0f, confScore));
         }
 
         return results;

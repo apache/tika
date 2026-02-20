@@ -1,0 +1,621 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.apache.maven</groupId>
+    <artifactId>maven-parent</artifactId>
+    <version>42</version>
+    <relativePath />
+  </parent>
+
+  <groupId>org.apache.maven.resolver</groupId>
+  <artifactId>maven-resolver</artifactId>
+  <version>1.9.22</version>
+  <packaging>pom</packaging>
+
+  <name>Maven Artifact Resolver</name>
+  <description>The parent and aggregator for the repository system.</description>
+  <url>https://maven.apache.org/resolver/</url>
+  <inceptionYear>2010</inceptionYear>
+
+  <contributors>
+    <contributor>
+      <name>Matej Cimbora</name>
+    </contributor>
+  </contributors>
+
+  <modules>
+    <!-- NOTE: Be sure to update the bin assembly descriptor as well if the module list changes -->
+    <module>maven-resolver-api</module>
+    <module>maven-resolver-spi</module>
+    <module>maven-resolver-util</module>
+    <module>maven-resolver-named-locks</module>
+    <module>maven-resolver-named-locks-hazelcast</module>
+    <module>maven-resolver-named-locks-redisson</module>
+    <module>maven-resolver-impl</module>
+    <module>maven-resolver-test-util</module>
+    <module>maven-resolver-connector-basic</module>
+    <module>maven-resolver-transport-classpath</module>
+    <module>maven-resolver-transport-file</module>
+    <module>maven-resolver-transport-http</module>
+    <module>maven-resolver-transport-wagon</module>
+    <module>maven-resolver-supplier</module>
+    <module>maven-resolver-demos</module>
+  </modules>
+
+  <scm>
+    <connection>scm:git:https://gitbox.apache.org/repos/asf/maven-resolver.git</connection>
+    <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/maven-resolver.git</developerConnection>
+    <tag>maven-resolver-1.9.22</tag>
+    <url>https://github.com/apache/maven-resolver/tree/${project.scm.tag}</url>
+  </scm>
+  <issueManagement>
+    <system>jira</system>
+    <url>https://issues.apache.org/jira/browse/MRESOLVER</url>
+  </issueManagement>
+  <ciManagement>
+    <system>Jenkins</system>
+    <url>https://ci-maven.apache.org/job/Maven/job/maven-box/job/maven-resolver/</url>
+  </ciManagement>
+  <distributionManagement>
+    <site>
+      <id>apache.website</id>
+      <url>scm:svn:https://svn.apache.org/repos/asf/maven/website/components/${maven.site.path}</url>
+    </site>
+  </distributionManagement>
+
+  <properties>
+    <javaVersion>8</javaVersion>
+    <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
+    <failsafe.redirectTestOutputToFile>${surefire.redirectTestOutputToFile}</failsafe.redirectTestOutputToFile>
+    <maven.site.path>resolver-archives/resolver-LATEST-1.x</maven.site.path>
+    <checkstyle.violation.ignore>None</checkstyle.violation.ignore>
+    <sisuVersion>0.9.0.M2</sisuVersion>
+    <guiceVersion>6.0.0</guiceVersion>
+    <slf4jVersion>1.7.36</slf4jVersion>
+    <!-- used by supplier and demo only -->
+    <mavenVersion>3.9.8</mavenVersion>
+    <minimalMavenBuildVersion>[3.8.7,)</minimalMavenBuildVersion>
+    <minimalJavaBuildVersion>[1.8.0-362,)</minimalJavaBuildVersion>
+    <project.build.outputTimestamp>2024-08-05T13:36:02Z</project.build.outputTimestamp>
+    <bnd.instructions.additions />
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.apache.maven.resolver</groupId>
+        <artifactId>maven-resolver-api</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.resolver</groupId>
+        <artifactId>maven-resolver-spi</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.resolver</groupId>
+        <artifactId>maven-resolver-util</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.resolver</groupId>
+        <artifactId>maven-resolver-named-locks</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.resolver</groupId>
+        <artifactId>maven-resolver-impl</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.resolver</groupId>
+        <artifactId>maven-resolver-connector-basic</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.resolver</groupId>
+        <artifactId>maven-resolver-transport-classpath</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.resolver</groupId>
+        <artifactId>maven-resolver-transport-file</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.resolver</groupId>
+        <artifactId>maven-resolver-transport-http</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.resolver</groupId>
+        <artifactId>maven-resolver-transport-wagon</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.resolver</groupId>
+        <artifactId>maven-resolver-supplier</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.resolver</groupId>
+        <artifactId>maven-resolver-test-util</artifactId>
+        <version>${project.version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.hamcrest</groupId>
+        <artifactId>hamcrest</artifactId>
+        <version>2.2</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.hamcrest</groupId>
+        <artifactId>hamcrest-core</artifactId>
+        <version>2.2</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.13.2</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
+        <version>4.11.0</version>
+        <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-utils</artifactId>
+        <version>4.0.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-xml</artifactId>
+        <version>3.0.0</version>
+      </dependency>
+
+      <dependency>
+        <groupId>javax.inject</groupId>
+        <artifactId>javax.inject</artifactId>
+        <version>1</version>
+        <scope>provided</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.eclipse.sisu</groupId>
+        <artifactId>org.eclipse.sisu.inject</artifactId>
+        <version>${sisuVersion}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.sisu</groupId>
+        <artifactId>org.eclipse.sisu.plexus</artifactId>
+        <version>${sisuVersion}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>javax.enterprise</groupId>
+            <artifactId>cdi-api</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>com.google.inject</groupId>
+        <artifactId>guice</artifactId>
+        <version>${guiceVersion}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>33.1.0-jre</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>${slf4jVersion}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-simple</artifactId>
+        <version>${slf4jVersion}</version>
+        <scope>test</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>com.github.siom79.japicmp</groupId>
+          <artifactId>japicmp-maven-plugin</artifactId>
+          <version>0.22.0</version>
+          <configuration>
+            <oldVersion>
+              <!-- We compare same module against 1.8.0 set as "baseline" -->
+              <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>${project.artifactId}</artifactId>
+                <version>1.8.0</version>
+                <type>${project.packaging}</type>
+              </dependency>
+            </oldVersion>
+          </configuration>
+          <executions>
+            <execution>
+              <id>default-source-cmp</id>
+              <goals>
+                <goal>cmp</goal>
+              </goals>
+              <phase>verify</phase>
+              <configuration>
+                <parameter>
+                  <excludes>
+                    <exclude>org.eclipse.aether.RepositoryListener</exclude>
+                    <exclude>org.eclipse.aether.RepositorySystem</exclude>
+                    <exclude>org.eclipse.aether.RepositorySystemSession</exclude>
+                    <exclude>org.eclipse.aether.SessionData</exclude>
+                    <exclude>org.eclipse.aether.artifact.Artifact</exclude>
+                    <exclude>org.eclipse.aether.artifact.ArtifactType</exclude>
+                    <exclude>org.eclipse.aether.collection.CollectStepData</exclude>
+                    <exclude>org.eclipse.aether.collection.DependencyCollectionContext</exclude>
+                    <exclude>org.eclipse.aether.collection.DependencyGraphTransformationContext</exclude>
+                    <exclude>org.eclipse.aether.collection.VersionFilter.VersionFilterContext</exclude>
+                    <exclude>org.eclipse.aether.graph.DependencyCycle</exclude>
+                    <exclude>org.eclipse.aether.graph.DependencyNode</exclude>
+                    <exclude>org.eclipse.aether.metadata.Metadata</exclude>
+                    <exclude>org.eclipse.aether.repository.ArtifactRepository</exclude>
+                    <exclude>org.eclipse.aether.transfer.TransferListener</exclude>
+                    <exclude>org.eclipse.aether.spi.connector.checksum.ChecksumAlgorithmFactorySelector</exclude>
+                    <exclude>org.eclipse.aether.spi.connector.checksum.ChecksumPolicyProvider</exclude>
+                    <exclude>org.eclipse.aether.spi.connector.layout.RepositoryLayoutProvider</exclude>
+                    <exclude>org.eclipse.aether.spi.connector.transport.TransporterProvider</exclude>
+                  </excludes>
+                  <breakBuildOnBinaryIncompatibleModifications>false</breakBuildOnBinaryIncompatibleModifications>
+                  <breakBuildOnSourceIncompatibleModifications>true</breakBuildOnSourceIncompatibleModifications>
+                </parameter>
+              </configuration>
+            </execution>
+            <execution>
+              <id>default-binary-cmp</id>
+              <goals>
+                <goal>cmp</goal>
+              </goals>
+              <phase>verify</phase>
+              <configuration>
+                <parameter>
+                  <breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>
+                  <breakBuildOnSourceIncompatibleModifications>false</breakBuildOnSourceIncompatibleModifications>
+                </parameter>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <configuration>
+            <detectOfflineLinks>false</detectOfflineLinks>
+            <linksource>true</linksource>
+            <notimestamp>true</notimestamp>
+            <links>
+              <link>https://download.oracle.com/javase/${javaVersion}/docs/api/</link>
+            </links>
+            <tags>
+              <tag>
+                <name>noextend</name>
+                <placement>a</placement>
+                <head>Restriction:</head>
+              </tag>
+              <tag>
+                <name>noimplement</name>
+                <placement>a</placement>
+                <head>Restriction:</head>
+              </tag>
+              <tag>
+                <name>noinstantiate</name>
+                <placement>a</placement>
+                <head>Restriction:</head>
+              </tag>
+              <tag>
+                <name>nooverride</name>
+                <placement>a</placement>
+                <head>Restriction:</head>
+              </tag>
+              <tag>
+                <name>noreference</name>
+                <placement>a</placement>
+                <head>Restriction:</head>
+              </tag>
+              <tag>
+                <name>provisional</name>
+                <placement>a</placement>
+                <head>Provisional:</head>
+              </tag>
+            </tags>
+            <groups>
+              <group>
+                <title>API</title>
+                <packages>org.eclipse.aether*</packages>
+              </group>
+              <group>
+                <title>SPI</title>
+                <packages>org.eclipse.aether.spi*</packages>
+              </group>
+              <group>
+                <title>Utilities</title>
+                <packages>org.eclipse.aether.util*</packages>
+              </group>
+              <group>
+                <title>Repository Connectors</title>
+                <packages>org.eclipse.aether.connector*</packages>
+              </group>
+              <group>
+                <title>Transporters</title>
+                <packages>org.eclipse.aether.transport*</packages>
+              </group>
+              <group>
+                <title>Implementation</title>
+                <packages>org.eclipse.aether.impl*</packages>
+              </group>
+              <group>
+                <title>Demo Maven Plugin</title>
+                <packages>org.apache.maven.resolver.examples.maven*</packages>
+              </group>
+              <group>
+                <title>Demo Snippets</title>
+                <packages>org.apache.maven.resolver.examples*</packages>
+              </group>
+              <group>
+                <title>Internals</title>
+                <packages>org.eclipse.aether.internal*</packages>
+              </group>
+            </groups>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jxr-plugin</artifactId>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-release-plugin</artifactId>
+          <configuration>
+            <autoVersionSubmodules>true</autoVersionSubmodules>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <configuration>
+            <argLine>-Xmx128m</argLine>
+            <redirectTestOutputToFile>${surefire.redirectTestOutputToFile}</redirectTestOutputToFile>
+            <systemPropertyVariables>
+              <java.io.tmpdir>${project.build.directory}/surefire-tmp</java.io.tmpdir>
+            </systemPropertyVariables>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <configuration>
+            <failIfNoTests>false</failIfNoTests>
+            <argLine>-Xmx128m</argLine>
+            <redirectTestOutputToFile>${failsafe.redirectTestOutputToFile}</redirectTestOutputToFile>
+            <systemPropertyVariables>
+              <java.io.tmpdir>${project.build.directory}/failsafe-tmp</java.io.tmpdir>
+            </systemPropertyVariables>
+          </configuration>
+          <executions>
+            <execution>
+              <goals>
+                <goal>integration-test</goal>
+                <goal>verify</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.eclipse.sisu</groupId>
+          <artifactId>sisu-maven-plugin</artifactId>
+          <version>${sisuVersion}</version>
+          <executions>
+            <execution>
+              <id>generate-index</id>
+              <goals>
+                <goal>main-index</goal>
+              </goals>
+              <phase>process-classes</phase>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.rat</groupId>
+          <artifactId>apache-rat-plugin</artifactId>
+          <configuration>
+            <excludes combine.children="append">
+              <exclude>src/test/resources/**/*.ini</exclude>
+              <exclude>src/test/resources/**/*.txt</exclude>
+              <exclude>src/test/resources/ssl/*-store</exclude>
+              <exclude>.gitattributes</exclude>
+            </excludes>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>biz.aQute.bnd</groupId>
+          <artifactId>bnd-maven-plugin</artifactId>
+          <version>6.4.0</version>
+          <configuration>
+            <bnd><![CDATA[
+              Bundle-SymbolicName: org.apache.${replacestring;${project.artifactId};-;.}
+              Automatic-Module-Name: ${Bundle-SymbolicName}
+              # Export packages, but don't re-import own packages
+              -exportcontents: \
+                *.impl.*;x-internal:=true;-noimport:=true, \
+                *.internal.*;x-internal:=true;-noimport:=true, \
+                *;-noimport:=true
+              # Ensure only maven-resolver packages of exactly the same version are imported
+              # and mark optional Maven dependencies as optional.
+              mavenResolverVersion=${versionmask;===;${version_cleanup;${project.version}}}
+              Import-Package: \
+                org.eclipse.aether*;version="${range;[===,===];${mavenResolverVersion}}", \
+                javax.inject*;resolution:=optional, \
+                *
+              # Reproducible build
+              -noextraheaders: true
+              ${bnd.instructions.additions}
+              # Remove warnings (as we keep things simple)
+              -fixupmessages: \
+                'Unused Import-Package instructions';is:=ignore,\
+                'Unused Export-Package instructions';is:=ignore
+            ]]></bnd>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <configuration>
+            <archive>
+              <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+            </archive>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>biz.aQute.bnd</groupId>
+        <artifactId>bnd-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>bnd-process</id>
+            <goals>
+              <goal>bnd-process</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>animal-sniffer-maven-plugin</artifactId>
+        <version>1.23</version>
+        <configuration>
+          <signature>
+            <groupId>org.codehaus.mojo.signature</groupId>
+            <artifactId>java18</artifactId>
+            <version>1.0</version>
+          </signature>
+        </configuration>
+        <executions>
+          <execution>
+            <id>check-java-compat</id>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <phase>process-classes</phase>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>reporting</id>
+      <reporting>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <reportSets>
+              <reportSet>
+                <id>aggregate</id>
+                <reports>
+                  <report>aggregate</report>
+                </reports>
+                <inherited>false</inherited>
+              </reportSet>
+            </reportSets>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jxr-plugin</artifactId>
+            <reportSets>
+              <reportSet>
+                <id>aggregate</id>
+                <reports>
+                  <report>aggregate</report>
+                </reports>
+                <inherited>false</inherited>
+              </reportSet>
+            </reportSets>
+          </plugin>
+        </plugins>
+      </reporting>
+    </profile>
+    <profile>
+      <id>m2e</id>
+      <activation>
+        <property>
+          <name>m2e.version</name>
+        </property>
+      </activation>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>org.eclipse.m2e</groupId>
+              <artifactId>lifecycle-mapping</artifactId>
+              <version>1.0.0</version>
+              <configuration>
+                <lifecycleMappingMetadata>
+                  <pluginExecutions>
+                    <pluginExecution>
+                      <pluginExecutionFilter>
+                        <groupId>org.eclipse.sisu</groupId>
+                        <artifactId>sisu-maven-plugin</artifactId>
+                        <versionRange>[${sisuVersion},)</versionRange>
+                        <goals>
+                          <goal>test-index</goal>
+                          <goal>main-index</goal>
+                        </goals>
+                      </pluginExecutionFilter>
+                      <action>
+                        <ignore />
+                      </action>
+                    </pluginExecution>
+                  </pluginExecutions>
+                </lifecycleMappingMetadata>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
+    </profile>
+  </profiles>
+</project>

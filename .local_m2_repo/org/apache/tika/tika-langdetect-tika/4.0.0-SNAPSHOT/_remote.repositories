@@ -1,0 +1,4 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Fri Feb 13 09:42:48 EST 2026
+tika-langdetect-tika-4.0.0-SNAPSHOT.jar>=
+tika-langdetect-tika-4.0.0-SNAPSHOT.pom>=

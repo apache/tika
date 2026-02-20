@@ -1,0 +1,282 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Content Handler Requirements for Inference
+
+The `tika-inference` module's text embedding pipeline (`AbstractEmbeddingFilter` and its
+subclasses like `OpenAIEmbeddingFilter`) reads extracted text from the `tika:content`
+metadata field, splits it with the `MarkdownChunker`, and sends the resulting chunks
+to an embeddings endpoint.
+
+The `MarkdownChunker` is designed to split text at **markdown structural boundaries**
+(headings, paragraph breaks, list items, fenced code blocks). If the content in
+`tika:content` is plain text (the default), the chunker loses the ability to split
+intelligently at semantic boundaries — it falls back to splitting on blank lines and
+then on character limits, which produces lower-quality chunks.
+
+This means the inference pipeline **requires** (or at minimum strongly prefers) that
+the `content-handler-factory` be set to `MARKDOWN`.
+
+== The Problem
+
+The default `content-handler-factory` in Tika is:
+
+[source,json]
+----
+{
+  "content-handler-factory": {
+    "basic-content-handler-factory": {
+      "type": "TEXT",
+      "writeLimit": -1
+    }
+  }
+}
+----
+
+This produces `tika:content` as plain text — no headings, no structural markers.
+A user who adds an `OpenAIEmbeddingFilter` to their metadata filter chain but forgets
+to change the handler type to `MARKDOWN` will get working but poor-quality chunks.
+
+The system will not warn or error. It will silently degrade.
+
+== Options
+
+=== Option A: Validate at Load Time (TikaLoader Cross-Component Check)
+
+After `TikaLoader` loads both the `MetadataFilter` chain and the `ContentHandlerFactory`,
+perform a cross-component validation:
+
+* Walk the loaded `CompositeMetadataFilter` looking for any `AbstractEmbeddingFilter`
+* If found, check whether the `ContentHandlerFactory` is a `BasicContentHandlerFactory`
+  with `type == MARKDOWN`
+* If not, throw `TikaConfigException` with a clear message
+
+**Pros:**
+
+* Fail-fast — the user knows immediately at startup.
+* Impossible to run inference with plain text accidentally.
+
+**Cons:**
+
+* Adds cross-component coupling to `TikaLoader`.
+* `TikaLoader` today loads components independently — this would be the first
+  cross-component validation.
+* Makes it impossible to intentionally chunk plain text (some users may want that).
+
+=== Option B: Warn at Runtime via Metadata Field Check
+
+The content handler factory writes the handler type (e.g. `MARKDOWN`, `TEXT`) into
+`tika:content_handler_type` on the metadata object. The `AbstractEmbeddingFilter`
+reads that field and logs a `WARN` if it is not `MARKDOWN`:
+
+[source]
+----
+WARN - content-handler-factory type is 'TEXT' but the MarkdownChunker requires
+       MARKDOWN-formatted content for high-quality chunking. Set the
+       content-handler-factory type to MARKDOWN.
+----
+
+This is a deterministic check on a metadata field — no heuristic content inspection.
+
+**Pros:**
+
+* No coupling between loader and filters.
+* Exact — checks what handler was actually used, not what the content looks like.
+* Graceful degradation — still works, just warns.
+* Works even when the embedding filter is used outside of Pipes (e.g., via Java API).
+
+**Cons:**
+
+* Warning may be missed in log noise.
+* Doesn't prevent the problem, just reports it.
+
+=== Option C: Auto-Override the Handler Type
+
+When `TikaLoader` detects an `AbstractEmbeddingFilter` in the metadata filter chain,
+automatically switch the content handler to `MARKDOWN` if it's currently `TEXT`:
+
+[source,java]
+----
+if (hasEmbeddingFilter && handlerType == TEXT) {
+    LOG.info("Inference filter detected, upgrading handler type to MARKDOWN");
+    contentHandlerFactory = new BasicContentHandlerFactory(HANDLER_TYPE.MARKDOWN, writeLimit);
+}
+----
+
+**Pros:**
+
+* Zero-configuration for the common case — just add the embedding filter and it works.
+* User doesn't need to understand the handler type / chunker relationship.
+
+**Cons:**
+
+* Implicit behavior — the handler type changes without the user explicitly requesting it.
+* Could break existing workflows that depend on `TEXT` output in `tika:content`
+  (e.g., downstream consumers that don't expect markdown).
+* "Magic" behavior is generally discouraged in Tika's design philosophy.
+
+=== Option D: Default the Handler to MARKDOWN (Change the Global Default)
+
+Change `TikaLoader.loadContentHandlerFactory()` to default to `MARKDOWN` instead of `TEXT`
+when no `content-handler-factory` section is present:
+
+[source,java]
+----
+// Before:
+contentHandlerFactory = new BasicContentHandlerFactory(HANDLER_TYPE.TEXT, -1);
+
+// After:
+contentHandlerFactory = new BasicContentHandlerFactory(HANDLER_TYPE.MARKDOWN, -1);
+----
+
+**Pros:**
+
+* Simplest change — one line.
+* Markdown is a superset of plain text for most purposes.
+* Aligns the default with the inference use case, which is the primary new capability in 4.x.
+
+**Cons:**
+
+* Breaking change for users upgrading from 3.x who expect plain text.
+* Markdown output is slightly larger than plain text (heading markers, etc.).
+* Not all parsers produce equally good markdown.
+
+=== Option E: Require MARKDOWN via the Embedding Filter's Config Validation
+
+Have `AbstractEmbeddingFilter` implement `Initializable` and accept an optional
+`requiredHandlerType` config field (defaulting to `MARKDOWN`). During
+`checkInitialization()`, validate that the handler type matches:
+
+[source,java]
+----
+@Override
+public void checkInitialization(InitializableProblemHandler problemHandler)
+        throws TikaConfigException {
+    // This runs at load time, but the filter doesn't have access
+    // to the ContentHandlerFactory...
+}
+----
+
+**Problem:** `MetadataFilter` runs in the post-parse metadata filter chain and has no
+access to the `ContentHandlerFactory` or `ParseContext` at initialization time. This
+option would require architectural changes to pass the handler type through.
+
+**Verdict:** Not viable without broader refactoring.
+
+== Current Implementation (Option B + D)
+
+**We use a combination of Option B + Option D:**
+
+1. **Change the global default to `MARKDOWN`** (Option D). Markdown output is a strict
+   superset of plain text for search/indexing purposes. Users who explicitly need plain
+   text can still set `"type": "TEXT"` in their config. This change aligns the default
+   with the modern inference use case and is appropriate for a major version bump (4.x).
+
+2. **Record the handler type in metadata** — `BasicContentHandlerFactory` writes its
+   `HANDLER_TYPE` enum name to `tika:content_handler_type` on the metadata object.
+   This is set in both the CONCATENATE and RMETA code paths.
+
+3. **Runtime warning in `AbstractEmbeddingFilter`** (Option B) as a safety net.
+   The embedding filter reads `tika:content_handler_type` from metadata and logs a
+   warning if it is not `MARKDOWN`. This catches the case where a user explicitly
+   overrides the handler to `TEXT` but still configures an embedding filter.
+
+With this combination, the default configuration works out of the box for inference:
+
+[source,json]
+----
+{
+  "metadata-filters": {
+    "openai-embedding-filter": {
+      "baseUrl": "http://localhost:8000",
+      "model": "text-embedding-3-small"
+    }
+  }
+}
+----
+
+No need to also configure the handler type — it defaults to `MARKDOWN`.
+
+== Configuration Example (Full Inference Pipeline)
+
+[source,json]
+----
+{
+  "content-handler-factory": {
+    "basic-content-handler-factory": {
+      "type": "MARKDOWN",
+      "writeLimit": -1
+    }
+  },
+  "metadata-filters": {
+    "openai-embedding-filter": {
+      "baseUrl": "https://api.openai.com",
+      "model": "text-embedding-3-small",
+      "apiKey": "${OPENAI_API_KEY}",
+      "maxChunkChars": 1500,
+      "overlapChars": 200
+    }
+  },
+  "fetchers": {
+    "fs": {
+      "file-system-fetcher": {
+        "basePath": "/data/documents"
+      }
+    }
+  },
+  "emitters": {
+    "es": {
+      "elasticsearch-emitter": {
+        "urls": ["http://localhost:9200"],
+        "index": "documents"
+      }
+    }
+  },
+  "pipes-iterator": {
+    "file-system-pipes-iterator": {
+      "basePath": "/data/documents",
+      "fetcherId": "fs",
+      "emitterId": "es"
+    }
+  },
+  "pipes": {
+    "parseMode": "CONCATENATE",
+    "numClients": 4
+  }
+}
+----
+
+NOTE: `parseMode` should be `CONCATENATE` (or `RMETA`) for inference. `CONTENT_ONLY`
+skips metadata filters entirely, so the embedding filter would never run.
+
+== Why Markdown?
+
+The `MarkdownChunker` splits at these structural boundaries (in priority order):
+
+1. **Headings** (`# H1`, `## H2`, etc.) — the strongest semantic boundary
+2. **Thematic breaks** (`---`) — section separators
+3. **Blank lines** — paragraph boundaries
+4. **Sentence endings** — last resort before hard character split
+
+With plain text, only blank lines and sentence endings are available. This means:
+
+* A 10-page PDF with headings will chunk at heading boundaries with markdown, but
+  at arbitrary paragraph breaks with plain text.
+* Tables, code blocks, and lists retain their structure in markdown, improving
+  embedding quality.
+* The heading text itself appears in the chunk, giving the embedding model context
+  about what the chunk is about.

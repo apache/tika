@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <artifactId>maven-parent</artifactId>
+    <groupId>org.apache.maven</groupId>
+    <version>33</version>
+    <relativePath>../pom/maven/pom.xml</relativePath>
+  </parent>
+
+  <groupId>org.apache.maven.plugin-tools</groupId>
+  <artifactId>maven-plugin-tools</artifactId>
+  <version>3.6.0</version>
+  <packaging>pom</packaging>
+
+  <name>Maven Plugin Tools</name>
+  <description>
+    The Maven Plugin Tools contains the necessary tools to be able to produce Maven Plugins in scripting languages
+    and to generate rebarbative content like descriptor, help and documentation.
+  </description>
+  <url>https://maven.apache.org/plugin-tools</url>
+  <inceptionYear>2004</inceptionYear>
+
+  <contributors>
+    <contributor>
+      <name>Muminur Choudhury</name>
+    </contributor>
+    <contributor>
+      <name>Tinguaro Barreno</name>
+    </contributor>
+    <contributor>
+      <name>James Phillpotts</name>
+    </contributor>
+    <contributor>
+      <name>Slawomir Jaranowski</name>
+    </contributor>
+    <contributor>
+      <name>Mikolaj Izdebski</name>
+    </contributor>
+  </contributors>
+
+  <modules>
+    <module>maven-plugin-tools-generators</module>
+    <module>maven-plugin-tools-api</module>
+    <module>maven-plugin-tools-java</module>
+    <module>maven-plugin-tools-annotations</module>
+    <module>maven-plugin-annotations</module>
+    <module>maven-script</module>
+    <module>maven-plugin-plugin</module><!-- keep at end since ITs require every extractors -->
+  </modules>
+
+  <scm>
+    <connection>scm:git:https://gitbox.apache.org/repos/asf/maven-plugin-tools.git</connection>
+    <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/maven-plugin-tools.git</developerConnection>
+    <url>https://github.com/apache/maven-plugin-tools/tree/${project.scm.tag}</url>
+    <tag>maven-plugin-tools-3.6.0</tag>
+  </scm>
+  <issueManagement>
+    <system>jira</system>
+    <url>https://issues.apache.org/jira/browse/MPLUGIN</url>
+  </issueManagement>
+  <ciManagement>
+    <system>Jenkins</system>
+    <url>https://builds.apache.org/job/maven-plugin-tools/</url>
+  </ciManagement>
+  <distributionManagement>
+    <site>
+      <id>apache.website</id>
+      <url>scm:svn:https://svn.apache.org/repos/asf/maven/website/components/${maven.site.path}</url>
+    </site>
+  </distributionManagement>
+
+  <properties>
+    <surefire.version>2.22.0</surefire.version>
+    <javaVersion>7</javaVersion>
+    <pluginTestingHarnessVersion>1.2</pluginTestingHarnessVersion>
+    <mavenVersion>3.0</mavenVersion>
+    <antVersion>1.7.1</antVersion>
+    <mavenInvokerPluginVersion>3.0.1</mavenInvokerPluginVersion>
+    <maven.site.path>plugin-tools-archives/plugin-tools-LATEST</maven.site.path>
+    <asmVersion>7.0</asmVersion>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- maven -->
+      <dependency>
+        <groupId>org.apache.maven.plugin-tools</groupId>
+        <artifactId>maven-plugin-tools-api</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.plugin-tools</groupId>
+        <artifactId>maven-plugin-tools-generators</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.plugin-tools</groupId>
+        <artifactId>maven-plugin-tools-model</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.plugin-tools</groupId>
+        <artifactId>maven-plugin-tools-java</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.plugin-tools</groupId>
+        <artifactId>maven-plugin-tools-annotations</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.plugin-tools</groupId>
+        <artifactId>maven-plugin-annotations</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.plugin-tools</groupId>
+        <artifactId>maven-plugin-tools-beanshell</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-model</artifactId>
+        <version>${mavenVersion}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-plugin-api</artifactId>
+        <version>${mavenVersion}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-compat</artifactId>
+        <version>${mavenVersion}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-core</artifactId>
+        <version>${mavenVersion}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-artifact</artifactId>
+        <version>${mavenVersion}</version>
+      </dependency>
+
+      <!-- plexus -->
+      <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-utils</artifactId>
+        <version>3.0.20</version>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-component-annotations</artifactId>
+        <version>1.5.5</version>
+        <exclusions>
+          <exclusion>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-archiver</artifactId>
+        <version>3.6.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-velocity</artifactId>
+        <version>1.1.8</version>
+        <exclusions>
+          <exclusion>
+            <groupId>velocity</groupId>
+            <artifactId>velocity</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+
+      <!-- other -->
+      <dependency>
+        <groupId>org.apache.velocity</groupId>
+        <artifactId>velocity</artifactId>
+        <version>1.7</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.thoughtworks.qdox</groupId>
+        <artifactId>qdox</artifactId>
+        <version>2.0-M5</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.ow2.asm</groupId>
+        <artifactId>asm</artifactId>
+        <version>${asmVersion}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.ow2.asm</groupId>
+        <artifactId>asm-commons</artifactId>
+        <version>${asmVersion}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.maven.plugin-testing</groupId>
+        <artifactId>maven-plugin-testing-harness</artifactId>
+        <version>${pluginTestingHarnessVersion}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.easymock</groupId>
+        <artifactId>easymock</artifactId>
+        <version>3.4</version>
+        <scope>test</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+  <dependencies>
+    <!-- misc -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>3.8.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.easytesting</groupId>
+      <artifactId>fest-assert</artifactId>
+      <version>1.4</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <configuration>
+            <!-- modello generate java sources with errors so do not fail -->
+            <failOnError>false</failOnError>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-site-plugin</artifactId>
+          <version>3.7.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-release-plugin</artifactId>
+          <configuration>
+            <tagBase>https://svn.apache.org/repos/asf/maven/plugin-tools/tags</tagBase>
+            <autoVersionSubmodules>true</autoVersionSubmodules>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.plexus</groupId>
+          <artifactId>plexus-component-metadata</artifactId>
+          <version>1.7</version>
+          <executions>
+            <execution>
+              <goals>
+                <goal>generate-metadata</goal>
+                <goal>generate-test-metadata</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+    <plugins>
+      <plugin>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>enforce-bytecode-version</id>
+            <configuration>
+              <rules>
+                <enforceBytecodeVersion>
+                  <excludes>
+                    <!-- ASM supports Java 1.5+, see https://asm.ow2.io/faq.html#Q14 -->
+                    <exclude>org.ow2.asm:*</exclude>
+                  </excludes>
+                </enforceBytecodeVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+        <dependencies>
+          <dependency>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>extra-enforcer-rules</artifactId>
+            <version>1.0-beta-5</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>reporting</id>
+      <reporting>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <linksource>true</linksource>
+              <groups>
+                <group>
+                  <title>Plugin Tools' Maven Plugin Plugin</title>
+                  <packages>org.apache.maven.plugin.plugin*</packages>
+                </group>
+                <group>
+                  <title>Plugin Tools Extractor API</title>
+                  <packages>org.apache.maven.tools.plugin:org.apache.maven.tools.plugin.extractor:org.apache.maven.tools.plugin.scanner:org.apache.maven.tools.plugin.util</packages>
+                </group>
+                <group>
+                  <title>Plugin Tools Generators</title>
+                  <packages>org.apache.maven.tools.plugin.generator</packages>
+                </group>
+                <group>
+                  <title>Java Annotations Support: Annotations + Extractor</title>
+                  <packages>org.apache.maven.plugins.annotations:org.apache.maven.tools.plugin.extractor.annotations*</packages>
+                </group>
+                <group>
+                  <title>Javadoc Support: Javadoc Tags Extractor + Taglets</title>
+                  <packages>org.apache.maven.tools.plugin.extractor.javadoc:org.apache.maven.tools.plugin.javadoc</packages>
+                </group>
+                <group>
+                  <title>Beanshell Support: Extractor + Runtime</title>
+                  <packages>org.apache.maven.tools.plugin.extractor.beanshell:org.apache.maven.script.beanshell</packages>
+                </group>
+                <group>
+                  <title>Apache Ant Support : Metadata + Extractor + Runtime</title>
+                  <packages>org.apache.maven.tools.plugin.extractor.ant:org.apache.maven.script.ant:org.apache.maven.tools.plugin.extractor.model*</packages>
+                </group>
+              </groups>
+            </configuration>
+            <reportSets>
+              <reportSet>
+                <id>non-aggregate</id>
+                <reports>
+                  <report>javadoc</report>
+                </reports>
+              </reportSet>
+              <reportSet>
+                <id>aggregate</id>
+                <reports>
+                  <report>aggregate</report>
+                </reports>
+              </reportSet>
+            </reportSets>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jxr-plugin</artifactId>
+            <reportSets>
+              <reportSet>
+                <id>non-aggregate</id>
+                <reports>
+                  <report>jxr</report>
+                </reports>
+              </reportSet>
+              <reportSet>
+                <id>aggregate</id>
+                <reports>
+                  <report>aggregate</report>
+                </reports>
+              </reportSet>
+            </reportSets>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <reportSets>
+              <reportSet>
+                <id>non-aggregate</id>
+                <reports>
+                  <report>checkstyle</report>
+                </reports>
+              </reportSet>
+              <reportSet>
+                <id>aggregate</id>
+                <inherited>false</inherited>
+                <reports>
+                  <report>checkstyle-aggregate</report>
+                </reports>
+              </reportSet>
+            </reportSets>
+          </plugin>
+        </plugins>
+      </reporting>
+    </profile>
+  </profiles>
+</project>

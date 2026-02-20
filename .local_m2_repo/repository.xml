@@ -1,0 +1,175 @@
+<repository lastmodified='20260213085850.408'>
+  <resource id='org.apache.tika.core/4.0.0.SNAPSHOT' symbolicname='org.apache.tika.core' presentationname='Apache Tika core' uri='org/apache/tika/tika-core/4.0.0-SNAPSHOT/tika-core-4.0.0-SNAPSHOT.jar' version='4.0.0.SNAPSHOT'>
+    <description>This is the core Apache Tika™ toolkit library from which all other modules inherit functionality. It    also    includes the core facades for the Tika API.</description>
+    <size>611757</size>
+    <documentation>https://tika.apache.org/</documentation>
+    <license>https://www.apache.org/licenses/LICENSE-2.0.txt</license>
+    <capability name='bundle'>
+      <p n='symbolicname' v='org.apache.tika.core'/>
+      <p n='presentationname' v='Apache Tika core'/>
+      <p n='version' t='version' v='4.0.0.SNAPSHOT'/>
+      <p n='manifestversion' v='2'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika'/>
+      <p n='version' t='version' v='4.0.0'/>
+      <p n='uses:' v='org.apache.tika.detect,org.apache.tika.exception,org.apache.tika.language.translate,org.apache.tika.metadata,org.apache.tika.parser'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika.annotation'/>
+      <p n='version' t='version' v='4.0.0'/>
+      <p n='uses:' v='javax.annotation.processing,javax.lang.model,javax.lang.model.element'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika.concurrent'/>
+      <p n='version' t='version' v='4.0.0'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika.config'/>
+      <p n='version' t='version' v='4.0.0'/>
+      <p n='uses:' v='org.apache.tika.exception,org.apache.tika.parser,org.osgi.framework,org.osgi.util.tracker'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika.detect'/>
+      <p n='version' t='version' v='4.0.0'/>
+      <p n='uses:' v='javax.xml.namespace,org.apache.tika.config,org.apache.tika.exception,org.apache.tika.io,org.apache.tika.metadata,org.apache.tika.mime,org.apache.tika.parser,org.xml.sax'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika.digest'/>
+      <p n='version' t='version' v='4.0.0'/>
+      <p n='uses:' v='org.apache.tika.io,org.apache.tika.metadata,org.apache.tika.parser'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika.embedder'/>
+      <p n='version' t='version' v='4.0.0'/>
+      <p n='uses:' v='org.apache.tika.exception,org.apache.tika.metadata,org.apache.tika.mime,org.apache.tika.parser'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika.exception'/>
+      <p n='version' t='version' v='4.0.0'/>
+      <p n='uses:' v='org.xml.sax'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika.extractor'/>
+      <p n='version' t='version' v='4.0.0'/>
+      <p n='uses:' v='org.apache.tika.detect,org.apache.tika.exception,org.apache.tika.io,org.apache.tika.metadata,org.apache.tika.mime,org.apache.tika.parser,org.xml.sax'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika.io'/>
+      <p n='version' t='version' v='4.0.0'/>
+      <p n='uses:' v='org.apache.commons.io.input,org.apache.tika.exception,org.apache.tika.metadata,org.apache.tika.mime'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika.language.detect'/>
+      <p n='version' t='version' v='4.0.0'/>
+      <p n='uses:' v='org.apache.tika.config,org.apache.tika.sax'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika.language.translate'/>
+      <p n='version' t='version' v='4.0.0'/>
+      <p n='uses:' v='org.apache.tika.config,org.apache.tika.exception'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika.metadata'/>
+      <p n='version' t='version' v='4.0.0'/>
+      <p n='uses:' v='org.apache.tika.metadata.writefilter,org.apache.tika.parser'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika.metadata.filter'/>
+      <p n='version' t='version' v='4.0.0'/>
+      <p n='uses:' v='org.apache.tika.config,org.apache.tika.exception,org.apache.tika.metadata'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika.metadata.writefilter'/>
+      <p n='version' t='version' v='4.0.0'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika.mime'/>
+      <p n='version' t='version' v='4.0.0'/>
+      <p n='uses:' v='org.apache.tika.detect,org.apache.tika.exception,org.apache.tika.io,org.apache.tika.metadata,org.apache.tika.parser,org.w3c.dom,org.xml.sax,org.xml.sax.helpers'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika.parser'/>
+      <p n='version' t='version' v='4.0.0'/>
+      <p n='uses:' v='org.apache.tika.config,org.apache.tika.detect,org.apache.tika.exception,org.apache.tika.io,org.apache.tika.metadata,org.apache.tika.mime,org.apache.tika.renderer,org.apache.tika.sax,org.xml.sax'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika.parser.external'/>
+      <p n='version' t='version' v='4.0.0'/>
+      <p n='uses:' v='org.apache.tika.config,org.apache.tika.exception,org.apache.tika.io,org.apache.tika.metadata,org.apache.tika.mime,org.apache.tika.parser,org.w3c.dom,org.xml.sax'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika.parser.external2'/>
+      <p n='version' t='version' v='4.0.0'/>
+      <p n='uses:' v='org.apache.tika.config,org.apache.tika.exception,org.apache.tika.io,org.apache.tika.metadata,org.apache.tika.mime,org.apache.tika.parser,org.xml.sax'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika.parser.multiple'/>
+      <p n='version' t='version' v='4.0.0'/>
+      <p n='uses:' v='org.apache.tika.exception,org.apache.tika.io,org.apache.tika.metadata,org.apache.tika.mime,org.apache.tika.parser,org.apache.tika.sax,org.xml.sax'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika.renderer'/>
+      <p n='version' t='version' v='4.0.0'/>
+      <p n='uses:' v='org.apache.tika.config,org.apache.tika.exception,org.apache.tika.io,org.apache.tika.metadata,org.apache.tika.mime,org.apache.tika.parser'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika.sax'/>
+      <p n='version' t='version' v='4.0.0'/>
+      <p n='uses:' v='javax.xml.namespace,org.apache.tika.exception,org.apache.tika.io,org.apache.tika.metadata,org.apache.tika.parser,org.xml.sax,org.xml.sax.helpers'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika.sax.xpath'/>
+      <p n='version' t='version' v='4.0.0'/>
+      <p n='uses:' v='org.apache.tika.sax,org.xml.sax'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='org.apache.tika.utils'/>
+      <p n='version' t='version' v='4.0.0'/>
+      <p n='uses:' v='javax.xml.parsers,javax.xml.stream,javax.xml.transform,javax.xml.transform.sax,org.apache.tika.config,org.apache.tika.exception,org.apache.tika.metadata,org.apache.tika.parser,org.w3c.dom,org.xml.sax'/>
+    </capability>
+    <require name='package' filter='(&amp;(package=org.apache.xerces.util))' extend='false' multiple='false' optional='true'>Import package org.apache.xerces.util;resolution:=optional</require>
+    <require name='package' filter='(&amp;(package=org.apache.commons.io)(version&gt;=2.0.0)(!(version&gt;=3.0.0)))' extend='false' multiple='false' optional='false'>Import package org.apache.commons.io;version="[2,3)"</require>
+    <require name='package' filter='(&amp;(package=org.apache.commons.io.input)(version&gt;=2.0.0)(!(version&gt;=3.0.0)))' extend='false' multiple='false' optional='false'>Import package org.apache.commons.io.input;version="[2,3)"</require>
+    <require name='package' filter='(&amp;(package=org.apache.commons.io.output)(version&gt;=2.0.0)(!(version&gt;=3.0.0)))' extend='false' multiple='false' optional='false'>Import package org.apache.commons.io.output;version="[2,3)"</require>
+    <require name='package' filter='(&amp;(package=com.fasterxml.jackson.databind))' extend='false' multiple='false' optional='false'>Import package com.fasterxml.jackson.databind</require>
+    <require name='package' filter='(&amp;(package=javax.annotation.processing))' extend='false' multiple='false' optional='false'>Import package javax.annotation.processing</require>
+    <require name='package' filter='(&amp;(package=javax.crypto))' extend='false' multiple='false' optional='false'>Import package javax.crypto</require>
+    <require name='package' filter='(&amp;(package=javax.lang.model))' extend='false' multiple='false' optional='false'>Import package javax.lang.model</require>
+    <require name='package' filter='(&amp;(package=javax.lang.model.element))' extend='false' multiple='false' optional='false'>Import package javax.lang.model.element</require>
+    <require name='package' filter='(&amp;(package=javax.lang.model.type))' extend='false' multiple='false' optional='false'>Import package javax.lang.model.type</require>
+    <require name='package' filter='(&amp;(package=javax.tools))' extend='false' multiple='false' optional='false'>Import package javax.tools</require>
+    <require name='package' filter='(&amp;(package=javax.xml.namespace))' extend='false' multiple='false' optional='false'>Import package javax.xml.namespace</require>
+    <require name='package' filter='(&amp;(package=javax.xml.parsers))' extend='false' multiple='false' optional='false'>Import package javax.xml.parsers</require>
+    <require name='package' filter='(&amp;(package=javax.xml.stream))' extend='false' multiple='false' optional='false'>Import package javax.xml.stream</require>
+    <require name='package' filter='(&amp;(package=javax.xml.transform))' extend='false' multiple='false' optional='false'>Import package javax.xml.transform</require>
+    <require name='package' filter='(&amp;(package=javax.xml.transform.dom))' extend='false' multiple='false' optional='false'>Import package javax.xml.transform.dom</require>
+    <require name='package' filter='(&amp;(package=javax.xml.transform.sax))' extend='false' multiple='false' optional='false'>Import package javax.xml.transform.sax</require>
+    <require name='package' filter='(&amp;(package=org.apache.tika)(version&gt;=4.0.0)(!(version&gt;=5.0.0)))' extend='false' multiple='false' optional='false'>Import package org.apache.tika;version="[4.0,5)"</require>
+    <require name='package' filter='(&amp;(package=org.apache.tika.config)(version&gt;=4.0.0)(!(version&gt;=5.0.0)))' extend='false' multiple='false' optional='false'>Import package org.apache.tika.config;version="[4.0,5)"</require>
+    <require name='package' filter='(&amp;(package=org.apache.tika.config.loader))' extend='false' multiple='false' optional='false'>Import package org.apache.tika.config.loader</require>
+    <require name='package' filter='(&amp;(package=org.apache.tika.detect)(version&gt;=4.0.0)(!(version&gt;=5.0.0)))' extend='false' multiple='false' optional='false'>Import package org.apache.tika.detect;version="[4.0,5)"</require>
+    <require name='package' filter='(&amp;(package=org.apache.tika.digest)(version&gt;=4.0.0)(!(version&gt;=5.0.0)))' extend='false' multiple='false' optional='false'>Import package org.apache.tika.digest;version="[4.0,5)"</require>
+    <require name='package' filter='(&amp;(package=org.apache.tika.exception)(version&gt;=4.0.0)(!(version&gt;=5.0.0)))' extend='false' multiple='false' optional='false'>Import package org.apache.tika.exception;version="[4.0,5)"</require>
+    <require name='package' filter='(&amp;(package=org.apache.tika.extractor)(version&gt;=4.0.0)(!(version&gt;=5.0.0)))' extend='false' multiple='false' optional='false'>Import package org.apache.tika.extractor;version="[4.0,5)"</require>
+    <require name='package' filter='(&amp;(package=org.apache.tika.io)(version&gt;=4.0.0)(!(version&gt;=5.0.0)))' extend='false' multiple='false' optional='false'>Import package org.apache.tika.io;version="[4.0,5)"</require>
+    <require name='package' filter='(&amp;(package=org.apache.tika.language.translate)(version&gt;=4.0.0)(!(version&gt;=5.0.0)))' extend='false' multiple='false' optional='false'>Import package org.apache.tika.language.translate;version="[4.0,5)"</require>
+    <require name='package' filter='(&amp;(package=org.apache.tika.metadata)(version&gt;=4.0.0)(!(version&gt;=5.0.0)))' extend='false' multiple='false' optional='false'>Import package org.apache.tika.metadata;version="[4.0,5)"</require>
+    <require name='package' filter='(&amp;(package=org.apache.tika.metadata.writefilter)(version&gt;=4.0.0)(!(version&gt;=5.0.0)))' extend='false' multiple='false' optional='false'>Import package org.apache.tika.metadata.writefilter;version="[4.0,5)"</require>
+    <require name='package' filter='(&amp;(package=org.apache.tika.mime)(version&gt;=4.0.0)(!(version&gt;=5.0.0)))' extend='false' multiple='false' optional='false'>Import package org.apache.tika.mime;version="[4.0,5)"</require>
+    <require name='package' filter='(&amp;(package=org.apache.tika.parser)(version&gt;=4.0.0)(!(version&gt;=5.0.0)))' extend='false' multiple='false' optional='false'>Import package org.apache.tika.parser;version="[4.0,5)"</require>
+    <require name='package' filter='(&amp;(package=org.apache.tika.parser.external)(version&gt;=4.0.0)(!(version&gt;=5.0.0)))' extend='false' multiple='false' optional='false'>Import package org.apache.tika.parser.external;version="[4.0,5)"</require>
+    <require name='package' filter='(&amp;(package=org.apache.tika.parser.multiple)(version&gt;=4.0.0)(!(version&gt;=5.0.0)))' extend='false' multiple='false' optional='false'>Import package org.apache.tika.parser.multiple;version="[4.0,5)"</require>
+    <require name='package' filter='(&amp;(package=org.apache.tika.renderer)(version&gt;=4.0.0)(!(version&gt;=5.0.0)))' extend='false' multiple='false' optional='false'>Import package org.apache.tika.renderer;version="[4.0,5)"</require>
+    <require name='package' filter='(&amp;(package=org.apache.tika.sax)(version&gt;=4.0.0)(!(version&gt;=5.0.0)))' extend='false' multiple='false' optional='false'>Import package org.apache.tika.sax;version="[4.0,5)"</require>
+    <require name='package' filter='(&amp;(package=org.apache.tika.sax.xpath)(version&gt;=4.0.0)(!(version&gt;=5.0.0)))' extend='false' multiple='false' optional='false'>Import package org.apache.tika.sax.xpath;version="[4.0,5)"</require>
+    <require name='package' filter='(&amp;(package=org.apache.tika.serialization))' extend='false' multiple='false' optional='false'>Import package org.apache.tika.serialization</require>
+    <require name='package' filter='(&amp;(package=org.apache.tika.utils)(version&gt;=4.0.0)(!(version&gt;=5.0.0)))' extend='false' multiple='false' optional='false'>Import package org.apache.tika.utils;version="[4.0,5)"</require>
+    <require name='package' filter='(&amp;(package=org.osgi.framework)(version&gt;=1.8.0)(!(version&gt;=2.0.0)))' extend='false' multiple='false' optional='false'>Import package org.osgi.framework;version="[1.8,2)"</require>
+    <require name='package' filter='(&amp;(package=org.osgi.util.tracker)(version&gt;=1.5.0)(!(version&gt;=2.0.0)))' extend='false' multiple='false' optional='false'>Import package org.osgi.util.tracker;version="[1.5,2)"</require>
+    <require name='package' filter='(&amp;(package=org.slf4j)(version&gt;=2.0.0)(!(version&gt;=3.0.0)))' extend='false' multiple='false' optional='false'>Import package org.slf4j;version="[2.0,3)"</require>
+    <require name='package' filter='(&amp;(package=org.w3c.dom))' extend='false' multiple='false' optional='false'>Import package org.w3c.dom</require>
+    <require name='package' filter='(&amp;(package=org.xml.sax))' extend='false' multiple='false' optional='false'>Import package org.xml.sax</require>
+    <require name='package' filter='(&amp;(package=org.xml.sax.helpers))' extend='false' multiple='false' optional='false'>Import package org.xml.sax.helpers</require>
+  </resource>
+</repository>

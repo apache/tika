@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>biz.aQute.bnd</groupId>
+  <artifactId>biz.aQute.bnd.util</artifactId>
+  <version>7.0.0</version>
+  <description>Util classes</description>
+  <name>biz.aQute.bnd.util</name>
+  <url>https://bnd.bndtools.org/</url>
+  <organization>
+    <name>Bndtools</name>
+    <url>https://bndtools.org/</url>
+  </organization>
+  <licenses>
+    <license>
+      <name>(Apache-2.0 OR EPL-2.0)</name>
+      <url>https://opensource.org/licenses/Apache-2.0,https://opensource.org/licenses/EPL-2.0</url>
+      <distribution>repo</distribution>
+      <comments>This program and the accompanying materials are made available under the terms of the Apache License, Version 2.0, or the Eclipse Public License 2.0.</comments>
+    </license>
+  </licenses>
+  <scm>
+    <url>https://github.com/bndtools/bnd</url>
+    <connection>scm:git:https://github.com/bndtools/bnd.git</connection>
+    <developerConnection>scm:git:git@github.com:bndtools/bnd.git</developerConnection>
+    <tag>7.0.0</tag>
+  </scm>
+  <developers>
+    <developer>
+      <id>pkriens</id>
+      <email>Peter.Kriens@aQute.biz</email>
+      <name>Peter Kriens</name>
+      <organization>Bndtools</organization>
+      <organizationUrl>https://github.com/bndtools</organizationUrl>
+      <roles>
+        <role>architect</role>
+        <role>developer</role>
+      </roles>
+      <timezone>1</timezone>
+    </developer>
+    <developer>
+      <id>bjhargrave</id>
+      <name>BJ Hargrave</name>
+      <email>bj@hargrave.dev</email>
+      <url>https://github.com/bjhargrave</url>
+      <organization>IBM</organization>
+      <organizationUrl>https://developer.ibm.com</organizationUrl>
+      <roles>
+        <role>developer</role>
+      </roles>
+      <timezone>America/New_York</timezone>
+    </developer>
+    <developer>
+      <id>rotty3000</id>
+      <name>Ray Augé</name>
+      <email>raymond.auge@liferay.com</email>
+      <url>https://rotty3000.github.io</url>
+      <organization>Liferay Inc.</organization>
+      <organizationUrl>https://www.liferay.com</organizationUrl>
+      <roles>
+        <role>developer</role>
+      </roles>
+      <timezone>America/New_York</timezone>
+    </developer>
+  </developers>
+  <dependencies>
+    <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>osgi.annotation</artifactId>
+      <version>8.1.0</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+</project>
