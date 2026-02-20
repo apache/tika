@@ -26,6 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.language.detect.LanguageConfidence;
 import org.apache.tika.language.detect.LanguageDetector;
@@ -50,8 +53,11 @@ import org.apache.tika.language.detect.LanguageResult;
  * keeping the implementation simple and predictable.
  * </p>
  */
-@TikaComponent
+@TikaComponent(name = "charsoup-language-detector")
 public class CharSoupLanguageDetector extends LanguageDetector {
+
+    private static final Logger LOG =
+            LoggerFactory.getLogger(CharSoupLanguageDetector.class);
 
     private static final String MODEL_RESOURCE =
             "/org/apache/tika/langdetect/charsoup/langdetect.bin";
@@ -267,6 +273,126 @@ public class CharSoupLanguageDetector extends LanguageDetector {
         return lastEntropy;
     }
 
+    /**
+     * Minimum confidence (inverse logit of the max logit) for a candidate to
+     * be considered a genuine language match. If no candidate exceeds this
+     * threshold, the comparison is inconclusive and {@code null} is returned.
+     * <p>
+     * 0.88 corresponds to a raw logit of ~2.0. Typical values:
+     * <ul>
+     *   <li>Arabic (windows-1256): 0.9999994 (logit +14.3)</li>
+     *   <li>UTF-8 garbled: 0.97 (logit +3.5)</li>
+     *   <li>EBCDIC garbage: 0.79 (logit +1.3) — below threshold</li>
+     *   <li>Short English: 0.025 (logit -3.7) — well below threshold</li>
+     * </ul>
+     */
+    private static final float MIN_CONFIDENCE_THRESHOLD = 0.88f;
+
+    /**
+     * Maximum ratio of junk characters (U+FFFD replacement chars + C0/C1
+     * control chars) allowed in a candidate text. Candidates exceeding
+     * this ratio are discarded before language scoring — they are almost
+     * certainly decoded with the wrong charset.
+     * <p>
+     * Typical values:
+     * <ul>
+     *   <li>Correct decoding: 0.00</li>
+     *   <li>UTF-8 decoding of windows-1256 bytes: 0.80</li>
+     *   <li>IBM500 decoding of ASCII bytes: 0.23</li>
+     * </ul>
+     */
+    private static final float MAX_JUNK_RATIO = 0.10f;
+
+    /**
+     * Compare multiple candidate texts and return the key of the one with
+     * the strongest language signal. Candidates with a high ratio of
+     * replacement or control characters are discarded first. Remaining
+     * candidates are scored using the inverse logit (sigmoid) of the
+     * model's maximum pre-softmax logit.
+     * <p>
+     * Returns {@code null} if no candidate exceeds the minimum confidence
+     * threshold, indicating the comparison is inconclusive.
+     *
+     * @param candidates map of arbitrary keys to candidate text strings
+     * @param <K>        key type (e.g., {@link java.nio.charset.Charset})
+     * @return the key whose text has the strongest language signal,
+     *         or {@code null} if the map is empty or no candidate is
+     *         confident enough
+     */
+    public <K> K compareLanguageSignal(Map<K, String> candidates) {
+        if (candidates.isEmpty()) {
+            return null;
+        }
+
+        float bestConfidence = Float.NEGATIVE_INFINITY;
+        K bestKey = null;
+
+        for (Map.Entry<K, String> entry : candidates.entrySet()) {
+            float junkRatio = junkRatio(entry.getValue());
+            if (junkRatio > MAX_JUNK_RATIO) {
+                LOG.debug("compareLanguageSignal: {} -> skipped (junkRatio={})",
+                        entry.getKey(), junkRatio);
+                continue;
+            }
+
+            int[] features = EXTRACTOR.extract(entry.getValue());
+            float[] logits = MODEL.predictLogits(features);
+            float confidence = sigmoid(max(logits));
+
+            LOG.debug("compareLanguageSignal: {} -> confidence={}",
+                    entry.getKey(), confidence);
+
+            if (confidence > bestConfidence) {
+                bestConfidence = confidence;
+                bestKey = entry.getKey();
+            }
+        }
+
+        if (bestConfidence < MIN_CONFIDENCE_THRESHOLD) {
+            LOG.debug("compareLanguageSignal: inconclusive (bestConfidence={} < {})",
+                    bestConfidence, MIN_CONFIDENCE_THRESHOLD);
+            return null;
+        }
+
+        return bestKey;
+    }
+
+    /**
+     * Ratio of junk characters (U+FFFD replacement + ISO control + C1
+     * control range U+0080-U+009F) to total characters. High values
+     * indicate a wrong-charset decoding.
+     */
+    static float junkRatio(String text) {
+        if (text == null || text.isEmpty()) {
+            return 0f;
+        }
+        int junk = 0;
+        int total = 0;
+        for (int i = 0; i < text.length(); ) {
+            int cp = text.codePointAt(i);
+            i += Character.charCount(cp);
+            total++;
+            if (cp == 0xFFFD || Character.isISOControl(cp)) {
+                junk++;
+            }
+        }
+        return total == 0 ? 0f : (float) junk / total;
+    }
+
+    private static float sigmoid(float x) {
+        return 1.0f / (1.0f + (float) Math.exp(-x));
+    }
+
+    private static float max(float[] arr) {
+        float m = Float.NEGATIVE_INFINITY;
+        for (float v : arr) {
+            if (v > m) {
+                m = v;
+            }
+        }
+        return m;
+    }
+
     @Override
     public LanguageDetector loadModels() throws IOException {
         // Models are loaded statically; nothing to do.
@@ -368,24 +494,45 @@ public class CharSoupLanguageDetector extends LanguageDetector {
     }
 
     /**
+     * Maximum meaningful entropy (bits) for normalizing confidenceScore.
+     * log2(numClasses) for ~165 classes is ~7.4. We cap at 7.0 so that
+     * even moderately uncertain text gets a near-zero confidenceScore.
+     */
+    private static final float MAX_ENTROPY = 7.0f;
+
+    /**
+     * Convert entropy to a 0-1 confidence score. Lower entropy = higher confidence.
+     * Uses 1/(1+entropy) to preserve discrimination even at very low entropies,
+     * unlike a linear mapping which saturates at 1.0 too quickly.
+     */
+    private static float entropyToConfidenceScore(float entropy) {
+        return 1.0f / (1.0f + entropy);
+    }
+
+    /**
      * Build sorted LanguageResult list from raw probabilities.
      */
     private List<LanguageResult> buildResults(float[] probs) {
         // Compute entropy on collapsed distribution
         float[] collapsed = collapseGroups(probs, GROUP_INDICES);
         lastEntropy = CharSoupModel.entropy(collapsed);
+        float confScore = entropyToConfidenceScore(lastEntropy);
 
         // Build results from raw probabilities sorted by probability descending
         List<LanguageResult> results = new ArrayList<>(MODEL.getNumClasses());
         for (int c = 0; c < MODEL.getNumClasses(); c++) {
             results.add(new LanguageResult(
-                    MODEL.getLabel(c), toConfidence(probs[c], lastEntropy), probs[c]));
+                    MODEL.getLabel(c), toConfidence(probs[c], lastEntropy),
+                    probs[c], confScore));
         }
         results.sort((a, b) -> Float.compare(b.getRawScore(), a.getRawScore()));
 
-        // If top score is below NONE threshold, return NULL
+        // If top score is below NONE threshold, return a NULL-like result
+        // but preserve the confidenceScore so encoding arbitration can
+        // still compare across candidate decodings.
         if (results.get(0).getConfidence() == LanguageConfidence.NONE) {
-            return Collections.singletonList(LanguageResult.NULL);
+            return Collections.singletonList(
+                    new LanguageResult("", LanguageConfidence.NONE, 0.0f, confScore));
         }
 
         return results;
