@@ -30,6 +30,7 @@ import org.apache.tika.inference.locator.PaginatedLocator;
 import org.apache.tika.inference.locator.SpatialLocator;
 import org.apache.tika.inference.locator.TemporalLocator;
 import org.apache.tika.inference.locator.TextLocator;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 /**
  * Serializes and deserializes a list of {@link Chunk} objects to/from JSON.
@@ -64,10 +65,11 @@ public final class ChunkSerializer {
     }
 
     /**
+     * @deprecated Use {@link org.apache.tika.metadata.TikaCoreProperties#TIKA_CHUNKS} directly.
      * The canonical metadata field for all chunk data (text chunks,
      * image embeddings, audio segments, etc.).
      */
-    public static final String CHUNKS_FIELD = "tika:chunks";
+    public static final String CHUNKS_FIELD = TikaCoreProperties.TIKA_CHUNKS;
 
     /**
      * Reads any existing chunks from the metadata field, appends the

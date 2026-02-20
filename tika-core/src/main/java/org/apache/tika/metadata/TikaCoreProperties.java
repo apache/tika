@@ -116,6 +116,13 @@ public interface TikaCoreProperties {
     Property TIKA_CONTENT_HANDLER_TYPE =
             Property.internalText(TIKA_META_PREFIX + "content_handler_type");
     Property TIKA_CONTENT = Property.internalText(TIKA_META_PREFIX + "content");
+
+    /**
+     * JSON array of chunks (text segments with optional embedding vectors and locators).
+     * Used by inference parsers and metadata filters to attach chunked representations
+     * of document content for downstream indexing and semantic search.
+     */
+    String TIKA_CHUNKS = "tika:chunks";
     /**
      * Use this to store parse exception information in the Metadata object.
      */

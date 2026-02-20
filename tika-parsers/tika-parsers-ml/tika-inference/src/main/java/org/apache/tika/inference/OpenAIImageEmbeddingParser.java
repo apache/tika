@@ -261,7 +261,13 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable {
 
             float[] vector = new float[embedding.size()];
             for (int i = 0; i < embedding.size(); i++) {
-                vector[i] = (float) embedding.get(i).asDouble();
+                float v = (float) embedding.get(i).asDouble();
+                if (Float.isNaN(v) || Float.isInfinite(v)) {
+                    throw new TikaException(
+                            "Embedding response contains invalid float at dim [" + i
+                                    + "]: " + v + " — image may be in an unsupported format");
+                }
+                vector[i] = v;
             }
             return vector;
         } catch (IOException e) {

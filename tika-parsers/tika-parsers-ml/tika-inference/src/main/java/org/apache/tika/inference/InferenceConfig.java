@@ -19,6 +19,7 @@ package org.apache.tika.inference;
 import java.io.Serializable;
 
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -63,7 +64,7 @@ public class InferenceConfig implements Serializable {
      * The metadata field to read the source text from.
      * Defaults to {@code tika:content}.
      */
-    private String contentField = "tika:content";
+    private String contentField = TikaCoreProperties.TIKA_CONTENT.getName();
 
     /**
      * The metadata field where the JSON chunk array is written.

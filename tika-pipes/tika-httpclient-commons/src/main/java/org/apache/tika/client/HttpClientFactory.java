@@ -293,6 +293,10 @@ public class HttpClientFactory {
                 new PoolingHttpClientConnectionManager(socketFactoryRegistry);
         manager.setDefaultMaxPerRoute(maxConnectionsPerRoute);
         manager.setMaxTotal(maxConnections);
+        // Validate pooled connections before reuse so that connections idled
+        // for a long time (e.g. while a VLM is processing) are not returned
+        // stale, which would cause a SocketTimeoutException on the first read.
+        manager.setValidateAfterInactivity(1000);
 
         HttpClientBuilder builder = HttpClients.custom();
         if (disableContentCompression) {
@@ -301,6 +305,7 @@ public class HttpClientFactory {
         addCredentialsProvider(builder);
         addProxy(builder);
         return builder.setConnectionManager(manager)
+                .evictExpiredConnections()
                 .setRedirectStrategy(new CustomRedirectStrategy(allowedHostsForRedirect))
                 .setDefaultRequestConfig(RequestConfig.custom().setTargetPreferredAuthSchemes(
                         Arrays.asList(AuthSchemes.BASIC, AuthSchemes.NTLM))
