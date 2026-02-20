@@ -45,6 +45,7 @@
     <module>tika-parsers</module>
     <module>tika-bundles</module>
     <module>tika-xmp</module>
+    <module>tika-ml</module>
     <module>tika-langdetect</module>
     <module>tika-pipes</module>
 

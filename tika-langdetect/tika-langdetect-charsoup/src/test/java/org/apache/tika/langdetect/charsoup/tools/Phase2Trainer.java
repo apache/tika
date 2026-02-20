@@ -42,8 +42,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.DoubleAdder;
 
-import org.apache.tika.langdetect.charsoup.FeatureExtractor;
 import org.apache.tika.langdetect.charsoup.ScriptAwareFeatureExtractor;
+import org.apache.tika.langdetect.charsoup.TextFeatureExtractor;
 
 /**
  * Phase 2 multinomial logistic regression trainer.
@@ -178,11 +178,32 @@ public class Phase2Trainer {
     private float[][] perThreadVBias;  // [thread][class]
     private long[] perThreadStep;      // [thread]
 
+    private boolean useTrigrams    = false;
+    private boolean useSkipBigrams = false;
+
     public Phase2Trainer(int numBuckets) {
         this.numBuckets = numBuckets;
     }
 
     // --- Builder-style setters ---
+
+    public Phase2Trainer setUseTrigrams(boolean useTrigrams) {
+        this.useTrigrams = useTrigrams;
+        return this;
+    }
+
+    public boolean isUseTrigrams() {
+        return useTrigrams;
+    }
+
+    public Phase2Trainer setUseSkipBigrams(boolean useSkipBigrams) {
+        this.useSkipBigrams = useSkipBigrams;
+        return this;
+    }
+
+    public boolean isUseSkipBigrams() {
+        return useSkipBigrams;
+    }
 
     public Phase2Trainer setAdamLr(float lr) {
         this.adamLr = lr;
@@ -883,7 +904,7 @@ public class Phase2Trainer {
             String[] texts, int[] batchLabels, int count,
             boolean useAdam, float sgdLr,
             DoubleAdder totalLoss) {
-        FeatureExtractor ext = createExtractor();
+        TextFeatureExtractor ext = createExtractor();
         int[] featureBuf = new int[numBuckets];
         float[] logitBuf = new float[numClasses];
         int[] nzBuf = new int[numBuckets];
@@ -956,7 +977,7 @@ public class Phase2Trainer {
                     / threads);
             int tid = t;
             futures.add(pool.submit(() -> {
-                FeatureExtractor ext = createExtractor();
+                TextFeatureExtractor ext = createExtractor();
                 int[] featureBuf = new int[numBuckets];
                 float[] logitBuf = new float[numClasses];
                 int[] nzBuf = new int[numBuckets];
@@ -1239,7 +1260,7 @@ public class Phase2Trainer {
     public F1Result evaluateMacroF1(
             List<LabeledSentence> data) {
         int[][] counts = new int[numClasses][3];
-        FeatureExtractor ext = createExtractor();
+        TextFeatureExtractor ext = createExtractor();
         int[] featureBuf = new int[numBuckets];
         float[] logitBuf = new float[numClasses];
 
@@ -1308,7 +1329,7 @@ public class Phase2Trainer {
      * Predict the language label for a text string.
      */
     public String predict(String text) {
-        FeatureExtractor ext = createExtractor();
+        TextFeatureExtractor ext = createExtractor();
         int[] features = new int[numBuckets];
         extractInto(ext, text, features);
         float[] logits = new float[numClasses];
@@ -1350,7 +1371,7 @@ public class Phase2Trainer {
         return numClasses;
     }
 
-    public FeatureExtractor getExtractor() {
+    public TextFeatureExtractor getExtractor() {
         return createExtractor();
     }
 
@@ -1363,7 +1384,7 @@ public class Phase2Trainer {
      * Safe to call from multiple threads provided each thread has its own
      * {@code ext}, {@code featureBuf}, and {@code logitBuf}.
      */
-    public String predictBuffered(String text, FeatureExtractor ext,
+    public String predictBuffered(String text, TextFeatureExtractor ext,
                                   int[] featureBuf, float[] logitBuf) {
         extractInto(ext, text, featureBuf);
         return labels[predictFromBuf(featureBuf, logitBuf)];
@@ -1373,11 +1394,11 @@ public class Phase2Trainer {
     //  Helpers
     // ================================================================
 
-    private FeatureExtractor createExtractor() {
-        return new ScriptAwareFeatureExtractor(numBuckets);
+    private TextFeatureExtractor createExtractor() {
+        return new ScriptAwareFeatureExtractor(numBuckets, useTrigrams, useSkipBigrams);
     }
 
-    private void extractInto(FeatureExtractor ext,
+    private void extractInto(TextFeatureExtractor ext,
                              String text, int[] buf) {
         if (preprocessed) {
             ext.extractFromPreprocessed(text, buf, true);

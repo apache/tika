@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -43,8 +44,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.tika.langdetect.charsoup.CharSoupFeatureExtractor;
-import org.apache.tika.langdetect.charsoup.CharSoupModel;
-import org.apache.tika.langdetect.charsoup.FeatureExtractor;
+import org.apache.tika.langdetect.charsoup.LanguageConfusables;
+import org.apache.tika.langdetect.charsoup.ScriptAwareFeatureExtractor;
+import org.apache.tika.langdetect.charsoup.TextFeatureExtractor;
+import org.apache.tika.ml.LinearModel;
 
 /**
  * Two-pass training pipeline for the bigram language detector.
@@ -77,9 +80,9 @@ public class TrainLanguageModel {
 
     private static final int DEFAULT_NUM_BUCKETS = 8_192;
     private static final long DEFAULT_TARGET_EPOCH_TOTAL = 5_000_000L;
-    private static final int MIN_SENTENCES_PER_LANG = 10_000;
-    private static final int MAX_TEST_PER_LANG = 20_000;
-    private static final int MAX_DEV_PER_LANG = 20_000;
+    private static final int DEFAULT_MAX_TRAIN_PER_LANG = 0;   // 0 = unlimited
+    private static final int DEFAULT_MAX_DEV_PER_LANG   = 20_000;
+    private static final int DEFAULT_MAX_TEST_PER_LANG  = 20_000;
 
     /**
      * Languages explicitly excluded from the model despite having enough
@@ -153,32 +156,94 @@ public class TrainLanguageModel {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length < 2) {
+        Path corpusDir  = null;
+        Path outputFile = null;
+        int  numBuckets       = DEFAULT_NUM_BUCKETS;
+        long targetEpochTotal = DEFAULT_TARGET_EPOCH_TOTAL;
+        int  maxTrainPerLang  = DEFAULT_MAX_TRAIN_PER_LANG;
+        int  maxDevPerLang    = DEFAULT_MAX_DEV_PER_LANG;
+        int  maxTestPerLang   = DEFAULT_MAX_TEST_PER_LANG;
+        boolean useTrigrams      = false;
+        boolean useSkipBigrams   = false;
+        Path    evalOnlyModel    = null;
+
+        for (int i = 0; i < args.length; i++) {
+            switch (args[i]) {
+                case "--corpus":       corpusDir      = Paths.get(args[++i]); break;
+                case "--output":       outputFile     = Paths.get(args[++i]); break;
+                case "--buckets":      numBuckets     = Integer.parseInt(args[++i]); break;
+                case "--epoch-total":  targetEpochTotal = Long.parseLong(args[++i]); break;
+                case "--max-train":    maxTrainPerLang = Integer.parseInt(args[++i]); break;
+                case "--max-dev":      maxDevPerLang   = Integer.parseInt(args[++i]); break;
+                case "--max-test":     maxTestPerLang  = Integer.parseInt(args[++i]); break;
+                case "--trigrams":     useTrigrams     = true; break;
+                case "--skip-bigrams": useSkipBigrams  = true; break;
+                case "--eval-only":    evalOnlyModel   = Paths.get(args[++i]); break;
+                default:
+                    // legacy positional args
+                    if (corpusDir == null)       { corpusDir  = Paths.get(args[i]); }
+                    else if (outputFile == null) { outputFile = Paths.get(args[i]); }
+                    else {
+                        System.err.println("Unknown argument: " + args[i]);
+                        System.exit(1);
+                    }
+            }
+        }
+
+        // --eval-only requires --output (to locate preprocessed/) but not --corpus
+        if (evalOnlyModel != null) {
+            if (outputFile == null) {
+                System.err.println(
+                        "Usage: TrainLanguageModel --eval-only <model> --output <file>"
+                        + " [--trigrams] [--skip-bigrams]");
+                System.exit(1);
+            }
+            Path prepDir  = (outputFile.getParent() != null
+                    ? outputFile.getParent() : Paths.get(".")).resolve("preprocessed");
+            Path testFile = prepDir.resolve("test_raw.txt");
+            System.out.println("=== Eval-only mode ===");
+            System.out.println("Model:    " + evalOnlyModel);
+            System.out.println("Test set: " + testFile);
+            LinearModel model = LinearModel.loadFromPath(evalOnlyModel);
+            List<LabeledSentence> testData = readPreprocessedFile(testFile);
+            evaluateQuantized(model, testData, useTrigrams, useSkipBigrams);
+            return;
+        }
+
+        if (corpusDir == null || outputFile == null) {
             System.err.println(
-                    "Usage: TrainLanguageModel <corpusDir> <outputFile>"
-                            + " [numBuckets] [targetEpochTotal]");
+                    "Usage: TrainLanguageModel --corpus <dir> --output <file>"
+                    + " [--buckets N] [--epoch-total N]"
+                    + " [--max-train N] [--max-dev N] [--max-test N]"
+                    + " [--trigrams] [--skip-bigrams]"
+                    + " [--eval-only <model-path>]");
             System.exit(1);
         }
 
-        Path corpusDir = Paths.get(args[0]);
-        Path outputFile = Paths.get(args[1]);
-        int numBuckets = args.length > 2
-                ? Integer.parseInt(args[2]) : DEFAULT_NUM_BUCKETS;
-        long targetEpochTotal = args.length > 3
-                ? Long.parseLong(args[3])
-                : DEFAULT_TARGET_EPOCH_TOTAL;
+        // Languages with fewer than (train+dev+test) sentences are skipped.
+        // A value of 0 for maxTrainPerLang means "no explicit cap on train pool".
+        int minSentencesPerLang = (maxTrainPerLang > 0 ? maxTrainPerLang : 0)
+                + maxDevPerLang + maxTestPerLang;
+        if (minSentencesPerLang == 0) {
+            // all defaults: fall back to a sensible floor
+            minSentencesPerLang = 10_000;
+        }
 
         Path prepDir = (outputFile.getParent() != null
                 ? outputFile.getParent()
                 : Paths.get(".")).resolve("preprocessed");
 
         System.out.println("=== Language Model Training Pipeline ===");
-        System.out.println("Corpus:          " + corpusDir);
-        System.out.println("Output:          " + outputFile);
-        System.out.println("Prep dir:        " + prepDir);
-        System.out.println("Buckets:         " + numBuckets);
-        System.out.printf(Locale.US,
-                "TargetEpochTotal: %,d%n", targetEpochTotal);
+        System.out.println("Corpus:           " + corpusDir);
+        System.out.println("Output:           " + outputFile);
+        System.out.println("Prep dir:         " + prepDir);
+        System.out.println("Buckets:          " + numBuckets);
+        System.out.printf(Locale.US, "Epoch total:      %,d%n", targetEpochTotal);
+        System.out.printf(Locale.US, "Max train/lang:   %s%n",
+                maxTrainPerLang > 0 ? String.format(Locale.US, "%,d", maxTrainPerLang) : "unlimited");
+        System.out.printf(Locale.US, "Max dev/lang:     %,d%n", maxDevPerLang);
+        System.out.printf(Locale.US, "Max test/lang:    %,d%n", maxTestPerLang);
+        System.out.printf(Locale.US, "Min sentences:    %,d (skip threshold)%n", minSentencesPerLang);
         System.out.println();
 
         long pipelineStart = System.nanoTime();
@@ -198,7 +263,8 @@ public class TrainLanguageModel {
             stepStart = System.nanoTime();
             System.out.println("--- Step 1: Data preparation ---");
             Files.createDirectories(poolDir);
-            int[] counts = prepareData(corpusDir, prepDir);
+            int[] counts = prepareData(corpusDir, prepDir,
+                    maxTrainPerLang, maxDevPerLang, maxTestPerLang, minSentencesPerLang);
             System.out.printf(Locale.US,
                     "Prepared: pool=%,d  dev=%,d  test=%,d%n",
                     counts[0], counts[1], counts[2]);
@@ -231,7 +297,9 @@ public class TrainLanguageModel {
                         scanPoolSizes(poolDir),
                         targetEpochTotal);
         Phase2Trainer pass1 = new Phase2Trainer(numBuckets)
-                .setPreprocessed(true);
+                .setPreprocessed(true)
+                .setUseTrigrams(useTrigrams)
+                .setUseSkipBigrams(useSkipBigrams);
         pass1.trainWithResampling(allLabels,
                 epochNum -> createEpochFile(
                         poolDir, epochFile,
@@ -269,7 +337,9 @@ public class TrainLanguageModel {
                         scanPoolSizes(filteredPoolDir),
                         targetEpochTotal);
         Phase2Trainer pass2 = new Phase2Trainer(numBuckets)
-                .setPreprocessed(true);
+                .setPreprocessed(true)
+                .setUseTrigrams(useTrigrams)
+                .setUseSkipBigrams(useSkipBigrams);
         pass2.trainWithResampling(filteredLabels,
                 epochNum -> createEpochFile(
                         filteredPoolDir, epochFile,
@@ -281,7 +351,7 @@ public class TrainLanguageModel {
         // ---- Quantize ----
         stepStart = System.nanoTime();
         System.out.println("\n--- Step 5: Quantizing to INT8 ---");
-        CharSoupModel quantized = ModelQuantizer.quantize(pass2);
+        LinearModel quantized = ModelQuantizer.quantize(pass2);
         System.out.printf(Locale.US, "  [%.1f s]%n",
                 elapsed(stepStart));
 
@@ -291,7 +361,7 @@ public class TrainLanguageModel {
                 "\n--- Step 6: Evaluating on raw test set ---");
         List<LabeledSentence> testData =
                 readPreprocessedFile(testFile);
-        double testAcc = evaluateQuantized(quantized, testData);
+        double testAcc = evaluateQuantized(quantized, testData, useTrigrams, useSkipBigrams);
         System.out.printf(Locale.US,
                 "Test accuracy (quantized): %.4f%n", testAcc);
         System.out.printf(Locale.US, "  [%.1f s]%n",
@@ -604,7 +674,7 @@ public class TrainLanguageModel {
                 String lang =
                         langFile.getFileName().toString();
                 Path outFile = filteredDir.resolve(lang);
-                FeatureExtractor ext = trainer.getExtractor();
+                TextFeatureExtractor ext = trainer.getExtractor();
                 int[] featureBuf =
                         new int[trainer.getNumBuckets()];
                 float[] logitBuf =
@@ -666,32 +736,170 @@ public class TrainLanguageModel {
     //  Evaluation
     // ================================================================
 
-    static double evaluateQuantized(CharSoupModel model,
-                                    List<LabeledSentence> data) {
-        FeatureExtractor extractor = model.createExtractor();
+    private static final int[] EVAL_LENGTHS = {20, 50, 100, 200, 0}; // 0 = full text
+
+    static double evaluateQuantized(LinearModel model,
+                                    List<LabeledSentence> data,
+                                    boolean useTrigrams,
+                                    boolean useSkipBigrams) {
+        TextFeatureExtractor extractor =
+                new ScriptAwareFeatureExtractor(
+                        model.getNumBuckets(), useTrigrams, useSkipBigrams);
+        int numClasses = model.getNumClasses();
         Map<String, Integer> labelIndex = new HashMap<>();
-        for (int i = 0; i < model.getNumClasses(); i++) {
+        for (int i = 0; i < numClasses; i++) {
             labelIndex.put(model.getLabel(i), i);
         }
 
-        int correct = 0;
-        int total = 0;
+        // Per-length: strict correct, lenient correct, total, per-class TP/FP/FN for macro F1
+        int[] correct        = new int[EVAL_LENGTHS.length];
+        int[] lenientCorrect = new int[EVAL_LENGTHS.length];
+        int[] total          = new int[EVAL_LENGTHS.length];
+        // [lengthIdx][classIdx] → {tp, fp, fn}
+        int[][][] perClass = new int[EVAL_LENGTHS.length][numClasses][3];
+        // [classIdx][lengthIdx] → strict correct count (for per-lang table)
+        int[][] langCorrect = new int[numClasses][EVAL_LENGTHS.length];
+        int[]   langTotal   = new int[numClasses];
+        // confusion tracking at 20-char length: trueIdx → (predLabel → count)
+        @SuppressWarnings("unchecked")
+        Map<String, Integer>[] confusions20 = new HashMap[numClasses];
+
         for (LabeledSentence s : data) {
-            Integer trueIdx =
-                    labelIndex.get(s.getLanguage());
+            Integer trueIdx = labelIndex.get(s.getLanguage());
             if (trueIdx == null) {
                 continue;
             }
-            // Test data is raw; extract runs full pipeline
-            int[] features = extractor.extract(s.getText());
-            float[] probs = model.predict(features);
-            int predicted = argmax(probs);
-            if (predicted == trueIdx) {
-                correct++;
+            String raw = s.getText();
+            String trueLabel = s.getLanguage();
+            langTotal[trueIdx]++;
+            for (int li = 0; li < EVAL_LENGTHS.length; li++) {
+                int maxLen = EVAL_LENGTHS[li];
+                String text = (maxLen > 0 && raw.length() > maxLen)
+                        ? raw.substring(0, maxLen) : raw;
+                int[] features = extractor.extract(text);
+                float[] probs = model.predict(features);
+                int predIdx = argmax(probs);
+                String predLabel = model.getLabel(predIdx);
+                boolean strict  = predIdx == trueIdx;
+                boolean lenient = strict
+                        || LanguageConfusables.isLenientMatch(trueLabel, predLabel);
+                if (strict) {
+                    correct[li]++;
+                    perClass[li][trueIdx][0]++;  // TP
+                    langCorrect[trueIdx][li]++;
+                } else {
+                    perClass[li][trueIdx][2]++;  // FN
+                    perClass[li][predIdx][1]++;  // FP
+                    if (li == 0) {               // track confusion at 20 chars
+                        if (confusions20[trueIdx] == null) {
+                            confusions20[trueIdx] = new HashMap<>();
+                        }
+                        confusions20[trueIdx].merge(predLabel, 1, Integer::sum);
+                    }
+                }
+                if (lenient) {
+                    lenientCorrect[li]++;
+                }
+                total[li]++;
             }
-            total++;
         }
-        return total > 0 ? (double) correct / total : 0.0;
+
+        System.out.printf(Locale.US, "  %-8s  %-10s  %-10s  %s%n",
+                "chars", "strict", "lenient", "macro-F1");
+        System.out.printf(Locale.US, "  %-8s  %-10s  %-10s  %s%n",
+                "------", "--------", "--------", "--------");
+        double fullAccuracy = 0.0;
+        for (int li = 0; li < EVAL_LENGTHS.length; li++) {
+            int maxLen = EVAL_LENGTHS[li];
+            double acc        = total[li] > 0 ? (double) correct[li]        / total[li] : 0.0;
+            double lenientAcc = total[li] > 0 ? (double) lenientCorrect[li] / total[li] : 0.0;
+            double f1Sum = 0.0;
+            int f1Count = 0;
+            for (int c = 0; c < numClasses; c++) {
+                int tp = perClass[li][c][0];
+                int fp = perClass[li][c][1];
+                int fn = perClass[li][c][2];
+                if (tp + fn == 0) {
+                    continue;
+                }
+                double p  = (tp + fp) > 0 ? (double) tp / (tp + fp) : 0.0;
+                double r  = (double) tp / (tp + fn);
+                double f1 = (p + r) > 0 ? 2.0 * p * r / (p + r) : 0.0;
+                f1Sum += f1;
+                f1Count++;
+            }
+            double macroF1 = f1Count > 0 ? f1Sum / f1Count : 0.0;
+            String label = maxLen > 0 ? String.valueOf(maxLen) : "full";
+            System.out.printf(Locale.US, "  %-8s  %-10s  %-10s  %.4f%n",
+                    label,
+                    String.format(Locale.US, "%.2f%%", acc * 100.0),
+                    String.format(Locale.US, "%.2f%%", lenientAcc * 100.0),
+                    macroF1);
+            if (maxLen == 0) {
+                fullAccuracy = acc;
+            }
+        }
+
+        // Per-language breakdown: sort by 20-char accuracy ascending (worst first)
+        // Find the length indices for 20-char and full-text
+        int li20   = 0; // EVAL_LENGTHS[0] = 20
+        int liFull = EVAL_LENGTHS.length - 1; // EVAL_LENGTHS[last] = 0 (full)
+        Integer[] classOrder = new Integer[numClasses];
+        for (int c = 0; c < numClasses; c++) {
+            classOrder[c] = c;
+        }
+        Arrays.sort(classOrder, (a, b) -> {
+            double accA = langTotal[a] > 0 ? (double) langCorrect[a][li20] / langTotal[a] : 1.0;
+            double accB = langTotal[b] > 0 ? (double) langCorrect[b][li20] / langTotal[b] : 1.0;
+            return Double.compare(accA, accB); // ascending: worst first
+        });
+        System.out.println();
+        System.out.printf(Locale.US, "  %-6s  %-8s  %-8s  %s%n",
+                "lang", "@20", "@full", "n");
+        System.out.printf(Locale.US, "  %-6s  %-8s  %-8s  %s%n",
+                "------", "--------", "--------", "----");
+        for (int c : classOrder) {
+            if (langTotal[c] == 0) {
+                continue;
+            }
+            double acc20   = (double) langCorrect[c][li20]   / langTotal[c];
+            double accFull = (double) langCorrect[c][liFull] / langTotal[c];
+            System.out.printf(Locale.US, "  %-6s  %-8s  %-8s  %d%n",
+                    model.getLabel(c),
+                    String.format(Locale.US, "%.1f%%", acc20   * 100.0),
+                    String.format(Locale.US, "%.1f%%", accFull * 100.0),
+                    langTotal[c]);
+        }
+
+        // Confusion detail: top-3 wrong predictions at 20 chars, worst 10 languages
+        System.out.println();
+        System.out.println("  Top confusions at 20 chars (worst languages):");
+        System.out.printf(Locale.US, "  %-6s  %s%n", "lang", "confused-as (count)");
+        System.out.printf(Locale.US, "  %-6s  %s%n", "------", "-------------------");
+        int printed = 0;
+        for (int c : classOrder) {
+            if (printed >= 10) {
+                break;
+            }
+            if (langTotal[c] == 0 || confusions20[c] == null) {
+                continue;
+            }
+            List<Map.Entry<String, Integer>> entries =
+                    new ArrayList<>(confusions20[c].entrySet());
+            entries.sort((a, b) -> b.getValue() - a.getValue());
+            StringBuilder sb = new StringBuilder();
+            for (int k = 0; k < Math.min(3, entries.size()); k++) {
+                if (k > 0) {
+                    sb.append(", ");
+                }
+                sb.append(entries.get(k).getKey())
+                  .append('(').append(entries.get(k).getValue()).append(')');
+            }
+            System.out.printf(Locale.US, "  %-6s  %s%n",
+                    model.getLabel(c), sb);
+            printed++;
+        }
+        return fullAccuracy;
     }
 
     private static int argmax(float[] arr) {
@@ -711,21 +919,35 @@ public class TrainLanguageModel {
     /**
      * Prepare data splits from corpus:
      * <ul>
-     *   <li>{@code pool/} — per-language preprocessed files
-     *       for training</li>
+     *   <li>{@code pool/} — per-language preprocessed files for training</li>
      *   <li>{@code dev.txt} — fixed dev set, preprocessed</li>
      *   <li>{@code test_raw.txt} — fixed test set, raw</li>
      * </ul>
+     * <p>
+     * Languages with fewer than {@code minSentencesPerLang} sentences after
+     * deduplication are skipped and reported. When {@code maxTrainPerLang > 0},
+     * each language directory is reservoir-sampled to at most
+     * {@code maxTrainPerLang + maxDevPerLang + maxTestPerLang} sentences so
+     * that large corpora (e.g. 2M English sentences) are not fully loaded
+     * into memory.
      *
      * @return int[3]: {poolCount, devCount, testCount}
      */
-    static int[] prepareData(Path corpusDir, Path prepDir)
+    static int[] prepareData(Path corpusDir, Path prepDir,
+                             int maxTrainPerLang, int maxDevPerLang,
+                             int maxTestPerLang, int minSentencesPerLang)
             throws IOException {
         Path poolDir = prepDir.resolve("pool");
         Path devFile = prepDir.resolve("dev.txt");
         Path testFile = prepDir.resolve("test_raw.txt");
 
         Files.createDirectories(poolDir);
+
+        // Read cap: if the user has set explicit per-split limits, only load
+        // as many sentences as we could possibly use. 0 = unlimited.
+        int readCap = (maxTrainPerLang > 0)
+                ? maxTrainPerLang + maxDevPerLang + maxTestPerLang
+                : 0;
 
         int totalPool = 0, totalDev = 0, totalTest = 0;
         int langCount = 0;
@@ -736,8 +958,7 @@ public class TrainLanguageModel {
 
         List<Path> langDirs = new ArrayList<>();
         try (DirectoryStream<Path> dirs =
-                     Files.newDirectoryStream(corpusDir,
-                             Files::isDirectory)) {
+                     Files.newDirectoryStream(corpusDir, Files::isDirectory)) {
             for (Path d : dirs) {
                 langDirs.add(d);
             }
@@ -745,126 +966,174 @@ public class TrainLanguageModel {
         langDirs.sort((a, b) -> a.getFileName().toString()
                 .compareTo(b.getFileName().toString()));
 
-        Map<String, List<LabeledSentence>> mergeAccum =
-                new HashMap<>();
+        // Per-language result collected by parallel workers before writing shared files.
+        // lang → {devSentences, testSentences} (pool file is written directly to disk)
+        // Using a concurrent map so workers can insert without locking.
+        java.util.concurrent.ConcurrentHashMap<String, LangPrepResult> prepResults =
+                new java.util.concurrent.ConcurrentHashMap<>();
+        java.util.concurrent.ConcurrentHashMap<String, String> droppedMap =
+                new java.util.concurrent.ConcurrentHashMap<>();
 
-        try (BufferedWriter devWriter = Files.newBufferedWriter(
-                     devFile, StandardCharsets.UTF_8);
-             BufferedWriter testWriter = Files.newBufferedWriter(
-                     testFile, StandardCharsets.UTF_8)) {
-
-            for (Path langDir : langDirs) {
-                String dirName =
-                        langDir.getFileName().toString();
-                if (dirName.startsWith("_")) {
-                    continue;
+        // Merge-accumulator must be populated before parallel work starts
+        // because some dirs are aliases that need combining (e.g. azj → aze).
+        Map<String, List<LabeledSentence>> mergeAccum = new HashMap<>();
+        for (Path langDir : langDirs) {
+            String dirName = langDir.getFileName().toString();
+            if (dirName.startsWith("_")) {
+                continue;
+            }
+            String canonLang = LANG_MERGE_MAP.getOrDefault(dirName, dirName);
+            if (!canonLang.equals(dirName)) {
+                // Pre-read alias dirs so they can be combined with the canonical dir
+                List<LabeledSentence> sentences = new ArrayList<>();
+                if (readCap > 0) {
+                    CorpusReader.readLanguageDirHead(langDir, canonLang, readCap, sentences);
+                } else {
+                    CorpusReader.readLanguageDir(langDir, canonLang, sentences);
                 }
+                mergeAccum.computeIfAbsent(canonLang, k -> new ArrayList<>())
+                        .addAll(sentences);
+                System.out.printf(Locale.US, "  %s → %s (%,d sentences pre-loaded)%n",
+                        dirName, canonLang, sentences.size());
+            }
+        }
 
-                List<LabeledSentence> sentences =
-                        new ArrayList<>();
-                CorpusReader.readLanguageDir(
-                        langDir, dirName, sentences);
+        // Collect canonical language dirs (non-alias) for parallel processing
+        List<Path> canonDirs = new ArrayList<>();
+        for (Path langDir : langDirs) {
+            String dirName = langDir.getFileName().toString();
+            if (dirName.startsWith("_")) {
+                continue;
+            }
+            String canonLang = LANG_MERGE_MAP.getOrDefault(dirName, dirName);
+            if (canonLang.equals(dirName)) {
+                canonDirs.add(langDir);
+            }
+        }
+        // Also add any merged languages whose canonical dir wasn't in corpus
+        for (String lang : mergeAccum.keySet()) {
+            boolean found = canonDirs.stream()
+                    .anyMatch(p -> p.getFileName().toString().equals(lang));
+            if (!found) {
+                canonDirs.add(null); // sentinel — handled below
+            }
+        }
 
-                int beforeDedup = sentences.size();
-                sentences = dedup(sentences);
-                int removed = beforeDedup - sentences.size();
-                if (removed > 0) {
-                    totalDupes += removed;
-                    if (removed > beforeDedup / 5) {
-                        System.out.printf(Locale.US,
-                                "  %s: removed %,d/%,d dupes"
-                                        + " (%.1f%%)%n",
-                                dirName, removed, beforeDedup,
-                                100.0 * removed / beforeDedup);
+        int threads = Math.min(Runtime.getRuntime().availableProcessors(),
+                canonDirs.size());
+        java.util.concurrent.ExecutorService exec =
+                java.util.concurrent.Executors.newFixedThreadPool(threads);
+        List<java.util.concurrent.Future<?>> futures = new ArrayList<>();
+
+        for (Path langDir : canonDirs) {
+            if (langDir == null) {
+                continue;
+            }
+            futures.add(exec.submit(() -> {
+                String lang = langDir.getFileName().toString();
+                try {
+                    List<LabeledSentence> sentences = new ArrayList<>();
+                    if (readCap > 0) {
+                        CorpusReader.readLanguageDirHead(langDir, lang, readCap, sentences);
+                    } else {
+                        CorpusReader.readLanguageDir(langDir, lang, sentences);
                     }
-                }
 
-                String canonLang = LANG_MERGE_MAP.getOrDefault(
-                        dirName, dirName);
-
-                if (!canonLang.equals(dirName)) {
-                    List<LabeledSentence> relabeled =
-                            new ArrayList<>(sentences.size());
-                    for (LabeledSentence s : sentences) {
-                        relabeled.add(new LabeledSentence(
-                                canonLang, s.getText()));
+                    // Merge any alias data accumulated for this canonical lang
+                    List<LabeledSentence> extra = mergeAccum.get(lang);
+                    if (extra != null) {
+                        sentences.addAll(extra);
                     }
-                    sentences = relabeled;
-                    System.out.printf(Locale.US,
-                            "  %s → %s (%,d sentences)%n",
-                            dirName, canonLang,
-                            sentences.size());
-                }
 
-                if (!canonLang.equals(dirName)) {
-                    mergeAccum.computeIfAbsent(canonLang,
-                            k -> new ArrayList<>())
-                            .addAll(sentences);
-                    continue;
-                }
-
-                List<LabeledSentence> accumulated =
-                        mergeAccum.remove(canonLang);
-                if (accumulated != null) {
-                    sentences.addAll(accumulated);
                     sentences = dedup(sentences);
-                }
 
-                if (EXCLUDED_LANGS.contains(canonLang)) {
-                    dropped.add(canonLang + "(excluded)");
-                    droppedCount++;
-                    continue;
-                }
+                    if (EXCLUDED_LANGS.contains(lang)) {
+                        droppedMap.put(lang, lang + "(excluded)");
+                        return;
+                    }
+                    if (sentences.size() < minSentencesPerLang) {
+                        droppedMap.put(lang, String.format(Locale.US,
+                                "%s(%,d)", lang, sentences.size()));
+                        return;
+                    }
 
-                if (sentences.size() < MIN_SENTENCES_PER_LANG) {
-                    dropped.add(canonLang + "("
-                            + sentences.size() + ")");
-                    droppedCount++;
-                    continue;
+                    LangPrepResult result = buildLangPrepResult(
+                            sentences, lang, poolDir,
+                            maxTrainPerLang, maxDevPerLang, maxTestPerLang);
+                    prepResults.put(lang, result);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to prepare lang: " + lang, e);
                 }
+            }));
+        }
 
-                int[] written = writeLanguageSplit(
-                        sentences, canonLang, poolDir,
-                        devWriter, testWriter);
-                totalPool += written[0];
-                totalDev += written[1];
-                totalTest += written[2];
-                langCounts.put(canonLang, sentences.size());
-
-                langCount++;
-                if (langCount % 50 == 0) {
-                    System.out.printf(Locale.US,
-                            "  Processed %d languages...%n",
-                            langCount);
-                }
+        // Also handle merged-only langs (alias target not present as a dir)
+        for (Map.Entry<String, List<LabeledSentence>> e : mergeAccum.entrySet()) {
+            String lang = e.getKey();
+            boolean hasCanonDir = canonDirs.stream()
+                    .filter(p -> p != null)
+                    .anyMatch(p -> p.getFileName().toString().equals(lang));
+            if (!hasCanonDir) {
+                futures.add(exec.submit(() -> {
+                    try {
+                        List<LabeledSentence> sentences = dedup(e.getValue());
+                        if (EXCLUDED_LANGS.contains(lang)) {
+                            droppedMap.put(lang, lang + "(excluded)");
+                            return;
+                        }
+                        if (sentences.size() < minSentencesPerLang) {
+                            droppedMap.put(lang, String.format(Locale.US,
+                                    "%s(%,d)", lang, sentences.size()));
+                            return;
+                        }
+                        LangPrepResult result = buildLangPrepResult(
+                                sentences, lang, poolDir,
+                                maxTrainPerLang, maxDevPerLang, maxTestPerLang);
+                        prepResults.put(lang, result);
+                    } catch (IOException ex) {
+                        throw new RuntimeException("Failed to prepare lang: " + lang, ex);
+                    }
+                }));
             }
+        }
 
-            // Flush remaining merged languages
-            for (Map.Entry<String, List<LabeledSentence>> e
-                    : mergeAccum.entrySet()) {
-                String lang = e.getKey();
-                List<LabeledSentence> sentences =
-                        dedup(e.getValue());
-                if (EXCLUDED_LANGS.contains(lang)) {
-                    dropped.add(lang + "(excluded)");
-                    droppedCount++;
-                    continue;
+        exec.shutdown();
+        for (java.util.concurrent.Future<?> f : futures) {
+            try {
+                f.get();
+            } catch (Exception e) {
+                throw new RuntimeException("Data prep worker failed", e);
+            }
+        }
+
+        // Write shared dev.txt and test.txt sequentially (sorted for reproducibility)
+        try (BufferedWriter devWriter = Files.newBufferedWriter(devFile, StandardCharsets.UTF_8);
+             BufferedWriter testWriter = Files.newBufferedWriter(testFile, StandardCharsets.UTF_8)) {
+
+            List<String> sortedLangs = new ArrayList<>(prepResults.keySet());
+            Collections.sort(sortedLangs);
+
+            for (String lang : sortedLangs) {
+                LangPrepResult r = prepResults.get(lang);
+                for (String line : r.devLines) {
+                    devWriter.write(line);
+                    devWriter.newLine();
                 }
-                if (sentences.size() < MIN_SENTENCES_PER_LANG) {
-                    dropped.add(lang + "("
-                            + sentences.size() + ")");
-                    droppedCount++;
-                    continue;
+                for (String line : r.testLines) {
+                    testWriter.write(line);
+                    testWriter.newLine();
                 }
-                int[] written = writeLanguageSplit(
-                        sentences, lang, poolDir,
-                        devWriter, testWriter);
-                totalPool += written[0];
-                totalDev += written[1];
-                totalTest += written[2];
-                langCounts.put(lang, sentences.size());
+                totalPool += r.poolCount;
+                totalDev  += r.devLines.size();
+                totalTest += r.testLines.size();
+                langCounts.put(lang, r.totalSentences);
                 langCount++;
             }
+        }
+
+        for (String msg : droppedMap.values()) {
+            dropped.add(msg);
+            droppedCount++;
         }
 
         // Report
@@ -897,68 +1166,6 @@ public class TrainLanguageModel {
         return new int[]{totalPool, totalDev, totalTest};
     }
 
-    /**
-     * Split one language's sentences into test, dev, and pool.
-     * <ul>
-     *   <li>Test: 10% (max 20K), written raw</li>
-     *   <li>Dev: 10% (max 20K), written preprocessed</li>
-     *   <li>Pool: rest, written preprocessed to per-language file</li>
-     * </ul>
-     *
-     * @return int[3]: {pool, dev, test} counts
-     */
-    private static int[] writeLanguageSplit(
-            List<LabeledSentence> sentences, String lang,
-            Path poolDir,
-            BufferedWriter devWriter,
-            BufferedWriter testWriter) throws IOException {
-
-        Random rng = new Random(lang.hashCode() + 42L);
-        Collections.shuffle(sentences, rng);
-
-        int n = sentences.size();
-        int testCount = Math.min(
-                (int) (n * 0.1f), MAX_TEST_PER_LANG);
-        int devCount = Math.min(
-                (int) ((n - testCount) * 0.1f / 0.9f),
-                MAX_DEV_PER_LANG);
-        int poolStart = testCount + devCount;
-
-        // Test: raw text
-        for (int i = 0; i < testCount; i++) {
-            String raw = sentences.get(i).getText();
-            testWriter.write(lang);
-            testWriter.write('\t');
-            testWriter.write(raw);
-            testWriter.newLine();
-        }
-
-        // Dev: preprocessed
-        for (int i = testCount; i < testCount + devCount; i++) {
-            String cleaned =
-                    CharSoupFeatureExtractor.preprocess(
-                            sentences.get(i).getText());
-            devWriter.write(lang);
-            devWriter.write('\t');
-            devWriter.write(cleaned);
-            devWriter.newLine();
-        }
-
-        // Pool: preprocessed, one file per language
-        Path poolFile = poolDir.resolve(lang);
-        try (BufferedWriter pw = Files.newBufferedWriter(
-                poolFile, StandardCharsets.UTF_8)) {
-            for (int i = poolStart; i < n; i++) {
-                String cleaned =
-                        CharSoupFeatureExtractor.preprocess(
-                                sentences.get(i).getText());
-                pw.write(cleaned);
-                pw.newLine();
-            }
-        }
-
-        return new int[]{n - poolStart, devCount, testCount};
-    }
 
     // ================================================================
     //  Helpers
@@ -995,6 +1202,73 @@ public class TrainLanguageModel {
             }
         }
         return unique;
+    }
+
+    /** Holds per-language prep output before writing to shared dev/test files. */
+    private static final class LangPrepResult {
+        final List<String> devLines;   // "lang\tpreprocessed"
+        final List<String> testLines;  // "lang\traw"
+        final int poolCount;
+        final int totalSentences;
+
+        LangPrepResult(List<String> devLines, List<String> testLines,
+                       int poolCount, int totalSentences) {
+            this.devLines  = devLines;
+            this.testLines = testLines;
+            this.poolCount = poolCount;
+            this.totalSentences = totalSentences;
+        }
+    }
+
+    /**
+     * Read, dedup, split, preprocess and write the pool file for one language.
+     * Dev and test lines are returned in-memory for the caller to write to
+     * shared files. This method is safe to call from multiple threads as long
+     * as each language uses a distinct {@code poolDir} file path.
+     */
+    private static LangPrepResult buildLangPrepResult(
+            List<LabeledSentence> sentences, String lang, Path poolDir,
+            int maxTrainPerLang, int maxDevPerLang, int maxTestPerLang)
+            throws IOException {
+
+        Random rng = new Random(lang.hashCode() + 42L);
+        Collections.shuffle(sentences, rng);
+
+        int n = sentences.size();
+        int testCount = (maxTestPerLang > 0)
+                ? Math.min(maxTestPerLang, n)
+                : Math.min((int) (n * 0.1f), DEFAULT_MAX_TEST_PER_LANG);
+        int devCount = (maxDevPerLang > 0)
+                ? Math.min(maxDevPerLang, n - testCount)
+                : Math.min((int) ((n - testCount) * 0.1f / 0.9f), DEFAULT_MAX_DEV_PER_LANG);
+        int poolStart = testCount + devCount;
+        int poolEnd = (maxTrainPerLang > 0)
+                ? Math.min(poolStart + maxTrainPerLang, n)
+                : n;
+
+        // test lines — raw
+        List<String> testLines = new ArrayList<>(testCount);
+        for (int i = 0; i < testCount; i++) {
+            testLines.add(lang + "\t" + sentences.get(i).getText());
+        }
+
+        // dev lines — preprocessed
+        List<String> devLines = new ArrayList<>(devCount);
+        for (int i = testCount; i < testCount + devCount; i++) {
+            devLines.add(lang + "\t" +
+                    CharSoupFeatureExtractor.preprocess(sentences.get(i).getText()));
+        }
+
+        // pool file — preprocessed, written directly to disk
+        Path poolFile = poolDir.resolve(lang);
+        try (BufferedWriter pw = Files.newBufferedWriter(poolFile, StandardCharsets.UTF_8)) {
+            for (int i = poolStart; i < poolEnd; i++) {
+                pw.write(CharSoupFeatureExtractor.preprocess(sentences.get(i).getText()));
+                pw.newLine();
+            }
+        }
+
+        return new LangPrepResult(devLines, testLines, poolEnd - poolStart, n);
     }
 
     static List<LabeledSentence> readPreprocessedFile(Path file)

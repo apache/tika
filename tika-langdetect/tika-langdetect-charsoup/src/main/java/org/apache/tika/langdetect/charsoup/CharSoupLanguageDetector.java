@@ -18,9 +18,7 @@ package org.apache.tika.langdetect.charsoup;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +28,8 @@ import org.apache.tika.config.TikaComponent;
 import org.apache.tika.language.detect.LanguageConfidence;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
+import org.apache.tika.ml.LinearModel;
+import org.apache.tika.ml.Prediction;
 
 /**
  * Hash-based bigram language detector using INT8-quantized multinomial logistic regression.
@@ -93,24 +93,7 @@ public class CharSoupLanguageDetector extends LanguageDetector {
      * summed and assigned to the top scorer, so the model reports confidence
      * in the <em>group</em> rather than a noisy choice within it.
      */
-    static final String[][] CONFUSABLE_GROUPS = {
-            {"nob", "nno", "nor", "dan"},       // Scandinavian + Norwegian variants
-            {"hrv", "srp", "bos", "hbs"},       // South Slavic + Serbo-Croatian
-            {"msa", "zlm", "zsm", "ind"},       // Malay / Indonesian
-            {"pes", "prs", "fas"},               // Persian / Dari
-            {"zho", "cmn", "wuu", "yue"},        // Chinese varieties
-            {"aze", "azj"},                      // Azerbaijani
-            {"ekk", "est"},                      // Estonian
-            {"lvs", "lav"},                      // Latvian
-            {"plt", "mlg"},                      // Malagasy
-            {"khk", "mon"},                      // Mongolian
-            {"ydd", "yid"},                      // Yiddish
-            {"sme", "smi"},                      // Sami
-            {"sqi", "als"},                      // Albanian / Tosk Albanian
-            {"tat", "bak"},                      // Tatar / Bashkir
-            {"ita", "vec"},                      // Italian / Venetian
-            {"spa", "arg", "ast"},               // Spanish / Aragonese / Asturian
-    };
+    static final String[][] CONFUSABLE_GROUPS = LanguageConfusables.GROUPS;
 
     /**
      * Maps each class index to the array of all class indices in its group.
@@ -119,97 +102,45 @@ public class CharSoupLanguageDetector extends LanguageDetector {
      */
     private static int[][] GROUP_INDICES;
 
-    private static final CharSoupModel MODEL;
-    private static final FeatureExtractor EXTRACTOR;
+    private static final LinearModel MODEL;
+    private static final TextFeatureExtractor EXTRACTOR;
     private static final Set<String> SUPPORTED_LANGUAGES;
+
+    /**
+     * System property to override the model loaded at startup.
+     * Set to an absolute path to a LDM1 binary on disk, e.g.:
+     * {@code -Dtika.langdetect.charsoup.model=/path/to/langdetect.bin}
+     * When unset the bundled classpath resource is used.
+     */
+    public static final String MODEL_PATH_PROPERTY =
+            "tika.langdetect.charsoup.model";
 
     static {
         try {
-            MODEL = CharSoupModel.loadFromClasspath(MODEL_RESOURCE);
-            EXTRACTOR = MODEL.createExtractor();
+            String overridePath = System.getProperty(MODEL_PATH_PROPERTY);
+            if (overridePath != null) {
+                MODEL = LinearModel.loadFromPath(java.nio.file.Paths.get(overridePath));
+                System.out.println("[CharSoupLanguageDetector] loaded model from disk: "
+                        + overridePath);
+            } else {
+                MODEL = LinearModel.loadFromClasspath(MODEL_RESOURCE);
+            }
+            EXTRACTOR = new ScriptAwareFeatureExtractor(MODEL.getNumBuckets());
             Set<String> langs = new HashSet<>();
             Collections.addAll(langs, MODEL.getLabels());
             SUPPORTED_LANGUAGES = Collections.unmodifiableSet(langs);
             GROUP_INDICES = buildGroupIndices(MODEL);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to load built-in language model: " + MODEL_RESOURCE,
-                    e);
+            throw new RuntimeException("Failed to load language model", e);
         }
     }
 
-    /**
-     * Build a mapping from each class index to the set of class indices in its
-     * confusable group. Only groups where at least 2 members are present in the
-     * model are created; singletons are left as no-ops.
-     */
-    private static int[][] buildGroupIndices(CharSoupModel model) {
-        // Build label → index map
-        Map<String, Integer> labelIdx = new HashMap<>();
-        for (int i = 0; i < model.getNumClasses(); i++) {
-            labelIdx.put(model.getLabel(i), i);
-        }
-
-        // For each class, determine its group members (by index)
-        int[][] result = new int[model.getNumClasses()][];
-        boolean[] assigned = new boolean[model.getNumClasses()];
-
-        for (String[] group : CONFUSABLE_GROUPS) {
-            // Collect indices of group members present in the model
-            List<Integer> members = new ArrayList<>();
-            for (String lang : group) {
-                Integer idx = labelIdx.get(lang);
-                if (idx != null) {
-                    members.add(idx);
-                }
-            }
-            if (members.size() >= 2) {
-                int[] memberArr = members.stream().mapToInt(Integer::intValue).toArray();
-                for (int idx : memberArr) {
-                    result[idx] = memberArr;
-                    assigned[idx] = true;
-                }
-            }
-        }
-
-        // Singletons: classes not in any group
-        for (int i = 0; i < result.length; i++) {
-            if (!assigned[i]) {
-                result[i] = new int[]{i};
-            }
-        }
-        return result;
+    private static int[][] buildGroupIndices(LinearModel model) {
+        return LanguageConfusables.buildGroupIndices(model);
     }
 
-    /**
-     * Collapse confusable group probabilities: sum each group's probabilities
-     * and assign the total to the highest-scoring member. Other members get 0.
-     * Returns a new array; the input is not modified.
-     */
     static float[] collapseGroups(float[] probs, int[][] groupIndices) {
-        float[] collapsed = Arrays.copyOf(probs, probs.length);
-        boolean[] visited = new boolean[probs.length];
-
-        for (int i = 0; i < probs.length; i++) {
-            if (visited[i] || groupIndices[i].length <= 1) {
-                continue;
-            }
-            int[] group = groupIndices[i];
-            // Find the top scorer and sum
-            float sum = 0f;
-            int best = group[0];
-            for (int idx : group) {
-                sum += probs[idx];
-                if (probs[idx] > probs[best]) {
-                    best = idx;
-                }
-                visited[idx] = true;
-            }
-            // Assign sum to top scorer, zero the rest
-            for (int idx : group) {
-                collapsed[idx] = (idx == best) ? sum : 0f;
-            }
-        }
-        return collapsed;
+        return LanguageConfusables.collapseGroups(probs, groupIndices);
     }
 
     private final StringBuilder buffer = new StringBuilder();
@@ -342,6 +273,7 @@ public class CharSoupLanguageDetector extends LanguageDetector {
         }
 
         int len = text.length();
+        float[] bestLogits = null;
         float[] bestProbs = null;
         float bestEntropy = Float.MAX_VALUE;
 
@@ -350,12 +282,14 @@ public class CharSoupLanguageDetector extends LanguageDetector {
             String chunk = text.substring(start, end);
 
             int[] features = EXTRACTOR.extract(chunk);
-            float[] probs = MODEL.predict(features);
+            float[] logits = MODEL.predictLogits(features);
+            float[] probs = LinearModel.softmax(logits.clone());
             float[] collapsed = collapseGroups(probs, GROUP_INDICES);
-            float entropy = CharSoupModel.entropy(collapsed);
+            float entropy = LinearModel.entropy(collapsed);
 
             if (entropy < bestEntropy) {
                 bestEntropy = entropy;
+                bestLogits = logits;
                 bestProbs = probs;
             }
 
@@ -364,26 +298,41 @@ public class CharSoupLanguageDetector extends LanguageDetector {
             }
         }
 
-        return buildResults(bestProbs);
+        return buildResults(bestLogits, bestProbs);
     }
 
     /**
-     * Build sorted LanguageResult list from raw probabilities.
+     * Build a {@link Prediction} list from raw logits and softmax probabilities.
+     * Predictions are sorted by probability descending.
      */
-    private List<LanguageResult> buildResults(float[] probs) {
-        // Compute entropy on collapsed distribution
-        float[] collapsed = collapseGroups(probs, GROUP_INDICES);
-        lastEntropy = CharSoupModel.entropy(collapsed);
-
-        // Build results from raw probabilities sorted by probability descending
-        List<LanguageResult> results = new ArrayList<>(MODEL.getNumClasses());
+    public List<Prediction> buildPredictions(float[] logits, float[] probs) {
+        List<Prediction> predictions = new ArrayList<>(MODEL.getNumClasses());
         for (int c = 0; c < MODEL.getNumClasses(); c++) {
-            results.add(new LanguageResult(
-                    MODEL.getLabel(c), toConfidence(probs[c], lastEntropy), probs[c]));
+            predictions.add(new Prediction(MODEL.getLabel(c), logits[c], probs[c]));
         }
-        results.sort((a, b) -> Float.compare(b.getRawScore(), a.getRawScore()));
+        predictions.sort((a, b) -> Double.compare(b.getProbability(), a.getProbability()));
+        return predictions;
+    }
 
-        // If top score is below NONE threshold, return NULL
+    /**
+     * Build sorted LanguageResult list from raw logits and softmax probabilities.
+     * Uses {@link Prediction} internally; adapts to {@link LanguageResult} for the
+     * {@link LanguageDetector} interface boundary.
+     */
+    private List<LanguageResult> buildResults(float[] logits, float[] probs) {
+        float[] collapsed = collapseGroups(probs, GROUP_INDICES);
+        lastEntropy = LinearModel.entropy(collapsed);
+
+        List<Prediction> predictions = buildPredictions(logits, probs);
+
+        List<LanguageResult> results = new ArrayList<>(predictions.size());
+        for (Prediction p : predictions) {
+            results.add(new LanguageResult(
+                    p.getLabel(),
+                    toConfidence((float) p.getProbability(), lastEntropy),
+                    (float) p.getProbability()));
+        }
+
         if (results.get(0).getConfidence() == LanguageConfidence.NONE) {
             return Collections.singletonList(LanguageResult.NULL);
         }

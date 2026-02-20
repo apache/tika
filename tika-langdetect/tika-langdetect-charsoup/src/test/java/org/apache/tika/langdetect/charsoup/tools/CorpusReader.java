@@ -42,10 +42,48 @@ import java.util.Random;
  * The directory name is used as the ISO 639-3 language code.
  * Each sentence file has tab-delimited lines: {@code lineNumber\tsentence text}.
  * Files ending in {@code .txt} under each language directory are read.
+ * <p>
+ * Lines containing three or more consecutive tilde characters ({@code ~~~}) are
+ * rejected as web-crawl noise: they indicate paywalled/redacted content where
+ * the body text was replaced by tildes but the page was still tagged with a
+ * language label. This pattern is particularly prevalent in Breton (bre) MADLAD
+ * data, where French blog posts were mislabeled due to Breton-language navigation
+ * wrappers on otherwise French pages.
  */
 public class CorpusReader {
 
+    /** Lines containing this many or more consecutive tildes are discarded as crawl noise. */
+    private static final String TILDE_NOISE_MARKER = "~~~";
+
     private CorpusReader() {
+    }
+
+    private static boolean isNoisyLine(String text) {
+        return text.contains(TILDE_NOISE_MARKER);
+    }
+
+    /**
+     * Split a sentence on literal {@code \n} escape sequences that corpus writers
+     * embed to represent paragraph breaks within a single tab-delimited field.
+     * Each non-empty, non-noisy segment becomes a separate training example.
+     * This is critical for languages like Dhivehi (dv) whose MADLAD entries begin
+     * with a romanized Latin headline followed by a Thaana-script body — without
+     * splitting, the 20-char evaluation window always hits the Latin prefix.
+     */
+    private static void addSegments(String language, String text,
+                                    List<LabeledSentence> out) {
+        if (!text.contains("\\n")) {
+            if (!isNoisyLine(text)) {
+                out.add(new LabeledSentence(language, text));
+            }
+            return;
+        }
+        for (String seg : text.split("\\\\n")) {
+            seg = seg.trim();
+            if (!seg.isEmpty() && !isNoisyLine(seg)) {
+                out.add(new LabeledSentence(language, seg));
+            }
+        }
     }
 
     /**
@@ -103,14 +141,18 @@ public class CorpusReader {
      * Read sentence files from a language directory using reservoir sampling
      * to cap at {@code maxPerLang} sentences. This reads through the entire
      * file but only keeps a fixed-size sample in memory.
+     * <p>
+     * Prefer {@link #readLanguageDirHead} when the corpus files are already
+     * randomly ordered (e.g. written by a reservoir-sampling downloader),
+     * since that method stops reading after {@code maxPerLang} lines and is
+     * orders of magnitude faster on large files.
      */
     static void readLanguageDirSampled(Path langDir, String language,
                                        int maxPerLang,
                                        List<LabeledSentence> allSentences)
             throws IOException {
-        // Reservoir sampling: read all lines, keep at most maxPerLang
         List<LabeledSentence> reservoir = new ArrayList<>(maxPerLang);
-        Random rng = new Random(language.hashCode()); // deterministic per language
+        Random rng = new Random(language.hashCode());
         int count = 0;
 
         try (DirectoryStream<Path> files = Files.newDirectoryStream(langDir, "*.txt")) {
@@ -127,14 +169,17 @@ public class CorpusReader {
                         if (text.isEmpty()) {
                             continue;
                         }
-                        count++;
-                        if (reservoir.size() < maxPerLang) {
-                            reservoir.add(new LabeledSentence(language, text));
-                        } else {
-                            // Replace with decreasing probability
-                            int j = rng.nextInt(count);
-                            if (j < maxPerLang) {
-                                reservoir.set(j, new LabeledSentence(language, text));
+                        List<LabeledSentence> segs = new ArrayList<>();
+                        addSegments(language, text, segs);
+                        for (LabeledSentence seg : segs) {
+                            count++;
+                            if (reservoir.size() < maxPerLang) {
+                                reservoir.add(seg);
+                            } else {
+                                int j = rng.nextInt(count);
+                                if (j < maxPerLang) {
+                                    reservoir.set(j, seg);
+                                }
                             }
                         }
                     }
@@ -142,6 +187,48 @@ public class CorpusReader {
             }
         }
         allSentences.addAll(reservoir);
+    }
+
+    /**
+     * Read the first {@code maxLines} sentences from a language directory,
+     * stopping as soon as the limit is reached.
+     * <p>
+     * This is much faster than {@link #readLanguageDirSampled} when the
+     * corpus files are already randomly ordered, because it avoids scanning
+     * the entire (potentially multi-gigabyte) file. Use this whenever the
+     * corpus was written by a reservoir-sampling downloader such as
+     * {@code download_madlad.py}.
+     */
+    static void readLanguageDirHead(Path langDir, String language,
+                                    int maxLines,
+                                    List<LabeledSentence> allSentences)
+            throws IOException {
+        int count = 0;
+        outer:
+        try (DirectoryStream<Path> files = Files.newDirectoryStream(langDir, "*.txt")) {
+            for (Path file : files) {
+                try (BufferedReader reader = Files.newBufferedReader(file,
+                        StandardCharsets.UTF_8)) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        int tab = line.indexOf('\t');
+                        if (tab < 0) {
+                            continue;
+                        }
+                        String text = line.substring(tab + 1).trim();
+                        if (text.isEmpty()) {
+                            continue;
+                        }
+                        int before = allSentences.size();
+                        addSegments(language, text, allSentences);
+                        count += allSentences.size() - before;
+                        if (count >= maxLines) {
+                            break outer;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -160,7 +247,7 @@ public class CorpusReader {
                 }
                 String text = line.substring(tab + 1).trim();
                 if (!text.isEmpty()) {
-                    sentences.add(new LabeledSentence(language, text));
+                    addSegments(language, text, sentences);
                 }
             }
         }

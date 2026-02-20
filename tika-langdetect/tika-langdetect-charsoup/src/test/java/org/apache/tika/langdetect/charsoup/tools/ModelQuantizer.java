@@ -16,7 +16,7 @@
  */
 package org.apache.tika.langdetect.charsoup.tools;
 
-import org.apache.tika.langdetect.charsoup.CharSoupModel;
+import org.apache.tika.ml.LinearModel;
 
 /**
  * Quantizes float32 model weights to INT8 for compact storage.
@@ -38,9 +38,9 @@ public class ModelQuantizer {
      * to the class-major layout expected here.
      *
      * @param trainer the trained Phase2Trainer
-     * @return a CharSoupModel with INT8 quantized weights
+     * @return a LinearModel with INT8 quantized weights
      */
-    public static CharSoupModel quantize(Phase2Trainer trainer) {
+    public static LinearModel quantize(Phase2Trainer trainer) {
         return quantize(trainer.getLabels(),
                 trainer.getWeightsClassMajor(),
                 trainer.getBiases(),
@@ -54,9 +54,9 @@ public class ModelQuantizer {
      * @param weights    float32 weights [numClasses][numBuckets]
      * @param biases     float32 biases [numClasses]
      * @param numBuckets number of feature buckets
-     * @return a CharSoupModel with INT8 quantized weights
+     * @return a LinearModel with INT8 quantized weights
      */
-    public static CharSoupModel quantize(String[] labels,
+    public static LinearModel quantize(String[] labels,
                                        float[][] weights,
                                        float[] biases,
                                        int numBuckets) {
@@ -87,7 +87,7 @@ public class ModelQuantizer {
             }
         }
 
-        return new CharSoupModel(numBuckets, numClasses,
+        return new LinearModel(numBuckets, numClasses,
                 labels.clone(), scales, biases.clone(),
                 quantizedWeights);
     }

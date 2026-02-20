@@ -19,39 +19,36 @@
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
-    <artifactId>tika-langdetect</artifactId>
+    <artifactId>tika-ml</artifactId>
     <groupId>org.apache.tika</groupId>
     <version>${revision}</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>tika-langdetect-charsoup</artifactId>
-  <name>Apache Tika langdetect (built-in charsoup)</name>
+  <artifactId>tika-ml-chardetect</artifactId>
+  <name>Apache Tika ML charset detector</name>
 
   <dependencies>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-ml-core</artifactId>
-      <version>${project.version}</version>
+      <version>${revision}</version>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-annotation-processor</artifactId>
-      <version>${project.version}</version>
-      <scope>compile</scope>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-core</artifactId>
+      <version>${revision}</version>
     </dependency>
 
-    <!-- test dependencies -->
+    <!-- Test dependencies -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-langdetect-test-commons</artifactId>
-      <version>${project.version}</version>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-langdetect-opennlp</artifactId>
-      <version>${project.version}</version>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -60,20 +57,13 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
+        <artifactId>maven-jar-plugin</artifactId>
         <configuration>
-          <annotationProcessorPaths>
-            <path>
-              <groupId>org.apache.tika</groupId>
-              <artifactId>tika-annotation-processor</artifactId>
-              <version>${project.version}</version>
-            </path>
-            <path>
-              <groupId>org.apache.tika</groupId>
-              <artifactId>tika-core</artifactId>
-              <version>${project.version}</version>
-            </path>
-          </annotationProcessorPaths>
+          <archive>
+            <manifestEntries>
+              <Automatic-Module-Name>org.apache.tika.ml.chardetect</Automatic-Module-Name>
+            </manifestEntries>
+          </archive>
         </configuration>
       </plugin>
       <plugin>
@@ -81,23 +71,10 @@
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
           <inputExcludes>
-            <inputExclude>src/test/resources/org/apache/tika/langdetect/charsoup/**</inputExclude>
+            <inputExclude>**/*.bin</inputExclude>
+            <inputExclude>**/*.bin.gz</inputExclude>
+            <inputExclude>**/manifest.json</inputExclude>
           </inputExcludes>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <configuration>
-          <archive>
-            <manifestEntries>
-              <Automatic-Module-Name>org.apache.tika.langdetect.charsoup</Automatic-Module-Name>
-            </manifestEntries>
-          </archive>
-          <includes>
-            <include>**/*</include>
-            <include>META-INF/tika/**</include>
-          </includes>
         </configuration>
       </plugin>
     </plugins>

@@ -34,10 +34,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.apache.tika.langdetect.charsoup.CharSoupModel;
-import org.apache.tika.langdetect.charsoup.FeatureExtractor;
+import org.apache.tika.langdetect.charsoup.ScriptAwareFeatureExtractor;
+import org.apache.tika.langdetect.charsoup.TextFeatureExtractor;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
+import org.apache.tika.ml.LinearModel;
 
 /**
  * Quick evaluation tool: compute macro F1, accuracy, and throughput
@@ -140,11 +141,11 @@ public class QuickF1Eval {
                             "org.apache.tika.langdetect.opennlp"
                                     + ".OpenNLPDetector");
             if (opennlp != null) {
-                CharSoupModel firstModel;
+                LinearModel firstModel;
                 try (InputStream is = new BufferedInputStream(
                         Files.newInputStream(
                                 modelFiles.get(0)))) {
-                    firstModel = CharSoupModel.load(is);
+                    firstModel = LinearModel.load(is);
                 }
                 for (String lang : firstModel.getLabels()) {
                     if (opennlp.hasModel(lang)
@@ -225,12 +226,12 @@ public class QuickF1Eval {
         // Evaluate each bigram model
         for (Path mf : modelFiles) {
             System.out.println("Loading: " + mf);
-            CharSoupModel model;
+            LinearModel model;
             try (InputStream is = new BufferedInputStream(
                     Files.newInputStream(mf))) {
-                model = CharSoupModel.load(is);
+                model = LinearModel.load(is);
             }
-            FeatureExtractor extractor = model.createExtractor();
+            TextFeatureExtractor extractor = new ScriptAwareFeatureExtractor(model.getNumBuckets());
             String label = mf.getParent() != null
                     ? mf.getParent().getFileName().toString()
                     : mf.getFileName().toString();
@@ -407,7 +408,7 @@ public class QuickF1Eval {
     // ---- Bigram evaluation ----
 
     static F1Result evalBigramParallel(
-            CharSoupModel model, FeatureExtractor extractor,
+            LinearModel model, TextFeatureExtractor extractor,
             List<LabeledSentence> data, int threads,
             boolean collapse,
             boolean binaryScript) throws Exception {
@@ -419,7 +420,7 @@ public class QuickF1Eval {
             List<Future<F1Stats>> futures = new ArrayList<>();
             long wallStart = System.nanoTime();
             for (List<LabeledSentence> chunk : chunks) {
-                FeatureExtractor te = model.createExtractor();
+                TextFeatureExtractor te = new ScriptAwareFeatureExtractor(model.getNumBuckets());
                 futures.add(pool.submit(
                         () -> evalBigramChunk(
                                 model, te, chunk, collapse,
@@ -445,7 +446,7 @@ public class QuickF1Eval {
     }
 
     static F1Stats evalBigramChunk(
-            CharSoupModel model, FeatureExtractor extractor,
+            LinearModel model, TextFeatureExtractor extractor,
             List<LabeledSentence> data, boolean collapse,
             boolean binaryScript) {
         F1Stats stats = new F1Stats(collapse, binaryScript);
