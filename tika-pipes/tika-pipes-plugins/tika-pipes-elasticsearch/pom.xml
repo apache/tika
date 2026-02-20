@@ -52,6 +52,11 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-pipes-reporter-commons</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-io</artifactId>
     </dependency>
@@ -88,11 +93,11 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Plugin-Id>elasticsearch-emitter</Plugin-Id>
+              <Plugin-Id>es-emitter</Plugin-Id>
               <Plugin-Version>${project.version}</Plugin-Version>
-              <Plugin-Class>org.apache.tika.pipes.plugin.elasticsearch.ElasticsearchPipesPlugin</Plugin-Class>
-              <Plugin-Provider>Elasticsearch Emitter</Plugin-Provider>
-              <Plugin-Description>Elasticsearch emitter (plain HTTP, no ES client)</Plugin-Description>
+              <Plugin-Class>org.apache.tika.pipes.plugin.es.ESPipesPlugin</Plugin-Class>
+              <Plugin-Provider>ES Emitter</Plugin-Provider>
+              <Plugin-Description>ES emitter (plain HTTP, no ES client)</Plugin-Description>
               <Plugin-Dependencies></Plugin-Dependencies>
             </manifestEntries>
           </archive>

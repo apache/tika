@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.emitter.elasticsearch;
+package org.apache.tika.pipes.emitter.es;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -28,6 +28,7 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpResponse;
@@ -45,33 +46,29 @@ import org.apache.tika.pipes.api.emitter.EmitData;
 import org.apache.tika.utils.StringUtils;
 
 /**
- * Plain HTTP client for Elasticsearch's REST API.
+ * Plain HTTP client for the ES REST API.
  *
- * <p>This does <b>not</b> use the Elasticsearch Java client library
+ * <p>This does <b>not</b> use the ES Java client library
  * (which is SSPL / Elastic License). Instead it talks directly to
- * Elasticsearch's {@code _bulk} REST endpoint using Apache HttpClient
- * (ASL v2).
+ * the {@code _bulk} REST endpoint using Apache HttpClient (ASL v2).
  *
  * <p>Supports API key authentication ({@code Authorization: ApiKey ...})
  * as well as basic auth via the underlying {@link HttpClient}.
  */
-public class ElasticsearchClient {
+public class ESClient {
 
-    private static final Logger LOG =
-            LoggerFactory.getLogger(ElasticsearchClient.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ESClient.class);
 
     protected final HttpClient httpClient;
 
     private final MetadataToJsonWriter metadataToJsonWriter;
-    private final ElasticsearchEmitterConfig config;
+    private final ESEmitterConfig config;
 
-    protected ElasticsearchClient(ElasticsearchEmitterConfig config,
-                                  HttpClient httpClient) {
+    protected ESClient(ESEmitterConfig config, HttpClient httpClient) {
         this.config = config;
         this.httpClient = httpClient;
         this.metadataToJsonWriter =
-                (config.updateStrategy() ==
-                        ElasticsearchEmitterConfig.UpdateStrategy.OVERWRITE)
+                (config.updateStrategy() == ESEmitterConfig.UpdateStrategy.OVERWRITE)
                         ? new InsertMetadataToJsonWriter()
                         : new UpsertMetadataToJsonWriter();
     }
@@ -94,16 +91,14 @@ public class ElasticsearchClient {
 
     private void emitJson(StringBuilder json)
             throws IOException, TikaClientException {
-        String requestUrl = config.elasticsearchUrl() + "/_bulk";
+        String requestUrl = config.esUrl() + "/_bulk";
         JsonResponse response = postJson(requestUrl, json.toString());
         if (response.getStatus() != 200) {
             throw new TikaClientException(response.getMsg());
         } else {
-            // If there's a single error in the bulk response, throw
             JsonNode errorNode = response.getJson().get("errors");
             if (errorNode != null && errorNode.asText().equals("true")) {
-                throw new TikaClientException(
-                        response.getJson().toString());
+                throw new TikaClientException(response.getJson().toString());
             }
         }
     }
@@ -113,16 +108,15 @@ public class ElasticsearchClient {
         int i = 0;
         String routing =
                 (config.attachmentStrategy() ==
-                        ElasticsearchEmitterConfig.AttachmentStrategy
-                                .PARENT_CHILD) ? emitKey : null;
+                        ESEmitterConfig.AttachmentStrategy.PARENT_CHILD)
+                        ? emitKey : null;
 
         for (Metadata metadata : metadataList) {
             StringBuilder id = new StringBuilder(emitKey);
             if (i > 0) {
                 id.append("-").append(UUID.randomUUID());
             }
-            String indexJson =
-                    metadataToJsonWriter.getBulkJson(id.toString(), routing);
+            String indexJson = metadataToJsonWriter.getBulkJson(id.toString(), routing);
             json.append(indexJson).append("\n");
             if (i == 0) {
                 json.append(metadataToJsonWriter.writeContainer(
@@ -140,7 +134,7 @@ public class ElasticsearchClient {
     // Package-private for testing
     static String metadataToJsonContainerInsert(
             Metadata metadata,
-            ElasticsearchEmitterConfig.AttachmentStrategy attachmentStrategy)
+            ESEmitterConfig.AttachmentStrategy attachmentStrategy)
             throws IOException {
         return new InsertMetadataToJsonWriter().writeContainer(
                 metadata, attachmentStrategy);
@@ -149,27 +143,22 @@ public class ElasticsearchClient {
     // Package-private for testing
     static String metadataToJsonEmbeddedInsert(
             Metadata metadata,
-            ElasticsearchEmitterConfig.AttachmentStrategy attachmentStrategy,
+            ESEmitterConfig.AttachmentStrategy attachmentStrategy,
             String emitKey, String embeddedFileFieldName)
             throws IOException {
         return new InsertMetadataToJsonWriter().writeEmbedded(
-                metadata, attachmentStrategy, emitKey,
-                embeddedFileFieldName);
+                metadata, attachmentStrategy, emitKey, embeddedFileFieldName);
     }
 
     public JsonResponse postJson(String url, String json) throws IOException {
         HttpPost httpRequest = new HttpPost(url);
-        StringEntity entity =
-                new StringEntity(json, StandardCharsets.UTF_8);
+        StringEntity entity = new StringEntity(json, StandardCharsets.UTF_8);
         httpRequest.setEntity(entity);
         httpRequest.setHeader("Accept", "application/json");
-        httpRequest.setHeader("Content-type",
-                "application/json; charset=utf-8");
+        httpRequest.setHeader("Content-type", "application/json; charset=utf-8");
 
-        // ES 8.x API key auth
         if (!StringUtils.isEmpty(config.apiKey())) {
-            httpRequest.setHeader("Authorization",
-                    "ApiKey " + config.apiKey());
+            httpRequest.setHeader("Authorization", "ApiKey " + config.apiKey());
         }
 
         HttpResponse response = null;
@@ -190,9 +179,7 @@ public class ElasticsearchClient {
                 }
             } else {
                 return new JsonResponse(status,
-                        new String(
-                                EntityUtils.toByteArray(
-                                        response.getEntity()),
+                        new String(EntityUtils.toByteArray(response.getEntity()),
                                 StandardCharsets.UTF_8));
             }
         } finally {
@@ -208,36 +195,29 @@ public class ElasticsearchClient {
     // -----------------------------------------------------------------------
 
     private interface MetadataToJsonWriter {
-        String writeContainer(
-                Metadata metadata,
-                ElasticsearchEmitterConfig.AttachmentStrategy strategy)
+        String writeContainer(Metadata metadata,
+                              ESEmitterConfig.AttachmentStrategy strategy)
                 throws IOException;
 
-        String writeEmbedded(
-                Metadata metadata,
-                ElasticsearchEmitterConfig.AttachmentStrategy strategy,
-                String emitKey, String embeddedFileFieldName)
+        String writeEmbedded(Metadata metadata,
+                             ESEmitterConfig.AttachmentStrategy strategy,
+                             String emitKey, String embeddedFileFieldName)
                 throws IOException;
 
         String getBulkJson(String id, String routing) throws IOException;
     }
 
-    private static class InsertMetadataToJsonWriter
-            implements MetadataToJsonWriter {
+    private static class InsertMetadataToJsonWriter implements MetadataToJsonWriter {
 
         @Override
-        public String writeContainer(
-                Metadata metadata,
-                ElasticsearchEmitterConfig.AttachmentStrategy strategy)
+        public String writeContainer(Metadata metadata,
+                                     ESEmitterConfig.AttachmentStrategy strategy)
                 throws IOException {
             StringWriter writer = new StringWriter();
-            try (JsonGenerator jg =
-                         new JsonFactory().createGenerator(writer)) {
+            try (JsonGenerator jg = new JsonFactory().createGenerator(writer)) {
                 jg.writeStartObject();
                 writeMetadata(metadata, jg);
-                if (strategy ==
-                        ElasticsearchEmitterConfig.AttachmentStrategy
-                                .PARENT_CHILD) {
+                if (strategy == ESEmitterConfig.AttachmentStrategy.PARENT_CHILD) {
                     jg.writeStringField("relation_type", "container");
                 }
                 jg.writeEndObject();
@@ -246,26 +226,20 @@ public class ElasticsearchClient {
         }
 
         @Override
-        public String writeEmbedded(
-                Metadata metadata,
-                ElasticsearchEmitterConfig.AttachmentStrategy strategy,
-                String emitKey, String embeddedFileFieldName)
+        public String writeEmbedded(Metadata metadata,
+                                    ESEmitterConfig.AttachmentStrategy strategy,
+                                    String emitKey, String embeddedFileFieldName)
                 throws IOException {
             StringWriter writer = new StringWriter();
-            try (JsonGenerator jg =
-                         new JsonFactory().createGenerator(writer)) {
+            try (JsonGenerator jg = new JsonFactory().createGenerator(writer)) {
                 jg.writeStartObject();
                 writeMetadata(metadata, jg);
-                if (strategy ==
-                        ElasticsearchEmitterConfig.AttachmentStrategy
-                                .PARENT_CHILD) {
+                if (strategy == ESEmitterConfig.AttachmentStrategy.PARENT_CHILD) {
                     jg.writeObjectFieldStart("relation_type");
                     jg.writeStringField("name", embeddedFileFieldName);
                     jg.writeStringField("parent", emitKey);
                     jg.writeEndObject();
-                } else if (strategy ==
-                        ElasticsearchEmitterConfig.AttachmentStrategy
-                                .SEPARATE_DOCUMENTS) {
+                } else if (strategy == ESEmitterConfig.AttachmentStrategy.SEPARATE_DOCUMENTS) {
                     jg.writeStringField("parent", emitKey);
                 }
                 jg.writeEndObject();
@@ -274,11 +248,9 @@ public class ElasticsearchClient {
         }
 
         @Override
-        public String getBulkJson(String id, String routing)
-                throws IOException {
+        public String getBulkJson(String id, String routing) throws IOException {
             StringWriter writer = new StringWriter();
-            try (JsonGenerator jg =
-                         new JsonFactory().createGenerator(writer)) {
+            try (JsonGenerator jg = new JsonFactory().createGenerator(writer)) {
                 jg.writeStartObject();
                 jg.writeObjectFieldStart("index");
                 jg.writeStringField("_id", id);
@@ -292,23 +264,18 @@ public class ElasticsearchClient {
         }
     }
 
-    private static class UpsertMetadataToJsonWriter
-            implements MetadataToJsonWriter {
+    private static class UpsertMetadataToJsonWriter implements MetadataToJsonWriter {
 
         @Override
-        public String writeContainer(
-                Metadata metadata,
-                ElasticsearchEmitterConfig.AttachmentStrategy strategy)
+        public String writeContainer(Metadata metadata,
+                                     ESEmitterConfig.AttachmentStrategy strategy)
                 throws IOException {
             StringWriter writer = new StringWriter();
-            try (JsonGenerator jg =
-                         new JsonFactory().createGenerator(writer)) {
+            try (JsonGenerator jg = new JsonFactory().createGenerator(writer)) {
                 jg.writeStartObject();
                 jg.writeObjectFieldStart("doc");
                 writeMetadata(metadata, jg);
-                if (strategy ==
-                        ElasticsearchEmitterConfig.AttachmentStrategy
-                                .PARENT_CHILD) {
+                if (strategy == ESEmitterConfig.AttachmentStrategy.PARENT_CHILD) {
                     jg.writeStringField("relation_type", "container");
                 }
                 jg.writeEndObject();
@@ -319,27 +286,21 @@ public class ElasticsearchClient {
         }
 
         @Override
-        public String writeEmbedded(
-                Metadata metadata,
-                ElasticsearchEmitterConfig.AttachmentStrategy strategy,
-                String emitKey, String embeddedFileFieldName)
+        public String writeEmbedded(Metadata metadata,
+                                    ESEmitterConfig.AttachmentStrategy strategy,
+                                    String emitKey, String embeddedFileFieldName)
                 throws IOException {
             StringWriter writer = new StringWriter();
-            try (JsonGenerator jg =
-                         new JsonFactory().createGenerator(writer)) {
+            try (JsonGenerator jg = new JsonFactory().createGenerator(writer)) {
                 jg.writeStartObject();
                 jg.writeObjectFieldStart("doc");
                 writeMetadata(metadata, jg);
-                if (strategy ==
-                        ElasticsearchEmitterConfig.AttachmentStrategy
-                                .PARENT_CHILD) {
+                if (strategy == ESEmitterConfig.AttachmentStrategy.PARENT_CHILD) {
                     jg.writeObjectFieldStart("relation_type");
                     jg.writeStringField("name", embeddedFileFieldName);
                     jg.writeStringField("parent", emitKey);
                     jg.writeEndObject();
-                } else if (strategy ==
-                        ElasticsearchEmitterConfig.AttachmentStrategy
-                                .SEPARATE_DOCUMENTS) {
+                } else if (strategy == ESEmitterConfig.AttachmentStrategy.SEPARATE_DOCUMENTS) {
                     jg.writeStringField("parent", emitKey);
                 }
                 jg.writeEndObject();
@@ -350,11 +311,9 @@ public class ElasticsearchClient {
         }
 
         @Override
-        public String getBulkJson(String id, String routing)
-                throws IOException {
+        public String getBulkJson(String id, String routing) throws IOException {
             StringWriter writer = new StringWriter();
-            try (JsonGenerator jg =
-                         new JsonFactory().createGenerator(writer)) {
+            try (JsonGenerator jg = new JsonFactory().createGenerator(writer)) {
                 jg.writeStartObject();
                 jg.writeObjectFieldStart("update");
                 jg.writeStringField("_id", id);
@@ -373,19 +332,16 @@ public class ElasticsearchClient {
      * Metadata fields whose values are serialized JSON from the
      * tika-inference pipeline. These must be written as raw JSON
      * (arrays/objects) rather than escaped strings so that
-     * Elasticsearch can index vectors, locators, etc. natively.
+     * ES can index vectors, locators, etc. natively.
      */
-    static final Set<String> INFERENCE_JSON_FIELDS = Set.of(
-            "tika:chunks");
+    static final Set<String> INFERENCE_JSON_FIELDS = Set.of("tika:chunks");
 
-    private static void writeMetadata(Metadata metadata,
-                                      JsonGenerator jsonGenerator)
+    private static void writeMetadata(Metadata metadata, JsonGenerator jsonGenerator)
             throws IOException {
         for (String n : metadata.names()) {
             String[] vals = metadata.getValues(n);
             if (vals.length == 1) {
-                if (INFERENCE_JSON_FIELDS.contains(n)
-                        && isValidJson(vals[0])) {
+                if (INFERENCE_JSON_FIELDS.contains(n) && isValidJson(vals[0])) {
                     jsonGenerator.writeFieldName(n);
                     jsonGenerator.writeRawValue(vals[0]);
                 } else {
@@ -401,12 +357,17 @@ public class ElasticsearchClient {
         }
     }
 
-    private static final ObjectMapper VALIDATION_MAPPER = new ObjectMapper();
+    private static final JsonFactory STRICT_JSON_FACTORY = new JsonFactory();
 
     /**
-     * Validates that the value is well-formed JSON (array or object)
-     * before writing it as raw JSON. This prevents injection of
-     * arbitrary content into the bulk request payload.
+     * Validates that the value is well-formed JSON (array or object) with
+     * no trailing content before writing it as raw JSON.
+     *
+     * <p>{@code ObjectMapper.readTree()} silently ignores trailing content,
+     * so a value like {@code [1,2,3], "injected": true} would pass a simple
+     * readTree check and then inject extra fields into the document via
+     * {@code writeRawValue}. We use a {@link JsonParser} directly and
+     * assert that the stream is fully consumed after the root value.
      */
     private static boolean isValidJson(String value) {
         if (value == null || value.isEmpty()) {
@@ -416,8 +377,14 @@ public class ElasticsearchClient {
         if (first != '[' && first != '{') {
             return false;
         }
-        try {
-            VALIDATION_MAPPER.readTree(value);
+        try (JsonParser parser = STRICT_JSON_FACTORY.createParser(value)) {
+            parser.nextToken();
+            parser.skipChildren();
+            if (parser.nextToken() != null) {
+                LOG.warn("Field value has trailing content after root JSON value; "
+                        + "writing as escaped string");
+                return false;
+            }
             return true;
         } catch (IOException e) {
             LOG.warn("Field value starts with '{}' but is not valid JSON; "

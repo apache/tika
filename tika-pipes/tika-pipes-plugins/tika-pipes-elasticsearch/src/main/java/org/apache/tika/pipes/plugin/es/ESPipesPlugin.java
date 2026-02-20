@@ -14,37 +14,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.plugin.elasticsearch;
+package org.apache.tika.pipes.plugin.es;
 
 import org.pf4j.Plugin;
 import org.pf4j.PluginWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ElasticsearchPipesPlugin extends Plugin {
-    private static final Logger LOG =
-            LoggerFactory.getLogger(ElasticsearchPipesPlugin.class);
+public class ESPipesPlugin extends Plugin {
+    private static final Logger LOG = LoggerFactory.getLogger(ESPipesPlugin.class);
 
-    public ElasticsearchPipesPlugin(PluginWrapper wrapper) {
+    public ESPipesPlugin(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public void start() {
-        LOG.info("Starting Elasticsearch pipes plugin");
+        LOG.info("Starting ES pipes plugin");
         super.start();
     }
 
     @Override
     public void stop() {
-        LOG.info("Stopping Elasticsearch pipes plugin");
+        LOG.info("Stopping ES pipes plugin");
         super.stop();
     }
 
     @Override
     public void delete() {
-        LOG.info("Deleting Elasticsearch pipes plugin");
+        LOG.info("Deleting ES pipes plugin");
         super.delete();
     }
-
 }

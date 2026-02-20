@@ -70,7 +70,7 @@
       <artifactId>apache-rat-plugin</artifactId>
       <configuration>
         <inputExcludes>
-          <inputExclude>src/test/resources/elasticsearch/*.json</inputExclude>
+          <inputExclude>src/test/resources/elasticsearch/**</inputExclude>
         </inputExcludes>
     </configuration>
   </plugin>

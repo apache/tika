@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.emitter.elasticsearch;
+package org.apache.tika.pipes.emitter.es;
 
 import java.io.IOException;
 
@@ -26,14 +26,14 @@ import org.apache.tika.pipes.api.emitter.EmitterFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
 /**
- * Factory for creating Elasticsearch emitters.
+ * Factory for creating ES emitters.
  *
  * <p>Example JSON configuration:
  * <pre>
  * "emitters": {
- *   "elasticsearch-emitter": {
+ *   "es-emitter": {
  *     "my-es-emitter": {
- *       "elasticsearchUrl": "https://localhost:9200/my-index",
+ *       "esUrl": "https://localhost:9200/my-index",
  *       "idField": "id",
  *       "apiKey": "base64-encoded-id:api_key",
  *       "attachmentStrategy": "PARENT_CHILD",
@@ -45,9 +45,9 @@ import org.apache.tika.plugins.ExtensionConfig;
  * </pre>
  */
 @Extension
-public class ElasticsearchEmitterFactory implements EmitterFactory {
+public class ESEmitterFactory implements EmitterFactory {
 
-    public static final String NAME = "elasticsearch-emitter";
+    public static final String NAME = "es-emitter";
 
     @Override
     public String getName() {
@@ -57,6 +57,6 @@ public class ElasticsearchEmitterFactory implements EmitterFactory {
     @Override
     public Emitter buildExtension(ExtensionConfig extensionConfig)
             throws IOException, TikaConfigException {
-        return ElasticsearchEmitter.build(extensionConfig);
+        return ESEmitter.build(extensionConfig);
     }
 }

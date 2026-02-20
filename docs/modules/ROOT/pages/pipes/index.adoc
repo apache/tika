@@ -24,7 +24,7 @@ This section covers Tika Pipes for scalable, fault-tolerant document processing.
 Tika Pipes provides a framework for processing large volumes of documents with:
 
 * **Fetchers** - Retrieve documents from various sources (filesystem, S3, HTTP, etc.)
-* **Emitters** - Send parsed results to various destinations (filesystem, OpenSearch, Solr, etc.)
+* **Emitters** - Send parsed results to various destinations (filesystem, OpenSearch, ES-compatible, Solr, etc.)
 * **Pipelines** - Configure processing workflows
 
 == Topics
@@ -38,6 +38,104 @@ Tika Pipes provides a framework for processing large volumes of documents with:
 // * link:emitters.html[Emitters]
 // * link:configuration.html[Configuration]
 // * link:async.html[Async Processing]
+
+== Emitters
+
+=== ES Emitter (`es-emitter`)
+
+The ES emitter sends parsed documents to any ES-compatible REST API (ES 7+/8+) via
+the `_bulk` endpoint. It uses plain HTTP (Apache HttpClient) — there is no dependency
+on the ES Java client, which carries a non-ASL license.
+
+[source,json]
+----
+"emitters": {
+  "my-es": {
+    "es-emitter": {
+      "esUrl": "https://localhost:9200/my-index",
+      "idField": "_id",
+      "attachmentStrategy": "SEPARATE_DOCUMENTS",
+      "updateStrategy": "UPSERT",
+      "embeddedFileFieldName": "embedded",
+      "apiKey": "<base64-encoded id:api_key>"
+    }
+  }
+}
+----
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`esUrl`
+|_required_
+|Full URL including the index name, e.g. `https://localhost:9200/my-index`
+
+|`idField`
+|`_id`
+|Metadata field used as the document `_id`
+
+|`attachmentStrategy`
+|`SEPARATE_DOCUMENTS`
+|How embedded documents are stored. `SEPARATE_DOCUMENTS` gives each embedded
+file its own flat document. `PARENT_CHILD` uses an ES join field so embedded
+files are linked to their container via `relation_type`.
+
+|`updateStrategy`
+|`OVERWRITE`
+|`OVERWRITE` uses a bulk `index` action (full replace).
+`UPSERT` uses a bulk `update` / `doc_as_upsert` action (field-level merge).
+
+|`embeddedFileFieldName`
+|`embedded`
+|Name of the join-field relation used in `PARENT_CHILD` mode.
+
+|`apiKey`
+|_none_
+|Base64-encoded `id:api_key` sent as `Authorization: ApiKey <value>`.
+Takes precedence over `httpClientConfig` basic auth.
+
+|`httpClientConfig`
+|_none_
+|Optional block for `userName`, `password`, `authScheme`, `connectionTimeout`,
+`socketTimeout`, `proxyHost`, `proxyPort`, and `verifySsl` (boolean, default `false`).
+|===
+
+[WARNING]
+====
+By default (`verifySsl: false`) TLS certificate verification is disabled — all
+certificates are trusted and hostname verification is skipped.  Set
+`httpClientConfig.verifySsl: true` to enable proper certificate and hostname
+validation using the JVM's default trust store.  When `verifySsl` is `false`,
+do not transmit credentials over plain HTTP in production; prefer HTTPS with
+network-level controls (VPN, private endpoint) until verification is enabled.
+====
+
+=== ES Pipes Reporter (`es-pipes-reporter`)
+
+The ES reporter writes per-document parse status back into the same index,
+so you can query the processing outcome alongside the extracted content.
+
+[source,json]
+----
+"pipes-reporters": {
+  "es-pipes-reporter": {
+    "esUrl": "https://localhost:9200/my-index",
+    "keyPrefix": "tika_",
+    "includeRouting": false
+  }
+}
+----
+
+The reporter adds `<keyPrefix>parse_status`, `<keyPrefix>parse_time_ms`,
+and (when the forked JVM exits abnormally) `<keyPrefix>exit_value` fields
+to each document via an upsert.
+
+=== OpenSearch Emitter
+
+The OpenSearch emitter is configured identically but uses `opensearch-emitter` as the
+plugin key and `openSearchUrl` as the URL field. It also ships with an
+`opensearch-pipes-reporter`.
 
 == Advanced Topics
 

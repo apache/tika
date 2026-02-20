@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.emitter.elasticsearch;
+package org.apache.tika.pipes.emitter.es;
 
 import java.io.IOException;
 import java.util.List;
@@ -33,40 +33,36 @@ import org.apache.tika.pipes.api.emitter.EmitData;
 import org.apache.tika.plugins.ExtensionConfig;
 
 /**
- * Emitter that sends documents to Elasticsearch via its REST API.
+ * Emitter that sends documents to an ES-compatible REST API.
  *
- * <p>This emitter does <b>not</b> depend on the Elasticsearch Java client
+ * <p>This emitter does <b>not</b> depend on the ES Java client
  * (which changed to a non-ASL license). It uses plain HTTP via
  * Apache HttpClient to call the {@code _bulk} endpoint directly.
  *
  * <p>Supports:
  * <ul>
- *   <li>API key authentication ({@code Authorization: ApiKey &lt;base64&gt;})
- *       — common with Elasticsearch 8.x</li>
+ *   <li>API key authentication ({@code Authorization: ApiKey &lt;base64&gt;})</li>
  *   <li>Basic authentication (username/password via httpClientConfig)</li>
  *   <li>OVERWRITE and UPSERT update strategies</li>
  *   <li>SEPARATE_DOCUMENTS and PARENT_CHILD attachment strategies</li>
  * </ul>
  */
-public class ElasticsearchEmitter extends AbstractEmitter {
+public class ESEmitter extends AbstractEmitter {
 
     public static final String DEFAULT_EMBEDDED_FILE_FIELD_NAME = "embedded";
-    private static final Logger LOG =
-            LoggerFactory.getLogger(ElasticsearchEmitter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ESEmitter.class);
 
-    private ElasticsearchClient elasticsearchClient;
+    private ESClient esClient;
     private final HttpClientFactory httpClientFactory;
-    private final ElasticsearchEmitterConfig config;
+    private final ESEmitterConfig config;
 
-    public static ElasticsearchEmitter build(ExtensionConfig pluginConfig)
+    public static ESEmitter build(ExtensionConfig pluginConfig)
             throws TikaConfigException, IOException {
-        ElasticsearchEmitterConfig config =
-                ElasticsearchEmitterConfig.load(pluginConfig.json());
-        return new ElasticsearchEmitter(pluginConfig, config);
+        ESEmitterConfig config = ESEmitterConfig.load(pluginConfig.json());
+        return new ESEmitter(pluginConfig, config);
     }
 
-    public ElasticsearchEmitter(ExtensionConfig pluginConfig,
-                                ElasticsearchEmitterConfig config)
+    public ESEmitter(ExtensionConfig pluginConfig, ESEmitterConfig config)
             throws IOException, TikaConfigException {
         super(pluginConfig);
         this.config = config;
@@ -80,10 +76,9 @@ public class ElasticsearchEmitter extends AbstractEmitter {
             LOG.debug("metadataList is null or empty");
             return;
         }
-
         try {
             LOG.debug("about to emit {} docs", emitData.size());
-            elasticsearchClient.emitDocuments(emitData);
+            esClient.emitDocuments(emitData);
             LOG.info("successfully emitted {} docs", emitData.size());
         } catch (TikaClientException e) {
             LOG.warn("problem emitting docs", e);
@@ -101,7 +96,7 @@ public class ElasticsearchEmitter extends AbstractEmitter {
         try {
             LOG.debug("about to emit one doc with {} metadata entries",
                     metadataList.size());
-            elasticsearchClient.emitDocument(emitKey, metadataList);
+            esClient.emitDocument(emitKey, metadataList);
             LOG.info("successfully emitted one doc");
         } catch (TikaClientException e) {
             LOG.warn("problem emitting doc", e);
@@ -110,18 +105,29 @@ public class ElasticsearchEmitter extends AbstractEmitter {
     }
 
     private void configure() throws TikaConfigException {
-        ConfigValidator.mustNotBeEmpty("elasticsearchUrl",
-                config.elasticsearchUrl());
+        ConfigValidator.mustNotBeEmpty("esUrl", config.esUrl());
         ConfigValidator.mustNotBeEmpty("idField", config.idField());
 
         HttpClientConfig http = config.httpClientConfig();
         if (http != null) {
             httpClientFactory.setUserName(http.userName());
             httpClientFactory.setPassword(http.password());
+            if (http.socketTimeout() > 0) {
+                httpClientFactory.setSocketTimeout(http.socketTimeout());
+            }
+            if (http.connectionTimeout() > 0) {
+                httpClientFactory.setConnectTimeout(http.connectionTimeout());
+            }
+            if (http.authScheme() != null) {
+                httpClientFactory.setAuthScheme(http.authScheme());
+            }
+            if (http.proxyHost() != null) {
+                httpClientFactory.setProxyHost(http.proxyHost());
+                httpClientFactory.setProxyPort(http.proxyPort());
+            }
+            httpClientFactory.setVerifySsl(http.verifySsl());
         }
 
-        elasticsearchClient =
-                new ElasticsearchClient(config, httpClientFactory.build());
+        esClient = new ESClient(config, httpClientFactory.build());
     }
-
 }

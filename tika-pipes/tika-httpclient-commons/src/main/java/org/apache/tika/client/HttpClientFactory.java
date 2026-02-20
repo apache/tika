@@ -109,6 +109,7 @@ public class HttpClientFactory {
     private String authScheme = "basic"; //ntlm or basic
     private boolean credentialsAESEncrypted = false;
     private boolean disableContentCompression = false;
+    private boolean verifySsl = false;
 
     public String getProxyHost() {
         return proxyHost;
@@ -237,6 +238,10 @@ public class HttpClientFactory {
         this.disableContentCompression = disableContentCompression;
     }
 
+    public void setVerifySsl(boolean verifySsl) {
+        this.verifySsl = verifySsl;
+    }
+
     public HttpClientFactory copy() throws TikaConfigException {
         HttpClientFactory cp = new HttpClientFactory();
         cp.setAllowedHostsForRedirect(new HashSet<>(allowedHostsForRedirect));
@@ -249,28 +254,36 @@ public class HttpClientFactory {
         cp.setMaxConnections(maxConnections);
         cp.setNtDomain(ntDomain);
         cp.setPassword(password);
+        cp.setUserName(userName);
         cp.setProxyHost(proxyHost);
         cp.setProxyPort(proxyPort);
         cp.setRequestTimeout(requestTimeout);
         cp.setSocketTimeout(socketTimeout);
+        cp.setVerifySsl(verifySsl);
         return cp;
     }
 
 
     public HttpClient build() throws TikaConfigException {
-        LOG.info("http client does not verify ssl at this point.  " +
-                "If you need that, please open a ticket.");
-        TrustStrategy acceptingTrustStrategy = (cert, authType) -> true;
         SSLContext sslContext = null;
-        try {
-            sslContext =
-                    SSLContexts.custom().loadTrustMaterial(
-                            null, acceptingTrustStrategy).build();
-        } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
-            throw new TikaConfigException("", e);
+        SSLConnectionSocketFactory sslsf;
+        if (verifySsl) {
+            sslContext = SSLContexts.createDefault();
+            sslsf = new SSLConnectionSocketFactory(sslContext,
+                    SSLConnectionSocketFactory.getDefaultHostnameVerifier());
+        } else {
+            LOG.info("http client does not verify ssl at this point.  " +
+                    "If you need that, please open a ticket.");
+            TrustStrategy acceptingTrustStrategy = (cert, authType) -> true;
+            try {
+                sslContext =
+                        SSLContexts.custom().loadTrustMaterial(
+                                null, acceptingTrustStrategy).build();
+            } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
+                throw new TikaConfigException("", e);
+            }
+            sslsf = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
         }
-        SSLConnectionSocketFactory sslsf =
-                new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
 
         Registry<ConnectionSocketFactory> socketFactoryRegistry =
                 RegistryBuilder.<ConnectionSocketFactory>create().register("https", sslsf)
@@ -294,7 +307,10 @@ public class HttpClientFactory {
                         .setConnectionRequestTimeout(requestTimeout)
                         .setConnectionRequestTimeout(connectTimeout).setSocketTimeout(socketTimeout)
                         .build()).setKeepAliveStrategy(getKeepAliveStrategy())
-                .setSSLSocketFactory(sslsf).setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+                .setSSLSocketFactory(sslsf)
+                .setSSLHostnameVerifier(verifySsl
+                        ? SSLConnectionSocketFactory.getDefaultHostnameVerifier()
+                        : NoopHostnameVerifier.INSTANCE)
                 .build();
     }
 

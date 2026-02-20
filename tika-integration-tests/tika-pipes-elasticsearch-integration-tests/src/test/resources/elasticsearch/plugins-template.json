@@ -15,8 +15,8 @@
   },
   "emitters": {
     "ese": {
-      "elasticsearch-emitter": {
-        "elasticsearchUrl": "ELASTICSEARCH_URL",
+      "es-emitter": {
+        "esUrl": "ELASTICSEARCH_URL",
         "updateStrategy": "UPDATE_STRATEGY",
         "attachmentStrategy": "ATTACHMENT_STRATEGY",
         "commitWithin": 10,
@@ -27,6 +27,18 @@
           "connectionTimeout": 60,
           "socketTimeout": 60
         }
+      }
+    }
+  },
+  "pipes-reporters": {
+    "es-pipes-reporter": {
+      "esUrl": "ELASTICSEARCH_URL",
+      "keyPrefix": "my_test_",
+      "includeRouting": "INCLUDE_ROUTING",
+      "httpClientConfig": {
+        "authScheme": "http",
+        "connectionTimeout": 60,
+        "socketTimeout": 60
       }
     }
   },

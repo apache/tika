@@ -14,9 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.emitter.elasticsearch;
+package org.apache.tika.pipes.emitter.es;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -26,7 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 
-public class ElasticsearchClientTest extends TikaTest {
+public class ESClientTest extends TikaTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -36,23 +37,19 @@ public class ElasticsearchClientTest extends TikaTest {
         metadata.add("authors", "author1");
         metadata.add("authors", "author2");
         metadata.add("title", "title1");
-        for (ElasticsearchEmitterConfig.AttachmentStrategy strategy :
-                ElasticsearchEmitterConfig.AttachmentStrategy.values()) {
-            String json =
-                    ElasticsearchClient.metadataToJsonContainerInsert(
-                            metadata, strategy);
+        for (ESEmitterConfig.AttachmentStrategy strategy :
+                ESEmitterConfig.AttachmentStrategy.values()) {
+            String json = ESClient.metadataToJsonContainerInsert(metadata, strategy);
             assertContains("author1", json);
             assertContains("author2", json);
             assertContains("authors", json);
             assertContains("title1", json);
         }
-        for (ElasticsearchEmitterConfig.AttachmentStrategy strategy :
-                ElasticsearchEmitterConfig.AttachmentStrategy.values()) {
-            String json =
-                    ElasticsearchClient.metadataToJsonEmbeddedInsert(
-                            metadata, strategy, "myEmitKey",
-                            ElasticsearchEmitter
-                                    .DEFAULT_EMBEDDED_FILE_FIELD_NAME);
+        for (ESEmitterConfig.AttachmentStrategy strategy :
+                ESEmitterConfig.AttachmentStrategy.values()) {
+            String json = ESClient.metadataToJsonEmbeddedInsert(
+                    metadata, strategy, "myEmitKey",
+                    ESEmitter.DEFAULT_EMBEDDED_FILE_FIELD_NAME);
             assertContains("author1", json);
             assertContains("author2", json);
             assertContains("authors", json);
@@ -64,11 +61,8 @@ public class ElasticsearchClientTest extends TikaTest {
     public void testParentChildContainer() throws Exception {
         Metadata metadata = new Metadata();
         metadata.add("title", "parent doc");
-        String json =
-                ElasticsearchClient.metadataToJsonContainerInsert(
-                        metadata,
-                        ElasticsearchEmitterConfig.AttachmentStrategy
-                                .PARENT_CHILD);
+        String json = ESClient.metadataToJsonContainerInsert(
+                metadata, ESEmitterConfig.AttachmentStrategy.PARENT_CHILD);
         assertContains("relation_type", json);
         assertContains("container", json);
     }
@@ -77,12 +71,9 @@ public class ElasticsearchClientTest extends TikaTest {
     public void testParentChildEmbedded() throws Exception {
         Metadata metadata = new Metadata();
         metadata.add("title", "child doc");
-        String json =
-                ElasticsearchClient.metadataToJsonEmbeddedInsert(
-                        metadata,
-                        ElasticsearchEmitterConfig.AttachmentStrategy
-                                .PARENT_CHILD,
-                        "parentKey", "embedded");
+        String json = ESClient.metadataToJsonEmbeddedInsert(
+                metadata, ESEmitterConfig.AttachmentStrategy.PARENT_CHILD,
+                "parentKey", "embedded");
         assertContains("relation_type", json);
         assertContains("parentKey", json);
         assertContains("embedded", json);
@@ -92,12 +83,9 @@ public class ElasticsearchClientTest extends TikaTest {
     public void testSeparateDocumentsEmbedded() throws Exception {
         Metadata metadata = new Metadata();
         metadata.add("title", "child doc");
-        String json =
-                ElasticsearchClient.metadataToJsonEmbeddedInsert(
-                        metadata,
-                        ElasticsearchEmitterConfig.AttachmentStrategy
-                                .SEPARATE_DOCUMENTS,
-                        "parentKey", "embedded");
+        String json = ESClient.metadataToJsonEmbeddedInsert(
+                metadata, ESEmitterConfig.AttachmentStrategy.SEPARATE_DOCUMENTS,
+                "parentKey", "embedded");
         assertContains("parent", json);
         assertContains("parentKey", json);
         assertNotContained("relation_type", json);
@@ -107,56 +95,59 @@ public class ElasticsearchClientTest extends TikaTest {
     public void testChunksFieldWrittenAsRawJson() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set("title", "test doc");
+        // "PwAAAEEgAABAwAAA" is the ES-documented base64 for [0.5, 10.0, 6.0]
+        // in big-endian float32 — the exact format ES dense_vector expects.
         metadata.set("tika:chunks",
-                "[{\"text\":\"hello\",\"vector\":\"AAAA\","
+                "[{\"text\":\"hello\",\"vector\":\"PwAAAEEgAABAwAAA\","
                         + "\"locators\":{\"text\":[{\"start_offset\":0,"
                         + "\"end_offset\":5}]}}]");
-        String json =
-                ElasticsearchClient.metadataToJsonContainerInsert(
-                        metadata,
-                        ElasticsearchEmitterConfig.AttachmentStrategy
-                                .SEPARATE_DOCUMENTS);
+        String json = ESClient.metadataToJsonContainerInsert(
+                metadata, ESEmitterConfig.AttachmentStrategy.SEPARATE_DOCUMENTS);
 
-        // Parse the output JSON — tika:chunks should be a real JSON
-        // array, not a double-escaped string
         JsonNode doc = MAPPER.readTree(json);
         JsonNode chunks = doc.get("tika:chunks");
         assertTrue(chunks.isArray(),
                 "tika:chunks should be a JSON array, not a string");
         assertEquals(1, chunks.size());
         assertEquals("hello", chunks.get(0).get("text").asText());
-        assertEquals("AAAA", chunks.get(0).get("vector").asText());
+        assertEquals("PwAAAEEgAABAwAAA", chunks.get(0).get("vector").asText());
     }
 
     @Test
     public void testNonJsonFieldStaysString() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set("tika:chunks", "not json at all");
-        String json =
-                ElasticsearchClient.metadataToJsonContainerInsert(
-                        metadata,
-                        ElasticsearchEmitterConfig.AttachmentStrategy
-                                .SEPARATE_DOCUMENTS);
+        String json = ESClient.metadataToJsonContainerInsert(
+                metadata, ESEmitterConfig.AttachmentStrategy.SEPARATE_DOCUMENTS);
         JsonNode doc = MAPPER.readTree(json);
-        // Should be a plain string since it doesn't look like JSON
         assertTrue(doc.get("tika:chunks").isTextual());
-        assertEquals("not json at all",
-                doc.get("tika:chunks").asText());
+        assertEquals("not json at all", doc.get("tika:chunks").asText());
     }
 
     @Test
     public void testRegularFieldNotRawJson() throws Exception {
         Metadata metadata = new Metadata();
-        // A regular field whose value happens to look like JSON
-        // should NOT be written as raw JSON
         metadata.set("description", "[some bracketed text]");
-        String json =
-                ElasticsearchClient.metadataToJsonContainerInsert(
-                        metadata,
-                        ElasticsearchEmitterConfig.AttachmentStrategy
-                                .SEPARATE_DOCUMENTS);
+        String json = ESClient.metadataToJsonContainerInsert(
+                metadata, ESEmitterConfig.AttachmentStrategy.SEPARATE_DOCUMENTS);
         JsonNode doc = MAPPER.readTree(json);
         assertTrue(doc.get("description").isTextual());
+    }
+
+    @Test
+    public void testTrailingContentRejected() throws Exception {
+        // A value that passes a naive readTree() check but contains trailing
+        // content that would inject extra fields into the document via writeRawValue.
+        Metadata metadata = new Metadata();
+        metadata.set("tika:chunks", "[1,2,3], \"injected\": true");
+        String json = ESClient.metadataToJsonContainerInsert(
+                metadata, ESEmitterConfig.AttachmentStrategy.SEPARATE_DOCUMENTS);
+        JsonNode doc = MAPPER.readTree(json);
+        // Must be written as an escaped string, not raw JSON — no injection
+        assertTrue(doc.get("tika:chunks").isTextual(),
+                "trailing-content value must be escaped, not written as raw JSON");
+        assertFalse(doc.has("injected"),
+                "injected field must not appear in document");
     }
 
     @Test
@@ -165,11 +156,8 @@ public class ElasticsearchClientTest extends TikaTest {
         metadata.add("tags", "tag1");
         metadata.add("tags", "tag2");
         metadata.add("tags", "tag3");
-        String json =
-                ElasticsearchClient.metadataToJsonContainerInsert(
-                        metadata,
-                        ElasticsearchEmitterConfig.AttachmentStrategy
-                                .SEPARATE_DOCUMENTS);
+        String json = ESClient.metadataToJsonContainerInsert(
+                metadata, ESEmitterConfig.AttachmentStrategy.SEPARATE_DOCUMENTS);
         assertContains("tag1", json);
         assertContains("tag2", json);
         assertContains("tag3", json);

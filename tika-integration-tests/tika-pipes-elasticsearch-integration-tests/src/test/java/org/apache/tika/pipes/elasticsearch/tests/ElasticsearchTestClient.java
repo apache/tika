@@ -33,18 +33,16 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.util.EntityUtils;
 
-import org.apache.tika.pipes.emitter.elasticsearch.ElasticsearchClient;
-import org.apache.tika.pipes.emitter.elasticsearch.ElasticsearchEmitterConfig;
-import org.apache.tika.pipes.emitter.elasticsearch.JsonResponse;
+import org.apache.tika.pipes.emitter.es.ESClient;
+import org.apache.tika.pipes.emitter.es.ESEmitterConfig;
+import org.apache.tika.pipes.emitter.es.JsonResponse;
 
 /**
- * Extends ElasticsearchClient with GET, PUT, and DELETE for integration
- * testing purposes.
+ * Extends ESClient with GET, PUT, and DELETE for integration testing purposes.
  */
-public class ElasticsearchTestClient extends ElasticsearchClient {
+public class ElasticsearchTestClient extends ESClient {
 
-    public ElasticsearchTestClient(ElasticsearchEmitterConfig config,
-                                   HttpClient httpClient) {
+    public ElasticsearchTestClient(ESEmitterConfig config, HttpClient httpClient) {
         super(config, httpClient);
     }
 
@@ -54,8 +52,7 @@ public class ElasticsearchTestClient extends ElasticsearchClient {
                 new ByteArrayEntity(json.getBytes(StandardCharsets.UTF_8));
         httpRequest.setEntity(entity);
         httpRequest.setHeader("Accept", "application/json");
-        httpRequest.setHeader("Content-type",
-                "application/json; charset=utf-8");
+        httpRequest.setHeader("Content-type", "application/json; charset=utf-8");
 
         HttpResponse response = null;
         try {
@@ -72,9 +69,7 @@ public class ElasticsearchTestClient extends ElasticsearchClient {
                 }
             } else {
                 return new JsonResponse(status,
-                        new String(
-                                EntityUtils.toByteArray(
-                                        response.getEntity()),
+                        new String(EntityUtils.toByteArray(response.getEntity()),
                                 StandardCharsets.UTF_8));
             }
         } finally {
@@ -88,8 +83,7 @@ public class ElasticsearchTestClient extends ElasticsearchClient {
     public JsonResponse getJson(String url) throws IOException {
         HttpGet httpRequest = new HttpGet(url);
         httpRequest.setHeader("Accept", "application/json");
-        httpRequest.setHeader("Content-type",
-                "application/json; charset=utf-8");
+        httpRequest.setHeader("Content-type", "application/json; charset=utf-8");
 
         HttpResponse response = null;
         try {
@@ -106,9 +100,7 @@ public class ElasticsearchTestClient extends ElasticsearchClient {
                 }
             } else {
                 return new JsonResponse(status,
-                        new String(
-                                EntityUtils.toByteArray(
-                                        response.getEntity()),
+                        new String(EntityUtils.toByteArray(response.getEntity()),
                                 StandardCharsets.UTF_8));
             }
         } finally {
@@ -136,9 +128,7 @@ public class ElasticsearchTestClient extends ElasticsearchClient {
                 }
             } else {
                 return new JsonResponse(status,
-                        new String(
-                                EntityUtils.toByteArray(
-                                        response.getEntity()),
+                        new String(EntityUtils.toByteArray(response.getEntity()),
                                 StandardCharsets.UTF_8));
             }
         } finally {

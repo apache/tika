@@ -14,22 +14,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.emitter.elasticsearch;
+package org.apache.tika.pipes.reporter.es;
 
-import java.io.IOException;
+import java.util.Set;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.pipes.emitter.es.HttpClientConfig;
 
-public record HttpClientConfig(String userName, String password,
-                               String authScheme, int connectionTimeout,
-                               int socketTimeout, String proxyHost,
-                               int proxyPort) {
+public record ESReporterConfig(String esUrl, Set<String> includes, Set<String> excludes,
+                               String keyPrefix, boolean includeRouting,
+                               String apiKey, HttpClientConfig httpClientConfig) {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static HttpClientConfig load(final String json) throws IOException {
-        return OBJECT_MAPPER.readValue(json, HttpClientConfig.class);
+    public static ESReporterConfig load(final String json) throws TikaConfigException {
+        try {
+            return OBJECT_MAPPER.readValue(json, ESReporterConfig.class);
+        } catch (JsonProcessingException e) {
+            throw new TikaConfigException(
+                    "Failed to parse ESReporterConfig from JSON", e);
+        }
     }
-
 }
