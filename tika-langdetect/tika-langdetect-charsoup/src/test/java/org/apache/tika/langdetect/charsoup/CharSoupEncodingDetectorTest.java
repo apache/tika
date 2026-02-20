@@ -180,4 +180,27 @@ public class CharSoupEncodingDetectorTest {
         detector.setReadLimit(4096);
         assertEquals(4096, detector.getReadLimit());
     }
+
+    @Test
+    public void testJunkRatio() {
+        // Clean text — no junk
+        assertEquals(0f,
+                CharSoupLanguageDetector.junkRatio("Hello, world!"), 0.001f);
+
+        // U+FFFD replacement chars
+        assertEquals(0.5f,
+                CharSoupLanguageDetector.junkRatio("ab\uFFFD\uFFFD"), 0.001f);
+
+        // C1 control chars (U+0080-U+009F are isISOControl)
+        assertEquals(0.25f,
+                CharSoupLanguageDetector.junkRatio("abc\u0080"), 0.001f);
+
+        // Mixed: \r\n are control chars too
+        assertEquals(2f / 13f,
+                CharSoupLanguageDetector.junkRatio("hello world\r\n"), 0.001f);
+
+        // Empty/null
+        assertEquals(0f, CharSoupLanguageDetector.junkRatio(""), 0.001f);
+        assertEquals(0f, CharSoupLanguageDetector.junkRatio(null), 0.001f);
+    }
 }
