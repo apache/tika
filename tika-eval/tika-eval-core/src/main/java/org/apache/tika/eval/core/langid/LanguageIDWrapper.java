@@ -17,9 +17,10 @@
 package org.apache.tika.eval.core.langid;
 
 import java.util.List;
+import java.util.Set;
 
 import org.apache.tika.eval.core.textstats.StringStatsCalculator;
-import org.apache.tika.langdetect.opennlp.OpenNLPDetector;
+import org.apache.tika.langdetect.charsoup.CharSoupLanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
 
 public class LanguageIDWrapper implements StringStatsCalculator<List<LanguageResult>> {
@@ -35,14 +36,14 @@ public class LanguageIDWrapper implements StringStatsCalculator<List<LanguageRes
 
     @Override
     public List<LanguageResult> calculate(String txt) {
-        OpenNLPDetector detector = new OpenNLPDetector();
+        CharSoupLanguageDetector detector = new CharSoupLanguageDetector();
         detector.setMaxLength(MAX_TEXT_LENGTH);
         detector.addText(txt);
         return detector.detectAll();
     }
 
 
-    public String[] getSupportedLanguages() {
-        return new OpenNLPDetector().getSupportedLanguages();
+    public static Set<String> getSupportedLanguages() {
+        return CharSoupLanguageDetector.getSupportedLanguages();
     }
 }

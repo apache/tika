@@ -56,9 +56,11 @@ public class TikaEvalMetadataFilterTest {
                     0.1);
             assertEquals("eng", metadata.get(TikaEvalMetadataFilter.LANGUAGE));
 
-            assertEquals(0.0196,
-                    Double.parseDouble(metadata.get(TikaEvalMetadataFilter.LANGUAGE_CONFIDENCE)),
-                    0.1);
+            // Bigram detector returns softmax probabilities; the top-1 score for
+            // a short English sentence is close to 1.0.
+            double langConf = Double.parseDouble(
+                    metadata.get(TikaEvalMetadataFilter.LANGUAGE_CONFIDENCE));
+            assertEquals(1.0, langConf, 0.1);
         }
     }
 }

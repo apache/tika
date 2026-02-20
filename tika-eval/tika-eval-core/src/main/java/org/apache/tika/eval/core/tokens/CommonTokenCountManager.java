@@ -104,12 +104,11 @@ public class CommonTokenCountManager {
             return langCode;
         }
         tryToLoad(langCode);
-        LangModel model = commonTokenMap.get(langCode);
-        if (model == null) {
-            return defaultLangCode;
+        if (commonTokenMap.get(langCode) != null) {
+            return langCode;
         }
-        return langCode;
 
+        return defaultLangCode;
     }
 
     public void close() throws IOException {

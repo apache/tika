@@ -19,9 +19,6 @@ package org.apache.tika.pipes.core;
 
 import static org.apache.tika.pipes.api.PipesResult.RESULT_STATUS.TIMEOUT;
 import static org.apache.tika.pipes.api.PipesResult.RESULT_STATUS.UNSPECIFIED_CRASH;
-import static org.apache.tika.pipes.core.PipesClient.COMMANDS.ACK;
-import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.FINISHED;
-import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.READY;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -35,9 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HexFormat;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -53,9 +48,10 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
+import org.apache.tika.pipes.core.protocol.PipesMessage;
+import org.apache.tika.pipes.core.protocol.PipesMessageType;
 import org.apache.tika.pipes.core.serialization.JsonPipesIpc;
 import org.apache.tika.pipes.core.server.IntermediateResult;
-import org.apache.tika.pipes.core.server.PipesServer;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
 
@@ -71,14 +67,6 @@ import org.apache.tika.utils.StringUtils;
  */
 public class PipesClient implements Closeable {
 
-    public enum COMMANDS {
-        PING, ACK, NEW_REQUEST, SHUT_DOWN;
-
-        public byte getByte() {
-            return (byte) (ordinal() + 1);
-        }
-    }
-
     private static final Logger LOG = LoggerFactory.getLogger(PipesClient.class);
     private static final AtomicInteger CLIENT_COUNTER = new AtomicInteger(0);
     public static final int SOCKET_CONNECT_TIMEOUT_MS = 60000;
@@ -86,6 +74,7 @@ public class PipesClient implements Closeable {
 
     private final PipesConfig pipesConfig;
     private final ServerManager serverManager;
+    private final boolean ownsServerManager;
     private final int pipesClientId;
 
     private ConnectionTuple connectionTuple;
@@ -93,6 +82,10 @@ public class PipesClient implements Closeable {
 
     /**
      * Creates a PipesClient with the given server manager.
+     * <p>
+     * The caller retains ownership of the server manager and is responsible
+     * for closing it. This is used in shared mode where multiple clients
+     * share a single server manager.
      *
      * @param pipesConfig the pipes configuration
      * @param serverManager the server manager (per-client or shared)
@@ -100,6 +93,7 @@ public class PipesClient implements Closeable {
     public PipesClient(PipesConfig pipesConfig, ServerManager serverManager) {
         this.pipesConfig = pipesConfig;
         this.serverManager = serverManager;
+        this.ownsServerManager = false;
         this.pipesClientId = CLIENT_COUNTER.getAndIncrement();
     }
 
@@ -117,6 +111,7 @@ public class PipesClient implements Closeable {
         this.pipesConfig = pipesConfig;
         this.pipesClientId = CLIENT_COUNTER.getAndIncrement();
         this.serverManager = new PerClientServerManager(pipesConfig, tikaConfigPath, pipesClientId);
+        this.ownsServerManager = true;
     }
 
     public int getFilesProcessed() {
@@ -132,10 +127,9 @@ public class PipesClient implements Closeable {
             return false;
         }
         try {
-            connectionTuple.output.write(COMMANDS.PING.getByte());
-            connectionTuple.output.flush();
-            int ping = connectionTuple.input.read();
-            if (ping == COMMANDS.PING.getByte()) {
+            PipesMessage.ping().write(connectionTuple.output);
+            PipesMessage response = PipesMessage.read(connectionTuple.input);
+            if (response.type() == PipesMessageType.PING) {
                 return true;
             }
         } catch (IOException e) {
@@ -150,6 +144,9 @@ public class PipesClient implements Closeable {
             closeConnection();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        }
+        if (ownsServerManager) {
+            serverManager.close();
         }
     }
 
@@ -167,8 +164,7 @@ public class PipesClient implements Closeable {
         }
         LOG.debug("pipesClientId={}: closing connection", pipesClientId);
         try {
-            connectionTuple.output.write(COMMANDS.SHUT_DOWN.getByte());
-            connectionTuple.output.flush();
+            PipesMessage.shutDown().write(connectionTuple.output);
         } catch (IOException e) {
             // swallow
         }
@@ -307,17 +303,13 @@ public class PipesClient implements Closeable {
     private void writeTask(FetchEmitTuple t) throws IOException {
         LOG.debug("pipesClientId={}: sending NEW_REQUEST for id={}", pipesClientId, t.getId());
         byte[] bytes = JsonPipesIpc.toBytes(t);
-        connectionTuple.output.write(COMMANDS.NEW_REQUEST.getByte());
-        connectionTuple.output.writeInt(bytes.length);
-        connectionTuple.output.write(bytes);
-        connectionTuple.output.flush();
+        PipesMessage.newRequest(bytes).write(connectionTuple.output);
     }
 
     private PipesResult waitForServer(FetchEmitTuple t, IntermediateResult intermediateResult) throws InterruptedException {
         long timeoutMillis = getTimeoutMillis(pipesConfig, t.getParseContext());
         Instant start = Instant.now();
         Instant lastUpdate = start;
-        long lastProgressCounter = 0;
 
         while (true) {
             if (Thread.currentThread().isInterrupted()) {
@@ -334,42 +326,49 @@ public class PipesClient implements Closeable {
                         intermediateResult.get());
             }
             try {
-                // Read blocks on the socket
-                PipesServer.PROCESSING_STATUS status = readServerStatus();
-                LOG.trace("clientId={}: switch status id={} status={}", pipesClientId, t.getId(), status);
-                String msg = null;
-                switch (status) {
+                PipesMessage msg = PipesMessage.read(connectionTuple.input);
+                LOG.trace("clientId={}: received message type={} id={}", pipesClientId, msg.type(), t.getId());
+
+                // Send ACK only for messages that require it
+                if (msg.type().requiresAck()) {
+                    PipesMessage.ack().write(connectionTuple.output);
+                }
+
+                switch (msg.type()) {
                     case OOM:
-                        msg = readResult(String.class);
-                        serverManager.markServerForRestart(); // Signal that server is dying
+                        String oomMsg = JsonPipesIpc.fromBytes(msg.payload(), String.class);
+                        serverManager.markServerForRestart();
                         closeConnection();
                         return buildFatalResult(t.getId(), t.getEmitKey(), PipesResult.RESULT_STATUS.OOM,
-                                intermediateResult.get(), msg);
+                                intermediateResult.get(), oomMsg);
                     case TIMEOUT:
-                        msg = readResult(String.class);
-                        serverManager.markServerForRestart(); // Signal that server is dying
+                        String timeoutMsg = JsonPipesIpc.fromBytes(msg.payload(), String.class);
+                        serverManager.markServerForRestart();
                         closeConnection();
-                        return buildFatalResult(t.getId(), t.getEmitKey(), TIMEOUT, intermediateResult.get(), msg);
+                        return buildFatalResult(t.getId(), t.getEmitKey(), TIMEOUT,
+                                intermediateResult.get(), timeoutMsg);
                     case UNSPECIFIED_CRASH:
-                        msg = readResult(String.class);
+                        String crashMsg = JsonPipesIpc.fromBytes(msg.payload(), String.class);
+                        serverManager.markServerForRestart();
                         closeConnection();
                         return buildFatalResult(t.getId(), t.getEmitKey(), UNSPECIFIED_CRASH,
-                                intermediateResult.get(), msg);
+                                intermediateResult.get(), crashMsg);
                     case INTERMEDIATE_RESULT:
-                        intermediateResult.set(readResult(Metadata.class));
+                        intermediateResult.set(JsonPipesIpc.fromBytes(msg.payload(), Metadata.class));
                         lastUpdate = Instant.now();
                         break;
                     case WORKING:
-                        lastProgressCounter = readProgressCounter();
                         lastUpdate = Instant.now();
                         break;
                     case FINISHED:
-                        PipesResult result = readResult(PipesResult.class);
+                        PipesResult result = JsonPipesIpc.fromBytes(msg.payload(), PipesResult.class);
                         // Restore ParseContext from original FetchEmitTuple (not serialized back from server)
                         if (result.emitData() instanceof EmitDataImpl emitDataImpl) {
                             emitDataImpl.setParseContext(t.getParseContext());
                         }
                         return result;
+                    default:
+                        throw new IOException("Unexpected message type from server: " + msg.type());
                 }
             } catch (SocketTimeoutException e) {
                 LOG.warn("clientId={}: Socket timeout exception while waiting for server", pipesClientId, e);
@@ -385,9 +384,9 @@ public class PipesClient implements Closeable {
                 // Handle crash and determine status based on exit code
                 int exitCode = serverManager.handleCrashAndGetExitCode();
                 PipesResult.RESULT_STATUS status = UNSPECIFIED_CRASH;
-                if (exitCode == PipesServer.OOM_EXIT_CODE) {
+                if (exitCode == PipesMessageType.OOM.getExitCode().orElse(-1)) {
                     status = PipesResult.RESULT_STATUS.OOM;
-                } else if (exitCode == PipesServer.TIMEOUT_EXIT_CODE) {
+                } else if (exitCode == PipesMessageType.TIMEOUT.getExitCode().orElse(-1)) {
                     status = PipesResult.RESULT_STATUS.TIMEOUT;
                 }
                 closeConnection();
@@ -395,10 +394,6 @@ public class PipesClient implements Closeable {
                         ExceptionUtils.getStackTrace(e));
             }
         }
-    }
-
-    private long readProgressCounter() throws IOException {
-        return connectionTuple.input.readLong();
     }
 
     private PipesResult buildFatalResult(String id, EmitKey emitKey, PipesResult.RESULT_STATUS status,
@@ -422,63 +417,19 @@ public class PipesClient implements Closeable {
         }
     }
 
-    private PipesServer.PROCESSING_STATUS readServerStatus() throws IOException {
-        int statusByte = connectionTuple.input.read();
-        writeAck();
-        PipesServer.PROCESSING_STATUS status = null;
-        try {
-            status = PipesServer.PROCESSING_STATUS.lookup(statusByte);
-        } catch (IllegalArgumentException e) {
-            String byteString = "-1";
-            if (statusByte > -1) {
-                byteString = String.format(Locale.US, "%02x", (byte) statusByte);
-            }
-            throw new IOException("problem reading response from server: " + byteString, e);
-        }
-        return status;
-    }
-
-    private <T> T readResult(Class<T> clazz) throws IOException {
-        int len = connectionTuple.input.readInt();
-        if (len < 0 || len > PipesServer.MAX_FETCH_EMIT_TUPLE_BYTES) {
-            throw new IOException("Server response length " + len +
-                    " exceeds maximum allowed size of " + PipesServer.MAX_FETCH_EMIT_TUPLE_BYTES + " bytes");
-        }
-        byte[] bytes = new byte[len];
-        connectionTuple.input.readFully(bytes);
-
-        writeAck();
-        return JsonPipesIpc.fromBytes(bytes, clazz);
-    }
-
-    private void writeAck() throws IOException {
-        connectionTuple.output.write(ACK.getByte());
-        connectionTuple.output.flush();
-    }
-
     private void waitForStartup() throws IOException {
-        // Wait for ready byte
-        int b = connectionTuple.input.read();
-        writeAck();
-        if (b == READY.getByte()) {
+        PipesMessage msg = PipesMessage.read(connectionTuple.input);
+        if (msg.type() == PipesMessageType.READY) {
             LOG.debug("clientId={}: server ready", pipesClientId);
-        } else if (b == FINISHED.getByte()) {
-            int len = connectionTuple.input.readInt();
-            if (len < 0 || len > PipesServer.MAX_FETCH_EMIT_TUPLE_BYTES) {
-                throw new IOException("Server startup error message length " + len +
-                        " exceeds maximum allowed size of " + PipesServer.MAX_FETCH_EMIT_TUPLE_BYTES + " bytes");
-            }
-            byte[] bytes = new byte[len];
-            connectionTuple.input.readFully(bytes);
-            writeAck();
-            String msg = new String(bytes, StandardCharsets.UTF_8);
-            LOG.error("clientId={}: Server failed to start: {}", pipesClientId, msg);
-            throw new ServerInitializationException(msg);
+        } else if (msg.type() == PipesMessageType.STARTUP_FAILED) {
+            // Send ACK for startup failure
+            PipesMessage.ack().write(connectionTuple.output);
+            String errorMsg = new String(msg.payload(), StandardCharsets.UTF_8);
+            LOG.error("clientId={}: Server failed to start: {}", pipesClientId, errorMsg);
+            throw new ServerInitializationException(errorMsg);
         } else {
-            LOG.error("clientId={}: Unexpected first byte: {}", pipesClientId,
-                    HexFormat.of().formatHex(new byte[]{(byte) b}));
-            throw new IOException("Unexpected first byte from server: " +
-                    HexFormat.of().formatHex(new byte[]{(byte) b}));
+            LOG.error("clientId={}: Unexpected first message type: {}", pipesClientId, msg.type());
+            throw new IOException("Unexpected first message type from server: " + msg.type());
         }
     }
 

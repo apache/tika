@@ -39,4 +39,19 @@ public interface ContentHandlerFactory extends Serializable {
      * @return a new ContentHandler instance
      */
     ContentHandler createHandler();
+
+    /**
+     * Returns the name of the handler type produced by this factory
+     * (e.g. {@code TEXT}, {@code MARKDOWN}, {@code HTML}, {@code XML}).
+     * <p>
+     * This value is written to
+     * {@link org.apache.tika.metadata.TikaCoreProperties#TIKA_CONTENT_HANDLER_TYPE}
+     * so that downstream components (such as the inference pipeline) can
+     * determine what format {@code tika:content} is in without guessing.
+     *
+     * @return handler type name, never {@code null}
+     */
+    default String handlerTypeName() {
+        return "UNKNOWN";
+    }
 }

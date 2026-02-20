@@ -16,12 +16,6 @@
  */
 package org.apache.tika.pipes.core.server;
 
-import static org.apache.tika.pipes.core.PipesClient.COMMANDS.ACK;
-import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.FINISHED;
-import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.INTERMEDIATE_RESULT;
-import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.OOM;
-import static org.apache.tika.pipes.core.server.PipesServer.PROCESSING_STATUS.TIMEOUT;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.Closeable;
@@ -32,7 +26,6 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HexFormat;
 import java.util.Locale;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -55,10 +48,10 @@ import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.core.EmitStrategyConfig;
 import org.apache.tika.pipes.core.PipesClient;
 import org.apache.tika.pipes.core.PipesConfig;
+import org.apache.tika.pipes.core.protocol.PipesMessage;
+import org.apache.tika.pipes.core.protocol.PipesMessageType;
 import org.apache.tika.pipes.core.serialization.JsonPipesIpc;
 import org.apache.tika.serialization.ParseContextUtils;
-import org.apache.tika.utils.ExceptionUtils;
-import org.apache.tika.utils.StringUtils;
 
 /**
  * Handles a single client connection in shared server mode.
@@ -67,9 +60,11 @@ import org.apache.tika.utils.StringUtils;
  * one PipesClient. It shares resources (parser, fetcher manager, etc.) with
  * other handlers but has its own socket, streams, and executor.
  * <p>
- * Unlike the per-client PipesServer, a ConnectionHandler does NOT call
- * System.exit() on errors - it just closes the connection and terminates
- * its thread. The shared server continues running for other clients.
+ * Unlike the per-client PipesServer, a ConnectionHandler does not call
+ * System.exit() for most errors — it just closes the connection and
+ * terminates its thread. However, OOM and TIMEOUT require a JVM restart,
+ * so those still call System.exit(). For all other crashes the shared
+ * server continues running for other clients.
  */
 public class ConnectionHandler implements Runnable, Closeable {
 
@@ -88,6 +83,7 @@ public class ConnectionHandler implements Runnable, Closeable {
     private final ExecutorCompletionService<PipesResult> executorCompletionService =
             new ExecutorCompletionService<>(executorService);
 
+    private final ServerProtocolIO protocolIO;
     private volatile boolean running = true;
 
     /**
@@ -107,14 +103,15 @@ public class ConnectionHandler implements Runnable, Closeable {
         this.resources = resources;
         this.pipesConfig = pipesConfig;
         this.heartbeatIntervalMs = pipesConfig.getHeartbeatIntervalMs();
+        this.protocolIO = new ServerProtocolIO(input, output);
     }
 
     @Override
     public void run() {
         LOG.debug("handlerId={}: starting connection handler", handlerId);
         try {
-            // Send READY signal
-            write(PipesServer.PROCESSING_STATUS.READY.getByte());
+            // Send READY signal (fire-and-forget, no ACK)
+            PipesMessage.ready().write(output);
             LOG.debug("handlerId={}: sent READY, entering main loop", handlerId);
 
             mainLoop();
@@ -134,58 +131,58 @@ public class ConnectionHandler implements Runnable, Closeable {
 
         while (running) {
             try {
-                int request = input.read();
-                LOG.trace("handlerId={}: received command byte={}", handlerId,
-                        HexFormat.of().formatHex(new byte[]{(byte) request}));
+                PipesMessage msg = PipesMessage.read(input);
+                LOG.trace("handlerId={}: received message type={}", handlerId, msg.type());
 
-                if (request == -1) {
-                    LOG.debug("handlerId={}: received -1 from client; closing connection", handlerId);
-                    return;
+                switch (msg.type()) {
+                    case PING:
+                        PipesMessage.ping().write(output);
+                        break;
+                    case NEW_REQUEST:
+                        intermediateResult.clear();
+                        CountDownLatch countDownLatch = new CountDownLatch(1);
+
+                        FetchEmitTuple fetchEmitTuple;
+                        try {
+                            fetchEmitTuple = JsonPipesIpc.fromBytes(msg.payload(), FetchEmitTuple.class);
+                        } catch (IOException e) {
+                            LOG.error("handlerId={}: problem deserializing FetchEmitTuple", handlerId, e);
+                            handleCrash(PipesMessageType.UNSPECIFIED_CRASH, "unknown", e);
+                            return; // connection is unsalvageable after deserialization failure
+                        }
+                        try {
+                            ServerProtocolIO.validateFetchEmitTuple(fetchEmitTuple);
+                            ParseContext mergedContext = resources.createMergedParseContext(fetchEmitTuple.getParseContext());
+                            ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
+
+                            PipesWorker pipesWorker = createPipesWorker(intermediateResult, fetchEmitTuple,
+                                    mergedContext, countDownLatch);
+                            executorCompletionService.submit(pipesWorker);
+
+                            loopUntilDone(fetchEmitTuple, mergedContext, intermediateResult, countDownLatch);
+                        } catch (TikaConfigException e) {
+                            LOG.error("handlerId={}: config error processing request", handlerId, e);
+                            handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), e);
+                        } catch (Throwable t) {
+                            LOG.error("handlerId={}: error processing request", handlerId, t);
+                        }
+                        break;
+                    case SHUT_DOWN:
+                        LOG.info("handlerId={}: received SHUT_DOWN, closing connection", handlerId);
+                        return;
+                    default:
+                        String errorMsg = String.format(Locale.ROOT,
+                                "handlerId=%d: Unexpected message type %s in command position",
+                                handlerId, msg.type());
+                        LOG.error(errorMsg);
+                        throw new IllegalStateException(errorMsg);
                 }
-
-                // Validate command byte
-                if (request == PipesClient.COMMANDS.ACK.getByte()) {
-                    String msg = String.format(Locale.ROOT,
-                            "handlerId=%d: PROTOCOL ERROR - Received ACK when expecting command", handlerId);
-                    LOG.error(msg);
-                    throw new IllegalStateException(msg);
-                }
-
-                if (request == PipesClient.COMMANDS.PING.getByte()) {
-                    writeNoAck(PipesClient.COMMANDS.PING.getByte());
-                } else if (request == PipesClient.COMMANDS.NEW_REQUEST.getByte()) {
-                    intermediateResult.clear();
-                    CountDownLatch countDownLatch = new CountDownLatch(1);
-
-                    FetchEmitTuple fetchEmitTuple = readFetchEmitTuple();
-                    try {
-                        validateFetchEmitTuple(fetchEmitTuple);
-                        ParseContext mergedContext = resources.createMergedParseContext(fetchEmitTuple.getParseContext());
-                        ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
-
-                        PipesWorker pipesWorker = createPipesWorker(intermediateResult, fetchEmitTuple,
-                                mergedContext, countDownLatch);
-                        executorCompletionService.submit(pipesWorker);
-
-                        loopUntilDone(fetchEmitTuple, mergedContext, intermediateResult, countDownLatch);
-                    } catch (TikaConfigException e) {
-                        LOG.error("handlerId={}: config error processing request", handlerId, e);
-                        handleCrash(PipesServer.PROCESSING_STATUS.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), e);
-                    } catch (Throwable t) {
-                        LOG.error("handlerId={}: error processing request", handlerId, t);
-                    }
-                } else if (request == PipesClient.COMMANDS.SHUT_DOWN.getByte()) {
-                    LOG.info("handlerId={}: received SHUT_DOWN, closing connection", handlerId);
-                    return;
-                } else {
-                    String msg = String.format(Locale.ROOT,
-                            "handlerId=%d: Unexpected byte 0x%02x in command position", handlerId, (byte) request);
-                    LOG.error(msg);
-                    throw new IllegalStateException(msg);
-                }
-                output.flush();
+            } catch (java.io.EOFException e) {
+                // Client disconnected (stream closed)
+                LOG.debug("handlerId={}: client disconnected (EOF)", handlerId);
+                return;
             } catch (SocketException e) {
-                // Client disconnected
+                // Client disconnected (socket closed)
                 LOG.debug("handlerId={}: client disconnected", handlerId);
                 return;
             } catch (IOException e) {
@@ -216,7 +213,7 @@ public class ConnectionHandler implements Runnable, Closeable {
                                CountDownLatch countDownLatch) throws InterruptedException, IOException {
         Instant start = Instant.now();
         long timeoutMillis = PipesClient.getTimeoutMillis(pipesConfig, mergedContext);
-        long mockProgressCounter = 0;
+        long progressCounter = 1;
         boolean wroteIntermediateResult = false;
 
         while (running) {
@@ -224,7 +221,7 @@ public class ConnectionHandler implements Runnable, Closeable {
             if (!wroteIntermediateResult) {
                 Metadata intermediate = intermediateResult.poll(100, TimeUnit.MILLISECONDS);
                 if (intermediate != null) {
-                    writeIntermediate(intermediate);
+                    protocolIO.writeIntermediate(intermediate);
                     countDownLatch.countDown();
                     wroteIntermediateResult = true;
                 }
@@ -237,33 +234,31 @@ public class ConnectionHandler implements Runnable, Closeable {
                 try {
                     pipesResult = future.get();
                 } catch (OutOfMemoryError e) {
-                    handleCrash(OOM, fetchEmitTuple.getId(), e);
+                    handleCrash(PipesMessageType.OOM, fetchEmitTuple.getId(), e);
                     LOG.error("handlerId={}: exiting server due to OOM", handlerId);
-                    System.exit(1);
+                    System.exit(PipesMessageType.OOM.getExitCode().orElse(18));
                 } catch (ExecutionException e) {
                     Throwable t = e.getCause();
                     LOG.error("handlerId={}: crash processing {}", handlerId, fetchEmitTuple.getId(), t);
                     if (t instanceof OutOfMemoryError) {
-                        handleCrash(OOM, fetchEmitTuple.getId(), t);
+                        handleCrash(PipesMessageType.OOM, fetchEmitTuple.getId(), t);
                         LOG.error("handlerId={}: exiting server due to OOM", handlerId);
-                        System.exit(1);
+                        System.exit(PipesMessageType.OOM.getExitCode().orElse(18));
                     }
-                    handleCrash(PipesServer.PROCESSING_STATUS.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), t);
+                    handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), t);
                     return;
                 }
                 LOG.debug("handlerId={}: finished task id={} status={}", handlerId,
                         fetchEmitTuple.getId(), pipesResult.status());
-                write(FINISHED, pipesResult);
+                protocolIO.writeFinished(pipesResult);
                 return;
             }
 
-            // Send heartbeat
+            // Send fire-and-forget heartbeat
             long elapsed = System.currentTimeMillis() - start.toEpochMilli();
-            if (elapsed > mockProgressCounter * heartbeatIntervalMs) {
-                LOG.trace("handlerId={}: still processing, counter={}", handlerId, mockProgressCounter);
-                write(PipesServer.PROCESSING_STATUS.WORKING.getByte());
-                output.writeLong(mockProgressCounter++);
-                output.flush();
+            if (elapsed > progressCounter * heartbeatIntervalMs) {
+                LOG.trace("handlerId={}: still processing, counter={}", handlerId, progressCounter);
+                PipesMessage.working(progressCounter++).write(output);
             }
 
             // Check timeout
@@ -276,114 +271,22 @@ public class ConnectionHandler implements Runnable, Closeable {
 
     private void handleTimeout(String id) throws IOException {
         LOG.warn("handlerId={}: timeout processing id={}", handlerId, id);
-        write(TIMEOUT.getByte());
+        handleCrash(PipesMessageType.TIMEOUT, id,
+                new RuntimeException("Server-side timeout processing " + id));
         // Timeout means a parsing thread is stuck - the JVM must be restarted
         LOG.error("handlerId={}: exiting server due to timeout", handlerId);
-        System.exit(1);
+        System.exit(PipesMessageType.TIMEOUT.getExitCode().orElse(17));
     }
 
-    private void handleCrash(PipesServer.PROCESSING_STATUS processingStatus, String id, Throwable t) {
-        LOG.error("handlerId={}: {} processing id={}", handlerId, processingStatus, id, t);
-        String msg = (t != null) ? ExceptionUtils.getStackTrace(t) : "";
+    private void handleCrash(PipesMessageType crashType, String id, Throwable t) {
+        LOG.error("handlerId={}: {} processing id={}", handlerId, crashType, id, t);
         try {
-            byte[] bytes = JsonPipesIpc.toBytes(msg);
-            write(processingStatus, bytes);
-            // Note: write() already awaits ACKs internally, don't call awaitAck() again
+            protocolIO.writeCrash(crashType, t);
         } catch (IOException e) {
             LOG.warn("handlerId={}: problem writing crash info to client", handlerId, e);
         }
         // Note: For OOM/timeout, caller is responsible for calling System.exit()
         // For other crashes (UNSPECIFIED_CRASH), we just close this connection
-    }
-
-    private FetchEmitTuple readFetchEmitTuple() throws IOException {
-        int length = input.readInt();
-        if (length < 0 || length > PipesServer.MAX_FETCH_EMIT_TUPLE_BYTES) {
-            throw new IOException("FetchEmitTuple length " + length +
-                    " exceeds maximum allowed size of " + PipesServer.MAX_FETCH_EMIT_TUPLE_BYTES + " bytes");
-        }
-        byte[] bytes = new byte[length];
-        input.readFully(bytes);
-        return JsonPipesIpc.fromBytes(bytes, FetchEmitTuple.class);
-    }
-
-    private void validateFetchEmitTuple(FetchEmitTuple fetchEmitTuple) throws TikaConfigException {
-        ParseContext requestContext = fetchEmitTuple.getParseContext();
-        if (requestContext == null) {
-            return;
-        }
-        org.apache.tika.pipes.core.extractor.UnpackConfig unpackConfig =
-                requestContext.get(org.apache.tika.pipes.core.extractor.UnpackConfig.class);
-        org.apache.tika.pipes.api.ParseMode parseMode =
-                requestContext.get(org.apache.tika.pipes.api.ParseMode.class);
-
-        if (unpackConfig != null && !StringUtils.isBlank(unpackConfig.getEmitter())
-                && parseMode != org.apache.tika.pipes.api.ParseMode.UNPACK) {
-            throw new TikaConfigException(
-                    "FetchEmitTuple has UnpackConfig with emitter '" + unpackConfig.getEmitter() +
-                            "' but ParseMode is " + parseMode + ". " +
-                            "To extract embedded bytes, set ParseMode.UNPACK in the ParseContext.");
-        }
-    }
-
-    private void write(PipesServer.PROCESSING_STATUS processingStatus, PipesResult pipesResult) {
-        try {
-            byte[] bytes = JsonPipesIpc.toBytes(pipesResult);
-            write(processingStatus, bytes);
-        } catch (IOException e) {
-            LOG.error("handlerId={}: problem writing emit data", handlerId, e);
-        }
-    }
-
-    private void writeIntermediate(Metadata metadata) {
-        try {
-            byte[] bytes = JsonPipesIpc.toBytes(metadata);
-            write(INTERMEDIATE_RESULT, bytes);
-        } catch (IOException e) {
-            LOG.error("handlerId={}: problem writing intermediate data", handlerId, e);
-        }
-    }
-
-    private void awaitAck() throws IOException {
-        int b = input.read();
-        if (b == ACK.getByte()) {
-            return;
-        }
-        LOG.error("handlerId={}: expected ACK but got byte={}", handlerId,
-                HexFormat.of().formatHex(new byte[]{(byte) b}));
-        throw new IOException("Expected ACK but got byte=" + HexFormat.of().formatHex(new byte[]{(byte) b}));
-    }
-
-    private void writeNoAck(byte b) {
-        try {
-            output.write(b);
-            output.flush();
-        } catch (IOException e) {
-            LOG.error("handlerId={}: problem writing data", handlerId, e);
-        }
-    }
-
-    private void write(byte b) {
-        try {
-            output.write(b);
-            output.flush();
-            awaitAck();
-        } catch (IOException e) {
-            LOG.error("handlerId={}: problem writing data", handlerId, e);
-        }
-    }
-
-    private void write(PipesServer.PROCESSING_STATUS status, byte[] bytes) {
-        try {
-            write(status.getByte());
-            int len = bytes.length;
-            output.writeInt(len);
-            output.write(bytes);
-            output.flush();
-            awaitAck();
-        } catch (IOException e) {
-            LOG.error("handlerId={}: problem writing data", handlerId, e);
-        }
     }
 
     @Override

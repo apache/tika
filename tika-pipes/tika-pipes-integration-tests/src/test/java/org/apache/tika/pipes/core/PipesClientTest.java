@@ -294,7 +294,8 @@ public class PipesClientTest {
             Assertions.assertNotNull(pipesResult.message(), "Should have error message");
             assertTrue(pipesResult.message().contains("exit code") ||
                             pipesResult.message().contains("JVM") ||
-                            pipesResult.message().contains("Process failed"),
+                            pipesResult.message().contains("Process failed") ||
+                            pipesResult.message().contains("couldn't connect to server"),
                     "Error message should indicate process failure: " + pipesResult.message());
         }
     }
@@ -353,7 +354,9 @@ public class PipesClientTest {
             // Should have error message about the crash
             Assertions.assertNotNull(pipesResult.message(), "Should have error message");
             assertTrue(pipesResult.message().contains("problem reading response") |
-                    pipesResult.message().contains("SocketException"),
+                    pipesResult.message().contains("SocketException") |
+                    pipesResult.message().contains("EOFException") |
+                    pipesResult.message().contains("Stream closed"),
                     "Error message should mention the detection crash: " + pipesResult.message());
 
             // Note: Because crash happens during pre-parse (before intermediate result is sent),
@@ -777,6 +780,60 @@ public class PipesClientTest {
         assertEquals("TESTOVERLAPPINGTEXT.PDF",
                 metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY),
                 "User filter should take priority over CONTENT_ONLY filter");
+    }
+
+    @Test
+    public void testRecoveryAfterServerCrash(@TempDir Path tmp) throws Exception {
+        // Test that after a server crash (System.exit), the client can recover
+        // and successfully process the next document.
+        // This exercises the full crash → restart → reconnect path.
+        Path inputDir = tmp.resolve("input");
+        Files.createDirectories(inputDir);
+
+        // Create a mock file that will crash the server
+        String crashContent = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
+                "<metadata action=\"add\" name=\"dc:creator\">Crash Test</metadata>" +
+                "<write element=\"p\">content before crash</write>" +
+                "<system_exit/>" + "</mock>";
+        String crashFile = "mock-crash.xml";
+        Files.write(inputDir.resolve(crashFile), crashContent.getBytes(StandardCharsets.UTF_8));
+
+        // Create a normal mock file
+        String normalContent = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
+                "<metadata action=\"add\" name=\"dc:creator\">Normal Author</metadata>" +
+                "<write element=\"p\">normal content</write>" +
+                "</mock>";
+        String normalFile = "mock-normal.xml";
+        Files.write(inputDir.resolve(normalFile), normalContent.getBytes(StandardCharsets.UTF_8));
+
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, inputDir, tmp.resolve("output"));
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+
+        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
+            // First: process the crashing file — server should die
+            PipesResult crashResult = pipesClient.process(
+                    new FetchEmitTuple(crashFile, new FetchKey(fetcherName, crashFile),
+                            new EmitKey(), new Metadata(), new ParseContext(),
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+
+            assertTrue(crashResult.isProcessCrash(),
+                    "Crash file should result in process crash, got: " + crashResult.status());
+
+            // Second: process the normal file — client should restart server and succeed
+            PipesResult normalResult = pipesClient.process(
+                    new FetchEmitTuple(normalFile, new FetchKey(fetcherName, normalFile),
+                            new EmitKey(), new Metadata(), new ParseContext(),
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+
+            assertTrue(normalResult.isSuccess(),
+                    "Normal file should succeed after crash recovery, got: " + normalResult.status() +
+                            " message: " + normalResult.message());
+            Assertions.assertNotNull(normalResult.emitData().getMetadataList());
+            assertEquals(1, normalResult.emitData().getMetadataList().size());
+            Metadata metadata = normalResult.emitData().getMetadataList().get(0);
+            assertEquals("Normal Author", metadata.get("dc:creator"));
+        }
     }
 
     @Test

@@ -21,6 +21,8 @@ This section covers advanced usage and internals of Apache Tika.
 
 == Topics
 
+* xref:advanced/language-detection.adoc[Language Detection] - Built-in bigram language detector, training pipeline, and comparison with OpenNLP
+* xref:advanced/language-detection-build.adoc[Building the Language Detector] - Full training log, decisions, and benchmark results vs OpenNLP
 * xref:advanced/robustness.adoc[Robustness] - Process isolation and fault tolerance when parsing untrusted content
 * xref:advanced/setting-limits.adoc[Setting Limits] - Limiting metadata size and resource consumption when processing untrusted content
 * xref:advanced/spooling.adoc[TikaInputStream and Spooling] - Understanding how TikaInputStream handles buffering, caching, and spooling to disk

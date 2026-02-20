@@ -1,0 +1,10 @@
+{
+  "parsers": [
+    {
+      "name": "tess4j-parser",
+      "dataPath": "/usr/share/tesseract-ocr/5/tessdata",
+      "nativeLibPath": "/usr/lib/x86_64-linux-gnu",
+      "poolSize": 4
+    }
+  ]
+}

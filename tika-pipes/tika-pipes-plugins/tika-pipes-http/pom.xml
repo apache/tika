@@ -22,7 +22,7 @@
   <parent>
     <artifactId>tika-pipes-plugins</artifactId>
     <groupId>org.apache.tika</groupId>
-    <version>4.0.0-SNAPSHOT</version>
+    <version>${revision}</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -85,11 +85,50 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <annotationProcessors>
+            <annotationProcessor>org.pf4j.processor.ExtensionAnnotationProcessor</annotationProcessor>
+          </annotationProcessors>
+        </configuration>
+      </plugin>
+      <!-- Build the plugin ZIP before tests so that tests can load it from
+           target/plugins via PF4J in the standard DEPLOYMENT mode, matching
+           how tika-server-core and tika-async-cli set up their test plugins.
+           Plugin declaration order matters: jar first, then deps, then assembly. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <Automatic-Module-Name>org.apache.tika.pipes.fetcher.http</Automatic-Module-Name>
+            </manifestEntries>
+          </archive>
+        </configuration>
+        <executions>
+          <!-- Disable the default jar execution in package phase since
+               pre-test-jar already creates the main artifact earlier. -->
+          <execution>
+            <id>default-jar</id>
+            <phase>none</phase>
+          </execution>
+          <execution>
+            <id>pre-test-jar</id>
+            <phase>process-test-resources</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
         <executions>
           <execution>
             <id>copy-dependencies</id>
-            <phase>package</phase>
+            <phase>process-test-resources</phase>
             <goals>
               <goal>copy-dependencies</goal>
             </goals>
@@ -103,17 +142,6 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <configuration>
-          <archive>
-            <manifestEntries>
-              <Automatic-Module-Name>org.apache.tika.pipes.fetcher.http</Automatic-Module-Name>
-            </manifestEntries>
-          </archive>
-        </configuration>
-      </plugin>
-      <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <configuration>
           <descriptors>
@@ -124,20 +152,27 @@
         <executions>
           <execution>
             <id>make-assembly</id>
-            <phase>package</phase>
+            <phase>process-test-resources</phase>
             <goals>
               <goal>single</goal>
             </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/plugins</outputDirectory>
+            </configuration>
           </execution>
         </executions>
       </plugin>
+      <!-- Self-testing a PF4J plugin requires development mode so that
+           PF4J uses parent-first classloading. Otherwise the plugin's classes
+           are loaded by an isolated PluginClassLoader, causing ClassCastException
+           when the test casts to concrete types like HttpFetcher. -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
+        <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <annotationProcessors>
-            <annotationProcessor>org.pf4j.processor.ExtensionAnnotationProcessor</annotationProcessor>
-          </annotationProcessors>
+          <systemPropertyVariables>
+            <tika.plugin.dev.mode>true</tika.plugin.dev.mode>
+          </systemPropertyVariables>
         </configuration>
       </plugin>
     </plugins>

@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>4.0.0-SNAPSHOT</version>
+    <version>${revision}</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
@@ -34,6 +34,8 @@
   <modules>
     <module>tika-langdetect-test-commons</module>
     <module>tika-langdetect-tika</module>
+    <module>tika-langdetect-charsoup-core</module>
+    <module>tika-langdetect-charsoup</module>
     <module>tika-langdetect-lingo24</module>
     <module>tika-langdetect-optimaize</module>
     <module>tika-langdetect-mitll-text</module>

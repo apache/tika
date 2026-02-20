@@ -79,7 +79,7 @@ public class SimpleComparerTest extends TikaTest {
         Map<Cols, String> row = tableInfos.get(0);
         assertTrue(row
                 .get(Cols.TOP_10_UNIQUE_TOKEN_DIFFS_A)
-                .startsWith("1,200: 1 | 120000: 1 | over: 1"));
+                .startsWith("1200: 1 | 120000: 1 | over: 1"));
 
         tableInfos = WRITER.getTable(ExtractComparer.CONTENTS_TABLE_A);
         row = tableInfos.get(0);
@@ -90,7 +90,7 @@ public class SimpleComparerTest extends TikaTest {
         assertEquals("12", row.get(Cols.NUM_ALPHABETIC_TOKENS));
         assertEquals("8", row.get(Cols.NUM_UNIQUE_COMMON_TOKENS));
         assertEquals("12", row.get(Cols.NUM_COMMON_TOKENS));
-        assertEquals("57", row.get(Cols.TOKEN_LENGTH_SUM));
+        assertEquals("56", row.get(Cols.TOKEN_LENGTH_SUM));
         assertEquals("eng", row.get(Cols.COMMON_TOKENS_LANG));
 
         tableInfos = WRITER.getTable(ExtractComparer.CONTENTS_TABLE_B);
@@ -98,8 +98,8 @@ public class SimpleComparerTest extends TikaTest {
         assertEquals("76", row.get(Cols.CONTENT_LENGTH));
         assertEquals("9", row.get(Cols.NUM_UNIQUE_TOKENS));
         assertEquals("13", row.get(Cols.NUM_TOKENS));
-        assertEquals("8", row.get(Cols.NUM_UNIQUE_COMMON_TOKENS));
-        assertEquals("10", row.get(Cols.NUM_COMMON_TOKENS));
+        assertEquals("9", row.get(Cols.NUM_UNIQUE_COMMON_TOKENS));
+        assertEquals("13", row.get(Cols.NUM_COMMON_TOKENS));
         assertEquals("64", row.get(Cols.TOKEN_LENGTH_SUM));
         assertEquals("eng", row.get(Cols.COMMON_TOKENS_LANG));
 
@@ -144,8 +144,8 @@ public class SimpleComparerTest extends TikaTest {
 
         Map<Cols, String> row = tableInfos.get(0);
         assertEquals("122", row.get(Cols.TOKEN_LENGTH_SUM));
-        assertEquals("37", row.get(Cols.NUM_COMMON_TOKENS));
-        assertEquals("zho-simp", row.get(Cols.COMMON_TOKENS_LANG));
+        assertEquals("32", row.get(Cols.NUM_COMMON_TOKENS));
+        assertEquals("wuu", row.get(Cols.COMMON_TOKENS_LANG));
 
     }
 

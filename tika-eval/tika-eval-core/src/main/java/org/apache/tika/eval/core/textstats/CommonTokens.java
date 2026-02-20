@@ -23,7 +23,6 @@ import java.util.Set;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.tuple.Pair;
 
-import org.apache.tika.eval.core.tokens.AlphaIdeographFilterFactory;
 import org.apache.tika.eval.core.tokens.CommonTokenCountManager;
 import org.apache.tika.eval.core.tokens.CommonTokenResult;
 import org.apache.tika.eval.core.tokens.LangModel;
@@ -42,6 +41,25 @@ public class CommonTokens implements LanguageAwareTokenCountStats<CommonTokenRes
         this.commonTokenCountManager = mgr;
     }
 
+    /**
+     * Check if a token consists entirely of alphabetic, ideographic, or underscore characters
+     * and contains no digits.
+     */
+    static boolean isAlphabetic(String token) {
+        int i = 0;
+        while (i < token.length()) {
+            int cp = token.codePointAt(i);
+            i += Character.charCount(cp);
+            if (Character.isDigit(cp)) {
+                return false;
+            }
+            if (!Character.isAlphabetic(cp) && !Character.isIdeographic(cp) && cp != '_') {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Override
     public CommonTokenResult calculate(List<LanguageResult> languages, TokenCounts tokenCounts) {
         Pair<String, LangModel> pair =
@@ -55,7 +73,7 @@ public class CommonTokens implements LanguageAwareTokenCountStats<CommonTokenRes
         for (Map.Entry<String, MutableInt> e : tokenCounts.getTokens().entrySet()) {
             String token = e.getKey();
             int count = e.getValue().intValue();
-            if (AlphaIdeographFilterFactory.isAlphabetic(token.toCharArray(), token.length())) {
+            if (isAlphabetic(token)) {
                 numAlphabeticTokens += count;
                 numUniqueAlphabeticTokens++;
             }
