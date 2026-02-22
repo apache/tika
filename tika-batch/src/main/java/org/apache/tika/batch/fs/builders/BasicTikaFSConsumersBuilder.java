@@ -268,6 +268,9 @@ public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
             case HTML:
                 sb.append("html");
                 break;
+            case MARKDOWN:
+                sb.append("md");
+                break;
             default:
                 sb.append("txt");
         }

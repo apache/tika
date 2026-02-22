@@ -67,7 +67,7 @@
         <option opt="handleExisting" hasArg="true"
                 description="if an output file already exists, do you want to: overwrite, rename or skip"/>
         <option opt="basicHandlerType" hasArg="true"
-                description="what type of content handler: xml, text, html, body"/>
+                description="what type of content handler: xml, text, html, body, markdown/md"/>
         <option opt="outputSuffix" hasArg="true"
                 description="suffix to add to the end of the output file name"/>
         <option opt="timeoutThresholdMillis" hasArg="true"

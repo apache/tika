@@ -174,6 +174,16 @@ public class TikaCLIBatchCommandLineTest {
     }
 
     @Test
+    public void testMarkdownMapping() throws Exception {
+        String[] params = {"-i", testInputPathForCommandLine, "-o", "outputRoot", "--md"};
+        String[] commandLine = BatchCommandLineBuilder.build(params);
+        Map<String, String> attrs = mapify(commandLine);
+        assertEquals("markdown", attrs.get("-basicHandlerType"));
+        assertEquals(escapedInputPathForCommandLine, attrs.get("-inputDir"));
+        assertEquals("outputRoot", attrs.get("-outputDir"));
+    }
+
+    @Test
     public void testOneDirOneFileException() throws Exception {
         boolean ex = false;
         try {

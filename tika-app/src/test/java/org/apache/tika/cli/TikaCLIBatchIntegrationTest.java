@@ -159,6 +159,14 @@ public class TikaCLIBatchIntegrationTest {
     }
 
     @Test
+    public void testMarkdownBatchIntegration() throws Exception {
+        String[] params = {"-i", testInputDirForCommandLine, "-o", tempOutputDirForCommandLine, "-numConsumers", "2", "--md"};
+        TikaCLI.main(params);
+        assertFileExists(tempOutputDir.resolve("bad_xml.xml.md"));
+        assertFileExists(tempOutputDir.resolve("coffee.xls.md"));
+    }
+
+    @Test
     public void testProcessLogFileConfig() throws Exception {
         String[] params = {"-i", testInputDirForCommandLine, "-o", tempOutputDirForCommandLine, "-numConsumers", "2", "-JDlog4j.configurationFile=" + customBatchLogging.toUri()};
         TikaCLI.main(params);
