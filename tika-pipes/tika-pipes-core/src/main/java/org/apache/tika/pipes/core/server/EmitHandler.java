@@ -248,7 +248,7 @@ class EmitHandler {
             return;
         }
         try {
-            parseData.filter(filter);
+            parseData.filter(filter, parseContext);
         } catch (TikaException e) {
             LOG.warn("failed to filter metadata list", e);
         }

@@ -16,6 +16,7 @@
  */
 package org.apache.tika.inference;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Base64;
@@ -23,12 +24,15 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import okhttp3.ConnectionPool;
+import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -73,11 +77,15 @@ import org.apache.tika.utils.StringUtils;
  * {@code {"input": [{"image": "data:image/png;base64,..."}]}}.
  * <p>
  * Configuration key: {@code "openai-image-embedding-parser"}
+ * <p>
+ * Thread safety: instances are safe for concurrent {@link #parse} calls once
+ * fully constructed. Setters must not be called concurrently with
+ * {@link #parse}.
  *
  * @since Apache Tika 4.0
  */
 @TikaComponent(name = "openai-image-embedding-parser", spi = false)
-public class OpenAIImageEmbeddingParser implements Parser, Initializable {
+public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closeable {
 
     private static final long serialVersionUID = 1L;
 
@@ -330,7 +338,19 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable {
     }
 
     private void buildHttpClient() {
+        // Zero idle connections so sockets are closed immediately after each request.
+        // This prevents MockWebServer (and any similar server) from hanging on shutdown
+        // while waiting for keep-alive connections to time out. The TCP handshake overhead
+        // is negligible compared to embedding inference latency.
+        // TODO: make maxIdleConnections configurable from a system-wide setting in
+        //  tika-config.json once that exists, so high-throughput deployments can tune it.
         httpClient = new OkHttpClient.Builder()
+                .connectionPool(new ConnectionPool(0, 1, TimeUnit.NANOSECONDS))
+                .dispatcher(new Dispatcher(Executors.newCachedThreadPool(r -> {
+                    Thread t = new Thread(r, "tika-okhttp-dispatcher");
+                    t.setDaemon(true);
+                    return t;
+                })))
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(defaultConfig.getTimeoutSeconds(),
                         TimeUnit.SECONDS)
@@ -346,6 +366,12 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable {
         return httpClient.newBuilder()
                 .readTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
                 .build();
+    }
+
+    @Override
+    public void close() {
+        httpClient.dispatcher().executorService().shutdown();
+        httpClient.connectionPool().evictAll();
     }
 
     // ---- delegating config getters/setters --------------------------------
