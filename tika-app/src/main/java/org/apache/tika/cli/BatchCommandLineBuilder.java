@@ -203,6 +203,9 @@ class BatchCommandLineBuilder {
             map.remove("-T");
             map.remove("--text-main");
             map.put("-basicHandlerType", "body");
+        } else if (map.containsKey("--md")) {
+            map.remove("--md");
+            map.put("-basicHandlerType", "markdown");
         }
 
         if (map.containsKey("-J") || map.containsKey("--jsonRecursive")) {
