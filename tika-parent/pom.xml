@@ -345,7 +345,7 @@
     <!-- can't use 4.1.0, fails in tika server core because it uses jetty 12, which we can't
          use due to the problems explained there -->
     <cxf.version>4.0.10</cxf.version>
-    <ddplist.version>1.28</ddplist.version>
+    <ddplist.version>1.29</ddplist.version>
     <dl4j.version>1.0.0-M2.1</dl4j.version>
     <fakeload.version>0.7.0</fakeload.version>
     <fastutil.version>8.5.16</fastutil.version>
