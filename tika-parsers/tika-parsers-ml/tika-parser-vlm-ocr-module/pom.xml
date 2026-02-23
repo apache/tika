@@ -33,7 +33,7 @@
 
   <properties>
     <okhttp.version>4.12.0</okhttp.version>
-    <commonmark.version>0.24.0</commonmark.version>
+    <commonmark.version>0.27.1</commonmark.version>
   </properties>
 
   <dependencyManagement>
