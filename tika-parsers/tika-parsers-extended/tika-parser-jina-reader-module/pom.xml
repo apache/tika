@@ -20,16 +20,15 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-
   <parent>
-    <artifactId>tika-parsers-ml</artifactId>
+    <artifactId>tika-parsers-extended</artifactId>
     <groupId>org.apache.tika</groupId>
     <version>${revision}</version>
   </parent>
+  <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>tika-parser-vlm-ocr-module</artifactId>
-  <name>Apache Tika VLM OCR parser module</name>
+  <artifactId>tika-parser-jina-reader-module</artifactId>
+  <name>Apache Tika Jina Reader parser module</name>
 
   <properties>
     <commonmark.version>0.24.0</commonmark.version>
@@ -82,7 +81,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Automatic-Module-Name>org.apache.tika.parser.vlm</Automatic-Module-Name>
+              <Automatic-Module-Name>org.apache.tika.parser.jina.reader</Automatic-Module-Name>
             </manifestEntries>
           </archive>
         </configuration>

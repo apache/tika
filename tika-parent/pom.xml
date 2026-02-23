@@ -387,8 +387,8 @@
          (only on the CI, not on local Windows with Docker, see comment in TIKA-4327 on 14.12.2024)
          expecting org.eclipse.jetty.client.util.InputStreamResponseListener which is only available
          in Jetty up to 11.0.26
-         but this class is now in org.eclipse.jetty.client, see also 
-         https://jetty.org/docs/jetty/12/programming-guide/migration/11-to-12.html 
+         but this class is now in org.eclipse.jetty.client, see also
+         https://jetty.org/docs/jetty/12/programming-guide/migration/11-to-12.html
          when updating, see also TODO in PipesBiDirectionalStreamingIntegrationTest
          and add jakarta.servlet jakarta.servlet-api 6.0.0 to tika-server-core
     -->
@@ -457,6 +457,11 @@
     <nimbus-jose-jwt.version>10.8</nimbus-jose-jwt.version>
     <javacpp.version>1.5.12</javacpp.version>
     <maven.exec.version>3.6.3</maven.exec.version>
+    <okhttp.version>4.12.0</okhttp.version>
+    <!-- kotlin-stdlib-jdk7/jdk8 are Kotlin's own legacy artifact names (shims since Kotlin 1.8);
+         they are not a JDK target. Pinning here resolves enforcer convergence failures when
+         OkHttp resolves different patch versions of these shims via different transitive paths. -->
+    <kotlin.version>1.9.10</kotlin.version>
 
     <!-- needs to exist even if empty due to problems with jacoco-maven-plugin -->
     <addmod/>
@@ -1143,6 +1148,36 @@
         <groupId>com.nimbusds</groupId>
         <artifactId>nimbus-jose-jwt</artifactId>
         <version>${nimbus-jose-jwt.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>okhttp</artifactId>
+        <version>${okhttp.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>mockwebserver</artifactId>
+        <version>${okhttp.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-stdlib</artifactId>
+        <version>${kotlin.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-stdlib-jdk8</artifactId>
+        <version>${kotlin.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-stdlib-jdk7</artifactId>
+        <version>${kotlin.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-stdlib-common</artifactId>
+        <version>${kotlin.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
