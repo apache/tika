@@ -234,6 +234,18 @@ public class TikaTestHttpServer implements Closeable {
         return requestCount.get();
     }
 
+    /**
+     * Clears all recorded requests and resets the request counter to zero.
+     * <p>
+     * Call this in test {@code setUp()} after invoking {@code initialize()} on a
+     * parser under test so that health-check probes made during initialization do
+     * not pollute per-test assertions about request count or request content.
+     */
+    public void clearRequests() {
+        requests.clear();
+        requestCount.set(0);
+    }
+
     /** Returns the base URL (e.g. {@code http://localhost:54321}) with no trailing slash. */
     public String url() {
         return "http://localhost:" + serverSocket.getLocalPort();

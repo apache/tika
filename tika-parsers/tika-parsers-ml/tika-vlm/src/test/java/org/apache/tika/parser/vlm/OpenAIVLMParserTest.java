@@ -57,7 +57,11 @@ public class OpenAIVLMParserTest {
         config.setMaxTokens(1024);
         config.setTimeoutSeconds(10);
 
+        // Queue 200 for the GET /v1/models health check in initialize()
+        server.enqueue(new TikaTestHttpServer.MockResponse(200, "{\"object\":\"list\"}"));
         parser = new OpenAIVLMParser(config);
+        parser.initialize();
+        server.clearRequests(); // discard the health-check request from the log
     }
 
     @AfterEach

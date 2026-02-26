@@ -61,6 +61,7 @@ public class ClaudeVLMParserTest {
         config.setApiKey("sk-ant-test-key");
 
         parser = new ClaudeVLMParser(config);
+        parser.initialize();
     }
 
     @AfterEach

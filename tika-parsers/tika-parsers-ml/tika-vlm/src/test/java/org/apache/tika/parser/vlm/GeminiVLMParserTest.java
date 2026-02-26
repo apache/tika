@@ -58,7 +58,11 @@ public class GeminiVLMParserTest {
         config.setTimeoutSeconds(10);
         config.setApiKey("test-gemini-key");
 
+        // Queue 200 for the GET /v1beta/models health check in initialize()
+        server.enqueue(new TikaTestHttpServer.MockResponse(200, "{\"models\":[]}"));
         parser = new GeminiVLMParser(config);
+        parser.initialize();
+        server.clearRequests(); // discard the health-check request from the log
     }
 
     @AfterEach

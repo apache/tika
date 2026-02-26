@@ -141,6 +141,9 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
+        if (!serverAvailable) {
+            return Collections.emptySet();
+        }
         VLMOCRConfig config = context.get(VLMOCRConfig.class);
         if (config != null && config.isSkipOcr()) {
             return Collections.emptySet();
@@ -225,6 +228,8 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
         this.httpClient = buildHttpClient();
         String healthUrl = getHealthCheckUrl(defaultConfig);
         if (healthUrl == null) {
+            // No health check configured (e.g. Claude) — assume available
+            serverAvailable = true;
             return;
         }
         try {
