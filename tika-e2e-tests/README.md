@@ -24,20 +24,20 @@ This module contains standalone end-to-end (E2E) tests for various Apache Tika d
 From this directory:
 
 ```bash
-mvn clean install
+./mvnw clean install
 ```
 
 ## Running All E2E Tests
 
 ```bash
-mvn test
+./mvnw test
 ```
 
 ## Running Specific Test Module
 
 ```bash
 cd tika-grpc
-mvn test
+./mvnw test
 ```
 
 ## Why Standalone?

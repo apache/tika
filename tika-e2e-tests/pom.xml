@@ -24,9 +24,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.apache.tika</groupId>
+    <parent>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-parent</artifactId>
+        <version>4.0.0-SNAPSHOT</version>
+        <relativePath>../tika-parent/pom.xml</relativePath>
+    </parent>
+
     <artifactId>tika-e2e-tests</artifactId>
-    <version>4.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Apache Tika End-to-End Tests</name>
     <description>End-to-end integration tests for Apache Tika components</description>
@@ -42,7 +47,7 @@
 
         <!-- Test dependencies -->
         <junit.version>5.11.4</junit.version>
-        <testcontainers.version>1.20.4</testcontainers.version>
+        <testcontainers.version>2.0.3</testcontainers.version>
 
         <!-- Logging -->
         <slf4j.version>2.0.16</slf4j.version>
@@ -82,7 +87,7 @@
             </dependency>
             <dependency>
                 <groupId>org.testcontainers</groupId>
-                <artifactId>junit-jupiter</artifactId>
+                <artifactId>testcontainers-junit-jupiter</artifactId>
                 <version>${testcontainers.version}</version>
                 <scope>test</scope>
             </dependency>
@@ -109,6 +114,18 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${jackson.version}</version>
+            </dependency>
+
+            <!-- Micronaut version alignment for Ignite 3.x -->
+            <dependency>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-validation</artifactId>
+                <version>3.10.4</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-http</artifactId>
+                <version>3.10.4</version>
             </dependency>
 
             <!-- Lombok -->
@@ -139,5 +156,19 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.rat</groupId>
+                <artifactId>apache-rat-plugin</artifactId>
+                <configuration>
+                    <inputExcludes>
+                        <inputExclude>README.md</inputExclude>
+                        <inputExclude>**/README.md</inputExclude>
+                        <inputExclude>**/target/**</inputExclude>
+                        <inputExclude>**/.idea/**</inputExclude>
+                    </inputExcludes>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 </project>
