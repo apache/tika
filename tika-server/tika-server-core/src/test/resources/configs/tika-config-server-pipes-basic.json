@@ -14,9 +14,13 @@
       "tika"
     ]
   },
+  "parse-context": {
+    "timeout-limits": {
+      "progressTimeoutMillis": 5000
+    }
+  },
   "pipes": {
     "numClients": 2,
-    "timeoutMillis": 5000,
     "forkedJvmArgs": [
       "-Xmx256m"
     ]

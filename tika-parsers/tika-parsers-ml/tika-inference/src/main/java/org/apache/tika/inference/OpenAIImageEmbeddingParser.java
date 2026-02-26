@@ -43,7 +43,8 @@ import org.apache.tika.config.Initializable;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.config.TikaComponent;
-import org.apache.tika.config.TikaTaskTimeout;
+import org.apache.tika.config.TikaProgressTracker;
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.inference.locator.Locators;
@@ -165,11 +166,12 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable {
         String mimeType = detectMimeType(metadata);
         String base64Data = Base64.getEncoder().encodeToString(imageBytes);
 
-        long timeoutMillis = TikaTaskTimeout.getTimeoutMillis(
+        long timeoutMillis = TimeoutLimits.getProcessTimeoutMillis(
                 parseContext, config.getTimeoutSeconds() * 1000L);
 
         float[] vector = callEmbeddingEndpoint(config, mimeType, base64Data,
                 timeoutMillis);
+        TikaProgressTracker.update(parseContext);
 
         // Build a Chunk with the vector and locators
         Locators locators = buildLocators(metadata);

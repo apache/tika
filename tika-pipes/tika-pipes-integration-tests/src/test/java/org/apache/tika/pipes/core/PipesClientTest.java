@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.config.TikaTaskTimeout;
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -181,7 +181,7 @@ public class PipesClientTest {
         //TODO -- figure out how to test pipes server timeout alone
         //I did both manually during development, but unit tests are better. :D
         ParseContext parseContext = new ParseContext();
-        parseContext.set(TikaTaskTimeout.class, new TikaTaskTimeout(1000));
+        parseContext.set(TimeoutLimits.class, new TimeoutLimits(1000, 1000));
         // Use JSON config approach for Jackson serialization compatibility
         // Don't resolve here - let PipesServer resolve on its side
         parseContext.setJsonConfig("metadata-filters", """
@@ -198,7 +198,7 @@ public class PipesClientTest {
 
     @Test
     public void testRuntimeTimeoutChange(@TempDir Path tmp) throws Exception {
-        // Test that TikaTaskTimeout can be changed at runtime via ParseContext
+        // Test that TimeoutLimits can be changed at runtime via ParseContext
         // Use a mock file with 3 second delay
         Path inputDir = tmp.resolve("input");
         Files.createDirectories(inputDir);
@@ -217,7 +217,7 @@ public class PipesClientTest {
         try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
             // First test: Short timeout (1 second) - should timeout
             ParseContext shortTimeoutContext = new ParseContext();
-            shortTimeoutContext.set(TikaTaskTimeout.class, new TikaTaskTimeout(1000));
+            shortTimeoutContext.set(TimeoutLimits.class, new TimeoutLimits(1000, 1000));
 
             PipesResult timeoutResult = pipesClient.process(
                     new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
@@ -229,7 +229,7 @@ public class PipesClientTest {
 
             // Second test: Long timeout (10 seconds) - should succeed
             ParseContext longTimeoutContext = new ParseContext();
-            longTimeoutContext.set(TikaTaskTimeout.class, new TikaTaskTimeout(10000));
+            longTimeoutContext.set(TimeoutLimits.class, new TimeoutLimits(10000, 10000));
 
             PipesResult successResult = pipesClient.process(
                     new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),

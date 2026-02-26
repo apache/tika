@@ -41,8 +41,8 @@ import org.apache.tika.parser.ParseContext;
  * Uses friendly-name format for configuration:
  * <pre>
  * "parse-context": {
- *   "tika-task-timeout": {
- *     "timeoutMillis": 30000
+ *   "timeout-limits": {
+ *     "progressTimeoutMillis": 60000
  *   },
  *   "pdf-parser": {
  *     "extractInlineImages": true

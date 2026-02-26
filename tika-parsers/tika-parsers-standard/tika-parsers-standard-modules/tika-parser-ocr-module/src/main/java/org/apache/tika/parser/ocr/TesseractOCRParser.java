@@ -62,7 +62,8 @@ import org.apache.tika.config.Initializable;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.config.TikaComponent;
-import org.apache.tika.config.TikaTaskTimeout;
+import org.apache.tika.config.TikaProgressTracker;
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.ParentContentHandler;
@@ -485,12 +486,13 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
 
         Process process = null;
         String id = null;
-        long timeoutMillis = TikaTaskTimeout.getTimeoutMillis(parseContext,
+        long timeoutMillis = TimeoutLimits.getProcessTimeoutMillis(parseContext,
                 config.getTimeoutSeconds() * 1000);
         try {
             process = pb.start();
             id = register(process);
             runOCRProcess(process, timeoutMillis);
+            TikaProgressTracker.update(parseContext);
         } finally {
             if (process != null) {
                 process.destroyForcibly();

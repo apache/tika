@@ -225,7 +225,7 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
         parseContext.set(ContentHandlerFactory.class,
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
         parseContext.set(ParseMode.class, ParseMode.RMETA);
-        parseContext.setJsonConfig("tika-task-timeout", "{\"timeoutMillis\":" + timeoutMillis + "}");
+        parseContext.setJsonConfig("timeout-limits", "{\"progressTimeoutMillis\":" + timeoutMillis + "}");
 
         FetchEmitTuple t = new FetchEmitTuple(fileName,
                 new FetchKey(CXFTestBase.FETCHER_ID, fileName),

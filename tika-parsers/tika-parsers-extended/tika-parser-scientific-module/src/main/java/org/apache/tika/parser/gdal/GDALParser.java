@@ -39,7 +39,8 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaComponent;
-import org.apache.tika.config.TikaTaskTimeout;
+import org.apache.tika.config.TikaProgressTracker;
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -194,12 +195,13 @@ public class GDALParser implements Parser {
 
         String[] runCommand = processCommand(tis).split("\\s+", -1);
 
-        long localTimeoutMillis = TikaTaskTimeout.getTimeoutMillis(context, timeoutMs);
+        long localTimeoutMillis = TimeoutLimits.getProcessTimeoutMillis(context, timeoutMs);
         FileProcessResult result = ProcessUtils.execute(new ProcessBuilder(runCommand),
                 localTimeoutMillis, maxStdOut, maxStdErr);
 
         metadata.set(ExternalProcess.IS_TIMEOUT, result.isTimeout());
         metadata.set(ExternalProcess.EXIT_VALUE, result.getExitValue());
+        TikaProgressTracker.update(context);
         metadata.set(ExternalProcess.STD_OUT_LENGTH, result.getStdoutLength());
         metadata.set(ExternalProcess.STD_OUT_IS_TRUNCATED, result.isStdoutTruncated());
         metadata.set(ExternalProcess.STD_ERR_LENGTH, result.getStderrLength());

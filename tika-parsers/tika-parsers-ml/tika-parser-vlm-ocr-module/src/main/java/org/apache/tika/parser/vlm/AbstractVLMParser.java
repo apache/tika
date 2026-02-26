@@ -36,7 +36,8 @@ import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.ParseContextConfig;
-import org.apache.tika.config.TikaTaskTimeout;
+import org.apache.tika.config.TikaProgressTracker;
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.ParentContentHandler;
@@ -192,7 +193,7 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
         byte[] fileBytes = readFully(tis);
         String base64Data = Base64.getEncoder().encodeToString(fileBytes);
 
-        long timeoutMillis = TikaTaskTimeout.getTimeoutMillis(
+        long timeoutMillis = TimeoutLimits.getProcessTimeoutMillis(
                 parseContext, config.getTimeoutSeconds() * 1000L);
         OkHttpClient client = getClientWithTimeout(timeoutMillis);
 
@@ -207,6 +208,7 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
             }
             String responseBody = response.body() != null ? response.body().string() : "";
             responseText = extractResponseText(responseBody, metadata);
+            TikaProgressTracker.update(parseContext);
         } catch (IOException e) {
             throw new TikaException("VLM request failed: " + e.getMessage(), e);
         }
