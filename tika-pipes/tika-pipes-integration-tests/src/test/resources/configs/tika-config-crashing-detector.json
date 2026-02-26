@@ -33,7 +33,7 @@
   },
   "detectors": [
     {
-      "org.apache.tika.pipes.core.CrashingDetector": {}
+      "crashing-detector": {}
     }
   ],
   "plugin-roots": "PLUGINS_PATHS"

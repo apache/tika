@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.serialization.ComponentNameResolver;
 
@@ -51,12 +52,8 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
     public static final String PARSE_CONTEXT = "parse-context";
     public static final String TYPED = "typed";
 
-    // Plain mapper for serializing values without TikaModule's component wrapping
-    private static final ObjectMapper PLAIN_MAPPER = new ObjectMapper();
-
-    static {
-        // Allow serialization of classes with no properties
-        PLAIN_MAPPER.disable(com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS);
+    private static ObjectMapper plainMapper() {
+        return TikaObjectMapperFactory.getPlainMapper();
     }
 
     @Override
@@ -81,14 +78,13 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
                 continue;
             }
 
-            // Use the actual value's class for serialization, not the key class (which may be an interface)
-            // This ensures we can deserialize back to the concrete class
-            String valueClassName = value.getClass().getName();
-
-            // Try to find a friendly component name for the value's class, otherwise use FQCN
-            String keyName = findComponentName(valueClassName);
+            // Find the friendly component name — all serializable components must be registered
+            String keyName = ComponentNameResolver.getFriendlyName(value.getClass());
             if (keyName == null) {
-                keyName = valueClassName;
+                throw new IOException(
+                        "Cannot serialize ParseContext entry: " + value.getClass().getName() +
+                        " is not registered. Components must be registered via " +
+                        "@TikaComponent annotation or .idx file to be serializable.");
             }
 
             if (!hasTypedObjects) {
@@ -99,7 +95,7 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
             gen.writeFieldName(keyName);
             // Use writeTree instead of writeRawValue for binary format support (e.g., Smile)
             // and stricter validation (fails early if value can't be serialized)
-            gen.writeTree(PLAIN_MAPPER.valueToTree(value));
+            gen.writeTree(plainMapper().valueToTree(value));
 
             // Track this name so we skip it in jsonConfigs
             serializedNames.add(keyName);
@@ -119,26 +115,10 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
             }
             gen.writeFieldName(entry.getKey());
             // Parse the JSON string into a tree for binary format support
-            gen.writeTree(PLAIN_MAPPER.readTree(entry.getValue().json()));
+            gen.writeTree(plainMapper().readTree(entry.getValue().json()));
         }
 
         gen.writeEndObject();
     }
 
-    /**
-     * Finds the component name for a class.
-     * Uses ComponentNameResolver for registry lookup. Only classes registered
-     * in a component registry will be serialized.
-     *
-     * @param className the fully qualified class name
-     * @return the component name, or null if not registered
-     */
-    private String findComponentName(String className) {
-        try {
-            Class<?> clazz = Class.forName(className);
-            return ComponentNameResolver.getFriendlyName(clazz);
-        } catch (ClassNotFoundException e) {
-            return null;
-        }
-    }
 }

@@ -17,10 +17,8 @@
 package org.apache.tika.serialization;
 
 import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -36,36 +34,21 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationConfig;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.Deserializers;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.ser.Serializers;
 
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.JsonConfig;
-import org.apache.tika.config.SelfConfiguring;
+import org.apache.tika.config.loader.ComponentInstantiator;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.detect.DefaultDetector;
-import org.apache.tika.detect.Detector;
-import org.apache.tika.detect.EncodingDetector;
-import org.apache.tika.digest.DigesterFactory;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
-import org.apache.tika.extractor.UnpackSelector;
-import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.filter.MetadataFilter;
-import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
-import org.apache.tika.renderer.Renderer;
-import org.apache.tika.sax.ContentHandlerDecoratorFactory;
-import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.serialization.serdes.DefaultDetectorSerializer;
 import org.apache.tika.serialization.serdes.DefaultParserSerializer;
 import org.apache.tika.serialization.serdes.MetadataDeserializer;
@@ -90,64 +73,6 @@ import org.apache.tika.serialization.serdes.ParseContextSerializer;
 public class TikaModule extends SimpleModule {
 
     private static ObjectMapper sharedMapper;
-
-    // Plain JSON mapper for converting JsonNodes to JSON strings.
-    // This is needed because the main mapper may use a binary format (e.g., Smile)
-    // which doesn't support writeValueAsString().
-    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
-
-    /**
-     * Interfaces that use compact format serialization.
-     * Types implementing these interfaces will be serialized as:
-     * - "type-name" for defaults
-     * - {"type-name": {...}} for configured instances
-     */
-    private static final Set<Class<?>> COMPACT_FORMAT_INTERFACES = new HashSet<>();
-
-    static {
-        // Core component interfaces that use compact format
-        COMPACT_FORMAT_INTERFACES.add(Parser.class);
-        COMPACT_FORMAT_INTERFACES.add(Detector.class);
-        COMPACT_FORMAT_INTERFACES.add(EncodingDetector.class);
-        COMPACT_FORMAT_INTERFACES.add(MetadataFilter.class);
-        COMPACT_FORMAT_INTERFACES.add(Translator.class);
-        COMPACT_FORMAT_INTERFACES.add(Renderer.class);
-        COMPACT_FORMAT_INTERFACES.add(DigesterFactory.class);
-        COMPACT_FORMAT_INTERFACES.add(EmbeddedDocumentExtractorFactory.class);
-        COMPACT_FORMAT_INTERFACES.add(MetadataWriteLimiterFactory.class);
-        COMPACT_FORMAT_INTERFACES.add(ContentHandlerDecoratorFactory.class);
-        COMPACT_FORMAT_INTERFACES.add(ContentHandlerFactory.class);
-        COMPACT_FORMAT_INTERFACES.add(UnpackSelector.class);
-    }
-
-    /**
-     * Checks if a type should use compact format serialization.
-     * Returns true if the type implements any of the registered compact format interfaces.
-     */
-    private static boolean usesCompactFormat(Class<?> type) {
-        return findContextKeyInterface(type) != null;
-    }
-
-    /**
-     * Finds the appropriate context key interface for a given type.
-     * This is used to determine which interface should be used as the ParseContext key
-     * when storing instances of this type.
-     * <p>
-     * Security note: This method only helps determine the context key - it does NOT
-     * affect which classes can be instantiated. Classes must still be registered
-     * via @TikaComponent to be deserializable.
-     *
-     * @param type the type to find the context key for
-     * @return the interface to use as context key, or null if none found
-     */
-    public static Class<?> findContextKeyInterface(Class<?> type) {
-        for (Class<?> iface : COMPACT_FORMAT_INTERFACES) {
-            if (iface.isAssignableFrom(type)) {
-                return iface;
-            }
-        }
-        return null;
-    }
 
     public TikaModule() {
         super("TikaModule");
@@ -220,7 +145,8 @@ public class TikaModule extends SimpleModule {
             // Concrete implementations (like ExternalParser, HtmlParser) should use normal
             // Jackson bean deserialization for their properties.
             if (rawClass.isInterface() || Modifier.isAbstract(rawClass.getModifiers())) {
-                if (COMPACT_FORMAT_INTERFACES.contains(rawClass) || usesCompactFormat(rawClass)) {
+                if (ComponentNameResolver.getContextKeyInterfaces().contains(rawClass) ||
+                        ComponentNameResolver.usesCompactFormat(rawClass)) {
                     return new TikaComponentDeserializer(rawClass);
                 }
             }
@@ -253,7 +179,8 @@ public class TikaModule extends SimpleModule {
 
             // Only serialize with compact format if type implements a compact format interface
             // AND has a registered friendly name
-            if (usesCompactFormat(rawClass) && ComponentNameResolver.getFriendlyName(rawClass) != null) {
+            if (ComponentNameResolver.usesCompactFormat(rawClass) &&
+                    ComponentNameResolver.getFriendlyName(rawClass) != null) {
                 return new TikaComponentSerializer();
             }
 
@@ -263,6 +190,7 @@ public class TikaModule extends SimpleModule {
 
     /**
      * Deserializer that handles both string and object formats for Tika components.
+     * Delegates to {@link ComponentInstantiator#instantiateComponent} for instantiation.
      */
     private static class TikaComponentDeserializer extends JsonDeserializer<Object> {
         private final Class<?> expectedType;
@@ -281,14 +209,15 @@ public class TikaModule extends SimpleModule {
                         "Call TikaModule.setSharedMapper() before deserializing.");
             }
 
+            String typeName;
+            JsonNode configNode;
+
             if (node.isTextual()) {
-                // Simple string format: "pdf-parser"
-                String typeName = node.asText();
-                return instantiate(typeName, null, mapper);
+                typeName = node.asText();
+                configNode = null;
             } else if (node.isObject()) {
                 Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
                 if (!fields.hasNext()) {
-                    // Empty object {} - try to create default instance if expectedType is concrete
                     try {
                         return expectedType.getDeclaredConstructor().newInstance();
                     } catch (ReflectiveOperationException e) {
@@ -297,136 +226,19 @@ public class TikaModule extends SimpleModule {
                     }
                 }
                 Map.Entry<String, JsonNode> entry = fields.next();
-                return instantiate(entry.getKey(), entry.getValue(), mapper);
+                typeName = entry.getKey();
+                configNode = entry.getValue();
             } else {
                 throw new IOException("Expected string or object for " +
                         expectedType.getSimpleName() + ", got: " + node.getNodeType());
             }
-        }
-
-        private Object instantiate(String typeName, JsonNode configNode, ObjectMapper mapper) throws IOException {
-            // Resolve the class using ComponentNameResolver
-            Class<?> clazz;
-            try {
-                clazz = ComponentNameResolver.resolveClass(typeName,
-                        Thread.currentThread().getContextClassLoader());
-            } catch (ClassNotFoundException e) {
-                throw new IOException("Unknown type: " + typeName, e);
-            }
-
-            // Verify type compatibility
-            if (!expectedType.isAssignableFrom(clazz)) {
-                throw new IOException("Type " + typeName + " (" + clazz.getName() +
-                        ") is not assignable to " + expectedType.getName());
-            }
-
-            // Extract mime filter fields before stripping them
-            Set<MediaType> includeTypes = extractMimeTypes(configNode, "_mime-include");
-            Set<MediaType> excludeTypes = extractMimeTypes(configNode, "_mime-exclude");
-
-            // Strip decorator fields before passing to component
-            JsonNode cleanedConfig = stripDecoratorFields(configNode);
 
             try {
-                Object instance;
-
-                // DefaultParser and DefaultDetector must be loaded via TikaLoader for proper dependency injection
-                if (clazz == DefaultParser.class) {
-                    throw new IOException("DefaultParser must be loaded via TikaLoader, not directly " +
-                            "via Jackson deserialization. Use TikaLoader.load() to load configuration.");
-                } else if (clazz == DefaultDetector.class) {
-                    throw new IOException("DefaultDetector must be loaded via TikaLoader, not directly " +
-                            "via Jackson deserialization. Use TikaLoader.load() to load configuration.");
-                } else if (clazz == MimeTypes.class) {
-                    // MimeTypes must use the singleton to have all type definitions loaded
-                    instance = MimeTypes.getDefaultMimeTypes();
-                } else if (cleanedConfig == null || cleanedConfig.isEmpty()) {
-                    // If no config, use default constructor
-                    instance = clazz.getDeclaredConstructor().newInstance();
-                } else {
-                    // Try JsonConfig constructor first (works for any component)
-                    Constructor<?> jsonConfigCtor = findJsonConfigConstructor(clazz);
-                    if (jsonConfigCtor != null) {
-                        // Use plain JSON mapper since the main mapper may be binary (Smile)
-                        String json = JSON_MAPPER.writeValueAsString(cleanedConfig);
-                        instance = jsonConfigCtor.newInstance((JsonConfig) () -> json);
-                    } else {
-                        // Fall back to no-arg constructor + Jackson bean deserialization
-                        instance = clazz.getDeclaredConstructor().newInstance();
-                        mapper.readerForUpdating(instance).readValue(cleanedConfig);
-                    }
-                }
-
-                // Call initialize() on Initializable components
-                if (instance instanceof Initializable) {
-                    try {
-                        ((Initializable) instance).initialize();
-                    } catch (TikaConfigException e) {
-                        throw new IOException("Failed to initialize " + typeName, e);
-                    }
-                }
-
-                // Wrap parser with mime filtering if include/exclude types specified
-                if (instance instanceof Parser && (!includeTypes.isEmpty() || !excludeTypes.isEmpty())) {
-                    instance = ParserDecorator.withMimeFilters((Parser) instance, includeTypes, excludeTypes);
-                }
-
-                return instance;
-
-            } catch (ReflectiveOperationException e) {
-                throw new IOException("Failed to instantiate: " + typeName, e);
+                return ComponentInstantiator.instantiateComponent(typeName, configNode,
+                        mapper, Thread.currentThread().getContextClassLoader(), expectedType);
+            } catch (TikaConfigException e) {
+                throw new IOException(e.getMessage(), e);
             }
-        }
-
-        private Set<MediaType> extractMimeTypes(JsonNode configNode, String fieldName) {
-            Set<MediaType> types = new HashSet<>();
-            if (configNode == null || !configNode.has(fieldName)) {
-                return types;
-            }
-            JsonNode arrayNode = configNode.get(fieldName);
-            if (arrayNode.isArray()) {
-                for (JsonNode typeNode : arrayNode) {
-                    types.add(MediaType.parse(typeNode.asText()));
-                }
-            }
-            return types;
-        }
-
-        private Constructor<?> findJsonConfigConstructor(Class<?> clazz) {
-            try {
-                return clazz.getConstructor(JsonConfig.class);
-            } catch (NoSuchMethodException e) {
-                return null;
-            }
-        }
-
-        /**
-         * Deserializes a JsonNode using a dedicated deserializer.
-         */
-        private <T> T deserializeWithNode(JsonDeserializer<T> deserializer, JsonNode node,
-                                          ObjectMapper mapper) throws IOException {
-            if (node == null) {
-                node = mapper.createObjectNode();
-            }
-            try (JsonParser p = mapper.treeAsTokens(node)) {
-                p.nextToken();
-                return deserializer.deserialize(p, mapper.getDeserializationContext());
-            }
-        }
-
-        /**
-         * Strips decorator fields (_mime-include, _mime-exclude) from config node.
-         * These fields are handled by TikaLoader for wrapping, not by the component itself.
-         * Note: _exclude is NOT stripped as it's used by DefaultParser for SPI exclusions.
-         */
-        private JsonNode stripDecoratorFields(JsonNode configNode) {
-            if (configNode == null || !configNode.isObject()) {
-                return configNode;
-            }
-            ObjectNode cleaned = configNode.deepCopy();
-            cleaned.remove("_mime-include");
-            cleaned.remove("_mime-exclude");
-            return cleaned;
         }
     }
 
@@ -435,12 +247,8 @@ public class TikaModule extends SimpleModule {
      * Outputs simple string if using defaults, object with type key if configured.
      */
     private static class TikaComponentSerializer extends JsonSerializer<Object> {
-        // Plain mapper for serializing without TikaModule (avoids infinite recursion)
-        private final ObjectMapper plainMapper;
 
         TikaComponentSerializer() {
-            this.plainMapper = new ObjectMapper();
-            this.plainMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
         }
 
         @Override
@@ -507,8 +315,8 @@ public class TikaModule extends SimpleModule {
                     // Create default config to compare against
                     Object defaultConfig = config.getClass().getDeclaredConstructor().newInstance();
 
-                    ObjectNode configNode = plainMapper.valueToTree(config);
-                    ObjectNode defaultNode = plainMapper.valueToTree(defaultConfig);
+                    ObjectNode configNode = TikaObjectMapperFactory.getPlainMapper().valueToTree(config);
+                    ObjectNode defaultNode = TikaObjectMapperFactory.getPlainMapper().valueToTree(defaultConfig);
 
                     // Only keep properties that differ from defaults
                     ObjectNode result = mapper.createObjectNode();
@@ -525,10 +333,10 @@ public class TikaModule extends SimpleModule {
                     // No config object - serialize the component directly
                     Object defaultInstance = value.getClass().getDeclaredConstructor().newInstance();
 
-                    ObjectNode valueNode = plainMapper.valueToTree(value);
-                    ObjectNode defaultNode = plainMapper.valueToTree(defaultInstance);
+                    ObjectNode valueNode = TikaObjectMapperFactory.getPlainMapper().valueToTree(value);
+                    ObjectNode defaultNode = TikaObjectMapperFactory.getPlainMapper().valueToTree(defaultInstance);
 
-                    ObjectNode result = plainMapper.createObjectNode();
+                    ObjectNode result = TikaObjectMapperFactory.getPlainMapper().createObjectNode();
                     Iterator<Map.Entry<String, JsonNode>> fields = valueNode.fields();
                     while (fields.hasNext()) {
                         Map.Entry<String, JsonNode> field = fields.next();
