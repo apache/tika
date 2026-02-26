@@ -467,6 +467,7 @@ public class PipesServer implements AutoCloseable {
     public void close() throws Exception {
         executorService.shutdownNow();
         socket.close();
+        defaultMetadataFilter.close();
     }
 
     private void exit(int exitCode) {

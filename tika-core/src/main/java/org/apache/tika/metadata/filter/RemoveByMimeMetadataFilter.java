@@ -27,6 +27,7 @@ import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * This class removes the entire metadata object if the
@@ -73,7 +74,7 @@ public class RemoveByMimeMetadataFilter extends MetadataFilter {
     }
 
     @Override
-    public void filter(List<Metadata> metadataList) throws TikaException {
+    public void filter(List<Metadata> metadataList, ParseContext parseContext) throws TikaException {
         metadataList.removeIf(this::shouldRemove);
     }
 

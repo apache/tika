@@ -37,6 +37,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.parser.ParseContext;
 
@@ -63,6 +64,7 @@ public class OpenAIImageEmbeddingParserTest {
 
     @AfterEach
     void tearDown() throws Exception {
+        parser.close();
         server.shutdown();
     }
 
@@ -83,7 +85,7 @@ public class OpenAIImageEmbeddingParserTest {
                     new ParseContext());
         }
 
-        String output = metadata.get(ChunkSerializer.CHUNKS_FIELD);
+        String output = metadata.get(TikaCoreProperties.TIKA_CHUNKS);
         assertNotNull(output, "Should have tika:chunks");
 
         List<Chunk> chunks = ChunkSerializer.fromJson(output);
@@ -119,7 +121,7 @@ public class OpenAIImageEmbeddingParserTest {
         }
 
         List<Chunk> chunks = ChunkSerializer.fromJson(
-                metadata.get(ChunkSerializer.CHUNKS_FIELD));
+                metadata.get(TikaCoreProperties.TIKA_CHUNKS));
         assertEquals(1, chunks.size());
 
         assertNotNull(chunks.get(0).getLocators().getPaginated());
@@ -154,6 +156,7 @@ public class OpenAIImageEmbeddingParserTest {
     @Test
     void testApiKeyHeader() throws Exception {
         config.setApiKey("sk-test-clip-key");
+        parser.close();
         parser = new OpenAIImageEmbeddingParser(config);
 
         server.enqueue(new MockResponse()
@@ -176,6 +179,7 @@ public class OpenAIImageEmbeddingParserTest {
     @Test
     void testSkipEmbedding() throws Exception {
         config.setSkipEmbedding(true);
+        parser.close();
         parser = new OpenAIImageEmbeddingParser(config);
 
         byte[] fakeImage = new byte[]{1, 2};
@@ -187,13 +191,14 @@ public class OpenAIImageEmbeddingParserTest {
                     new ParseContext());
         }
 
-        assertNull(metadata.get(ChunkSerializer.CHUNKS_FIELD));
+        assertNull(metadata.get(TikaCoreProperties.TIKA_CHUNKS));
         assertEquals(0, server.getRequestCount());
     }
 
     @Test
     void testFileSizeFilter() throws Exception {
         config.setMinFileSizeToEmbed(100);
+        parser.close();
         parser = new OpenAIImageEmbeddingParser(config);
 
         // 4 bytes -- below minimum
@@ -206,7 +211,7 @@ public class OpenAIImageEmbeddingParserTest {
                     new ParseContext());
         }
 
-        assertNull(metadata.get(ChunkSerializer.CHUNKS_FIELD));
+        assertNull(metadata.get(TikaCoreProperties.TIKA_CHUNKS));
         assertEquals(0, server.getRequestCount());
     }
 
@@ -241,7 +246,7 @@ public class OpenAIImageEmbeddingParserTest {
         // Pre-populate with a text chunk (simulating text chunker ran first)
         Chunk textChunk = new Chunk("existing text", 0, 13);
         textChunk.setVector(new float[]{0.1f, 0.2f});
-        metadata.set(ChunkSerializer.CHUNKS_FIELD,
+        metadata.set(TikaCoreProperties.TIKA_CHUNKS,
                 ChunkSerializer.toJson(List.of(textChunk)));
 
         try (TikaInputStream tis = TikaInputStream.get(fakeImage)) {
@@ -250,7 +255,7 @@ public class OpenAIImageEmbeddingParserTest {
         }
 
         List<Chunk> merged = ChunkSerializer.fromJson(
-                metadata.get(ChunkSerializer.CHUNKS_FIELD));
+                metadata.get(TikaCoreProperties.TIKA_CHUNKS));
         assertEquals(2, merged.size());
         // First chunk is the pre-existing text chunk
         assertEquals("existing text", merged.get(0).getText());
@@ -272,8 +277,9 @@ public class OpenAIImageEmbeddingParserTest {
     }
 
     @Test
-    void testSupportedTypesWhenSkipped() {
+    void testSupportedTypesWhenSkipped() throws Exception {
         config.setSkipEmbedding(true);
+        parser.close();
         parser = new OpenAIImageEmbeddingParser(config);
         assertTrue(parser.getSupportedTypes(new ParseContext()).isEmpty());
     }
@@ -306,7 +312,7 @@ public class OpenAIImageEmbeddingParserTest {
                     new ParseContext());
         }
 
-        String output = metadata.get(ChunkSerializer.CHUNKS_FIELD);
+        String output = metadata.get(TikaCoreProperties.TIKA_CHUNKS);
         JsonNode array = MAPPER.readTree(output);
         // Vector should be base64-encoded string, not a JSON array
         String vectorField = array.get(0).get("vector").asText();

@@ -19,6 +19,7 @@ package org.apache.tika.inference;
 import java.io.Serializable;
 
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -63,12 +64,22 @@ public class InferenceConfig implements Serializable {
      * The metadata field to read the source text from.
      * Defaults to {@code tika:content}.
      */
-    private String contentField = "tika:content";
+    private String contentField = TikaCoreProperties.TIKA_CONTENT.getName();
 
     /**
      * The metadata field where the JSON chunk array is written.
      */
-    private String outputField = ChunkSerializer.CHUNKS_FIELD;
+    private String outputField = TikaCoreProperties.TIKA_CHUNKS;
+
+    /**
+     * If {@code true}, the embedding filter is skipped entirely for this
+     * request. Useful when the filter is configured as the default filter
+     * but should be bypassed for specific documents (e.g. binary blobs,
+     * very short metadata-only records). Set via {@code ParseContext} JSON:
+     * {@code {"openai-embedding-filter": {"skipEmbedding": true}}}.
+     * Default is {@code false}.
+     */
+    private boolean skipEmbedding = false;
 
     /**
      * If {@code true}, the content field (default {@code tika:content}) is
@@ -163,6 +174,14 @@ public class InferenceConfig implements Serializable {
 
     public void setOutputField(String outputField) {
         this.outputField = outputField;
+    }
+
+    public boolean isSkipEmbedding() {
+        return skipEmbedding;
+    }
+
+    public void setSkipEmbedding(boolean skipEmbedding) {
+        this.skipEmbedding = skipEmbedding;
     }
 
     public boolean isClearContentAfterChunking() {

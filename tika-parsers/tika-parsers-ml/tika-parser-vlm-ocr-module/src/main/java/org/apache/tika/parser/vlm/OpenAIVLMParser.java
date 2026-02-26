@@ -128,7 +128,7 @@ public class OpenAIVLMParser extends AbstractVLMParser {
                                        String mimeType, String base64Data,
                                        OkHttpClient client) {
         String json = buildRequestJson(config, base64Data, mimeType);
-        String url = stripTrailingSlash(config.getBaseUrl()) + completionsPath;
+        String url = stripTrailingSlash(config.getBaseUrl()) + config.getCompletionsPath();
 
         Request.Builder builder = new Request.Builder()
                 .url(url)
@@ -190,7 +190,7 @@ public class OpenAIVLMParser extends AbstractVLMParser {
     protected String getHealthCheckUrl(VLMOCRConfig config) {
         // Azure and custom endpoints may not have /v1/models;
         // skip health check if using a non-default completions path
-        if (!"/v1/chat/completions".equals(completionsPath)) {
+        if (!"/v1/chat/completions".equals(config.getCompletionsPath())) {
             return null;
         }
         return stripTrailingSlash(config.getBaseUrl()) + "/v1/models";
