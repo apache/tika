@@ -14,13 +14,14 @@
   },
   "parsers": [
     {
-      "class": "org.apache.tika.parser.ner.NamedEntityParser",
-      "supportedMimeTypes": [
-        "application/pdf",
-        "text/plain",
-        "text/html",
-        "application/xhtml+xml"
-      ]
+      "named-entity-parser": {
+        "_mime-include": [
+          "application/pdf",
+          "text/plain",
+          "text/html",
+          "application/xhtml+xml"
+        ]
+      }
     }
   ]
 }

@@ -78,10 +78,13 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
                 continue;
             }
 
-            // Try to find a friendly component name for the value's class, otherwise use FQCN
+            // Find the friendly component name — all serializable components must be registered
             String keyName = ComponentNameResolver.getFriendlyName(value.getClass());
             if (keyName == null) {
-                keyName = value.getClass().getName();
+                throw new IOException(
+                        "Cannot serialize ParseContext entry: " + value.getClass().getName() +
+                        " is not registered. Components must be registered via " +
+                        "@TikaComponent annotation or .idx file to be serializable.");
             }
 
             if (!hasTypedObjects) {

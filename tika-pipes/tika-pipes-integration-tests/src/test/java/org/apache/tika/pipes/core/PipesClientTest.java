@@ -34,15 +34,13 @@ import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.filter.CompositeMetadataFilter;
-import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
-import org.apache.tika.serialization.ParseContextUtils;
+
 
 public class PipesClientTest {
     String fetcherName = "fsf";
@@ -115,22 +113,13 @@ public class PipesClientTest {
     @Test
     public void testMetadataFilterFromJsonConfig(@TempDir Path tmp) throws Exception {
         // Test that metadata filters specified as JSON array in jsonConfigs
-        // are properly resolved and applied during pipe processing.
-        // This tests the full serialization/deserialization flow.
+        // survive serialization to the forked PipesServer and are applied.
         ParseContext parseContext = new ParseContext();
         parseContext.setJsonConfig("metadata-filters", """
             [
               "mock-upper-case-filter"
             ]
         """);
-
-        // Resolve the config to actual MetadataFilter instances
-        ParseContextUtils.resolveAll(parseContext, PipesClientTest.class.getClassLoader());
-
-        // Verify the filter was resolved
-        MetadataFilter resolvedFilter = parseContext.get(MetadataFilter.class);
-        Assertions.assertNotNull(resolvedFilter, "MetadataFilter should be resolved from jsonConfigs");
-        assertEquals(CompositeMetadataFilter.class, resolvedFilter.getClass());
 
         PipesClient pipesClient = init(tmp, testDoc);
         PipesResult pipesResult = pipesClient.process(
@@ -146,7 +135,7 @@ public class PipesClientTest {
 
     @Test
     public void testMultipleMetadataFiltersFromJsonConfig(@TempDir Path tmp) throws Exception {
-        // Test multiple filters specified as JSON array
+        // Test multiple filters specified as JSON array survive serialization
         ParseContext parseContext = new ParseContext();
         parseContext.setJsonConfig("metadata-filters", """
             [
@@ -154,9 +143,6 @@ public class PipesClientTest {
               "mock-upper-case-filter"
             ]
         """);
-
-        // Resolve the config to actual MetadataFilter instances
-        ParseContextUtils.resolveAll(parseContext, PipesClientTest.class.getClassLoader());
 
         String testFile = "mock-embedded.xml";
         PipesClient pipesClient = init(tmp, testFile);

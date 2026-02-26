@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 
@@ -249,20 +250,13 @@ public class TestParseContextSerialization {
     }
 
     @Test
-    public void testProgrammaticObjectsNotSerialized() throws Exception {
-        // Typed objects set via context.set() are NOT serialized
-        // Only jsonConfigs are serialized for clean round-trip
+    public void testUnregisteredObjectFailsSerialization() throws Exception {
+        // Unregistered objects must fail serialization with a clear error
         ParseContext pc = new ParseContext();
-
-        // String doesn't have a @TikaComponent annotation
         pc.set(String.class, "test-value");
 
-        String json = serializeParseContext(pc);
-
-        // Should be empty - typed objects are not serialized
-        ObjectMapper mapper = createMapper();
-        JsonNode root = mapper.readTree(json);
-        assertEquals(1, root.size(), "Typed objects should be serialized");
+        assertThrows(IOException.class, () -> serializeParseContext(pc),
+                "Unregistered components should fail serialization");
     }
 
     @Test
