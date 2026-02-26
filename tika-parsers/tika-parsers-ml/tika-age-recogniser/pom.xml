@@ -33,7 +33,7 @@
 
   <properties>
       <curator.version>5.9.0</curator.version>
-      <hadoop.version>3.4.2</hadoop.version>
+      <hadoop.version>3.4.3</hadoop.version>
   </properties>
 
   <!-- we're not maintaining this module.
