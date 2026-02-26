@@ -20,15 +20,13 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
 
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
@@ -115,9 +113,8 @@ public class GeminiVLMParser extends AbstractVLMParser {
     }
 
     @Override
-    protected Request buildHttpRequest(VLMOCRConfig config, byte[] fileBytes,
-                                       String mimeType, String base64Data,
-                                       OkHttpClient client) {
+    protected HttpCall buildHttpCall(VLMOCRConfig config,
+                                     String base64Data, String mimeType) {
         String json = buildRequestJson(config, base64Data, mimeType);
 
         String baseUrl = stripTrailingSlash(config.getBaseUrl());
@@ -127,10 +124,7 @@ public class GeminiVLMParser extends AbstractVLMParser {
             url += "?key=" + config.getApiKey();
         }
 
-        return new Request.Builder()
-                .url(url)
-                .post(RequestBody.create(json, JSON_MEDIA_TYPE))
-                .build();
+        return new HttpCall(url, json, Map.of());
     }
 
     @Override

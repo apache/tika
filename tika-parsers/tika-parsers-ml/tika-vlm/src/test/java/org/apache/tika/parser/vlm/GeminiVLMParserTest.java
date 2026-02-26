@@ -25,15 +25,13 @@ import java.io.ByteArrayInputStream;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.http.TikaTestHttpServer;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -44,17 +42,16 @@ public class GeminiVLMParserTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private MockWebServer server;
+    private TikaTestHttpServer server;
     private GeminiVLMParser parser;
     private VLMOCRConfig config;
 
     @BeforeEach
     void setUp() throws Exception {
-        server = new MockWebServer();
-        server.start();
+        server = new TikaTestHttpServer();
 
         config = new VLMOCRConfig();
-        config.setBaseUrl(server.url("").toString().replaceAll("/+$", ""));
+        config.setBaseUrl(server.url());
         config.setModel("gemini-2.5-flash");
         config.setPrompt("Extract all text from this document.");
         config.setMaxTokens(4096);
@@ -65,15 +62,14 @@ public class GeminiVLMParserTest {
     }
 
     @AfterEach
-    void tearDown() throws Exception {
+    void tearDown() {
         server.shutdown();
     }
 
     @Test
     void testSuccessfulImageOcr() throws Exception {
-        server.enqueue(new MockResponse()
-                .setBody(buildGeminiResponse("Hello from Gemini!", 80, 15))
-                .setHeader("Content-Type", "application/json"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                buildGeminiResponse("Hello from Gemini!", 80, 15)));
 
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/png");
@@ -89,13 +85,12 @@ public class GeminiVLMParserTest {
         assertEquals("80", metadata.get(AbstractVLMParser.VLM_PROMPT_TOKENS));
         assertEquals("15", metadata.get(AbstractVLMParser.VLM_COMPLETION_TOKENS));
 
-        RecordedRequest request = server.takeRequest();
-        assertTrue(request.getPath().contains("/v1beta/models/gemini-2.5-flash:generateContent"));
-        assertTrue(request.getPath().contains("key=test-gemini-key"));
-        assertEquals("POST", request.getMethod());
+        TikaTestHttpServer.RecordedRequest request = server.takeRequest();
+        assertTrue(request.path().contains("/v1beta/models/gemini-2.5-flash:generateContent"));
+        assertTrue(request.path().contains("key=test-gemini-key"));
+        assertEquals("POST", request.method());
 
-        // Verify Gemini request format
-        JsonNode body = MAPPER.readTree(request.getBody().readUtf8());
+        JsonNode body = MAPPER.readTree(request.body());
         JsonNode contents = body.get("contents");
         assertNotNull(contents);
         assertEquals(1, contents.size());
@@ -109,21 +104,18 @@ public class GeminiVLMParserTest {
         assertEquals("image/png", inlineData.get("mime_type").asText());
         assertNotNull(inlineData.get("data").asText());
 
-        // Verify generation config
         assertEquals(4096, body.get("generationConfig").get("maxOutputTokens").asInt());
     }
 
     @Test
     void testPdfSupport() throws Exception {
-        server.enqueue(new MockResponse()
-                .setBody(buildGeminiResponse("PDF content extracted", 200, 50))
-                .setHeader("Content-Type", "application/json"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                buildGeminiResponse("PDF content extracted", 200, 50)));
 
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "application/pdf");
         BodyContentHandler handler = new BodyContentHandler();
 
-        // Fake PDF bytes (starts with %PDF)
         byte[] fakePdf = "%PDF-1.4 fake content".getBytes(java.nio.charset.StandardCharsets.UTF_8);
 
         try (TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(fakePdf))) {
@@ -132,9 +124,10 @@ public class GeminiVLMParserTest {
 
         assertTrue(handler.toString().contains("PDF content extracted"));
 
-        RecordedRequest request = server.takeRequest();
-        JsonNode body = MAPPER.readTree(request.getBody().readUtf8());
-        JsonNode inlineData = body.get("contents").get(0).get("parts").get(1).get("inline_data");
+        TikaTestHttpServer.RecordedRequest request = server.takeRequest();
+        JsonNode body = MAPPER.readTree(request.body());
+        JsonNode inlineData =
+                body.get("contents").get(0).get("parts").get(1).get("inline_data");
         assertEquals("application/pdf", inlineData.get("mime_type").asText());
     }
 
@@ -155,9 +148,8 @@ public class GeminiVLMParserTest {
 
     @Test
     void testApiKeyAsQueryParam() throws Exception {
-        server.enqueue(new MockResponse()
-                .setBody(buildGeminiResponse("ok", 10, 5))
-                .setHeader("Content-Type", "application/json"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                buildGeminiResponse("ok", 10, 5)));
 
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
@@ -167,17 +159,17 @@ public class GeminiVLMParserTest {
             parser.parse(tis, new BodyContentHandler(), metadata, new ParseContext());
         }
 
-        RecordedRequest request = server.takeRequest();
-        assertTrue(request.getPath().contains("key=test-gemini-key"),
+        TikaTestHttpServer.RecordedRequest request = server.takeRequest();
+        assertTrue(request.path().contains("key=test-gemini-key"),
                 "API key should be in query params, not header");
         // Gemini does NOT use Bearer auth
-        assertEquals(null, request.getHeader("Authorization"));
+        assertEquals(null, request.header("authorization"));
     }
 
     @Test
     void testServerError() throws Exception {
-        server.enqueue(new MockResponse().setResponseCode(500)
-                .setBody("{\"error\":{\"message\":\"internal\"}}"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(500,
+                "{\"error\":{\"message\":\"internal\"}}"));
 
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/png");
@@ -199,7 +191,6 @@ public class GeminiVLMParserTest {
 
     @Test
     void testExtractResponseTextMultipleParts() throws Exception {
-        // Gemini can return multiple text parts
         String json = "{\"candidates\":[{\"content\":{\"parts\":["
                 + "{\"text\":\"Part one\"},"
                 + "{\"text\":\"Part two\"}"
@@ -220,7 +211,6 @@ public class GeminiVLMParserTest {
         assertTrue(json.contains("\"data\":\"AAAA\""));
         assertTrue(json.contains("\"maxOutputTokens\":4096"));
         assertTrue(json.contains("Extract all text from this document."));
-        // Should NOT contain OpenAI-style fields
         assertTrue(!json.contains("\"messages\""));
         assertTrue(!json.contains("\"max_tokens\""));
     }

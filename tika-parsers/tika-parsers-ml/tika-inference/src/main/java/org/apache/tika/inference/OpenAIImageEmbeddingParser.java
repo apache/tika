@@ -20,19 +20,16 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
@@ -46,6 +43,7 @@ import org.apache.tika.config.TikaComponent;
 import org.apache.tika.config.TikaTaskTimeout;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.http.TikaHttpClient;
 import org.apache.tika.inference.locator.Locators;
 import org.apache.tika.inference.locator.PaginatedLocator;
 import org.apache.tika.io.TikaInputStream;
@@ -105,11 +103,8 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private static final okhttp3.MediaType JSON_MEDIA_TYPE =
-            okhttp3.MediaType.parse("application/json; charset=utf-8");
-
     private ImageEmbeddingConfig defaultConfig;
-    private transient OkHttpClient httpClient;
+    private transient TikaHttpClient httpClient;
 
     /** URL path for embeddings requests. Default: {@code /v1/embeddings}. */
     private String embeddingsPath = "/v1/embeddings";
@@ -126,7 +121,7 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable {
 
     public OpenAIImageEmbeddingParser(ImageEmbeddingConfig config) {
         this.defaultConfig = config;
-        buildHttpClient();
+        this.httpClient = TikaHttpClient.build(30);
     }
 
     public OpenAIImageEmbeddingParser(JsonConfig jsonConfig) {
@@ -167,20 +162,16 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable {
 
         long timeoutMillis = TikaTaskTimeout.getTimeoutMillis(
                 parseContext, config.getTimeoutSeconds() * 1000L);
+        int timeoutSeconds = (int) (timeoutMillis / 1000L);
 
-        float[] vector = callEmbeddingEndpoint(config, mimeType, base64Data,
-                timeoutMillis);
+        float[] vector = callEmbeddingEndpoint(config, mimeType, base64Data, timeoutSeconds);
 
-        // Build a Chunk with the vector and locators
         Locators locators = buildLocators(metadata);
         Chunk chunk = new Chunk(null, locators);
         chunk.setVector(vector);
 
-        // Merge into the canonical chunks field so image embeddings
-        // coexist with text chunks in a single array
         ChunkSerializer.mergeInto(metadata, List.of(chunk));
 
-        // Emit an empty document -- this parser produces vectors, not text
         XHTMLContentHandler xhtml = new XHTMLContentHandler(
                 handler, metadata, parseContext);
         xhtml.startDocument();
@@ -191,42 +182,26 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable {
 
     @Override
     public void initialize() throws TikaConfigException {
-        buildHttpClient();
+        this.httpClient = TikaHttpClient.build(30);
     }
 
     // ---- internals --------------------------------------------------------
 
     float[] callEmbeddingEndpoint(ImageEmbeddingConfig config,
                                   String mimeType, String base64Data,
-                                  long timeoutMillis)
+                                  int timeoutSeconds)
             throws IOException, TikaException {
 
         String requestJson = buildRequest(config, mimeType, base64Data);
         String url = config.getBaseUrl().replaceAll("/+$", "") + embeddingsPath;
 
-        Request.Builder builder = new Request.Builder()
-                .url(url)
-                .post(RequestBody.create(requestJson, JSON_MEDIA_TYPE));
-
+        Map<String, String> headers = new HashMap<>();
         if (!StringUtils.isBlank(config.getApiKey())) {
-            builder.header(apiKeyHeaderName, apiKeyPrefix + config.getApiKey());
+            headers.put(apiKeyHeaderName, apiKeyPrefix + config.getApiKey());
         }
 
-        OkHttpClient client = getClientWithTimeout(timeoutMillis);
-
-        try (Response response = client.newCall(builder.build()).execute()) {
-            if (!response.isSuccessful()) {
-                String body = response.body() != null
-                        ? response.body().string() : "";
-                throw new TikaException(
-                        "Image embedding request failed with HTTP "
-                                + response.code() + ": " + body);
-            }
-
-            String responseBody = response.body() != null
-                    ? response.body().string() : "";
-            return parseResponse(responseBody);
-        }
+        String responseBody = httpClient.postJson(url, requestJson, headers, timeoutSeconds);
+        return parseResponse(responseBody);
     }
 
     String buildRequest(ImageEmbeddingConfig config, String mimeType,
@@ -273,8 +248,6 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable {
     Locators buildLocators(Metadata metadata) {
         Locators locators = new Locators();
 
-        // If we have page number metadata (from PDF rendering), create
-        // a PaginatedLocator
         String pageStr = metadata.get(TikaPagedText.PAGE_NUMBER);
         if (pageStr != null) {
             try {
@@ -303,8 +276,6 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable {
             throws TikaConfigException, IOException {
         String key = "openai-image-embedding-parser";
         if (parseContext.hasJsonConfig(key)) {
-            // Deserialize into RuntimeConfig which prevents overriding
-            // security-sensitive fields (baseUrl, apiKey) at parse time
             ImageEmbeddingConfig.RuntimeConfig runtimeConfig =
                     ParseContextConfig.getConfig(
                             parseContext, key,
@@ -315,31 +286,11 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable {
                 return runtimeConfig;
             }
 
-            // Merge runtime overrides with the init-time defaults
             return ParseContextConfig.getConfig(
                     parseContext, key, ImageEmbeddingConfig.class,
                     defaultConfig);
         }
         return defaultConfig;
-    }
-
-    private void buildHttpClient() {
-        httpClient = new OkHttpClient.Builder()
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(defaultConfig.getTimeoutSeconds(),
-                        TimeUnit.SECONDS)
-                .writeTimeout(60, TimeUnit.SECONDS)
-                .build();
-    }
-
-    private OkHttpClient getClientWithTimeout(long timeoutMillis) {
-        long defaultMs = defaultConfig.getTimeoutSeconds() * 1000L;
-        if (timeoutMillis == defaultMs) {
-            return httpClient;
-        }
-        return httpClient.newBuilder()
-                .readTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
-                .build();
     }
 
     // ---- delegating config getters/setters --------------------------------

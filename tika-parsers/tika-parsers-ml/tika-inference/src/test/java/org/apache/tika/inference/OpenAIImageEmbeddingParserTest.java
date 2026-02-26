@@ -26,15 +26,13 @@ import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.http.TikaTestHttpServer;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaPagedText;
@@ -44,17 +42,16 @@ public class OpenAIImageEmbeddingParserTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private MockWebServer server;
+    private TikaTestHttpServer server;
     private OpenAIImageEmbeddingParser parser;
     private ImageEmbeddingConfig config;
 
     @BeforeEach
     void setUp() throws Exception {
-        server = new MockWebServer();
-        server.start();
+        server = new TikaTestHttpServer();
 
         config = new ImageEmbeddingConfig();
-        config.setBaseUrl(server.url("").toString().replaceAll("/+$", ""));
+        config.setBaseUrl(server.url());
         config.setModel("jina-clip-v2");
         config.setTimeoutSeconds(10);
 
@@ -62,25 +59,22 @@ public class OpenAIImageEmbeddingParserTest {
     }
 
     @AfterEach
-    void tearDown() throws Exception {
+    void tearDown() {
         server.shutdown();
     }
 
     @Test
     void testEndToEnd() throws Exception {
-        server.enqueue(new MockResponse()
-                .setBody(buildEmbeddingResponse(3))
-                .setHeader("Content-Type", "application/json"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                buildEmbeddingResponse(3)));
 
-        // Fake 1x1 PNG bytes (just needs to be non-empty)
         byte[] fakeImage = new byte[]{(byte) 0x89, 'P', 'N', 'G'};
 
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/ocr-png");
 
         try (TikaInputStream tis = TikaInputStream.get(fakeImage)) {
-            parser.parse(tis, new DefaultHandler(), metadata,
-                    new ParseContext());
+            parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
         String output = metadata.get(ChunkSerializer.CHUNKS_FIELD);
@@ -92,10 +86,9 @@ public class OpenAIImageEmbeddingParserTest {
         assertNotNull(chunks.get(0).getVector());
         assertEquals(3, chunks.get(0).getVector().length);
 
-        // Verify request format
-        RecordedRequest request = server.takeRequest();
-        assertEquals("/v1/embeddings", request.getPath());
-        JsonNode body = MAPPER.readTree(request.getBody().readUtf8());
+        TikaTestHttpServer.RecordedRequest request = server.takeRequest();
+        assertEquals("/v1/embeddings", request.path());
+        JsonNode body = MAPPER.readTree(request.body());
         assertEquals("jina-clip-v2", body.get("model").asText());
         assertTrue(body.get("input").get(0).get("image").asText()
                 .startsWith("data:image/png;base64,"));
@@ -103,9 +96,8 @@ public class OpenAIImageEmbeddingParserTest {
 
     @Test
     void testPageNumberLocator() throws Exception {
-        server.enqueue(new MockResponse()
-                .setBody(buildEmbeddingResponse(2))
-                .setHeader("Content-Type", "application/json"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                buildEmbeddingResponse(2)));
 
         byte[] fakeImage = new byte[]{1, 2, 3};
 
@@ -114,8 +106,7 @@ public class OpenAIImageEmbeddingParserTest {
         metadata.set(TikaPagedText.PAGE_NUMBER, 7);
 
         try (TikaInputStream tis = TikaInputStream.get(fakeImage)) {
-            parser.parse(tis, new DefaultHandler(), metadata,
-                    new ParseContext());
+            parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
         List<Chunk> chunks = ChunkSerializer.fromJson(
@@ -124,15 +115,13 @@ public class OpenAIImageEmbeddingParserTest {
 
         assertNotNull(chunks.get(0).getLocators().getPaginated());
         assertEquals(1, chunks.get(0).getLocators().getPaginated().size());
-        assertEquals(7,
-                chunks.get(0).getLocators().getPaginated().get(0).getPage());
+        assertEquals(7, chunks.get(0).getLocators().getPaginated().get(0).getPage());
     }
 
     @Test
     void testOcrPrefixStripped() throws Exception {
-        server.enqueue(new MockResponse()
-                .setBody(buildEmbeddingResponse(2))
-                .setHeader("Content-Type", "application/json"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                buildEmbeddingResponse(2)));
 
         byte[] fakeImage = new byte[]{1, 2, 3};
 
@@ -140,12 +129,11 @@ public class OpenAIImageEmbeddingParserTest {
         metadata.set(Metadata.CONTENT_TYPE, "image/ocr-jpeg");
 
         try (TikaInputStream tis = TikaInputStream.get(fakeImage)) {
-            parser.parse(tis, new DefaultHandler(), metadata,
-                    new ParseContext());
+            parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
-        RecordedRequest request = server.takeRequest();
-        JsonNode body = MAPPER.readTree(request.getBody().readUtf8());
+        TikaTestHttpServer.RecordedRequest request = server.takeRequest();
+        JsonNode body = MAPPER.readTree(request.body());
         // Should strip "ocr-" prefix: image/ocr-jpeg -> image/jpeg
         assertTrue(body.get("input").get(0).get("image").asText()
                 .startsWith("data:image/jpeg;base64,"));
@@ -156,21 +144,19 @@ public class OpenAIImageEmbeddingParserTest {
         config.setApiKey("sk-test-clip-key");
         parser = new OpenAIImageEmbeddingParser(config);
 
-        server.enqueue(new MockResponse()
-                .setBody(buildEmbeddingResponse(2))
-                .setHeader("Content-Type", "application/json"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                buildEmbeddingResponse(2)));
 
         byte[] fakeImage = new byte[]{1};
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/png");
 
         try (TikaInputStream tis = TikaInputStream.get(fakeImage)) {
-            parser.parse(tis, new DefaultHandler(), metadata,
-                    new ParseContext());
+            parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
         assertEquals("Bearer sk-test-clip-key",
-                server.takeRequest().getHeader("Authorization"));
+                server.takeRequest().header("authorization"));
     }
 
     @Test
@@ -183,8 +169,7 @@ public class OpenAIImageEmbeddingParserTest {
         metadata.set(Metadata.CONTENT_TYPE, "image/png");
 
         try (TikaInputStream tis = TikaInputStream.get(fakeImage)) {
-            parser.parse(tis, new DefaultHandler(), metadata,
-                    new ParseContext());
+            parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
         assertNull(metadata.get(ChunkSerializer.CHUNKS_FIELD));
@@ -196,14 +181,12 @@ public class OpenAIImageEmbeddingParserTest {
         config.setMinFileSizeToEmbed(100);
         parser = new OpenAIImageEmbeddingParser(config);
 
-        // 4 bytes -- below minimum
         byte[] tinyImage = new byte[]{1, 2, 3, 4};
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/png");
 
         try (TikaInputStream tis = TikaInputStream.get(tinyImage)) {
-            parser.parse(tis, new DefaultHandler(), metadata,
-                    new ParseContext());
+            parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
         assertNull(metadata.get(ChunkSerializer.CHUNKS_FIELD));
@@ -212,9 +195,8 @@ public class OpenAIImageEmbeddingParserTest {
 
     @Test
     void testServerError() {
-        server.enqueue(new MockResponse()
-                .setResponseCode(500)
-                .setBody("{\"error\":\"internal error\"}"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(500,
+                "{\"error\":\"internal error\"}"));
 
         byte[] fakeImage = new byte[]{1};
         Metadata metadata = new Metadata();
@@ -222,17 +204,15 @@ public class OpenAIImageEmbeddingParserTest {
 
         assertThrows(TikaException.class, () -> {
             try (TikaInputStream tis = TikaInputStream.get(fakeImage)) {
-                parser.parse(tis, new DefaultHandler(), metadata,
-                        new ParseContext());
+                parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
             }
         });
     }
 
     @Test
     void testMergeWithExistingChunks() throws Exception {
-        server.enqueue(new MockResponse()
-                .setBody(buildEmbeddingResponse(4))
-                .setHeader("Content-Type", "application/json"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                buildEmbeddingResponse(4)));
 
         byte[] fakeImage = new byte[]{1};
         Metadata metadata = new Metadata();
@@ -245,17 +225,14 @@ public class OpenAIImageEmbeddingParserTest {
                 ChunkSerializer.toJson(List.of(textChunk)));
 
         try (TikaInputStream tis = TikaInputStream.get(fakeImage)) {
-            parser.parse(tis, new DefaultHandler(), metadata,
-                    new ParseContext());
+            parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
         List<Chunk> merged = ChunkSerializer.fromJson(
                 metadata.get(ChunkSerializer.CHUNKS_FIELD));
         assertEquals(2, merged.size());
-        // First chunk is the pre-existing text chunk
         assertEquals("existing text", merged.get(0).getText());
         assertNotNull(merged.get(0).getVector());
-        // Second chunk is the image embedding (no text)
         assertNull(merged.get(1).getText());
         assertNotNull(merged.get(1).getVector());
         assertEquals(4, merged.get(1).getVector().length);
@@ -264,11 +241,11 @@ public class OpenAIImageEmbeddingParserTest {
     @Test
     void testSupportedTypes() {
         assertTrue(parser.getSupportedTypes(new ParseContext())
-                .contains(MediaType.image("ocr-png")));
+                .contains(org.apache.tika.mime.MediaType.image("ocr-png")));
         assertTrue(parser.getSupportedTypes(new ParseContext())
-                .contains(MediaType.image("ocr-jpeg")));
+                .contains(org.apache.tika.mime.MediaType.image("ocr-jpeg")));
         assertTrue(parser.getSupportedTypes(new ParseContext())
-                .contains(MediaType.image("webp")));
+                .contains(org.apache.tika.mime.MediaType.image("webp")));
     }
 
     @Test
@@ -293,22 +270,19 @@ public class OpenAIImageEmbeddingParserTest {
 
     @Test
     void testVectorSerializedAsBase64() throws Exception {
-        server.enqueue(new MockResponse()
-                .setBody(buildEmbeddingResponse(3))
-                .setHeader("Content-Type", "application/json"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                buildEmbeddingResponse(3)));
 
         byte[] fakeImage = new byte[]{1};
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/png");
 
         try (TikaInputStream tis = TikaInputStream.get(fakeImage)) {
-            parser.parse(tis, new DefaultHandler(), metadata,
-                    new ParseContext());
+            parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
         String output = metadata.get(ChunkSerializer.CHUNKS_FIELD);
         JsonNode array = MAPPER.readTree(output);
-        // Vector should be base64-encoded string, not a JSON array
         String vectorField = array.get(0).get("vector").asText();
         assertNotNull(vectorField);
         float[] decoded = VectorSerializer.decode(vectorField);
@@ -328,13 +302,5 @@ public class OpenAIImageEmbeddingParserTest {
         sb.append("]}],\"model\":\"jina-clip-v2\",");
         sb.append("\"usage\":{\"prompt_tokens\":10,\"total_tokens\":10}}");
         return sb.toString();
-    }
-
-    // Local MediaType helper since we don't want to import tika-core's
-    // MediaType in the static context of these asserts
-    private static class MediaType {
-        static org.apache.tika.mime.MediaType image(String subtype) {
-            return org.apache.tika.mime.MediaType.image(subtype);
-        }
     }
 }

@@ -19,16 +19,15 @@ package org.apache.tika.parser.vlm;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
 
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
@@ -124,20 +123,16 @@ public class OpenAIVLMParser extends AbstractVLMParser {
     }
 
     @Override
-    protected Request buildHttpRequest(VLMOCRConfig config, byte[] fileBytes,
-                                       String mimeType, String base64Data,
-                                       OkHttpClient client) {
+    protected HttpCall buildHttpCall(VLMOCRConfig config,
+                                     String base64Data, String mimeType) {
         String json = buildRequestJson(config, base64Data, mimeType);
         String url = stripTrailingSlash(config.getBaseUrl()) + completionsPath;
 
-        Request.Builder builder = new Request.Builder()
-                .url(url)
-                .post(RequestBody.create(json, JSON_MEDIA_TYPE));
-
+        Map<String, String> headers = new HashMap<>();
         if (!StringUtils.isBlank(config.getApiKey())) {
-            builder.header(apiKeyHeaderName, apiKeyPrefix + config.getApiKey());
+            headers.put(apiKeyHeaderName, apiKeyPrefix + config.getApiKey());
         }
-        return builder.build();
+        return new HttpCall(url, json, headers);
     }
 
     @Override

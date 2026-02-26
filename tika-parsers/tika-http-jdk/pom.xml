@@ -23,37 +23,28 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <artifactId>tika-parsers-ml</artifactId>
+    <artifactId>tika-parsers</artifactId>
     <groupId>org.apache.tika</groupId>
     <version>${revision}</version>
   </parent>
 
-  <artifactId>tika-inference</artifactId>
-  <name>Apache Tika inference module</name>
+  <artifactId>tika-http-jdk</artifactId>
+  <name>Apache Tika JDK HTTP client</name>
+  <description>
+    Thin wrapper around java.net.http.HttpClient for use by Tika parser
+    modules that make outbound REST calls (embedding APIs, VLM endpoints,
+    etc.). Has zero runtime dependencies beyond tika-core and the JDK.
+  </description>
 
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-http-jdk</artifactId>
+      <artifactId>tika-core</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
+      <scope>provided</scope>
     </dependency>
 
     <!-- test -->
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-http-jdk</artifactId>
-      <version>${project.version}</version>
-      <classifier>tests</classifier>
-      <scope>test</scope>
-    </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
@@ -69,17 +60,24 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Automatic-Module-Name>org.apache.tika.inference</Automatic-Module-Name>
+              <Automatic-Module-Name>org.apache.tika.http</Automatic-Module-Name>
             </manifestEntries>
           </archive>
         </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>test-jar</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
           <inputExcludes>
-            <inputExclude>src/test/resources/test-documents/**</inputExclude>
+            <inputExclude>src/test/resources/**</inputExclude>
           </inputExcludes>
         </configuration>
       </plugin>
@@ -87,6 +85,6 @@
   </build>
 
   <scm>
-    <tag>3.0.0-rc1</tag>
+    <tag>HEAD</tag>
   </scm>
 </project>

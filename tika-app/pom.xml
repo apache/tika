@@ -40,6 +40,18 @@
       <artifactId>tika-parsers-standard-package</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- inference: text embeddings and CLIP image embeddings -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-inference</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <!-- VLM: OpenAI-compatible, Gemini, and Claude vision parsers -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-vlm</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-handler-boilerpipe</artifactId>

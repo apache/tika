@@ -26,15 +26,13 @@ import java.io.ByteArrayInputStream;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.http.TikaTestHttpServer;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -44,17 +42,16 @@ public class OpenAIVLMParserTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private MockWebServer server;
+    private TikaTestHttpServer server;
     private OpenAIVLMParser parser;
     private VLMOCRConfig config;
 
     @BeforeEach
     void setUp() throws Exception {
-        server = new MockWebServer();
-        server.start();
+        server = new TikaTestHttpServer();
 
         config = new VLMOCRConfig();
-        config.setBaseUrl(server.url("").toString().replaceAll("/+$", ""));
+        config.setBaseUrl(server.url());
         config.setModel("test-model");
         config.setPrompt("Extract text from this image.");
         config.setMaxTokens(1024);
@@ -64,7 +61,7 @@ public class OpenAIVLMParserTest {
     }
 
     @AfterEach
-    void tearDown() throws Exception {
+    void tearDown() {
         server.shutdown();
     }
 
@@ -72,9 +69,8 @@ public class OpenAIVLMParserTest {
     void testSuccessfulOcr() throws Exception {
         String ocrText = "Hello, World!\nThis is extracted text.";
 
-        server.enqueue(new MockResponse()
-                .setBody(buildChatResponse(ocrText, 100, 20))
-                .setHeader("Content-Type", "application/json"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                buildChatResponse(ocrText, 100, 20)));
 
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/png");
@@ -91,11 +87,11 @@ public class OpenAIVLMParserTest {
         assertEquals("100", metadata.get(AbstractVLMParser.VLM_PROMPT_TOKENS));
         assertEquals("20", metadata.get(AbstractVLMParser.VLM_COMPLETION_TOKENS));
 
-        RecordedRequest request = server.takeRequest();
-        assertEquals("/v1/chat/completions", request.getPath());
-        assertEquals("POST", request.getMethod());
+        TikaTestHttpServer.RecordedRequest request = server.takeRequest();
+        assertEquals("/v1/chat/completions", request.path());
+        assertEquals("POST", request.method());
 
-        JsonNode body = MAPPER.readTree(request.getBody().readUtf8());
+        JsonNode body = MAPPER.readTree(request.body());
         assertEquals("test-model", body.get("model").asText());
         assertEquals(1024, body.get("max_tokens").asInt());
 
@@ -112,8 +108,7 @@ public class OpenAIVLMParserTest {
 
     @Test
     void testServerError() throws Exception {
-        server.enqueue(new MockResponse().setResponseCode(500)
-                .setBody("{\"error\":\"boom\"}"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(500, "{\"error\":\"boom\"}"));
 
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/png");
@@ -164,9 +159,8 @@ public class OpenAIVLMParserTest {
         config.setApiKey("sk-test-key");
         parser = new OpenAIVLMParser(config);
 
-        server.enqueue(new MockResponse()
-                .setBody(buildChatResponse("text", 10, 5))
-                .setHeader("Content-Type", "application/json"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                buildChatResponse("text", 10, 5)));
 
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
@@ -176,7 +170,7 @@ public class OpenAIVLMParserTest {
             parser.parse(tis, new BodyContentHandler(), metadata, new ParseContext());
         }
 
-        assertEquals("Bearer sk-test-key", server.takeRequest().getHeader("Authorization"));
+        assertEquals("Bearer sk-test-key", server.takeRequest().header("authorization"));
     }
 
     @Test
@@ -185,11 +179,11 @@ public class OpenAIVLMParserTest {
         parser = new OpenAIVLMParser(config);
         parser.setApiKeyHeaderName("api-key");
         parser.setApiKeyPrefix("");
-        parser.setCompletionsPath("/openai/deployments/gpt-4o/chat/completions?api-version=2024-02-01");
+        parser.setCompletionsPath(
+                "/openai/deployments/gpt-4o/chat/completions?api-version=2024-02-01");
 
-        server.enqueue(new MockResponse()
-                .setBody(buildChatResponse("text", 10, 5))
-                .setHeader("Content-Type", "application/json"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                buildChatResponse("text", 10, 5)));
 
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
@@ -199,10 +193,10 @@ public class OpenAIVLMParserTest {
             parser.parse(tis, new BodyContentHandler(), metadata, new ParseContext());
         }
 
-        var request = server.takeRequest();
-        assertEquals("azure-key-123", request.getHeader("api-key"));
-        assertNull(request.getHeader("Authorization"));
-        assertTrue(request.getPath().startsWith(
+        TikaTestHttpServer.RecordedRequest request = server.takeRequest();
+        assertEquals("azure-key-123", request.header("api-key"));
+        assertNull(request.header("authorization"));
+        assertTrue(request.path().startsWith(
                 "/openai/deployments/gpt-4o/chat/completions"));
     }
 
@@ -220,15 +214,14 @@ public class OpenAIVLMParserTest {
     @Test
     void testPerRequestConfigOverride() throws Exception {
         VLMOCRConfig override = new VLMOCRConfig();
-        override.setBaseUrl(server.url("").toString().replaceAll("/+$", ""));
+        override.setBaseUrl(server.url());
         override.setModel("override-model");
         override.setPrompt("Custom.");
         override.setMaxTokens(2048);
         override.setTimeoutSeconds(10);
 
-        server.enqueue(new MockResponse()
-                .setBody(buildChatResponse("ok", 10, 5))
-                .setHeader("Content-Type", "application/json"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                buildChatResponse("ok", 10, 5)));
 
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/png");
@@ -240,7 +233,7 @@ public class OpenAIVLMParserTest {
             parser.parse(tis, new BodyContentHandler(), metadata, ctx);
         }
 
-        JsonNode body = MAPPER.readTree(server.takeRequest().getBody().readUtf8());
+        JsonNode body = MAPPER.readTree(server.takeRequest().body());
         assertEquals("override-model", body.get("model").asText());
         assertEquals(2048, body.get("max_tokens").asInt());
     }
