@@ -32,16 +32,16 @@ import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.filter.NoOpFilter;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.StreamEmitter;
 import org.apache.tika.pipes.core.EmitStrategy;
-import org.apache.tika.pipes.core.EmitStrategyOverride;
+import org.apache.tika.pipes.core.EmitStrategyConfig;
 import org.apache.tika.pipes.core.PassbackFilter;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
-import org.apache.tika.pipes.core.extractor.EmbeddedDocumentBytesConfig;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
 
@@ -62,14 +62,12 @@ class EmitHandler {
         this.directEmitThresholdBytes = directEmitThresholdBytes;
     }
 
-    public PipesResult emitParseData(FetchEmitTuple t, MetadataListAndEmbeddedBytes parseData) {
+    public PipesResult emitParseData(FetchEmitTuple t, MetadataListAndEmbeddedBytes parseData, ParseContext parseContext) {
         long start = System.currentTimeMillis();
         String stack = getContainerStacktrace(t, parseData.getMetadataList());
         //we need to apply the metadata filter after we pull out the stacktrace
-        filterMetadata(t, parseData);
-        ParseContext parseContext = t.getParseContext();
+        filterMetadata(parseData, parseContext);
         FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = t.getOnParseException();
-        EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig = parseContext.get(EmbeddedDocumentBytesConfig.class);
         if (StringUtils.isBlank(stack) ||
                 onParseException == FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT) {
             injectUserMetadata(t.getMetadata(), parseData.getMetadataList());
@@ -79,8 +77,9 @@ class EmitHandler {
                 t.setEmitKey(emitKey);
             }
             EmitDataImpl emitDataTuple = new EmitDataImpl(t.getEmitKey().getEmitKey(), parseData.getMetadataList(), stack);
-            if (shouldEmit(embeddedDocumentBytesConfig, parseData, emitDataTuple, parseContext)) {
-                return emit(t.getId(), emitKey, embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes(),
+            ParseMode parseMode = parseContext.get(ParseMode.class);
+            if (shouldEmit(parseMode, parseData, emitDataTuple, parseContext)) {
+                return emit(t.getId(), emitKey, parseMode == ParseMode.UNPACK,
                         parseData, stack, parseContext);
             } else {
                 if (StringUtils.isBlank(stack)) {
@@ -97,6 +96,12 @@ class EmitHandler {
     private PipesResult emit(String taskId, EmitKey emitKey,
                       boolean isExtractEmbeddedBytes, MetadataListAndEmbeddedBytes parseData,
                       String parseExceptionStack, ParseContext parseContext) {
+        // If no emitter specified, skip emission and return success
+        if (emitKey == EmitKey.NO_EMIT || emitKey.getEmitterId() == null) {
+            LOG.debug("No emitter specified for task id '{}', skipping emission", taskId);
+            return new PipesResult(PipesResult.RESULT_STATUS.PARSE_SUCCESS);
+        }
+        
         Emitter emitter = null;
 
         try {
@@ -154,23 +159,31 @@ class EmitHandler {
     }
 
 
-    private boolean shouldEmit(EmbeddedDocumentBytesConfig embeddedDocumentBytesConfig, MetadataListAndEmbeddedBytes parseData,
+    private boolean shouldEmit(ParseMode parseMode, MetadataListAndEmbeddedBytes parseData,
                                EmitDataImpl emitDataTuple, ParseContext parseContext) {
         EmitStrategy strategy = emitStrategy;
         long thresholdBytes = directEmitThresholdBytes;
 
-        EmitStrategyOverride overrideConfig = parseContext.get(EmitStrategyOverride.class);
+        EmitStrategyConfig overrideConfig = parseContext.get(EmitStrategyConfig.class);
         if (overrideConfig != null) {
-            strategy = overrideConfig.getEmitStrategy();
-            if (overrideConfig.getDirectEmitThresholdBytes() != null) {
-                thresholdBytes = overrideConfig.getDirectEmitThresholdBytes();
+            strategy = overrideConfig.getType();
+            if (overrideConfig.getThresholdBytes() != null) {
+                thresholdBytes = overrideConfig.getThresholdBytes();
             }
         }
 
-        if (strategy == EmitStrategy.EMIT_ALL) {
+        // UNPACK mode: bytes are already emitted during parsing
+        // For PASSBACK_ALL, don't emit metadata - pass it back to client instead
+        // For other strategies, also emit metadata
+        if (parseMode == ParseMode.UNPACK) {
+            if (strategy == EmitStrategy.PASSBACK_ALL) {
+                // Bytes were emitted during parsing, metadata will be passed back
+                return false;
+            }
             return true;
-        } else if (embeddedDocumentBytesConfig.isExtractEmbeddedDocumentBytes() &&
-                parseData.toBePackagedForStreamEmitter()) {
+        }
+
+        if (strategy == EmitStrategy.EMIT_ALL) {
             return true;
         } else if (strategy == EmitStrategy.PASSBACK_ALL) {
             return false;
@@ -200,8 +213,8 @@ class EmitHandler {
         }
     }
 
-    private void filterMetadata(FetchEmitTuple t, MetadataListAndEmbeddedBytes parseData) {
-        MetadataFilter filter = t.getParseContext().get(MetadataFilter.class);
+    private void filterMetadata(MetadataListAndEmbeddedBytes parseData, ParseContext parseContext) {
+        MetadataFilter filter = parseContext.get(MetadataFilter.class);
         if (filter == null) {
             filter = defaultMetadataFilter;
         }

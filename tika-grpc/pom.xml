@@ -34,7 +34,6 @@
   </parent>
 
   <properties>
-    <grpc.version>1.78.0</grpc.version>
     <asarkar-grpc-test.version>2.0.0</asarkar-grpc-test.version>
     <awaitility.version>4.3.0</awaitility.version>
     <j2objc-annotations.version>3.1</j2objc-annotations.version>
@@ -50,6 +49,56 @@
         <version>${grpc.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.micronaut</groupId>
+        <artifactId>micronaut-runtime</artifactId>
+        <version>3.10.4</version>
+      </dependency>
+      <dependency>
+        <groupId>io.micronaut</groupId>
+        <artifactId>micronaut-inject</artifactId>
+        <version>3.10.4</version>
+      </dependency>
+      <dependency>
+        <groupId>io.micronaut</groupId>
+        <artifactId>micronaut-http-server</artifactId>
+        <version>3.10.4</version>
+      </dependency>
+      <dependency>
+        <groupId>io.micronaut</groupId>
+        <artifactId>micronaut-websocket</artifactId>
+        <version>3.10.4</version>
+      </dependency>
+      <dependency>
+        <groupId>io.micronaut</groupId>
+        <artifactId>micronaut-http-netty</artifactId>
+        <version>3.10.4</version>
+      </dependency>
+      <dependency>
+        <groupId>io.micronaut</groupId>
+        <artifactId>micronaut-http</artifactId>
+        <version>3.10.4</version>
+      </dependency>
+      <dependency>
+        <groupId>io.micronaut</groupId>
+        <artifactId>micronaut-validation</artifactId>
+        <version>3.10.4</version>
+      </dependency>
+      <dependency>
+        <groupId>io.micronaut</groupId>
+        <artifactId>micronaut-http-client-core</artifactId>
+        <version>3.10.4</version>
+      </dependency>
+      <dependency>
+        <groupId>io.swagger.core.v3</groupId>
+        <artifactId>swagger-annotations</artifactId>
+        <version>2.2.38</version>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.inject</groupId>
+        <artifactId>jakarta.inject-api</artifactId>
+        <version>2.0.1</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -423,10 +472,10 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>src/test/resources/certs/**</exclude>
-            <exclude>README.md</exclude>
-          </excludes>
+          <inputExcludes>
+            <inputExclude>src/test/resources/certs/**</inputExclude>
+            <inputExclude>README.md</inputExclude>
+          </inputExcludes>
         </configuration>
       </plugin>
       <plugin>
