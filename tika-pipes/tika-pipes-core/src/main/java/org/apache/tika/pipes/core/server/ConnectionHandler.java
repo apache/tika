@@ -40,13 +40,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.TikaProgressTracker;
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.core.EmitStrategyConfig;
-import org.apache.tika.pipes.core.PipesClient;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.protocol.PipesMessage;
 import org.apache.tika.pipes.core.protocol.PipesMessageType;
@@ -154,12 +155,14 @@ public class ConnectionHandler implements Runnable, Closeable {
                             ServerProtocolIO.validateFetchEmitTuple(fetchEmitTuple);
                             ParseContext mergedContext = resources.createMergedParseContext(fetchEmitTuple.getParseContext());
                             ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
+                            TikaProgressTracker tracker = new TikaProgressTracker();
+                            mergedContext.set(TikaProgressTracker.class, tracker);
 
                             PipesWorker pipesWorker = createPipesWorker(intermediateResult, fetchEmitTuple,
                                     mergedContext, countDownLatch);
                             executorCompletionService.submit(pipesWorker);
 
-                            loopUntilDone(fetchEmitTuple, mergedContext, intermediateResult, countDownLatch);
+                            loopUntilDone(fetchEmitTuple, mergedContext, intermediateResult, countDownLatch, tracker);
                         } catch (TikaConfigException e) {
                             LOG.error("handlerId={}: config error processing request", handlerId, e);
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), e);
@@ -210,10 +213,13 @@ public class ConnectionHandler implements Runnable, Closeable {
 
     private void loopUntilDone(FetchEmitTuple fetchEmitTuple, ParseContext mergedContext,
                                ArrayBlockingQueue<Metadata> intermediateResult,
-                               CountDownLatch countDownLatch) throws InterruptedException, IOException {
+                               CountDownLatch countDownLatch,
+                               TikaProgressTracker tracker) throws InterruptedException, IOException {
         Instant start = Instant.now();
-        long timeoutMillis = PipesClient.getTimeoutMillis(pipesConfig, mergedContext);
-        long progressCounter = 1;
+        TimeoutLimits limits = TimeoutLimits.get(mergedContext);
+        long progressTimeoutMillis = limits.getProgressTimeoutMillis();
+        long totalTaskTimeoutMillis = limits.getTotalTaskTimeoutMillis();
+        long heartbeatCounter = 1;
         boolean wroteIntermediateResult = false;
 
         while (running) {
@@ -256,26 +262,46 @@ public class ConnectionHandler implements Runnable, Closeable {
 
             // Send fire-and-forget heartbeat
             long elapsed = System.currentTimeMillis() - start.toEpochMilli();
-            if (elapsed > progressCounter * heartbeatIntervalMs) {
-                LOG.trace("handlerId={}: still processing, counter={}", handlerId, progressCounter);
-                PipesMessage.working(progressCounter++).write(output);
+            if (elapsed > heartbeatCounter * heartbeatIntervalMs) {
+                LOG.trace("handlerId={}: still processing, counter={}", handlerId, heartbeatCounter);
+                PipesMessage.working(tracker.getLastProgressMillis()).write(output);
+                heartbeatCounter++;
             }
 
-            // Check timeout
-            if (Duration.between(start, Instant.now()).toMillis() > timeoutMillis) {
-                handleTimeout(fetchEmitTuple.getId());
+            // Check timeouts
+            if (checkTotalTimeout(start, totalTaskTimeoutMillis, fetchEmitTuple.getId())) {
+                return;
+            }
+            if (checkProgressTimeout(tracker, progressTimeoutMillis, fetchEmitTuple.getId())) {
                 return;
             }
         }
     }
 
-    private void handleTimeout(String id) throws IOException {
-        LOG.warn("handlerId={}: timeout processing id={}", handlerId, id);
-        handleCrash(PipesMessageType.TIMEOUT, id,
-                new RuntimeException("Server-side timeout processing " + id));
-        // Timeout means a parsing thread is stuck - the JVM must be restarted
-        LOG.error("handlerId={}: exiting server due to timeout", handlerId);
-        System.exit(PipesMessageType.TIMEOUT.getExitCode().orElse(17));
+    private boolean checkTotalTimeout(Instant start, long totalTaskTimeoutMillis, String id) {
+        long elapsed = Duration.between(start, Instant.now()).toMillis();
+        if (elapsed > totalTaskTimeoutMillis) {
+            handleCrash(PipesMessageType.TIMEOUT, id,
+                    new RuntimeException("Server-side total task timeout after " + elapsed + "ms (limit: " + totalTaskTimeoutMillis + "ms)"));
+            // Timeout means a parsing thread is stuck - the JVM must be restarted
+            LOG.error("handlerId={}: exiting server due to total task timeout", handlerId);
+            System.exit(PipesMessageType.TIMEOUT.getExitCode().orElse(17));
+            return true;
+        }
+        return false;
+    }
+
+    private boolean checkProgressTimeout(TikaProgressTracker tracker, long progressTimeoutMillis, String id) {
+        long timeSinceProgress = System.currentTimeMillis() - tracker.getLastProgressMillis();
+        if (timeSinceProgress > progressTimeoutMillis) {
+            handleCrash(PipesMessageType.TIMEOUT, id,
+                    new RuntimeException("Server-side progress timeout: no progress for " + timeSinceProgress + "ms (limit: " + progressTimeoutMillis + "ms)"));
+            // Timeout means a parsing thread is stuck - the JVM must be restarted
+            LOG.error("handlerId={}: exiting server due to progress timeout", handlerId);
+            System.exit(PipesMessageType.TIMEOUT.getExitCode().orElse(17));
+            return true;
+        }
+        return false;
     }
 
     private void handleCrash(PipesMessageType crashType, String id, Throwable t) {

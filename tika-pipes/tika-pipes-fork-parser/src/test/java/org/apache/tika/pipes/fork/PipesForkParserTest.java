@@ -81,7 +81,6 @@ public class PipesForkParserTest {
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
                 .setParseMode(ParseMode.RMETA)
-                .setTimeoutMillis(60000)
                 .addJvmArg("-Xmx256m");
 
         try (PipesForkParser parser = new PipesForkParser(config);
@@ -114,8 +113,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(ParseMode.RMETA)
-                .setTimeoutMillis(60000);
+                .setParseMode(ParseMode.RMETA);
 
         try (PipesForkParser parser = new PipesForkParser(config);
              TikaInputStream tis = TikaInputStream.get(testFile)) {
@@ -144,8 +142,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(ParseMode.RMETA)
-                .setTimeoutMillis(60000);
+                .setParseMode(ParseMode.RMETA);
 
         try (PipesForkParser parser = new PipesForkParser(config)) {
             try (TikaInputStream tis1 = TikaInputStream.get(testFile1)) {
@@ -171,8 +168,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(ParseMode.CONCATENATE)
-                .setTimeoutMillis(60000);
+                .setParseMode(ParseMode.CONCATENATE);
 
         try (PipesForkParser parser = new PipesForkParser(config);
              TikaInputStream tis = TikaInputStream.get(testZip)) {
@@ -205,8 +201,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(ParseMode.NO_PARSE)
-                .setTimeoutMillis(60000);
+                .setParseMode(ParseMode.NO_PARSE);
 
         try (PipesForkParser parser = new PipesForkParser(config);
              TikaInputStream tis = TikaInputStream.get(testFile)) {
@@ -243,8 +238,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(ParseMode.NO_PARSE)
-                .setTimeoutMillis(60000);
+                .setParseMode(ParseMode.NO_PARSE);
 
         try (PipesForkParser parser = new PipesForkParser(config);
              TikaInputStream tis = TikaInputStream.get(testZip)) {
@@ -280,8 +274,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(ParseMode.RMETA)
-                .setTimeoutMillis(60000);
+                .setParseMode(ParseMode.RMETA);
 
         try (PipesForkParser parser = new PipesForkParser(config);
              TikaInputStream tis = TikaInputStream.get(testZip)) {
@@ -308,8 +301,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig explicitConfig = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(ParseMode.RMETA)
-                .setTimeoutMillis(60000);
+                .setParseMode(ParseMode.RMETA);
 
         int explicitMetadataCount;
         try (PipesForkParser parser = new PipesForkParser(explicitConfig);
@@ -344,8 +336,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig textConfig = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(ParseMode.RMETA)
-                .setTimeoutMillis(60000);
+                .setParseMode(ParseMode.RMETA);
 
         String textContent;
         try (PipesForkParser parser = new PipesForkParser(textConfig);
@@ -364,8 +355,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig xmlConfig = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.XML)
-                .setParseMode(ParseMode.RMETA)
-                .setTimeoutMillis(60000);
+                .setParseMode(ParseMode.RMETA);
 
         String xmlContent;
         try (PipesForkParser parser = new PipesForkParser(xmlConfig);
@@ -399,8 +389,7 @@ public class PipesForkParserTest {
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
                 .setParseMode(ParseMode.RMETA)
-                .setWriteLimit(100)  // Limit to 100 characters
-                .setTimeoutMillis(60000);
+                .setWriteLimit(100);  // Limit to 100 characters
 
         try (PipesForkParser parser = new PipesForkParser(config);
              TikaInputStream tis = TikaInputStream.get(testFile)) {
@@ -448,8 +437,7 @@ public class PipesForkParserTest {
         Files.writeString(realFile, "This file exists");
 
         PipesForkParserConfig config = new PipesForkParserConfig()
-                .setPluginsDir(PLUGINS_DIR)
-                .setTimeoutMillis(60000);
+                .setPluginsDir(PLUGINS_DIR);
 
         try (PipesForkParser parser = new PipesForkParser(config)) {
             // First attempt - TikaInputStream.get() will throw for non-existent file
@@ -474,8 +462,7 @@ public class PipesForkParserTest {
         Files.writeString(testFile, "Simple content");
 
         PipesForkParserConfig config = new PipesForkParserConfig()
-                .setPluginsDir(PLUGINS_DIR)
-                .setTimeoutMillis(60000);
+                .setPluginsDir(PLUGINS_DIR);
 
         try (PipesForkParser parser = new PipesForkParser(config);
              TikaInputStream tis = TikaInputStream.get(testFile)) {
@@ -500,8 +487,7 @@ public class PipesForkParserTest {
         Files.writeString(testFile, "Test categorization");
 
         PipesForkParserConfig config = new PipesForkParserConfig()
-                .setPluginsDir(PLUGINS_DIR)
-                .setTimeoutMillis(60000);
+                .setPluginsDir(PLUGINS_DIR);
 
         try (PipesForkParser parser = new PipesForkParser(config);
              TikaInputStream tis = TikaInputStream.get(testFile)) {
@@ -533,8 +519,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(ParseMode.RMETA)
-                .setTimeoutMillis(60000);
+                .setParseMode(ParseMode.RMETA);
 
         try (PipesForkParser parser = new PipesForkParser(config)) {
             // Use parse(Path) directly without wrapping in TikaInputStream
@@ -564,8 +549,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(ParseMode.RMETA)
-                .setTimeoutMillis(60000);
+                .setParseMode(ParseMode.RMETA);
 
         try (PipesForkParser parser = new PipesForkParser(config)) {
             Metadata initialMetadata = new Metadata();
@@ -591,8 +575,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(ParseMode.RMETA)
-                .setTimeoutMillis(60000);
+                .setParseMode(ParseMode.RMETA);
 
         try (PipesForkParser parser = new PipesForkParser(config)) {
             // Parse both files using Path directly
@@ -615,8 +598,7 @@ public class PipesForkParserTest {
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setPluginsDir(PLUGINS_DIR)
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
-                .setParseMode(ParseMode.RMETA)
-                .setTimeoutMillis(60000);
+                .setParseMode(ParseMode.RMETA);
 
         // Parse with Path
         String pathContent;

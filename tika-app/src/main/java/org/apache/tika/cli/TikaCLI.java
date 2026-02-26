@@ -66,6 +66,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.Tika;
 import org.apache.tika.async.cli.TikaAsyncCLI;
 import org.apache.tika.config.EmbeddedLimits;
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.Detector;
@@ -633,7 +634,8 @@ public class TikaCLI {
         }
 
         // Set timeout
-        config.setTimeoutMillis(forkTimeout);
+        config.setTimeoutLimits(new TimeoutLimits(
+                TimeoutLimits.DEFAULT_TOTAL_TASK_TIMEOUT_MILLIS, forkTimeout));
 
         // Set JVM args if provided
         if (forkJvmArgs != null && !forkJvmArgs.isEmpty()) {

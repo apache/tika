@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.pipes.core.EmitStrategy;
 
 /**
@@ -36,7 +37,7 @@ import org.apache.tika.pipes.core.EmitStrategy;
  * ConfigOverrides overrides = ConfigOverrides.builder()
  *     .addFetcher("my-fetcher", "file-system-fetcher",
  *         Map.of("basePath", "/tmp/input"))
- *     .setPipesConfig(4, 60000, null)
+ *     .setPipesConfig(4, null)
  *     .setEmitStrategy(EmitStrategy.PASSBACK_ALL)
  *     .setPluginRoots("plugins")
  *     .build();
@@ -49,6 +50,7 @@ public class ConfigOverrides {
     private final PipesConfigOverride pipesConfig;
     private final String pluginRoots;
     private final EmitStrategy emitStrategy;
+    private final TimeoutLimits timeoutLimits;
 
     private ConfigOverrides(Builder builder) {
         this.fetchers = Collections.unmodifiableList(new ArrayList<>(builder.fetchers));
@@ -56,6 +58,7 @@ public class ConfigOverrides {
         this.pipesConfig = builder.pipesConfig;
         this.pluginRoots = builder.pluginRoots;
         this.emitStrategy = builder.emitStrategy;
+        this.timeoutLimits = builder.timeoutLimits;
     }
 
     public static Builder builder() {
@@ -80,6 +83,10 @@ public class ConfigOverrides {
 
     public EmitStrategy getEmitStrategy() {
         return emitStrategy;
+    }
+
+    public TimeoutLimits getTimeoutLimits() {
+        return timeoutLimits;
     }
 
     /**
@@ -141,16 +148,14 @@ public class ConfigOverrides {
      */
     public static class PipesConfigOverride {
         private final int numClients;
-        private final long timeoutMillis;
         private final long startupTimeoutMillis;
         private final int maxFilesProcessedPerProcess;
         private final List<String> forkedJvmArgs;
 
-        public PipesConfigOverride(int numClients, long timeoutMillis,
+        public PipesConfigOverride(int numClients,
                                    long startupTimeoutMillis, int maxFilesProcessedPerProcess,
                                    List<String> forkedJvmArgs) {
             this.numClients = numClients;
-            this.timeoutMillis = timeoutMillis;
             this.startupTimeoutMillis = startupTimeoutMillis;
             this.maxFilesProcessedPerProcess = maxFilesProcessedPerProcess;
             this.forkedJvmArgs = forkedJvmArgs != null ?
@@ -159,10 +164,6 @@ public class ConfigOverrides {
 
         public int getNumClients() {
             return numClients;
-        }
-
-        public long getTimeoutMillis() {
-            return timeoutMillis;
         }
 
         public long getStartupTimeoutMillis() {
@@ -187,6 +188,7 @@ public class ConfigOverrides {
         private PipesConfigOverride pipesConfig;
         private String pluginRoots;
         private EmitStrategy emitStrategy;
+        private TimeoutLimits timeoutLimits;
 
         private Builder() {
         }
@@ -221,13 +223,12 @@ public class ConfigOverrides {
          * Set pipes configuration with basic options.
          *
          * @param numClients number of forked JVM clients
-         * @param timeoutMillis parse timeout in milliseconds
          * @param forkedJvmArgs JVM arguments for forked processes (may be null)
          * @return this builder
          */
-        public Builder setPipesConfig(int numClients, long timeoutMillis,
+        public Builder setPipesConfig(int numClients,
                                       List<String> forkedJvmArgs) {
-            return setPipesConfig(numClients, timeoutMillis,
+            return setPipesConfig(numClients,
                     org.apache.tika.pipes.core.PipesConfig.DEFAULT_STARTUP_TIMEOUT_MILLIS,
                     org.apache.tika.pipes.core.PipesConfig.DEFAULT_MAX_FILES_PROCESSED_PER_PROCESS,
                     forkedJvmArgs);
@@ -237,17 +238,27 @@ public class ConfigOverrides {
          * Set pipes configuration with all options.
          *
          * @param numClients number of forked JVM clients
-         * @param timeoutMillis parse timeout in milliseconds
          * @param startupTimeoutMillis startup timeout in milliseconds
          * @param maxFilesProcessedPerProcess max files before process restart
          * @param forkedJvmArgs JVM arguments for forked processes (may be null)
          * @return this builder
          */
-        public Builder setPipesConfig(int numClients, long timeoutMillis,
+        public Builder setPipesConfig(int numClients,
                                       long startupTimeoutMillis, int maxFilesProcessedPerProcess,
                                       List<String> forkedJvmArgs) {
-            this.pipesConfig = new PipesConfigOverride(numClients, timeoutMillis,
+            this.pipesConfig = new PipesConfigOverride(numClients,
                     startupTimeoutMillis, maxFilesProcessedPerProcess, forkedJvmArgs);
+            return this;
+        }
+
+        /**
+         * Set the timeout limits to write to the parse-context section.
+         *
+         * @param timeoutLimits the timeout limits (may be null to use defaults)
+         * @return this builder
+         */
+        public Builder setTimeoutLimits(TimeoutLimits timeoutLimits) {
+            this.timeoutLimits = timeoutLimits;
             return this;
         }
 

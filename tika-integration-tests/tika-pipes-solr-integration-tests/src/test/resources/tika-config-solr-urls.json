@@ -51,7 +51,6 @@
       "-XX:+ExitOnOutOfMemoryError",
       "-Dlog4j.configurationFile={LOG4J_PROPERTIES_FILE}"
     ],
-    "timeoutMillis": 60000,
     "emitStrategy": {
       "type": "DYNAMIC",
       "thresholdBytes": 10000

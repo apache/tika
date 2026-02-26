@@ -4,8 +4,8 @@
     "enableLogFile": true
   },
   "parse-context": {
-    "tika-task-timeout": {
-      "timeoutMillis": 100
+    "timeout-limits": {
+      "progressTimeoutMillis": 100
     }
   }
 }

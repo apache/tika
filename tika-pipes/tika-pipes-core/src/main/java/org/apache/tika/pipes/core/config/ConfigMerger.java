@@ -32,6 +32,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.TimeoutLimits;
+
 /**
  * Utility for merging configuration overrides with existing Tika JSON configuration.
  * <p>
@@ -57,7 +59,7 @@ import org.slf4j.LoggerFactory;
  * ConfigOverrides overrides = ConfigOverrides.builder()
  *     .addFetcher("my-fetcher", "file-system-fetcher",
  *         Map.of("basePath", "/tmp/input"))
- *     .setPipesConfig(4, 60000, null)
+ *     .setPipesConfig(4, null)
  *     .setEmitStrategy(EmitStrategy.PASSBACK_ALL)
  *     .build();
  *
@@ -154,9 +156,6 @@ public class ConfigMerger {
             if (pc.getNumClients() > 0) {
                 pipesNode.put("numClients", pc.getNumClients());
             }
-            if (pc.getTimeoutMillis() > 0) {
-                pipesNode.put("timeoutMillis", pc.getTimeoutMillis());
-            }
             if (pc.getStartupTimeoutMillis() > 0) {
                 pipesNode.put("startupTimeoutMillis", pc.getStartupTimeoutMillis());
             }
@@ -174,8 +173,7 @@ public class ConfigMerger {
                 pipesNode.set("forkedJvmArgs", argsArray);
             }
 
-            LOG.debug("Applied pipes config: numClients={}, timeoutMillis={}",
-                    pc.getNumClients(), pc.getTimeoutMillis());
+            LOG.debug("Applied pipes config: numClients={}", pc.getNumClients());
         }
 
         // Apply emit strategy
@@ -190,6 +188,18 @@ public class ConfigMerger {
         if (overrides.getPluginRoots() != null && !root.has("plugin-roots")) {
             root.put("plugin-roots", overrides.getPluginRoots());
             LOG.debug("Set plugin-roots: {}", overrides.getPluginRoots());
+        }
+
+        // Apply timeout limits to parse-context section
+        if (overrides.getTimeoutLimits() != null) {
+            TimeoutLimits tl = overrides.getTimeoutLimits();
+            ObjectNode parseContextNode = getOrCreateObject(mapper, root, "parse-context");
+            ObjectNode timeoutNode = getOrCreateObject(mapper, parseContextNode, "timeout-limits");
+            timeoutNode.put("totalTaskTimeoutMillis", tl.getTotalTaskTimeoutMillis());
+            timeoutNode.put("progressTimeoutMillis", tl.getProgressTimeoutMillis());
+            LOG.debug("Applied timeout limits: totalTaskTimeoutMillis={}, " +
+                    "progressTimeoutMillis={}", tl.getTotalTaskTimeoutMillis(),
+                    tl.getProgressTimeoutMillis());
         }
 
         // Write merged config to temp file

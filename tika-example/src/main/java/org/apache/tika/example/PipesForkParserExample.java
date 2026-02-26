@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -206,7 +207,8 @@ public class PipesForkParserExample {
             throws IOException, InterruptedException, TikaException, PipesException {
         PipesForkParserConfig config = new PipesForkParserConfig()
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.HTML)
-                .setTimeoutMillis(60000)
+                .setTimeoutLimits(new TimeoutLimits(
+                        TimeoutLimits.DEFAULT_TOTAL_TASK_TIMEOUT_MILLIS, 60000))
                 .addJvmArg("-Xmx512m")
                 .setMaxFilesPerProcess(100);
 
@@ -376,7 +378,8 @@ public class PipesForkParserExample {
      */
     public String parseWithErrorHandling(Path filePath) {
         PipesForkParserConfig config = new PipesForkParserConfig()
-                .setTimeoutMillis(30000);
+                .setTimeoutLimits(new TimeoutLimits(
+                        TimeoutLimits.DEFAULT_TOTAL_TASK_TIMEOUT_MILLIS, 30000));
 
         try (PipesForkParser parser = new PipesForkParser(config);
              TikaInputStream tis = TikaInputStream.get(filePath)) {
@@ -421,7 +424,8 @@ public class PipesForkParserExample {
     public void parseManyFiles(List<Path> filePaths)
             throws IOException, InterruptedException, TikaException, PipesException {
         PipesForkParserConfig config = new PipesForkParserConfig()
-                .setTimeoutMillis(30000)
+                .setTimeoutLimits(new TimeoutLimits(
+                        TimeoutLimits.DEFAULT_TOTAL_TASK_TIMEOUT_MILLIS, 30000))
                 .setMaxFilesPerProcess(50);
 
         try (PipesForkParser parser = new PipesForkParser(config)) {

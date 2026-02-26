@@ -45,7 +45,7 @@ public class ConfigMergerTest {
         ConfigOverrides overrides = ConfigOverrides.builder()
                 .addFetcher("my-fetcher", "file-system-fetcher",
                         Map.of("basePath", "/tmp/input", "allowAbsolutePaths", true))
-                .setPipesConfig(4, 60000, null)
+                .setPipesConfig(4, null)
                 .setEmitStrategy(EmitStrategy.PASSBACK_ALL)
                 .setPluginRoots("plugins")
                 .build();
@@ -70,7 +70,6 @@ public class ConfigMergerTest {
         // Check pipes config
         assertTrue(root.has("pipes"));
         assertEquals(4, root.get("pipes").get("numClients").asInt());
-        assertEquals(60000, root.get("pipes").get("timeoutMillis").asLong());
 
         // Check emit strategy
         assertEquals("PASSBACK_ALL", root.get("pipes").get("emitStrategy").get("type").asText());
@@ -107,7 +106,7 @@ public class ConfigMergerTest {
         ConfigOverrides overrides = ConfigOverrides.builder()
                 .addFetcher("new-fetcher", "file-system-fetcher",
                         Map.of("basePath", "/new/path"))
-                .setPipesConfig(8, 120000, null)
+                .setPipesConfig(8, null)
                 .build();
 
         ConfigMerger.MergeResult result = ConfigMerger.mergeOrCreate(existingPath, overrides);
@@ -133,7 +132,6 @@ public class ConfigMergerTest {
 
         // Pipes config should be overridden
         assertEquals(8, root.get("pipes").get("numClients").asInt());
-        assertEquals(120000, root.get("pipes").get("timeoutMillis").asLong());
 
         // Existing plugin-roots should be preserved (not overridden)
         assertEquals("existing-plugins", root.get("plugin-roots").asText());
@@ -190,7 +188,7 @@ public class ConfigMergerTest {
     @Test
     public void testJvmArgs() throws IOException {
         ConfigOverrides overrides = ConfigOverrides.builder()
-                .setPipesConfig(4, 60000, List.of("-Xmx512m", "-Dsome.prop=value"))
+                .setPipesConfig(4, List.of("-Xmx512m", "-Dsome.prop=value"))
                 .build();
 
         ConfigMerger.MergeResult result = ConfigMerger.mergeOrCreate(null, overrides);
@@ -211,7 +209,7 @@ public class ConfigMergerTest {
     @Test
     public void testFullPipesConfig() throws IOException {
         ConfigOverrides overrides = ConfigOverrides.builder()
-                .setPipesConfig(8, 120000, 300000, 5000, List.of("-Xmx1g"))
+                .setPipesConfig(8, 300000, 5000, List.of("-Xmx1g"))
                 .build();
 
         ConfigMerger.MergeResult result = ConfigMerger.mergeOrCreate(null, overrides);
@@ -221,7 +219,6 @@ public class ConfigMergerTest {
 
         JsonNode pipes = root.get("pipes");
         assertEquals(8, pipes.get("numClients").asInt());
-        assertEquals(120000, pipes.get("timeoutMillis").asLong());
         assertEquals(300000, pipes.get("startupTimeoutMillis").asLong());
         assertEquals(5000, pipes.get("maxFilesProcessedPerProcess").asInt());
 

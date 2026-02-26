@@ -13,6 +13,9 @@
     "throwOnZeroBytes": false
   },
   "parse-context": {
+    "timeout-limits": {
+      "progressTimeoutMillis": 30000
+    },
     "commons-digester-factory": {
         "digests": [
           { "algorithm": "MD5" },
@@ -28,8 +31,7 @@
     }
   },
   "pipes": {
-    "numClients": 2,
-    "timeoutMillis": 30000
+    "numClients": 2
   },
   "plugin-roots": "target/plugins"
 }
