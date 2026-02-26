@@ -40,10 +40,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.TikaTaskTimeout;
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
@@ -307,7 +306,9 @@ public class PipesClient implements Closeable {
     }
 
     private PipesResult waitForServer(FetchEmitTuple t, IntermediateResult intermediateResult) throws InterruptedException {
-        long timeoutMillis = getTimeoutMillis(pipesConfig, t.getParseContext());
+        TimeoutLimits limits = TimeoutLimits.get(t.getParseContext());
+        long progressTimeoutMillis = limits.getProgressTimeoutMillis();
+        long totalTaskTimeoutMillis = limits.getTotalTaskTimeoutMillis();
         Instant start = Instant.now();
         Instant lastUpdate = start;
 
@@ -315,11 +316,21 @@ public class PipesClient implements Closeable {
             if (Thread.currentThread().isInterrupted()) {
                 throw new InterruptedException("thread interrupt");
             }
-            long totalElapsed = Duration.between(start, Instant.now()).toMillis();
-            if (totalElapsed > timeoutMillis) {
-                LOG.warn("clientId={}: timeout on client side: id={} elapsed={} timeoutMillis={}",
-                        pipesClientId, t.getId(), totalElapsed, timeoutMillis);
+            Instant now = Instant.now();
+            long totalElapsed = Duration.between(start, now).toMillis();
+            if (totalElapsed > totalTaskTimeoutMillis) {
+                LOG.warn("clientId={}: total task timeout: id={} elapsed={}ms limit={}ms",
+                        pipesClientId, t.getId(), totalElapsed, totalTaskTimeoutMillis);
                 // Mark for restart - server is stuck on current request and needs to be restarted
+                serverManager.markServerForRestart();
+                closeConnection();
+                return buildFatalResult(t.getId(), t.getEmitKey(), PipesResult.RESULT_STATUS.TIMEOUT,
+                        intermediateResult.get());
+            }
+            long timeSinceUpdate = Duration.between(lastUpdate, now).toMillis();
+            if (timeSinceUpdate > progressTimeoutMillis) {
+                LOG.warn("clientId={}: progress timeout: id={} timeSinceUpdate={}ms limit={}ms",
+                        pipesClientId, t.getId(), timeSinceUpdate, progressTimeoutMillis);
                 serverManager.markServerForRestart();
                 closeConnection();
                 return buildFatalResult(t.getId(), t.getEmitKey(), PipesResult.RESULT_STATUS.TIMEOUT,
@@ -358,7 +369,7 @@ public class PipesClient implements Closeable {
                         lastUpdate = Instant.now();
                         break;
                     case WORKING:
-                        lastUpdate = Instant.now();
+                        lastUpdate = Instant.ofEpochMilli(msg.lastProgressMillis());
                         break;
                     case FINISHED:
                         PipesResult result = JsonPipesIpc.fromBytes(msg.payload(), PipesResult.class);
@@ -441,18 +452,4 @@ public class PipesClient implements Closeable {
     private record ConnectionTuple(Socket socket, DataInputStream input, DataOutputStream output) {
     }
 
-    public static long getTimeoutMillis(PipesConfig pipesConfig, ParseContext parseContext) {
-        long defaultTimeoutMillis = pipesConfig.getTimeoutMillis();
-
-        if (parseContext == null) {
-            return defaultTimeoutMillis;
-        }
-
-        TikaTaskTimeout tikaTaskTimeout = parseContext.get(TikaTaskTimeout.class);
-        if (tikaTaskTimeout == null) {
-            return defaultTimeoutMillis;
-        }
-        LOG.debug("applying timeout from parseContext: {}ms", tikaTaskTimeout.getTimeoutMillis());
-        return tikaTaskTimeout.getTimeoutMillis();
-    }
 }

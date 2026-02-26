@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 
@@ -31,7 +32,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.TikaTaskTimeout;
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.extractor.SkipEmbeddedDocumentSelector;
@@ -129,31 +130,37 @@ public class TestParseContextSerialization {
     }
 
     @Test
-    public void testTikaTaskTimeoutFormat() throws Exception {
-        // Test serializing tika-task-timeout configuration
+    public void testTimeoutLimitsFormat() throws Exception {
+        // Test serializing timeout-limits configuration
         ParseContext pc = new ParseContext();
-        pc.setJsonConfig("tika-task-timeout", "{\"timeoutMillis\":30000}");
+        pc.setJsonConfig("timeout-limits",
+                "{\"progressTimeoutMillis\":30000,\"totalTaskTimeoutMillis\":120000}");
 
         String json = serializeParseContext(pc);
 
         ObjectMapper mapper = createMapper();
         JsonNode root = mapper.readTree(json);
 
-        assertTrue(root.has("tika-task-timeout"), "Should have tika-task-timeout field");
+        assertTrue(root.has("timeout-limits"), "Should have timeout-limits field");
         assertEquals(30000, root
-                .get("tika-task-timeout")
-                .get("timeoutMillis")
+                .get("timeout-limits")
+                .get("progressTimeoutMillis")
+                .asInt());
+        assertEquals(120000, root
+                .get("timeout-limits")
+                .get("totalTaskTimeoutMillis")
                 .asInt());
 
         // Verify round-trip
         ParseContext deserialized = mapper.readValue(json, ParseContext.class);
-        assertTrue(deserialized.hasJsonConfig("tika-task-timeout"));
+        assertTrue(deserialized.hasJsonConfig("timeout-limits"));
 
         // Resolve and verify
         ParseContextUtils.resolveAll(deserialized, Thread.currentThread().getContextClassLoader());
-        TikaTaskTimeout timeout = deserialized.get(TikaTaskTimeout.class);
-        assertNotNull(timeout, "TikaTaskTimeout should be resolved");
-        assertEquals(30000, timeout.getTimeoutMillis());
+        TimeoutLimits limits = deserialized.get(TimeoutLimits.class);
+        assertNotNull(limits, "TimeoutLimits should be resolved");
+        assertEquals(30000, limits.getProgressTimeoutMillis());
+        assertEquals(120000, limits.getTotalTaskTimeoutMillis());
     }
 
     @Test
@@ -228,7 +235,8 @@ public class TestParseContextSerialization {
 
         pc.setJsonConfig("pdf-parser", "{\"ocrStrategy\":\"AUTO\"}");
         pc.setJsonConfig("html-parser", "{\"extractScripts\":true}");
-        pc.setJsonConfig("tika-task-timeout", "{\"timeoutMillis\":5000}");
+        pc.setJsonConfig("timeout-limits",
+                "{\"progressTimeoutMillis\":5000,\"totalTaskTimeoutMillis\":60000}");
         pc.setJsonConfig("my-custom-config", "{\"enabled\":true,\"maxRetries\":3}");
 
         String json = serializeParseContext(pc);
@@ -240,7 +248,7 @@ public class TestParseContextSerialization {
         assertEquals(4, root.size(), "Should have 4 config fields");
         assertTrue(root.has("pdf-parser"));
         assertTrue(root.has("html-parser"));
-        assertTrue(root.has("tika-task-timeout"));
+        assertTrue(root.has("timeout-limits"));
         assertTrue(root.has("my-custom-config"));
 
         // Verify round-trip
@@ -249,20 +257,13 @@ public class TestParseContextSerialization {
     }
 
     @Test
-    public void testProgrammaticObjectsNotSerialized() throws Exception {
-        // Typed objects set via context.set() are NOT serialized
-        // Only jsonConfigs are serialized for clean round-trip
+    public void testUnregisteredObjectFailsSerialization() throws Exception {
+        // Unregistered objects must fail serialization with a clear error
         ParseContext pc = new ParseContext();
-
-        // String doesn't have a @TikaComponent annotation
         pc.set(String.class, "test-value");
 
-        String json = serializeParseContext(pc);
-
-        // Should be empty - typed objects are not serialized
-        ObjectMapper mapper = createMapper();
-        JsonNode root = mapper.readTree(json);
-        assertEquals(1, root.size(), "Typed objects should be serialized");
+        assertThrows(IOException.class, () -> serializeParseContext(pc),
+                "Unregistered components should fail serialization");
     }
 
     @Test

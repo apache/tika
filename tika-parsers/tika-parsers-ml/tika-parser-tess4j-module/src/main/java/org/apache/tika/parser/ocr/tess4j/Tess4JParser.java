@@ -43,7 +43,8 @@ import org.apache.tika.config.Initializable;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.config.TikaComponent;
-import org.apache.tika.config.TikaTaskTimeout;
+import org.apache.tika.config.TikaProgressTracker;
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -152,7 +153,7 @@ public class Tess4JParser implements Parser, Initializable {
         xhtml.startDocument();
 
         Tesseract tesseract = null;
-        long timeoutMillis = TikaTaskTimeout.getTimeoutMillis(
+        long timeoutMillis = TimeoutLimits.getProcessTimeoutMillis(
                 parseContext, config.getTimeoutSeconds() * 1000L);
         try {
             tesseract = borrowTesseract(timeoutMillis);
@@ -188,6 +189,7 @@ public class Tess4JParser implements Parser, Initializable {
             }
 
             String ocrResult = tesseract.doOCR(image);
+            TikaProgressTracker.update(parseContext);
 
             // Emit the text as XHTML
             AttributesImpl attrs = new AttributesImpl();

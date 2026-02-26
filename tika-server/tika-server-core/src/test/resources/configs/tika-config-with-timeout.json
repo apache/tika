@@ -7,8 +7,8 @@
     }
   ],
   "parse-context": {
-    "tika-task-timeout": {
-      "timeoutMillis": 30000
+    "timeout-limits": {
+      "progressTimeoutMillis": 30000
     }
   }
 }

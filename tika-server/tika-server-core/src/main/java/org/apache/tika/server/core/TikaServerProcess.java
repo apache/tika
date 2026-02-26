@@ -589,9 +589,9 @@ public class TikaServerProcess {
                 .setPluginRoots(Path.of(DEFAULT_PLUGINS_DIR).toAbsolutePath().toString());
 
         // Only set default pipes config if there's no existing config
-        // This allows user-provided config to specify their own numClients, timeoutMillis, etc.
+        // This allows user-provided config to specify their own numClients, etc.
         if (existingConfigPath == null || !Files.exists(existingConfigPath)) {
-            builder.setPipesConfig(4, 60000, null);
+            builder.setPipesConfig(4, null);
         }
 
         // Add unpack emitter if /unpack endpoint is enabled

@@ -30,19 +30,17 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.config.TikaTaskTimeout;
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.filter.CompositeMetadataFilter;
-import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
-import org.apache.tika.serialization.ParseContextUtils;
+
 
 public class PipesClientTest {
     String fetcherName = "fsf";
@@ -115,22 +113,13 @@ public class PipesClientTest {
     @Test
     public void testMetadataFilterFromJsonConfig(@TempDir Path tmp) throws Exception {
         // Test that metadata filters specified as JSON array in jsonConfigs
-        // are properly resolved and applied during pipe processing.
-        // This tests the full serialization/deserialization flow.
+        // survive serialization to the forked PipesServer and are applied.
         ParseContext parseContext = new ParseContext();
         parseContext.setJsonConfig("metadata-filters", """
             [
               "mock-upper-case-filter"
             ]
         """);
-
-        // Resolve the config to actual MetadataFilter instances
-        ParseContextUtils.resolveAll(parseContext, PipesClientTest.class.getClassLoader());
-
-        // Verify the filter was resolved
-        MetadataFilter resolvedFilter = parseContext.get(MetadataFilter.class);
-        Assertions.assertNotNull(resolvedFilter, "MetadataFilter should be resolved from jsonConfigs");
-        assertEquals(CompositeMetadataFilter.class, resolvedFilter.getClass());
 
         PipesClient pipesClient = init(tmp, testDoc);
         PipesResult pipesResult = pipesClient.process(
@@ -146,7 +135,7 @@ public class PipesClientTest {
 
     @Test
     public void testMultipleMetadataFiltersFromJsonConfig(@TempDir Path tmp) throws Exception {
-        // Test multiple filters specified as JSON array
+        // Test multiple filters specified as JSON array survive serialization
         ParseContext parseContext = new ParseContext();
         parseContext.setJsonConfig("metadata-filters", """
             [
@@ -154,9 +143,6 @@ public class PipesClientTest {
               "mock-upper-case-filter"
             ]
         """);
-
-        // Resolve the config to actual MetadataFilter instances
-        ParseContextUtils.resolveAll(parseContext, PipesClientTest.class.getClassLoader());
 
         String testFile = "mock-embedded.xml";
         PipesClient pipesClient = init(tmp, testFile);
@@ -181,7 +167,7 @@ public class PipesClientTest {
         //TODO -- figure out how to test pipes server timeout alone
         //I did both manually during development, but unit tests are better. :D
         ParseContext parseContext = new ParseContext();
-        parseContext.set(TikaTaskTimeout.class, new TikaTaskTimeout(1000));
+        parseContext.set(TimeoutLimits.class, new TimeoutLimits(1000, 1000));
         // Use JSON config approach for Jackson serialization compatibility
         // Don't resolve here - let PipesServer resolve on its side
         parseContext.setJsonConfig("metadata-filters", """
@@ -198,7 +184,7 @@ public class PipesClientTest {
 
     @Test
     public void testRuntimeTimeoutChange(@TempDir Path tmp) throws Exception {
-        // Test that TikaTaskTimeout can be changed at runtime via ParseContext
+        // Test that TimeoutLimits can be changed at runtime via ParseContext
         // Use a mock file with 3 second delay
         Path inputDir = tmp.resolve("input");
         Files.createDirectories(inputDir);
@@ -217,7 +203,7 @@ public class PipesClientTest {
         try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
             // First test: Short timeout (1 second) - should timeout
             ParseContext shortTimeoutContext = new ParseContext();
-            shortTimeoutContext.set(TikaTaskTimeout.class, new TikaTaskTimeout(1000));
+            shortTimeoutContext.set(TimeoutLimits.class, new TimeoutLimits(1000, 1000));
 
             PipesResult timeoutResult = pipesClient.process(
                     new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
@@ -229,7 +215,7 @@ public class PipesClientTest {
 
             // Second test: Long timeout (10 seconds) - should succeed
             ParseContext longTimeoutContext = new ParseContext();
-            longTimeoutContext.set(TikaTaskTimeout.class, new TikaTaskTimeout(10000));
+            longTimeoutContext.set(TimeoutLimits.class, new TimeoutLimits(10000, 10000));
 
             PipesResult successResult = pipesClient.process(
                     new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),

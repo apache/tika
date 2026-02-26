@@ -33,6 +33,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.Tika;
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -55,6 +56,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * @see OpenNLPNERecogniser
  * @see NERecogniser
  */
+@TikaComponent(spi = false)
 public class NamedEntityParser implements Parser {
     public static final Logger LOG = LoggerFactory.getLogger(NamedEntityParser.class);
     public static final Set<MediaType> MEDIA_TYPES = new HashSet<>();

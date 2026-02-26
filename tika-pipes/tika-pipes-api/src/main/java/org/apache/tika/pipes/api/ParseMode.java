@@ -18,12 +18,15 @@ package org.apache.tika.pipes.api;
 
 import java.util.Locale;
 
+import org.apache.tika.config.TikaComponent;
+
 /**
  * Controls how embedded documents are handled during parsing.
  * <p>
  * This can be set as a default in PipesConfig (loaded from tika-config.json)
  * or overridden per-file via ParseContext.
  */
+@TikaComponent(name = "parse-mode")
 public enum ParseMode {
 
     /**

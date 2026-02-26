@@ -90,7 +90,7 @@ public class ConfigLoaderTest {
     /**
      * Config class with suffix that should be stripped.
      */
-    public static class TikaTaskTimeout {
+    public static class TestTimeoutConfig {
         private long millis;
 
         public long getMillis() {
@@ -206,10 +206,10 @@ public class ConfigLoaderTest {
     }
 
     @Test
-    public void testLoadByClassNameTikaTaskTimeout() throws Exception {
-        // TikaTaskTimeout -> "tika-task-timeout" (no suffix stripping)
-        // JSON has "tika-task-timeout"
-        TikaTaskTimeout timeout = configLoader.load(TikaTaskTimeout.class);
+    public void testLoadByClassNameTestTimeoutConfig() throws Exception {
+        // TestTimeoutConfig -> "test-timeout-config" (kebab-case)
+        // JSON has "test-timeout-config"
+        TestTimeoutConfig timeout = configLoader.load(TestTimeoutConfig.class);
 
         assertNotNull(timeout);
         assertEquals(30000, timeout.getMillis());
@@ -396,12 +396,12 @@ public class ConfigLoaderTest {
         assertNotNull(config);
 
         // Non-existent class
-        TikaTaskTimeout defaultTimeout = new TikaTaskTimeout();
+        TestTimeoutConfig defaultTimeout = new TestTimeoutConfig();
         defaultTimeout.setMillis(60000);
 
         // Use a class name that won't match
-        TikaTaskTimeout result = configLoader.load("NonExistentConfig.class",
-                                                    TikaTaskTimeout.class,
+        TestTimeoutConfig result = configLoader.load("NonExistentConfig.class",
+                                                    TestTimeoutConfig.class,
                                                     defaultTimeout);
         assertEquals(60000, result.getMillis());
     }
@@ -606,12 +606,12 @@ public class ConfigLoaderTest {
         TikaJsonConfig config = TikaJsonConfig.load(configPath);
         ConfigLoader loader = new ConfigLoader(config, TikaObjectMapperFactory.getMapper());
 
-        TikaTaskTimeout defaults = new TikaTaskTimeout();
+        TestTimeoutConfig defaults = new TestTimeoutConfig();
         defaults.setMillis(60000);
 
-        // Note: tika-task-timeout in JSON has millis: 30000
-        TikaTaskTimeout result = loader.loadWithDefaults("tika-task-timeout",
-                                                                    TikaTaskTimeout.class,
+        // Note: test-timeout-config in JSON has millis: 30000
+        TestTimeoutConfig result = loader.loadWithDefaults("test-timeout-config",
+                                                                    TestTimeoutConfig.class,
                                                                     defaults);
 
         // Result should have JSON value

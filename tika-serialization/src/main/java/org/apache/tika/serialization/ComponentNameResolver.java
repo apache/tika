@@ -17,6 +17,7 @@
 package org.apache.tika.serialization;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -24,7 +25,19 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.tika.config.loader.ComponentInfo;
 import org.apache.tika.config.loader.ComponentRegistry;
+import org.apache.tika.detect.Detector;
+import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.digest.DigesterFactory;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
+import org.apache.tika.extractor.UnpackSelector;
+import org.apache.tika.language.translate.Translator;
+import org.apache.tika.metadata.filter.MetadataFilter;
+import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.renderer.Renderer;
+import org.apache.tika.sax.ContentHandlerDecoratorFactory;
+import org.apache.tika.sax.ContentHandlerFactory;
 
 /**
  * Utility class that resolves friendly component names to classes using ComponentRegistry.
@@ -36,6 +49,29 @@ import org.apache.tika.exception.TikaConfigException;
  * Also stores {@link ComponentConfig} registrations for top-level component loading.
  */
 public final class ComponentNameResolver {
+
+    /**
+     * Interfaces that use compact format serialization and serve as ParseContext keys.
+     * Types implementing these interfaces will be serialized as:
+     * - "type-name" for defaults
+     * - {"type-name": {...}} for configured instances
+     */
+    private static final Set<Class<?>> CONTEXT_KEY_INTERFACES = new HashSet<>();
+
+    static {
+        CONTEXT_KEY_INTERFACES.add(Parser.class);
+        CONTEXT_KEY_INTERFACES.add(Detector.class);
+        CONTEXT_KEY_INTERFACES.add(EncodingDetector.class);
+        CONTEXT_KEY_INTERFACES.add(MetadataFilter.class);
+        CONTEXT_KEY_INTERFACES.add(Translator.class);
+        CONTEXT_KEY_INTERFACES.add(Renderer.class);
+        CONTEXT_KEY_INTERFACES.add(DigesterFactory.class);
+        CONTEXT_KEY_INTERFACES.add(EmbeddedDocumentExtractorFactory.class);
+        CONTEXT_KEY_INTERFACES.add(MetadataWriteLimiterFactory.class);
+        CONTEXT_KEY_INTERFACES.add(ContentHandlerDecoratorFactory.class);
+        CONTEXT_KEY_INTERFACES.add(ContentHandlerFactory.class);
+        CONTEXT_KEY_INTERFACES.add(UnpackSelector.class);
+    }
 
     private static final Map<String, ComponentRegistry> REGISTRIES = new ConcurrentHashMap<>();
 
@@ -77,7 +113,10 @@ public final class ComponentNameResolver {
                 }
             }
         }
-        return Class.forName(name, false, classLoader);
+        throw new ClassNotFoundException(
+                "Component '" + name + "' is not registered. " +
+                "Components must be registered via @TikaComponent annotation or .idx file. " +
+                "Arbitrary class names are not allowed for security reasons.");
     }
 
     /**
@@ -202,6 +241,69 @@ public final class ComponentNameResolver {
      */
     public static Set<String> getComponentFields() {
         return Collections.unmodifiableSet(FIELD_TO_CONFIG.keySet());
+    }
+
+    // ==================== Context Key Resolution Methods ====================
+
+    /**
+     * Returns the set of interfaces that use compact format serialization.
+     *
+     * @return unmodifiable set of context key interfaces
+     */
+    public static Set<Class<?>> getContextKeyInterfaces() {
+        return Collections.unmodifiableSet(CONTEXT_KEY_INTERFACES);
+    }
+
+    /**
+     * Finds the appropriate context key interface for a given type.
+     * This is used to determine which interface should be used as the ParseContext key
+     * when storing instances of this type.
+     *
+     * @param type the type to find the context key for
+     * @return the interface to use as context key, or null if none found
+     */
+    public static Class<?> findContextKeyInterface(Class<?> type) {
+        for (Class<?> iface : CONTEXT_KEY_INTERFACES) {
+            if (iface.isAssignableFrom(type)) {
+                return iface;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Checks if a type should use compact format serialization.
+     * Returns true if the type implements any of the registered context key interfaces.
+     *
+     * @param type the type to check
+     * @return true if the type uses compact format
+     */
+    public static boolean usesCompactFormat(Class<?> type) {
+        return findContextKeyInterface(type) != null;
+    }
+
+    /**
+     * Determines the ParseContext key for a component.
+     * <p>
+     * Resolution order:
+     * <ol>
+     *   <li>Explicit contextKey from .idx file (via @TikaComponent annotation)</li>
+     *   <li>Auto-detect from implemented interfaces (using CONTEXT_KEY_INTERFACES)</li>
+     *   <li>Fall back to the component class itself</li>
+     * </ol>
+     *
+     * @param info the component info
+     * @return the class to use as ParseContext key
+     */
+    public static Class<?> determineContextKey(ComponentInfo info) {
+        if (info.contextKey() != null) {
+            return info.contextKey();
+        }
+        Class<?> interfaceKey = findContextKeyInterface(info.componentClass());
+        if (interfaceKey != null) {
+            return interfaceKey;
+        }
+        return info.componentClass();
     }
 
     /**

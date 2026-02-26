@@ -27,8 +27,6 @@ import org.apache.tika.pipes.api.ParseMode;
 public class PipesConfig {
 
 
-    public static final long DEFAULT_TIMEOUT_MILLIS = 60000;
-
     public static final long DEFAULT_STARTUP_TIMEOUT_MILLIS = 240000;
 
     public static final long DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLS = 300000;
@@ -58,7 +56,6 @@ public class PipesConfig {
      */
     private boolean useSharedServer = DEFAULT_USE_SHARED_SERVER;
 
-    private long timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
     private long socketTimeoutMs = DEFAULT_SOCKET_TIMEOUT_MS;
     private long heartbeatIntervalMs = DEFAULT_HEARTBEAT_INTERVAL_MS;
     private long startupTimeoutMillis = DEFAULT_STARTUP_TIMEOUT_MILLIS;
@@ -151,18 +148,6 @@ public class PipesConfig {
             config = new PipesConfig();
         }
         return config;
-    }
-
-    public long getTimeoutMillis() {
-        return timeoutMillis;
-    }
-
-    /**
-     * How long to wait in milliseconds before timing out the forked process.
-     * @param timeoutMillis
-     */
-    public void setTimeoutMillis(long timeoutMillis) {
-        this.timeoutMillis = timeoutMillis;
     }
 
     public long getSocketTimeoutMs() {

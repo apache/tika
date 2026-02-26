@@ -101,7 +101,6 @@
       "-XX:+ExitOnOutOfMemoryError",
       "LOG4J_JVM_ARG"
     ],
-    "timeoutMillis": 60000,
     "emitStrategy": {
       "type": "DYNAMIC",
       "thresholdBytes": 10000

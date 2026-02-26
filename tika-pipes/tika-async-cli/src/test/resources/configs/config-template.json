@@ -23,13 +23,17 @@
       }
     }
   },
+  "parse-context": {
+    "timeout-limits": {
+      "progressTimeoutMillis": 60000
+    }
+  },
   "pipes": {
     "emitWithinMillis": 10000,
     "emitMaxEstimatedBytes": 100000,
     "queueSize": 10000,
     "numEmitters": 1,
     "emitIntermediateResults": false,
-    "timeoutMillis": 60000,
     "startupTimeoutMillis": 240000,
     "sleepOnStartupTimeoutMillis": 240000,
     "shutdownClientAfterMillis": 300000,

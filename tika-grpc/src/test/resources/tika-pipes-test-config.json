@@ -1,4 +1,9 @@
 {
+  "parse-context": {
+    "timeout-limits": {
+      "progressTimeoutMillis": 60000
+    }
+  },
   "pipes": {
     "javaPath": "JAVA_PATH",
     "numClients": 2,
@@ -6,7 +11,6 @@
       "-Xmx1g",
       "-XX:ParallelGCThreads=2"
     ],
-    "timeoutMillis": 60000,
     "emitStrategy": {
       "type": "PASSBACK_ALL"
     },

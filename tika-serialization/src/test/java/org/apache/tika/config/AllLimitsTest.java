@@ -53,7 +53,8 @@ import org.apache.tika.parser.ParseContext;
  *       "zipBombRatio": 100
  *     },
  *     "timeout-limits": {
- *       "taskTimeoutMillis": 60000
+ *       "totalTaskTimeoutMillis": 3600000,
+ *       "progressTimeoutMillis": 60000
  *     },
  *     "standard-metadata-limiter-factory": {
  *       "maxTotalBytes": 1048576,
@@ -95,7 +96,7 @@ public class AllLimitsTest extends TikaTest {
         // Verify TimeoutLimits
         TimeoutLimits timeoutLimits = context.get(TimeoutLimits.class);
         assertNotNull(timeoutLimits, "TimeoutLimits should be loaded");
-        assertEquals(60000, timeoutLimits.getTaskTimeoutMillis());
+        assertEquals(60000, timeoutLimits.getProgressTimeoutMillis());
 
         // Verify MetadataWriteLimiterFactory
         MetadataWriteLimiterFactory metadataFactory = context.get(MetadataWriteLimiterFactory.class);
@@ -118,7 +119,7 @@ public class AllLimitsTest extends TikaTest {
 
         TimeoutLimits timeoutLimits = context.get(TimeoutLimits.class);
         assertNotNull(timeoutLimits);
-        assertEquals(60000, timeoutLimits.getTaskTimeoutMillis());
+        assertEquals(60000, timeoutLimits.getProgressTimeoutMillis());
     }
 
     @Test
@@ -134,7 +135,7 @@ public class AllLimitsTest extends TikaTest {
         assertEquals(100000, outputLimits.getWriteLimit());
 
         TimeoutLimits timeoutLimits = TimeoutLimits.get(context);
-        assertEquals(60000, timeoutLimits.getTaskTimeoutMillis());
+        assertEquals(60000, timeoutLimits.getProgressTimeoutMillis());
     }
 
     @Test
@@ -150,6 +151,6 @@ public class AllLimitsTest extends TikaTest {
 
         TimeoutLimits timeoutLimits = TimeoutLimits.get(null);
         assertNotNull(timeoutLimits);
-        assertEquals(TimeoutLimits.DEFAULT_TASK_TIMEOUT_MILLIS, timeoutLimits.getTaskTimeoutMillis());
+        assertEquals(TimeoutLimits.DEFAULT_PROGRESS_TIMEOUT_MILLIS, timeoutLimits.getProgressTimeoutMillis());
     }
 }

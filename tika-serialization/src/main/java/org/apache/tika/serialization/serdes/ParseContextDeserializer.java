@@ -34,9 +34,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.loader.ComponentInfo;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.serialization.ComponentNameResolver;
-import org.apache.tika.serialization.TikaModule;
 
 /**
  * Deserializes ParseContext from JSON.
@@ -61,10 +61,9 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
 
     private static final Logger LOG = LoggerFactory.getLogger(ParseContextDeserializer.class);
 
-    // Plain JSON mapper for converting JsonNodes to JSON strings.
-    // This is needed because the main mapper may use a binary format (e.g., Smile)
-    // which doesn't support writeValueAsString().
-    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+    private static ObjectMapper plainMapper() {
+        return TikaObjectMapperFactory.getPlainMapper();
+    }
 
     @Override
     public ParseContext deserialize(JsonParser jsonParser, DeserializationContext ctxt)
@@ -120,27 +119,12 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
 
                 // Store as JSON config for lazy resolution
                 // Use plain JSON mapper since the main mapper may be binary (Smile)
-                String json = JSON_MAPPER.writeValueAsString(value);
+                String json = plainMapper().writeValueAsString(value);
                 parseContext.setJsonConfig(name, json);
             }
         }
 
         return parseContext;
-    }
-
-    /**
-     * Determines the context key for a component.
-     * Uses explicit contextKey if available, otherwise auto-detects from interfaces.
-     */
-    private static Class<?> determineContextKey(ComponentInfo info) {
-        if (info.contextKey() != null) {
-            return info.contextKey();
-        }
-        Class<?> interfaceKey = TikaModule.findContextKeyInterface(info.componentClass());
-        if (interfaceKey != null) {
-            return interfaceKey;
-        }
-        return info.componentClass();
     }
 
     /**
@@ -172,7 +156,7 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
             return;
         }
 
-        Class<?> contextKey = determineContextKey(info);
+        Class<?> contextKey = ComponentNameResolver.determineContextKey(info);
 
         String existingName = seenContextKeys.get(contextKey);
         if (existingName != null) {
@@ -215,25 +199,16 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
                 contextKeyClass = info.contextKey();
             }
 
-            // If not found in registry, try as fully qualified class name
+            // If not found in registry, reject — components must be registered
             if (configClass == null) {
-                try {
-                    configClass = Class.forName(componentName);
-                    // Check if the class has a contextKey via its annotation
-                    contextKeyClass = ComponentNameResolver.getContextKey(configClass);
-                } catch (ClassNotFoundException e) {
-                    LOG.warn("Could not find class for typed component '{}', storing as JSON config",
-                            componentName);
-                    // Fall back to storing as JSON config (use plain JSON mapper)
-                    parseContext.setJsonConfig(componentName, JSON_MAPPER.writeValueAsString(configNode));
-                    continue;
-                }
+                throw new IOException("Unknown typed component '" + componentName + "'. " +
+                        "Components must be registered via @TikaComponent annotation or .idx file.");
             }
 
             // Determine context key: explicit > interface detection > class itself
             Class<?> parseContextKey = contextKeyClass;
             if (parseContextKey == null) {
-                parseContextKey = TikaModule.findContextKeyInterface(configClass);
+                parseContextKey = ComponentNameResolver.findContextKeyInterface(configClass);
             }
             if (parseContextKey == null) {
                 parseContextKey = configClass;
@@ -257,7 +232,7 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
                 LOG.warn("Failed to deserialize typed component '{}' as {}, storing as JSON config",
                         componentName, configClass.getName(), e);
                 // Use plain JSON mapper since main mapper may be binary (Smile)
-                parseContext.setJsonConfig(componentName, JSON_MAPPER.writeValueAsString(configNode));
+                parseContext.setJsonConfig(componentName, plainMapper().writeValueAsString(configNode));
             }
         }
     }
