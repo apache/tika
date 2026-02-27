@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Locale;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.ignite.IgniteServer;
 import org.apache.ignite.InitParameters;
@@ -80,7 +81,14 @@ public class IgniteStoreServer implements AutoCloseable {
                 """;
         Files.writeString(configPath, config);
 
-        node = IgniteServer.start(nodeName, configPath, workDir);
+        node = IgniteServer.builder(nodeName, configPath, workDir).build();
+        try {
+            node.startAsync().get();
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            LOG.error("Ignite startup failed. Root cause: {}", cause.getMessage(), cause);
+            throw new RuntimeException("Ignite server startup failed", cause);
+        }
 
         InitParameters initParameters = InitParameters.builder()
                 .clusterName("tika-cluster")
@@ -97,6 +105,14 @@ public class IgniteStoreServer implements AutoCloseable {
 
     private void createTable() {
         try {
+            // Create a single-replica distribution zone for single-node clusters.
+            // Without REPLICAS=1, the default zone may require multiple replicas,
+            // causing "Mandatory nodes was excluded from mapping" errors on 1-node clusters.
+            String createZoneSql = "CREATE ZONE IF NOT EXISTS tika_zone " +
+                    "WITH REPLICAS=1, PARTITIONS=10, STORAGE_PROFILES='default'";
+            node.api().sql().execute(null, createZoneSql);
+            LOG.info("Distribution zone 'tika_zone' created/verified");
+
             Table existingTable = node.api().tables().table(tableName);
             if (existingTable != null) {
                 LOG.info("Table {} already exists", tableName);
@@ -108,7 +124,7 @@ public class IgniteStoreServer implements AutoCloseable {
                     "  id VARCHAR PRIMARY KEY," +
                     "  name VARCHAR," +
                     "  json VARCHAR(10000)" +
-                    ")",
+                    ") ZONE tika_zone",
                     tableName);
 
             node.api().sql().execute(null, createTableSql);

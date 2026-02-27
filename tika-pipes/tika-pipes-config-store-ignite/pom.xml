@@ -100,6 +100,12 @@
         <artifactId>snakeyaml</artifactId>
         <version>2.4</version>
       </dependency>
+      <!-- Pin to resolve conflict: kotlin-stdlib requests 13.0, Ignite 3.x needs 26.0.2-1 -->
+      <dependency>
+        <groupId>org.jetbrains</groupId>
+        <artifactId>annotations</artifactId>
+        <version>26.0.2-1</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -187,6 +193,7 @@
             --add-opens java.base/java.nio=ALL-UNNAMED
             --add-opens java.base/java.util=ALL-UNNAMED
             --add-opens java.base/java.lang=ALL-UNNAMED
+            --add-opens java.base/java.lang.reflect=ALL-UNNAMED
             --add-opens java.base/java.io=ALL-UNNAMED
             --add-opens java.base/sun.nio.ch=ALL-UNNAMED
             --add-opens java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED
