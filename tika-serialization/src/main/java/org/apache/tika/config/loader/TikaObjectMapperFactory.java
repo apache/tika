@@ -55,6 +55,35 @@ public class TikaObjectMapperFactory {
 
     private static ObjectMapper MAPPER = null;
 
+    // Shared plain ObjectMapper (no TikaModule) for converting JsonNodes to JSON strings.
+    // Needed because the main mapper may use a binary format (e.g., Smile)
+    // which doesn't support writeValueAsString().
+    private static final ObjectMapper PLAIN_MAPPER = new ObjectMapper();
+
+    static {
+        // Components with no bean properties (e.g., parsers with no configuration)
+        // need to serialize as empty objects rather than throwing.
+        PLAIN_MAPPER.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+    }
+
+    /**
+     * Returns a shared plain ObjectMapper without TikaModule registration.
+     * <p>
+     * This mapper is suitable for:
+     * <ul>
+     *   <li>Converting JsonNodes to JSON strings</li>
+     *   <li>Serializing component properties without compact format wrapping</li>
+     *   <li>Avoiding infinite recursion when serializing inside TikaModule</li>
+     * </ul>
+     * <p>
+     * Has {@code FAIL_ON_EMPTY_BEANS} disabled to allow serialization of classes with no properties.
+     *
+     * @return the shared plain ObjectMapper
+     */
+    public static ObjectMapper getPlainMapper() {
+        return PLAIN_MAPPER;
+    }
+
     public static synchronized ObjectMapper getMapper() {
         if (MAPPER == null) {
             MAPPER = createMapper();

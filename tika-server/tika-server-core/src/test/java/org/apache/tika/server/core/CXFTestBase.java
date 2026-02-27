@@ -328,8 +328,12 @@ public abstract class CXFTestBase {
                 }
               },
               "pipes": {
-                "numClients": 2,
-                "timeoutMillis": 60000
+                "numClients": 2
+              },
+              "parse-context": {
+                "timeout-limits": {
+                  "progressTimeoutMillis": 60000
+                }
               },
               "plugin-roots": "%s"%s
             }

@@ -18,12 +18,16 @@
   },
   "pipes": {
     "numClients": 1,
-    "timeoutMillis": 60000,
     "forkedJvmArgs": [
       "-Xmx256m"
     ],
     "emitStrategy": {
       "type": "EMIT_ALL"
+    }
+  },
+  "parse-context": {
+    "timeout-limits": {
+      "progressTimeoutMillis": 60000
     }
   },
   "plugin-roots": "PLUGINS_PATHS"

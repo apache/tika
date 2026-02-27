@@ -385,12 +385,16 @@ public class PipesForkParser implements Closeable {
                 // Set pipes configuration
                 .setPipesConfig(
                         pc.getNumClients(),
-                        pc.getTimeoutMillis(),
                         pc.getStartupTimeoutMillis(),
                         pc.getMaxFilesProcessedPerProcess(),
                         pc.getForkedJvmArgs())
                 // Use PASSBACK_ALL strategy - results returned through socket
                 .setEmitStrategy(EmitStrategy.PASSBACK_ALL);
+
+        // Set timeout limits if configured
+        if (config.getTimeoutLimits() != null) {
+            builder.setTimeoutLimits(config.getTimeoutLimits());
+        }
 
         // Set plugin roots if specified
         if (config.getPluginsDir() != null) {

@@ -27,7 +27,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.TikaTaskTimeout;
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.serialization.serdes.ParseContextDeserializer;
@@ -82,7 +82,8 @@ public class RoundTripSerializationTest {
         ParseContext original = new ParseContext();
         original.setJsonConfig("pdf-parser", "{\"ocrStrategy\":\"AUTO\"}");
         original.setJsonConfig("html-parser", "{\"extractScripts\":false}");
-        original.setJsonConfig("tika-task-timeout", "{\"timeoutMillis\":30000}");
+        original.setJsonConfig("timeout-limits",
+                "{\"progressTimeoutMillis\":30000,\"totalTaskTimeoutMillis\":120000}");
 
         String json = mapper.writeValueAsString(original);
         ParseContext reloaded = mapper.readValue(json, ParseContext.class);
@@ -90,7 +91,7 @@ public class RoundTripSerializationTest {
         assertEquals(3, reloaded.getJsonConfigs().size());
         assertTrue(reloaded.hasJsonConfig("pdf-parser"));
         assertTrue(reloaded.hasJsonConfig("html-parser"));
-        assertTrue(reloaded.hasJsonConfig("tika-task-timeout"));
+        assertTrue(reloaded.hasJsonConfig("timeout-limits"));
     }
 
     @Test
@@ -116,7 +117,8 @@ public class RoundTripSerializationTest {
     void testMultipleRoundTripsStability() throws Exception {
         ParseContext context = new ParseContext();
         context.setJsonConfig("pdf-parser", "{\"ocrStrategy\":\"NO_OCR\"}");
-        context.setJsonConfig("tika-task-timeout", "{\"timeoutMillis\":45000}");
+        context.setJsonConfig("timeout-limits",
+                "{\"progressTimeoutMillis\":45000,\"totalTaskTimeoutMillis\":180000}");
 
         // Perform 5 round-trips
         for (int i = 0; i < 5; i++) {
@@ -127,43 +129,47 @@ public class RoundTripSerializationTest {
         // Verify values preserved after multiple round-trips
         assertEquals(2, context.getJsonConfigs().size());
         assertTrue(context.getJsonConfig("pdf-parser").json().contains("NO_OCR"));
-        assertTrue(context.getJsonConfig("tika-task-timeout").json().contains("45000"));
+        assertTrue(context.getJsonConfig("timeout-limits").json().contains("45000"));
     }
 
-    // ==================== TikaTaskTimeout Round-Trip ====================
+    // ==================== TimeoutLimits Round-Trip ====================
 
     @Test
-    void testTikaTaskTimeoutRoundTrip() throws Exception {
+    void testTimeoutLimitsRoundTrip() throws Exception {
         ParseContext original = new ParseContext();
-        original.setJsonConfig("tika-task-timeout", "{\"timeoutMillis\":60000}");
+        original.setJsonConfig("timeout-limits",
+                "{\"progressTimeoutMillis\":60000,\"totalTaskTimeoutMillis\":3600000}");
 
         String json = mapper.writeValueAsString(original);
         ParseContext reloaded = mapper.readValue(json, ParseContext.class);
 
         // Resolve and verify
         ParseContextUtils.resolveAll(reloaded, Thread.currentThread().getContextClassLoader());
-        TikaTaskTimeout timeout = reloaded.get(TikaTaskTimeout.class);
+        TimeoutLimits limits = reloaded.get(TimeoutLimits.class);
 
-        assertNotNull(timeout);
-        assertEquals(60000, timeout.getTimeoutMillis());
+        assertNotNull(limits);
+        assertEquals(60000, limits.getProgressTimeoutMillis());
+        assertEquals(3600000, limits.getTotalTaskTimeoutMillis());
     }
 
     @Test
-    void testTikaTaskTimeoutDifferentValues() throws Exception {
+    void testTimeoutLimitsDifferentValues() throws Exception {
         long[] testValues = {1000, 5000, 30000, 120000, 600000};
 
         for (long value : testValues) {
             ParseContext original = new ParseContext();
-            original.setJsonConfig("tika-task-timeout", "{\"timeoutMillis\":" + value + "}");
+            original.setJsonConfig("timeout-limits",
+                    "{\"progressTimeoutMillis\":" + value +
+                            ",\"totalTaskTimeoutMillis\":" + (value * 10) + "}");
 
             String json = mapper.writeValueAsString(original);
             ParseContext reloaded = mapper.readValue(json, ParseContext.class);
 
             ParseContextUtils.resolveAll(reloaded, Thread.currentThread().getContextClassLoader());
-            TikaTaskTimeout timeout = reloaded.get(TikaTaskTimeout.class);
+            TimeoutLimits limits = reloaded.get(TimeoutLimits.class);
 
-            assertEquals(value, timeout.getTimeoutMillis(),
-                    "Timeout " + value + " should survive round-trip");
+            assertEquals(value, limits.getProgressTimeoutMillis(),
+                    "progressTimeoutMillis " + value + " should survive round-trip");
         }
     }
 

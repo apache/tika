@@ -299,8 +299,8 @@
     <maven.assembly.version>3.8.0</maven.assembly.version>
     <maven.bundle.version>6.0.0</maven.bundle.version>
     <maven.compiler.plugin.version>3.15.0</maven.compiler.plugin.version>
-    <maven.failsafe.version>3.5.4</maven.failsafe.version>
-    <maven.surefire.version>3.5.4</maven.surefire.version>
+    <maven.failsafe.version>3.5.5</maven.failsafe.version>
+    <maven.surefire.version>3.5.5</maven.surefire.version>
     <maven.javadoc.version>3.12.0</maven.javadoc.version>
     <maven.jar.version>3.5.0</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
@@ -315,7 +315,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.63.0</google.cloud.version>
-    <aws2.version>2.41.29</aws2.version>
+    <aws2.version>2.42.3</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -328,7 +328,7 @@
     <bouncycastle.version>1.83</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
-    <c3p0.version>0.11.2</c3p0.version>
+    <c3p0.version>0.12.0</c3p0.version>
     <commons.cli.version>1.11.0</commons.cli.version>
     <commons.codec.version>1.21.0</commons.codec.version>
     <commons.collections4.version>4.5.0</commons.collections4.version>
@@ -345,7 +345,7 @@
     <!-- can't use 4.1.0, fails in tika server core because it uses jetty 12, which we can't
          use due to the problems explained there -->
     <cxf.version>4.0.10</cxf.version>
-    <ddplist.version>1.28</ddplist.version>
+    <ddplist.version>1.29</ddplist.version>
     <dl4j.version>1.0.0-M2.1</dl4j.version>
     <fakeload.version>0.7.0</fakeload.version>
     <fastutil.version>8.5.16</fastutil.version>
@@ -366,7 +366,7 @@
     <icu4j.version>75.1</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.23.3-beta</jackrabbit.version>
-    <jackson.version>2.21.0</jackson.version>
+    <jackson.version>2.21.1</jackson.version>
     <jackcess.version>4.0.10</jackcess.version>
     <jackcess.encrypt.version>4.0.3</jackcess.encrypt.version>
     <jai.imageio.core.version>1.4.0</jai.imageio.core.version>
@@ -402,14 +402,14 @@
     <junit6.version>6.1.0-M1</junit6.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
     <junrar.version>7.5.7</junrar.version>
-    <jwarc.version>0.34.0</jwarc.version>
-    <kafka.version>4.1.1</kafka.version>
+    <jwarc.version>0.35.0</jwarc.version>
+    <kafka.version>4.2.0</kafka.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.25.3</log4j2.version>
     <!-- can't update to 10, needs jdk21 -->
     <lucene.version>9.12.3</lucene.version>
     <maven.plugin.annotations.version>3.15.2</maven.plugin.annotations.version>
-    <mchange.version>0.3.2</mchange.version>
+    <mchange.version>0.4.0</mchange.version>
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.13</mime4j.version>
@@ -438,13 +438,13 @@
     <sis.version>1.6</sis.version>
     <snappy.version>1.1.10.8</snappy.version>
     <solrj.version>9.10.0</solrj.version>
-    <spring.version>7.0.4</spring.version>
+    <spring.version>7.0.5</spring.version>
     <sqlite.version>3.51.2.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>2.0.3</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
     <tukaani.version>1.11</tukaani.version>
-    <twelvemonkeys.version>3.13.0</twelvemonkeys.version>
+    <twelvemonkeys.version>3.13.1</twelvemonkeys.version>
     <uimafit.version>3.6.1</uimafit.version>
     <uimaj.core.version>3.6.1</uimaj.core.version>
     <uimaj.cpe.version>3.6.1</uimaj.cpe.version>
@@ -454,7 +454,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.4</zookeeper.version>
     <zstd.version>1.5.7-7</zstd.version>
-    <nimbus-jose-jwt.version>10.7</nimbus-jose-jwt.version>
+    <nimbus-jose-jwt.version>10.8</nimbus-jose-jwt.version>
     <javacpp.version>1.5.12</javacpp.version>
     <maven.exec.version>3.6.3</maven.exec.version>
 
@@ -1189,7 +1189,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>flatten-maven-plugin</artifactId>
-        <version>1.6.0</version>
+        <version>1.7.3</version>
         <configuration>
           <updatePomFile>true</updatePomFile>
           <flattenMode>resolveCiFriendliesOnly</flattenMode>

@@ -1,7 +1,7 @@
 {
   "parsers": [
     {
-      "org.apache.tika.parser.ner.NamedEntityParser": {
+      "named-entity-parser": {
         "_mime-include": ["text/plain", "text/html", "application/xhtml+xml"]
       }
     }

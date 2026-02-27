@@ -34,7 +34,6 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.pipes.core.server.PipesServer;
 import org.apache.tika.utils.ProcessUtils;
 
 /**
@@ -161,17 +160,14 @@ public class PerClientServerManager implements ServerManager {
                     int exitValue = process.exitValue();
                     LOG.error("clientId={}: Process exited with code {} before connecting to socket",
                             clientId, exitValue);
-                    // Don't treat known crash exit codes as initialization failures
-                    // These indicate the server started but crashed during processing
-                    if (exitValue == PipesServer.OOM_EXIT_CODE ||
-                            exitValue == PipesServer.TIMEOUT_EXIT_CODE ||
-                            exitValue == PipesServer.UNSPECIFIED_CRASH_EXIT_CODE) {
-                        // Mark for restart and throw IOException so caller can retry
-                        pendingRestart = true;
-                        throw new IOException("Server crashed (exit code " + exitValue + ") - will retry");
-                    }
-                    throw new ServerInitializationException(
-                            "Process failed to start (exit code " + exitValue + "). Check JVM arguments and classpath.");
+                    // Always treat pre-connect death as retryable.
+                    // The only non-retryable paths are:
+                    // 1. pb.start() fails (can't launch process) - handled in startServer()
+                    // 2. Server explicitly reports bad config via protocol - handled in waitForStartup()
+                    // 3. Exhausted all retry attempts - handled in maybeInit()
+                    pendingRestart = true;
+                    throw new IOException(
+                            "Server process died before connecting (exit code " + exitValue + ") - will retry");
                 }
                 // Check if we've exceeded the overall timeout
                 long elapsed = System.currentTimeMillis() - startTime;

@@ -9,7 +9,6 @@
       "-Xmx1g",
       "-XX:ParallelGCThreads=2"
     ],
-    "timeoutMillis": 60000,
     "maxForEmitBatchBytes": -1
   },
   "parsers": [

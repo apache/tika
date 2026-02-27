@@ -1,0 +1,18 @@
+{
+  "parsers": [
+    {
+      "name": "tess4j-parser",
+      "dataPath": "/usr/share/tesseract-ocr/5/tessdata",
+      "nativeLibPath": "/usr/lib/x86_64-linux-gnu",
+      "language": "eng",
+      "pageSegMode": 1,
+      "ocrEngineMode": 3,
+      "poolSize": 4,
+      "timeoutSeconds": 120,
+      "dpi": 300,
+      "minFileSizeToOcr": 0,
+      "maxFileSizeToOcr": 2147483647,
+      "skipOcr": false
+    }
+  ]
+}

@@ -30,19 +30,17 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.config.TikaTaskTimeout;
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.filter.CompositeMetadataFilter;
-import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
-import org.apache.tika.serialization.ParseContextUtils;
+
 
 public class PipesClientTest {
     String fetcherName = "fsf";
@@ -115,22 +113,13 @@ public class PipesClientTest {
     @Test
     public void testMetadataFilterFromJsonConfig(@TempDir Path tmp) throws Exception {
         // Test that metadata filters specified as JSON array in jsonConfigs
-        // are properly resolved and applied during pipe processing.
-        // This tests the full serialization/deserialization flow.
+        // survive serialization to the forked PipesServer and are applied.
         ParseContext parseContext = new ParseContext();
         parseContext.setJsonConfig("metadata-filters", """
             [
               "mock-upper-case-filter"
             ]
         """);
-
-        // Resolve the config to actual MetadataFilter instances
-        ParseContextUtils.resolveAll(parseContext, PipesClientTest.class.getClassLoader());
-
-        // Verify the filter was resolved
-        MetadataFilter resolvedFilter = parseContext.get(MetadataFilter.class);
-        Assertions.assertNotNull(resolvedFilter, "MetadataFilter should be resolved from jsonConfigs");
-        assertEquals(CompositeMetadataFilter.class, resolvedFilter.getClass());
 
         PipesClient pipesClient = init(tmp, testDoc);
         PipesResult pipesResult = pipesClient.process(
@@ -146,7 +135,7 @@ public class PipesClientTest {
 
     @Test
     public void testMultipleMetadataFiltersFromJsonConfig(@TempDir Path tmp) throws Exception {
-        // Test multiple filters specified as JSON array
+        // Test multiple filters specified as JSON array survive serialization
         ParseContext parseContext = new ParseContext();
         parseContext.setJsonConfig("metadata-filters", """
             [
@@ -154,9 +143,6 @@ public class PipesClientTest {
               "mock-upper-case-filter"
             ]
         """);
-
-        // Resolve the config to actual MetadataFilter instances
-        ParseContextUtils.resolveAll(parseContext, PipesClientTest.class.getClassLoader());
 
         String testFile = "mock-embedded.xml";
         PipesClient pipesClient = init(tmp, testFile);
@@ -181,7 +167,7 @@ public class PipesClientTest {
         //TODO -- figure out how to test pipes server timeout alone
         //I did both manually during development, but unit tests are better. :D
         ParseContext parseContext = new ParseContext();
-        parseContext.set(TikaTaskTimeout.class, new TikaTaskTimeout(1000));
+        parseContext.set(TimeoutLimits.class, new TimeoutLimits(1000, 1000));
         // Use JSON config approach for Jackson serialization compatibility
         // Don't resolve here - let PipesServer resolve on its side
         parseContext.setJsonConfig("metadata-filters", """
@@ -198,7 +184,7 @@ public class PipesClientTest {
 
     @Test
     public void testRuntimeTimeoutChange(@TempDir Path tmp) throws Exception {
-        // Test that TikaTaskTimeout can be changed at runtime via ParseContext
+        // Test that TimeoutLimits can be changed at runtime via ParseContext
         // Use a mock file with 3 second delay
         Path inputDir = tmp.resolve("input");
         Files.createDirectories(inputDir);
@@ -217,7 +203,7 @@ public class PipesClientTest {
         try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
             // First test: Short timeout (1 second) - should timeout
             ParseContext shortTimeoutContext = new ParseContext();
-            shortTimeoutContext.set(TikaTaskTimeout.class, new TikaTaskTimeout(1000));
+            shortTimeoutContext.set(TimeoutLimits.class, new TimeoutLimits(1000, 1000));
 
             PipesResult timeoutResult = pipesClient.process(
                     new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
@@ -229,7 +215,7 @@ public class PipesClientTest {
 
             // Second test: Long timeout (10 seconds) - should succeed
             ParseContext longTimeoutContext = new ParseContext();
-            longTimeoutContext.set(TikaTaskTimeout.class, new TikaTaskTimeout(10000));
+            longTimeoutContext.set(TimeoutLimits.class, new TimeoutLimits(10000, 10000));
 
             PipesResult successResult = pipesClient.process(
                     new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
@@ -294,7 +280,8 @@ public class PipesClientTest {
             Assertions.assertNotNull(pipesResult.message(), "Should have error message");
             assertTrue(pipesResult.message().contains("exit code") ||
                             pipesResult.message().contains("JVM") ||
-                            pipesResult.message().contains("Process failed"),
+                            pipesResult.message().contains("Process failed") ||
+                            pipesResult.message().contains("couldn't connect to server"),
                     "Error message should indicate process failure: " + pipesResult.message());
         }
     }
@@ -353,7 +340,9 @@ public class PipesClientTest {
             // Should have error message about the crash
             Assertions.assertNotNull(pipesResult.message(), "Should have error message");
             assertTrue(pipesResult.message().contains("problem reading response") |
-                    pipesResult.message().contains("SocketException"),
+                    pipesResult.message().contains("SocketException") |
+                    pipesResult.message().contains("EOFException") |
+                    pipesResult.message().contains("Stream closed"),
                     "Error message should mention the detection crash: " + pipesResult.message());
 
             // Note: Because crash happens during pre-parse (before intermediate result is sent),
@@ -777,6 +766,60 @@ public class PipesClientTest {
         assertEquals("TESTOVERLAPPINGTEXT.PDF",
                 metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY),
                 "User filter should take priority over CONTENT_ONLY filter");
+    }
+
+    @Test
+    public void testRecoveryAfterServerCrash(@TempDir Path tmp) throws Exception {
+        // Test that after a server crash (System.exit), the client can recover
+        // and successfully process the next document.
+        // This exercises the full crash → restart → reconnect path.
+        Path inputDir = tmp.resolve("input");
+        Files.createDirectories(inputDir);
+
+        // Create a mock file that will crash the server
+        String crashContent = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
+                "<metadata action=\"add\" name=\"dc:creator\">Crash Test</metadata>" +
+                "<write element=\"p\">content before crash</write>" +
+                "<system_exit/>" + "</mock>";
+        String crashFile = "mock-crash.xml";
+        Files.write(inputDir.resolve(crashFile), crashContent.getBytes(StandardCharsets.UTF_8));
+
+        // Create a normal mock file
+        String normalContent = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
+                "<metadata action=\"add\" name=\"dc:creator\">Normal Author</metadata>" +
+                "<write element=\"p\">normal content</write>" +
+                "</mock>";
+        String normalFile = "mock-normal.xml";
+        Files.write(inputDir.resolve(normalFile), normalContent.getBytes(StandardCharsets.UTF_8));
+
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, inputDir, tmp.resolve("output"));
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+
+        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
+            // First: process the crashing file — server should die
+            PipesResult crashResult = pipesClient.process(
+                    new FetchEmitTuple(crashFile, new FetchKey(fetcherName, crashFile),
+                            new EmitKey(), new Metadata(), new ParseContext(),
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+
+            assertTrue(crashResult.isProcessCrash(),
+                    "Crash file should result in process crash, got: " + crashResult.status());
+
+            // Second: process the normal file — client should restart server and succeed
+            PipesResult normalResult = pipesClient.process(
+                    new FetchEmitTuple(normalFile, new FetchKey(fetcherName, normalFile),
+                            new EmitKey(), new Metadata(), new ParseContext(),
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+
+            assertTrue(normalResult.isSuccess(),
+                    "Normal file should succeed after crash recovery, got: " + normalResult.status() +
+                            " message: " + normalResult.message());
+            Assertions.assertNotNull(normalResult.emitData().getMetadataList());
+            assertEquals(1, normalResult.emitData().getMetadataList().size());
+            Metadata metadata = normalResult.emitData().getMetadataList().get(0);
+            assertEquals("Normal Author", metadata.get("dc:creator"));
+        }
     }
 
     @Test

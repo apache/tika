@@ -122,6 +122,6 @@ mvn clean spotless:apply install
 * Implement flexible component loading without `@TikaComponent` requirements
 * Enable friendly name usage throughout the codebase
 * Resolve gRPC issues
-* Fix mutool renderer byte-passing in open containers
+* Fix external renderer byte-passing in open containers
 * Simplify and strengthen serialization code
 * Consider relocating `TikaConfig` and `ForkParser` to legacy module

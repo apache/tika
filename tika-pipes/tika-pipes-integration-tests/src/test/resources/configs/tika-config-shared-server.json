@@ -35,7 +35,6 @@
     "parseMode": "RMETA",
     "onParseException": "EMIT",
     "numClients": 4,
-    "timeoutMillis": 5000,
     "useSharedServer": true,
     "emitIntermediateResults": "EMIT_INTERMEDIATE_RESULTS",
     "forkedJvmArgs": ["-Xmx512m"],
@@ -48,7 +47,10 @@
     "throwOnZeroBytes": false
   },
   "parse-context": {
-    "mock-digester-factory": {}
-    },
+    "mock-digester-factory": {},
+    "timeout-limits": {
+      "progressTimeoutMillis": 5000
+    }
+  },
   "plugin-roots": "PLUGINS_PATHS"
 }

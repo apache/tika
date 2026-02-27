@@ -20,9 +20,13 @@
       "clientAuthenticationRequired": false
     }
   },
+  "parse-context": {
+    "timeout-limits": {
+      "progressTimeoutMillis": 120000
+    }
+  },
   "pipes": {
     "numClients": 2,
-    "timeoutMillis": 120000,
     "forkedJvmArgs": [
       "-Xmx256m"
     ]

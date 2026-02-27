@@ -239,9 +239,18 @@ public class ParseContext implements Serializable {
         }
         // Copy typed objects
         context.putAll(source.context);
-        // Copy JSON configs
-        jsonConfigs.putAll(source.jsonConfigs);
-        // Copy resolved configs (if any)
+        // Copy JSON configs, invalidating stale resolved state for overridden keys.
+        // When a source jsonConfig overrides an existing entry, the previously resolved
+        // object is stale and must be cleared so resolveAll() will re-resolve from the
+        // new JSON config.
+        for (Map.Entry<String, JsonConfig> entry : source.jsonConfigs.entrySet()) {
+            String key = entry.getKey();
+            jsonConfigs.put(key, entry.getValue());
+            if (resolvedConfigs != null) {
+                resolvedConfigs.remove(key);
+            }
+        }
+        // Copy resolved configs from source (if any)
         if (source.resolvedConfigs != null && !source.resolvedConfigs.isEmpty()) {
             if (resolvedConfigs == null) {
                 resolvedConfigs = new HashMap<>();

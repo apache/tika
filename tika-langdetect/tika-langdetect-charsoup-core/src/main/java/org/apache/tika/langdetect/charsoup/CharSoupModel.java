@@ -197,6 +197,22 @@ public class CharSoupModel {
      *         (softmax probabilities, sum ≈ 1.0)
      */
     public float[] predict(int[] features) {
+        float[] logits = predictLogits(features);
+        return softmax(logits);
+    }
+
+    /**
+     * Compute raw logits (pre-softmax scores) for the given
+     * feature vector. Higher logits indicate stronger match.
+     * Unlike {@link #predict}, this preserves the full dynamic
+     * range of the model's output, which is useful when
+     * comparing confidence across different input texts.
+     *
+     * @param features int array of size {@code numBuckets}
+     * @return float array of size {@code numClasses}
+     *         (raw logits, not normalized)
+     */
+    public float[] predictLogits(int[] features) {
         int nnz = 0;
         for (int b = 0; b < numBuckets; b++) {
             if (features[b] != 0) {
@@ -225,7 +241,7 @@ public class CharSoupModel {
         for (int c = 0; c < numClasses; c++) {
             logits[c] = biases[c] + scales[c] * dots[c];
         }
-        return softmax(logits);
+        return logits;
     }
 
     /**
