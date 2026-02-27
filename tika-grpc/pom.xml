@@ -500,6 +500,7 @@
                     <Multi-Release>true</Multi-Release>
                   </manifestEntries>
                 </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
                   <resource>META-INF/LICENSE</resource>
                   <file>target/classes/META-INF/LICENSE</file>
