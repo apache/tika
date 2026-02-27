@@ -22,12 +22,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
@@ -41,6 +38,7 @@ import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.ParentContentHandler;
+import org.apache.tika.http.TikaHttpClient;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -79,34 +77,36 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
     public static final Property VLM_COMPLETION_TOKENS =
             Property.externalInteger(VLM_META + "completion_tokens");
 
-    static final okhttp3.MediaType JSON_MEDIA_TYPE =
-            okhttp3.MediaType.parse("application/json; charset=utf-8");
+    /**
+     * Encapsulates a fully built HTTP request for a VLM API call.
+     *
+     * @param url     full request URL (base + path)
+     * @param json    serialized JSON request body
+     * @param headers additional HTTP headers (e.g. Authorization)
+     */
+    protected record HttpCall(String url, String json, Map<String, String> headers) {}
 
     private VLMOCRConfig defaultConfig;
-    private transient OkHttpClient httpClient;
+    private transient TikaHttpClient httpClient;
     private boolean serverAvailable = false;
 
     protected AbstractVLMParser(VLMOCRConfig config) {
         this.defaultConfig = config;
-        buildHttpClient();
+        this.httpClient = buildHttpClient();
     }
 
     // ---- abstract contract for subclasses ---------------------------------
 
     /**
-     * Build a fully formed {@link Request} for the target API.
+     * Build a fully formed {@link HttpCall} for the target API.
      *
-     * @param config       resolved config for this parse
-     * @param fileBytes    raw bytes of the input (image or document)
-     * @param mimeType     the MIME type of the input (e.g. {@code image/png},
-     *                     {@code application/pdf})
-     * @param base64Data   base64-encoded version of {@code fileBytes}
-     * @param client       the OkHttp client (for timeout-aware request building)
-     * @return a ready-to-execute OkHttp {@link Request}
+     * @param config     resolved config for this parse
+     * @param base64Data base64-encoded version of the file bytes
+     * @param mimeType   the MIME type of the input (e.g. {@code image/png})
+     * @return a ready-to-execute {@link HttpCall}
      */
-    protected abstract Request buildHttpRequest(VLMOCRConfig config, byte[] fileBytes,
-                                                String mimeType, String base64Data,
-                                                OkHttpClient client);
+    protected abstract HttpCall buildHttpCall(VLMOCRConfig config,
+                                              String base64Data, String mimeType);
 
     /**
      * Parse the API response body and extract the model's text output.
@@ -142,6 +142,9 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
+        if (!serverAvailable) {
+            return Collections.emptySet();
+        }
         VLMOCRConfig config = context.get(VLMOCRConfig.class);
         if (config != null && config.isSkipOcr()) {
             return Collections.emptySet();
@@ -171,7 +174,6 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
 
         String mimeType = detectMimeType(metadata);
 
-        // Check image pixel dimensions before reading fully (skip for PDFs)
         long maxPixels = config.getMaxImagePixels();
         if (maxPixels > 0 && mimeType.startsWith("image/")) {
             tis.mark((int) Math.min(tis.getLength() + 1, 1024 * 1024));
@@ -195,20 +197,18 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
 
         long timeoutMillis = TimeoutLimits.getProcessTimeoutMillis(
                 parseContext, config.getTimeoutSeconds() * 1000L);
-        OkHttpClient client = getClientWithTimeout(timeoutMillis);
+        int timeoutSeconds = (int) (timeoutMillis / 1000L);
 
-        Request httpRequest = buildHttpRequest(config, fileBytes, mimeType, base64Data, client);
+        HttpCall call = buildHttpCall(config, base64Data, mimeType);
 
         String responseText;
-        try (Response response = client.newCall(httpRequest).execute()) {
-            if (!response.isSuccessful()) {
-                String body = response.body() != null ? response.body().string() : "";
-                throw new TikaException(
-                        "VLM request failed with HTTP " + response.code() + ": " + body);
-            }
-            String responseBody = response.body() != null ? response.body().string() : "";
+        try {
+            String responseBody = httpClient.postJson(
+                    call.url(), call.json(), call.headers(), timeoutSeconds);
             responseText = extractResponseText(responseBody, metadata);
             TikaProgressTracker.update(parseContext);
+        } catch (TikaException e) {
+            throw e;
         } catch (IOException e) {
             throw new TikaException("VLM request failed: " + e.getMessage(), e);
         }
@@ -227,22 +227,21 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
 
     @Override
     public void initialize() throws TikaConfigException {
-        buildHttpClient();
+        this.httpClient = buildHttpClient();
         String healthUrl = getHealthCheckUrl(defaultConfig);
         if (healthUrl == null) {
+            // No health check configured (e.g. Claude) — assume available
+            serverAvailable = true;
             return;
         }
         try {
-            Request request = new Request.Builder().url(healthUrl).get().build();
-            try (Response response = httpClient.newCall(request).execute()) {
-                serverAvailable = response.isSuccessful();
-                if (serverAvailable) {
-                    LOG.info("VLM server is available at {}", defaultConfig.getBaseUrl());
-                } else {
-                    LOG.warn("VLM server returned HTTP {} at {}",
-                            response.code(), defaultConfig.getBaseUrl());
-                }
-            }
+            httpClient.get(healthUrl, Map.of(), defaultConfig.getTimeoutSeconds());
+            serverAvailable = true;
+            LOG.info("VLM server is available at {}", defaultConfig.getBaseUrl());
+        } catch (TikaException e) {
+            LOG.warn("VLM server returned error at {}: {}",
+                    defaultConfig.getBaseUrl(), e.getMessage());
+            serverAvailable = false;
         } catch (IOException e) {
             LOG.warn("VLM server is not available at {}: {}",
                     defaultConfig.getBaseUrl(), e.getMessage());
@@ -256,9 +255,6 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
             throws TikaConfigException, IOException {
         String key = configKey();
         if (parseContext.hasJsonConfig(key)) {
-            // Deserialize into RuntimeConfig which prevents overriding
-            // security-sensitive fields (baseUrl, apiKey, prompt) at parse time.
-            // Pass the init-time config so that allowRuntimePrompt is inherited.
             VLMOCRConfig.RuntimeConfig runtimeConfig = ParseContextConfig.getConfig(
                     parseContext, key, VLMOCRConfig.RuntimeConfig.class,
                     new VLMOCRConfig.RuntimeConfig(defaultConfig));
@@ -267,7 +263,6 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
                 return runtimeConfig;
             }
 
-            // Merge runtime overrides with the init-time defaults
             return ParseContextConfig.getConfig(
                     parseContext, key, VLMOCRConfig.class, defaultConfig);
         }
@@ -356,22 +351,8 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
         }
     }
 
-    private void buildHttpClient() {
-        httpClient = new OkHttpClient.Builder()
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(defaultConfig.getTimeoutSeconds(), TimeUnit.SECONDS)
-                .writeTimeout(60, TimeUnit.SECONDS)
-                .build();
-    }
-
-    OkHttpClient getClientWithTimeout(long timeoutMillis) {
-        long defaultTimeoutMillis = defaultConfig.getTimeoutSeconds() * 1000L;
-        if (timeoutMillis == defaultTimeoutMillis) {
-            return httpClient;
-        }
-        return httpClient.newBuilder()
-                .readTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
-                .build();
+    private TikaHttpClient buildHttpClient() {
+        return TikaHttpClient.build(30);
     }
 
     // ---- delegating config getters/setters --------------------------------

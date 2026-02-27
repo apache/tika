@@ -17,14 +17,13 @@
 package org.apache.tika.inference;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.Base64;
 
 /**
- * Serializes and deserializes float vectors as base64-encoded little-endian
- * float32 byte arrays. Little-endian matches numpy/PyTorch convention so
- * vectors from Python inference servers round-trip cleanly.
+ * Serializes and deserializes float vectors as base64-encoded big-endian
+ * float32 byte arrays. Big-endian (network byte order) matches what
+ * Elasticsearch expects when ingesting base64-encoded dense vectors.
  */
 public final class VectorSerializer {
 
@@ -32,23 +31,20 @@ public final class VectorSerializer {
     }
 
     /**
-     * Encode a float array as a base64 string (little-endian float32).
+     * Encode a float array as a base64 string (big-endian float32).
      */
     public static String encode(float[] vector) {
-        ByteBuffer buf = ByteBuffer.allocate(vector.length * Float.BYTES)
-                .order(ByteOrder.LITTLE_ENDIAN);
+        ByteBuffer buf = ByteBuffer.allocate(vector.length * Float.BYTES);
         buf.asFloatBuffer().put(vector);
         return Base64.getEncoder().encodeToString(buf.array());
     }
 
     /**
-     * Decode a base64 string back to a float array (little-endian float32).
+     * Decode a base64 string back to a float array (big-endian float32).
      */
     public static float[] decode(String base64) {
         byte[] bytes = Base64.getDecoder().decode(base64);
-        FloatBuffer fb = ByteBuffer.wrap(bytes)
-                .order(ByteOrder.LITTLE_ENDIAN)
-                .asFloatBuffer();
+        FloatBuffer fb = ByteBuffer.wrap(bytes).asFloatBuffer();
         float[] vector = new float[fb.remaining()];
         fb.get(vector);
         return vector;

@@ -27,15 +27,13 @@ import java.io.ByteArrayInputStream;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.http.TikaTestHttpServer;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -46,17 +44,16 @@ public class ClaudeVLMParserTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private MockWebServer server;
+    private TikaTestHttpServer server;
     private ClaudeVLMParser parser;
     private VLMOCRConfig config;
 
     @BeforeEach
     void setUp() throws Exception {
-        server = new MockWebServer();
-        server.start();
+        server = new TikaTestHttpServer();
 
         config = new VLMOCRConfig();
-        config.setBaseUrl(server.url("").toString().replaceAll("/+$", ""));
+        config.setBaseUrl(server.url());
         config.setModel("claude-sonnet-4-20250514");
         config.setPrompt("Extract all text.");
         config.setMaxTokens(4096);
@@ -64,18 +61,18 @@ public class ClaudeVLMParserTest {
         config.setApiKey("sk-ant-test-key");
 
         parser = new ClaudeVLMParser(config);
+        parser.initialize();
     }
 
     @AfterEach
-    void tearDown() throws Exception {
+    void tearDown() {
         server.shutdown();
     }
 
     @Test
     void testSuccessfulImageOcr() throws Exception {
-        server.enqueue(new MockResponse()
-                .setBody(buildClaudeResponse("Hello from Claude!", 200, 30))
-                .setHeader("Content-Type", "application/json"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                buildClaudeResponse("Hello from Claude!", 200, 30)));
 
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/png");
@@ -92,15 +89,15 @@ public class ClaudeVLMParserTest {
         assertEquals("200", metadata.get(AbstractVLMParser.VLM_PROMPT_TOKENS));
         assertEquals("30", metadata.get(AbstractVLMParser.VLM_COMPLETION_TOKENS));
 
-        RecordedRequest request = server.takeRequest();
-        assertEquals("/v1/messages", request.getPath());
-        assertEquals("POST", request.getMethod());
-        assertEquals("2023-06-01", request.getHeader("anthropic-version"));
-        assertEquals("sk-ant-test-key", request.getHeader("x-api-key"));
+        TikaTestHttpServer.RecordedRequest request = server.takeRequest();
+        assertEquals("/v1/messages", request.path());
+        assertEquals("POST", request.method());
+        assertEquals("2023-06-01", request.header("anthropic-version"));
+        assertEquals("sk-ant-test-key", request.header("x-api-key"));
         // Claude does NOT use Bearer auth
-        assertNull(request.getHeader("Authorization"));
+        assertNull(request.header("authorization"));
 
-        JsonNode body = MAPPER.readTree(request.getBody().readUtf8());
+        JsonNode body = MAPPER.readTree(request.body());
         assertEquals("claude-sonnet-4-20250514", body.get("model").asText());
         assertEquals(4096, body.get("max_tokens").asInt());
 
@@ -111,7 +108,6 @@ public class ClaudeVLMParserTest {
         JsonNode parts = messages.get(0).get("content");
         assertEquals(2, parts.size());
 
-        // First part: image
         JsonNode imagePart = parts.get(0);
         assertEquals("image", imagePart.get("type").asText());
         JsonNode source = imagePart.get("source");
@@ -119,16 +115,14 @@ public class ClaudeVLMParserTest {
         assertEquals("image/png", source.get("media_type").asText());
         assertNotNull(source.get("data").asText());
 
-        // Second part: text prompt
         assertEquals("text", parts.get(1).get("type").asText());
         assertEquals("Extract all text.", parts.get(1).get("text").asText());
     }
 
     @Test
     void testPdfSupport() throws Exception {
-        server.enqueue(new MockResponse()
-                .setBody(buildClaudeResponse("PDF text extracted by Claude", 500, 60))
-                .setHeader("Content-Type", "application/json"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                buildClaudeResponse("PDF text extracted by Claude", 500, 60)));
 
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "application/pdf");
@@ -141,11 +135,10 @@ public class ClaudeVLMParserTest {
 
         assertTrue(handler.toString().contains("PDF text extracted by Claude"));
 
-        RecordedRequest request = server.takeRequest();
-        JsonNode body = MAPPER.readTree(request.getBody().readUtf8());
+        TikaTestHttpServer.RecordedRequest request = server.takeRequest();
+        JsonNode body = MAPPER.readTree(request.body());
         JsonNode parts = body.get("messages").get(0).get("content");
 
-        // For PDFs, the content type should be "document" not "image"
         assertEquals("document", parts.get(0).get("type").asText());
         assertEquals("application/pdf",
                 parts.get(0).get("source").get("media_type").asText());
@@ -172,9 +165,8 @@ public class ClaudeVLMParserTest {
 
     @Test
     void testApiKeyAsXApiKeyHeader() throws Exception {
-        server.enqueue(new MockResponse()
-                .setBody(buildClaudeResponse("ok", 10, 5))
-                .setHeader("Content-Type", "application/json"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                buildClaudeResponse("ok", 10, 5)));
 
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
@@ -184,16 +176,16 @@ public class ClaudeVLMParserTest {
             parser.parse(tis, new BodyContentHandler(), metadata, new ParseContext());
         }
 
-        RecordedRequest request = server.takeRequest();
-        assertEquals("sk-ant-test-key", request.getHeader("x-api-key"));
-        assertNull(request.getHeader("Authorization"));
-        assertEquals("2023-06-01", request.getHeader("anthropic-version"));
+        TikaTestHttpServer.RecordedRequest request = server.takeRequest();
+        assertEquals("sk-ant-test-key", request.header("x-api-key"));
+        assertNull(request.header("authorization"));
+        assertEquals("2023-06-01", request.header("anthropic-version"));
     }
 
     @Test
     void testServerError() throws Exception {
-        server.enqueue(new MockResponse().setResponseCode(500)
-                .setBody("{\"error\":{\"type\":\"server_error\",\"message\":\"boom\"}}"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(500,
+                "{\"error\":{\"type\":\"server_error\",\"message\":\"boom\"}}"));
 
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/png");
