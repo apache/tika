@@ -596,18 +596,18 @@
         </dependency>
         <dependency>
           <groupId>org.apache.ignite</groupId>
-          <artifactId>ignite-core</artifactId>
-          <version>2.16.0</version>
+          <artifactId>ignite-api</artifactId>
+          <version>3.1.0</version>
         </dependency>
         <dependency>
           <groupId>org.apache.ignite</groupId>
-          <artifactId>ignite-indexing</artifactId>
-          <version>2.16.0</version>
+          <artifactId>ignite-client</artifactId>
+          <version>3.1.0</version>
         </dependency>
         <dependency>
-          <groupId>com.h2database</groupId>
-          <artifactId>h2</artifactId>
-          <version>1.4.197</version>
+          <groupId>org.apache.ignite</groupId>
+          <artifactId>ignite-runner</artifactId>
+          <version>3.1.0</version>
         </dependency>
         <dependency>
           <groupId>org.apache.tika</groupId>

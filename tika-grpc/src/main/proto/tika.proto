@@ -98,6 +98,8 @@ message FetchAndParseRequest {
   // You can supply additional fetch configuration using this. Follows same fetch configuration json schema
   // as the fetcher configuration.
   string additional_fetch_config_json = 3;
+  // The ID of the emitter to use (optional). If not provided, no emitter will be used.
+  string emitter_id = 4;
 }
 
 message FetchAndParseReply {
