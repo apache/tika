@@ -97,6 +97,7 @@ import os
 import random
 import struct
 import sys
+import unicodedata
 from collections import defaultdict
 from pathlib import Path
 
@@ -238,6 +239,20 @@ LANG_CHARSETS: dict[str, list[str]] = {
 # UTF-* added for all MADLAD languages below
 UNICODE_CHARSETS = ["UTF-8", "UTF-16-LE", "UTF-16-BE", "UTF-32-LE", "UTF-32-BE"]
 
+# These charsets produce zero high bytes (all content < 0x80), so the ML
+# feature extractor sees no signal.  They are detected by structural gates
+# in MlEncodingDetector before the model is ever called:
+#   - US-ASCII  → checkAscii()   → returns UTF-8
+#   - HZ        → checkHz()      → returns HZ
+#   - ISO-2022* → detectIso2022() → returns ISO-2022-JP/KR/CN
+#
+# We still generate devtest/test files so EvalCharsetDetectors can measure
+# full-pipeline accuracy (with structural gates enabled), but we skip train
+# files so these classes don't pollute the ML model with zero-feature samples.
+STRUCTURAL_ONLY_CHARSETS = frozenset({
+    "US-ASCII", "HZ", "ISO-2022-JP", "ISO-2022-KR", "ISO-2022-CN",
+})
+
 # Charsets sourced from Flores Traditional Chinese.
 # MADLAD-400 has no Cantonese/Min Nan in Han script.
 # *** devtest and test for these charsets are IN-SAMPLE copies of train. ***
@@ -324,6 +339,11 @@ MIN_HIGH_BYTE_SBCS = 0.02
 
 RTL_CHARSETS = {"IBM424-rtl", "IBM420-rtl"}
 
+# CP1258 (Vietnamese) uses combining diacritical marks (NFD-style).
+# MADLAD is NFC, so we must decompose before encoding and recompose before
+# the drop-count comparison.
+NFD_CHARSETS = {"windows-1258"}
+
 # Maximum number of characters that may be silently dropped during encoding
 # (unencodable chars removed by errors='ignore') plus corrupt sequences
 # (U+FFFD produced on decode) before a sentence is rejected.
@@ -354,18 +374,23 @@ def encode_chunk(text: str, charset: str, codec: str,
     if charset in RTL_CHARSETS:
         text = text[::-1]
 
+    # CP1258 needs NFD decomposition; compare after recomposing back to NFC
+    norm_text = unicodedata.normalize("NFD", text) if charset in NFD_CHARSETS else text
+
     try:
-        encoded_full = text.encode(codec, errors="ignore")
+        encoded_full = norm_text.encode(codec, errors="ignore")
     except LookupError:
         return None
     if not encoded_full:
         return None
 
     try:
-        decoded = encoded_full.decode(codec, errors="replace")
+        decoded_raw = encoded_full.decode(codec, errors="replace")
     except (UnicodeDecodeError, LookupError):
         return None
 
+    # Recompose decoded output for fair character-count comparison
+    decoded = unicodedata.normalize("NFC", decoded_raw) if charset in NFD_CHARSETS else decoded_raw
     n_dropped = len(text) - len(decoded)
     n_corrupt = decoded.count("\ufffd")
     if n_dropped + n_corrupt > MAX_DROPPED_CHARS:
@@ -548,52 +573,9 @@ def main():
         print("fastText filter: disabled (model not found)")
 
     # -----------------------------------------------------------------------
-    # Step 1: Build per-language sentence pools from MADLAD
-    # Only load languages that contribute to the requested (or all) charsets.
+    # Step 1: Load Flores Traditional Chinese (tiny — ~4K sentences — load once)
     # -----------------------------------------------------------------------
-    print("\n=== Loading and splitting MADLAD sentences ===")
-    lang_pools: dict[str, dict[str, list[str]]] = {}
-
-    # Determine which charsets we're actually building
-    target_charsets: set[str] = set(args.charsets) if args.charsets else (
-        set(CHARSET_CODEC.keys())
-    )
-    # Which languages contribute to those charsets?
-    relevant_langs: set[str] = set()
-    for lang, charsets in LANG_CHARSETS.items():
-        lang_charsets = set(UNICODE_CHARSETS + charsets)
-        if lang_charsets & target_charsets:
-            relevant_langs.add(lang)
-
-    for lang in sorted(relevant_langs):
-        lang_dir = args.madlad_dir / lang
-        if not lang_dir.is_dir():
-            print(f"  SKIP {lang}: directory not found")
-            continue
-
-        raw = load_madlad_sentences(lang_dir, args.max_source_per_lang)
-        if not raw:
-            print(f"  SKIP {lang}: no sentences")
-            continue
-
-        # fastText contamination filter (batched)
-        before = len(raw)
-        if ft_model is not None:
-            raw = apply_fasttext_filter(raw, lang, ft_model)
-        removed = before - len(raw)
-
-        pools = split_pool(raw, args.seed)
-        lang_pools[lang] = pools
-        print(f"  {lang:6s}: {before:>7,} sentences, "
-              f"removed {removed:>5,} contaminated, "
-              f"split {len(pools['train']):>6,} / "
-              f"{len(pools['devtest']):>5,} / "
-              f"{len(pools['test']):>5,}", flush=True)
-
-    # -----------------------------------------------------------------------
-    # Step 2: Load Flores Traditional Chinese (for Big5, Big5-HKSCS, EUC-TW)
-    # -----------------------------------------------------------------------
-    print("\n=== Loading Flores Traditional Chinese ===")
+    print("=== Loading Flores Traditional Chinese ===")
     flores_sentences = load_flores_sentences(args.flores_dir)
     rng_flores = random.Random(args.seed)
     rng_flores.shuffle(flores_sentences)
@@ -605,27 +587,17 @@ def main():
     caps = {"train": args.train_cap, "devtest": args.devtest_cap,
             "test": args.test_cap}
 
-    # Determine which charsets to build and which are in-sample
-    all_charsets: set[str] = set()
-    charset_is_in_sample: dict[str, bool] = {}
-    for lang in lang_pools:
-        for cs in UNICODE_CHARSETS + LANG_CHARSETS.get(lang, []):
-            all_charsets.add(cs)
-            charset_is_in_sample[cs] = False
-    for cs in FLORES_CHARSETS:
-        if flores_sentences:
-            all_charsets.add(cs)
-            charset_is_in_sample[cs] = True
-
-    if args.charsets:
-        all_charsets &= set(args.charsets)
-    all_charsets = {cs for cs in all_charsets
+    # Determine which charsets to build
+    target_charsets: set[str] = set(args.charsets) if args.charsets else (
+        set(CHARSET_CODEC.keys())
+    )
+    all_charsets = {cs for cs in target_charsets
                     if cs in CHARSET_CODEC and probe_codec(cs, CHARSET_CODEC[cs])}
+    flores_charsets = {cs for cs in FLORES_CHARSETS if flores_sentences} & all_charsets
 
     # -----------------------------------------------------------------------
-    # Step 3 + 4: For each charset, build sentence pool on-the-fly and encode.
-    # We process one charset at a time to avoid holding millions of sentences
-    # in memory simultaneously.
+    # Step 2 + 3: For each charset, load only the languages it needs, encode,
+    # then free memory.  Never hold more than one charset's sentence pool in RAM.
     # -----------------------------------------------------------------------
     print(f"\n=== Encoding {len(all_charsets)} charsets ===")
     print(f"  Caps: train={args.train_cap:,}  "
@@ -638,50 +610,98 @@ def main():
 
     for charset in sorted(all_charsets):
         codec = CHARSET_CODEC[charset]
-        in_sample = charset_is_in_sample.get(charset, False)
+        in_sample = charset in flores_charsets
         flag = "  *** IN-SAMPLE ***" if in_sample else ""
         print(f"  {charset}{flag}", flush=True)
 
         split_counts: dict[str, int] = {}
 
-        for split in split_names:
-            cap = caps[split]
-
-            # Collect sentences from contributing languages, capped per lang
-            # to avoid memory blowup and give each language a fair share.
-            if in_sample:
-                # Flores: all sentences go to every split (in-sample)
-                sents = list(flores_sentences)
-            else:
-                contributing = [
-                    lang for lang in lang_pools
-                    if charset in (UNICODE_CHARSETS + LANG_CHARSETS.get(lang, []))
-                ]
-                # Per-language cap: take at most 3× cap / num_langs from each,
-                # with a floor so small-language charsets still get enough data.
-                per_lang = max(200, (cap * 3) // max(1, len(contributing)))
-                sents = []
-                for lang in contributing:
-                    pool = lang_pools[lang][split]
-                    sents.extend(pool[:per_lang])
-
-            # Shuffle to interleave languages
-            rng_split = random.Random(args.seed + hash(charset + split))
-            rng_split.shuffle(sents)
-
-            out_file = args.output_dir / split / f"{charset}.bin.gz"
-            n = build_split_file(
-                sents, charset, codec, out_file,
-                cap, args.min_chunk, args.max_chunk,
-                random.Random(args.seed + hash(charset + split + "enc")),
+        if in_sample:
+            # Flores charsets: same sentences go to all splits (in-sample eval)
+            for split in split_names:
+                out_file = args.output_dir / split / f"{charset}.bin.gz"
+                n = build_split_file(
+                    list(flores_sentences), charset, codec, out_file,
+                    caps[split], args.min_chunk, args.max_chunk,
+                    random.Random(args.seed + hash(charset + split + "enc")),
+                )
+                split_counts[split] = n
+                print(f"    {split:7s}: {n:>6,} samples")
+        else:
+            # MADLAD charsets: determine contributing languages
+            is_unicode = charset in UNICODE_CHARSETS
+            contributing = sorted(
+                lang for lang, csets in LANG_CHARSETS.items()
+                if is_unicode or charset in csets
             )
-            split_counts[split] = n
-            print(f"    {split:7s}: {n:>6,} samples")
+
+            # Load sentences for each contributing language.
+            # Per-language load cap: we need roughly train_cap*6/n_langs sentences
+            # total to survive encoding rejections; the 80/10/10 split means
+            # train gets 80% of loaded data.  Use max_source_per_lang as ceiling.
+            n_langs = max(1, len(contributing))
+            load_cap = min(
+                args.max_source_per_lang,
+                max(5_000, (args.train_cap * 10) // n_langs),
+            )
+
+            lang_pools: dict[str, dict[str, list[str]]] = {}
+            for lang in contributing:
+                lang_dir = args.madlad_dir / lang
+                if not lang_dir.is_dir():
+                    continue
+                raw = load_madlad_sentences(lang_dir, load_cap)
+                if not raw:
+                    continue
+                before = len(raw)
+                if ft_model is not None:
+                    raw = apply_fasttext_filter(raw, lang, ft_model)
+                lang_pools[lang] = split_pool(raw, args.seed)
+                removed = before - len(raw)
+                pools = lang_pools[lang]
+                print(f"    load {lang}: {before:>6,} → split "
+                      f"{len(pools['train']):>5,}/{len(pools['devtest']):>4,}"
+                      f"/{len(pools['test']):>4,}"
+                      + (f"  (-{removed} filtered)" if removed else ""),
+                      flush=True)
+
+            structural_only = charset in STRUCTURAL_ONLY_CHARSETS
+            if structural_only:
+                print(f"    (structural-only: skipping train, generating devtest/test only)")
+
+            for split in split_names:
+                # Skip train split for structural-only charsets: the ML model
+                # sees zero features for these encodings; structural gates in
+                # MlEncodingDetector handle them before the model is called.
+                if structural_only and split == "train":
+                    split_counts[split] = 0
+                    continue
+
+                cap = caps[split]
+                per_lang = max(200, (cap * 4) // max(1, len(lang_pools)))
+                sents: list[str] = []
+                for lang, pools in lang_pools.items():
+                    sents.extend(pools[split][:per_lang])
+                rng_split = random.Random(args.seed + hash(charset + split))
+                rng_split.shuffle(sents)
+
+                out_file = args.output_dir / split / f"{charset}.bin.gz"
+                n = build_split_file(
+                    sents, charset, codec, out_file,
+                    cap, args.min_chunk, args.max_chunk,
+                    random.Random(args.seed + hash(charset + split + "enc")),
+                )
+                split_counts[split] = n
+                print(f"    {split:7s}: {n:>6,} samples")
+
+            # Release the sentence pools for this charset before moving on
+            del lang_pools
 
         manifest[charset] = {
-            "codec":             codec,
-            "eval_is_in_sample": in_sample,
-            "samples":           split_counts,
+            "codec":              codec,
+            "eval_is_in_sample":  in_sample,
+            "structural_only":    charset in STRUCTURAL_ONLY_CHARSETS,
+            "samples":            split_counts,
         }
 
     # -----------------------------------------------------------------------
