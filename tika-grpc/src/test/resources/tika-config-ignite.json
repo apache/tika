@@ -1,7 +1,7 @@
 {
   "pipes": {
     "configStoreType": "ignite",
-    "configStoreParams": "{\"cacheName\":\"my-tika-cache\",\"cacheMode\":\"REPLICATED\",\"igniteInstanceName\":\"MyTikaCluster\",\"autoClose\":true}"
+    "configStoreParams": "{\"tableName\":\"my_tika_cache\",\"igniteInstanceName\":\"MyTikaCluster\",\"replicas\":2,\"partitions\":10,\"autoClose\":true}"
   },
   "fetchers": [
     {
