@@ -102,18 +102,40 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
         }
 
         Map<Charset, String> candidates = new LinkedHashMap<>();
+        Map<Charset, Float> junkRatios = new LinkedHashMap<>();
         for (Charset candidate : uniqueCharsets) {
-            candidates.put(candidate, stripTags(decode(bytes, candidate)));
+            String decoded = stripTags(decode(bytes, candidate));
+            candidates.put(candidate, decoded);
+            junkRatios.put(candidate, CharSoupLanguageDetector.junkRatio(decoded));
         }
 
         CharSoupLanguageDetector langDetector = new CharSoupLanguageDetector();
         Charset bestCharset = langDetector.compareLanguageSignal(candidates);
-        if (bestCharset == null) {
-            bestCharset = firstResult.getCharset();
+        if (bestCharset != null) {
+            context.setArbitrationInfo("scored");
+            return bestCharset;
         }
 
-        context.setArbitrationInfo("scored");
-        return bestCharset;
+        // Language scoring was inconclusive (e.g. short filename, no natural-text signal).
+        // Fall back to the candidate with the lowest junk ratio: if one encoding decodes the
+        // bytes cleanly (no U+FFFD / undefined codepoints) while another produces many
+        // replacement chars, the clean one is structurally more consistent.
+        float minJunk = Float.POSITIVE_INFINITY;
+        Charset leastJunky = null;
+        for (Map.Entry<Charset, Float> e : junkRatios.entrySet()) {
+            if (e.getValue() < minJunk) {
+                minJunk = e.getValue();
+                leastJunky = e.getKey();
+            }
+        }
+        float firstJunk = junkRatios.getOrDefault(firstResult.getCharset(), 1f);
+        if (leastJunky != null && minJunk < firstJunk) {
+            context.setArbitrationInfo("junk-fallback");
+            return leastJunky;
+        }
+
+        context.setArbitrationInfo("inconclusive");
+        return firstResult.getCharset();
     }
 
     private byte[] readBytes(TikaInputStream tis) throws IOException {

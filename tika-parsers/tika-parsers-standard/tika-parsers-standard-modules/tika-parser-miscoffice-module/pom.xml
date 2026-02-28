@@ -31,6 +31,16 @@
 
   <dependencies>
     <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-charset-detectors-core</artifactId>
+      <version>${revision}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-charset-detectors-icu4j</artifactId>
+      <version>${revision}</version>
+    </dependency>
+    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-parser-zip-commons</artifactId>
       <version>${project.version}</version>

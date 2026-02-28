@@ -102,15 +102,21 @@ public class CommonTokenGenerator {
         m.put("azj", "aze");
         m.put("ekk", "est");
         m.put("pes", "fas");
+        m.put("prs", "fas");
         m.put("zsm", "msa");
         m.put("nor", "nob");
         m.put("plt", "mlg");
         m.put("cmn", "zho");
+        m.put("wuu", "zho");
         m.put("lvs", "lav");
         m.put("gug", "grn");
         m.put("quz", "que");
         m.put("swa", "swh");
         m.put("yid", "ydd");
+        m.put("khk", "mon");
+        m.put("uzn", "uzb");
+        m.put("hbs", "srp");
+        m.put("cnr", "srp");
         LANG_MERGE_MAP = Collections.unmodifiableMap(m);
     }
 
@@ -158,7 +164,11 @@ public class CommonTokenGenerator {
                 if (!Files.isDirectory(p)) {
                     continue;
                 }
-                Path sentencesFile = p.resolve("sentences.txt");
+                // Accept sentences.txt (Leipzig) or sentences_madlad.txt (MADLAD)
+                Path sentencesFile = p.resolve("sentences_madlad.txt");
+                if (!Files.isRegularFile(sentencesFile)) {
+                    sentencesFile = p.resolve("sentences.txt");
+                }
                 if (!Files.isRegularFile(sentencesFile)) {
                     continue;
                 }

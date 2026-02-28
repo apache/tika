@@ -252,7 +252,8 @@ public class PDFParserTest extends TikaTest {
                 metadatas.get(1).get(Metadata.CONTENT_TYPE));
         assertImageContentType("image/tiff",
                 metadatas.get(2).get(Metadata.CONTENT_TYPE));
-        assertEquals("text/plain; charset=ISO-8859-1", metadatas.get(3).get(Metadata.CONTENT_TYPE));
+        // ASCII plain text: new ML-based chain correctly returns UTF-8
+        assertEquals("text/plain; charset=UTF-8", metadatas.get(3).get(Metadata.CONTENT_TYPE));
         assertEquals(TYPE_DOC.toString(), metadatas.get(4).get(Metadata.CONTENT_TYPE));
     }
 

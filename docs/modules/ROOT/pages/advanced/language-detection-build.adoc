@@ -24,37 +24,46 @@ xref:advanced/language-detection.adoc[Language Detection].
 
 == Training Corpus
 
-Training data is downloaded from the
-https://wortschatz.uni-leipzig.de/en/download[Leipzig Corpora Collection] using
-`download_corpus.py` (checked into the repository). The script downloads multiple
-corpora per language (preferring 1M, then 300K, 100K sizes), targeting up to
-6 million unique sentences per language. During download, sentences are merged
-across variant language codes and deduplicated in memory so the per-language cap
-applies to unique sentences only.
+Training data is downloaded from
+https://huggingface.co/datasets/allenai/MADLAD-400[MADLAD-400]
+(Magnusson et al., 2023), a massively multilingual web corpus covering 419
+languages derived from Common Crawl. MADLAD is preferred over the Leipzig
+Corpora Collection because it carries a permissive Creative Commons license
+suitable for redistribution with Tika.
+
+The download script `download_madlad.py` (checked into the repository at
+`~/datasets/madlad/`) streams the `_clean_` gzipped JSONL shards directly from
+Hugging Face, splits each web document on newlines into sentence-sized units,
+applies a minimum-length filter (50 characters), and takes the first 500,000
+sentences per language (stopping immediately — no reservoir sampling needed as
+MADLAD shards represent diverse web-crawl data).
 
 [source,bash]
 ----
-python tika-langdetect/tika-langdetect-charsoup/src/test/python/download_corpus.py \
-    ~/datasets/leipzig \
-    --max-per-lang 6000000
+python download_madlad.py ~/datasets/madlad/data
 ----
 
-The 6 million target provides stable frequency estimates for both the language
-model and the common token lists used by `tika-eval`. High-resource languages
-like English require downloading many archives because news corpora have high
-duplication rates.
+The script writes one file per language:
+
+----
+~/datasets/madlad/data/
+    eng/
+        sentences_madlad.txt   (lineNum<TAB>sentence)
+    deu/
+        sentences_madlad.txt
+    ...
+----
+
+MADLAD uses ISO 639-1 two-letter codes for major languages; the script maps
+all of these to ISO 639-3 three-letter codes and renames directories
+accordingly. The 500k-sentence cap provides ample data for both the language
+model (100k used for training) and the common token lists used by `tika-eval`.
 
 === Deduplication
 
-Many Leipzig corpora contain a high proportion of exact-duplicate sentences,
-especially news corpora where the same headlines and wire stories appear in
-multiple archives. Deduplication is performed at two stages:
-
-1. **During download** — the download script deduplicates within each canonical
-   language using Python's built-in `hash()`. This ensures the `--max-per-lang`
-   cap applies to unique sentences.
-2. **During data preparation** — the Java training pipeline applies FNV-1a 64-bit
-   hashing for a more robust second-pass deduplication.
+Deduplication is performed at the Java training-pipeline stage using FNV-1a
+64-bit hashing. Web-crawl data has lower duplication rates than Leipzig news
+corpora, so a single deduplication pass is sufficient.
 
 [[_language_code_merging]]
 === Language Code Merging
@@ -69,65 +78,46 @@ download and training:
 
 | `azj` (North Azerbaijani) | `aze` (Azerbaijani) | Code variant
 | `cmn` (Mandarin Chinese) | `zho` (Chinese) | Code variant
+| `cnr` (Montenegrin) | `srp` (Serbian) | Nearly identical writing system
 | `ekk` (Standard Estonian) | `est` (Estonian) | Code variant
 | `gug` (Paraguayan Guaraní) | `grn` (Guaraní) | Code variant
+| `hbs` (Serbo-Croatian) | `srp` (Serbian) | Umbrella code → canonical
+| `khk` (Halh Mongolian) | `mon` (Mongolian) | Code variant
 | `lvs` (Standard Latvian) | `lav` (Latvian) | Code variant
 | `nor` (Norwegian) | `nob` (Norwegian Bokmål) | Code variant
 | `pes` (Iranian Persian) | `fas` (Persian) | Code variant
 | `plt` (Plateau Malagasy) | `mlg` (Malagasy) | Code variant
+| `prs` (Dari) | `fas` (Persian) | Eastern variety, same written form
 | `quz` (Cusco Quechua) | `que` (Quechua) | Code variant
 | `swa` (Swahili macrolanguage) | `swh` (Coastal Swahili) | Code variant
+| `uzn` (Northern Uzbek) | `uzb` (Uzbek) | Code variant
+| `wuu` (Wu Chinese) | `zho` (Chinese) | Code variant
 | `yid` (Yiddish macrolanguage) | `ydd` (Eastern Yiddish) | Code variant
 | `zsm` (Standard Malay) | `msa` (Malay) | Code variant
 |===
 
 The same merge map is maintained in three places and must be kept in sync:
 
-* `download_corpus.py` — `LANG_MERGE_MAP`
+* `download_madlad.py` — `LANG_MERGE_MAP`
 * `TrainLanguageModel.java` — `LANG_MERGE_MAP`
 * `CommonTokenGenerator.java` — `LANG_MERGE_MAP`
 
-=== Corpus Cleaning: Pashto
+=== Corpus Cleaning
 
-Leipzig web-crawl data for Pashto (`pus`) was found to contain approximately
-18% contamination from Dari, Persian, and Bosnian. These languages share Arabic
-script, so the contamination only becomes apparent at the word/character level.
+Two data-quality issues were identified during development and addressed in
+`CorpusReader.java`:
 
-A filtering script (`filter_pashto.py`) removes sentences that lack any
-Pashto-specific character. The Pashto-unique characters used as the filter are:
+**Breton (`bre`) noise** — approximately 5% of MADLAD Breton sentences were
+French blog posts, identifiable by lines containing three or more consecutive
+tildes (`~~~`), a Common Crawl redaction marker. A filter discards any sentence
+containing this pattern.
 
-[cols="1,1"]
-|===
-| Character | Name
-
-| ښ | Xe
-| ځ | Dze
-| ږ | Zhe
-| ټ | Te (retroflex)
-| ډ | Dal (retroflex)
-| ړ | Re (retroflex)
-| ڼ | Nun (retroflex)
-| ۍ | Ye (feminine)
-|===
-
-These characters do not appear in Dari, Persian, or Urdu. The filter is
-high-precision: some genuine short Pashto sentences are lost, but the remaining
-data is substantially cleaner.
-
-[source,bash]
-----
-python tika-langdetect/tika-langdetect-charsoup/src/test/python/filter_pashto.py \
-    ~/datasets/leipzig
-----
-
-The script rewrites `pus/sentences.txt` in place and saves a backup as
-`sentences.txt.bak`. The cleaned corpus should be used for both language model
-training and common token generation.
-
-Other languages may benefit from similar cleaning in the future. The general
-approach — identifying script-unique characters that distinguish a language from
-its confusable relatives — can be applied to any language where contamination is
-suspected.
+**Dhivehi (`div`) mixed-script headlines** — MADLAD Dhivehi documents
+consistently begin with a Latin-script headline followed by Thaana-script body
+text, separated by a literal `\n` escape sequence. The pipeline splits on this
+separator and treats each segment as a distinct sentence, preventing the Latin
+headline from polluting the Thaana training signal. This raised 20-character
+accuracy from 32.9% to 95.5%.
 
 === Filtering Low-Resource Languages
 
@@ -246,7 +236,12 @@ makes this trivial.
 
 == Training Configuration
 
-* **Hash buckets:** 8,192
+* **Hash buckets:** 16,384
+* **Feature extractor:** `ScriptAwareFeatureExtractor` with character bigrams,
+  skip-bigrams (pairs `(c[i], c[i+2])`), word unigrams, CJK character unigrams,
+  and script-aware boundary detection. Skip-bigrams are omitted for CJK scripts.
+* **Training sentences per language:** up to 100,000 (sampled from the 500k
+  stored per language)
 * **Target epoch total:** 5,000,000 sentences per epoch. A flat cap C is
   found by binary search such that Σ min(n_i, C) ≈ 5M. Languages below
   C contribute all their data; languages above C are uniformly capped,
@@ -256,7 +251,7 @@ makes this trivial.
 * **Within-epoch early stopping:** checkpoint every 200K sentences; stop if
   F1 range over last 5 checkpoints < 0.005
 * **Across-epoch patience:** stop if no improvement for 2 consecutive epochs
-* **JVM:** `-Xmx10g`
+* **JVM:** `-Xmx8g`
 
 === Epoch-Level Resampling
 
@@ -336,15 +331,16 @@ These groups are used in:
 
 == Common Token Lists (tika-eval)
 
-The same Leipzig corpus is used to generate common token frequency lists for
-`tika-eval`. The `CommonTokenGenerator` in `tika-eval-core` applies:
+The same MADLAD corpus is used to generate common token frequency lists for
+`tika-eval`. The `CommonTokenGenerator` in `tika-eval-core` reads
+`sentences_madlad.txt` files and applies:
 
 * `TikaEvalTokenizer` in `COMMON_TOKENS` mode (NFKD normalization, minimum
   length 3, no numbers, no HTML terms)
 * The same language merge map and FNV-1a deduplication as the training pipeline
 
-This ensures consistency between the language model's training data and the
-common token lists.
+The 500k sentences stored per language provide stable frequency estimates for
+the top-30,000 tokens with a minimum document frequency of 10.
 
 [source,bash]
 ----
@@ -352,14 +348,35 @@ java -cp tika-eval/tika-eval-core/target/test-classes:\
 tika-eval/tika-eval-core/target/classes:\
 tika-langdetect/tika-langdetect-charsoup/target/classes \
     org.apache.tika.eval.core.tokens.tools.CommonTokenGenerator \
-    ~/datasets/leipzig \
+    ~/datasets/madlad/data \
     /tmp/common_tokens_new \
     30000 10
 ----
 
 Arguments: `<corpusDir> <outputDir> [topN] [minDocFreq]`
 
-== Current Build: v2
+NOTE: `CommonTokenGenerator` looks for `sentences_madlad.txt` files inside
+each language subdirectory.
+
+== Current Build: v3 (MADLAD, in progress)
+
+v3 is the first build trained entirely on MADLAD-400, replacing the
+Leipzig Corpora Collection used in v1 and v2. MADLAD's permissive license
+makes the training pipeline fully reproducible from publicly available data.
+
+=== v3 Training Configuration
+
+* **Corpus:** MADLAD-400 (500k sentences per language, first-N sampling)
+* **Languages:** ~200 (exact count depends on MADLAD coverage after filtering)
+* **Hash buckets:** 16,384
+* **Feature extractor:** `ScriptAwareFeatureExtractor` — character bigrams,
+  skip-bigrams, word unigrams, CJK character unigrams, script-aware boundaries
+* **Training sentences per language:** up to 100,000
+* **Optimizer:** AdamW (lr=0.001, mini-batch=64) × 2 epochs, then Hogwild!
+  SGD (lr=0.01→0.001) × 6 max epochs
+* **JVM:** `-Xmx8g`
+
+== Historical Build: v2 (Leipzig)
 
 === v2 Training Configuration
 

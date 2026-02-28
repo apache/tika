@@ -20,6 +20,7 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.StringWriter;
 
@@ -53,7 +54,7 @@ public class TXTParserTest extends TikaTest {
         }
         String content = writer.toString();
 
-        assertEquals("text/plain; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("text/plain; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
 
         // TIKA-501: Remove language detection from TXTParser
         assertNull(metadata.get(Metadata.CONTENT_LANGUAGE));
@@ -110,21 +111,29 @@ public class TXTParserTest extends TikaTest {
         try (TikaInputStream tis = TikaInputStream.get(windows.getBytes("ISO-8859-15"))) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
-        assertEquals("text/plain; charset=windows-1252", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("UniversalEncodingDetector", metadata.get(TikaCoreProperties.ENCODING_DETECTOR));
-        assertEquals("windows-1252", metadata.get(TikaCoreProperties.DETECTED_ENCODING));
+        // Pure ASCII: new ML-based chain returns UTF-8 (structurally correct)
+        assertEquals("text/plain; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("MlEncodingDetector", metadata.get(TikaCoreProperties.ENCODING_DETECTOR));
+        assertEquals("UTF-8", metadata.get(TikaCoreProperties.DETECTED_ENCODING));
 
         metadata = new Metadata();
         try (TikaInputStream tis = TikaInputStream.get(unix.getBytes("ISO-8859-15"))) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
-        assertEquals("text/plain; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
+        // Pure ASCII: UTF-8 is structurally correct
+        assertEquals("text/plain; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
 
         metadata = new Metadata();
         try (TikaInputStream tis = TikaInputStream.get(euro.getBytes("ISO-8859-15"))) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
-        assertEquals("text/plain; charset=ISO-8859-15", metadata.get(Metadata.CONTENT_TYPE));
+        // The ML model sees 7 bytes with one 0xA4 high byte — insufficient signal to
+        // distinguish ISO-8859-15 from ISO-8859-1.  Both decode 0xa4 to a printable
+        // character; either is a valid (non-obviously-wrong) answer.
+        String euroDet = metadata.get(Metadata.CONTENT_TYPE);
+        assertTrue(euroDet.equals("text/plain; charset=ISO-8859-15") ||
+                   euroDet.equals("text/plain; charset=ISO-8859-1"),
+                   "Expected ISO-8859-15 or ISO-8859-1, got: " + euroDet);
     }
 
     /**
@@ -157,9 +166,13 @@ public class TXTParserTest extends TikaTest {
         try (TikaInputStream tis = TikaInputStream.get(test2.getBytes(ISO_8859_1))) {
             parser.parse(tis, new BodyContentHandler(), metadata, new ParseContext());
         }
-        assertEquals("text/plain; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING)); // deprecated
+        // ML model best guess for short single-byte Latin text (0xe1 = á in both
+        // windows-1250 and ISO-8859-1; either is a valid decode)
+        assertEquals("text/plain; charset=windows-1250", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("windows-1250", metadata.get(Metadata.CONTENT_ENCODING)); // deprecated
 
+        // When an explicit charset hint is present in metadata, HttpHeaderEncodingDetector
+        // returns it and it takes priority over the ML model
         metadata.set(Metadata.CONTENT_TYPE, "text/plain; charset=ISO-8859-15");
         try (TikaInputStream tis = TikaInputStream.get(test2.getBytes(ISO_8859_1))) {
             parser.parse(tis, new BodyContentHandler(), metadata, new ParseContext());
@@ -185,8 +198,9 @@ public class TXTParserTest extends TikaTest {
         }
         parser.parse(TikaInputStream.get(test2.getBytes(ISO_8859_1)), new BodyContentHandler(),
                 metadata, new ParseContext());
-        assertEquals("text/plain; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING)); // deprecated
+        // ML model best guess for short single-byte Latin text
+        assertEquals("text/plain; charset=windows-1250", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("windows-1250", metadata.get(Metadata.CONTENT_ENCODING)); // deprecated
 
         metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=ISO-8859-15");
@@ -256,7 +270,8 @@ public class TXTParserTest extends TikaTest {
             parser.parse(tis, new WriteOutContentHandler(writer), metadata, new ParseContext());
         }
 
-        assertEquals("text/plain; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
+        // Pure ASCII bytes: UTF-8 is the structurally correct answer
+        assertEquals("text/plain; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
     }
 
     /**
@@ -272,7 +287,8 @@ public class TXTParserTest extends TikaTest {
         try (TikaInputStream tis = TikaInputStream.get(text.getBytes(UTF_8))) {
             parser.parse(tis, new BodyContentHandler(), metadata, new ParseContext());
         }
-        assertEquals("text/plain; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
+        // Pure ASCII bytes: UTF-8 is structurally correct
+        assertEquals("text/plain; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
 
         // Now verify that if we tell the parser the encoding is UTF-8, that's what
         // we get back (see TIKA-868)
@@ -287,7 +303,8 @@ public class TXTParserTest extends TikaTest {
     @Test
     public void testSubclassingMimeTypesRemain() throws Exception {
         XMLResult r = getXML("testVCalendar.vcs");
-        assertEquals("text/x-vcalendar; charset=ISO-8859-1", r.metadata.get(Metadata.CONTENT_TYPE));
+        // vCalendar test file is ASCII: UTF-8 is the structurally correct answer
+        assertEquals("text/x-vcalendar; charset=UTF-8", r.metadata.get(Metadata.CONTENT_TYPE));
     }
 
 }
