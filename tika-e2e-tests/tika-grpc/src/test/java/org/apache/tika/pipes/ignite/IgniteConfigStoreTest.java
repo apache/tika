@@ -62,11 +62,6 @@ import org.apache.tika.SaveFetcherRequest;
 import org.apache.tika.TikaGrpc;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
 
-/**
- * End-to-end test for Ignite ConfigStore.
- * Tests that fetchers saved via gRPC are persisted in Ignite
- * and available in the forked PipesServer process.
- */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Testcontainers
 @Slf4j
@@ -88,9 +83,7 @@ class IgniteConfigStoreTest {
     
     @BeforeAll
     static void setupIgnite() throws Exception {
-        // Clean up any orphaned processes from previous runs
         if (USE_LOCAL_SERVER) {
-            log.info("Cleaning up any orphaned processes from previous runs");
             try {
                 killProcessOnPort(GRPC_PORT);
                 killProcessOnPort(3344);
@@ -100,7 +93,6 @@ class IgniteConfigStoreTest {
             }
         }
         
-        // Load govdocs1 if not already loaded
         if (!TEST_FOLDER.exists() || TEST_FOLDER.listFiles().length == 0) {
             downloadAndUnzipGovdocs1(GOV_DOCS_FROM_IDX, GOV_DOCS_TO_IDX);
         }
@@ -115,11 +107,9 @@ class IgniteConfigStoreTest {
     private static void startLocalGrpcServer() throws Exception {
         log.info("Starting local tika-grpc server using Maven");
         
-        // Find the tika root directory - it should contain both tika-grpc and tika-e2e-tests
         Path currentDir = Path.of("").toAbsolutePath();
         Path tikaRootDir = currentDir;
         
-        // Navigate up to find the directory that contains both tika-grpc and tika-e2e-tests
         while (tikaRootDir != null && 
                !(Files.exists(tikaRootDir.resolve("tika-grpc")) && 
                  Files.exists(tikaRootDir.resolve("tika-e2e-tests")))) {
@@ -137,7 +127,6 @@ class IgniteConfigStoreTest {
             throw new IllegalStateException("Cannot find tika-grpc directory at: " + tikaGrpcDir);
         }
         
-        // Use different config for local vs Docker
         String configFileName = "tika-config-ignite-local.json";
         Path configFile = Path.of("src/test/resources/" + configFileName).toAbsolutePath();
         
@@ -188,10 +177,8 @@ class IgniteConfigStoreTest {
         
         localGrpcProcess = pb.start();
         
-        // Track whether Ignite has started
         final boolean[] igniteStarted = {false};
         
-        // Start a thread to consume and log output, watching for Ignite startup
         Thread logThread = new Thread(() -> {
             try (java.io.BufferedReader reader = new java.io.BufferedReader(
                     new java.io.InputStreamReader(localGrpcProcess.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
@@ -199,7 +186,6 @@ class IgniteConfigStoreTest {
                 while ((line = reader.readLine()) != null) {
                     log.info("tika-grpc: {}", line);
                     
-                    // Look for signs that Ignite has fully started
                     if (line.contains("Ignite server started") ||
                         line.contains("Table") && line.contains("created successfully") ||
                         line.contains("Server started, listening on")) {
@@ -216,9 +202,6 @@ class IgniteConfigStoreTest {
         logThread.setDaemon(true);
         logThread.start();
         
-        // Wait for Ignite to start - check both log messages and gRPC connectivity
-        log.info("Waiting for local gRPC server and Ignite to start (timeout: 180 seconds)...");
-        
         try {
             org.awaitility.Awaitility.await()
                 .atMost(java.time.Duration.ofSeconds(180))
@@ -234,7 +217,6 @@ class IgniteConfigStoreTest {
                         return false;
                     }
                     
-                    // Try to actually test gRPC readiness with a real (lightweight) call
                     try {
                         ManagedChannel testChannel = ManagedChannelBuilder
                             .forAddress("localhost", GRPC_PORT)
@@ -242,7 +224,6 @@ class IgniteConfigStoreTest {
                             .build();
                         
                         try {
-                            // Try to use the health check service
                             io.grpc.health.v1.HealthGrpc.HealthBlockingStub healthStub = 
                                 io.grpc.health.v1.HealthGrpc.newBlockingStub(testChannel)
                                     .withDeadlineAfter(2, TimeUnit.SECONDS);
@@ -312,11 +293,8 @@ class IgniteConfigStoreTest {
             log.info("Stopping local gRPC server and all child processes");
             
             try {
-                // Get the PID of the Maven process
                 long mvnPid = localGrpcProcess.pid();
                 log.info("Maven process PID: {}", mvnPid);
-                
-                // Try graceful shutdown first
                 localGrpcProcess.destroy();
                 
                 if (!localGrpcProcess.waitFor(10, TimeUnit.SECONDS)) {
@@ -325,15 +303,12 @@ class IgniteConfigStoreTest {
                     localGrpcProcess.waitFor(5, TimeUnit.SECONDS);
                 }
                 
-                // Give it a moment for cleanup
                 Thread.sleep(2000);
                 
-                // Kill any remaining child processes by finding processes listening on Ignite/gRPC ports
-                // Only do this if the process is still running
                 try {
-                    killProcessOnPort(GRPC_PORT);  // Kill gRPC server
-                    killProcessOnPort(3344);        // Kill Ignite's internal port
-                    killProcessOnPort(10800);       // Kill Ignite client connector
+                    killProcessOnPort(GRPC_PORT);
+                    killProcessOnPort(3344);
+                    killProcessOnPort(10800);
                 } catch (Exception e) {
                     log.debug("Error killing processes on ports (may already be stopped): {}", e.getMessage());
                 }
@@ -349,7 +324,6 @@ class IgniteConfigStoreTest {
     }
     
     private static void killProcessOnPort(int port) throws IOException, InterruptedException {
-        // Find process listening on the port using lsof
         ProcessBuilder findPb = new ProcessBuilder("lsof", "-ti", ":" + port);
         findPb.redirectErrorStream(true);
         Process findProcess = findPb.start();
@@ -373,7 +347,6 @@ class IgniteConfigStoreTest {
                 Process killProcess = killPb.start();
                 killProcess.waitFor(2, TimeUnit.SECONDS);
                 
-                // If still alive, force kill
                 Thread.sleep(1000);
                 ProcessBuilder forceKillPb = new ProcessBuilder("kill", "-9", String.valueOf(pid));
                 Process forceKillProcess = forceKillPb.start();
@@ -408,9 +381,7 @@ class IgniteConfigStoreTest {
             TikaGrpc.TikaBlockingStub blockingStub = TikaGrpc.newBlockingStub(channel);
             TikaGrpc.TikaStub tikaStub = TikaGrpc.newStub(channel);
 
-            // Create and save the fetcher dynamically
             FileSystemFetcherConfig config = new FileSystemFetcherConfig();
-            // Use local path when running in local mode, Docker path otherwise
             String basePath = USE_LOCAL_SERVER ? TEST_FOLDER.getAbsolutePath() : "/tika/govdocs1";
             config.setBasePath(basePath);
             
@@ -457,7 +428,6 @@ class IgniteConfigStoreTest {
                 }
             });
 
-            // Submit files for parsing - limit to configured number
             int maxDocs = Integer.parseInt(System.getProperty("corpa.numdocs", "-1"));
             log.info("Document limit: {}", maxDocs == -1 ? "unlimited" : maxDocs);
             
@@ -485,7 +455,6 @@ class IgniteConfigStoreTest {
 
             requestStreamObserver.onCompleted();
 
-            // Wait for all parsing to complete
             try {
                 if (!countDownLatch.await(3, TimeUnit.MINUTES)) {
                     log.error("Timed out waiting for parse to complete");
@@ -496,7 +465,6 @@ class IgniteConfigStoreTest {
                 Assertions.fail("Interrupted while waiting for parsing to complete");
             }
             
-            // Verify documents were processed
             if (maxDocs == -1) {
                 assertAllFilesFetched(TEST_FOLDER.toPath(), successes, errors);
             } else {
@@ -512,7 +480,6 @@ class IgniteConfigStoreTest {
             log.info("Ignite ConfigStore test completed successfully - {} successes, {} errors", 
                 successes.size(), errors.size());
         } finally {
-            // Properly shutdown gRPC channel to avoid resource leak
             channel.shutdown();
             try {
                 if (!channel.awaitTermination(5, TimeUnit.SECONDS)) {
@@ -525,7 +492,6 @@ class IgniteConfigStoreTest {
         }
     }
     
-    // Helper method for downloading test data
     private static void downloadAndUnzipGovdocs1(int fromIndex, int toIndex) throws IOException {
         Path targetDir = TEST_FOLDER.toPath();
         Files.createDirectories(targetDir);
@@ -566,7 +532,6 @@ class IgniteConfigStoreTest {
         log.info("Finished downloading and extracting govdocs1 files");
     }
     
-    // Helper method to validate all files were fetched
     private static void assertAllFilesFetched(Path baseDir, List<FetchAndParseReply> successes, 
                                             List<FetchAndParseReply> errors) {
         java.util.Set<String> allFetchKeys = new java.util.HashSet<>();
@@ -600,7 +565,6 @@ class IgniteConfigStoreTest {
         });
     }
     
-    // Helper method to create gRPC channel
     private static ManagedChannel getManagedChannelForIgnite() {
         if (USE_LOCAL_SERVER) {
             return ManagedChannelBuilder

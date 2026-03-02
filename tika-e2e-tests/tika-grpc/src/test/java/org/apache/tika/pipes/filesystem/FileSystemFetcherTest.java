@@ -52,9 +52,7 @@ class FileSystemFetcherTest extends ExternalTestBase {
         TikaGrpc.TikaBlockingStub blockingStub = TikaGrpc.newBlockingStub(channel);
         TikaGrpc.TikaStub tikaStub = TikaGrpc.newStub(channel);
 
-        // Create and save the fetcher dynamically
         FileSystemFetcherConfig config = new FileSystemFetcherConfig();
-        // Use local path when running in local mode, Docker path otherwise  
         boolean useLocalServer = Boolean.parseBoolean(System.getProperty("tika.e2e.useLocalServer", "false"));
         String basePath = useLocalServer ? TEST_FOLDER.getAbsolutePath() : GOV_DOCS_FOLDER;
         config.setBasePath(basePath);
@@ -102,14 +100,9 @@ class FileSystemFetcherTest extends ExternalTestBase {
             }
         });
 
-        // Submit all files for parsing
         int maxDocs = Integer.parseInt(System.getProperty("corpa.numdocs", "-1"));
-        log.info("Document limit: {}", maxDocs == -1 ? "unlimited" : maxDocs);
-        
         try (Stream<Path> paths = Files.walk(TEST_FOLDER.toPath())) {
             Stream<Path> fileStream = paths.filter(Files::isRegularFile);
-            
-            // Limit number of documents if specified
             if (maxDocs > 0) {
                 fileStream = fileStream.limit(maxDocs);
             }
@@ -131,7 +124,6 @@ class FileSystemFetcherTest extends ExternalTestBase {
 
         requestStreamObserver.onCompleted();
 
-        // Wait for all parsing to complete
         try {
             if (!countDownLatch.await(3, TimeUnit.MINUTES)) {
                 log.error("Timed out waiting for parse to complete");
@@ -142,7 +134,6 @@ class FileSystemFetcherTest extends ExternalTestBase {
             Assertions.fail("Interrupted while waiting for parsing to complete");
         }
         
-        // Verify all files were processed (unless we limited the number)
         if (maxDocs == -1) {
             assertAllFilesFetched(TEST_FOLDER.toPath(), successes, errors);
         } else {

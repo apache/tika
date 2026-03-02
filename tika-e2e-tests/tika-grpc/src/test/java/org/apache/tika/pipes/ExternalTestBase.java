@@ -57,10 +57,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import org.apache.tika.FetchAndParseReply;
 
-/**
- * Base class for Tika gRPC end-to-end tests.
- * Can run with either local server (default in CI) or Docker Compose.
- */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Testcontainers
 @Slf4j
@@ -129,7 +125,6 @@ public abstract class ExternalTestBase {
         
         localGrpcProcess = pb.start();
         
-        // Start thread to consume output
         Thread logThread = new Thread(() -> {
             try (BufferedReader reader = new BufferedReader(
                     new InputStreamReader(localGrpcProcess.getInputStream(), StandardCharsets.UTF_8))) {
@@ -144,7 +139,6 @@ public abstract class ExternalTestBase {
         logThread.setDaemon(true);
         logThread.start();
         
-        // Wait for server to be ready
         waitForServerReady();
         
         log.info("Local tika-grpc server started successfully on port {}", GRPC_PORT);
@@ -178,7 +172,6 @@ public abstract class ExternalTestBase {
                     .build();
                 
                 try {
-                    // Try a simple connection
                     testChannel.getState(true);
                     TimeUnit.MILLISECONDS.sleep(100);
                     if (testChannel.getState(false).toString().contains("READY")) {
@@ -190,7 +183,6 @@ public abstract class ExternalTestBase {
                     testChannel.awaitTermination(1, TimeUnit.SECONDS);
                 }
             } catch (Exception e) {
-                // Server not ready yet
             }
             TimeUnit.SECONDS.sleep(1);
         }
@@ -318,7 +310,6 @@ public abstract class ExternalTestBase {
         }
         
         Assertions.assertNotEquals(0, successes.size(), "Should have some successful fetches");
-        // Note: errors.size() can be 0 if all files parse successfully
         log.info("Processed {} files: {} successes, {} errors", allFetchKeys.size(), successes.size(), errors.size());
         Assertions.assertEquals(keysFromGovdocs1, allFetchKeys, () -> {
             Set<String> missing = new HashSet<>(keysFromGovdocs1);
