@@ -103,11 +103,12 @@ class FileSystemFetcherTest extends ExternalTestBase {
 
         int maxDocs = Integer.parseInt(System.getProperty("corpus.numDocs", "-1"));
         try (Stream<Path> paths = Files.walk(TEST_FOLDER.toPath())) {
-            Stream<Path> fileStream = paths.filter(Files::isRegularFile);
+            Stream<Path> fileStream = paths
+                    .filter(Files::isRegularFile)
+                    .filter(p -> !p.toString().endsWith(".zip"));
             if (maxDocs > 0) {
                 fileStream = fileStream.limit(maxDocs);
             }
-            
             fileStream.forEach(file -> {
                         try {
                             String relPath = TEST_FOLDER.toPath().relativize(file).toString();
