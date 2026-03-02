@@ -82,7 +82,9 @@ public class IgniteStoreServer implements AutoCloseable {
                 """;
         Files.writeString(configPath, config);
 
-        node = IgniteServer.builder(nodeName, configPath, workDir).build();
+        node = IgniteServer.builder(nodeName, configPath, workDir)
+                .serviceLoaderClassLoader(Thread.currentThread().getContextClassLoader())
+                .build();
         try {
             node.startAsync().get();
         } catch (ExecutionException e) {

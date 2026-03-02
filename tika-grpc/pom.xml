@@ -649,15 +649,6 @@
                 <argument>--config</argument>
                 <argument>${config.file}</argument>
               </arguments>
-              <jvmArgs>
-                <jvmArg>--add-opens=java.base/java.nio=ALL-UNNAMED</jvmArg>
-                <jvmArg>--add-opens=java.base/sun.nio.ch=ALL-UNNAMED</jvmArg>
-                <jvmArg>--add-opens=java.base/java.lang=ALL-UNNAMED</jvmArg>
-                <jvmArg>--add-opens=java.base/java.util=ALL-UNNAMED</jvmArg>
-                <jvmArg>--add-opens=java.base/java.lang.reflect=ALL-UNNAMED</jvmArg>
-                <jvmArg>--add-opens=java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED</jvmArg>
-                <jvmArg>--add-opens=jdk.management/com.sun.management.internal=ALL-UNNAMED</jvmArg>
-              </jvmArgs>
             </configuration>
           </plugin>
         </plugins>
