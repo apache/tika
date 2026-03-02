@@ -16,7 +16,7 @@ This module contains standalone end-to-end (E2E) tests for various Apache Tika d
 
 - Java 17 or later
 - Maven 3.6 or later
-- Internet connection (for downloading test documents)
+- Internet connection (only when running tests that download external corpora, e.g. with `-Dtika.e2e.useGovdocs=true`)
 - Docker and Docker Compose (only required for Docker Compose mode; not needed for the default local-server mode)
 
 ## Building All E2E Tests
