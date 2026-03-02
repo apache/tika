@@ -16,12 +16,15 @@
  */
 package org.apache.tika.pipes;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -29,6 +32,7 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -100,7 +104,7 @@ public abstract class ExternalTestBase {
         log.info("Using config file: {}", configFile);
         
         String javaHome = System.getProperty("java.home");
-        boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+        boolean isWindows = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win");
         String javaCmd = javaHome + (isWindows ? "\\bin\\java.exe" : "/bin/java");
         String mvnCmd = isWindows ? "mvn.cmd" : "mvn";
         
@@ -127,8 +131,8 @@ public abstract class ExternalTestBase {
         
         // Start thread to consume output
         Thread logThread = new Thread(() -> {
-            try (java.io.BufferedReader reader = new java.io.BufferedReader(
-                    new java.io.InputStreamReader(localGrpcProcess.getInputStream()))) {
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(localGrpcProcess.getInputStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     log.info("tika-grpc: {}", line);
