@@ -94,7 +94,11 @@ class IgniteConfigStoreTest {
         }
         
         if (!TEST_FOLDER.exists() || TEST_FOLDER.listFiles().length == 0) {
-            downloadAndUnzipGovdocs1(GOV_DOCS_FROM_IDX, GOV_DOCS_TO_IDX);
+            if (System.getProperty("govdocs1.fromIndex") != null) {
+                downloadAndUnzipGovdocs1(GOV_DOCS_FROM_IDX, GOV_DOCS_TO_IDX);
+            } else {
+                copyTestFixtures();
+            }
         }
         
         if (USE_LOCAL_SERVER) {
@@ -499,6 +503,24 @@ class IgniteConfigStoreTest {
         }
     }
     
+    private static void copyTestFixtures() throws IOException {
+        Path targetDir = TEST_FOLDER.toPath();
+        Files.createDirectories(targetDir);
+        String[] fixtures = {"sample.txt", "sample.html", "sample.csv", "sample.xml"};
+        for (String fixture : fixtures) {
+            java.net.URL resource = IgniteConfigStoreTest.class.getClassLoader()
+                    .getResource("test-fixtures/" + fixture);
+            if (resource == null) {
+                throw new IllegalStateException("Test fixture not found: test-fixtures/" + fixture);
+            }
+            try (java.io.InputStream in = resource.openStream()) {
+                java.nio.file.Files.copy(in, targetDir.resolve(fixture),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+        }
+        log.info("Copied {} test fixtures to {}", fixtures.length, targetDir);
+    }
+
     private static void downloadAndUnzipGovdocs1(int fromIndex, int toIndex) throws IOException {
         Path targetDir = TEST_FOLDER.toPath();
         Files.createDirectories(targetDir);

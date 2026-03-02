@@ -50,7 +50,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: build
-    if: github.event_name == 'push'
     strategy:
       matrix:
         java: [ '17' ]
@@ -64,4 +63,4 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
       - name: Run E2E Tests
-        run: mvn test -Pe2e -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+        run: mvn clean install -Pe2e -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"

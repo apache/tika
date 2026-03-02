@@ -219,21 +219,44 @@ public abstract class ExternalTestBase {
     }
 
     private static void loadGovdocs1() throws IOException, InterruptedException {
-        int retries = 3;
-        int attempt = 0;
-        while (true) {
-            try {
-                downloadAndUnzipGovdocs1(GOV_DOCS_FROM_IDX, GOV_DOCS_TO_IDX);
-                break;
-            } catch (IOException e) {
-                attempt++;
-                if (attempt >= retries) {
-                    throw e;
+        if (System.getProperty("govdocs1.fromIndex") != null) {
+            // Opt-in: download the actual GovDocs1 corpus when explicitly requested.
+            // Default CI runs use committed test fixtures instead to avoid network dependency.
+            int retries = 3;
+            int attempt = 0;
+            while (true) {
+                try {
+                    downloadAndUnzipGovdocs1(GOV_DOCS_FROM_IDX, GOV_DOCS_TO_IDX);
+                    break;
+                } catch (IOException e) {
+                    attempt++;
+                    if (attempt >= retries) {
+                        throw e;
+                    }
+                    log.warn("Download attempt {} failed, retrying in 10 seconds...", attempt, e);
+                    TimeUnit.SECONDS.sleep(10);
                 }
-                log.warn("Download attempt {} failed, retrying in 10 seconds...", attempt, e);
-                TimeUnit.SECONDS.sleep(10);
+            }
+        } else {
+            copyTestFixtures();
+        }
+    }
+
+    private static void copyTestFixtures() throws IOException {
+        Path targetDir = TEST_FOLDER.toPath();
+        Files.createDirectories(targetDir);
+        String[] fixtures = {"sample.txt", "sample.html", "sample.csv", "sample.xml"};
+        for (String fixture : fixtures) {
+            URL resource = ExternalTestBase.class.getClassLoader()
+                    .getResource("test-fixtures/" + fixture);
+            if (resource == null) {
+                throw new IllegalStateException("Test fixture not found: test-fixtures/" + fixture);
+            }
+            try (InputStream in = resource.openStream()) {
+                Files.copy(in, targetDir.resolve(fixture), StandardCopyOption.REPLACE_EXISTING);
             }
         }
+        log.info("Copied {} test fixtures to {}", fixtures.length, targetDir);
     }
 
     @AfterAll
