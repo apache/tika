@@ -82,7 +82,7 @@ class IgniteConfigStoreTest {
             }
         }
         
-        if (!TEST_FOLDER.exists() || TEST_FOLDER.listFiles().length == 0) {
+        if (!hasExtractedFiles(TEST_FOLDER)) {
             if (Boolean.parseBoolean(System.getProperty("tika.e2e.useGovdocs", "false"))) {
                 ExternalTestBase.downloadAndUnzipGovdocs1(ExternalTestBase.GOV_DOCS_FROM_IDX, ExternalTestBase.GOV_DOCS_TO_IDX);
             } else {
@@ -97,6 +97,15 @@ class IgniteConfigStoreTest {
         }
     }
     
+    /** Returns true only if the folder contains at least one non-zip extracted file. */
+    private static boolean hasExtractedFiles(File folder) {
+        if (!folder.exists()) {
+            return false;
+        }
+        File[] files = folder.listFiles(f -> f.isFile() && !f.getName().endsWith(".zip"));
+        return files != null && files.length > 0;
+    }
+
     private static void startLocalGrpcServer() throws Exception {
         log.info("Starting local tika-grpc server using Maven");
         
