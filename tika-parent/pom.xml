@@ -1204,7 +1204,7 @@
       <dependency>
         <groupId>io.micronaut</groupId>
         <artifactId>micronaut-http-client-core</artifactId>
-        <version>3.10.5</version>
+        <version>4.10.16</version>
       </dependency>
       <dependency>
         <groupId>io.micronaut</groupId>
