@@ -55,7 +55,6 @@
 
         <!-- Other -->
         <lombok.version>1.18.32</lombok.version>
-        <jackson.version>2.18.2</jackson.version>
     </properties>
 
     <modules>

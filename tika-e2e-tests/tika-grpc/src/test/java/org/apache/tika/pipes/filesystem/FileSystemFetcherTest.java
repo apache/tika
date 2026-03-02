@@ -49,6 +49,7 @@ class FileSystemFetcherTest extends ExternalTestBase {
     void testFileSystemFetcher() throws Exception {
         String fetcherId = "defaultFetcher";
         ManagedChannel channel = getManagedChannel();
+        try {
         TikaGrpc.TikaBlockingStub blockingStub = TikaGrpc.newBlockingStub(channel);
         TikaGrpc.TikaStub tikaStub = TikaGrpc.newStub(channel);
 
@@ -147,5 +148,16 @@ class FileSystemFetcherTest extends ExternalTestBase {
         
         log.info("Test completed successfully - {} successes, {} errors", 
             successes.size(), errors.size());
+        } finally {
+            channel.shutdown();
+            try {
+                if (!channel.awaitTermination(5, TimeUnit.SECONDS)) {
+                    channel.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                channel.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 }

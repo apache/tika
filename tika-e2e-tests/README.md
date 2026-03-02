@@ -16,28 +16,28 @@ This module contains standalone end-to-end (E2E) tests for various Apache Tika d
 
 - Java 17 or later
 - Maven 3.6 or later
-- Docker and Docker Compose
 - Internet connection (for downloading test documents)
+- Docker and Docker Compose (only required for Docker Compose mode; not needed for the default local-server mode)
 
 ## Building All E2E Tests
 
 From this directory:
 
 ```bash
-./mvnw clean install
+../mvnw clean install
 ```
 
 ## Running All E2E Tests
 
 ```bash
-./mvnw test
+../mvnw test
 ```
 
 ## Running Specific Test Module
 
 ```bash
 cd tika-grpc
-./mvnw test
+../../mvnw test
 ```
 
 ## Why Standalone?

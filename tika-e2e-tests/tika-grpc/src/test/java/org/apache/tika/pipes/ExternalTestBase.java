@@ -68,7 +68,7 @@ public abstract class ExternalTestBase {
     public static final int GOV_DOCS_FROM_IDX = Integer.parseInt(System.getProperty("govdocs1.fromIndex", "1"));
     public static final int GOV_DOCS_TO_IDX = Integer.parseInt(System.getProperty("govdocs1.toIndex", "1"));
     public static final String DIGITAL_CORPORA_ZIP_FILES_URL = "https://corp.digitalcorpora.org/corpora/files/govdocs1/zipfiles";
-    private static final boolean USE_LOCAL_SERVER = Boolean.parseBoolean(System.getProperty("tika.e2e.useLocalServer", "false"));
+    private static final boolean USE_LOCAL_SERVER = Boolean.parseBoolean(System.getProperty("tika.e2e.useLocalServer", "true"));
     private static final int GRPC_PORT = Integer.parseInt(System.getProperty("tika.e2e.grpcPort", "50052"));
     
     public static DockerComposeContainer<?> composeContainer;
@@ -114,7 +114,7 @@ public abstract class ExternalTestBase {
                 "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED " +
                 "-classpath %classpath " +
                 "org.apache.tika.pipes.grpc.TikaGrpcServer " +
-                "-c " + configFile + " " +
+                "-c \"" + configFile + "\" " +
                 "-p " + GRPC_PORT
         );
         

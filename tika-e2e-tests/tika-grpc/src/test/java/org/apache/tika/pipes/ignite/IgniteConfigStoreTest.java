@@ -166,10 +166,10 @@ class IgniteConfigStoreTest {
                 "--add-opens=java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED " +
                 "--add-opens=jdk.management/com.sun.management.internal=ALL-UNNAMED " +
                 "-Dio.netty.tryReflectionSetAccessible=true " +
-                "-Dignite.work.dir=" + tikaGrpcDir.resolve("target/ignite-work") + " " +
+                "-Dignite.work.dir=\"" + tikaGrpcDir.resolve("target/ignite-work") + "\" " +
                 "-classpath %classpath " +
                 "org.apache.tika.pipes.grpc.TikaGrpcServer " +
-                "-c " + configFile + " " +
+                "-c \"" + configFile + "\" " +
                 "-p " + GRPC_PORT
         );
         
