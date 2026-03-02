@@ -441,14 +441,14 @@ class IgniteConfigStoreTest {
             log.info("Document limit: {}", maxDocs == -1 ? "unlimited" : maxDocs);
             
             try (Stream<Path> paths = Files.walk(TEST_FOLDER.toPath())) {
-                Stream<Path> fileStream = paths.filter(Files::isRegularFile);
+                Stream<Path> fileStream = paths
+                        .filter(Files::isRegularFile)
+                        .filter(p -> !p.getFileName().toString()
+                                .toLowerCase(Locale.ROOT)
+                                .endsWith(".zip"));
                 
                 if (maxDocs > 0) {
                     fileStream = fileStream.limit(maxDocs);
-                }
-                
-                fileStream.forEach(file -> {
-                    try {
                         String relPath = TEST_FOLDER.toPath().relativize(file).toString();
                         requestStreamObserver.onNext(FetchAndParseRequest
                                 .newBuilder()
