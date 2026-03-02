@@ -443,7 +443,7 @@
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>2.0.3</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
-    <tukaani.version>1.11</tukaani.version>
+    <tukaani.version>1.12</tukaani.version>
     <twelvemonkeys.version>3.13.1</twelvemonkeys.version>
     <uimafit.version>3.6.1</uimafit.version>
     <uimaj.core.version>3.6.1</uimaj.core.version>
