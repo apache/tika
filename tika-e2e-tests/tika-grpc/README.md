@@ -45,10 +45,10 @@ By default tests use small committed fixture files. To run against the real GovD
 ../../mvnw test -Dgovdocs1.fromIndex=1 -Dgovdocs1.toIndex=1
 ```
 
-To test with more documents, increase the range or set `corpa.numdocs`:
+To test with more documents, increase the range or set `corpus.numDocs`:
 
 ```bash
-../../mvnw test -Dgovdocs1.fromIndex=1 -Dgovdocs1.toIndex=5 -Dcorpa.numdocs=100
+../../mvnw test -Dgovdocs1.fromIndex=1 -Dgovdocs1.toIndex=5 -Dcorpus.numDocs=100
 ```
 
 ## Test Structure
