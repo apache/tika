@@ -78,7 +78,7 @@
       <dependency>
         <groupId>io.micronaut</groupId>
         <artifactId>micronaut-validation</artifactId>
-        <version>3.10.4</version>
+        <version>3.10.5</version>
       </dependency>
       <dependency>
         <groupId>io.micronaut</groupId>
