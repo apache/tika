@@ -282,17 +282,15 @@ public abstract class ExternalTestBase {
             String zipName = String.format(java.util.Locale.ROOT, "%03d.zip", i);
             String url = DIGITAL_CORPORA_ZIP_FILES_URL + "/" + zipName;
             Path zipPath = targetDir.resolve(zipName);
-            
+
             if (Files.exists(zipPath)) {
                 log.info("{} already exists, skipping download", zipName);
-                continue;
+            } else {
+                log.info("Downloading {} from {}...", zipName, url);
+                try (InputStream in = new URL(url).openStream()) {
+                    Files.copy(in, zipPath, StandardCopyOption.REPLACE_EXISTING);
+                }
             }
-
-            log.info("Downloading {} from {}...", zipName, url);
-            try (InputStream in = new URL(url).openStream()) {
-                Files.copy(in, zipPath, StandardCopyOption.REPLACE_EXISTING);
-            }
-
             log.info("Unzipping {}...", zipName);
             try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zipPath.toFile()))) {
                 ZipEntry entry;
