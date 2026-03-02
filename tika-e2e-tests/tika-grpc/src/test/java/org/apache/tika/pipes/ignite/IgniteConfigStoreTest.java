@@ -66,7 +66,7 @@ import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
 @Testcontainers
 @Slf4j
 @Tag("E2ETest")
-@DisabledOnOs(value = OS.WINDOWS, disabledReason = "Maven not on PATH and Docker/Testcontainers not supported on Windows CI")
+@DisabledOnOs(value = OS.WINDOWS, disabledReason = "Windows classpath length limit (CreateProcess error=206) exceeded by exec:exec with full Tika classpath")
 class IgniteConfigStoreTest {
     
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -75,7 +75,7 @@ class IgniteConfigStoreTest {
     private static final int GOV_DOCS_FROM_IDX = Integer.parseInt(System.getProperty("govdocs1.fromIndex", "1"));
     private static final int GOV_DOCS_TO_IDX = Integer.parseInt(System.getProperty("govdocs1.toIndex", "1"));
     private static final String DIGITAL_CORPORA_ZIP_FILES_URL = "https://corp.digitalcorpora.org/corpora/files/govdocs1/zipfiles";
-    private static final boolean USE_LOCAL_SERVER = Boolean.parseBoolean(System.getProperty("tika.e2e.useLocalServer", "false"));
+    private static final boolean USE_LOCAL_SERVER = Boolean.parseBoolean(System.getProperty("tika.e2e.useLocalServer", "true"));
     private static final int GRPC_PORT = Integer.parseInt(System.getProperty("tika.e2e.grpcPort", "50052"));
     
     private static DockerComposeContainer<?> igniteComposeContainer;

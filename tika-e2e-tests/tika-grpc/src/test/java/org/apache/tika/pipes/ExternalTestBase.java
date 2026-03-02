@@ -55,6 +55,8 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import org.apache.tika.FetchAndParseReply;
+import org.apache.tika.ListFetchersRequest;
+import org.apache.tika.TikaGrpc;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Testcontainers
@@ -164,29 +166,24 @@ public abstract class ExternalTestBase {
     private static void waitForServerReady() throws Exception {
         int maxAttempts = 60;
         for (int i = 0; i < maxAttempts; i++) {
-            try {
-                ManagedChannel testChannel = ManagedChannelBuilder
+            ManagedChannel testChannel = ManagedChannelBuilder
                     .forAddress("localhost", GRPC_PORT)
                     .usePlaintext()
                     .build();
-                
-                try {
-                    testChannel.getState(true);
-                    TimeUnit.MILLISECONDS.sleep(100);
-                    if (testChannel.getState(false).toString().contains("READY")) {
-                        log.info("gRPC server is ready!");
-                        return;
-                    }
-                } finally {
-                    testChannel.shutdown();
-                    testChannel.awaitTermination(1, TimeUnit.SECONDS);
-                }
+            try {
+                TikaGrpc.TikaBlockingStub stub = TikaGrpc.newBlockingStub(testChannel);
+                stub.listFetchers(ListFetchersRequest.newBuilder().build());
+                log.info("gRPC server is ready");
+                return;
             } catch (Exception e) {
-                log.trace("gRPC server not ready yet: {}", e.getMessage());
+                log.trace("gRPC server not ready yet (attempt {}/{}): {}", i + 1, maxAttempts, e.getMessage());
+            } finally {
+                testChannel.shutdown();
+                testChannel.awaitTermination(1, TimeUnit.SECONDS);
             }
             TimeUnit.SECONDS.sleep(1);
         }
-        
+
         if (localGrpcProcess != null && localGrpcProcess.isAlive()) {
             localGrpcProcess.destroyForcibly();
         }
