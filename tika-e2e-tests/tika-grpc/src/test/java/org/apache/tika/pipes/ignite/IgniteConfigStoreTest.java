@@ -458,6 +458,10 @@ class IgniteConfigStoreTest {
                 
                 if (maxDocs > 0) {
                     fileStream = fileStream.limit(maxDocs);
+                }
+
+                fileStream.forEach(file -> {
+                    try {
                         String relPath = TEST_FOLDER.toPath().relativize(file).toString();
                         requestStreamObserver.onNext(FetchAndParseRequest
                                 .newBuilder()
