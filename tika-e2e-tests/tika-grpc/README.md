@@ -39,16 +39,16 @@ This test module validates the functionality of Apache Tika gRPC Server by:
 
 ### Test with the full GovDocs1 corpus (opt-in)
 
-By default tests use small committed fixture files. To run against the real GovDocs1 corpus, set `govdocs1.fromIndex` to trigger a download:
+By default tests use small committed fixture files. To run against the real GovDocs1 corpus, pass `-Dtika.e2e.useGovdocs=true` to trigger a download:
 
 ```bash
-../../mvnw test -Dgovdocs1.fromIndex=1 -Dgovdocs1.toIndex=1
+../../mvnw test -Dtika.e2e.useGovdocs=true
 ```
 
-To test with more documents, increase the range or set `corpus.numDocs`:
+`govdocs1.fromIndex` and `govdocs1.toIndex` control which zip files are downloaded (default: zip 001 only). To fetch a wider range or cap the number of documents parsed:
 
 ```bash
-../../mvnw test -Dgovdocs1.fromIndex=1 -Dgovdocs1.toIndex=5 -Dcorpus.numDocs=100
+../../mvnw test -Dtika.e2e.useGovdocs=true -Dgovdocs1.fromIndex=1 -Dgovdocs1.toIndex=5 -Dcorpus.numDocs=100
 ```
 
 ## Test Structure
