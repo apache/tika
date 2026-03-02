@@ -37,7 +37,8 @@
 
     <properties>
         <!-- Use local server mode by default in CI (faster, no Docker required) -->
-        <!-- Override with -Dtika.e2e.useLocalServer=false to use Docker -->
+        <govdocs1.fromIndex>1</govdocs1.fromIndex>
+        <govdocs1.toIndex>1</govdocs1.toIndex>
         <tika.e2e.useLocalServer>true</tika.e2e.useLocalServer>
         <corpa.numdocs>2</corpa.numdocs>
     </properties>
@@ -136,8 +137,8 @@
                         <include>**/*Test.java</include>
                     </includes>
                     <systemPropertyVariables>
-                        <govdocs1.fromIndex>1</govdocs1.fromIndex>
-                        <govdocs1.toIndex>1</govdocs1.toIndex>
+                        <govdocs1.fromIndex>${govdocs1.fromIndex}</govdocs1.fromIndex>
+                        <govdocs1.toIndex>${govdocs1.toIndex}</govdocs1.toIndex>
                         <tika.e2e.useLocalServer>${tika.e2e.useLocalServer}</tika.e2e.useLocalServer>
                         <corpa.numdocs>${corpa.numdocs}</corpa.numdocs>
                     </systemPropertyVariables>

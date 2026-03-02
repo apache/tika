@@ -34,7 +34,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -102,7 +101,7 @@ public abstract class ExternalTestBase {
         String javaHome = System.getProperty("java.home");
         boolean isWindows = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win");
         String javaCmd = javaHome + (isWindows ? "\\bin\\java.exe" : "/bin/java");
-        String mvnCmd = isWindows ? "mvn.cmd" : "mvn";
+        String mvnCmd = tikaGrpcDir.getParent().resolve(isWindows ? "mvnw.cmd" : "mvnw").toString();
         
         ProcessBuilder pb = new ProcessBuilder(
             mvnCmd,
@@ -183,6 +182,7 @@ public abstract class ExternalTestBase {
                     testChannel.awaitTermination(1, TimeUnit.SECONDS);
                 }
             } catch (Exception e) {
+                log.trace("gRPC server not ready yet: {}", e.getMessage());
             }
             TimeUnit.SECONDS.sleep(1);
         }
@@ -196,8 +196,17 @@ public abstract class ExternalTestBase {
     private static void startDockerGrpcServer() {
         log.info("Starting Docker Compose tika-grpc server");
         
-        composeContainer = new DockerComposeContainer<>(
-                new File("src/test/resources/docker-compose.yml"))
+        String composeFilePath = System.getProperty("tika.docker.compose.file");
+        if (composeFilePath == null || composeFilePath.isBlank()) {
+            throw new IllegalStateException(
+                    "Docker Compose mode requires system property 'tika.docker.compose.file' " +
+                    "pointing to a valid docker-compose.yml file.");
+        }
+        File composeFile = new File(composeFilePath);
+        if (!composeFile.isFile()) {
+            throw new IllegalStateException("Docker Compose file not found: " + composeFile.getAbsolutePath());
+        }
+        composeContainer = new DockerComposeContainer<>(composeFile)
                 .withEnv("HOST_GOVDOCS1_DIR", TEST_FOLDER.getAbsolutePath())
                 .withStartupTimeout(Duration.of(MAX_STARTUP_TIMEOUT, ChronoUnit.SECONDS))
                 .withExposedService("tika-grpc", 50052, 
@@ -323,15 +332,13 @@ public abstract class ExternalTestBase {
             return ManagedChannelBuilder
                     .forAddress("localhost", GRPC_PORT)
                     .usePlaintext()
-                    .executor(Executors.newCachedThreadPool())
                     .maxInboundMessageSize(160 * 1024 * 1024)
                     .build();
         } else {
             return ManagedChannelBuilder
-                    .forAddress(composeContainer.getServiceHost("tika-grpc", 50052), 
+                    .forAddress(composeContainer.getServiceHost("tika-grpc", 50052),
                                composeContainer.getServicePort("tika-grpc", 50052))
                     .usePlaintext()
-                    .executor(Executors.newCachedThreadPool())
                     .maxInboundMessageSize(160 * 1024 * 1024)
                     .build();
         }

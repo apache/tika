@@ -30,8 +30,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -140,10 +140,12 @@ class IgniteConfigStoreTest {
         
         // Use mvn exec:exec to run as external process (not exec:java which breaks ServiceLoader)
         String javaHome = System.getProperty("java.home");
-        String javaCmd = javaHome + "/bin/java";
+        boolean isWindows = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win");
+        String javaCmd = javaHome + (isWindows ? "\\bin\\java.exe" : "/bin/java");
+        String mvnCmd = tikaRootDir.resolve(isWindows ? "mvnw.cmd" : "mvnw").toString();
         
         ProcessBuilder pb = new ProcessBuilder(
-            "mvn",
+            mvnCmd,
             "exec:exec",
             "-Dexec.executable=" + javaCmd,
             "-Dexec.args=" +
@@ -272,19 +274,24 @@ class IgniteConfigStoreTest {
     
     
     private static void startDockerGrpcServer() {
-        log.info("Starting Docker Compose tika-grpc server");
-        
-        igniteComposeContainer = new DockerComposeContainer<>(
-                new File("src/test/resources/docker-compose-ignite.yml"))
+        String composeFilePath = System.getProperty("tika.docker.compose.ignite.file");
+        if (composeFilePath == null || composeFilePath.isBlank()) {
+            throw new IllegalStateException(
+                    "Docker Compose mode requires system property 'tika.docker.compose.ignite.file' " +
+                    "pointing to a valid docker-compose-ignite.yml file.");
+        }
+        File composeFile = new File(composeFilePath);
+        if (!composeFile.isFile()) {
+            throw new IllegalStateException("Docker Compose file not found: " + composeFile.getAbsolutePath());
+        }
+        igniteComposeContainer = new DockerComposeContainer<>(composeFile)
                 .withEnv("HOST_GOVDOCS1_DIR", TEST_FOLDER.getAbsolutePath())
                 .withStartupTimeout(Duration.of(MAX_STARTUP_TIMEOUT, ChronoUnit.SECONDS))
-                .withExposedService("tika-grpc", 50052, 
+                .withExposedService("tika-grpc", 50052,
                     Wait.forLogMessage(".*Server started.*\\n", 1))
                 .withLogConsumer("tika-grpc", new Slf4jLogConsumer(log));
         
         igniteComposeContainer.start();
-        
-        log.info("Ignite Docker Compose containers started successfully");
     }
     
     @AfterAll
@@ -570,15 +577,13 @@ class IgniteConfigStoreTest {
             return ManagedChannelBuilder
                     .forAddress("localhost", GRPC_PORT)
                     .usePlaintext()
-                    .executor(Executors.newCachedThreadPool())
                     .maxInboundMessageSize(160 * 1024 * 1024)
                     .build();
         } else {
             return ManagedChannelBuilder
-                    .forAddress(igniteComposeContainer.getServiceHost("tika-grpc", 50052), 
+                    .forAddress(igniteComposeContainer.getServiceHost("tika-grpc", 50052),
                                igniteComposeContainer.getServicePort("tika-grpc", 50052))
                     .usePlaintext()
-                    .executor(Executors.newCachedThreadPool())
                     .maxInboundMessageSize(160 * 1024 * 1024)
                     .build();
         }

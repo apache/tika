@@ -53,7 +53,7 @@ class FileSystemFetcherTest extends ExternalTestBase {
         TikaGrpc.TikaStub tikaStub = TikaGrpc.newStub(channel);
 
         FileSystemFetcherConfig config = new FileSystemFetcherConfig();
-        boolean useLocalServer = Boolean.parseBoolean(System.getProperty("tika.e2e.useLocalServer", "false"));
+        boolean useLocalServer = Boolean.parseBoolean(System.getProperty("tika.e2e.useLocalServer", "true"));
         String basePath = useLocalServer ? TEST_FOLDER.getAbsolutePath() : GOV_DOCS_FOLDER;
         config.setBasePath(basePath);
         

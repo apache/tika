@@ -43,7 +43,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!-- Tika version -->
-        <tika.version>4.0.0-SNAPSHOT</tika.version>
+        <tika.version>${revision}</tika.version>
 
         <!-- Test dependencies -->
         <junit.version>5.11.4</junit.version>
