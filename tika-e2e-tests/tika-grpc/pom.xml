@@ -40,7 +40,8 @@
         <govdocs1.fromIndex>1</govdocs1.fromIndex>
         <govdocs1.toIndex>1</govdocs1.toIndex>
         <tika.e2e.useLocalServer>true</tika.e2e.useLocalServer>
-        <corpa.numdocs>2</corpa.numdocs>
+        <tika.e2e.useGovdocs>false</tika.e2e.useGovdocs>
+        <corpus.numDocs>2</corpus.numDocs>
     </properties>
 
     <dependencies>
@@ -140,7 +141,8 @@
                         <govdocs1.fromIndex>${govdocs1.fromIndex}</govdocs1.fromIndex>
                         <govdocs1.toIndex>${govdocs1.toIndex}</govdocs1.toIndex>
                         <tika.e2e.useLocalServer>${tika.e2e.useLocalServer}</tika.e2e.useLocalServer>
-                        <corpa.numdocs>${corpa.numdocs}</corpa.numdocs>
+                        <tika.e2e.useGovdocs>${tika.e2e.useGovdocs}</tika.e2e.useGovdocs>
+                        <corpus.numDocs>${corpus.numDocs}</corpus.numDocs>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
@@ -166,6 +168,8 @@
                         <inputExclude>**/README*.md</inputExclude>
                         <inputExclude>src/test/resources/docker-compose*.yml</inputExclude>
                         <inputExclude>src/test/resources/log4j2.xml</inputExclude>
+                        <inputExclude>src/test/resources/tika-config*.json</inputExclude>
+                        <inputExclude>src/test/resources/test-fixtures/**</inputExclude>
                     </inputExcludes>
                 </configuration>
             </plugin>

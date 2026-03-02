@@ -216,9 +216,9 @@ public abstract class ExternalTestBase {
     }
 
     private static void loadGovdocs1() throws IOException, InterruptedException {
-        if (System.getProperty("govdocs1.fromIndex") != null) {
-            // Opt-in: download the actual GovDocs1 corpus when explicitly requested.
-            // Default CI runs use committed test fixtures instead to avoid network dependency.
+        if (Boolean.parseBoolean(System.getProperty("tika.e2e.useGovdocs", "false"))) {
+            // Opt-in: download the actual GovDocs1 corpus when explicitly requested via -Dtika.e2e.useGovdocs=true.
+            // Default CI runs use committed test fixtures to avoid any network dependency.
             int retries = 3;
             int attempt = 0;
             while (true) {
@@ -239,7 +239,7 @@ public abstract class ExternalTestBase {
         }
     }
 
-    private static void copyTestFixtures() throws IOException {
+    public static void copyTestFixtures() throws IOException {
         Path targetDir = TEST_FOLDER.toPath();
         Files.createDirectories(targetDir);
         String[] fixtures = {"sample.txt", "sample.html", "sample.csv", "sample.xml"};

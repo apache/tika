@@ -101,7 +101,7 @@ class FileSystemFetcherTest extends ExternalTestBase {
             }
         });
 
-        int maxDocs = Integer.parseInt(System.getProperty("corpa.numdocs", "-1"));
+        int maxDocs = Integer.parseInt(System.getProperty("corpus.numDocs", "-1"));
         try (Stream<Path> paths = Files.walk(TEST_FOLDER.toPath())) {
             Stream<Path> fileStream = paths.filter(Files::isRegularFile);
             if (maxDocs > 0) {

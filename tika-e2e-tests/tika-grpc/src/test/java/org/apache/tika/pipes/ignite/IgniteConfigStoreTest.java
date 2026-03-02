@@ -17,14 +17,9 @@
 package org.apache.tika.pipes.ignite;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -34,10 +29,7 @@ import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -60,6 +52,7 @@ import org.apache.tika.FetchAndParseRequest;
 import org.apache.tika.SaveFetcherReply;
 import org.apache.tika.SaveFetcherRequest;
 import org.apache.tika.TikaGrpc;
+import org.apache.tika.pipes.ExternalTestBase;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -69,12 +62,8 @@ import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
 @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Windows classpath length limit (CreateProcess error=206) exceeded by exec:exec with full Tika classpath")
 class IgniteConfigStoreTest {
     
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final int MAX_STARTUP_TIMEOUT = 120;
-    private static final File TEST_FOLDER = new File("target", "govdocs1");
-    private static final int GOV_DOCS_FROM_IDX = Integer.parseInt(System.getProperty("govdocs1.fromIndex", "1"));
-    private static final int GOV_DOCS_TO_IDX = Integer.parseInt(System.getProperty("govdocs1.toIndex", "1"));
-    private static final String DIGITAL_CORPORA_ZIP_FILES_URL = "https://corp.digitalcorpora.org/corpora/files/govdocs1/zipfiles";
+    private static final int MAX_STARTUP_TIMEOUT = ExternalTestBase.MAX_STARTUP_TIMEOUT;
+    private static final File TEST_FOLDER = ExternalTestBase.TEST_FOLDER;
     private static final boolean USE_LOCAL_SERVER = Boolean.parseBoolean(System.getProperty("tika.e2e.useLocalServer", "true"));
     private static final int GRPC_PORT = Integer.parseInt(System.getProperty("tika.e2e.grpcPort", "50052"));
     
@@ -94,10 +83,10 @@ class IgniteConfigStoreTest {
         }
         
         if (!TEST_FOLDER.exists() || TEST_FOLDER.listFiles().length == 0) {
-            if (System.getProperty("govdocs1.fromIndex") != null) {
-                downloadAndUnzipGovdocs1(GOV_DOCS_FROM_IDX, GOV_DOCS_TO_IDX);
+            if (Boolean.parseBoolean(System.getProperty("tika.e2e.useGovdocs", "false"))) {
+                ExternalTestBase.downloadAndUnzipGovdocs1(ExternalTestBase.GOV_DOCS_FROM_IDX, ExternalTestBase.GOV_DOCS_TO_IDX);
             } else {
-                copyTestFixtures();
+                ExternalTestBase.copyTestFixtures();
             }
         }
         
@@ -346,13 +335,22 @@ class IgniteConfigStoreTest {
                 long pid = Long.parseLong(pidStr.trim());
                 long myPid = ProcessHandle.current().pid();
                 
-                // Don't kill ourselves or our parent
                 if (pid == myPid || isParentProcess(pid)) {
                     log.debug("Skipping kill of PID {} on port {} (test process or parent)", pid, port);
                     return;
                 }
                 
-                log.info("Found process {} listening on port {}, killing it", pid, port);
+                // Only kill processes we can identify as tika-grpc or Ignite instances to avoid
+                // accidentally killing unrelated processes that happen to be on the same port.
+                String cmdLine = ProcessHandle.of(pid)
+                        .flatMap(h -> h.info().commandLine())
+                        .orElse("");
+                if (!cmdLine.contains("tika") && !cmdLine.contains("TikaGrpc") && !cmdLine.contains("ignite")) {
+                    log.debug("Skipping kill of PID {} on port {} — not a tika/ignite process: {}", pid, port, cmdLine);
+                    return;
+                }
+                
+                log.info("Found tika/ignite process {} on port {}, killing it", pid, port);
                 
                 ProcessBuilder killPb = new ProcessBuilder("kill", String.valueOf(pid));
                 Process killProcess = killPb.start();
@@ -396,7 +394,7 @@ class IgniteConfigStoreTest {
             String basePath = USE_LOCAL_SERVER ? TEST_FOLDER.getAbsolutePath() : "/tika/govdocs1";
             config.setBasePath(basePath);
             
-            String configJson = OBJECT_MAPPER.writeValueAsString(config);
+            String configJson = ExternalTestBase.OBJECT_MAPPER.writeValueAsString(config);
             log.info("Creating fetcher with Ignite ConfigStore (basePath={}): {}", basePath, configJson);
             
             SaveFetcherReply saveReply = blockingStub.saveFetcher(SaveFetcherRequest
@@ -439,7 +437,7 @@ class IgniteConfigStoreTest {
                 }
             });
 
-            int maxDocs = Integer.parseInt(System.getProperty("corpa.numdocs", "-1"));
+            int maxDocs = Integer.parseInt(System.getProperty("corpus.numDocs", "-1"));
             log.info("Document limit: {}", maxDocs == -1 ? "unlimited" : maxDocs);
             
             try (Stream<Path> paths = Files.walk(TEST_FOLDER.toPath())) {
@@ -477,7 +475,7 @@ class IgniteConfigStoreTest {
             }
             
             if (maxDocs == -1) {
-                assertAllFilesFetched(TEST_FOLDER.toPath(), successes, errors);
+                ExternalTestBase.assertAllFilesFetched(TEST_FOLDER.toPath(), successes, errors);
             } else {
                 int totalProcessed = successes.size() + errors.size();
                 log.info("Processed {} documents with Ignite ConfigStore (limit was {})", 
@@ -501,97 +499,6 @@ class IgniteConfigStoreTest {
                 Thread.currentThread().interrupt();
             }
         }
-    }
-    
-    private static void copyTestFixtures() throws IOException {
-        Path targetDir = TEST_FOLDER.toPath();
-        Files.createDirectories(targetDir);
-        String[] fixtures = {"sample.txt", "sample.html", "sample.csv", "sample.xml"};
-        for (String fixture : fixtures) {
-            java.net.URL resource = IgniteConfigStoreTest.class.getClassLoader()
-                    .getResource("test-fixtures/" + fixture);
-            if (resource == null) {
-                throw new IllegalStateException("Test fixture not found: test-fixtures/" + fixture);
-            }
-            try (java.io.InputStream in = resource.openStream()) {
-                java.nio.file.Files.copy(in, targetDir.resolve(fixture),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            }
-        }
-        log.info("Copied {} test fixtures to {}", fixtures.length, targetDir);
-    }
-
-    private static void downloadAndUnzipGovdocs1(int fromIndex, int toIndex) throws IOException {
-        Path targetDir = TEST_FOLDER.toPath();
-        Files.createDirectories(targetDir);
-
-        for (int i = fromIndex; i <= toIndex; i++) {
-            String zipName = String.format(java.util.Locale.ROOT, "%03d.zip", i);
-            String url = DIGITAL_CORPORA_ZIP_FILES_URL + "/" + zipName;
-            Path zipPath = targetDir.resolve(zipName);
-            
-            if (Files.exists(zipPath)) {
-                log.info("{} already exists, skipping download", zipName);
-                continue;
-            }
-
-            log.info("Downloading {} from {}...", zipName, url);
-            try (InputStream in = new URL(url).openStream()) {
-                Files.copy(in, zipPath, StandardCopyOption.REPLACE_EXISTING);
-            }
-
-            log.info("Unzipping {}...", zipName);
-            try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zipPath.toFile()))) {
-                ZipEntry entry;
-                while ((entry = zis.getNextEntry()) != null) {
-                    Path outPath = targetDir.resolve(entry.getName());
-                    if (entry.isDirectory()) {
-                        Files.createDirectories(outPath);
-                    } else {
-                        Files.createDirectories(outPath.getParent());
-                        try (OutputStream out = Files.newOutputStream(outPath)) {
-                            zis.transferTo(out);
-                        }
-                    }
-                    zis.closeEntry();
-                }
-            }
-        }
-        
-        log.info("Finished downloading and extracting govdocs1 files");
-    }
-    
-    private static void assertAllFilesFetched(Path baseDir, List<FetchAndParseReply> successes, 
-                                            List<FetchAndParseReply> errors) {
-        java.util.Set<String> allFetchKeys = new java.util.HashSet<>();
-        for (FetchAndParseReply reply : successes) {
-            allFetchKeys.add(reply.getFetchKey());
-        }
-        for (FetchAndParseReply reply : errors) {
-            allFetchKeys.add(reply.getFetchKey());
-        }
-        
-        java.util.Set<String> keysFromGovdocs1 = new java.util.HashSet<>();
-        try (Stream<Path> paths = Files.walk(baseDir)) {
-            paths.filter(Files::isRegularFile)
-                    .forEach(file -> {
-                        String relPath = baseDir.relativize(file).toString();
-                        if (java.util.regex.Pattern.compile("\\d{3}\\.zip").matcher(relPath).find()) {
-                            return;
-                        }
-                        keysFromGovdocs1.add(relPath);
-                    });
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        
-        Assertions.assertNotEquals(0, successes.size(), "Should have some successful fetches");
-        log.info("Processed {} files: {} successes, {} errors", allFetchKeys.size(), successes.size(), errors.size());
-        Assertions.assertEquals(keysFromGovdocs1, allFetchKeys, () -> {
-            java.util.Set<String> missing = new java.util.HashSet<>(keysFromGovdocs1);
-            missing.removeAll(allFetchKeys);
-            return "Missing fetch keys: " + missing;
-        });
     }
     
     private static ManagedChannel getManagedChannelForIgnite() {
