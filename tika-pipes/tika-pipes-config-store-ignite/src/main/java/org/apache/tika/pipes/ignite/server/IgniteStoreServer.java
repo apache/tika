@@ -50,7 +50,8 @@ public class IgniteStoreServer implements AutoCloseable {
     public IgniteStoreServer(String tableName, String nodeName) {
         this.tableName = tableName;
         this.nodeName = nodeName;
-        this.workDir = Paths.get(System.getProperty("ignite.work.dir", "/var/cache/tika/ignite-work"));
+        this.workDir = Paths.get(System.getProperty("ignite.work.dir",
+                System.getProperty("java.io.tmpdir") + "/tika-ignite-work"));
     }
 
     /**
