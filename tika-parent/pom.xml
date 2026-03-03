@@ -438,7 +438,7 @@
     <slf4j.version>2.0.17</slf4j.version>
     <sis.version>1.6</sis.version>
     <snappy.version>1.1.10.8</snappy.version>
-    <solrj.version>9.10.0</solrj.version>
+    <solrj.version>9.10.1</solrj.version>
     <spring.version>7.0.5</spring.version>
     <sqlite.version>3.51.2.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
@@ -1564,7 +1564,7 @@
       <plugin>
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>
-        <version>3.2.1</version>
+        <version>3.3.0</version>
         <configuration>
           <java>
             <includes>
