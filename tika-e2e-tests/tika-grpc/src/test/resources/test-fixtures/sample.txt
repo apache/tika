@@ -1,0 +1,3 @@
+This is a sample plain text document used by the tika-grpc e2e tests.
+It contains several lines so the parser has something to work with.
+Apache Tika extracts text and metadata from a wide variety of document formats.

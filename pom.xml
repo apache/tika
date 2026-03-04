@@ -61,6 +61,12 @@
 
   <profiles>
     <profile>
+      <id>e2e</id>
+      <modules>
+        <module>tika-e2e-tests</module>
+      </modules>
+    </profile>
+    <profile>
       <id>apache-release</id>
       <modules>
         <module>docs</module>
