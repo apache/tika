@@ -85,11 +85,15 @@ public class PluginsWriter {
             }
 
             // Set plugin-roots
-            String pluginString = StringUtils.isBlank(simpleAsyncConfig.getPluginsDir()) ?
-                    "plugins" : simpleAsyncConfig.getPluginsDir();
-            Path plugins = Paths.get(pluginString);
-            if (Files.isDirectory(plugins)) {
-                pluginString = plugins.toAbsolutePath().toString();
+            String pluginString;
+            if (!StringUtils.isBlank(simpleAsyncConfig.getPluginsDir())) {
+                pluginString = simpleAsyncConfig.getPluginsDir();
+                Path plugins = Paths.get(pluginString);
+                if (Files.isDirectory(plugins)) {
+                    pluginString = plugins.toAbsolutePath().toString();
+                }
+            } else {
+                pluginString = TikaAsyncCLI.resolveDefaultPluginsDir();
             }
             root.put("plugin-roots", pluginString);
 
@@ -98,7 +102,11 @@ public class PluginsWriter {
             pipesConfig.setNumClients(simpleAsyncConfig.getNumClients() == null ?
                     2 : simpleAsyncConfig.getNumClients());
             if (simpleAsyncConfig.getXmx() != null) {
-                pipesConfig.setForkedJvmArgs(new ArrayList<>(List.of(simpleAsyncConfig.getXmx())));
+                String xmx = simpleAsyncConfig.getXmx();
+                if (!xmx.startsWith("-")) {
+                    xmx = "-Xmx" + xmx;
+                }
+                pipesConfig.setForkedJvmArgs(new ArrayList<>(List.of(xmx)));
             }
             if (simpleAsyncConfig.isContentOnly()) {
                 pipesConfig.setParseMode(ParseMode.CONTENT_ONLY);

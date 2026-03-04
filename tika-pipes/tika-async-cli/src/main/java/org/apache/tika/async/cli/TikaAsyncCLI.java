@@ -64,7 +64,7 @@ public class TikaAsyncCLI {
         options.addOption("i", "inputDir", true, "input directory");
         options.addOption("o", "outputDir", true, "output directory");
         options.addOption("n", "numClients", true, "number of forked clients");
-        options.addOption("X", "Xmx", true, "heap for the forked clients in usual jvm heap amount, e.g. -X 1g");
+        options.addOption(null, "Xmx", true, "heap for the forked clients, e.g. --Xmx 1g");
         options.addOption("?", "help", false, "this help message");
         options.addOption("T", "timeoutMs", true, "timeout for each parse in milliseconds");
         options.addOption("h", "handlerType", true, "handler type: t=text, h=html, x=xml, m=markdown, b=body, i=ignore");
@@ -196,8 +196,8 @@ public class TikaAsyncCLI {
         if (line.hasOption("o")) {
             outputDir = line.getOptionValue("o");
         }
-        if (line.hasOption("X")) {
-            xmx = line.getOptionValue("X");
+        if (line.hasOption("Xmx")) {
+            xmx = line.getOptionValue("Xmx");
         }
         if (line.hasOption("T")) {
             timeoutMs = Long.parseLong(line.getOptionValue("T"));
@@ -392,6 +392,33 @@ public class TikaAsyncCLI {
     private static final String DEFAULT_PLUGINS_DIR = "plugins";
 
     /**
+     * Resolves the default plugins directory. Looks for a "plugins" directory
+     * next to the running jar first, then falls back to the current working directory.
+     *
+     * @return the resolved plugins directory path, or "plugins" if neither location exists
+     */
+    static String resolveDefaultPluginsDir() {
+        try {
+            Path jarPath = Paths.get(
+                    TikaAsyncCLI.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+            Path jarDir = jarPath.getParent();
+            if (jarDir != null) {
+                Path pluginsNextToJar = jarDir.resolve(DEFAULT_PLUGINS_DIR);
+                if (Files.isDirectory(pluginsNextToJar)) {
+                    return pluginsNextToJar.toAbsolutePath().toString();
+                }
+            }
+        } catch (Exception e) {
+            // Fall through to cwd-relative
+        }
+        Path cwdPlugins = Paths.get(DEFAULT_PLUGINS_DIR);
+        if (Files.isDirectory(cwdPlugins)) {
+            return cwdPlugins.toAbsolutePath().toString();
+        }
+        return DEFAULT_PLUGINS_DIR;
+    }
+
+    /**
      * Ensures plugin-roots is set in the config. If missing, creates a merged config
      * with a default plugin-roots value.
      *
@@ -410,10 +437,13 @@ public class TikaAsyncCLI {
 
         // Need to add plugin-roots
         ObjectNode mutableRoot = (ObjectNode) rootNode;
-        String pluginString = StringUtils.isBlank(pluginsDir) ? DEFAULT_PLUGINS_DIR : pluginsDir;
-        Path plugins = Paths.get(pluginString);
-        if (Files.isDirectory(plugins)) {
-            pluginString = plugins.toAbsolutePath().toString();
+        String pluginString;
+        if (!StringUtils.isBlank(pluginsDir)) {
+            Path plugins = Paths.get(pluginsDir);
+            pluginString = Files.isDirectory(plugins) ?
+                    plugins.toAbsolutePath().toString() : pluginsDir;
+        } else {
+            pluginString = resolveDefaultPluginsDir();
         }
         mutableRoot.put("plugin-roots", pluginString);
 
