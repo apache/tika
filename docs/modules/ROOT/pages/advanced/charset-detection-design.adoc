@@ -1,0 +1,275 @@
+= Charset Detection: Design Decisions
+:toc:
+:toc-placement: left
+
+Working document tracking design decisions for the ML-based charset detection
+pipeline (`tika-ml-chardetect`). Updated as decisions are made.
+
+== Goals
+
+Replace the existing ICU4J and Universal (juniversalchardet) heuristic detectors
+with a trainable ML model that generalises across more encodings and languages,
+while preserving the existing `CharSoupEncodingDetector` arbitration mechanism
+and the `EncodingDetector` chain architecture.
+
+== Evaluation Results
+
+The ML detector was evaluated against the ICU4J and juniversalchardet baselines
+using `EvalCharsetDetectors` on the MadLAD-derived test corpus.
+Results justified removing ICU4J and Universal from the default detection chain.
+
+[NOTE]
+====
+TODO: Paste the `EvalCharsetDetectors` output table here after re-running with
+the final `chardetect.bin` model.  Run:
+
+  mvn test -pl tika-ml/tika-ml-chardetect \
+    -Dtest=EvalCharsetDetectors -DfailIfNoTests=false \
+    -Dcorpus=/path/to/eval-corpus
+
+Capture the per-encoding accuracy table and the summary line (overall accuracy,
+top-1 and top-3), and paste below.
+====
+
+== Architecture
+
+=== Module structure
+
+Encoding detectors now live in `tika-encoding-detectors/`, a dedicated parent
+module at the project root (peer to `tika-parsers`, `tika-detectors`, etc.):
+
+|===
+| Module | Detector(s) | SPI-loaded | Notes
+
+| `tika-core`
+| `WideUnicodeDetector`, `BOMDetector`
+| `WideUnicodeDetector` yes; `BOMDetector` no
+| No extra dependencies; always available
+
+| `tika-encoding-detector-ml`
+| `MojibusterEncodingDetector`
+| yes (default)
+| ML byte-ngram model; replaces ICU4J + Universal
+
+| `tika-encoding-detector-html`
+| `HtmlEncodingDetector`, `StandardHtmlEncodingDetector`
+| `HtmlEncodingDetector` yes; `Standard...` no
+| HTML `<meta>` charset extraction
+
+| `tika-encoding-detector-charsoup`
+| `CharSoupEncodingDetector`
+| yes (default)
+| `MetaEncodingDetector`; language-scoring arbitrator
+
+| `tika-encoding-detector-icu4j`
+| `Icu4jEncodingDetector` + vendored ICU4J charset engine
+| no (opt-in)
+| Kept for compatibility; not in default chain
+
+| `tika-encoding-detector-universal`
+| `UniversalEncodingDetector`
+| no (opt-in)
+| Kept for compatibility; not in default chain
+|===
+
+=== Detection chain
+
+Default detectors run in order; all results are collected into `EncodingDetectorContext`:
+
+. `BOMDetector` — definitive (confidence 1.0) when a BOM is present (opt-in, not default)
+. `WideUnicodeDetector` — UTF-16/32 structural detection; writes `WideUnicodeSignal`
+  into `EncodingDetectorContext` (see <<wide-unicode-signal>>)
+. `MojibusterEncodingDetector` — ML-based detector (replaces ICU4J + Universal)
+. `HtmlEncodingDetector` — charset from HTML `<meta>` tags
+. `CharSoupEncodingDetector` — meta-detector; arbitrates using language scoring
+
+=== EncodingResult
+
+Detectors now return `List<EncodingResult>` instead of a single `Charset`.
+Each `EncodingResult` carries a `charset` and a `confidence` (0.0–1.0).
+This mirrors the language detection API and enables arbitration across multiple
+candidates.
+
+=== EncodingDetectorContext
+
+Created by `CompositeEncodingDetector` for each detection pass, stored in
+`ParseContext`, and *removed after detection completes* so it does not bleed
+into embedded-document parses.
+
+Contains:
+
+* Per-detector ranked `List<EncodingResult>` contributions
+* `WideUnicodeSignal` written by `WideUnicodeDetector` (see below)
+* Arbitration metadata set by `CharSoupEncodingDetector`
+
+[[wide-unicode-signal]]
+=== WideUnicodeSignal
+
+`WideUnicodeDetector` writes a `WideUnicodeSignal` into `EncodingDetectorContext`
+(not directly into `ParseContext`) when it finds wide-Unicode structure.
+The signal carries:
+
+* `Kind.VALID` + detected `Charset` — structurally valid UTF-16/32
+* `Kind.ILLEGAL_SURROGATES` — null-column pattern present but surrogate pairs are invalid
+
+`MojibusterEncodingDetector` checks for this signal before touching the probe bytes.
+If present it returns an empty list immediately — the model was not trained on
+null-heavy UTF-16/32 data and would produce noise.
+
+Using `EncodingDetectorContext` (rather than `ParseContext`) as the carrier
+ensures the signal is scoped to the current detection pass and cannot affect
+embedded-document detection.
+
+== MojibusterEncodingDetector pipeline
+
+ input bytes
+     │
+     ├─ HZ escape check (structural, 7-bit)         → HZ
+     ├─ WideUnicodeSignal present?                   → defer (return empty)
+     ├─ ISO-2022 escape sequence                     → ISO-2022-JP/KR/CN
+     ├─ IBM424 EBCDIC gate                           → IBM424
+     ├─ Pure ASCII (no bytes ≥ 0x80)                 → UTF-8
+     ├─ UTF-8 grammar check                          → DEFINITIVE_UTF8 or exclude UTF-8
+     ├─ Statistical model (byte-ngram logistic reg)
+     ├─ collapseGroups (pool confusable probabilities)
+     └─ upgradeIsoToWindows (C1-byte post-correction)
+
+=== ISO-8859-X → Windows-12XX post-correction
+
+**Decision:** rule-based post-correction, not training data.
+
+After the model runs and group probabilities are collapsed, if the probe
+contains any byte in the C1 range (`0x80–0x9F`):
+
+* Those bytes are C1 control codes in every ISO-8859-X standard
+* They are printable characters in every Windows-12XX encoding
+
+Therefore, any ISO-8859-X result is structurally invalid when C1 bytes are
+present.  `upgradeIsoToWindows()` replaces each such result with its
+Windows-12XX equivalent from `CharsetConfusables.ISO_TO_WINDOWS`, preserving
+the model's confidence score.
+
+The upgrade map covers all confusable ISO/Windows pairs:
+`ISO-8859-1` / `ISO-8859-15` → `windows-1252`, `ISO-8859-2` → `windows-1250`,
+`ISO-8859-5` → `windows-1251`, `ISO-8859-6` → `windows-1256`,
+`ISO-8859-7` → `windows-1253`, `ISO-8859-8` → `windows-1255`,
+`ISO-8859-9` → `windows-1254`, `ISO-8859-4` / `ISO-8859-13` → `windows-1257`.
+
+This rule is preferred over generating split training data because:
+
+* The 0x80–0x9F signal is sparse in real text (smart quotes, Euro sign appear
+  in a minority of documents); the model may not learn reliable weights
+* The rule is deterministic and covers all confusable groups simultaneously
+* The model's script-level discrimination (Western European vs. Cyrillic vs.
+  Arabic etc.) is trusted; this only fixes ISO-vs-Windows within the group
+
+=== Confusable groups
+
+`CharsetConfusables` defines symmetric groups (both directions acceptable for
+evaluation) and directional superset chains (predicting a superset is safe;
+predicting a subset is not).
+
+`collapseGroups()` pools softmax probability within each group and awards the
+total to the highest-scoring member before thresholding.
+
+== CJK encoding detection (replacing ICU4J)
+
+=== Problem
+
+The byte-ngram ML model is trained on single-byte and UTF-8 content.
+For CJK multi-byte encodings (Shift_JIS, EUC-JP, EUC-KR, Big5, GB18030) it
+provides useful discrimination on long probes (≥ ~50 high bytes) but is
+unreliable on short probes such as ZIP entry filenames (10–30 bytes).
+
+With ICU4J removed there is no backstop for these short probes.
+
+=== Solution: grammar walkers + gated invocation
+
+Implement grammar walkers for each CJK encoding, inspired by ICU4J's
+`CharsetRecog_mbcs` class.  Each walker:
+
+. Iterates the probe byte-by-byte according to the encoding's grammar rules
+. Counts valid double-byte characters, single-byte characters, and errors
+. Returns a confidence score
+
+Invocation is *gated on the model's top-N results*: grammar walkers only run
+when a CJK encoding appears in the model output.  This avoids false positives
+on Latin/Arabic/Cyrillic probes (where some byte values coincidentally match
+CJK lead-byte ranges) and avoids wasting cycles on clearly non-CJK content.
+
+Grammar walker complexity (lines of logic, excluding data):
+
+|===
+| Encoding | Walker lines | Notes
+
+| Shift_JIS | ~10 | Lead 0x81–0x9F / 0xE0–0xFC + trail 0x40–0x7E / 0x80–0xFF; half-width katakana 0xA1–0xDF single byte
+| EUC-JP / EUC-KR | ~35 (shared) | ≤0x8D single; 0xA1–0xFE two-byte; 0x8E SS2; 0x8F SS3 three-byte
+| Big5 | ~10 | Lead 0x81–0xFE; trail 0x40–0xFE excluding 0x7F / 0xFF
+| GB18030 | ~30 | Two-byte or four-byte (second 0x30–0x39); most complex
+| Confidence formula | ~15 | Shared; based on doubleByteCount, badCharCount, commonCharCount
+|===
+
+Total: ~100 lines of logic across all five encodings.
+
+=== Common character frequency tables
+
+**Decision:** derive from corpus later; start with grammar-walker-only.
+
+ICU4J uses hardcoded frequency tables (64 entries each) of the most common
+two-byte characters per encoding.  These boost confidence on short probes via
+a logarithmic formula.
+
+Without the tables, grammar-walker-only confidence for a 10-byte valid SJIS
+probe is ~33/100 — enough for discrimination (ruling out wrong encodings) but
+below the typical acceptance threshold for a positive result.
+
+Plan:
+
+. **Now:** implement grammar walkers only.  Discrimination between CJK
+  encodings works correctly.  Short-probe positive confidence may be low.
+. **Later, if short-probe confidence proves insufficient:** derive common
+  character tables from MadLAD corpus:
+  ** Take Japanese/Chinese/Korean text, re-encode to target encoding
+  ** Count frequency of every two-byte sequence
+  ** Take the top 64, sorted — drop in as the `commonChars` array
+  ** This produces corpus-specific tables tuned to our training distribution
+
+== Training data plan
+
+=== Single-byte encodings
+
+Source: MadLAD (cleaned UTF-8).  Re-encode each document into the target
+single-byte encoding.
+
+Bucketing rules for Western European encodings to ensure the model can
+distinguish ISO-8859-1 from windows-1252:
+
+* **Text with characters exclusive to windows-1252** (U+20AC €, U+2018/2019
+  smart quotes, U+201C/201D, U+2013 en-dash, U+2014 em-dash, etc.) can only
+  be re-encoded as windows-1252.  Generate windows-1252 examples only.
+  These examples will have bytes in 0x80–0x9F, training the model to associate
+  those bytes with windows-1252.
+* **Text with only characters in the shared 0xA0–0xFF range** is byte-for-byte
+  identical in ISO-8859-1 and windows-1252.  Label as ISO-8859-1 as the
+  canonical default.  These are genuinely ambiguous; the post-correction rule
+  handles the case where such a file actually has 0x80–0x9F bytes at runtime.
+* **Pure ASCII text** → UTF-8 / US-ASCII; excluded from this group.
+
+The same bucketing applies to each ISO/Windows confusable pair
+(ISO-8859-2 / windows-1250 for Central European, etc.).
+
+=== CJK encodings
+
+Re-encode MadLAD Japanese/Chinese/Korean text into Shift_JIS, EUC-JP, EUC-KR,
+Big5, GB18030.  Apply OOV-rate filter: exclude chunks where fewer than 20% of
+bytes are high bytes (too ASCII-heavy to provide useful CJK signal).
+
+== Removed from the default chain
+
+* `ByteEncodingHint` — removed; replaced by `WideUnicodeDetector`
+* `Icu4jEncodingDetector` — removed from default SPI chain; still available as
+  `tika-encoding-detector-icu4j` for explicit opt-in configuration
+* `UniversalEncodingDetector` — removed from default SPI chain; still available as
+  `tika-encoding-detector-universal` for explicit opt-in configuration
+* `BOMDetector` — moved from `tika-parser-text-module` to `tika-core`
+  (package `org.apache.tika.detect`); remains opt-in (not SPI-loaded by default)
