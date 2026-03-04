@@ -59,6 +59,7 @@
 
     <modules>
         <module>tika-grpc</module>
+        <module>tika-server</module>
     </modules>
 
     <dependencyManagement>
